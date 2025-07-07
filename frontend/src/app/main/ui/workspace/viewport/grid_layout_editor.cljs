@@ -360,11 +360,13 @@
            (dom/stop-propagation event)
            (let [position (dom/get-client-position event)]
              (if selected?
-               (st/emit! (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)}))
+               (st/emit! (dw/show-grid-cell-context-menu {:position position
+                                                          :grid-id (:id shape)}))
 
                ;; If right-click on a non-selected cell we select the cell and then open the menu
                (st/emit! (dwge/set-selection (:id shape) (:id cell))
-                         (dw/show-grid-cell-context-menu {:position position :grid-id (:id shape)}))))))]
+                         (dw/show-grid-cell-context-menu {:position position
+                                                          :grid-id (:id shape)}))))))]
 
     [:g.cell-editor
      ;; DEBUG OVERLAY
@@ -450,9 +452,11 @@
                  shape
                  (-> shape
                      (cond-> (some? track-before)
-                       (update-in [tracks-prop (dec index)] merge {:type :fixed :value (:size track-before)}))
+                       (update-in [tracks-prop (dec index)] merge {:type :fixed
+                                                                   :value (:size track-before)}))
                      (cond-> (some? track-after)
-                       (update-in [tracks-prop index] merge {:type :fixed :value (:size track-after)})))
+                       (update-in [tracks-prop index] merge {:type :fixed
+                                                             :value (:size track-after)})))
 
                  modifiers
                  (-> (ctm/empty)
@@ -480,9 +484,11 @@
                  shape
                  (-> shape
                      (cond-> (some? track-before)
-                       (update-in [tracks-prop (dec index)] merge {:type :fixed :value new-size-before}))
+                       (update-in [tracks-prop (dec index)] merge {:type :fixed
+                                                                   :value new-size-before}))
                      (cond-> (some? track-after)
-                       (update-in [tracks-prop index] merge {:type :fixed :value new-size-after})))]
+                       (update-in [tracks-prop index] merge {:type :fixed
+                                                             :value new-size-after})))]
              (-> (ctm/empty)
                  (ctm/change-property tracks-prop (get shape tracks-prop))))))
 
@@ -530,7 +536,8 @@
         on-set-modifiers (unchecked-get props "on-set-modifiers")
         on-clear-modifiers (unchecked-get props "on-clear-modifiers")
 
-        {:keys [column-total-size column-total-gap row-total-size row-total-gap] :as layout-data}
+        {:keys [column-total-size column-total-gap row-total-size row-total-gap]
+         :as layout-data}
         (unchecked-get props "layout-data")
 
         start-p (unchecked-get props "start-p")
@@ -798,7 +805,8 @@
                    :else
                    [:auto nil])
 
-                 track-data (when (some? track-type) {:type track-type :value value})]
+                 track-data (when (some? track-type) {:type track-type
+                                                      :value value})]
 
              (dom/set-value! (mf/ref-val track-input-ref) (format-size track-data))
              (if (some? track-type)
@@ -898,7 +906,10 @@
               :style {:cursor "pointer"}
               :opacity (if (and hovering? (not small?)) 0.2 0)}]
       (when (not small?)
-        [:foreignObject {:x text-x :y text-y :width text-width :height text-height}
+        [:foreignObject {:x text-x
+                         :y text-y
+                         :width text-width
+                         :height text-height}
          [:div {:class (stl/css :grid-editor-wrapper)
                 :on-context-menu handle-show-track-menu
                 :on-pointer-down handle-pointer-down

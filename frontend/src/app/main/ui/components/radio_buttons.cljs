@@ -58,7 +58,8 @@
 
 (mf/defc radio-buttons
   {::mf/props :obj}
-  [{:keys [name children on-change selected class wide encode-fn decode-fn allow-empty] :as props}]
+  [{:keys [name children on-change selected class wide encode-fn decode-fn allow-empty]
+    :as props}]
   (let [encode-fn (d/nilv encode-fn identity)
         decode-fn (d/nilv decode-fn identity)
         nitems    (if (array? children)

@@ -360,7 +360,9 @@
    of the specified shape-id"
   ([objects] (get-immediate-children objects uuid/zero nil))
   ([objects shape-id] (get-immediate-children objects shape-id nil))
-  ([objects shape-id {:keys [remove-hidden remove-blocked] :or {remove-hidden false remove-blocked false}}]
+  ([objects shape-id {:keys [remove-hidden remove-blocked]
+                      :or {remove-hidden false
+                           remove-blocked false}}]
    (let [lookup (d/getf objects)]
      (->> (lookup shape-id)
           (:shapes)

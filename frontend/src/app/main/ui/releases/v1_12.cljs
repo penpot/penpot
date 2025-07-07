@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Beta release 1.12"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Beta release 1.12"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Beta 1.12 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.12-ui.gif" :border "0" :alt "Adjustable UI"}]]
+         [:img {:src "images/features/1.12-ui.gif"
+                :border "0"
+                :alt "Adjustable UI"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Adjustable UI"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.12-guides.gif" :border "0" :alt "Guides"}]]
+         [:img {:src "images/features/1.12-guides.gif"
+                :border "0"
+                :alt "Guides"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Guides"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.12-scrollbars.gif" :border "0" :alt "Scrollbars"}]]
+         [:img {:src "images/features/1.12-scrollbars.gif"
+                :border "0"
+                :alt "Scrollbars"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Scrollbars"]]
@@ -92,7 +102,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.12-nudge.gif" :border "0" :alt "Nudge amount"}]]
+         [:img {:src "images/features/1.12-nudge.gif"
+                :border "0"
+                :alt "Nudge amount"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Nudge amount"]]

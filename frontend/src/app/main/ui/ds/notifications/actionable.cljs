@@ -24,7 +24,8 @@
 
 (mf/defc actionable*
   {::mf/schema schema:actionable}
-  [{:keys [class variant accept-label cancel-label children on-accept on-cancel] :rest props}]
+  [{:keys [class variant accept-label cancel-label children on-accept on-cancel]
+    :rest props}]
 
   (let [variant (d/nilv variant "default")
         class   (d/append-class class (stl/css :notification))

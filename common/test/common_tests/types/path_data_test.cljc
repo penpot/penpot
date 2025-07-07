@@ -21,62 +21,293 @@
    [clojure.test :as t]))
 
 (def sample-content
-  [{:command :move-to :params {:x 480.0 :y 839.0}}
-   {:command :line-to :params {:x 439.0 :y 802.0}}
-   {:command :curve-to :params {:c1x 368.0 :c1y 737.0 :c2x 310.0 :c2y 681.0 :x 264.0 :y 634.0}}
-   {:command :close-path :params {}}])
+  [{:command :move-to
+    :params {:x 480.0
+             :y 839.0}}
+   {:command :line-to
+    :params {:x 439.0
+             :y 802.0}}
+   {:command :curve-to
+    :params {:c1x 368.0
+             :c1y 737.0
+             :c2x 310.0
+             :c2y 681.0
+             :x 264.0
+             :y 634.0}}
+   {:command :close-path
+    :params {}}])
 
 (def sample-content-square
-  [{:command :move-to, :params {:x 0, :y 0}}
-   {:command :line-to, :params {:x 10, :y 0}}
-   {:command :line-to, :params {:x 10, :y 10}}
-   {:command :line-to, :params {:x 10, :y 0}}
-   {:command :line-to, :params {:x 0, :y 10}}
-   {:command :line-to, :params {:x 0, :y 0}}
-   {:command :close-path :params {}}])
+  [{:command :move-to,
+    :params {:x 0,
+             :y 0}}
+   {:command :line-to,
+    :params {:x 10,
+             :y 0}}
+   {:command :line-to,
+    :params {:x 10,
+             :y 10}}
+   {:command :line-to,
+    :params {:x 10,
+             :y 0}}
+   {:command :line-to,
+    :params {:x 0,
+             :y 10}}
+   {:command :line-to,
+    :params {:x 0,
+             :y 0}}
+   {:command :close-path
+    :params {}}])
 
 (def sample-content-large
-  [{:command :move-to :params {:x 480.0 :y 839.0}}
-   {:command :line-to :params {:x 439.0 :y 802.0}}
-   {:command :curve-to :params {:c1x 368.0 :c1y 737.0 :c2x 310.0 :c2y 681.0 :x 264.0 :y 634.0}}
-   {:command :curve-to :params {:c1x 218.0 :c1y 587.0 :c2x 181.0 :c2y 545.0 :x 154.0 :y 508.0}}
-   {:command :curve-to :params {:c1x 126.0 :c1y 471.0 :c2x 107.0 :c2y 438.0 :x 96.0  :y 408.0}}
-   {:command :curve-to :params {:c1x 85.0  :c1y 378.0 :c2x 80.0  :c2y 347.0 :x 80.0  :y 317.0}}
-   {:command :curve-to :params {:c1x 80.0  :c1y 256.0 :c2x 100.0 :c2y 206.0 :x 140.0 :y 166.0}}
-   {:command :curve-to :params {:c1x 180.0 :c1y 126.0 :c2x 230.0 :c2y 106.0 :x 290.0 :y 106.0}}
-   {:command :curve-to :params {:c1x 328.0 :c1y 106.0 :c2x 363.0 :c2y 115.0 :x 395.0 :y 133.0}}
-   {:command :curve-to :params {:c1x 427.0 :c1y 151.0 :c2x 456.0 :c2y 177.0 :x 480.0 :y 211.0}}
-   {:command :curve-to :params {:c1x 508.0 :c1y 175.0 :c2x 537.0 :c2y 148.0 :x 569.0 :y 131.0}}
-   {:command :curve-to :params {:c1x 600.0 :c1y 114.0 :c2x 634.0 :c2y 106.0 :x 670.0 :y 106.0}}
-   {:command :curve-to :params {:c1x 729.0 :c1y 106.0 :c2x 779.0 :c2y 126.0 :x 819.0 :y 166.0}}
-   {:command :curve-to :params {:c1x 859.0 :c1y 206.0 :c2x 880.0 :c2y 256.0 :x 880.0 :y 317.0}}
-   {:command :curve-to :params {:c1x 880.0 :c1y 347.0 :c2x 874.0 :c2y 378.0 :x 863.0 :y 408.0}}
-   {:command :curve-to :params {:c1x 852.0 :c1y 438.0 :c2x 833.0 :c2y 471.0 :x 806.0 :y 508.0}}
-   {:command :curve-to :params {:c1x 778.0 :c1y 545.0 :c2x 741.0 :c2y 587.0 :x 695.0 :y 634.0}}
-   {:command :curve-to :params {:c1x 649.0 :c1y 681.0 :c2x 591.0 :c2y 737.0 :x 521.0 :y 802.0}}
-   {:command :line-to :params {:x 480.0 :y 839.0}}
-   {:command :close-path :params {}}
-   {:command :move-to :params {:x 480.0 :y 760.0}}
-   {:command :curve-to :params {:c1x 547.0 :c1y 698.0 :c2x 603.0 :c2y 644.0 :x 646.0 :y 600.0}}
-   {:command :curve-to :params {:c1x 690.0 :c1y 556.0 :c2x 724.0 :c2y 517.0 :x 750.0 :y 484.0}}
-   {:command :curve-to :params {:c1x 776.0 :c1y 450.0 :c2x 794.0 :c2y 420.0 :x 804.0 :y 394.0}}
-   {:command :curve-to :params {:c1x 814.0 :c1y 368.0 :c2x 820.0 :c2y 342.0 :x 820.0 :y 317.0}}
-   {:command :curve-to :params {:c1x 820.0 :c1y 273.0 :c2x 806.0 :c2y 236.0 :x 778.0 :y 2085.0}}
-   {:command :curve-to :params {:c1x 750.0 :c1y 180.0 :c2x 714.0 :c2y 166.0 :x 670.0 :y 1660.0}}
-   {:command :curve-to :params {:c1x 635.0 :c1y 166.0 :c2x 604.0 :c2y 176.0 :x 574.0 :y 1975.0}}
-   {:command :curve-to :params {:c1x 545.0 :c1y 218.0 :c2x 522.0 :c2y 248.0 :x 504.0 :y 2860.0}}
-   {:command :line-to :params {:x 455.0 :y 286.0}}
-   {:command :curve-to :params {:c1x 437.0 :c1y 248.0 :c2x 414.0 :c2y 219.0 :x 385.0 :y 198.0}}
-   {:command :curve-to :params {:c1x 355.0 :c1y 176.0 :c2x 324.0 :c2y 166.0 :x 289.0 :y 166.0}}
-   {:command :curve-to :params {:c1x 245.0 :c1y 166.0 :c2x 210.0 :c2y 180.0 :x 182.0 :y 208.0}}
-   {:command :curve-to :params {:c1x 154.0 :c1y 236.0 :c2x 140.0 :c2y 273.0 :x 140.0 :y 317.0}}
-   {:command :curve-to :params {:c1x 140.0 :c1y 343.0 :c2x 145.0 :c2y 369.0 :x 155.0 :y 395.0}}
-   {:command :curve-to :params {:c1x 165.0 :c1y 421.0 :c2x 183.0 :c2y 451.0 :x 209.0 :y 485.0}}
-   {:command :curve-to :params {:c1x 235.0 :c1y 519.0 :c2x 270.0 :c2y 558.0 :x 314.0 :y 602.0}}
-   {:command :curve-to :params {:c1x 358.0 :c1y 646.0 :c2x 413.0 :c2y 698.0 :x 480.0 :y 760.0}}
-   {:command :close-path :params {}}
-   {:command :move-to :params {:x 480.0 :y 463.0}}
-   {:command :close-path :params {}}])
+  [{:command :move-to
+    :params {:x 480.0
+             :y 839.0}}
+   {:command :line-to
+    :params {:x 439.0
+             :y 802.0}}
+   {:command :curve-to
+    :params {:c1x 368.0
+             :c1y 737.0
+             :c2x 310.0
+             :c2y 681.0
+             :x 264.0
+             :y 634.0}}
+   {:command :curve-to
+    :params {:c1x 218.0
+             :c1y 587.0
+             :c2x 181.0
+             :c2y 545.0
+             :x 154.0
+             :y 508.0}}
+   {:command :curve-to
+    :params {:c1x 126.0
+             :c1y 471.0
+             :c2x 107.0
+             :c2y 438.0
+             :x 96.0
+             :y 408.0}}
+   {:command :curve-to
+    :params {:c1x 85.0
+             :c1y 378.0
+             :c2x 80.0
+             :c2y 347.0
+             :x 80.0
+             :y 317.0}}
+   {:command :curve-to
+    :params {:c1x 80.0
+             :c1y 256.0
+             :c2x 100.0
+             :c2y 206.0
+             :x 140.0
+             :y 166.0}}
+   {:command :curve-to
+    :params {:c1x 180.0
+             :c1y 126.0
+             :c2x 230.0
+             :c2y 106.0
+             :x 290.0
+             :y 106.0}}
+   {:command :curve-to
+    :params {:c1x 328.0
+             :c1y 106.0
+             :c2x 363.0
+             :c2y 115.0
+             :x 395.0
+             :y 133.0}}
+   {:command :curve-to
+    :params {:c1x 427.0
+             :c1y 151.0
+             :c2x 456.0
+             :c2y 177.0
+             :x 480.0
+             :y 211.0}}
+   {:command :curve-to
+    :params {:c1x 508.0
+             :c1y 175.0
+             :c2x 537.0
+             :c2y 148.0
+             :x 569.0
+             :y 131.0}}
+   {:command :curve-to
+    :params {:c1x 600.0
+             :c1y 114.0
+             :c2x 634.0
+             :c2y 106.0
+             :x 670.0
+             :y 106.0}}
+   {:command :curve-to
+    :params {:c1x 729.0
+             :c1y 106.0
+             :c2x 779.0
+             :c2y 126.0
+             :x 819.0
+             :y 166.0}}
+   {:command :curve-to
+    :params {:c1x 859.0
+             :c1y 206.0
+             :c2x 880.0
+             :c2y 256.0
+             :x 880.0
+             :y 317.0}}
+   {:command :curve-to
+    :params {:c1x 880.0
+             :c1y 347.0
+             :c2x 874.0
+             :c2y 378.0
+             :x 863.0
+             :y 408.0}}
+   {:command :curve-to
+    :params {:c1x 852.0
+             :c1y 438.0
+             :c2x 833.0
+             :c2y 471.0
+             :x 806.0
+             :y 508.0}}
+   {:command :curve-to
+    :params {:c1x 778.0
+             :c1y 545.0
+             :c2x 741.0
+             :c2y 587.0
+             :x 695.0
+             :y 634.0}}
+   {:command :curve-to
+    :params {:c1x 649.0
+             :c1y 681.0
+             :c2x 591.0
+             :c2y 737.0
+             :x 521.0
+             :y 802.0}}
+   {:command :line-to
+    :params {:x 480.0
+             :y 839.0}}
+   {:command :close-path
+    :params {}}
+   {:command :move-to
+    :params {:x 480.0
+             :y 760.0}}
+   {:command :curve-to
+    :params {:c1x 547.0
+             :c1y 698.0
+             :c2x 603.0
+             :c2y 644.0
+             :x 646.0
+             :y 600.0}}
+   {:command :curve-to
+    :params {:c1x 690.0
+             :c1y 556.0
+             :c2x 724.0
+             :c2y 517.0
+             :x 750.0
+             :y 484.0}}
+   {:command :curve-to
+    :params {:c1x 776.0
+             :c1y 450.0
+             :c2x 794.0
+             :c2y 420.0
+             :x 804.0
+             :y 394.0}}
+   {:command :curve-to
+    :params {:c1x 814.0
+             :c1y 368.0
+             :c2x 820.0
+             :c2y 342.0
+             :x 820.0
+             :y 317.0}}
+   {:command :curve-to
+    :params {:c1x 820.0
+             :c1y 273.0
+             :c2x 806.0
+             :c2y 236.0
+             :x 778.0
+             :y 2085.0}}
+   {:command :curve-to
+    :params {:c1x 750.0
+             :c1y 180.0
+             :c2x 714.0
+             :c2y 166.0
+             :x 670.0
+             :y 1660.0}}
+   {:command :curve-to
+    :params {:c1x 635.0
+             :c1y 166.0
+             :c2x 604.0
+             :c2y 176.0
+             :x 574.0
+             :y 1975.0}}
+   {:command :curve-to
+    :params {:c1x 545.0
+             :c1y 218.0
+             :c2x 522.0
+             :c2y 248.0
+             :x 504.0
+             :y 2860.0}}
+   {:command :line-to
+    :params {:x 455.0
+             :y 286.0}}
+   {:command :curve-to
+    :params {:c1x 437.0
+             :c1y 248.0
+             :c2x 414.0
+             :c2y 219.0
+             :x 385.0
+             :y 198.0}}
+   {:command :curve-to
+    :params {:c1x 355.0
+             :c1y 176.0
+             :c2x 324.0
+             :c2y 166.0
+             :x 289.0
+             :y 166.0}}
+   {:command :curve-to
+    :params {:c1x 245.0
+             :c1y 166.0
+             :c2x 210.0
+             :c2y 180.0
+             :x 182.0
+             :y 208.0}}
+   {:command :curve-to
+    :params {:c1x 154.0
+             :c1y 236.0
+             :c2x 140.0
+             :c2y 273.0
+             :x 140.0
+             :y 317.0}}
+   {:command :curve-to
+    :params {:c1x 140.0
+             :c1y 343.0
+             :c2x 145.0
+             :c2y 369.0
+             :x 155.0
+             :y 395.0}}
+   {:command :curve-to
+    :params {:c1x 165.0
+             :c1y 421.0
+             :c2x 183.0
+             :c2y 451.0
+             :x 209.0
+             :y 485.0}}
+   {:command :curve-to
+    :params {:c1x 235.0
+             :c1y 519.0
+             :c2x 270.0
+             :c2y 558.0
+             :x 314.0
+             :y 602.0}}
+   {:command :curve-to
+    :params {:c1x 358.0
+             :c1y 646.0
+             :c2x 413.0
+             :c2y 698.0
+             :x 480.0
+             :y 760.0}}
+   {:command :close-path
+    :params {}}
+   {:command :move-to
+    :params {:x 480.0
+             :y 463.0}}
+   {:command :close-path
+    :params {}}])
 
 (def sample-bytes
   [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -16 67 0 -64 81 68
@@ -157,7 +388,8 @@
                    py (:y tr-point))))
 
         transform-params
-        (fn [{:keys [x c1x c2x] :as params}]
+        (fn [{:keys [x c1x c2x]
+              :as params}]
           (cond-> params
             (some? x)   (set-tr :x :y)
             (some? c1x) (set-tr :c1x :c1y)
@@ -301,11 +533,28 @@
     (t/is (= result4 expect))))
 
 (def sample-content-2
-  [{:command :move-to, :params {:x 480.0, :y 839.0}}
-   {:command :line-to, :params {:x 439.0, :y 802.0}}
-   {:command :curve-to, :params {:c1x 368.0, :c1y 737.0, :c2x 310.0, :c2y 681.0, :x 4.0, :y 4.0}}
-   {:command :curve-to, :params {:c1x 3.0, :c1y 7.0, :c2x 30.0, :c2y -68.0, :x 20.0, :y 20.0}}
-   {:command :close-path :params {}}])
+  [{:command :move-to,
+    :params {:x 480.0,
+             :y 839.0}}
+   {:command :line-to,
+    :params {:x 439.0,
+             :y 802.0}}
+   {:command :curve-to,
+    :params {:c1x 368.0,
+             :c1y 737.0,
+             :c2x 310.0,
+             :c2y 681.0,
+             :x 4.0,
+             :y 4.0}}
+   {:command :curve-to,
+    :params {:c1x 3.0,
+             :c1y 7.0,
+             :c2x 30.0,
+             :c2y -68.0,
+             :x 20.0,
+             :y 20.0}}
+   {:command :close-path
+    :params {}}])
 
 (t/deftest extremities-2
   (let [result1 (path.segment/calculate-extremities sample-content-2)
@@ -313,7 +562,9 @@
     (t/is (= result1 result2))))
 
 (t/deftest extremities-3
-  (let [segments [{:command :move-to, :params {:x -310.5355224609375, :y 452.62115478515625}}]
+  (let [segments [{:command :move-to,
+                   :params {:x -310.5355224609375,
+                            :y 452.62115478515625}}]
         content  (path/content segments)
         result1  (calculate-extremities segments)
         result2  (path.segment/calculate-extremities segments)
@@ -331,9 +582,15 @@
         content  (path.segment/points->content initial)
         segments (vec content)]
     (t/is (= 3 (count segments)))
-    (t/is (= {:command :move-to, :params {:x 0.0, :y 0.0}} (nth segments 0)))
-    (t/is (= {:command :line-to, :params {:x 10.0, :y 10.0}} (nth segments 1)))
-    (t/is (= {:command :line-to, :params {:x 10.0, :y 5.0}} (nth segments 2)))))
+    (t/is (= {:command :move-to,
+              :params {:x 0.0,
+                       :y 0.0}} (nth segments 0)))
+    (t/is (= {:command :line-to,
+              :params {:x 10.0,
+                       :y 10.0}} (nth segments 1)))
+    (t/is (= {:command :line-to,
+              :params {:x 10.0,
+                       :y 5.0}} (nth segments 2)))))
 
 (t/deftest get-segments
   (let [content (path/content sample-content-square)
@@ -341,7 +598,8 @@
                   (gpt/point 0.0 0.0)}
         result  (path.segment/get-segments-with-points content points)
         expect  [{:command :line-to,
-                  :params {:x 10.0, :y 0.0},
+                  :params {:x 10.0,
+                           :y 0.0},
                   :start (gpt/point 0.0 0.0)
                   :end (gpt/point 10.0 0.0)
                   :index 1}
@@ -418,85 +676,261 @@
 
 
 (def contents-for-bool
-  [[{:command :move-to, :params {:x 1682.9000244140625, :y 48.0}}
-    {:command :line-to, :params {:x 1682.9000244140625, :y 44.0}}
-    {:command :curve-to, :params {:x 1683.9000244140625, :y 43.0, :c1x 1682.9000244140625, :c1y 43.400001525878906, :c2x 1683.300048828125, :c2y 43.0}}
-    {:command :line-to, :params {:x 1687.9000244140625, :y 43.0}}
-    {:command :curve-to, :params {:x 1688.9000244140625, :y 44.0, :c1x 1688.5, :c1y 43.0, :c2x 1688.9000244140625, :c2y 43.400001525878906}}
-    {:command :line-to, :params {:x 1688.9000244140625, :y 48.0}}
-    {:command :curve-to, :params {:x 1687.9000244140625, :y 49.0, :c1x 1688.9000244140625, :c1y 48.599998474121094, :c2x 1688.5, :c2y 49.0}}
-    {:command :line-to, :params {:x 1683.9000244140625, :y 49.0}}
-    {:command :curve-to, :params {:x 1682.9000244140625, :y 48.0, :c1x 1683.300048828125, :c1y 49.0, :c2x 1682.9000244140625, :c2y 48.599998474121094}}
-    {:command :close-path, :params {}}
-    {:command :close-path, :params {}}
-    {:command :move-to, :params {:x 1684.9000244140625, :y 45.0}}
-    {:command :line-to, :params {:x 1684.9000244140625, :y 47.0}}
-    {:command :line-to, :params {:x 1686.9000244140625, :y 47.0}}
-    {:command :line-to, :params {:x 1686.9000244140625, :y 45.0}}
-    {:command :line-to, :params {:x 1684.9000244140625, :y 45.0}}
-    {:command :close-path, :params {}}
-    {:command :close-path, :params {}}]
+  [[{:command :move-to,
+     :params {:x 1682.9000244140625,
+              :y 48.0}}
+    {:command :line-to,
+     :params {:x 1682.9000244140625,
+              :y 44.0}}
+    {:command :curve-to,
+     :params {:x 1683.9000244140625,
+              :y 43.0,
+              :c1x 1682.9000244140625,
+              :c1y 43.400001525878906,
+              :c2x 1683.300048828125,
+              :c2y 43.0}}
+    {:command :line-to,
+     :params {:x 1687.9000244140625,
+              :y 43.0}}
+    {:command :curve-to,
+     :params {:x 1688.9000244140625,
+              :y 44.0,
+              :c1x 1688.5,
+              :c1y 43.0,
+              :c2x 1688.9000244140625,
+              :c2y 43.400001525878906}}
+    {:command :line-to,
+     :params {:x 1688.9000244140625,
+              :y 48.0}}
+    {:command :curve-to,
+     :params {:x 1687.9000244140625,
+              :y 49.0,
+              :c1x 1688.9000244140625,
+              :c1y 48.599998474121094,
+              :c2x 1688.5,
+              :c2y 49.0}}
+    {:command :line-to,
+     :params {:x 1683.9000244140625,
+              :y 49.0}}
+    {:command :curve-to,
+     :params {:x 1682.9000244140625,
+              :y 48.0,
+              :c1x 1683.300048828125,
+              :c1y 49.0,
+              :c2x 1682.9000244140625,
+              :c2y 48.599998474121094}}
+    {:command :close-path,
+     :params {}}
+    {:command :close-path,
+     :params {}}
+    {:command :move-to,
+     :params {:x 1684.9000244140625,
+              :y 45.0}}
+    {:command :line-to,
+     :params {:x 1684.9000244140625,
+              :y 47.0}}
+    {:command :line-to,
+     :params {:x 1686.9000244140625,
+              :y 47.0}}
+    {:command :line-to,
+     :params {:x 1686.9000244140625,
+              :y 45.0}}
+    {:command :line-to,
+     :params {:x 1684.9000244140625,
+              :y 45.0}}
+    {:command :close-path,
+     :params {}}
+    {:command :close-path,
+     :params {}}]
 
-   [{:command :move-to, :params {:x 1672.9000244140625, :y 48.0}}
-    {:command :line-to, :params {:x 1672.9000244140625, :y 44.0}}
-    {:command :curve-to, :params {:x 1673.9000244140625, :y 43.0, :c1x 1672.9000244140625, :c1y 43.400001525878906, :c2x 1673.300048828125, :c2y 43.0}}
-    {:command :line-to, :params {:x 1677.9000244140625, :y 43.0}}
-    {:command :curve-to, :params {:x 1678.9000244140625, :y 44.0, :c1x 1678.5, :c1y 43.0, :c2x 1678.9000244140625, :c2y 43.400001525878906}}
-    {:command :line-to, :params {:x 1678.9000244140625, :y 48.0}}
-    {:command :curve-to, :params {:x 1677.9000244140625, :y 49.0, :c1x 1678.9000244140625, :c1y 48.599998474121094, :c2x 1678.5, :c2y 49.0}}
-    {:command :line-to, :params {:x 1673.9000244140625, :y 49.0}}
-    {:command :curve-to, :params {:x 1672.9000244140625, :y 48.0, :c1x 1673.300048828125, :c1y 49.0, :c2x 1672.9000244140625, :c2y 48.599998474121094}}
-    {:command :close-path, :params {}}
-    {:command :close-path, :params {}}
-    {:command :move-to, :params {:x 1674.9000244140625, :y 45.0}}
-    {:command :line-to, :params {:x 1674.9000244140625, :y 47.0}}
-    {:command :line-to, :params {:x 1676.9000244140625, :y 47.0}}
-    {:command :line-to, :params {:x 1676.9000244140625, :y 45.0}}
-    {:command :line-to, :params {:x 1674.9000244140625, :y 45.0}}
-    {:command :close-path, :params {}}
-    {:command :close-path, :params {}}]])
+   [{:command :move-to,
+     :params {:x 1672.9000244140625,
+              :y 48.0}}
+    {:command :line-to,
+     :params {:x 1672.9000244140625,
+              :y 44.0}}
+    {:command :curve-to,
+     :params {:x 1673.9000244140625,
+              :y 43.0,
+              :c1x 1672.9000244140625,
+              :c1y 43.400001525878906,
+              :c2x 1673.300048828125,
+              :c2y 43.0}}
+    {:command :line-to,
+     :params {:x 1677.9000244140625,
+              :y 43.0}}
+    {:command :curve-to,
+     :params {:x 1678.9000244140625,
+              :y 44.0,
+              :c1x 1678.5,
+              :c1y 43.0,
+              :c2x 1678.9000244140625,
+              :c2y 43.400001525878906}}
+    {:command :line-to,
+     :params {:x 1678.9000244140625,
+              :y 48.0}}
+    {:command :curve-to,
+     :params {:x 1677.9000244140625,
+              :y 49.0,
+              :c1x 1678.9000244140625,
+              :c1y 48.599998474121094,
+              :c2x 1678.5,
+              :c2y 49.0}}
+    {:command :line-to,
+     :params {:x 1673.9000244140625,
+              :y 49.0}}
+    {:command :curve-to,
+     :params {:x 1672.9000244140625,
+              :y 48.0,
+              :c1x 1673.300048828125,
+              :c1y 49.0,
+              :c2x 1672.9000244140625,
+              :c2y 48.599998474121094}}
+    {:command :close-path,
+     :params {}}
+    {:command :close-path,
+     :params {}}
+    {:command :move-to,
+     :params {:x 1674.9000244140625,
+              :y 45.0}}
+    {:command :line-to,
+     :params {:x 1674.9000244140625,
+              :y 47.0}}
+    {:command :line-to,
+     :params {:x 1676.9000244140625,
+              :y 47.0}}
+    {:command :line-to,
+     :params {:x 1676.9000244140625,
+              :y 45.0}}
+    {:command :line-to,
+     :params {:x 1674.9000244140625,
+              :y 45.0}}
+    {:command :close-path,
+     :params {}}
+    {:command :close-path,
+     :params {}}]])
 
 (def bool-result
-  [{:command :move-to, :params {:x 1682.9000244140625, :y 48.0}}
-   {:command :line-to, :params {:x 1682.9000244140625, :y 44.0}}
+  [{:command :move-to,
+    :params {:x 1682.9000244140625,
+             :y 48.0}}
+   {:command :line-to,
+    :params {:x 1682.9000244140625,
+             :y 44.0}}
    {:command :curve-to,
     :params
-    {:x 1683.9000244140625, :y 43.0, :c1x 1682.9000244140625, :c1y 43.400001525878906, :c2x 1683.300048828125, :c2y 43.0}}
-   {:command :line-to, :params {:x 1687.9000244140625, :y 43.0}}
+    {:x 1683.9000244140625,
+     :y 43.0,
+     :c1x 1682.9000244140625,
+     :c1y 43.400001525878906,
+     :c2x 1683.300048828125,
+     :c2y 43.0}}
+   {:command :line-to,
+    :params {:x 1687.9000244140625,
+             :y 43.0}}
    {:command :curve-to,
-    :params {:x 1688.9000244140625, :y 44.0, :c1x 1688.5, :c1y 43.0, :c2x 1688.9000244140625, :c2y 43.400001525878906}}
-   {:command :line-to, :params {:x 1688.9000244140625, :y 48.0}}
+    :params {:x 1688.9000244140625,
+             :y 44.0,
+             :c1x 1688.5,
+             :c1y 43.0,
+             :c2x 1688.9000244140625,
+             :c2y 43.400001525878906}}
+   {:command :line-to,
+    :params {:x 1688.9000244140625,
+             :y 48.0}}
    {:command :curve-to,
-    :params {:x 1687.9000244140625, :y 49.0, :c1x 1688.9000244140625, :c1y 48.599998474121094, :c2x 1688.5, :c2y 49.0}}
-   {:command :line-to, :params {:x 1683.9000244140625, :y 49.0}}
+    :params {:x 1687.9000244140625,
+             :y 49.0,
+             :c1x 1688.9000244140625,
+             :c1y 48.599998474121094,
+             :c2x 1688.5,
+             :c2y 49.0}}
+   {:command :line-to,
+    :params {:x 1683.9000244140625,
+             :y 49.0}}
    {:command :curve-to,
     :params
-    {:x 1682.9000244140625, :y 48.0, :c1x 1683.300048828125, :c1y 49.0, :c2x 1682.9000244140625, :c2y 48.599998474121094}}
-   {:command :move-to, :params {:x 1684.9000244140625, :y 45.0}}
-   {:command :line-to, :params {:x 1684.9000244140625, :y 47.0}}
-   {:command :line-to, :params {:x 1686.9000244140625, :y 47.0}}
-   {:command :line-to, :params {:x 1686.9000244140625, :y 45.0}}
-   {:command :line-to, :params {:x 1684.9000244140625, :y 45.0}}
-   {:command :move-to, :params {:x 1672.9000244140625, :y 48.0}}
-   {:command :line-to, :params {:x 1672.9000244140625, :y 44.0}}
+    {:x 1682.9000244140625,
+     :y 48.0,
+     :c1x 1683.300048828125,
+     :c1y 49.0,
+     :c2x 1682.9000244140625,
+     :c2y 48.599998474121094}}
+   {:command :move-to,
+    :params {:x 1684.9000244140625,
+             :y 45.0}}
+   {:command :line-to,
+    :params {:x 1684.9000244140625,
+             :y 47.0}}
+   {:command :line-to,
+    :params {:x 1686.9000244140625,
+             :y 47.0}}
+   {:command :line-to,
+    :params {:x 1686.9000244140625,
+             :y 45.0}}
+   {:command :line-to,
+    :params {:x 1684.9000244140625,
+             :y 45.0}}
+   {:command :move-to,
+    :params {:x 1672.9000244140625,
+             :y 48.0}}
+   {:command :line-to,
+    :params {:x 1672.9000244140625,
+             :y 44.0}}
    {:command :curve-to,
     :params
-    {:x 1673.9000244140625, :y 43.0, :c1x 1672.9000244140625, :c1y 43.400001525878906, :c2x 1673.300048828125, :c2y 43.0}}
-   {:command :line-to, :params {:x 1677.9000244140625, :y 43.0}}
+    {:x 1673.9000244140625,
+     :y 43.0,
+     :c1x 1672.9000244140625,
+     :c1y 43.400001525878906,
+     :c2x 1673.300048828125,
+     :c2y 43.0}}
+   {:command :line-to,
+    :params {:x 1677.9000244140625,
+             :y 43.0}}
    {:command :curve-to,
-    :params {:x 1678.9000244140625, :y 44.0, :c1x 1678.5, :c1y 43.0, :c2x 1678.9000244140625, :c2y 43.400001525878906}}
-   {:command :line-to, :params {:x 1678.9000244140625, :y 48.0}}
+    :params {:x 1678.9000244140625,
+             :y 44.0,
+             :c1x 1678.5,
+             :c1y 43.0,
+             :c2x 1678.9000244140625,
+             :c2y 43.400001525878906}}
+   {:command :line-to,
+    :params {:x 1678.9000244140625,
+             :y 48.0}}
    {:command :curve-to,
-    :params {:x 1677.9000244140625, :y 49.0, :c1x 1678.9000244140625, :c1y 48.599998474121094, :c2x 1678.5, :c2y 49.0}}
-   {:command :line-to, :params {:x 1673.9000244140625, :y 49.0}}
+    :params {:x 1677.9000244140625,
+             :y 49.0,
+             :c1x 1678.9000244140625,
+             :c1y 48.599998474121094,
+             :c2x 1678.5,
+             :c2y 49.0}}
+   {:command :line-to,
+    :params {:x 1673.9000244140625,
+             :y 49.0}}
    {:command :curve-to,
     :params
-    {:x 1672.9000244140625, :y 48.0, :c1x 1673.300048828125, :c1y 49.0, :c2x 1672.9000244140625, :c2y 48.599998474121094}}
-   {:command :move-to, :params {:x 1674.9000244140625, :y 45.0}}
-   {:command :line-to, :params {:x 1674.9000244140625, :y 47.0}}
-   {:command :line-to, :params {:x 1676.9000244140625, :y 47.0}}
-   {:command :line-to, :params {:x 1676.9000244140625, :y 45.0}}
-   {:command :line-to, :params {:x 1674.9000244140625, :y 45.0}}])
+    {:x 1672.9000244140625,
+     :y 48.0,
+     :c1x 1673.300048828125,
+     :c1y 49.0,
+     :c2x 1672.9000244140625,
+     :c2y 48.599998474121094}}
+   {:command :move-to,
+    :params {:x 1674.9000244140625,
+             :y 45.0}}
+   {:command :line-to,
+    :params {:x 1674.9000244140625,
+             :y 47.0}}
+   {:command :line-to,
+    :params {:x 1676.9000244140625,
+             :y 47.0}}
+   {:command :line-to,
+    :params {:x 1676.9000244140625,
+             :y 45.0}}
+   {:command :line-to,
+    :params {:x 1674.9000244140625,
+             :y 45.0}}])
 
 (t/deftest calculate-bool-content
   (let [result (path.bool/calculate-content :union contents-for-bool)]

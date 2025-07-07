@@ -64,7 +64,8 @@
 
 (mf/defc token-management-section*
   {::mf/private true}
-  [{:keys [resize-height] :as props}]
+  [{:keys [resize-height]
+    :as props}]
 
   (let [can-edit?
         (mf/use-ctx ctx/can-edit?)]

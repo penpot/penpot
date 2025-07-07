@@ -27,7 +27,8 @@
 
 (mf/defc heading*
   {::mf/schema schema:heading}
-  [{:keys [level typography class children] :rest props}]
+  [{:keys [level typography class children]
+    :rest props}]
 
   (let [level (or level "1")
         tag   (dm/str "h" level)

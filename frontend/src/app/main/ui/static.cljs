@@ -45,10 +45,12 @@
      [:button
       {:class (stl/css :exception-header)
        :on-click on-nav-root}
-      [:> raw-svg* {:id "penpot-logo-icon" :class (stl/css :penpot-logo)}]
+      [:> raw-svg* {:id "penpot-logo-icon"
+                    :class (stl/css :penpot-logo)}]
       (when profile-id
         [:div {:class (stl/css :go-back-wrapper)}
-         [:> icon* {:icon-id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
+         [:> icon* {:icon-id "arrow"
+                    :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
      [:div {:class (stl/css :deco-before)} i/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
@@ -148,7 +150,8 @@
          [:*
           [:div {:class (stl/css :logo-title)} (tr "not-found.login.signup-free")]
           [:div {:class (stl/css :logo-subtitle)} (tr "not-found.login.start-using")]
-          [:& register/register-methods {:on-success-callback success-register :hide-separator true}]
+          [:& register/register-methods {:on-success-callback success-register
+                                         :hide-separator true}]
           #_[:hr {:class (stl/css :separator)}]
           [:div {:class (stl/css :separator)}]
           [:div {:class (stl/css :change-section)}
@@ -173,7 +176,8 @@
 
          :register-email-sent
          [:div {:class (stl/css :form-container)}
-          [:& register/register-success-page {:params {:email @user-email :hide-logo true}}]]
+          [:& register/register-success-page {:params {:email @user-email
+                                                       :hide-logo true}}]]
 
          :recovery-request
          [:& recovery-request-page {:go-back-callback set-section-login
@@ -190,7 +194,8 @@
     [:div {:class (stl/css :overlay)}
      [:div {:class (stl/css :dialog)}
       [:div {:class (stl/css :modal-close)}
-       [:button {:class (stl/css :modal-close-button) :on-click on-close}
+       [:button {:class (stl/css :modal-close-button)
+                 :on-click on-close}
         i/close]]
       [:div {:class (stl/css :dialog-title)} title]
       (for [[index content] (d/enumerate content)]
@@ -205,7 +210,8 @@
 (mf/defc request-access*
   [{:keys [file-id team-id is-default is-workspace]}]
   (let [profile     (mf/deref refs/profile)
-        requested*  (mf/use-state {:sent false :already-requested false})
+        requested*  (mf/use-state {:sent false
+                                   :already-requested false})
         requested   (deref requested*)
         show-dialog (mf/use-state true)
 
@@ -218,11 +224,13 @@
 
         on-success
         (mf/use-fn
-         #(reset! requested* {:sent true :already-requested false}))
+         #(reset! requested* {:sent true
+                              :already-requested false}))
 
         on-error
         (mf/use-fn
-         #(reset! requested* {:sent true :already-requested true}))
+         #(reset! requested* {:sent true
+                              :already-requested true}))
 
         on-request-access
         (mf/use-fn
@@ -372,7 +380,8 @@
           (-> (d/without-qualified data)
               (dissoc :explain)
               (d/update-when :data (constantly "(...)"))
-              (pp/pprint {:level 8 :length 10}))
+              (pp/pprint {:level 8
+                          :length 10}))
 
           (println)
 
@@ -396,7 +405,8 @@
       nil)))
 
 (mf/defc internal-error*
-  [{:keys [on-reset report] :as props}]
+  [{:keys [on-reset report]
+    :as props}]
   (let [report-uri (mf/use-ref nil)
         on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
 
@@ -453,7 +463,8 @@
 
 (mf/defc exception-section*
   {::mf/private true}
-  [{:keys [data route] :as props}]
+  [{:keys [data route]
+    :as props}]
   (let [type   (get data :type)
         report (mf/with-memo [data]
                  (generate-report data))
@@ -486,7 +497,8 @@
 
 (mf/defc exception-page*
   {::mf/props :obj}
-  [{:keys [data route] :as props}]
+  [{:keys [data route]
+    :as props}]
 
   (let [type       (:type data)
         path       (:path route)

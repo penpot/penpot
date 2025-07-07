@@ -34,7 +34,8 @@
              refs/workspace-local =))
 
 (defn- on-pointer-down
-  [event index {:keys [id] :as shape}]
+  [event index {:keys [id]
+                :as shape}]
   (dom/stop-propagation event)
   (st/emit! (dw/select-shape id))
   (st/emit! (dw/start-edit-interaction index)))
@@ -97,7 +98,8 @@
 
 
 (mf/defc interaction-marker
-  [{:keys [x y stroke action-type arrow-dir zoom] :as props}]
+  [{:keys [x y stroke action-type arrow-dir zoom]
+    :as props}]
   (let [icon-pdata (case action-type
                      :navigate (case arrow-dir
                                  :right "M -6.5 0 l 12 0 l -6 -6 m 6 6 l -6 6"
@@ -139,7 +141,8 @@
 
 
 (mf/defc interaction-path
-  [{:keys [index level orig-shape dest-shape dest-point selected? action-type zoom] :as props}]
+  [{:keys [index level orig-shape dest-shape dest-point selected? action-type zoom]
+    :as props}]
   (let [[orig-pos orig-x orig-y dest-pos dest-x dest-y]
         (cond
           dest-shape
@@ -205,7 +208,8 @@
 
 
 (mf/defc interaction-handle
-  [{:keys [index shape zoom] :as props}]
+  [{:keys [index shape zoom]
+    :as props}]
   (let [shape-rect (:selrect shape)
         handle-x (+ (:x shape-rect) (:width shape-rect))
         handle-y (+ (:y shape-rect) (/ (:height shape-rect) 2))]
@@ -219,7 +223,8 @@
 
 
 (mf/defc overlay-marker
-  [{:keys [page-id index orig-shape dest-shape position objects hover-disabled?] :as props}]
+  [{:keys [page-id index orig-shape dest-shape position objects hover-disabled?]
+    :as props}]
   (let [start-move-position
         (fn [_]
           (st/emit! (dw/start-move-overlay-pos index)))]
@@ -274,7 +279,8 @@
                    :fill "var(--color-accent-tertiary)"}]]))))
 
 (mf/defc interactions
-  [{:keys [current-transform objects zoom selected hover-disabled? page-id] :as props}]
+  [{:keys [current-transform objects zoom selected hover-disabled? page-id]
+    :as props}]
   (let [active-shapes (into []
                             (comp (filter #(seq (:interactions %))))
                             (vals objects))

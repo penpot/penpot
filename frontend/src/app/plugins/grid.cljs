@@ -27,10 +27,14 @@
 (defn grid-layout-proxy
   [plugin-id file-id page-id id]
   (obj/reify {:name "GridLayoutProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly id)}
-    :$file {:enumerable false :get (constantly file-id)}
-    :$page {:enumerable false :get (constantly page-id)}
+    :$plugin {:enumerable false
+              :get (constantly plugin-id)}
+    :$id {:enumerable false
+          :get (constantly id)}
+    :$file {:enumerable false
+            :get (constantly file-id)}
+    :$page {:enumerable false
+            :get (constantly page-id)}
 
     :dir
     {:this true
@@ -163,7 +167,8 @@
          (u/display-not-valid :verticalPadding "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value :p3 value}}))))}
+         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value
+                                                               :p3 value}}))))}
 
     :horizontalPadding
     {:this true
@@ -178,7 +183,8 @@
          (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}}))))}
+         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value
+                                                               :p4 value}}))))}
 
     :topPadding
     {:this true
@@ -255,7 +261,8 @@
           (u/display-not-valid :addRow "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwsl/add-layout-track #{id} :row {:type type :value value})))))
+          (st/emit! (dwsl/add-layout-track #{id} :row {:type type
+                                                       :value value})))))
 
     :addRowAtIndex
     (fn [index type value]
@@ -275,7 +282,8 @@
           (u/display-not-valid :addRowAtIndex "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwsl/add-layout-track #{id} :row {:type type :value value} index)))))
+          (st/emit! (dwsl/add-layout-track #{id} :row {:type type
+                                                       :value value} index)))))
 
     :addColumn
     (fn [type value]
@@ -292,7 +300,8 @@
           (u/display-not-valid :addColumn "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwsl/add-layout-track #{id} :column {:type type :value value})))))
+          (st/emit! (dwsl/add-layout-track #{id} :column {:type type
+                                                          :value value})))))
 
     :addColumnAtIndex
     (fn [index type value]
@@ -312,7 +321,8 @@
 
         :else
         (let [type (keyword type)]
-          (st/emit! (dwsl/add-layout-track #{id} :column {:type type :value value} index)))))
+          (st/emit! (dwsl/add-layout-track #{id} :column {:type type
+                                                          :value value} index)))))
 
     :removeRow
     (fn [index]
@@ -356,7 +366,8 @@
           (u/display-not-valid :setColumn "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwsl/change-layout-track #{id} :column index (d/without-nils {:type type :value value}))))))
+          (st/emit! (dwsl/change-layout-track #{id} :column index (d/without-nils {:type type
+                                                                                   :value value}))))))
 
     :setRow
     (fn [index type value]
@@ -376,7 +387,8 @@
           (u/display-not-valid :setRow "Plugin doesn't have 'content:write' permission")
 
           :else
-          (st/emit! (dwsl/change-layout-track #{id} :row index (d/without-nils {:type type :value value}))))))
+          (st/emit! (dwsl/change-layout-track #{id} :row index (d/without-nils {:type type
+                                                                                :value value}))))))
 
     :remove
     (fn []
@@ -418,10 +430,14 @@
               (ctl/get-cell-by-shape-id parent id)))]
 
     (obj/reify {:name "GridCellProxy"}
-      :$plugin {:enumerable false :get (constantly plugin-id)}
-      :$id {:enumerable false :get (constantly id)}
-      :$file {:enumerable false :get (constantly file-id)}
-      :$page {:enumerable false :get (constantly page-id)}
+      :$plugin {:enumerable false
+                :get (constantly plugin-id)}
+      :$id {:enumerable false
+            :get (constantly id)}
+      :$file {:enumerable false
+              :get (constantly file-id)}
+      :$page {:enumerable false
+              :get (constantly page-id)}
 
       :row
       {:this true

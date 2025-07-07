@@ -36,8 +36,10 @@
   [plugin-id file-id users data]
   (let [data (atom data)]
     (obj/reify {:name "FileVersionProxy"}
-      :$plugin {:enumerable false :get (fn [] plugin-id)}
-      :$file   {:enumerable false :get (fn [] file-id)}
+      :$plugin {:enumerable false
+                :get (fn [] plugin-id)}
+      :$file   {:enumerable false
+                :get (fn [] file-id)}
 
       :label
       {:get #(:label @data)
@@ -52,7 +54,8 @@
 
            :else
            (do (swap! data assoc :label value :created-by "user")
-               (->> (rp/cmd! :update-file-snapshot {:id (:id @data) :label value})
+               (->> (rp/cmd! :update-file-snapshot {:id (:id @data)
+                                                    :label value})
                     (rx/take 1)
                     (rx/subs! identity)))))}
 
@@ -122,8 +125,10 @@
   [plugin-id id]
 
   (obj/reify {:name "FileProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
-    :$id {:enumerable false :get (fn [] id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
+    :$id {:enumerable false
+          :get (fn [] id)}
 
     :id
     {:get #(format/format-id id)}
@@ -220,7 +225,8 @@
 
         :else
         (let [page-id (uuid/next)]
-          (st/emit! (dw/create-page {:page-id page-id :file-id id}))
+          (st/emit! (dw/create-page {:page-id page-id
+                                     :file-id id}))
           (page/page-proxy plugin-id id page-id))))
 
     :export

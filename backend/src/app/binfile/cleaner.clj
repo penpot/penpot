@@ -61,7 +61,8 @@
   this function removes the invalid id from the data structure."
   [shape]
   (let [fix-color
-        (fn [{:keys [id] :as color}]
+        (fn [{:keys [id]
+              :as color}]
           (if (uuid? id)
             color
             (if (and (string? id)

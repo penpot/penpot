@@ -1048,7 +1048,8 @@
 (defn format-number
   ([value]
    (format-number value nil))
-  ([value {:keys [precision] :or {precision 2}}]
+  ([value {:keys [precision]
+           :or {precision 2}}]
    (let [value (if (string? value) (parse-double value) value)]
      (when (num? value)
        (let [value (format-precision value precision)]

@@ -55,7 +55,8 @@
   [plugin-id type]
   (let [page  (dsh/lookup-page @st/state)
         shape (cts/setup-shape {:type type
-                                :x 0 :y 0
+                                :x 0
+                                :y 0
                                 :width 100
                                 :height 100})
         changes
@@ -71,7 +72,8 @@
   [plugin-id]
   (obj/reify {:name "PenpotContext"}
     ;; Private properties
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
 
     ;; Public properties
     :root
@@ -318,8 +320,12 @@
       (let [page  (dsh/lookup-page @st/state)
             shape (cts/setup-shape
                    {:type :path
-                    :content [{:command :move-to :params {:x 0 :y 0}}
-                              {:command :line-to :params {:x 100 :y 100}}]})
+                    :content [{:command :move-to
+                               :params {:x 0
+                                        :y 0}}
+                              {:command :line-to
+                               :params {:x 100
+                                        :y 100}}]})
             changes
             (-> (cb/empty-changes)
                 (cb/with-page page)
@@ -337,7 +343,10 @@
 
         :else
         (let [page  (dsh/lookup-page @st/state)
-              shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+              shape (-> (cts/setup-shape {:type :text
+                                          :x 0
+                                          :y 0
+                                          :grow-type :auto-width})
                         (txt/change-text text)
                         (assoc :position-data nil))
               changes
@@ -473,7 +482,8 @@
     (fn []
       (let [file-id (:current-file-id @st/state)
             id (uuid/next)]
-        (st/emit! (dw/create-page {:page-id id :file-id file-id}))
+        (st/emit! (dw/create-page {:page-id id
+                                   :file-id file-id}))
         (page/page-proxy plugin-id file-id id)))
     :openPage
     (fn [page]

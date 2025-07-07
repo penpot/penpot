@@ -137,8 +137,10 @@
   (t/testing "applies border-radius to all and individual corners"
     (t/async
       done
-      (let [file (setup-file-with-tokens {:rect-1 {:r1 100 :r2 100}
-                                          :rect-2 {:r3 100 :r4 100}})
+      (let [file (setup-file-with-tokens {:rect-1 {:r1 100
+                                                   :r2 100}
+                                          :rect-2 {:r3 100
+                                                   :r4 100}})
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
@@ -303,7 +305,10 @@
                (t/is (= (:p3 (:applied-tokens frame-2')) (:name token-target')))
                (t/is (= (:p4 (:applied-tokens frame-2')) (:name token-target'))))
              (t/testing "shapes padding got updated"
-               (t/is (= (:layout-padding frame-2') {:p1 100 :p2 100 :p3 100 :p4 100})))
+               (t/is (= (:layout-padding frame-2') {:p1 100
+                                                    :p2 100
+                                                    :p3 100
+                                                    :p4 100})))
              (t/testing "shapes without layout get ignored"
                (t/is (nil? (:layout-padding frame-1')))))))))))
 

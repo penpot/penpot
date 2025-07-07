@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Beta release 1.11"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Beta release 1.11"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Beta 1.11 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.11-animations.gif" :border "0" :alt "Animations"}]]
+         [:img {:src "images/features/1.11-animations.gif"
+                :border "0"
+                :alt "Animations"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Prototype animations"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.11-bg-export.gif" :border "0" :alt "Ignore background on export"}]]
+         [:img {:src "images/features/1.11-bg-export.gif"
+                :border "0"
+                :alt "Ignore background on export"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Ignore artboard background on export"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.11-zoom-widget.gif" :border "0" :alt "New zoom widget"}]]
+         [:img {:src "images/features/1.11-zoom-widget.gif"
+                :border "0"
+                :alt "New zoom widget"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "New zoom widget"]]

@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/onboarding-version.jpg" :border "0" :alt "What's new release 1.17"}]]
+         [:img {:src "images/onboarding-version.jpg"
+                :border "0"
+                :alt "What's new release 1.17"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "On this 1.17 release, you’ll also be able to inspect the code and properties of your designs right from the workspace and to manage webhooks. We’ve also implemented a lot of accessibility improvements."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.17-flex-layout.gif" :border "0" :alt "Flex-Layout"}]]
+         [:img {:src "images/features/1.17-flex-layout.gif"
+                :border "0"
+                :alt "Flex-Layout"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Flex-Layout"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.17-inspect.gif" :border "0" :alt "Inspect at the workspace"}]]
+         [:img {:src "images/features/1.17-inspect.gif"
+                :border "0"
+                :alt "Inspect at the workspace"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Inspect at the workspace"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.17-webhook.gif" :border "0" :alt "Webhooks"}]]
+         [:img {:src "images/features/1.17-webhook.gif"
+                :border "0"
+                :alt "Webhooks"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Webhooks"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.17-ally.gif" :border "0" :alt "Accessibility improvements"}]]
+         [:img {:src "images/features/1.17-ally.gif"
+                :border "0"
+                :alt "Accessibility improvements"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Accessibility improvements"]]

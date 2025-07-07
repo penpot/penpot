@@ -64,8 +64,10 @@
 
 (defn- wrap-body-params
   [handler]
-  (let [opts #js {:limit "60mb" :encoding "utf8"}]
-    (fn [{:keys [:request/method :request/headers request] :as exchange}]
+  (let [opts #js {:limit "60mb"
+                  :encoding "utf8"}]
+    (fn [{:keys [:request/method :request/headers request]
+          :as exchange}]
       (let [ctype (get headers "content-type")]
         (if (= method "post")
           (-> (raw-body (inflate request) opts)
@@ -79,7 +81,8 @@
 
 (defn- wrap-params
   [handler]
-  (fn [{:keys [:request/body-params :request/query-params] :as exchange}]
+  (fn [{:keys [:request/body-params :request/query-params]
+        :as exchange}]
     (handler (assoc exchange :request/params (merge query-params body-params)))))
 
 (defn- wrap-response-format
@@ -87,7 +90,8 @@
   (fn [exchange]
     (p/then
      (handler exchange)
-     (fn [{:keys [:response/body :response/status] :as exchange}]
+     (fn [{:keys [:response/body :response/status]
+           :as exchange}]
        (cond
          (map? body)
          (let [data (t/encode-str body {:type :json-verbose})
@@ -110,7 +114,8 @@
 
 (defn- wrap-query-params
   [handler]
-  (fn [{:keys [:request/uri] :as exchange}]
+  (fn [{:keys [:request/uri]
+        :as exchange}]
     (handler (assoc exchange :request/query-params (u/query-string->map (:query uri))))))
 
 (defn- wrap-error
@@ -121,14 +126,16 @@
 
 (defn- wrap-auth
   [handler cookie-name]
-  (fn [{:keys [:request/cookies] :as exchange}]
+  (fn [{:keys [:request/cookies]
+        :as exchange}]
     (let [token (.get ^js cookies cookie-name)]
       (handler (cond-> exchange token (assoc :request/auth-token token))))))
 
 (defn- wrap-health
   "Add /healthz entry point intercept."
   [handler]
-  (fn [{:keys [:request/path] :as exchange}]
+  (fn [{:keys [:request/path]
+        :as exchange}]
     (if (= path "/readyz")
       (assoc exchange
              :response/status 200

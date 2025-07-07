@@ -69,7 +69,8 @@
              xf-update-layout
              (comp
               (map (d/getf objects))
-              (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs :with-objects? with-objects?})))
+              (filter #(some update-layout-attr? (pcb/changed-attrs % objects update-fn {:attrs attrs
+                                                                                         :with-objects? with-objects?})))
               (map :id))
 
              update-layout-ids
@@ -205,11 +206,13 @@
          (rx/of (dwu/start-undo-transaction undo-id)
                 (dc/detach-comment-thread ids)
                 (dch/commit-changes changes)
-                (ptk/data-event :layout/update {:ids all-parents :undo-group (:undo-group options)})
+                (ptk/data-event :layout/update {:ids all-parents
+                                                :undo-group (:undo-group options)})
                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn create-and-add-shape
-  [type frame-x frame-y {:keys [width height] :as attrs}]
+  [type frame-x frame-y {:keys [width height]
+                         :as attrs}]
   (ptk/reify ::create-and-add-shape
     ptk/WatchEvent
     (watch [_ state _]
@@ -219,7 +222,8 @@
             page-id   (:current-page-id state)
             objects   (dsh/lookup-page-objects state page-id)
             frame-id  (-> (dsh/lookup-page-objects state page-id)
-                          (ctst/top-nested-frame {:x frame-x :y frame-y}))
+                          (ctst/top-nested-frame {:x frame-x
+                                                  :y frame-y}))
 
             selected  (dsh/lookup-selected state)
             base      (cfh/get-base-shape objects selected)
@@ -327,7 +331,8 @@
               ids     (if (boolean? blocked)
                         (into ids (->> ids (mapcat #(cfh/get-children-ids objects %))))
                         ids)]
-          (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden} :undo-group undo-group})))))))
+          (rx/of (update-shapes ids update-fn {:attrs #{:blocked :hidden}
+                                               :undo-group undo-group})))))))
 
 (defn toggle-visibility-selected
   []
@@ -365,7 +370,8 @@
          (rx/from
           (->> pages
                (mapcat
-                (fn [{:keys [objects id] :as page}]
+                (fn [{:keys [objects id]
+                      :as page}]
                   (->> (ctst/get-frames objects)
                        (sequence
                         (comp (filter :use-for-thumbnail)

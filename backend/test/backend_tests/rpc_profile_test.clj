@@ -415,7 +415,8 @@
         (t/is (= "mtma" (:penpot/mtm-campaign props)))))))
 
 (t/deftest prepare-register-and-register-profile-2
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send!
+                     :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -469,7 +470,8 @@
           (t/is (= 1 (:call-count @mock))))))))
 
 (t/deftest prepare-register-and-register-profile-3
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send!
+                     :return nil}]
     (let [current-token (atom nil)]
       ;; PREPARE REGISTER
       (let [data  {::th/type :prepare-register-profile
@@ -527,7 +529,8 @@
                :email "user@example.com"
                :password "foobar"}
 
-        {:keys [result error] :as out} (th/command! data)]
+        {:keys [result error]
+         :as out} (th/command! data)]
     (t/is (nil? error))
     (t/is (map? result))
     (t/is (string? (:token result)))
@@ -536,7 +539,8 @@
           data   {::th/type :register-profile
                   :token rtoken}
 
-          {:keys [result error] :as out} (th/command! data)]
+          {:keys [result error]
+           :as out} (th/command! data)]
         ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (map? result))
@@ -661,7 +665,8 @@
                :email "user@example.com"
                :password "foobar"}]
 
-    (th/create-global-complaint-for pool {:type :bounce :email "user@example.com"})
+    (th/create-global-complaint-for pool {:type :bounce
+                                          :email "user@example.com"})
 
     (let [out (th/command! data)]
       (t/is (not (th/success? out)))
@@ -676,7 +681,8 @@
                :email "user@example.com"
                :password "foobar"}]
 
-    (th/create-global-complaint-for pool {:type :complaint :email "user@example.com"})
+    (th/create-global-complaint-for pool {:type :complaint
+                                          :email "user@example.com"})
 
     (let [out (th/command! data)]
       (t/is (not (th/success? out)))
@@ -698,7 +704,8 @@
       (t/is (= :email-as-password (:code edata))))))
 
 (t/deftest email-change-request
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send!
+                     :return nil}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)
           data    {::th/type :request-email-change
@@ -714,7 +721,8 @@
           (t/is (true? (:called? mock)))))
 
       ;; with complaints
-      (th/create-global-complaint-for pool {:type :complaint :email (:email data)})
+      (th/create-global-complaint-for pool {:type :complaint
+                                            :email (:email data)})
       (let [out   (th/command! data)]
         ;; (th/print-result! out)
         (t/is (nil? (:result out)))
@@ -726,7 +734,8 @@
         (t/is (= 1 (:call-count @mock))))
 
       ;; with bounces
-      (th/create-global-complaint-for pool {:type :bounce :email (:email data)})
+      (th/create-global-complaint-for pool {:type :bounce
+                                            :email (:email data)})
       (let [out   (th/command! data)]
         ;; (th/print-result! out)
 
@@ -738,7 +747,8 @@
 
 
 (t/deftest email-change-request-without-smtp
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send!
+                     :return nil}]
     (with-redefs [app.config/flags #{}]
       (let [profile (th/create-profile* 1)
             pool    (:app.db/pool th/*system*)
@@ -754,7 +764,8 @@
 
 
 (t/deftest request-profile-recovery
-  (with-mocks [mock {:target 'app.email/send! :return nil}]
+  (with-mocks [mock {:target 'app.email/send!
+                     :return nil}]
     (let [profile1 (th/create-profile* 1 {:is-active false})
           profile2 (th/create-profile* 2 {:is-active true})
           pool  (:app.db/pool th/*system*)
@@ -794,7 +805,8 @@
           (t/is (= 1 (:call-count @mock))))
 
         ;; with valid email and active user with global complaints
-        (th/create-global-complaint-for pool {:type :complaint :email (:email profile2)})
+        (th/create-global-complaint-for pool {:type :complaint
+                                              :email (:email profile2)})
         (let [data  (assoc data :email (:email profile2))
               out   (th/command! data)]
           ;; (th/print-result! out)
@@ -802,7 +814,8 @@
           (t/is (= 1 (:call-count @mock))))
 
         ;; with valid email and active user with global bounce
-        (th/create-global-complaint-for pool {:type :bounce :email (:email profile2)})
+        (th/create-global-complaint-for pool {:type :bounce
+                                              :email (:email profile2)})
         (let [data  (assoc data :email (:email profile2))
               out   (th/command! data)]
           (t/is (nil? (:result out)))
@@ -828,7 +841,8 @@
                ::rpc/profile-id (:id profile)
                :old-password "badpassword"
                :password "foobarfoobar"}
-        {:keys [result error] :as out} (th/command! data)]
+        {:keys [result error]
+         :as out} (th/command! data)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
     (t/is (th/ex-of-code? error :old-password-not-match))))
@@ -840,7 +854,8 @@
                ::rpc/profile-id (:id profile)
                :old-password "123123"
                :password "profile1.test@nodomain.com"}
-        {:keys [result error] :as out} (th/command! data)]
+        {:keys [result error]
+         :as out} (th/command! data)]
     (t/is (th/ex-info? error))
     (t/is (th/ex-of-type? error :validation))
     (t/is (th/ex-of-code? error :email-as-password))))

@@ -78,7 +78,8 @@
   "Removes `attributes` that match `token` for `shape-ids`.
 
   Doesn't update shape attributes."
-  [{:keys [attributes token shape-ids] :as _props}]
+  [{:keys [attributes token shape-ids]
+    :as _props}]
   (ptk/reify ::unapply-token
     ptk/WatchEvent
     (watch [_ _ _]
@@ -183,8 +184,9 @@
   (when-let [tc (tinycolor/valid-color value)]
     (let [hex (tinycolor/->hex-string tc)
           opacity (tinycolor/alpha tc)]
-      (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true
-                                                    :page-id page-id}))))
+      (f shape-ids {:color hex
+                    :opacity opacity} 0 {:ignore-touched true
+                                         :page-id page-id}))))
 
 (defn- value->color
   "Transform a token color value into penpot color data structure"
@@ -192,7 +194,8 @@
   (when-let [tc (tinycolor/valid-color color)]
     (let [hex (tinycolor/->hex-string tc)
           opacity (tinycolor/alpha tc)]
-      {:color hex :opacity opacity})))
+      {:color hex
+       :opacity opacity})))
 
 (defn update-fill
   ([value shape-ids attributes]
@@ -238,8 +241,10 @@
      (watch [_ _ _]
        (when (number? value)
          (rx/of
-          (when (:width attributes) (dwtr/update-dimensions shape-ids :width value {:ignore-touched true :page-id page-id}))
-          (when (:height attributes) (dwtr/update-dimensions shape-ids :height value {:ignore-touched true :page-id page-id}))))))))
+          (when (:width attributes) (dwtr/update-dimensions shape-ids :width value {:ignore-touched true
+                                                                                    :page-id page-id}))
+          (when (:height attributes) (dwtr/update-dimensions shape-ids :height value {:ignore-touched true
+                                                                                      :page-id page-id}))))))))
 
 (defn- attributes->layout-gap [attributes value]
   (let [layout-gap (-> (set/intersection attributes #{:column-gap :row-gap})
@@ -390,7 +395,8 @@
     :all-attributes ctt/color-keys
     :on-update-shape update-fill-stroke
     :modal {:key :tokens/color
-            :fields [{:label "Color" :key :color}]}}
+            :fields [{:label "Color"
+                      :key :color}]}}
 
    :font-size
    {:title "Font Size"

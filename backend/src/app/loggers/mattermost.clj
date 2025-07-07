@@ -20,7 +20,8 @@
 (defonce enabled (atom true))
 
 (defn- send-mattermost-notification!
-  [cfg {:keys [id public-uri] :as report}]
+  [cfg {:keys [id public-uri]
+        :as report}]
 
 
   (let [text (str "Exception: " public-uri "/dbg/error/" id " "
@@ -51,7 +52,8 @@
               :response (pr-str resp)))))
 
 (defn record->report
-  [{:keys [::l/context ::l/id ::l/cause] :as record}]
+  [{:keys [::l/context ::l/id ::l/cause]
+    :as record}]
   (assert (l/valid-record? record) "expectd valid log record")
   {:id               id
    :tenant           (cf/get :tenant)

@@ -178,7 +178,8 @@
         [:div {:class (stl/css :hint)} hint])]]))
 
 (mf/defc textarea
-  [{:keys [label disabled form hint trim] :as props}]
+  [{:keys [label disabled form hint trim]
+    :as props}]
   (let [input-name (get props :name)
 
         form     (or form (mf/use-ctx form-ctx))
@@ -235,7 +236,8 @@
        [:span {:class (stl/css :hint)} hint])]))
 
 (mf/defc select
-  [{:keys [options disabled form default dropdown-class select-class] :as props
+  [{:keys [options disabled form default dropdown-class select-class]
+    :as props
     :or {default ""}}]
   (let [input-name (get props :name)
         form       (or form (mf/use-ctx form-ctx))
@@ -386,7 +388,8 @@
 
 (mf/defc submit-button*
   {::mf/wrap-props false}
-  [{:keys [on-click children label form class name disabled] :as props}]
+  [{:keys [on-click children label form class name disabled]
+    :as props}]
   (let [form      (or form (mf/use-ctx form-ctx))
 
         disabled? (or (and (some? form) (not (:valid @form)))
@@ -427,7 +430,8 @@
                       (when (fn? on-submit)
                         (on-submit form event))))]
     [:& (mf/provider form-ctx) {:value form}
-     [:form {:class class :on-submit on-submit'} children]]))
+     [:form {:class class
+             :on-submit on-submit'} children]]))
 
 (defn- conj-dedup
   "A helper that adds item into a vector and removes possible
@@ -437,7 +441,8 @@
   (into [] (distinct) (conj coll item)))
 
 (mf/defc multi-input
-  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit] :as props}]
+  [{:keys [form label class name trim valid-item-fn caution-item-fn on-submit]
+    :as props}]
   (let [form       (or form (mf/use-ctx form-ctx))
         input-name (get props :name)
         touched?   (get-in @form [:touched input-name])
@@ -555,7 +560,8 @@
 
     (mf/with-effect [result @value]
       (let [val (cond-> @value trim str/trim)
-            values (conj-dedup result {:text val :valid (valid-item-fn val)})
+            values (conj-dedup result {:text val
+                                       :valid (valid-item-fn val)})
             values (filterv #(:valid %) values)]
 
         (update-form! values)))

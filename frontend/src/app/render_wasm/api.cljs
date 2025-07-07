@@ -78,7 +78,8 @@
 ;; Based on app.main.render/object-svg
 (mf/defc object-svg
   {::mf/props :obj}
-  [{:keys [shape] :as props}]
+  [{:keys [shape]
+    :as props}]
   (let [objects (mf/deref refs/workspace-page-objects)
         shape-wrapper
         (mf/with-memo [shape]
@@ -681,7 +682,9 @@
          height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
          max-width (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))]
      (h/call wasm/internal-module "_free_bytes")
-     {:width width :height height :max-width max-width})))
+     {:width width
+      :height height
+      :max-width max-width})))
 
 (defn set-view-box
   [zoom vbox]
@@ -846,7 +849,8 @@
       (loop [entries (seq entries)
              current-offset  offset]
         (when-not (empty? entries)
-          (let [{:keys [type parent id index value] :as entry} (first entries)]
+          (let [{:keys [type parent id index value]
+                 :as entry} (first entries)]
             (sr/heapu32-set-u32 (sr/translate-structure-modifier-type type) heapu32 (+ current-offset 0))
             (sr/heapu32-set-u32 (or index 0) heapu32 (+ current-offset 1))
             (sr/heapu32-set-uuid parent heapu32 (+ current-offset 2))

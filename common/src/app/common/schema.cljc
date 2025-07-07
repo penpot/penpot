@@ -250,7 +250,9 @@
   (let [errors (mapv #(update % :schema form) errors)]
     (with-out-str
       (println "Errors:")
-      (println (pp/pprint-str errors {:width 100 :level 15 :length 20}))
+      (println (pp/pprint-str errors {:width 100
+                                      :level 15
+                                      :length 20}))
       (println "Value:")
       (println (pp/pprint-str value {:width 160
                                      :level (d/nilv level 8)
@@ -263,7 +265,8 @@
           (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer)]})
 
 (defmethod v/-format ::explain
-  [_ {:keys [schema] :as explanation} printer]
+  [_ {:keys [schema]
+      :as explanation} printer]
   {:body [:group
           (v/-block "Value" (v/-visit (me/error-value explanation printer) printer) printer) :break :break
           (v/-block "Errors" (v/-visit (me/humanize (me/with-spell-checking explanation)) printer) printer) :break :break
@@ -415,7 +418,8 @@
  {:type ::email
   :pred email-string?
   :property-pred
-  (fn [{:keys [max] :as props}]
+  (fn [{:keys [max]
+        :as props}]
     (if (some? max)
       (fn [value]
         (<= (count value) max))
@@ -445,7 +449,8 @@
   :min 0
   :max 1
   :compile
-  (fn [{:keys [kind max min] :as props} children _]
+  (fn [{:keys [kind max min]
+        :as props} children _]
     (let [kind  (or (last children) kind)
 
           pred
@@ -528,7 +533,8 @@
   :min 0
   :max 1
   :compile
-  (fn [{:keys [kind max min] :as props} children _]
+  (fn [{:keys [kind max min]
+        :as props} children _]
     (let [kind  (or (last children) kind)
           pred
           (cond
@@ -632,7 +638,8 @@
                       (into #{} (comp xf:filter-word-strings (map keyword)) v)))
    ::oapi/type "array"
    ::oapi/format "set"
-   ::oapi/items {:type "string" :format "keyword"}
+   ::oapi/items {:type "string"
+                 :format "keyword"}
    ::oapi/unique-items true}})
 
 (register!
@@ -648,7 +655,8 @@
                       (into #{} (keep parse-uuid) v)))
    ::oapi/type "array"
    ::oapi/format "set"
-   ::oapi/items {:type "string" :format "uuid"}
+   ::oapi/items {:type "string"
+                 :format "uuid"}
    ::oapi/unique-items true}})
 
 (register!
@@ -664,7 +672,8 @@
                       (into [] (keep parse-uuid) v)))
    ::oapi/type "array"
    ::oapi/format "array"
-   ::oapi/items {:type "string" :format "uuid"}
+   ::oapi/items {:type "string"
+                 :format "uuid"}
    ::oapi/unique-items false}})
 
 (register!
@@ -706,7 +715,8 @@
   :min 0
   :max 0
   :compile
-  (fn [{:keys [max min] :as props} _ _]
+  (fn [{:keys [max min]
+        :as props} _ _]
     (let [pred int?
           pred (if (some? min)
                  (fn [v]
@@ -745,7 +755,8 @@
 (register!
  {:type ::double
   :compile
-  (fn [{:keys [max min] :as props} _ _]
+  (fn [{:keys [max min]
+        :as props} _ _]
     (let [pred double?
           pred (if (some? min)
                  (fn [v]
@@ -773,7 +784,8 @@
 (register!
  {:type ::number
   :compile
-  (fn [{:keys [max min] :as props} _ _]
+  (fn [{:keys [max min]
+        :as props} _ _]
     (let [pred number?
           pred (if (some? min)
                  (fn [v]
@@ -803,8 +815,10 @@
         :decode/json parse-double
         ::oapi/type "number"}}))})
 
-(register! ::safe-int [::int {:max max-safe-int :min min-safe-int}])
-(register! ::safe-double [::double {:max max-safe-int :min min-safe-int}])
+(register! ::safe-int [::int {:max max-safe-int
+                              :min min-safe-int}])
+(register! ::safe-double [::double {:max max-safe-int
+                                    :min min-safe-int}])
 (register! ::safe-number [::number {:gen/gen (sg/small-double)
                                     :max max-safe-int
                                     :min min-safe-int}])
@@ -911,7 +925,8 @@
  {:type ::uri
   :pred u/uri?
   :property-pred
-  (fn [{:keys [min max prefix] :as props}]
+  (fn [{:keys [min max prefix]
+        :as props}]
     (if (seq props)
       (fn [value]
         (let [value  (str value)
@@ -951,7 +966,8 @@
  {:type ::text
   :pred #(and (string? %) (not (str/blank? %)))
   :property-pred
-  (fn [{:keys [min max] :as props}]
+  (fn [{:keys [min max]
+        :as props}]
     (if (seq props)
       (fn [value]
         (let [size (count value)]
@@ -972,7 +988,8 @@
    :gen/gen (sg/word-string)
    :error/fn
    (fn [{:keys [value schema]}]
-     (let [{:keys [max min] :as props} (properties schema)]
+     (let [{:keys [max min]
+            :as props} (properties schema)]
        (cond
          (and (string? value)
               (number? max)

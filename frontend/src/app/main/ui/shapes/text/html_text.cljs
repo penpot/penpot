@@ -25,7 +25,8 @@
                  (sts/generate-text-styles shape parent)
                  (sts/generate-text-styles shape node))
         class  (when code? (:$id node))]
-    [:span.text-node {:style style :class class}
+    [:span.text-node {:style style
+                      :class class}
      (if (= text "") "\u00A0" text)]))
 
 (mf/defc render-root
@@ -52,7 +53,8 @@
         code?    (obj/get props "code?")
         style    (when-not code? (sts/generate-paragraph-set-styles shape))
         class    (when code? (:$id node))]
-    [:div.paragraph-set {:style style :class class} children]))
+    [:div.paragraph-set {:style style
+                         :class class} children]))
 
 (mf/defc render-paragraph
   {::mf/wrap-props false}
@@ -64,13 +66,16 @@
         style    (when-not code? (sts/generate-paragraph-styles shape node))
         class    (when code? (:$id node))
         dir      (:text-direction node "auto")]
-    [:p.paragraph {:style style :dir dir :class class} children]))
+    [:p.paragraph {:style style
+                   :dir dir
+                   :class class} children]))
 
 ;; -- Text nodes
 (mf/defc render-node
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [type text children] :as parent} (obj/get props "node")
+  (let [{:keys [type text children]
+         :as parent} (obj/get props "node")
         code? (obj/get props "code?")]
     (if (string? text)
       [:> render-text props]

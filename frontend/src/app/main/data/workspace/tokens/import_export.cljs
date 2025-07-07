@@ -132,7 +132,8 @@
                      {set-name (decode-json file-text)}
                      (catch js/Error e
                        ;; Ignore files with json parse errors
-                       {:path file-path :error e})))))
+                       {:path file-path
+                        :error e})))))
        (rx/reduce (fn [merged-json decoded-json]
                     (if (:error decoded-json)
                       merged-json

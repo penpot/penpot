@@ -12,7 +12,10 @@
    [app.common.types.text :as cttx]
    [clojure.test :as t :include-macros true]))
 
-(def content-base (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+(def content-base (-> (cts/setup-shape {:type :text
+                                        :x 0
+                                        :y 0
+                                        :grow-type :auto-width})
                       (txt/change-text "hello world")
                       (assoc :position-data nil)
                       :content))

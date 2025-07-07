@@ -23,7 +23,8 @@
 
 (defn decode-row
   "Decode the storage-object row fields"
-  [{:keys [metadata] :as row}]
+  [{:keys [metadata]
+    :as row}]
   (cond-> row
     (some? metadata)
     (assoc :metadata (db/decode-transit-pgobject metadata))))

@@ -99,7 +99,8 @@
                         :bounds bounds}])]])))
 
 (defn- get-svg-def-bounds
-  [{:keys [tag attrs] :as node} shape transform]
+  [{:keys [tag attrs]
+    :as node} shape transform]
   (if (or (= tag :mask) (contains? csvg/filter-tags tag))
     (some-> (grc/make-rect (d/parse-double (get attrs :x))
                            (d/parse-double (get attrs :y))

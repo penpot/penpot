@@ -55,7 +55,8 @@
 ;; --- API IMPL
 
 (defmethod impl/put-object :fs
-  [backend {:keys [id] :as object} content]
+  [backend {:keys [id]
+            :as object} content]
   (assert (valid-backend? backend) "expected a valid backend instance")
   (let [base (fs/path (::directory backend))
         path (fs/path (impl/id->path id))
@@ -71,7 +72,8 @@
     object))
 
 (defmethod impl/get-object-data :fs
-  [backend {:keys [id] :as object}]
+  [backend {:keys [id]
+            :as object}]
   (assert (valid-backend? backend) "expected a valid backend instance")
   (let [^Path base (fs/path (::directory backend))
         ^Path path (fs/path (impl/id->path id))
@@ -88,7 +90,9 @@
     (io/read input)))
 
 (defmethod impl/get-object-url :fs
-  [{:keys [::uri] :as backend} {:keys [id] :as object} _]
+  [{:keys [::uri]
+    :as backend} {:keys [id]
+                  :as object} _]
   (assert (valid-backend? backend) "expected a valid backend instance")
   (update uri :path
           (fn [existing]
@@ -97,7 +101,8 @@
               (str existing "/" (impl/id->path id))))))
 
 (defmethod impl/del-object :fs
-  [backend {:keys [id] :as object}]
+  [backend {:keys [id]
+            :as object}]
   (assert (valid-backend? backend) "expected a valid backend instance")
   (let [base (fs/path (::directory backend))
         path (fs/path (impl/id->path id))

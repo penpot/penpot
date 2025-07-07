@@ -35,7 +35,8 @@
     [:section {:class (stl/css :gallery)}
      (for [[key value] entries]
        (let [value (if (fn? value) (value @rotation) value)]
-         [:div {:key key :class (stl/css :gallery-item)}
+         [:div {:key key
+                :class (stl/css :gallery-item)}
           [:div {:class (stl/css :cursor)
                  :style {:background-image (-> value (str/replace #"(url\(.*\)).*" "$1"))
                          :cursor value}}]

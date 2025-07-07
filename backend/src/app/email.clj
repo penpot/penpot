@@ -56,35 +56,43 @@
       (.addRecipients mmsg type address)
       mmsg)))
 (defn- assign-recipients
-  [mmsg {:keys [to cc bcc] :as params}]
+  [mmsg {:keys [to cc bcc]
+         :as params}]
   (cond-> mmsg
     (some? to)  (assign-recipient :to to)
     (some? cc)  (assign-recipient :cc cc)
     (some? bcc) (assign-recipient :bcc bcc)))
 
 (defn- assign-from
-  [mmsg {:keys [::default-from] :as cfg} {:keys [from] :as params}]
+  [mmsg {:keys [::default-from]
+         :as cfg} {:keys [from]
+                   :as params}]
   (let [from (or from default-from)]
     (when from
       (let [from (parse-address from)]
         (.addFrom ^MimeMessage mmsg from)))))
 
 (defn- assign-reply-to
-  [mmsg {:keys [::default-reply-to] :as cfg} {:keys [reply-to] :as params}]
+  [mmsg {:keys [::default-reply-to]
+         :as cfg} {:keys [reply-to]
+                   :as params}]
   (let [reply-to (or reply-to default-reply-to)]
     (when reply-to
       (let [reply-to (parse-address reply-to)]
         (.setReplyTo ^MimeMessage mmsg reply-to)))))
 
 (defn- assign-subject
-  [mmsg {:keys [subject charset] :or {charset "utf-8"} :as params}]
+  [mmsg {:keys [subject charset]
+         :or {charset "utf-8"}
+         :as params}]
   (assert (string? subject) "subject is mandatory")
   (.setSubject ^MimeMessage mmsg
                ^String subject
                ^String charset))
 
 (defn- assign-extra-headers
-  [^MimeMessage mmsg {:keys [headers extra-data] :as params}]
+  [^MimeMessage mmsg {:keys [headers extra-data]
+                      :as params}]
   (let [headers (assoc headers "X-Penpot-Data" extra-data)]
     (reduce-kv (fn [^MimeMessage mmsg k v]
                  (doto mmsg
@@ -93,7 +101,8 @@
                headers)))
 
 (defn- assign-body
-  [^MimeMessage mmsg {:keys [body charset] :or {charset "utf-8"}}]
+  [^MimeMessage mmsg {:keys [body charset]
+                      :or {charset "utf-8"}}]
   (let [mpart (MimeMultipart. "mixed")]
     (cond
       (string? body)
@@ -268,7 +277,8 @@
 (defn send!
   "Schedule an already defined email to be sent using asynchronously
   using worker task."
-  [{:keys [::conn ::factory] :as context}]
+  [{:keys [::conn ::factory]
+    :as context}]
   (assert (db/connectable? conn) "expected a valid database connection or pool")
 
   (let [email (if factory
@@ -318,7 +328,8 @@
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::sendmail]}]
-  (fn [{:keys [props] :as task}]
+  (fn [{:keys [props]
+        :as task}]
     (sendmail props)))
 
 (defn- send-to-logger!
@@ -512,7 +523,8 @@
           bounce-threshold    (cf/get :profile-bounce-threshold)
           bounce-max-age      (cf/get :profile-bounce-max-age)
 
-          {:keys [complaints bounces] :as result}
+          {:keys [complaints bounces]
+           :as result}
           (db/exec-one! conn [sql:profile-complaint-report
                               (:id profile)
                               (db/interval complaint-max-age)
@@ -524,23 +536,28 @@
 
 (defn has-complaint-reports?
   ([conn email] (has-complaint-reports? conn email nil))
-  ([conn email {:keys [threshold] :or {threshold 1}}]
+  ([conn email {:keys [threshold]
+                :or {threshold 1}}]
    (let [reports (db/exec! conn (sql/select :global-complaint-report
-                                            {:email email :type "complaint"}
+                                            {:email email
+                                             :type "complaint"}
                                             {:limit 10}))]
      (>= (count reports) threshold))))
 
 (defn has-bounce-reports?
   ([conn email] (has-bounce-reports? conn email nil))
-  ([conn email {:keys [threshold] :or {threshold 1}}]
+  ([conn email {:keys [threshold]
+                :or {threshold 1}}]
    (let [reports (db/exec! conn (sql/select :global-complaint-report
-                                            {:email email :type "bounce"}
+                                            {:email email
+                                             :type "bounce"}
                                             {:limit 10}))]
      (>= (count reports) threshold))))
 
 (defn has-reports?
   ([conn email] (has-reports? conn email nil))
-  ([conn email {:keys [threshold] :or {threshold 1}}]
+  ([conn email {:keys [threshold]
+                :or {threshold 1}}]
    (let [reports (db/exec! conn (sql/select :global-complaint-report
                                             {:email email}
                                             {:limit 10}))]

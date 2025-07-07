@@ -11,7 +11,8 @@
    [app.common.transit :as t]
    [app.util.object :as obj]))
 
-(defn encode [{:keys [sender-id reply-to payload buffer?] :as message}]
+(defn encode [{:keys [sender-id reply-to payload buffer?]
+               :as message}]
   #js {:cmd (d/name (:cmd payload))
        :senderId (when sender-id (str sender-id))
        :replyTo (when reply-to (str reply-to))

@@ -93,7 +93,9 @@
 (def sample-fill-2
   {:fill-color-ref-file #uuid "4fcb3db7-d281-8004-8006-3a97e2e142ad"
    :fill-color-ref-id #uuid "fb19956a-c9e0-8056-8006-3a9c78f531c6"
-   :fill-image {:width 200, :height 100, :mtype "image/gif",
+   :fill-image {:width 200,
+                :height 100,
+                :mtype "image/gif",
                 :id #uuid "b30f028d-cc2f-8035-8006-3a93bd0e137b",
                 :name "ovba",
                 :keep-aspect-ratio false}})
@@ -114,7 +116,8 @@
     :end-x 1.0,
     :end-y 1.5,
     :width 200,
-    :stops [{:color "#631aa8", :offset 0.5}]}})
+    :stops [{:color "#631aa8",
+             :offset 0.5}]}})
 
 (t/deftest build-from-plain-3
   (let [fills (types.fill/from-plain [sample-fill-3])]
@@ -131,7 +134,9 @@
     :end-x -0.5,
     :end-y 2,
     :width 0.5,
-    :stops [{:color "#781025", :offset 0.0} {:color "#035c3f", :offset 0.2}]},
+    :stops [{:color "#781025",
+             :offset 0.0} {:color "#035c3f",
+                           :offset 0.2}]},
    :fill-opacity 1.0,
    :fill-color-ref-id #uuid "2eef07f1-e38a-8062-8006-3aa264d5b785"})
 
@@ -151,7 +156,9 @@
     :end-x 0.25,
     :end-y -0.5,
     :width 3.8,
-    :stops [{:color "#bba1aa", :opacity 0.37, :offset 0.84}]}})
+    :stops [{:color "#bba1aa",
+             :opacity 0.37,
+             :offset 0.84}]}})
 
 (t/deftest build-from-plain-5
   (let [fills (types.fill/from-plain [sample-fill-5])]
@@ -167,7 +174,10 @@
     :end-x -1.87,
     :end-y 1.95,
     :width 2.62,
-    :stops [{:color "#e15610", :offset 0.4} {:color "#005a9e", :opacity 0.62, :offset 0.81}]}})
+    :stops [{:color "#e15610",
+             :offset 0.4} {:color "#005a9e",
+                           :opacity 0.62,
+                           :offset 0.81}]}})
 
 (t/deftest build-from-plain-6
   (let [fills (types.fill/from-plain [sample-fill-6])]

@@ -56,7 +56,8 @@
         selected    (mf/deref refs/selected-shapes)
         page-id     (get page :id)
 
-        {:keys [vport] :as wlocal} (mf/deref refs/workspace-local)
+        {:keys [vport]
+         :as wlocal} (mf/deref refs/workspace-local)
         {:keys [options-mode]} wglobal
 
 

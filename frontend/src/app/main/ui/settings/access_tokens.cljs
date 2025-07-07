@@ -44,7 +44,8 @@
    [:expiration-date [::sm/text {:max 250}]]])
 
 (def initial-data
-  {:name "" :expiration-date "never"})
+  {:name ""
+   :expiration-date "never"})
 
 (mf/defc access-token-modal
   {::mf/register modal/components
@@ -106,7 +107,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
-      [:& fm/form {:form form :on-submit on-submit}
+      [:& fm/form {:form form
+                   :on-submit on-submit}
 
        [:div {:class (stl/css :modal-header)}
         [:h2 {:class (stl/css :modal-title)} (tr "modals.create-access-token.title")]
@@ -129,11 +131,21 @@
         [:div {:class (stl/css :fields-row)}
          [:div {:class (stl/css :select-title)}
           (tr "modals.create-access-token.expiration-date.label")]
-         [:& fm/select {:options [{:label (tr "dashboard.access-tokens.expiration-never")    :value "never" :key "never"}
-                                  {:label (tr "dashboard.access-tokens.expiration-30-days")  :value "720h"  :key "720h"}
-                                  {:label (tr "dashboard.access-tokens.expiration-60-days")  :value "1440h" :key "1440h"}
-                                  {:label (tr "dashboard.access-tokens.expiration-90-days")  :value "2160h" :key "2160h"}
-                                  {:label (tr "dashboard.access-tokens.expiration-180-days") :value "4320h" :key "4320h"}]
+         [:& fm/select {:options [{:label (tr "dashboard.access-tokens.expiration-never")
+                                   :value "never"
+                                   :key "never"}
+                                  {:label (tr "dashboard.access-tokens.expiration-30-days")
+                                   :value "720h"
+                                   :key "720h"}
+                                  {:label (tr "dashboard.access-tokens.expiration-60-days")
+                                   :value "1440h"
+                                   :key "1440h"}
+                                  {:label (tr "dashboard.access-tokens.expiration-90-days")
+                                   :value "2160h"
+                                   :key "2160h"}
+                                  {:label (tr "dashboard.access-tokens.expiration-180-days")
+                                   :value "4320h"
+                                   :key "4320h"}]
                         :default "never"
                         :disabled @created?
                         :name :expiration-date}]
@@ -176,7 +188,8 @@
                      :value (tr "labels.cancel")
                      :on-click modal/hide!}]
             [:> fm/submit-button*
-             {:large? false :label (tr "modals.create-access-token.submit-label")}]])]]]]]))
+             {:large? false
+              :label (tr "modals.create-access-token.submit-label")}]])]]]]]))
 
 (mf/defc access-tokens-hero
   []
@@ -234,7 +247,8 @@
 
 (mf/defc access-token-item
   {::mf/wrap [mf/memo]}
-  [{:keys [token] :as props}]
+  [{:keys [token]
+    :as props}]
   (let [locale      (mf/deref i18n/locale)
         expires-at  (:expires-at token)
         expires-txt (some-> expires-at (dt/format-date-locale {:locale locale}))
@@ -289,5 +303,6 @@
        [:div {:class (stl/css :dashboard-table)}
         [:div {:class (stl/css :table-rows)}
          (for [token tokens]
-           [:& access-token-item {:token token :key (:id token)}])]])]))
+           [:& access-token-item {:token token
+                                  :key (:id token)}])]])]))
 

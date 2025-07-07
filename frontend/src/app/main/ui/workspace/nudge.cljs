@@ -32,7 +32,8 @@
    ::mf/register-as :nudge-option}
   []
   (let [profile      (mf/deref refs/profile)
-        nudge        (or (get-in profile [:props :nudge]) {:big 10 :small 1})
+        nudge        (or (get-in profile [:props :nudge]) {:big 10
+                                                           :small 1})
         update-big   (mf/use-fn #(st/emit! (dw/update-nudge {:big %})))
         update-small (mf/use-fn #(st/emit! (dw/update-nudge {:small %})))]
 

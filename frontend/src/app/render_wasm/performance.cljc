@@ -16,8 +16,10 @@
 
 (defn create-memory
   [used total]
-  #?(:clj {:used used :total total}
-     :cljs #js {:used used :total total}))
+  #?(:clj {:used used
+           :total total}
+     :cljs #js {:used used
+                :total total}))
 
 (defn get-memory
   []

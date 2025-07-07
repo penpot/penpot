@@ -444,7 +444,8 @@
   [pool name migrations]
   (dm/with-open [conn (db/open pool)]
     (mg/setup! conn)
-    (mg/migrate! conn {:name name :steps migrations})))
+    (mg/migrate! conn {:name name
+                       :steps migrations})))
 
 (defmethod ig/assert-key ::migrations
   [_ {:keys [::db/pool]}]

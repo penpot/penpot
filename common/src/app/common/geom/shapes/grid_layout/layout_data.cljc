@@ -77,7 +77,8 @@
     (gpo/pad-points shape-bounds pad-top pad-right pad-bottom pad-left)))
 
 (defn calculate-initial-track-size
-  [total-value {:keys [type value] :as track}]
+  [total-value {:keys [type value]
+                :as track}]
 
   (let [[size max-size]
         (case type
@@ -201,7 +202,8 @@
 (defn stretch-tracks
   [track-list add-size]
   (->> track-list
-       (mapv (fn [{:keys [type size max-size] :as track}]
+       (mapv (fn [{:keys [type size max-size]
+                   :as track}]
                (cond-> track
                  (= :auto type)
                  (assoc :size (min (+ size add-size) max-size)))))))
@@ -565,7 +567,8 @@
 
          column-tracks
          (->> column-tracks
-              (reduce (fn [[tracks start-p] {:keys [size] :as track}]
+              (reduce (fn [[tracks start-p] {:keys [size]
+                                             :as track}]
                         [(conj tracks (assoc track :start-p start-p))
                          (gpt/add start-p (hv (+ size column-gap)))])
                       [[] start-p])
@@ -573,7 +576,8 @@
 
          row-tracks
          (->> row-tracks
-              (reduce (fn [[tracks start-p] {:keys [size] :as track}]
+              (reduce (fn [[tracks start-p] {:keys [size]
+                                             :as track}]
                         [(conj tracks (assoc track :start-p start-p))
                          (gpt/add start-p (vv (+ size row-gap)))])
                       [[] start-p])

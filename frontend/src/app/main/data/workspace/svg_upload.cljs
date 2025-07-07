@@ -37,7 +37,8 @@
   Return a map {<href> <image-data>}."
   [svg-data file-id]
   (->> (rx/from (csvg/collect-images svg-data))
-       (rx/map (fn [{:keys [href] :as item}]
+       (rx/map (fn [{:keys [href]
+                     :as item}]
                  (let [item (-> item
                                 (assoc :file-id file-id)
                                 (assoc :is-local true)
@@ -66,7 +67,8 @@
    (add-svg-shapes nil svg-data position nil))
 
   ([id svg-data position {:keys [change-selection? ignore-selection?]
-                          :or {ignore-selection? false change-selection? true}}]
+                          :or {ignore-selection? false
+                               change-selection? true}}]
    (ptk/reify ::add-svg-shapes
      ptk/WatchEvent
      (watch [it state _]

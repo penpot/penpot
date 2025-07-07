@@ -63,7 +63,8 @@
 
 
 (defn- enrich-color-map
-  [{:keys [h s v] :as color}]
+  [{:keys [h s v]
+    :as color}]
   (let [h (d/nilv h 0)
         s (d/nilv s 0)
         v (d/nilv v 0)
@@ -90,7 +91,8 @@
 
         bullet-color
         (mf/with-memo [hex alpha]
-          {:color hex :opacity alpha})
+          {:color hex
+           :opacity alpha})
 
         on-change-value-saturation
         (mf/use-fn

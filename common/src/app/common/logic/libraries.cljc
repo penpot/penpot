@@ -1512,7 +1512,8 @@
 
 (defn change-touched
   [changes dest-shape origin-shape container
-   {:keys [reset-touched? copy-touched?] :as options}]
+   {:keys [reset-touched? copy-touched?]
+    :as options}]
   (if (nil? (:shape-ref dest-shape))
     changes
     (do
@@ -1840,8 +1841,10 @@
         touched        (get previous-shape :touched #{})]
 
     (loop [attrs       updatable-attrs
-           roperations [{:type :set-touched :touched (:touched previous-shape)}]
-           uoperations (list {:type :set-touched :touched (:touched current-shape)})]
+           roperations [{:type :set-touched
+                         :touched (:touched previous-shape)}]
+           uoperations (list {:type :set-touched
+                              :touched (:touched current-shape)})]
       (if-let [attr (first attrs)]
         (let [attr-group (get ctk/sync-attrs attr)
               skip-operations?
@@ -2044,7 +2047,8 @@
                (assoc :layout-grid-cells
                       (ctl/merge-cells main-cells copy-cells omit-touched?))
                (ctl/assign-cells objects))))
-       {:ignore-touched true :with-objects? true})))
+       {:ignore-touched true
+        :with-objects? true})))
 
 (defn- update-grid-main-attrs
   "Synchronizes the `layout-grid-cells` property from the copy to the main shape"
@@ -2271,7 +2275,8 @@
         (-> changes
             (cls/generate-delete-shapes
              file page objects (d/ordered-set (:id shape))
-             {:allow-altering-copies true :ignore-children-fn ignore-swapped-fn}))
+             {:allow-altering-copies true
+              :ignore-children-fn ignore-swapped-fn}))
         [new-shape changes]
         (-> changes
             (generate-new-shape-for-swap shape file page libraries id-new-component index target-cell keep-props-values))]

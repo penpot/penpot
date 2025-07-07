@@ -507,7 +507,8 @@
     (let [trigger (parse-keyword trigger)
           action  (parse-action action)]
       (d/without-nils
-       (d/patch-object {:event-type trigger :delay delay}  action)))))
+       (d/patch-object {:event-type trigger
+                        :delay delay}  action)))))
 
 (defn orientation->axis
   [axis]

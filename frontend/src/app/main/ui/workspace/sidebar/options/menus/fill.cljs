@@ -34,7 +34,8 @@
   (map-indexed
    (fn [index item]
      (let [color (ctc/fill->color item)]
-       (with-meta item {:index index :color color})))))
+       (with-meta item {:index index
+                        :color color})))))
 
 (def ^:private ^boolean binary-fills-enabled?
   (contains? cfg/flags :frontend-binary-fills))

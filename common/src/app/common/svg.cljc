@@ -527,22 +527,33 @@
   (let [filter-default {:units :filterUnits
                         :default "objectBoundingBox"
                         "objectBoundingBox" {}
-                        "userSpaceOnUse" {:x "-10%" :y "-10%" :width "120%" :height "120%"}}
+                        "userSpaceOnUse" {:x "-10%"
+                                          :y "-10%"
+                                          :width "120%"
+                                          :height "120%"}}
         filter-values (->> filter-tags
                            (reduce #(merge %1 (hash-map %2 filter-default)) {}))]
 
     (merge {:linearGradient {:units :gradientUnits
                              :default "objectBoundingBox"
                              "objectBoundingBox" {}
-                             "userSpaceOnUse"    {:x1 "0%" :y1 "0%" :x2 "100%" :y2 "0%"}}
+                             "userSpaceOnUse"    {:x1 "0%"
+                                                  :y1 "0%"
+                                                  :x2 "100%"
+                                                  :y2 "0%"}}
             :radialGradient {:units :gradientUnits
                              :default "objectBoundingBox"
                              "objectBoundingBox" {}
-                             "userSpaceOnUse"    {:cx "50%" :cy "50%" :r "50%"}}
+                             "userSpaceOnUse"    {:cx "50%"
+                                                  :cy "50%"
+                                                  :r "50%"}}
             :mask {:units :maskUnits
                    :default "userSpaceOnUse"
                    "objectBoundingBox" {}
-                   "userSpaceOnUse"    {:x "-10%" :y "-10%" :width "120%" :height "120%"}}}
+                   "userSpaceOnUse"    {:x "-10%"
+                                        :y "-10%"
+                                        :width "120%"
+                                        :height "120%"}}}
            filter-values)))
 
 (defn extract-ids [val]
@@ -654,7 +665,8 @@
     (visit-node {} content)))
 
 (defn extract-defs
-  [{:keys [attrs] :as node}]
+  [{:keys [attrs]
+    :as node}]
   (if-not (map? node)
     [{} node]
 
@@ -826,7 +838,8 @@
     (str (format-move head)
          (->> other (map format-line) (str/join " ")))))
 
-(defn polyline->path [{:keys [attrs] :as node}]
+(defn polyline->path [{:keys [attrs]
+                       :as node}]
   (let [tag :path
         attrs (-> attrs
                   (dissoc :points)
@@ -834,14 +847,16 @@
 
     (assoc node :attrs attrs :tag tag)))
 
-(defn polygon->path [{:keys [attrs] :as node}]
+(defn polygon->path [{:keys [attrs]
+                      :as node}]
   (let [tag :path
         attrs (-> attrs
                   (dissoc :points)
                   (assoc :d (str (points->path (:points attrs)) "Z")))]
     (assoc node :attrs attrs :tag tag)))
 
-(defn line->path [{:keys [attrs] :as node}]
+(defn line->path [{:keys [attrs]
+                   :as node}]
   (let [tag :path
         {:keys [x1 y1 x2 y2]} attrs
         x1 (or x1 0)
@@ -865,7 +880,8 @@
       (update :transform append-transform))))
 
 (defn inherit-attributes
-  [group-attrs {:keys [attrs] :as node}]
+  [group-attrs {:keys [attrs]
+                :as node}]
   (if (map? node)
     (let [attrs             (-> (format-styles attrs)
                                 (add-transform (:transform group-attrs)))
@@ -916,7 +932,8 @@
   imported into the platform"
   [svg-data]
   (let [add-defaults
-        (fn [{:keys [tag attrs] :as node}]
+        (fn [{:keys [tag attrs]
+              :as node}]
           (let [prop (get-in svg-tag-defaults [tag :units])
                 default-units (get-in svg-tag-defaults [tag :default])
                 units (get attrs prop default-units)

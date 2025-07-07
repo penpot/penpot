@@ -76,7 +76,8 @@
 
           (t/is (= (:modified-at status) (:modified-at thread)))
 
-          (let [{:keys [result] :as out} (th/command! data)]
+          (let [{:keys [result]
+                 :as out} (th/command! data)]
             (t/is (th/success? out))
             (t/is (dt/instant? (:modified-at result))))
 
@@ -91,7 +92,8 @@
                        ::rpc/profile-id (:id profile-2)
                        :id (:id thread)}]
 
-          (let [{:keys [error] :as out} (th/command! data)]
+          (let [{:keys [error]
+                 :as out} (th/command! data)]
             ;; (th/print-result! out)
             (t/is (not (th/success? out)))
             (t/is (= :not-found (th/ex-type error))))))
@@ -105,7 +107,8 @@
 
           (t/is (false? (:is-resolved thread)))
 
-          (let [{:keys [result] :as out} (th/command! data)]
+          (let [{:keys [result]
+                 :as out} (th/command! data)]
             (t/is (th/success? out))
             (t/is (nil? result)))
 
@@ -118,7 +121,8 @@
                        ::rpc/profile-id (:id profile-1)
                        :thread-id (:id thread)
                        :content "comment 2"}]
-          (let [{:keys [result] :as out} (th/command! data)
+          (let [{:keys [result]
+                 :as out} (th/command! data)
                 {:keys [modified-at]}    (th/db-get :comment-thread-status
                                                     {:thread-id (:id thread)
                                                      :profile-id (:id profile-1)})]
@@ -130,12 +134,14 @@
 
       (t/testing "update comment"
         (let [thread  (-> (th/db-query :comment-thread {:file-id (:id file-1)}) first)
-              comment (-> (th/db-query :comment {:thread-id (:id thread) :content "comment 2"}) first)
+              comment (-> (th/db-query :comment {:thread-id (:id thread)
+                                                 :content "comment 2"}) first)
               data    {::th/type :update-comment
                        ::rpc/profile-id (:id profile-1)
                        :id (:id comment)
                        :content "comment 2 mod"}]
-          (let [{:keys [result] :as out} (th/command! data)]
+          (let [{:keys [result]
+                 :as out} (th/command! data)]
             ;; (th/print-result! out)
             (t/is (th/success? out))
             (t/is (nil? result)))
@@ -165,15 +171,18 @@
               data   {::th/type :get-unread-comment-threads
                       ::rpc/profile-id (:id profile-1)}]
 
-          (let [{:keys [result] :as out} (th/command! (assoc data :team-id (:default-team-id profile-1)))]
+          (let [{:keys [result]
+                 :as out} (th/command! (assoc data :team-id (:default-team-id profile-1)))]
             (t/is (th/success? out))
             (t/is (= [] result)))
 
-          (let [{:keys [error] :as out} (th/command! (assoc data :team-id (:default-team-id profile-2)))]
+          (let [{:keys [error]
+                 :as out} (th/command! (assoc data :team-id (:default-team-id profile-2)))]
             (t/is (not (th/success? out)))
             (t/is (= :not-found (th/ex-type error))))
 
-          (let [{:keys [result] :as out} (th/command! (assoc data :team-id (:id team)))]
+          (let [{:keys [result]
+                 :as out} (th/command! (assoc data :team-id (:id team)))]
             ;; (th/print-result! out)
             (t/is (th/success? out))
             (let [[thread :as result] (:result out)]
@@ -185,7 +194,8 @@
                 out  (th/command! data)]
             (t/is (th/success? out)))
 
-          (let [{:keys [result] :as out} (th/command! (assoc data :team-id (:id team)))]
+          (let [{:keys [result]
+                 :as out} (th/command! (assoc data :team-id (:id team)))]
             ;; (th/print-result! out)
             (t/is (th/success? out))
             (let [result (:result out)]
@@ -198,7 +208,8 @@
                       :file-id (:id file-1)
                       :id (:id thread)}]
 
-          (let [{:keys [result] :as out} (th/command! data)]
+          (let [{:keys [result]
+                 :as out} (th/command! data)]
             ;; (th/print-result! out)
             (t/is (th/success? out))
             (t/is (= (:id thread) (:id result))))))
@@ -236,7 +247,8 @@
 
       (t/testing "delete comment"
         (let [thread  (-> (th/db-query :comment-thread {:file-id (:id file-1)}) first)
-              comment (-> (th/db-query :comment {:thread-id (:id thread) :content "comment 2 mod"}) first)
+              comment (-> (th/db-query :comment {:thread-id (:id thread)
+                                                 :content "comment 2 mod"}) first)
               data    {::th/type :delete-comment
                        ::rpc/profile-id (:id profile-2)
                        :id (:id comment)}
@@ -250,7 +262,8 @@
 
       (t/testing "delete comment 2"
         (let [thread  (-> (th/db-query :comment-thread {:file-id (:id file-1)}) first)
-              comment (-> (th/db-query :comment {:thread-id (:id thread) :content "comment 2 mod"}) first)
+              comment (-> (th/db-query :comment {:thread-id (:id thread)
+                                                 :content "comment 2 mod"}) first)
               data    {::th/type :delete-comment
                        ::rpc/profile-id (:id profile-1)
                        :id (:id comment)}

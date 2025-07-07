@@ -47,13 +47,15 @@
                "content-length" (:size stat)}}))
 
 (defn handler
-  [{:keys [:request/params] :as exchange}]
+  [{:keys [:request/params]
+    :as exchange}]
   (when-not (contains? params :id)
     (ex/raise :type :validation
               :code :missing-id))
 
   (-> (lookup (get params :id))
-      (p/then (fn [{:keys [stream headers] :as resource}]
+      (p/then (fn [{:keys [stream headers]
+                    :as resource}]
                 (-> exchange
                     (assoc :response/status 200)
                     (assoc :response/body stream)
@@ -69,7 +71,8 @@
     (.on zip "entry" (fn [data]
                        (let [name (unchecked-get data "name")
                              num  (swap! progress inc)]
-                         (on-progress {:done num :filename name}))))
+                         (on-progress {:done num
+                                       :filename name}))))
     (.pipe zip out)
     zip))
 

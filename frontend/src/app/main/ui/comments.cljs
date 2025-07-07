@@ -263,7 +263,8 @@
                          (rx/push! mentions-s {:type :display-mentions})
                          (let [mention (subs mention-text 1)]
                            (when (d/not-empty? mention)
-                             (rx/push! mentions-s {:type :filter-mentions :data mention}))))
+                             (rx/push! mentions-s {:type :filter-mentions
+                                                   :data mention}))))
                        (do
                          (reset! cur-mention nil)
                          (rx/push! mentions-s {:type :hide-mentions}))))))))))
@@ -529,7 +530,8 @@
          [:div {:class (stl/css :comments-mentions-empty)}
           (tr "comments.mentions.not-found" mention-filter)]
 
-         (for [[idx {:keys [id fullname email] :as user}] (d/enumerate mentions-users)]
+         (for [[idx {:keys [id fullname email]
+                     :as user}] (d/enumerate mentions-users)]
            [:div {:key id
                   :on-pointer-down handle-click-mention
                   :data-user-id (dm/str id)
@@ -594,7 +596,8 @@
 
 (mf/defc comment-avatar*
   {::mf/schema schema:comment-avatar}
-  [{:keys [image variant class children] :rest props}]
+  [{:keys [image variant class children]
+    :rest props}]
   (let [variant (or variant "read")
         class   (dm/str class " " (stl/css-case :avatar true
                                                 :avatar-read (= variant "read")
@@ -760,7 +763,10 @@
                                 :on-cancel on-cancel
                                 :is-disabled disabled?}]]))
 (defn- offset-position [position viewport zoom bubble-margin]
-  (let [viewport (or viewport {:offset-x 0 :offset-y 0 :width 0 :height 0})
+  (let [viewport (or viewport {:offset-x 0
+                               :offset-y 0
+                               :width 0
+                               :height 0})
         base-x   (+ (* (:x position) zoom) (:offset-x viewport))
         base-y   (+ (* (:y position) zoom) (:offset-y viewport))
 
@@ -778,7 +784,10 @@
 
         h-dir (if orientation-left? :left :right)
         v-dir (if orientation-top? :top :bottom)]
-    {:x x :y y :h-dir h-dir :v-dir v-dir}))
+    {:x x
+     :y y
+     :h-dir h-dir
+     :v-dir v-dir}))
 
 (mf/defc comment-floating-thread-draft*
   [{:keys [draft zoom on-cancel on-submit position-modifier viewport]}]

@@ -78,7 +78,8 @@
   "select revn, changes, data from file_change where file_id=? and revn = ?")
 
 (defn- retrieve-file-data
-  [{:keys [::db/pool]} {:keys [params ::session/profile-id] :as request}]
+  [{:keys [::db/pool]} {:keys [params ::session/profile-id]
+                        :as request}]
   (let [file-id  (some-> params :file-id parse-uuid)
         revn     (some-> params :revn parse-long)
         filename (str file-id)]
@@ -103,7 +104,8 @@
         (let [profile    (profile/get-profile pool profile-id)
               project-id (:default-project-id profile)]
 
-          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
+          (db/run! pool (fn [{:keys [::db/conn]
+                              :as cfg}]
                           (create-file cfg {:id file-id
                                             :name (str "Cloned file: " filename)
                                             :project-id project-id
@@ -123,7 +125,8 @@
     (-> (db/exec-one! pool [sql id]) :exists)))
 
 (defn- upload-file-data
-  [{:keys [::db/pool]} {:keys [::session/profile-id params] :as request}]
+  [{:keys [::db/pool]} {:keys [::session/profile-id params]
+                        :as request}]
   (let [profile    (profile/get-profile pool profile-id)
         project-id (:default-project-id profile)
         data       (some-> params :file :path io/read*)]
@@ -144,7 +147,8 @@
             {::yres/status 200
              ::yres/body "OK UPDATED"})
 
-          (db/run! pool (fn [{:keys [::db/conn] :as cfg}]
+          (db/run! pool (fn [{:keys [::db/conn]
+                              :as cfg}]
                           (create-file cfg {:id file-id
                                             :name fname
                                             :project-id project-id
@@ -167,7 +171,8 @@
               :code :method-not-found)))
 
 (defn file-changes-handler
-  [{:keys [::db/pool]} {:keys [params] :as request}]
+  [{:keys [::db/pool]} {:keys [params]
+                        :as request}]
   (letfn [(retrieve-changes [file-id revn]
             (if (str/includes? revn ":")
               (let [[start end] (->> (str/split revn #":")
@@ -270,7 +275,9 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn export-handler
-  [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [params ::session/profile-id]
+              :as request}]
 
   (let [file-ids (into #{}
                        (comp (remove empty?)
@@ -312,7 +319,9 @@
 
 
 (defn import-handler
-  [{:keys [::db/pool] :as cfg} {:keys [params ::session/profile-id] :as request}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [params ::session/profile-id]
+              :as request}]
   (when-not (contains? params :file)
     (ex/raise :type :validation
               :code :missing-upload-file
@@ -350,8 +359,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- resend-email-notification
-  [cfg {:keys [params] :as request}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  [cfg {:keys [params]
+        :as request}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn]
+                        :as cfg}]
                     (when-not (contains? params :force)
                       (ex/raise :type :validation
                                 :code :missing-force
@@ -404,7 +415,8 @@
 
 
 (defn- reset-file-version
-  [cfg {:keys [params] :as request}]
+  [cfg {:keys [params]
+        :as request}]
   (let [file-id (some-> params :file-id d/parse-uuid)
         version (some-> params :version d/parse-integer)]
 
@@ -431,7 +443,8 @@
 
 
 (defn- add-team-feature
-  [{:keys [params] :as request}]
+  [{:keys [params]
+    :as request}]
   (let [team-id (some-> params :team-id d/parse-uuid)
         feature (some-> params :feature str)
         skip-check (contains? params :skip-check)]
@@ -453,7 +466,8 @@
      ::yres/body    "OK"}))
 
 (defn- remove-team-feature
-  [{:keys [params] :as request}]
+  [{:keys [params]
+    :as request}]
   (let [team-id   (some-> params :team-id d/parse-uuid)
         feature   (some-> params :feature str)
         skip-check (contains? params :skip-check)]
@@ -531,7 +545,8 @@
   (assert (session/manager? (::session/manager params)) "expected a valid session manager"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::db/pool] :as cfg}]
+  [_ {:keys [::db/pool]
+      :as cfg}]
   [["/readyz" {:handler (partial health-handler cfg)}]
    ["/dbg" {:middleware [[session/authz cfg]
                          [with-authorization pool]]}

@@ -11,14 +11,19 @@
 
 (t/deftest test-parse-token-value
   (t/testing "parses double from a token value"
-    (t/is (= {:value 100.1 :unit nil} (cft/parse-token-value "100.1")))
-    (t/is (= {:value -9.0 :unit nil} (cft/parse-token-value "-9"))))
+    (t/is (= {:value 100.1
+              :unit nil} (cft/parse-token-value "100.1")))
+    (t/is (= {:value -9.0
+              :unit nil} (cft/parse-token-value "-9"))))
   (t/testing "trims white-space"
-    (t/is (= {:value -1.3 :unit nil} (cft/parse-token-value "     -1.3   "))))
+    (t/is (= {:value -1.3
+              :unit nil} (cft/parse-token-value "     -1.3   "))))
   (t/testing "parses unit: px"
-    (t/is (= {:value 70.3 :unit "px"} (cft/parse-token-value "     70.3px   "))))
+    (t/is (= {:value 70.3
+              :unit "px"} (cft/parse-token-value "     70.3px   "))))
   (t/testing "parses unit: %"
-    (t/is (= {:value -10.0 :unit "%"} (cft/parse-token-value "-10%"))))
+    (t/is (= {:value -10.0
+              :unit "%"} (cft/parse-token-value "-10%"))))
   (t/testing "parses unit: px")
   (t/testing "returns nil for any invalid characters"
     (t/is (nil? (cft/parse-token-value "     -1.3a   "))))
@@ -43,11 +48,14 @@
           shape-applied-y {:id "shape-applied-y"
                            :applied-tokens {:y "1"}}
           shape-applied-x-y {:id "shape-applied-x-y"
-                             :applied-tokens {:x "1" :y "1"}}
+                             :applied-tokens {:x "1"
+                                              :y "1"}}
           shape-applied-none {:id "shape-applied-none"
                               :applied-tokens {}}
           shape-applied-all {:id "shape-applied-all"
-                             :applied-tokens {:x "1" :y "1" :z "1"}}
+                             :applied-tokens {:x "1"
+                                              :y "1"
+                                              :z "1"}}
           shape-ids (fn [& xs] (into #{} (map :id xs)))
           shapes [shape-applied-x
                   shape-applied-y

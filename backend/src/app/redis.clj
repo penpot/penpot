@@ -141,7 +141,8 @@
 
 (defn- initialize-resources
   "Initialize redis connection resources"
-  [{:keys [::uri ::io-threads ::worker-threads ::wrk/executor ::mtx/metrics] :as params}]
+  [{:keys [::uri ::io-threads ::worker-threads ::wrk/executor ::mtx/metrics]
+    :as params}]
 
   (l/inf :hint "initialize redis resources"
          :uri (str uri)

@@ -103,7 +103,8 @@
 (defn- stack-undo-entry
   "Extends the current undo entry in the workspace with new changes if it
    exists, or creates a new entry if it doesn't."
-  [state {:keys [undo-changes redo-changes] :as entry}]
+  [state {:keys [undo-changes redo-changes]
+          :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
       (update-in state [:workspace-undo :items index]
@@ -151,13 +152,15 @@
         (add-undo-entry state entry)))))
 
 (def empty-tx
-  {:undo-changes [] :redo-changes []})
+  {:undo-changes []
+   :redo-changes []})
 
 (declare check-open-transactions)
 
 (defn start-undo-transaction
   "Start a transaction, so that changes in it are added together into a single undo entry."
-  [id & {:keys [timeout] :or {timeout discard-transaction-time-millis}}]
+  [id & {:keys [timeout]
+         :or {timeout discard-transaction-time-millis}}]
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
     (update [_ state]

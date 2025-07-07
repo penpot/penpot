@@ -277,7 +277,8 @@
                       ^Subscriber subscriber))))))
 
 (defn- put-object
-  [{:keys [::client ::bucket ::prefix ::wrk/executor]} {:keys [id] :as object} content]
+  [{:keys [::client ::bucket ::prefix ::wrk/executor]} {:keys [id]
+                                                        :as object} content]
   (let [path    (dm/str prefix (impl/id->path id))
         mdata   (meta object)
         mtype   (:content-type mdata "application/octet-stream")
@@ -341,7 +342,8 @@
   (dt/duration {:minutes 10}))
 
 (defn- get-object-url
-  [{:keys [::presigner ::bucket ::prefix]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
+  [{:keys [::presigner ::bucket ::prefix]} {:keys [id]} {:keys [max-age]
+                                                         :or {max-age default-max-age}}]
   (assert (dt/duration? max-age) "expected valid duration instance")
 
   (let [gor  (.. (GetObjectRequest/builder)
@@ -356,7 +358,8 @@
     (u/uri (str (.url ^PresignedGetObjectRequest pgor)))))
 
 (defn- del-object
-  [{:keys [::bucket ::client ::prefix]} {:keys [id] :as obj}]
+  [{:keys [::bucket ::client ::prefix]} {:keys [id]
+                                         :as obj}]
   (let [dor (.. (DeleteObjectRequest/builder)
                 (bucket bucket)
                 (key (dm/str prefix (impl/id->path id)))

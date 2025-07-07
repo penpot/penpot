@@ -224,7 +224,8 @@
 (defmacro log!
   "Emit a new log record to the global log-record state (asynchronously). "
   [& props]
-  (let [{:keys [::level ::logger ::context ::sync? cause] :or {sync? false}} props
+  (let [{:keys [::level ::logger ::context ::sync? cause]
+         :or {sync? false}} props
         props (into [] msg-props-xf props)]
     `(when (enabled? ~logger ~level)
        (let [props#   (cond-> (delay ~props) ~sync? deref)

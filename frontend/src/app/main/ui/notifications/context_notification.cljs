@@ -38,7 +38,8 @@
   "They are persistent, informative and non-actionable.
   They are contextual messages in specific areas off the app"
   {::mf/props :obj}
-  [{:keys [level content links is-html class] :as props}]
+  [{:keys [level content links is-html class]
+    :as props}]
   [:aside {:class (dm/str
                    class
                    " "

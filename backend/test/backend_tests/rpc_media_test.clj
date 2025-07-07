@@ -35,7 +35,8 @@
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
-    (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
+    (let [{:keys [media-id thumbnail-id]
+           :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
       (t/is (= 1024 (:width result)))
       (t/is (= 683  (:height result)))
@@ -72,7 +73,8 @@
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
-    (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
+    (let [{:keys [media-id thumbnail-id]
+           :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
       (t/is (= 800 (:width result)))
       (t/is (= 800  (:height result)))
@@ -109,7 +111,8 @@
                 :id (uuid/next)}]
 
     ;; First try
-    (let [{:keys [result error] :as out} (th/command! params)]
+    (let [{:keys [result error]
+           :as out} (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (= (:id params) (:id result)))
@@ -121,7 +124,8 @@
       (t/is (uuid? (:thumbnail-id result))))
 
     ;; Second try
-    (let [{:keys [result error] :as out} (th/command! params)]
+    (let [{:keys [result error]
+           :as out} (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (= (:id params) (:id result)))
@@ -150,7 +154,8 @@
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
-    (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
+    (let [{:keys [media-id thumbnail-id]
+           :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
       (t/is (= 1024 (:width result)))
       (t/is (= 683  (:height result)))
@@ -187,7 +192,8 @@
 
     ;; (th/print-result! out)
     (t/is (nil? (:error out)))
-    (let [{:keys [media-id thumbnail-id] :as result} (:result out)]
+    (let [{:keys [media-id thumbnail-id]
+           :as result} (:result out)]
       (t/is (= (:id file) (:file-id result)))
       (t/is (= 800 (:width result)))
       (t/is (= 800  (:height result)))
@@ -224,7 +230,8 @@
                 :id (uuid/next)}]
 
     ;; First try
-    (let [{:keys [result error] :as out} (th/command! params)]
+    (let [{:keys [result error]
+           :as out} (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (= (:id params) (:id result)))
@@ -236,7 +243,8 @@
       (t/is (uuid? (:thumbnail-id result))))
 
     ;; Second try
-    (let [{:keys [result error] :as out} (th/command! params)]
+    (let [{:keys [result error]
+           :as out} (th/command! params)]
       ;; (th/print-result! out)
       (t/is (nil? error))
       (t/is (= (:id params) (:id result)))

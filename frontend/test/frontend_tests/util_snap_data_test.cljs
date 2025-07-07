@@ -130,8 +130,12 @@
     (let [state    (-> (fb/create-state)
                        (fb/add-file {:name "Test"})
                        (fb/add-page {:name "Page 1"})
-                       (fb/add-guide {:position 50 :axis :x})
-                       (fb/add-board {:x 200 :y 200 :width 100 :height 100})
+                       (fb/add-guide {:position 50
+                                      :axis :x})
+                       (fb/add-board {:x 200
+                                      :y 200
+                                      :width 100
+                                      :height 100})
                        (fb/close-board))
 
           frame-id (::fb/last-id state)
@@ -158,13 +162,18 @@
     (let [state    (-> (fb/create-state)
                        (fb/add-file {:name "Test"})
                        (fb/add-page {:name "Page 1"})
-                       (fb/add-board {:x 200 :y 200 :width 100 :height 100})
+                       (fb/add-board {:x 200
+                                      :y 200
+                                      :width 100
+                                      :height 100})
                        (fb/close-board))
 
           frame-id (::fb/last-id state)
 
           state    (-> state
-                       (fb/add-guide {:position 50 :axis :x :frame-id frame-id}))
+                       (fb/add-guide {:position 50
+                                      :axis :x
+                                      :frame-id frame-id}))
 
           page     (fb/get-current-page state)
 
@@ -257,7 +266,11 @@
                          :height 100}))
           frame-id (::fb/last-id state)
 
-          state    (fb/add-shape state {:type :rect :x 25 :y 25 :width 50 :height 50})
+          state    (fb/add-shape state {:type :rect
+                                        :x 25
+                                        :y 25
+                                        :width 50
+                                        :height 50})
           shape-id (::fb/last-id state)
 
           state    (fb/close-board state)
@@ -282,11 +295,15 @@
     (let [state    (-> (fb/create-state)
                        (fb/add-file {:name "Test"})
                        (fb/add-page {:name "Page 1"})
-                       (fb/add-guide {:position 50 :axis :x}))
+                       (fb/add-guide {:position 50
+                                      :axis :x}))
 
           guide-id (::fb/last-id state)
 
-          state    (-> (fb/add-board state {:x 200 :y 200 :width 100 :height 100})
+          state    (-> (fb/add-board state {:x 200
+                                            :y 200
+                                            :width 100
+                                            :height 100})
                        (fb/close-board))
 
           frame-id (::fb/last-id state)
@@ -317,11 +334,16 @@
     (let [file (-> (fb/create-state)
                    (fb/add-file {:name "Test"})
                    (fb/add-page {:name "Page 1"})
-                   (fb/add-board {:x 200 :y 200 :width 100 :height 100})
+                   (fb/add-board {:x 200
+                                  :y 200
+                                  :width 100
+                                  :height 100})
                    (fb/close-board))
 
           frame-id (::fb/last-id file)
-          file (fb/add-guide file {:position 50 :axis :x :frame-id frame-id})
+          file (fb/add-guide file {:position 50
+                                   :axis :x
+                                   :frame-id frame-id})
           guide-id (::fb/last-id file)
 
           page     (fb/get-current-page file)
@@ -418,7 +440,8 @@
       (t/is (= (count result-zero-x-2) 3))))
 
   (t/testing "Update global guide"
-    (let [guide   {:position 50 :axis :x}
+    (let [guide   {:position 50
+                   :axis :x}
           state    (-> (fb/create-state)
                        (fb/add-file {:name "Test"})
                        (fb/add-page {:name "Page 1"})
@@ -427,7 +450,10 @@
           guide-id (::fb/last-id state)
           guide    (assoc guide :id guide-id)
 
-          state    (-> (fb/add-board state {:x 500 :y 500 :width 100 :height 100})
+          state    (-> (fb/add-board state {:x 500
+                                            :y 500
+                                            :width 100
+                                            :height 100})
                        (fb/close-board))
 
           frame-id (::fb/last-id state)

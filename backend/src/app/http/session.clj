@@ -188,7 +188,8 @@
 (defn- decode-token
   [props token]
   (when token
-    (tokens/verify props {:token token :iss "authentication"})))
+    (tokens/verify props {:token token
+                          :iss "authentication"})))
 
 (defn- get-token
   [request]
@@ -202,7 +203,8 @@
   (some->> token (read manager)))
 
 (defn- renew-session?
-  [{:keys [updated-at] :as session}]
+  [{:keys [updated-at]
+    :as session}]
   (and (dt/instant? updated-at)
        (let [elapsed (dt/diff updated-at (dt/now))]
          (neg? (compare default-renewal-max-age elapsed)))))
@@ -254,7 +256,8 @@
 ;; --- IMPL
 
 (defn- assign-auth-token-cookie
-  [response {token :id updated-at :updated-at}]
+  [response {token :id
+             updated-at :updated-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
         created-at (or updated-at (dt/now))
         renewal    (dt/plus created-at default-renewal-max-age)
@@ -274,7 +277,8 @@
     (update response :cookies assoc name cookie)))
 
 (defn- assign-auth-data-cookie
-  [response {profile-id :profile-id updated-at :updated-at}]
+  [response {profile-id :profile-id
+             updated-at :updated-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
         domain     (cf/get :auth-data-cookie-domain)
         cname      default-auth-data-cookie-name
@@ -303,7 +307,9 @@
 (defn- clear-auth-token-cookie
   [response]
   (let [cname (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
-    (update response :cookies assoc cname {:path "/" :value "" :max-age 0})))
+    (update response :cookies assoc cname {:path "/"
+                                           :value ""
+                                           :max-age 0})))
 
 (defn- clear-auth-data-cookie
   [response]
@@ -311,7 +317,10 @@
         domain (cf/get :auth-data-cookie-domain)]
     (cond-> response
       (string? domain)
-      (update :cookies assoc cname {:domain domain :path "/" :value "" :max-age 0}))))
+      (update :cookies assoc cname {:domain domain
+                                    :path "/"
+                                    :value ""
+                                    :max-age 0}))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -348,6 +357,7 @@
     result))
 
 (defmethod ig/init-key ::tasks/gc
-  [_ {:keys [::tasks/max-age] :as cfg}]
+  [_ {:keys [::tasks/max-age]
+      :as cfg}]
   (l/debug :hint "initializing session gc task" :max-age max-age)
   (fn [_] (db/tx-run! cfg collect-expired-tasks)))

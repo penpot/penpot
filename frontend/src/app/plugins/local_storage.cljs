@@ -24,7 +24,8 @@
 (defn local-storage-proxy
   [plugin-id]
   (obj/reify {:name "LocalStorageProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
 
     :getItem
     (fn [key]

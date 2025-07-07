@@ -27,7 +27,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc converted-chars
-  [{:keys [char command] :as props}]
+  [{:keys [char command]
+    :as props}]
   (let [modified-keys {:up    ds/up-arrow
                        :down  ds/down-arrow
                        :left  ds/left-arrow
@@ -238,7 +239,8 @@
     (reduce reduce-sc {} subsections)))
 
 (mf/defc shortcuts-keys
-  [{:keys [content command] :as props}]
+  [{:keys [content command]
+    :as props}]
   (let [managed-list    (if (coll? content)
                           content
                           (conj () content))
@@ -265,7 +267,8 @@
                                :command command}])])]))
 
 (mf/defc shortcut-row
-  [{:keys [elements filter-term match-section? match-subsection?] :as props}]
+  [{:keys [elements filter-term match-section? match-subsection?]
+    :as props}]
   (let [shortcut-name         (keys elements)
         shortcut-translations (map #(translation-keyname :sc %) shortcut-name)
         match-shortcut?       (some #(matches-search % @filter-term) shortcut-translations)
@@ -287,7 +290,8 @@
                               :command command}]]))]))
 
 (mf/defc section-title
-  [{:keys [is-visible? name is-sub?] :as props}]
+  [{:keys [is-visible? name is-sub?]
+    :as props}]
   [:div {:class (if is-sub?
                   (stl/css :subsection-title)
                   (stl/css :section-title))}
@@ -298,7 +302,8 @@
                     (stl/css :section-name))} name]])
 
 (mf/defc shortcut-subsection
-  [{:keys [subsections manage-sections filter-term match-section? open-sections] :as props}]
+  [{:keys [subsections manage-sections filter-term match-section? open-sections]
+    :as props}]
   (let [subsections-names       (keys subsections)
         subsection-translations (if (= :none (first subsections-names))
                                   (map #(translation-keyname :sc %) subsections-names)
@@ -334,7 +339,8 @@
                                  :match-subsection? match-subsection?}]]])))])))
 
 (mf/defc shortcut-section
-  [{:keys [section manage-sections open-sections filter-term] :as props}]
+  [{:keys [section manage-sections open-sections filter-term]
+    :as props}]
   (let [[section-key section-info] section
         section-id          (:id section-info)
         section-translation (translation-keyname :sec section-key)

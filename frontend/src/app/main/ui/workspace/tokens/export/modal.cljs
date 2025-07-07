@@ -31,7 +31,9 @@
   [{:keys [on-export is-disabled children]}]
   [:div {:class (stl/css :export-preview)}
    (when-not is-disabled
-     [:> text* {:as "span" :typography "body-medium" :class (stl/css :preview-label)}
+     [:> text* {:as "span"
+                :typography "body-medium"
+                :class (stl/css :preview-label)}
       (tr "workspace.tokens.export.preview")])
    (if is-disabled
      [:div {:class (stl/css :disabled-message)}
@@ -61,13 +63,15 @@
          (mf/deps tokens-json)
          (fn []
            (when tokens-json
-             (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens" :type "single"}))
+             (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens"
+                                                   :type "single"}))
              (->> (wapi/create-blob (or tokens-json "{}") "application/json")
                   (dom/trigger-download "tokens.json")))))]
     [:> export-tab* {:is-disabled is-disabled
                      :on-export on-export}
      [:div {:class (stl/css :json-preview)}
-      [:> code-block {:code tokens-json :type "json"}]]]))
+      [:> code-block {:code tokens-json
+                      :type "json"}]]]))
 
 (defn download-tokens-zip! [multi-file-entries]
   (let [writer (-> (zip/blob-writer {:mtype "application/zip"})
@@ -88,7 +92,8 @@
         (mf/use-fn
          (mf/deps files)
          (fn []
-           (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens" :type "multiple"}))
+           (st/emit! (ptk/data-event ::ev/event {::ev/name "export-tokens"
+                                                 :type "multiple"}))
            (download-tokens-zip! files)))]
     [:> export-tab* {:on-export on-export
                      :is-disabled is-disabled}
@@ -99,7 +104,8 @@
                :class (stl/css :file-item)}
           [:div {:class (stl/css :file-icon)}
            [:> icon* {:icon-id "document"}]]
-          [:div {:class (stl/css :file-name) :title path}
+          [:div {:class (stl/css :file-name)
+                 :title path}
            path]])]]]))
 
 (mf/defc export-modal-body*

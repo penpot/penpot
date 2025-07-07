@@ -65,13 +65,15 @@
 
   ;; FIXME: this code should be probably moved outside of the UI
   (->> (rp/cmd! :login-with-oidc (assoc params :provider provider))
-       (rx/subs! (fn [{:keys [redirect-uri] :as rsp}]
+       (rx/subs! (fn [{:keys [redirect-uri]
+                       :as rsp}]
                    (if redirect-uri
                      (st/emit! (rt/nav-raw :uri redirect-uri))
                      (log/error :hint "unexpected response from OIDC method"
                                 :resp (pr-str rsp))))
                  (fn [cause]
-                   (let [{:keys [type code] :as error} (ex-data cause)]
+                   (let [{:keys [type code]
+                          :as error} (ex-data cause)]
                      (cond
                        (and (= type :restriction)
                             (= code :provider-not-configured))
@@ -88,7 +90,8 @@
     [:string {:min 1}]]])
 
 (mf/defc login-form
-  [{:keys [params on-success-callback on-recovery-request origin] :as props}]
+  [{:keys [params on-success-callback on-recovery-request origin]
+    :as props}]
   (let [initial (mf/with-memo [params] params)
         error   (mf/use-state false)
         form    (fm/use-form :schema schema:login-form
@@ -203,7 +206,8 @@
            :on-click on-submit-ldap}])]]]))
 
 (mf/defc login-buttons
-  [{:keys [params] :as props}]
+  [{:keys [params]
+    :as props}]
   (let [login-with-google (mf/use-fn (mf/deps params) #(login-with-oidc % :google params))
         login-with-github (mf/use-fn (mf/deps params) #(login-with-oidc % :github params))
         login-with-gitlab (mf/use-fn (mf/deps params) #(login-with-oidc % :gitlab params))
@@ -235,7 +239,8 @@
                            :class (stl/css :login-btn :btn-oidc-auth)}])]))
 
 (mf/defc login-button-oidc
-  [{:keys [params] :as props}]
+  [{:keys [params]
+    :as props}]
   (let [login-oidc
         (mf/use-fn
          (mf/deps params)
@@ -255,7 +260,8 @@
        (tr "auth.login-with-oidc-submit")])))
 
 (mf/defc login-methods
-  [{:keys [params on-success-callback on-recovery-request origin] :as props}]
+  [{:keys [params on-success-callback on-recovery-request origin]
+    :as props}]
   [:*
    (when show-alt-login-buttons?
      [:*
@@ -269,10 +275,14 @@
    (when (or (contains? cf/flags :login)
              (contains? cf/flags :login-with-password)
              (contains? cf/flags :login-with-ldap))
-     [:& login-form {:params params :on-success-callback on-success-callback :on-recovery-request on-recovery-request :origin origin}])])
+     [:& login-form {:params params
+                     :on-success-callback on-success-callback
+                     :on-recovery-request on-recovery-request
+                     :origin origin}])])
 
 (mf/defc login-page
-  [{:keys [params] :as props}]
+  [{:keys [params]
+    :as props}]
   (let [go-register
         (mf/use-fn
          #(st/emit! (rt/nav :auth-register params)))]

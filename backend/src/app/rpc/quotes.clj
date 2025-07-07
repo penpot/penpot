@@ -73,7 +73,8 @@
                       (run! (partial check cfg) others)))))))
 
 (defn- send-notification!
-  [{:keys [::db/conn] :as params}]
+  [{:keys [::db/conn]
+    :as params}]
   (l/warn :hint "max quote reached"
           :target (::target params)
           :profile-id (some-> params ::profile-id str)
@@ -106,7 +107,9 @@
                                           :content content}]}}))))
 
 (defn- generic-check!
-  [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target] :or {incr 1} :as params}]
+  [{:keys [::db/conn ::incr ::quote-sql ::count-sql ::default ::target]
+    :or {incr 1}
+    :as params}]
   (let [quote (->> (db/exec! conn quote-sql)
                    (map :quote)
                    (reduce max (- Integer/MAX_VALUE)))
@@ -171,7 +174,8 @@
     WHERE profile_id = ?")
 
 (defmethod check-quote ::teams-per-profile
-  [{:keys [::profile-id ::target] :as quote}]
+  [{:keys [::profile-id ::target]
+    :as quote}]
   (assert (valid-teams-per-profile-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-teams-per-profile Integer/MAX_VALUE))
@@ -195,7 +199,8 @@
     WHERE profile_id = ?")
 
 (defmethod check-quote ::access-tokens-per-profile
-  [{:keys [::profile-id ::target] :as quote}]
+  [{:keys [::profile-id ::target]
+    :as quote}]
   (assert (valid-access-tokens-per-profile-quote? quote) "invalid quote parameters")
 
   (-> quote
@@ -223,7 +228,8 @@
       AND p.deleted_at IS NULL")
 
 (defmethod check-quote ::projects-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  [{:keys [::profile-id ::team-id ::target]
+    :as quote}]
   (assert (valid-projects-per-team-quote? quote) "invalid quote parameters")
 
   (-> quote
@@ -250,7 +256,8 @@
      WHERE v.team_id = ?")
 
 (defmethod check-quote ::font-variants-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  [{:keys [::profile-id ::team-id ::target]
+    :as quote}]
   (assert (valid-font-variant-per-team-quote? quote) "invalid quote parameters")
 
   (-> quote
@@ -278,7 +285,8 @@
     WHERE team_id = ?")
 
 (defmethod check-quote ::invitations-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  [{:keys [::profile-id ::team-id ::target]
+    :as quote}]
   (assert (valid-invitations-per-team-quote? quote) "invalid quote parameters")
 
   (-> quote
@@ -312,7 +320,8 @@
 ;; effective members plus ongoing valid invitations.
 
 (defmethod check-quote ::profiles-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  [{:keys [::profile-id ::team-id ::target]
+    :as quote}]
   (assert (valid-profiles-per-team-quote? quote) "invalid quote parameters")
 
   (-> quote
@@ -341,7 +350,8 @@
       AND f.deleted_at IS NULL")
 
 (defmethod check-quote ::files-per-project
-  [{:keys [::profile-id ::project-id ::team-id ::target] :as quote}]
+  [{:keys [::profile-id ::project-id ::team-id ::target]
+    :as quote}]
   (assert (valid-files-per-project-quote? quote) "invalid quote parameters")
 
   (-> quote
@@ -369,7 +379,8 @@
     WHERE ct.file_id = ?")
 
 (defmethod check-quote ::comment-threads-per-file
-  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
+  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target]
+    :as quote}]
   (assert (valid-comment-threads-per-file-quote? quote) "invalid quote parameters")
 
   (-> quote
@@ -399,7 +410,8 @@
     WHERE ct.file_id = ?")
 
 (defmethod check-quote ::comments-per-file
-  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
+  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target]
+    :as quote}]
   (assert (valid-comments-per-file-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-comments-per-file Integer/MAX_VALUE))
@@ -431,7 +443,8 @@
       AND fc.data IS NOT NULL")
 
 (defmethod check-quote ::snapshots-per-file
-  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target] :as quote}]
+  [{:keys [::profile-id ::file-id ::team-id ::project-id ::target]
+    :as quote}]
   (assert (valid-snapshots-per-file-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-snapshots-per-file Integer/MAX_VALUE))
@@ -464,7 +477,8 @@
       AND fc.data IS NOT NULL")
 
 (defmethod check-quote ::snapshots-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  [{:keys [::profile-id ::team-id ::target]
+    :as quote}]
   (assert (valid-snapshots-per-team-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-snapshots-per-team Integer/MAX_VALUE))
@@ -490,7 +504,8 @@
     WHERE tar.team_id = ?")
 
 (defmethod check-quote ::team-access-requests-per-team
-  [{:keys [::profile-id ::team-id ::target] :as quote}]
+  [{:keys [::profile-id ::team-id ::target]
+    :as quote}]
   (assert (valid-team-access-requests-per-team-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-team-access-requests-per-team Integer/MAX_VALUE))
@@ -515,7 +530,8 @@
     WHERE tar.requester_id = ?")
 
 (defmethod check-quote ::team-access-requests-per-requester
-  [{:keys [::profile-id ::target] :as quote}]
+  [{:keys [::profile-id ::target]
+    :as quote}]
   (assert (valid-team-access-requests-per-requester-quote? quote) "invalid quote parameters")
   (-> quote
       (assoc ::default (cf/get :quotes-team-access-requests-per-requester Integer/MAX_VALUE))

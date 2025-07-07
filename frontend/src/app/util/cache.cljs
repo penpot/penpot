@@ -36,7 +36,8 @@
            observable
 
            (fn [data]
-             (let [entry {:created-at (dt/now) :data data}]
+             (let [entry {:created-at (dt/now)
+                          :data data}]
                (swap! cache assoc key entry))
              (swap! pending dissoc key)
              (rx/push! subject data)

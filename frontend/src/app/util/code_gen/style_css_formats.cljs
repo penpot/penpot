@@ -60,8 +60,10 @@
       (let [image-url (cfg/resolve-file-media (:image value))
             opacity-color (when (not= (:opacity value) 1)
                             (uc/gradient->css {:type :linear
-                                               :stops [{:color "#FFFFFF" :opacity (:opacity value)}
-                                                       {:color "#FFFFFF" :opacity (:opacity value)}]}))]
+                                               :stops [{:color "#FFFFFF"
+                                                        :opacity (:opacity value)}
+                                                       {:color "#FFFFFF"
+                                                        :opacity (:opacity value)}]}))]
         (if opacity-color
           ;; CSS doesn't allow setting directly opacity to background image, we should add a dummy gradient to get it
           (dm/fmt "%, url(%) no-repeat center center / cover" opacity-color image-url)

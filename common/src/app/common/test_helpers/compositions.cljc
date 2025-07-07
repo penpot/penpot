@@ -21,7 +21,8 @@
 ;; ----- File building
 
 (defn add-rect
-  [file rect-label & {:keys [] :as params}]
+  [file rect-label & {:keys []
+                      :as params}]
   ;; Generated shape tree:
   ;; :rect-label [:type :rect :name Rect1]
   (ths/add-sample-shape file rect-label
@@ -30,15 +31,19 @@
                                params)))
 
 (defn add-text
-  [file text-label content & {:keys [text-params] :as text}]
-  (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0})
+  [file text-label content & {:keys [text-params]
+                              :as text}]
+  (let [shape (-> (cts/setup-shape {:type :text
+                                    :x 0
+                                    :y 0})
                   (txt/change-text content))]
     (ths/add-sample-shape file text-label
                           (merge shape
                                  text-params))))
 
 (defn add-frame
-  [file frame-label & {:keys [] :as params}]
+  [file frame-label & {:keys []
+                       :as params}]
   ;; Generated shape tree:
   ;; :frame-label [:type :frame :name Frame1]
   (ths/add-sample-shape file frame-label
@@ -47,7 +52,8 @@
                                params)))
 
 (defn add-group
-  [file group-label & {:keys [] :as params}]
+  [file group-label & {:keys []
+                       :as params}]
   ;; Generated shape tree:
   ;; :group-label [:type :group :name Group1]
   (ths/add-sample-shape file group-label
@@ -70,7 +76,10 @@
 
 (defn add-frame-with-text
   [file frame-label child-label text & {:keys [frame-params child-params]}]
-  (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+  (let [shape (-> (cts/setup-shape {:type :text
+                                    :x 0
+                                    :y 0
+                                    :grow-type :auto-width})
                   (txt/change-text text)
                   (assoc :position-data nil
                          :parent-label frame-label))]

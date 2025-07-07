@@ -181,10 +181,13 @@
       (if (nil? current)
         (> signed-area 0)
 
-        (let [{x1 :x y1 :y :as p} (helpers/segment->point current)
+        (let [{x1 :x
+               y1 :y
+               :as p} (helpers/segment->point current)
               last? (nil? (first subpath))
               first-point (if (nil? first-point) p first-point)
-              {x2 :x y2 :y} (if last? first-point (helpers/segment->point (first subpath)))
+              {x2 :x
+               y2 :y} (if last? first-point (helpers/segment->point (first subpath)))
               signed-area (+ signed-area (- (* x1 y2) (* x2 y1)))]
 
           (recur (first subpath)

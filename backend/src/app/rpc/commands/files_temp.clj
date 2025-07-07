@@ -46,7 +46,9 @@
    ::doc/module :files
    ::sm/params schema:create-temp-file
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id project-id]
+              :as params}]
   (projects/check-edition-permissions! conn profile-id project-id)
   (let [team (teams/get-team conn :profile-id profile-id :project-id project-id)
         ;; When we create files, we only need to respect the team
@@ -91,7 +93,8 @@
   {::doc/added "1.17"
    ::doc/module :files
    ::sm/params schema:update-temp-file}
-  [cfg {:keys [::rpc/profile-id session-id id revn changes] :as params}]
+  [cfg {:keys [::rpc/profile-id session-id id revn changes]
+        :as params}]
   (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                     (db/insert! conn :file-change
                                 {:id (uuid/next)
@@ -109,7 +112,9 @@
 ;; --- MUTATION COMMAND: persist-temp-file
 
 (defn persist-temp-file
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id]
+              :as params}]
   (let [file (files/get-file cfg id
                              :migrate? false
                              :lock-for-update? true)]
@@ -155,7 +160,9 @@
   {::doc/added "1.17"
    ::doc/module :files
    ::sm/params schema:persist-temp-file}
-  [cfg {:keys [::rpc/profile-id id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  [cfg {:keys [::rpc/profile-id id]
+        :as params}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn]
+                        :as cfg}]
                     (files/check-edition-permissions! conn profile-id id)
                     (persist-temp-file cfg params))))

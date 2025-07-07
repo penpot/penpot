@@ -61,7 +61,8 @@
 (defn save-path-content
   ([]
    (save-path-content {}))
-  ([{:keys [preserve-move-to] :or {preserve-move-to false}}]
+  ([{:keys [preserve-move-to]
+     :or {preserve-move-to false}}]
    (ptk/reify ::save-path-content
      ptk/UpdateEvent
      (update [_ state]

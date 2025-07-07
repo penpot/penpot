@@ -144,7 +144,8 @@
    (reduce #(index-object %1 %2 attr) index coll)))
 
 (defn decode-row
-  [{:keys [data changes features] :as row}]
+  [{:keys [data changes features]
+    :as row}]
   (when row
     (cond-> row
       features (assoc :features (db/decode-pgarray features #{}))
@@ -155,7 +156,8 @@
 (defn decode-file
   "A general purpose file decoding function that resolves all external
   pointers, run migrations and return plain vanilla file map"
-  [cfg {:keys [id] :as file}]
+  [cfg {:keys [id]
+        :as file}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
     (let [file (->> file
                     (feat.fmigr/resolve-applied-migrations cfg)
@@ -177,7 +179,8 @@
   operations on file, because it removes the ovehead of lazy fetching
   and decoding."
   [cfg file-id & {:as opts}]
-  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  (db/run! cfg (fn [{:keys [::db/conn]
+                     :as cfg}]
                  (some->> (db/get* conn :file {:id file-id}
                                    (assoc opts ::db/remove-deleted false))
                           (decode-file cfg)))))
@@ -280,9 +283,12 @@
 (defn update-media-references!
   "Given a file and a coll of media-refs, check if all provided
   references are correct or fix them in-place"
-  [{:keys [::db/conn] :as cfg} {file-id :id :as file} media-refs]
+  [{:keys [::db/conn]
+    :as cfg} {file-id :id
+              :as file} media-refs]
   (let [missing-index
-        (reduce (fn [result {:keys [id] :as fmo}]
+        (reduce (fn [result {:keys [id]
+                             :as fmo}]
                   (assoc result id
                          (-> fmo
                              (assoc :id (uuid/next))
@@ -330,7 +336,8 @@
   "SELECT * FROM file_media_object WHERE id = ANY(?)")
 
 (defn get-file-media
-  [cfg {:keys [data] :as file}]
+  [cfg {:keys [data]
+        :as file}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (let [used (cfh/collect-used-media data)
                        used (db/create-array conn "uuid" used)]
@@ -422,7 +429,8 @@
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
 (defn process-file
-  [cfg {:keys [id] :as file}]
+  [cfg {:keys [id]
+        :as file}]
   (let [libs (delay (get-resolved-file-libraries cfg file))]
     (-> file
         (update :data (fn [fdata]
@@ -445,7 +453,9 @@
         (vary-meta dissoc ::fmg/migrated))))
 
 (defn encode-file
-  [{:keys [::db/conn] :as cfg} {:keys [id features] :as file}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id features]
+              :as file}]
   (let [file (if (contains? features "fdata/objects-map")
                (feat.fdata/enable-objects-map file)
                file)
@@ -484,7 +494,8 @@
 
 (defn insert-file!
   "Insert a new file into the database table"
-  [{:keys [::db/conn] :as cfg} file & {:as opts}]
+  [{:keys [::db/conn]
+    :as cfg} file & {:as opts}]
   (feat.fmigr/upsert-migrations! conn file)
   (let [params (-> (encode-file cfg file)
                    (get-params-from-file))]
@@ -492,7 +503,9 @@
 
 (defn update-file!
   "Update an existing file on the database."
-  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file} & {:as opts}]
+  [{:keys [::db/conn ::sto/storage]
+    :as cfg} {:keys [id]
+              :as file} & {:as opts}]
   (let [file   (encode-file cfg file)
         params (-> (get-params-from-file file)
                    (dissoc :id))]
@@ -508,7 +521,8 @@
 (defn save-file!
   "Applies all the final validations and perist the file, binfile
   specific, should not be used outside of binfile domain"
-  [{:keys [::timestamp] :as cfg} file & {:as opts}]
+  [{:keys [::timestamp]
+    :as cfg} file & {:as opts}]
 
   (assert (dt/instant? timestamp) "expected valid timestamp")
 
@@ -575,7 +589,8 @@
 
 (defn get-resolved-file-libraries
   "A helper for preload file libraries"
-  [{:keys [::db/conn] :as cfg} file]
+  [{:keys [::db/conn]
+    :as cfg} file]
   (->> (get-file-libraries conn (:id file))
        (into [file] (map #(get-file cfg (:id %))))
        (d/index-by :id)))

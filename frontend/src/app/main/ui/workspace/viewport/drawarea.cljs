@@ -28,7 +28,8 @@
                (not (mth/nan? x))
                (not (mth/nan? y)))
 
-      [:rect.main {:x x :y y
+      [:rect.main {:x x
+                   :y y
                    :width width
                    :height height
                    :style {:stroke "var(--color-accent-tertiary)"
@@ -37,7 +38,8 @@
 
 (mf/defc path-draw-area*
   {::mf/private true}
-  [{:keys [shape] :as props}]
+  [{:keys [shape]
+    :as props}]
   (let [shape-id
         (dm/get-prop shape :id)
 
@@ -54,13 +56,15 @@
     [:> path-editor* props]))
 
 (mf/defc draw-area*
-  [{:keys [shape zoom tool] :as props}]
+  [{:keys [shape zoom tool]
+    :as props}]
   [:g.draw-area
    [:g {:style {:pointer-events "none"}}
     [:& shapes/shape-wrapper {:shape shape}]]
 
    (case tool
      :path      [:> path-draw-area* props]
-     :curve     [:& path-shape {:shape shape :zoom zoom}]
+     :curve     [:& path-shape {:shape shape
+                                :zoom zoom}]
      #_:default [:> generic-draw-area* props])])
 

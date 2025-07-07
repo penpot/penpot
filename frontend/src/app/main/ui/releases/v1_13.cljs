@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Beta release 1.13"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Beta release 1.13"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Beta 1.13 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.13-multi-export.gif" :border "0" :alt "Multiple exports"}]]
+         [:img {:src "images/features/1.13-multi-export.gif"
+                :border "0"
+                :alt "Multiple exports"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Multiple exports"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.13-multiple-fills.gif" :border "0" :alt "Multiple fills and strokes"}]]
+         [:img {:src "images/features/1.13-multiple-fills.gif"
+                :border "0"
+                :alt "Multiple fills and strokes"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Multiple fills and strokes"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.13-members.gif" :border "0" :alt "Members area redesign"}]]
+         [:img {:src "images/features/1.13-members.gif"
+                :border "0"
+                :alt "Members area redesign"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Members area redesign"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.13-focus.gif" :border "0" :alt "Focus mode"}]]
+         [:img {:src "images/features/1.13-focus.gif"
+                :border "0"
+                :alt "Focus mode"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Focus mode"]]

@@ -33,7 +33,8 @@
                          :current-page-id (cthf/current-page-id file)
                          :permissions {:can-edit true}
                          :files {(:id file) file}))
-        store (ptk/store {:state state :on-error on-error})]
+        store (ptk/store {:state state
+                          :on-error on-error})]
     store))
 
 (defn run-store

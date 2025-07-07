@@ -175,48 +175,254 @@
                      "182 208.5s-42 64.605-42 108.816c0 25.789 5.167 51.851 15.5 78.184s28.333 56.333 54 90S270 "
                      "558 314 602s99.333 96.667 166 158Zm0-297Z")
 
-        expect  [{:command :move-to, :params {:x 480.0, :y 839.0}}
-                 {:command :line-to, :params {:x 439.0, :y 802.0}}
-                 {:command :curve-to, :params {:c1x 368.488, :c1y 737.253, :c2x 310.193, :c2y 681.399, :x 264.116, :y 634.439}}
-                 {:command :curve-to, :params {:c1x 218.039, :c1y 587.48, :c2x 181.333, :c2y 545.5, :x 154.0, :y 508.5}}
-                 {:command :curve-to, :params {:c1x 126.667, :c1y 471.5, :c2x 107.5, :c2y 438.0, :x 96.5, :y 408.0}}
-                 {:command :curve-to, :params {:c1x 85.5, :c1y 378.0, :c2x 80.0, :c2y 347.667, :x 80.0, :y 317.0}}
-                 {:command :curve-to, :params {:c1x 80.0, :c1y 256.897, :c2x 100.167, :c2y 206.704, :x 140.5, :y 166.423}}
-                 {:command :curve-to, :params {:c1x 180.833, :c1y 126.141, :c2x 230.667, :c2y 106.0, :x 290.0, :y 106.0}}
-                 {:command :curve-to, :params {:c1x 328.0, :c1y 106.0, :c2x 363.16700000000003, :c2y 115.0, :x 395.5, :y 133.0}}
-                 {:command :curve-to, :params {:c1x 427.83299999999997, :c1y 151.0, :c2x 456.0, :c2y 177.0, :x 480.0, :y 211.0}}
-                 {:command :curve-to, :params {:c1x 508.0, :c1y 175.0, :c2x 537.667, :c2y 148.5, :x 569.0, :y 131.5}}
-                 {:command :curve-to, :params {:c1x 600.333, :c1y 114.5, :c2x 634.0, :c2y 106.0, :x 670.0, :y 106.0}}
-                 {:command :curve-to, :params {:c1x 729.333, :c1y 106.0, :c2x 779.167, :c2y 126.14099999999999, :x 819.5, :y 166.423}}
-                 {:command :curve-to, :params {:c1x 859.833, :c1y 206.704, :c2x 880.0, :c2y 256.897, :x 880.0, :y 317.0}}
-                 {:command :curve-to, :params {:c1x 880.0, :c1y 347.66700000000003, :c2x 874.5, :c2y 378.0, :x 863.5, :y 408.0}}
-                 {:command :curve-to, :params {:c1x 852.5, :c1y 438.0, :c2x 833.333, :c2y 471.5, :x 806.0, :y 508.5}}
-                 {:command :curve-to, :params {:c1x 778.667, :c1y 545.5, :c2x 741.961, :c2y 587.48, :x 695.884, :y 634.439}}
-                 {:command :curve-to, :params {:c1x 649.807, :c1y 681.399, :c2x 591.512, :c2y 737.253, :x 521.0, :y 802.0}}
-                 {:command :line-to, :params {:x 480.0, :y 839.0}}
-                 {:command :close-path, :params {}}
-                 {:command :move-to, :params {:x 480.0, :y 760.0}}
-                 {:command :curve-to, :params {:c1x 547.491, :c1y 698.003, :c2x 603.03, :c2y 644.837, :x 646.6179999999999, :y 600.502}}
-                 {:command :curve-to, :params {:c1x 690.206, :c1y 556.167, :c2x 724.833, :c2y 517.333, :x 750.5, :y 484.0}}
-                 {:command :curve-to, :params {:c1x 776.167, :c1y 450.66700000000003, :c2x 794.167, :c2y 420.955, :x 804.5, :y 394.865}}
-                 {:command :curve-to, :params {:c1x 814.833, :c1y 368.774, :c2x 820.0, :c2y 342.868, :x 820.0, :y 317.145}}
-                 {:command :curve-to, :params {:c1x 820.0, :c1y 273.048, :c2x 806.0, :c2y 236.83299999999997, :x 778.0, :y 208.5}}
-                 {:command :curve-to, :params {:c1x 750.0, :c1y 180.16700000000003, :c2x 714.075, :c2y 166.0, :x 670.225, :y 166.0}}
-                 {:command :curve-to, :params {:c1x 635.876, :c1y 166.0, :c2x 604.0840000000001, :c2y 176.5, :x 574.85, :y 197.5}}
-                 {:command :curve-to, :params {:c1x 545.617, :c1y 218.5, :c2x 522.0, :c2y 248.0, :x 504.0, :y 286.0}}
-                 {:command :line-to, :params {:x 455.0, :y 286.0}}
-                 {:command :curve-to, :params {:c1x 437.66700000000003, :c1y 248.667, :c2x 414.383, :c2y 219.333, :x 385.15, :y 198.0}}
-                 {:command :curve-to, :params {:c1x 355.916, :c1y 176.667, :c2x 324.12399999999997, :c2y 166.0, :x 289.775, :y 166.0}}
-                 {:command :curve-to, :params {:c1x 245.925, :c1y 166.0, :c2x 210.0, :c2y 180.167, :x 182.0, :y 208.5}}
-                 {:command :curve-to, :params {:c1x 154.0, :c1y 236.833, :c2x 140.0, :c2y 273.105, :x 140.0, :y 317.31600000000003}}
-                 {:command :curve-to, :params {:c1x 140.0, :c1y 343.105, :c2x 145.167, :c2y 369.16700000000003, :x 155.5, :y 395.5}}
+        expect  [{:command :move-to,
+                  :params {:x 480.0,
+                           :y 839.0}}
+                 {:command :line-to,
+                  :params {:x 439.0,
+                           :y 802.0}}
                  {:command :curve-to,
-                  :params {:c1x 165.833, :c1y 421.83299999999997, :c2x 183.833, :c2y 451.83299999999997, :x 209.5, :y 485.5}}
-                 {:command :curve-to, :params {:c1x 235.167, :c1y 519.167, :c2x 270.0, :c2y 558.0, :x 314.0, :y 602.0}}
-                 {:command :curve-to, :params {:c1x 358.0, :c1y 646.0, :c2x 413.33299999999997, :c2y 698.667, :x 480.0, :y 760.0}}
-                 {:command :close-path, :params {}}
-                 {:command :move-to, :params {:x 480.0, :y 463.0}}
-                 {:command :close-path, :params {}}]
+                  :params {:c1x 368.488,
+                           :c1y 737.253,
+                           :c2x 310.193,
+                           :c2y 681.399,
+                           :x 264.116,
+                           :y 634.439}}
+                 {:command :curve-to,
+                  :params {:c1x 218.039,
+                           :c1y 587.48,
+                           :c2x 181.333,
+                           :c2y 545.5,
+                           :x 154.0,
+                           :y 508.5}}
+                 {:command :curve-to,
+                  :params {:c1x 126.667,
+                           :c1y 471.5,
+                           :c2x 107.5,
+                           :c2y 438.0,
+                           :x 96.5,
+                           :y 408.0}}
+                 {:command :curve-to,
+                  :params {:c1x 85.5,
+                           :c1y 378.0,
+                           :c2x 80.0,
+                           :c2y 347.667,
+                           :x 80.0,
+                           :y 317.0}}
+                 {:command :curve-to,
+                  :params {:c1x 80.0,
+                           :c1y 256.897,
+                           :c2x 100.167,
+                           :c2y 206.704,
+                           :x 140.5,
+                           :y 166.423}}
+                 {:command :curve-to,
+                  :params {:c1x 180.833,
+                           :c1y 126.141,
+                           :c2x 230.667,
+                           :c2y 106.0,
+                           :x 290.0,
+                           :y 106.0}}
+                 {:command :curve-to,
+                  :params {:c1x 328.0,
+                           :c1y 106.0,
+                           :c2x 363.16700000000003,
+                           :c2y 115.0,
+                           :x 395.5,
+                           :y 133.0}}
+                 {:command :curve-to,
+                  :params {:c1x 427.83299999999997,
+                           :c1y 151.0,
+                           :c2x 456.0,
+                           :c2y 177.0,
+                           :x 480.0,
+                           :y 211.0}}
+                 {:command :curve-to,
+                  :params {:c1x 508.0,
+                           :c1y 175.0,
+                           :c2x 537.667,
+                           :c2y 148.5,
+                           :x 569.0,
+                           :y 131.5}}
+                 {:command :curve-to,
+                  :params {:c1x 600.333,
+                           :c1y 114.5,
+                           :c2x 634.0,
+                           :c2y 106.0,
+                           :x 670.0,
+                           :y 106.0}}
+                 {:command :curve-to,
+                  :params {:c1x 729.333,
+                           :c1y 106.0,
+                           :c2x 779.167,
+                           :c2y 126.14099999999999,
+                           :x 819.5,
+                           :y 166.423}}
+                 {:command :curve-to,
+                  :params {:c1x 859.833,
+                           :c1y 206.704,
+                           :c2x 880.0,
+                           :c2y 256.897,
+                           :x 880.0,
+                           :y 317.0}}
+                 {:command :curve-to,
+                  :params {:c1x 880.0,
+                           :c1y 347.66700000000003,
+                           :c2x 874.5,
+                           :c2y 378.0,
+                           :x 863.5,
+                           :y 408.0}}
+                 {:command :curve-to,
+                  :params {:c1x 852.5,
+                           :c1y 438.0,
+                           :c2x 833.333,
+                           :c2y 471.5,
+                           :x 806.0,
+                           :y 508.5}}
+                 {:command :curve-to,
+                  :params {:c1x 778.667,
+                           :c1y 545.5,
+                           :c2x 741.961,
+                           :c2y 587.48,
+                           :x 695.884,
+                           :y 634.439}}
+                 {:command :curve-to,
+                  :params {:c1x 649.807,
+                           :c1y 681.399,
+                           :c2x 591.512,
+                           :c2y 737.253,
+                           :x 521.0,
+                           :y 802.0}}
+                 {:command :line-to,
+                  :params {:x 480.0,
+                           :y 839.0}}
+                 {:command :close-path,
+                  :params {}}
+                 {:command :move-to,
+                  :params {:x 480.0,
+                           :y 760.0}}
+                 {:command :curve-to,
+                  :params {:c1x 547.491,
+                           :c1y 698.003,
+                           :c2x 603.03,
+                           :c2y 644.837,
+                           :x 646.6179999999999,
+                           :y 600.502}}
+                 {:command :curve-to,
+                  :params {:c1x 690.206,
+                           :c1y 556.167,
+                           :c2x 724.833,
+                           :c2y 517.333,
+                           :x 750.5,
+                           :y 484.0}}
+                 {:command :curve-to,
+                  :params {:c1x 776.167,
+                           :c1y 450.66700000000003,
+                           :c2x 794.167,
+                           :c2y 420.955,
+                           :x 804.5,
+                           :y 394.865}}
+                 {:command :curve-to,
+                  :params {:c1x 814.833,
+                           :c1y 368.774,
+                           :c2x 820.0,
+                           :c2y 342.868,
+                           :x 820.0,
+                           :y 317.145}}
+                 {:command :curve-to,
+                  :params {:c1x 820.0,
+                           :c1y 273.048,
+                           :c2x 806.0,
+                           :c2y 236.83299999999997,
+                           :x 778.0,
+                           :y 208.5}}
+                 {:command :curve-to,
+                  :params {:c1x 750.0,
+                           :c1y 180.16700000000003,
+                           :c2x 714.075,
+                           :c2y 166.0,
+                           :x 670.225,
+                           :y 166.0}}
+                 {:command :curve-to,
+                  :params {:c1x 635.876,
+                           :c1y 166.0,
+                           :c2x 604.0840000000001,
+                           :c2y 176.5,
+                           :x 574.85,
+                           :y 197.5}}
+                 {:command :curve-to,
+                  :params {:c1x 545.617,
+                           :c1y 218.5,
+                           :c2x 522.0,
+                           :c2y 248.0,
+                           :x 504.0,
+                           :y 286.0}}
+                 {:command :line-to,
+                  :params {:x 455.0,
+                           :y 286.0}}
+                 {:command :curve-to,
+                  :params {:c1x 437.66700000000003,
+                           :c1y 248.667,
+                           :c2x 414.383,
+                           :c2y 219.333,
+                           :x 385.15,
+                           :y 198.0}}
+                 {:command :curve-to,
+                  :params {:c1x 355.916,
+                           :c1y 176.667,
+                           :c2x 324.12399999999997,
+                           :c2y 166.0,
+                           :x 289.775,
+                           :y 166.0}}
+                 {:command :curve-to,
+                  :params {:c1x 245.925,
+                           :c1y 166.0,
+                           :c2x 210.0,
+                           :c2y 180.167,
+                           :x 182.0,
+                           :y 208.5}}
+                 {:command :curve-to,
+                  :params {:c1x 154.0,
+                           :c1y 236.833,
+                           :c2x 140.0,
+                           :c2y 273.105,
+                           :x 140.0,
+                           :y 317.31600000000003}}
+                 {:command :curve-to,
+                  :params {:c1x 140.0,
+                           :c1y 343.105,
+                           :c2x 145.167,
+                           :c2y 369.16700000000003,
+                           :x 155.5,
+                           :y 395.5}}
+                 {:command :curve-to,
+                  :params {:c1x 165.833,
+                           :c1y 421.83299999999997,
+                           :c2x 183.833,
+                           :c2y 451.83299999999997,
+                           :x 209.5,
+                           :y 485.5}}
+                 {:command :curve-to,
+                  :params {:c1x 235.167,
+                           :c1y 519.167,
+                           :c2x 270.0,
+                           :c2y 558.0,
+                           :x 314.0,
+                           :y 602.0}}
+                 {:command :curve-to,
+                  :params {:c1x 358.0,
+                           :c1y 646.0,
+                           :c2x 413.33299999999997,
+                           :c2y 698.667,
+                           :x 480.0,
+                           :y 760.0}}
+                 {:command :close-path,
+                  :params {}}
+                 {:command :move-to,
+                  :params {:x 480.0,
+                           :y 463.0}}
+                 {:command :close-path,
+                  :params {}}]
 
         result1 (->> (svg.path/parse data)
                      (mapv (fn [entry]
@@ -487,21 +693,36 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (t/deftest extract-params-legacy-1
-  (let [expected [{:x -994.563, :y 4564.1423}
-                  {:x 149.3086, :y -52.8821}
-                  {:x 30.1828, :y -1.9265}
-                  {:x 5.2446, :y -117.5157}
-                  {:x 98.6828, :y -43.7312}
-                  {:x 219.9492, :y 9.5361}
-                  {:x 9.0977, :y 121.0797}
-                  {:x 115.0586, :y 12.7148}
-                  {:x -1.1774, :y 75.7109}
-                  {:x 134.7524, :y 3.1787}
-                  {:x -6.1008, :y 85.0544}
-                  {:x -137.3211, :y 59.9137}
-                  {:x -301.293, :y -1.0595}
-                  {:x -51.375, :y 25.7186}
-                  {:x -261.0492, :y -7.706}]
+  (let [expected [{:x -994.563,
+                   :y 4564.1423}
+                  {:x 149.3086,
+                   :y -52.8821}
+                  {:x 30.1828,
+                   :y -1.9265}
+                  {:x 5.2446,
+                   :y -117.5157}
+                  {:x 98.6828,
+                   :y -43.7312}
+                  {:x 219.9492,
+                   :y 9.5361}
+                  {:x 9.0977,
+                   :y 121.0797}
+                  {:x 115.0586,
+                   :y 12.7148}
+                  {:x -1.1774,
+                   :y 75.7109}
+                  {:x 134.7524,
+                   :y 3.1787}
+                  {:x -6.1008,
+                   :y 85.0544}
+                  {:x -137.3211,
+                   :y 59.9137}
+                  {:x -301.293,
+                   :y -1.0595}
+                  {:x -51.375,
+                   :y 25.7186}
+                  {:x -261.0492,
+                   :y -7.706}]
         cmdstr (str "m -994.563 4564.1423 149.3086 -52.8821 30.1828 "
                     "-1.9265 5.2446 -117.5157 98.6828 -43.7312 219.9492 "
                     "9.5361 9.0977 121.0797 115.0586 12.7148 -1.1774 "
@@ -512,7 +733,9 @@
     (t/is (= expected (svg.path.legacy2/extract-params cmdstr pattern)))))
 
 (t/deftest extract-params-legacy-2
-  (let [expected [{:x -994.563, :y 4564.1423 :r 0}]
+  (let [expected [{:x -994.563,
+                   :y 4564.1423
+                   :r 0}]
         cmdstr (str "m -994.563 4564.1423 0")
         pattern [[:x :number] [:y :number] [:r :flag]]]
 
@@ -522,10 +745,34 @@
   (let [cmdstr   (str "a1.42 1.42 0 00-1.415-1.416 1.42 1.42 0 00-1.416 1.416 "
                       "1.42 1.42 0 001.416 1.415 1.42 1.42 0 001.415-1.415")
 
-        expected [{:rx 1.42, :ry 1.42, :x-axis-rotation 0.0, :large-arc-flag 0, :sweep-flag 0, :x -1.415, :y -1.416}
-                  {:rx 1.42, :ry 1.42, :x-axis-rotation 0.0, :large-arc-flag 0, :sweep-flag 0, :x -1.416, :y 1.416}
-                  {:rx 1.42, :ry 1.42, :x-axis-rotation 0.0, :large-arc-flag 0, :sweep-flag 0, :x 1.416, :y 1.415}
-                  {:rx 1.42, :ry 1.42, :x-axis-rotation 0.0, :large-arc-flag 0, :sweep-flag 0, :x 1.415, :y -1.415}]
+        expected [{:rx 1.42,
+                   :ry 1.42,
+                   :x-axis-rotation 0.0,
+                   :large-arc-flag 0,
+                   :sweep-flag 0,
+                   :x -1.415,
+                   :y -1.416}
+                  {:rx 1.42,
+                   :ry 1.42,
+                   :x-axis-rotation 0.0,
+                   :large-arc-flag 0,
+                   :sweep-flag 0,
+                   :x -1.416,
+                   :y 1.416}
+                  {:rx 1.42,
+                   :ry 1.42,
+                   :x-axis-rotation 0.0,
+                   :large-arc-flag 0,
+                   :sweep-flag 0,
+                   :x 1.416,
+                   :y 1.415}
+                  {:rx 1.42,
+                   :ry 1.42,
+                   :x-axis-rotation 0.0,
+                   :large-arc-flag 0,
+                   :sweep-flag 0,
+                   :x 1.415,
+                   :y -1.415}]
 
         pattern  [[:rx :number]
                   [:ry :number]

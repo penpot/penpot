@@ -81,7 +81,8 @@
 (defmulti process-error class)
 
 (defmethod process :default
-  [{:keys [cmd] :as params}]
+  [{:keys [cmd]
+    :as params}]
   (ex/raise :type :internal
             :code :not-implemented
             :hint (str/fmt "No impl found for process cmd: %s" cmd)))
@@ -129,7 +130,8 @@
   [:map {:title "ThumbnailParams"}
    [:input schema:input]
    [:format [:enum :jpeg :webp :png]]
-   [:quality [:int {:min 1 :max 100}]]
+   [:quality [:int {:min 1
+                    :max 100}]]
    [:width :int]
    [:height :int]])
 
@@ -140,7 +142,8 @@
 ;;  http://www.imagemagick.org/Usage/thumbnails/
 
 (defn- generic-process
-  [{:keys [input format operation] :as params}]
+  [{:keys [input format operation]
+    :as params}]
   (let [{:keys [path mtype]} input
         format (or (cm/mtype->format mtype) format)
         ext    (cm/format->extension format)
@@ -157,7 +160,8 @@
 
 (defmethod process :generic-thumbnail
   [params]
-  (let [{:keys [quality width height] :as params}
+  (let [{:keys [quality width height]
+         :as params}
         (check-thumbnail-params params)
 
         operation
@@ -173,7 +177,8 @@
 
 (defmethod process :profile-thumbnail
   [params]
-  (let [{:keys [quality width height] :as params}
+  (let [{:keys [quality width height]
+         :as params}
         (check-thumbnail-params params)
 
         operation
@@ -190,7 +195,8 @@
     (generic-process (assoc params :operation operation))))
 
 (defn get-basic-info-from-svg
-  [{:keys [tag attrs] :as data}]
+  [{:keys [tag attrs]
+    :as data}]
   (when (not= tag :svg)
     (ex/raise :type :validation
               :code :unable-to-parse-svg
@@ -199,7 +205,8 @@
             (if-let [res (f attrs)]
               (reduced res)
               default))
-          {:width 100 :height 100}
+          {:width 100
+           :height 100}
           [(fn parse-width-and-height
              [{:keys [width height]}]
              (when (and (string? width)
@@ -230,13 +237,17 @@
                       (->> (mapv #(Integer/parseInt %))))
             orientation (-> orient-result :out str/trim)]
         (case orientation
-          ("6" "8") {:width h :height w} ; Rotated 90 or 270 degrees
-          {:width w :height h}))         ; Normal or unknown orientation
+          ("6" "8") {:width h
+                     :height w} ; Rotated 90 or 270 degrees
+          {:width w
+           :height h}))         ; Normal or unknown orientation
       nil)))
 
 (defmethod process :info
-  [{:keys [input] :as params}]
-  (let [{:keys [path mtype] :as input} (check-input input)]
+  [{:keys [input]
+    :as params}]
+  (let [{:keys [path mtype]
+         :as input} (check-input input)]
     (if (= mtype "image/svg+xml")
       (let [info (some-> path slurp parse-svg get-basic-info-from-svg)]
         (when-not info
@@ -277,7 +288,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod process :generate-fonts
-  [{:keys [input] :as params}]
+  [{:keys [input]
+    :as params}]
   (letfn [(ttf->otf [data]
             (let [finput  (tmp/tempfile :prefix "penpot.font." :suffix "")
                   foutput (fs/path (str finput ".otf"))

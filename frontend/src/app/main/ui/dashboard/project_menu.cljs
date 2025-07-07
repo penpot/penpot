@@ -50,7 +50,8 @@
 
         on-move
         (fn [team-id]
-          (let [data  {:id (:id project) :team-id team-id}
+          (let [data  {:id (:id project)
+                       :team-id team-id}
                 mdata {:on-success #(on-move-success team-id)}]
             #(st/emit! (ntf/success (tr "dashboard.success-move-project"))
                        (dd/move-project (with-meta data mdata)))))

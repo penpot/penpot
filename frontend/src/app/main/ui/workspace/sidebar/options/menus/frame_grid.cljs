@@ -28,7 +28,8 @@
   (l/derived :default-grids refs/workspace-page))
 
 (defn- get-size-options []
-  [{:value nil :label (tr "workspace.options.grid.auto")}
+  [{:value nil
+    :label (tr "workspace.options.grid.auto")}
    :separator
    18 12 10 8 6 4 3 2])
 
@@ -155,9 +156,12 @@
         [:& select
          {:class (stl/css :grid-type-select)
           :default-value type
-          :options [{:value :square :label (tr "workspace.options.grid.square")}
-                    {:value :column :label (tr "workspace.options.grid.column")}
-                    {:value :row :label (tr "workspace.options.grid.row")}]
+          :options [{:value :square
+                     :label (tr "workspace.options.grid.square")}
+                    {:value :column
+                     :label (tr "workspace.options.grid.column")}
+                    {:value :row
+                     :label (tr "workspace.options.grid.row")}]
           :on-change handle-change-type}]]
        (if (= type :square)
          [:div {:class (stl/css :grid-size)
@@ -226,14 +230,18 @@
              [:& select {:data-mousetrap-dont-stop true ;; makes mousetrap to not stop at this element
                          :default-value (:type params)
                          :class (stl/css :orientation-select)
-                         :options [{:value :stretch :label (tr "workspace.options.grid.params.type.stretch")}
-                                   {:value :left :label (if (= type :row)
-                                                          (tr "workspace.options.grid.params.type.top")
-                                                          (tr "workspace.options.grid.params.type.left"))}
-                                   {:value :center :label (tr "workspace.options.grid.params.type.center")}
-                                   {:value :right :label (if (= type :row)
-                                                           (tr "workspace.options.grid.params.type.bottom")
-                                                           (tr "workspace.options.grid.params.type.right"))}]
+                         :options [{:value :stretch
+                                    :label (tr "workspace.options.grid.params.type.stretch")}
+                                   {:value :left
+                                    :label (if (= type :row)
+                                             (tr "workspace.options.grid.params.type.top")
+                                             (tr "workspace.options.grid.params.type.left"))}
+                                   {:value :center
+                                    :label (tr "workspace.options.grid.params.type.center")}
+                                   {:value :right
+                                    :label (if (= type :row)
+                                             (tr "workspace.options.grid.params.type.bottom")
+                                             (tr "workspace.options.grid.params.type.right"))}]
                          :on-change (handle-change :params :type)}]]
 
             [:div {:class (stl/css :color-wrapper)}

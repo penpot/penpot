@@ -53,7 +53,8 @@
 (sv/defmethod ::get-file-snapshots
   {::doc/added "1.20"
    ::sm/params schema:get-file-snapshots}
-  [cfg {:keys [::rpc/profile-id file-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id]
+        :as params}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (files/check-read-permissions! conn profile-id file-id)
                  (get-file-snapshots conn file-id))))
@@ -121,7 +122,8 @@
                  :created-by created-by}
                 {::db/return-keys false})
 
-    {:id snapshot-id :label label}))
+    {:id snapshot-id
+     :label label}))
 
 (def ^:private schema:create-file-snapshot
   [:map
@@ -132,7 +134,8 @@
   {::doc/added "1.20"
    ::sm/params schema:create-file-snapshot
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id label]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id file-id label]}]
   (files/check-edition-permissions! conn profile-id file-id)
   (let [file    (bfc/get-file cfg file-id)
         project (db/get-by-id cfg :project (:project-id file))]
@@ -151,7 +154,8 @@
                             :created-by :user})))
 
 (defn restore-file-snapshot!
-  [{:keys [::db/conn ::mbus/msgbus] :as cfg} file-id snapshot-id]
+  [{:keys [::db/conn ::mbus/msgbus]
+    :as cfg} file-id snapshot-id]
   (let [storage  (sto/resolve cfg {::db/reuse-conn true})
         file     (files/get-minimal-file conn file-id {::db/for-update true})
         vern     (rand-int Integer/MAX_VALUE)
@@ -230,9 +234,11 @@
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
    ::sm/params schema:restore-file-snapshot}
-  [cfg {:keys [::rpc/profile-id file-id id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id id]
+        :as params}]
   (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
+              (fn [{:keys [::db/conn]
+                    :as cfg}]
                 (files/check-edition-permissions! conn profile-id file-id)
                 (let [file (bfc/get-file cfg file-id)]
                   (create-file-snapshot! cfg file

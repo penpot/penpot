@@ -30,7 +30,8 @@
 (log/setup! {:app :info})
 
 (defn set-current-team
-  [{:keys [id permissions features] :as team}]
+  [{:keys [id permissions features]
+    :as team}]
   (ptk/reify ::set-current-team
     ptk/UpdateEvent
     (update [_ state]
@@ -96,13 +97,15 @@
           :skip-children skip-children}]))))
 
 (defn- fetch-objects-bundle
-  [& {:keys [file-id page-id share-id object-id] :as options}]
+  [& {:keys [file-id page-id share-id object-id]
+      :as options}]
   (ptk/reify ::fetch-objects-bundle
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (get state :features)]
         (->> (rx/zip
-              (repo/cmd! :get-font-variants {:file-id file-id :share-id share-id})
+              (repo/cmd! :get-font-variants {:file-id file-id
+                                             :share-id share-id})
               (repo/cmd! :get-page {:file-id file-id
                                     :page-id page-id
                                     :share-id share-id
@@ -138,7 +141,8 @@
 
 (defn- render-objects
   [params]
-  (let [{:keys [file-id page-id embed share-id object-id skip-children] :as params} (render-objects-decoder params)]
+  (let [{:keys [file-id page-id embed share-id object-id skip-children]
+         :as params} (render-objects-decoder params)]
     (if-not (render-objects-validator params)
       (do
         (js/console.error "invalid arguments")
@@ -225,7 +229,9 @@
           :embed embed}
 
          (when-let [component-id (:component-id @state)]
-           [:use {:x 0 :y 0 :href (str "#" component-id)}])]]])))
+           [:use {:x 0
+                  :y 0
+                  :href (str "#" component-id)}])]]])))
 
 (defn- fetch-components-bundle
   [& {:keys [file-id]}]
@@ -233,7 +239,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [features (get state :features)]
-        (->> (repo/cmd! :get-file {:id file-id :features features})
+        (->> (repo/cmd! :get-file {:id file-id
+                                   :features features})
              (rx/map (fn [file] #(assoc % :file file))))))))
 
 (def ^:private schema:render-components
@@ -251,7 +258,8 @@
 
 (defn render-components
   [params]
-  (let [{:keys [file-id component-id embed] :as params} (render-components-decoder params)]
+  (let [{:keys [file-id component-id embed]
+         :as params} (render-components-decoder params)]
     (if-not (render-components-validator params)
       (do
         (js/console.error "invalid arguments")

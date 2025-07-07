@@ -31,7 +31,8 @@
             objects         (dsh/lookup-page-objects state page-id)
             selected-ids    (dsh/lookup-selected state)
             selected-shapes (map (d/getf objects) selected-ids)]
-        (assoc state :specialized-panel {:type type :shapes selected-shapes})))
+        (assoc state :specialized-panel {:type type
+                                         :shapes selected-shapes})))
     ptk/WatchEvent
     (watch [_ _ stream]
       (->> (rx/merge

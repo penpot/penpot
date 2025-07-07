@@ -26,10 +26,14 @@
 (defn flex-layout-proxy
   [plugin-id file-id page-id id]
   (obj/reify {:name "FlexLayoutProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
-    :$id {:enumerable false :get (fn [] id)}
-    :$file {:enumerable false :get (fn [] file-id)}
-    :$page {:enumerable false :get (fn [] page-id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
+    :$id {:enumerable false
+          :get (fn [] id)}
+    :$file {:enumerable false
+            :get (fn [] file-id)}
+    :$page {:enumerable false
+            :get (fn [] page-id)}
 
     :dir
     {:this true
@@ -170,7 +174,8 @@
          (u/display-not-valid :verticalPadding "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value :p3 value}}))))}
+         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p1 value
+                                                               :p3 value}}))))}
 
     :horizontalPadding
     {:this true
@@ -185,7 +190,8 @@
          (u/display-not-valid :horizontalPadding "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value :p4 value}}))))}
+         (st/emit! (dwsl/update-layout #{id} {:layout-padding {:p2 value
+                                                               :p4 value}}))))}
 
 
     :topPadding
@@ -270,10 +276,14 @@
 (defn layout-child-proxy
   [plugin-id file-id page-id id]
   (obj/reify {:name "LayoutChildProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
-    :$id {:enumerable false :get (fn [] id)}
-    :$file {:enumerable false :get (fn [] file-id)}
-    :$page {:enumerable false :get (fn [] page-id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
+    :$id {:enumerable false
+          :get (fn [] id)}
+    :$file {:enumerable false
+            :get (fn [] file-id)}
+    :$page {:enumerable false
+            :get (fn [] page-id)}
 
     :absolute
     {:this true
@@ -366,7 +376,8 @@
          (u/display-not-valid :verticalMargin "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value :m3 value}}))))}
+         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m1 value
+                                                                         :m3 value}}))))}
 
     :horizontalMargin
     {:this true
@@ -381,7 +392,8 @@
          (u/display-not-valid :horizontalMargin "Plugin doesn't have 'content:write' permission")
 
          :else
-         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value :m4 value}}))))}
+         (st/emit! (dwsl/update-layout-child #{id} {:layout-item-margin {:m2 value
+                                                                         :m4 value}}))))}
 
     :topMargin
     {:this true

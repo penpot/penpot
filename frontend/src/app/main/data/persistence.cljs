@@ -72,7 +72,8 @@
 (defn- append-commit
   "Event used internally to append the current change to the
   persistence queue."
-  [{:keys [id] :as commit}]
+  [{:keys [id]
+    :as commit}]
   (let [run-id (uuid/next)]
     (ptk/reify ::append-commit
       ptk/UpdateEvent
@@ -105,7 +106,8 @@
     ptk/WatchEvent
     (watch [_ state _]
       (log/dbg :hint "persist-commit" :commit-id (dm/str commit-id))
-      (when-let [{:keys [file-id file-revn file-vern changes features] :as commit} (dm/get-in state [:persistence :index commit-id])]
+      (when-let [{:keys [file-id file-revn file-vern changes features]
+                  :as commit} (dm/get-in state [:persistence :index commit-id])]
         (let [sid      (:session-id state)
               revn     (max file-revn (get @revn-data file-id 0))
               params   {:id file-id
@@ -122,7 +124,8 @@
           ;; Prevent commit changes by a team member without edition permission
           (when (:can-edit permissions)
             (->> (rp/cmd! :update-file params)
-                 (rx/mapcat (fn [{:keys [revn lagged] :as response}]
+                 (rx/mapcat (fn [{:keys [revn lagged]
+                                  :as response}]
                               (log/debug :hint "changes persisted" :commit-id (dm/str commit-id) :lagged (count lagged))
                               (rx/of (ptk/data-event ::commit-persisted commit)
                                      (update-file-revn file-id revn))))
@@ -230,6 +233,7 @@
               (rx/filter dch/commit?)
               (rx/map deref)
               (rx/filter #(= :remote (:source %)))
-              (rx/mapcat (fn [{:keys [file-id file-revn] :as commit}]
+              (rx/mapcat (fn [{:keys [file-id file-revn]
+                               :as commit}]
                            (rx/of (update-file-revn file-id file-revn))))
               (rx/take-until stoper-s)))))))

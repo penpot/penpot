@@ -24,5 +24,6 @@
          :class (stl/css :input-token-color-bullet)
          :on-click on-click}
    (if-let [color' (dwtc/color-bullet-color color)]
-     [:> color-bullet {:color color' :mini true}]
+     [:> color-bullet {:color color'
+                       :mini true}]
      [:div {:class (stl/css :input-token-color-bullet-placeholder)}])])

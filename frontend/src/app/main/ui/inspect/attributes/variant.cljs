@@ -28,7 +28,8 @@
 
 
 (mf/defc variant-panel*
-  [{:keys [objects shapes libraries file-id] :as kk}]
+  [{:keys [objects shapes libraries file-id]
+    :as kk}]
   (let [shape           (->> shapes first)
         is-container?   (ctc/is-variant-container? shape)
         properties      (mf/with-memo [objects shape]
@@ -45,4 +46,6 @@
        :class (stl/css :title-spacing-variant)}]
 
      (for [[pos property] (map-indexed vector properties)]
-       [:> variant-block* {:key (dm/str "variant-property-" pos) :name (:name property) :value (:value property)}])]))
+       [:> variant-block* {:key (dm/str "variant-property-" pos)
+                           :name (:name property)
+                           :value (:value property)}])]))

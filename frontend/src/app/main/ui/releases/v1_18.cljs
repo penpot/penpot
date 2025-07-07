@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/onboarding-version.jpg" :border "0" :alt "What's new release 1.18"}]]
+         [:img {:src "images/onboarding-version.jpg"
+                :border "0"
+                :alt "What's new release 1.18"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We also continued implementing accessibility improvements to make Penpot more inclusive and published stability and performance enhancements."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.18-spacing.gif" :border "0" :alt "Spacing management"}]]
+         [:img {:src "images/features/1.18-spacing.gif"
+                :border "0"
+                :alt "Spacing management"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Spacing management for Flex layout"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.18-absolute.gif" :border "0" :alt "Position absolute feature"}]]
+         [:img {:src "images/features/1.18-absolute.gif"
+                :border "0"
+                :alt "Position absolute feature"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Absolute position elements in Flex layout"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.18-z-index.gif" :border "0" :alt "Z-index feature"}]]
+         [:img {:src "images/features/1.18-z-index.gif"
+                :border "0"
+                :alt "Z-index feature"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "More on Flex layout: z-index"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.18-scale.gif" :border "0" :alt "Scale content proportionally"}]]
+         [:img {:src "images/features/1.18-scale.gif"
+                :border "0"
+                :alt "Scale content proportionally"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Scale content proportionally affects strokes, shadows, blurs and corners"]]

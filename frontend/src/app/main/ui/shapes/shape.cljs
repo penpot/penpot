@@ -125,19 +125,25 @@
         [:& ed/export-data {:shape shape}])
 
       [:defs
-       [:& defs/svg-defs          {:shape shape :render-id render-id}]
+       [:& defs/svg-defs          {:shape shape
+                                   :render-id render-id}]
 
        ;; The filters for frames should be setup inside the container.
        (when-not (cfh/frame-shape? shape)
          [:*
-          [:& filters/filters        {:shape shape :filter-id filter-id}]
-          [:& filters/filters        {:shape shape-without-blur :filter-id (dm/fmt "filter-shadow-%" render-id)}]
-          [:& filters/filters        {:shape shape-without-shadows :filter-id (dm/fmt "filter-blur-%" render-id)}]])
+          [:& filters/filters        {:shape shape
+                                      :filter-id filter-id}]
+          [:& filters/filters        {:shape shape-without-blur
+                                      :filter-id (dm/fmt "filter-shadow-%" render-id)}]
+          [:& filters/filters        {:shape shape-without-shadows
+                                      :filter-id (dm/fmt "filter-blur-%" render-id)}]])
 
-       [:& frame/frame-clip-def   {:shape shape :render-id render-id}]
+       [:& frame/frame-clip-def   {:shape shape
+                                   :render-id render-id}]
 
        ;; Text fills need to be defined afterwards because they are specified per text-block
        (when-not (cfh/text-shape? shape)
-         [:& fills/fills            {:shape shape :render-id render-id}])]
+         [:& fills/fills            {:shape shape
+                                     :render-id render-id}])]
 
       children]]))

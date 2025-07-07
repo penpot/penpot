@@ -156,7 +156,8 @@
         transform-str))))
 
 (defmethod get-value :background
-  [_ {:keys [fills] :as shape} _ _]
+  [_ {:keys [fills]
+      :as shape} _ _]
   (let [single-fill? (= (count fills) 1)]
     (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) single-fill?)
       (fill->color (first fills)))))
@@ -180,7 +181,8 @@
     (get-stroke-data (first (:strokes shape)))))
 
 (defmethod get-value :border-radius
-  [_ {:keys [rx r1 r2 r3 r4] :as shape} _ _]
+  [_ {:keys [rx r1 r2 r3 r4]
+      :as shape} _ _]
   (cond
     (cfh/circle-shape? shape)
     "50%"
@@ -263,7 +265,10 @@
 (defmethod get-value :padding
   [_ {:keys [layout-padding]} _ _]
   (when (some? layout-padding)
-    (let [default-padding {:p1 0 :p2 0 :p3 0 :p4 0}
+    (let [default-padding {:p1 0
+                           :p2 0
+                           :p3 0
+                           :p4 0}
           {:keys [p1 p2 p3 p4]} (merge default-padding layout-padding)]
       (when (or (not= p1 0) (not= p2 0) (not= p3 0) (not= p4 0))
         [p1 p2 p3 p4]))))
@@ -348,16 +353,21 @@
     0))
 
 (defmethod get-value :margin
-  [_ {:keys [layout-item-margin] :as shape} objects _]
+  [_ {:keys [layout-item-margin]
+      :as shape} objects _]
 
   (when (ctl/any-layout-immediate-child? objects shape)
-    (let [default-margin {:m1 0 :m2 0 :m3 0 :m4 0}
+    (let [default-margin {:m1 0
+                          :m2 0
+                          :m3 0
+                          :m4 0}
           {:keys [m1 m2 m3 m4]} (merge default-margin layout-item-margin)]
       (when (or (not= m1 0) (not= m2 0) (not= m3 0) (not= m4 0))
         [m1 m2 m3 m4]))))
 
 (defmethod get-value :z-index
-  [_ {:keys [layout-item-z-index] :as shape} objects _]
+  [_ {:keys [layout-item-z-index]
+      :as shape} objects _]
   (cond
     (cfh/root-frame? shape)
     0

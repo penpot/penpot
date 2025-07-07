@@ -62,7 +62,8 @@
    (ntf/warn (tr "errors.unexpected-token"))))
 
 (mf/defc verify-token
-  [{:keys [route] :as props}]
+  [{:keys [route]
+    :as props}]
   (let [token (get-in route [:query-params :token])
         bad-token (mf/use-state false)]
 
@@ -73,7 +74,8 @@
             (fn [tdata]
               (handle-token tdata))
             (fn [cause]
-              (let [{:keys [type code] :as error} (ex-data cause)]
+              (let [{:keys [type code]
+                     :as error} (ex-data cause)]
                 (cond
                   (or (= :validation type)
                       (= :invalid-token code)

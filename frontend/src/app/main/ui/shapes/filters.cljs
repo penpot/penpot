@@ -38,7 +38,8 @@
 
   (let [{:keys [color offset-x offset-y blur spread]} params]
     [:*
-     [:feColorMatrix {:in "SourceAlpha" :type "matrix"
+     [:feColorMatrix {:in "SourceAlpha"
+                      :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"}]
      (when (> spread 0)
        [:feMorphology {:radius spread
@@ -52,7 +53,8 @@
                        :in "SourceAlpha"
                        :result filter-id}])
 
-     [:feOffset {:dx offset-x :dy offset-y}]
+     [:feOffset {:dx offset-x
+                 :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
      [:& color-matrix {:color color}]
 
@@ -65,7 +67,8 @@
 
   (let [{:keys [color offset-x offset-y blur spread]} params]
     [:*
-     [:feColorMatrix {:in "SourceAlpha" :type "matrix"
+     [:feColorMatrix {:in "SourceAlpha"
+                      :type "matrix"
                       :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"
                       :result "hardAlpha"}]
 
@@ -75,7 +78,8 @@
                        :in "SourceAlpha"
                        :result filter-id}])
 
-     [:feOffset {:dx offset-x :dy offset-y}]
+     [:feOffset {:dx offset-x
+                 :dy offset-y}]
      [:feGaussianBlur {:stdDeviation (/ blur 2)}]
 
      [:feComposite {:in2 "hardAlpha"
@@ -105,7 +109,8 @@
                     :result filter-id}])
 
 (mf/defc image-fix-filter [{:keys [filter-id]}]
-  [:feFlood {:flood-opacity 0 :result filter-id}])
+  [:feFlood {:flood-opacity 0
+             :result filter-id}])
 
 (mf/defc blend-filters [{:keys [filter-id filter-in]}]
   [:feBlend {:mode "normal"

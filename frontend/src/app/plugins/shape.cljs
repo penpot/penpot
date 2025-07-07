@@ -65,11 +65,16 @@
 (defn interaction-proxy
   [plugin-id file-id page-id shape-id index]
   (obj/reify {:name "InteractionProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
-    :$file   {:enumerable false :get (fn [] file-id)}
-    :$page   {:enumerable false :get (fn [] page-id)}
-    :$shape  {:enumerable false :get (fn [] shape-id)}
-    :$index  {:enumerable false :get (fn [] index)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
+    :$file   {:enumerable false
+              :get (fn [] file-id)}
+    :$page   {:enumerable false
+              :get (fn [] page-id)}
+    :$shape  {:enumerable false
+              :get (fn [] shape-id)}
+    :$index  {:enumerable false
+              :get (fn [] index)}
 
     ;; Not enumerable so we don't have an infinite loop
     :shape
@@ -139,16 +144,20 @@
 (defn text-props
   [shape]
   (d/merge
-   (dwt/current-root-values {:shape shape :attrs txt/root-attrs})
-   (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
-   (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})))
+   (dwt/current-root-values {:shape shape
+                             :attrs txt/root-attrs})
+   (dwt/current-paragraph-values {:shape shape
+                                  :attrs txt/paragraph-attrs})
+   (dwt/current-text-values {:shape shape
+                             :attrs txt/text-node-attrs})))
 
 (defn- shadow-defaults
   [shadow]
   (d/patch-object
    {:id (uuid/next)
     :style :drop-shadow
-    :color {:color clr/black :opacity 0.2}
+    :color {:color clr/black
+            :opacity 0.2}
     :offset-x 4
     :offset-y 4
     :blur 4
@@ -182,10 +191,14 @@
 
    (let [data (u/locate-shape file-id page-id id)]
      (-> (obj/reify {:name "ShapeProxy"}
-           :$plugin {:enumerable false :get (fn [] plugin-id)}
-           :$id {:enumerable false :get (fn [] id)}
-           :$file {:enumerable false :get (fn [] file-id)}
-           :$page {:enumerable false :get (fn [] page-id)}
+           :$plugin {:enumerable false
+                     :get (fn [] plugin-id)}
+           :$id {:enumerable false
+                 :get (fn [] id)}
+           :$file {:enumerable false
+                   :get (fn [] file-id)}
+           :$page {:enumerable false
+                   :get (fn [] page-id)}
 
            :id
            {:this true
@@ -792,7 +805,8 @@
 
            :rotate
            (fn [angle center]
-             (let [center (when center {:x (obj/get center "x") :y (obj/get center "y")})]
+             (let [center (when center {:x (obj/get center "x")
+                                        :y (obj/get center "y")})]
                (cond
                  (not (number? angle))
                  (u/display-not-valid :rotate-angle angle)
@@ -804,7 +818,8 @@
                  (u/display-not-valid :rotate "Plugin doesn't have 'content:write' permission")
 
                  :else
-                 (st/emit! (dw/increase-rotation [id] angle {:center center :delta? true})))))
+                 (st/emit! (dw/increase-rotation [id] angle {:center center
+                                                             :delta? true})))))
 
            :clone
            (fn []
@@ -1149,7 +1164,10 @@
                    (js/Promise.
                     (fn [resolve reject]
                       (->> (rp/cmd! :export payload)
-                           (rx/mapcat #(rp/cmd! :export {:cmd :get-resource :wait true :id (:id %) :blob? true}))
+                           (rx/mapcat #(rp/cmd! :export {:cmd :get-resource
+                                                         :wait true
+                                                         :id (:id %)
+                                                         :blob? true}))
                            (rx/mapcat #(.arrayBuffer %))
                            (rx/map #(js/Uint8Array. %))
                            (rx/subs! resolve reject))))))))

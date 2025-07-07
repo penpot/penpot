@@ -245,7 +245,8 @@
                      (mapv (constantly {}))
                      (transient))
          ranges (seq ranges)]
-    (if-let [{:keys [offset length] :as item} (first ranges)]
+    (if-let [{:keys [offset length]
+              :as item} (first ranges)]
       (recur (reduce (fn [result index]
                        (let [prev (get result index)]
                          (assoc! result index (assoc prev (:key item) (:val item)))))
@@ -327,7 +328,8 @@
                    start    nil
                    offset   0
                    ranges   ranges]
-              (if-let [{:keys [text] :as item} (first children)]
+              (if-let [{:keys [text]
+                        :as item} (first children)]
                 (let [cpoints (text->code-points text)]
                   (if (= v (get item k ::novalue))
                     (recur (rest children)
@@ -351,7 +353,8 @@
                           :length (- offset start)
                           :style (encode-style k v)})))))
 
-          (calc-ranges [{:keys [children] :as blok}]
+          (calc-ranges [{:keys [children]
+                         :as blok}]
             (let [xform (comp (map #(dissoc % :key :text))
                               (remove empty?)
                               (mapcat vec)
@@ -360,7 +363,8 @@
               (persistent!
                (transduce xform (completing f) (transient []) children))))
 
-          (build-block [{:keys [key children] :as paragraph}]
+          (build-block [{:keys [key children]
+                         :as paragraph}]
             {:key key
              :depth 0
              :text (apply str (map :text children))

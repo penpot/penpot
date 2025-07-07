@@ -93,23 +93,32 @@
            p2 [(+ from-c (/ segment-gap zoom)) (- half-point (/ segment-gap-side zoom))]
            [x1 y1] (if (= :x coord) p1 (reverse p1))
            [x2 y2] (if (= :x coord) p2 (reverse p2))]
-       [:line {:x1 x1 :y1 y1
-               :x2 x2 :y2 y2
-               :style {:stroke line-color :stroke-width (str (/ 1 zoom))}}])
+       [:line {:x1 x1
+               :y1 y1
+               :x2 x2
+               :y2 y2
+               :style {:stroke line-color
+                       :stroke-width (str (/ 1 zoom))}}])
      (let [p1 [(- to-c (/ segment-gap zoom)) (+ half-point (/ segment-gap-side zoom))]
            p2 [(- to-c (/ segment-gap zoom)) (- half-point (/ segment-gap-side zoom))]
            [x1 y1] (if (= :x coord) p1 (reverse p1))
            [x2 y2] (if (= :x coord) p2 (reverse p2))]
-       [:line {:x1 x1 :y1 y1
-               :x2 x2 :y2 y2
-               :style {:stroke line-color :stroke-width (str (/ 1 zoom))}}])
+       [:line {:x1 x1
+               :y1 y1
+               :x2 x2
+               :y2 y2
+               :style {:stroke line-color
+                       :stroke-width (str (/ 1 zoom))}}])
      (let [p1 [(+ from-c (/ segment-gap zoom)) half-point]
            p2 [(- to-c (/ segment-gap zoom)) half-point]
            [x1 y1] (if (= :x coord) p1 (reverse p1))
            [x2 y2] (if (= :x coord) p2 (reverse p2))]
-       [:line {:x1 x1 :y1 y1
-               :x2 x2 :y2 y2
-               :style {:stroke line-color :stroke-width (str (/ 1 zoom))}}])]))
+       [:line {:x1 x1
+               :y1 y1
+               :x2 x2
+               :y2 y2
+               :style {:stroke line-color
+                       :stroke-width (str (/ 1 zoom))}}])]))
 
 (defn add-distance [coord sh1 sh2]
   (let [sr1 (:selrect sh1)

@@ -289,7 +289,10 @@
   ([p]
    (select-padding (= p :p1) (= p :p2) (= p :p3) (= p :p4)))
   ([p1? p2? p3? p4?]
-   (st/emit! (udw/set-paddings-selected {:p1 p1? :p2 p2? :p3 p3? :p4 p4?}))))
+   (st/emit! (udw/set-paddings-selected {:p1 p1?
+                                         :p2 p2?
+                                         :p3 p3?
+                                         :p4 p4?}))))
 
 (defn- on-padding-blur
   [_event]
@@ -457,7 +460,8 @@
 
 (mf/defc padding-section
   {::mf/props :obj}
-  [{:keys [type on-type-change on-change] :as props}]
+  [{:keys [type on-type-change on-change]
+    :as props}]
   (let [on-type-change'
         (mf/use-fn
          (mf/deps on-type-change)
@@ -585,7 +589,8 @@
 
 (mf/defc direction-row-grid
   {::mf/props :obj}
-  [{:keys [value on-change] :as props}]
+  [{:keys [value on-change]
+    :as props}]
   [:& radio-buttons {:class (stl/css :direction-row-grid)
                      :selected (d/name value)
                      :decode-fn keyword
@@ -769,10 +774,14 @@
       [:div {:class (stl/css :track-info-unit)}
        [:& select {:class (stl/css :track-info-unit-selector)
                    :default-value (:type column)
-                   :options [{:value :flex :label "FR"}
-                             {:value :auto :label "AUTO"}
-                             {:value :fixed :label "PX"}
-                             {:value :percent :label "%"}]
+                   :options [{:value :flex
+                              :label "FR"}
+                             {:value :auto
+                              :label "AUTO"}
+                             {:value :fixed
+                              :label "PX"}
+                             {:value :percent
+                              :label "%"}]
                    :on-change #(set-column-type type index %)}]]]
 
      [:> icon-button* {:variant "ghost"
@@ -802,13 +811,19 @@
            (when-not expanded? (toggle))
            (add-new-element type ctl/default-track-value))]
 
-    [:div {:class (stl/css :grid-tracks) :data-testid testid}
+    [:div {:class (stl/css :grid-tracks)
+           :data-testid testid}
      [:div {:class (stl/css :grid-track-header)}
-      [:button {:class (stl/css :expand-icon) :on-click toggle} i/menu]
-      [:div {:class (stl/css :track-title) :on-click toggle}
-       [:div {:class (stl/css :track-name) :title track-name} track-name]
-       [:div {:class (stl/css :track-detail) :title track-detail} track-detail]]
-      [:button {:class (stl/css :add-column) :on-click add-track} i/add]]
+      [:button {:class (stl/css :expand-icon)
+                :on-click toggle} i/menu]
+      [:div {:class (stl/css :track-title)
+             :on-click toggle}
+       [:div {:class (stl/css :track-name)
+              :title track-name} track-name]
+       [:div {:class (stl/css :track-detail)
+              :title track-detail} track-detail]]
+      [:button {:class (stl/css :add-column)
+                :on-click add-track} i/add]]
 
      (when expanded?
        [:& h/sortable-container {}
@@ -923,7 +938,8 @@
           (let [val (mth/finite val 0)]
             (cond
               ^boolean multiple?
-              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val
+                                                              :column-gap val}}))
 
               (some? type)
               (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
@@ -942,10 +958,12 @@
            (let [val (mth/finite val 0)]
              (cond
                (and (= type :simple) (= prop :p1))
-               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val
+                                                                   :p3 val}}))
 
                (and (= type :simple) (= prop :p2))
-               (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+               (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val
+                                                                   :p4 val}}))
 
                (some? prop)
                (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}}))))))
@@ -1000,7 +1018,8 @@
         on-hide-dropdown
         (mf/use-fn #(reset! show-dropdown* false))]
 
-    [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
+    [:div {:class (stl/css :element-set)
+           :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
       [:& title-bar
        {:collapsable has-layout?
@@ -1161,7 +1180,8 @@
          (fn [multiple? type val]
            (let [val (mth/finite val 0)]
              (if multiple?
-               (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+               (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val
+                                                               :column-gap val}}))
                (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
 
         ;; Padding
@@ -1176,10 +1196,12 @@
           (let [val (mth/finite val 0)]
             (cond
               (and (= type :simple) (= prop :p1))
-              (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val :p3 val}}))
+              (st/emit! (dwsl/update-layout ids {:layout-padding {:p1 val
+                                                                  :p3 val}}))
 
               (and (= type :simple) (= prop :p2))
-              (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val :p4 val}}))
+              (st/emit! (dwsl/update-layout ids {:layout-padding {:p2 val
+                                                                  :p4 val}}))
 
               :else
               (st/emit! (dwsl/update-layout ids {:layout-padding {prop val}})))))

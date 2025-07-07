@@ -45,7 +45,11 @@
             props     (mf/with-memo [shape]
                         (-> #js {}
                             (attrs/add-border-props! shape)
-                            (obj/merge! #js {:x x :y y :width w :height h :transform t})))
+                            (obj/merge! #js {:x x
+                                             :y y
+                                             :width w
+                                             :height h
+                                             :transform t})))
 
             path?     (some? (.-d props))]
 
@@ -97,8 +101,10 @@
     [:g.frame-container-wrapper {:opacity opacity}
      [:g.frame-container-blur {:filter filter-str-blur}
       [:defs
-       [:& filters/filters {:shape (dissoc shape :blur) :filter-id filter-id-shadows}]
-       [:& filters/filters {:shape (assoc shape :shadow []) :filter-id filter-id-blur}]]
+       [:& filters/filters {:shape (dissoc shape :blur)
+                            :filter-id filter-id-shadows}]
+       [:& filters/filters {:shape (assoc shape :shadow [])
+                            :filter-id filter-id-blur}]]
 
      ;; This need to be separated in two layers so the clip doesn't affect the shadow filters
      ;; otherwise the shadow will be clipped and not visible
@@ -190,5 +196,6 @@
         (for [item childs]
           (let [id (dm/get-prop item :id)]
             (when (some? id)
-              [:& shape-wrapper {:key (dm/str id) :shape item}])))]])))
+              [:& shape-wrapper {:key (dm/str id)
+                                 :shape item}])))]])))
 

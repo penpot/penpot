@@ -45,8 +45,10 @@
       (handler wsp message)
       (catch Throwable cause
         (if (ex/error? cause)
-          {:type :error :error (ex-data cause)}
-          {:type :error :error {:message (ex-message cause)}})))))
+          {:type :error
+           :error (ex-data cause)}
+          {:type :error
+           :error {:message (ex-message cause)}})))))
 
 (declare start-io-loop!)
 
@@ -135,7 +137,8 @@
        (sp/put! hbeat-ch data))}))
 
 (defn- handle-ping!
-  [{:keys [::id ::beats ::channel] :as wsp} beat-id]
+  [{:keys [::id ::beats ::channel]
+    :as wsp} beat-id]
   (l/trc :hint "send ping" :beat beat-id :conn-id (str id))
   (yws/ping channel (encode-beat beat-id))
   (let [issued (swap! beats conj (long beat-id))]
@@ -171,7 +174,8 @@
             (identical? p input-ch)
             (let [message (t/decode-str msg)
                   message (on-rcv-message message)
-                  {:keys [request-id] :as response} (handler wsp message)]
+                  {:keys [request-id]
+                   :as response} (handler wsp message)]
               (when (map? response)
                 (sp/put! output-ch
                          (cond-> response

@@ -21,7 +21,8 @@
         (take 7)))
 
 (defn- extract-colors
-  [{:keys [data] :as file}]
+  [{:keys [data]
+    :as file}]
   (let [colors (into [] xf:sample-colors (:colors data))]
     (-> file
         (assoc :colors colors)
@@ -49,9 +50,11 @@
                                             (assoc color ::id (dm/str index))))
                              (vec)))]
 
-    [:& dropdown {:show show :on-close on-close}
+    [:& dropdown {:show show
+                  :on-close on-close}
      [:ul {:class (stl/css :palette-menu)}
-      (for [{:keys [id colors] :as library} libraries]
+      (for [{:keys [id colors]
+             :as library} libraries]
         [:li  {:class (stl/css-case :palette-library true
                                     :selected (= selected id))
                :key (dm/str "library-" id)

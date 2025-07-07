@@ -26,11 +26,13 @@
 (mf/defc avatar*
   {::mf/schema schema:avatar}
 
-  [{:keys [tag class name color url selected variant] :rest props}]
+  [{:keys [tag class name color url selected variant]
+    :rest props}]
   (let [variant (or variant "S")
         url     (if (and (some? url) (d/not-empty? url))
                   url
-                  (avatars/generate {:name name :color color}))]
+                  (avatars/generate {:name name
+                                     :color color}))]
     [:> (or tag "div")
      {:class (d/append-class
               class
@@ -42,4 +44,5 @@
       :style {"--avatar-color" color}
       :title name}
      [:div {:class (stl/css :avatar-image)}
-      [:img {:alt name :src url}]]]))
+      [:img {:alt name
+             :src url}]]]))

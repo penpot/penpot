@@ -53,9 +53,12 @@
 
 (defn- get-available-roles
   []
-  [{:value "viewer" :label (tr "labels.viewer")}
-   {:value "editor" :label (tr "labels.editor")}
-   {:value "admin" :label (tr "labels.admin")}])
+  [{:value "viewer"
+    :label (tr "labels.viewer")}
+   {:value "editor"
+    :label (tr "labels.editor")}
+   {:value "admin"
+    :label (tr "labels.admin")}])
 
 (def ^:private schema:team-form
   [:map {:title "TeamForm"}
@@ -90,7 +93,8 @@
         on-error
         (mf/use-fn
          (fn [cause]
-           (let [{:keys [type code] :as error} (ex-data cause)]
+           (let [{:keys [type code]
+                  :as error} (ex-data cause)]
              (cond
                (and (= :validation type)
                     (= :profile-is-muted code))
@@ -130,7 +134,8 @@
 
         on-invite-now
         (mf/use-fn
-         (fn [{:keys [name emails] :as params}]
+         (fn [{:keys [name emails]
+               :as params}]
            (let [mdata  {:on-success on-success
                          :on-error   on-error}]
 
@@ -188,11 +193,13 @@
         [:p {:class (stl/css :modal-text)} (tr "onboarding.choice.team-up.invite-members-info")]
 
         (when-let [content (deref error*)]
-          [:& context-notification {:content content :level :error}])
+          [:& context-notification {:content content
+                                    :level :error}])
 
         [:div {:class (stl/css :role-select)}
          [:p {:class (stl/css :role-title)} (tr "onboarding.choice.team-up.roles")]
-         [:& fm/select {:name :role :options roles}]]
+         [:& fm/select {:name :role
+                        :options roles}]]
 
         [:div {:class (stl/css :invitation-row)}
          [:& fm/multi-input {:type "email"

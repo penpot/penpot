@@ -76,7 +76,8 @@
 
 (defn sample-page
   ([state] (sample-page state {}))
-  ([state {:keys [id name] :as props
+  ([state {:keys [id name]
+           :as props
            :or {id (uuid/next)
                 name "page1"}}]
    (swap! idmap assoc :page id)
@@ -91,7 +92,11 @@
   ([state label type props]
    (let [page  (current-page state)
          frame (cfh/get-frame (:objects page))
-         shape (cts/setup-shape (merge {:type type :x 0 :y 0 :width 1 :height 1} props))]
+         shape (cts/setup-shape (merge {:type type
+                                        :x 0
+                                        :y 0
+                                        :width 1
+                                        :height 1} props))]
      (swap! idmap assoc label (:id shape))
      (apply-changes state
                     [{:type :add-obj
@@ -213,7 +218,8 @@
 
           ;; Collects all the items together and split images into a
           ;; separated data structure for a more easy paste process.
-          (collect-data [result {:keys [id ::images] :as item}]
+          (collect-data [result {:keys [id ::images]
+                                 :as item}]
             (cond-> result
               :always
               (update :objects assoc id (dissoc item ::images))

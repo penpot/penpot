@@ -17,7 +17,8 @@
    [app.common.types.modifiers :as ctm]))
 
 (defn fit-frame-modifiers
-  [objects {:keys [id transform transform-inverse selrect points show-content] :as frame}]
+  [objects {:keys [id transform transform-inverse selrect points show-content]
+            :as frame}]
   (let [children (cfh/get-immediate-children objects (:id frame))]
     (when (d/not-empty? children)
       (let [ids (cfh/get-children-ids objects id)

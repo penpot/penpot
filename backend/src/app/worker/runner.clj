@@ -52,7 +52,8 @@
   (sm/validator schema:result))
 
 (defn- decode-task-row
-  [{:keys [props] :as row}]
+  [{:keys [props]
+    :as row}]
   (cond-> row
     (db/pgobject? props)
     (assoc :props (db/decode-transit-pgobject props))))
@@ -68,7 +69,8 @@
            (decode-task-row))))
 
 (defn- run-task
-  [{:keys [::wrk/registry ::id ::queue] :as cfg} task]
+  [{:keys [::wrk/registry ::id ::queue]
+    :as cfg} task]
   (try
     (l/dbg :hint "start"
            :name (:name task)
@@ -104,7 +106,8 @@
         (if (and (< (:retry-num task)
                     (:max-retries task))
                  (= ::retry (:type edata)))
-          (cond-> {:status "retry" :error cause}
+          (cond-> {:status "retry"
+                   :error cause}
             (dt/duration? (:delay edata))
             (assoc :delay (:delay edata))
 
@@ -115,11 +118,14 @@
                    ::l/context (get-error-context cause task)
                    :cause cause)
             (if (>= (:retry-num task) (:max-retries task))
-              {:status "failed" :error cause}
-              {:status "retry" :error cause})))))))
+              {:status "failed"
+               :error cause}
+              {:status "retry"
+               :error cause})))))))
 
 (defn- run-task!
-  [{:keys [::id ::timeout] :as cfg} task-id]
+  [{:keys [::id ::timeout]
+    :as cfg} task-id]
   (loop [task (get-task cfg task-id)]
     (cond
       (ex/exception? task)
@@ -149,8 +155,12 @@
           {::task task})))))
 
 (defn- run-worker-loop!
-  [{:keys [::db/pool ::rds/rconn ::timeout ::queue] :as cfg}]
-  (letfn [(handle-task-retry [{:keys [error inc-by delay] :or {inc-by 1 delay 1000} :as result}]
+  [{:keys [::db/pool ::rds/rconn ::timeout ::queue]
+    :as cfg}]
+  (letfn [(handle-task-retry [{:keys [error inc-by delay]
+                               :or {inc-by 1
+                                    delay 1000}
+                               :as result}]
             (let [explain (if (ex/exception? error)
                             (ex-message error)
                             (str error))
@@ -167,7 +177,8 @@
                           {:id (:id task)})
               nil))
 
-          (handle-task-failure [{:keys [error] :as result}]
+          (handle-task-failure [{:keys [error]
+                                 :as result}]
             (let [task    (-> result meta ::task)
                   explain (ex-message error)]
               (db/update! pool :task
@@ -200,7 +211,8 @@
                        :length (alength payload)
                        :cause cause))))
 
-          (process-result [{:keys [status] :as result}]
+          (process-result [{:keys [status]
+                            :as result}]
             (ex/try!
              (case status
                "retry"     (handle-task-retry result)
@@ -246,7 +258,8 @@
           (l/err :hint "unhandled exception" :cause cause))))))
 
 (defn- start-thread!
-  [{:keys [::rds/redis ::id ::queue ::wrk/tenant] :as cfg}]
+  [{:keys [::rds/redis ::id ::queue ::wrk/tenant]
+    :as cfg}]
   (px/thread
     {:name (format "penpot/worker/runner:%s" id)}
     (l/inf :hint "started" :id id :queue queue)
@@ -296,7 +309,8 @@
   {k (merge {::wrk/parallelism 1} (d/without-nils v))})
 
 (defmethod ig/init-key ::wrk/runner
-  [_ {:keys [::db/pool ::wrk/queue ::wrk/parallelism] :as cfg}]
+  [_ {:keys [::db/pool ::wrk/queue ::wrk/parallelism]
+      :as cfg}]
   (let [queue (d/name queue)
         cfg   (assoc cfg ::queue queue)]
     (if (db/read-only? pool)

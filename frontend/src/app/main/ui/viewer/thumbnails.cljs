@@ -22,7 +22,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc thumbnails-content
-  [{:keys [children expanded? total] :as props}]
+  [{:keys [children expanded? total]
+    :as props}]
   (let [container (mf/use-ref)
         width     (mf/use-var (.. js/document -documentElement -clientWidth))
         element-width (mf/use-var 152)
@@ -76,7 +77,8 @@
          children]]])))
 
 (mf/defc thumbnails-summary
-  [{:keys [on-toggle-expand on-close total] :as props}]
+  [{:keys [on-toggle-expand on-close total]
+    :as props}]
   [:div {:class (stl/css :thumbnails-summary)}
    [:span {:class (stl/css :counter)}
     (tr "labels.num-of-frames" (i18n/c total))]
@@ -108,7 +110,8 @@
       (:name frame)]]))
 
 (mf/defc thumbnails-panel
-  [{:keys [frames page index show? thumbnail-data] :as props}]
+  [{:keys [frames page index show? thumbnail-data]
+    :as props}]
   (let [expanded-state (mf/use-state false)
         expanded? (deref expanded-state)
         container (mf/use-ref)

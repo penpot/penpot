@@ -45,15 +45,18 @@
 
         library-options
         (mf/with-memo []
-          [{:value "recent" :label  (tr "workspace.libraries.colors.recent-colors")}
-           {:value "file" :label (tr "workspace.libraries.colors.file-library")}])
+          [{:value "recent"
+            :label  (tr "workspace.libraries.colors.recent-colors")}
+           {:value "file"
+            :label (tr "workspace.libraries.colors.file-library")}])
 
         options
         (mf/with-memo [library-options libraries file-id]
           (into library-options
                 (comp
                  (map val)
-                 (map (fn [lib] {:value (d/name (:id lib)) :label (:name lib)})))
+                 (map (fn [lib] {:value (d/name (:id lib))
+                                 :label (:name lib)})))
                 (dissoc libraries file-id)))
 
         on-library-change

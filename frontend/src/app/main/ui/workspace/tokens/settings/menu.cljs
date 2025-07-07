@@ -85,9 +85,13 @@
 
        [:div {:class (stl/css :settings-modal-content)}
         [:div {:class (stl/css :settings-modal-subtitle-wrapper)}
-         [:> text* {:as "span" :typography t/body-large :class (stl/css :settings-subtitle)}
+         [:> text* {:as "span"
+                    :typography t/body-large
+                    :class (stl/css :settings-subtitle)}
           (tr "workspace.tokens.base-font-size")]]
-        [:> text* {:as "span" :typography t/body-medium :class (stl/css :settings-modal-description)}
+        [:> text* {:as "span"
+                   :typography t/body-medium
+                   :class (stl/css :settings-modal-description)}
          (tr "workspace.tokens.setting-description")]
 
         [:> input* {:type "text"

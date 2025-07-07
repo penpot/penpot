@@ -37,7 +37,8 @@
   (perms/make-check-fn has-webhook-edit-permissions?))
 
 (defn decode-row
-  [{:keys [uri] :as row}]
+  [{:keys [uri]
+    :as row}]
   (cond-> row
     (string? uri) (assoc :uri (u/uri uri))))
 
@@ -80,7 +81,8 @@
                                 max-hooks-for-team)))))
 
 (defn- insert-webhook!
-  [{:keys [::db/pool]} {:keys [team-id uri mtype is-active ::rpc/profile-id] :as params}]
+  [{:keys [::db/pool]} {:keys [team-id uri mtype is-active ::rpc/profile-id]
+                        :as params}]
   (-> (db/insert! pool :webhook
                   {:id (uuid/next)
                    :team-id team-id
@@ -91,7 +93,10 @@
       (decode-row)))
 
 (defn- update-webhook!
-  [{:keys [::db/pool] :as cfg} {:keys [id] :as wook} {:keys [uri mtype is-active] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [id]
+              :as wook} {:keys [uri mtype is-active]
+                         :as params}]
   (-> (db/update! pool :webhook
                   {:uri (str uri)
                    :is-active is-active
@@ -116,7 +121,9 @@
 (sv/defmethod ::create-webhook
   {::doc/added "1.17"
    ::sm/params schema:create-webhook}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id]
+              :as params}]
   (check-webhook-edition-permissions! pool profile-id team-id profile-id)
   (validate-quotes! cfg params)
   (validate-webhook! cfg nil params)
@@ -132,7 +139,9 @@
 (sv/defmethod ::update-webhook
   {::doc/added "1.17"
    ::sm/params schema:update-webhook}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id id]
+              :as params}]
   (let [whook (-> (db/get pool :webhook {:id id}) (decode-row))]
     (check-webhook-edition-permissions! pool profile-id (:team-id whook) (:profile-id whook))
     (validate-webhook! cfg whook params)
@@ -167,7 +176,8 @@
 (sv/defmethod ::get-webhooks
   {::doc/added "1.17"
    ::sm/params schema:get-webhooks}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (->> (db/exec! conn [sql:get-webhooks team-id])

@@ -26,7 +26,9 @@
 ;; Related .penpot file: common/test/cases/copying-and-duplicating.penpot
 (defn- setup-file []
   (-> (cthf/sample-file :file1 :page-label :page-1)
-      (ctho/add-simple-component :simple-1 :frame-simple-1 :rect-simple-1 :child-params {:type :rect :fills (cths/sample-fills-color :fill-color "#2152e5") :name "rect-simple-1"})
+      (ctho/add-simple-component :simple-1 :frame-simple-1 :rect-simple-1 :child-params {:type :rect
+                                                                                         :fills (cths/sample-fills-color :fill-color "#2152e5")
+                                                                                         :name "rect-simple-1"})
 
       (ctho/add-frame :frame-composed-1 :name "frame-composed-1")
       (cthc/instantiate-component :simple-1 :copy-simple-1 :parent-label :frame-composed-1 :children-labels [:composed-1-simple-1])

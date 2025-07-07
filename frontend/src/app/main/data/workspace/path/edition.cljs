@@ -75,7 +75,8 @@
                      (fn [state] (update-in state [:workspace-local :edit-path id] dissoc :content-modifiers :moving-nodes :moving-handler))))))))))
 
 (defn modify-content-point
-  [content {dx :x dy :y} modifiers point]
+  [content {dx :x
+            dy :y} modifiers point]
   (let [point-indices (path.segment/point-indices content point) ;; [indices]
         handler-indices (path.segment/handler-indices content point) ;; [[index prefix]]
 

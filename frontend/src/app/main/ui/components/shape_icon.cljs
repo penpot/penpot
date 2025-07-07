@@ -57,7 +57,8 @@
 
 
 (mf/defc element-icon-by-type
-  [{:keys [type main-instance?] :as props}]
+  [{:keys [type main-instance?]
+    :as props}]
   (if main-instance?
     i/component
     (case type

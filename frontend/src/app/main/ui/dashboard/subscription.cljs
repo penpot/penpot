@@ -34,7 +34,8 @@
                                     :cta-without-dropdown (not has-dropdown))}
       [:div {:class (stl/css :content)}
        [:span {:class (stl/css :cta-title)} top-title]
-       [:span {:class (stl/css :cta-text) :data-testid "subscription-name"} top-description]]
+       [:span {:class (stl/css :cta-text)
+               :data-testid "subscription-name"} top-description]]
       (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  i/arrow])]
 
      (when (and has-dropdown show-data)
@@ -121,7 +122,8 @@
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-name]}]
-  [:span {:class (stl/css :subscription-icon) :data-testid "subscription-icon"}
+  [:span {:class (stl/css :subscription-icon)
+          :data-testid "subscription-icon"}
    (case subscription-name
      "unlimited" i/character-u
      "enterprise" i/character-e)])
@@ -177,7 +179,8 @@
           (and (= "unlimited" subscription-name) (< seats editors) (not is-owner))
           (tr "subscription.dashboard.cta.upgrade-more-seats-member" link))]
 
-    [:> cta* {:class (stl/css-case ::members-cta-full-width banner-is-expanded :members-cta (not banner-is-expanded)) :title cta-title}
+    [:> cta* {:class (stl/css-case ::members-cta-full-width banner-is-expanded :members-cta (not banner-is-expanded))
+              :title cta-title}
      [:> i18n/tr-html*
       {:tag-name "span"
        :class (stl/css :cta-message)

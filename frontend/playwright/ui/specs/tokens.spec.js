@@ -531,9 +531,7 @@ test.describe("Tokens: Sets Tab", () => {
 
   const assertEmptySetsList = async (el) => {
     const buttons = await el.getByRole("button").allTextContents();
-    const filteredButtons = buttons.filter(
-      (text) => text === "Create one.",
-    );
+    const filteredButtons = buttons.filter((text) => text === "Create one.");
     await expect(filteredButtons.length).toEqual(2); // We assume there are no themes, so we have two "Create one" buttons.
   };
 

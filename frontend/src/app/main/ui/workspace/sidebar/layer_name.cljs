@@ -111,7 +111,8 @@
        {:class (stl/css :element-name
                         :element-name-input
                         :selected is-selected)
-        :style {"--depth" depth "--parent-size" parent-size}
+        :style {"--depth" depth
+                "--parent-size" parent-size}
         :type "text"
         :ref ref
         :on-blur accept-edit
@@ -127,7 +128,8 @@
                  :hidden is-hidden
                  :type-comp type-comp
                  :type-frame type-frame)
-         :style {"--depth" depth "--parent-size" parent-size}
+         :style {"--depth" depth
+                 "--parent-size" parent-size}
          :ref ref
          :on-double-click start-edit}
         (if (dbg/enabled? :show-ids)

@@ -53,7 +53,8 @@
      [:h3 (tr "labels.language")]
 
      [:div {:class (stl/css :fields-row)}
-      [:& fm/select {:options (into [{:label "Auto (browser)" :value ""}]
+      [:& fm/select {:options (into [{:label "Auto (browser)"
+                                      :value ""}]
                                     i18n/supported-locales)
                      :label (tr "dashboard.select-ui-language")
                      :default ""
@@ -65,9 +66,12 @@
       [:& fm/select {:label (tr "dashboard.select-ui-theme")
                      :name :theme
                      :default theme/default
-                     :options [{:label (tr "dashboard.select-ui-theme.dark") :value "dark"}
-                               {:label (tr "dashboard.select-ui-theme.light") :value "light"}
-                               {:label (tr "dashboard.select-ui-theme.system") :value "system"}]
+                     :options [{:label (tr "dashboard.select-ui-theme.dark")
+                                :value "dark"}
+                               {:label (tr "dashboard.select-ui-theme.light")
+                                :value "light"}
+                               {:label (tr "dashboard.select-ui-theme.system")
+                                :value "system"}]
                      :data-testid "setting-theme"}]]
 
      [:> fm/submit-button*
@@ -83,7 +87,8 @@
    #(dom/set-html-title (tr "title.settings.options")))
 
   [:div {:class (stl/css :dashboard-settings)}
-   [:div {:class (stl/css :form-container) :data-testid "settings-form"}
+   [:div {:class (stl/css :form-container)
+          :data-testid "settings-form"}
     [:h2 (tr "labels.settings")]
     [:& options-form {}]]])
 

@@ -127,7 +127,8 @@
 
 (defn- rect->path
   "Creates a bezier curve that approximates a rounded corner rectangle"
-  [{:keys [x y width height] :as shape}]
+  [{:keys [x y width height]
+    :as shape}]
   (case (ctsr/radius-mode shape)
     :radius-1
     (let [radius (gso/shape-corners-1 shape)]

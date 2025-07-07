@@ -158,13 +158,16 @@
   (= candidate platform))
 
 (defn resolve-profile-photo-url
-  [{:keys [photo-id fullname name color] :as profile}]
+  [{:keys [photo-id fullname name color]
+    :as profile}]
   (if (nil? photo-id)
-    (avatars/generate {:name (or fullname name) :color color})
+    (avatars/generate {:name (or fullname name)
+                       :color color})
     (dm/str (u/join public-uri "assets/by-id/" photo-id))))
 
 (defn resolve-team-photo-url
-  [{:keys [photo-id name] :as team}]
+  [{:keys [photo-id name]
+    :as team}]
   (if (nil? photo-id)
     (avatars/generate {:name name})
     (dm/str (u/join public-uri "assets/by-id/" photo-id))))
@@ -176,7 +179,8 @@
 (defn resolve-file-media
   ([media]
    (resolve-file-media media false))
-  ([{:keys [id data-uri] :as media} thumbnail?]
+  ([{:keys [id data-uri]
+     :as media} thumbnail?]
    (if data-uri
      data-uri
      (dm/str

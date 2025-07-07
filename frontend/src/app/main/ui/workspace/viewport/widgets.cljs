@@ -55,18 +55,22 @@
            :style {:pointer-events "none"}}]])
 
 (mf/defc cursor-tooltip
-  [{:keys [zoom tooltip] :as props}]
+  [{:keys [zoom tooltip]
+    :as props}]
   (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
                        (gpt/divide (gpt/point zoom zoom)))
         pos-x (- (:x coords) 100)
         pos-y (+ (:y coords) 30)]
     [:g {:transform (str "translate(" pos-x "," pos-y ")")}
-     [:foreignObject {:width 200 :height 100 :style {:text-align "center"}}
+     [:foreignObject {:width 200
+                      :height 100
+                      :style {:text-align "center"}}
       [:span tooltip]]]))
 
 (mf/defc selection-rect
   {:wrap [mf/memo]}
-  [{:keys [data zoom] :as props}]
+  [{:keys [data zoom]
+    :as props}]
   (when data
     [:rect.selection-rect
      {:x (:x data)
@@ -117,7 +121,8 @@
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (when-not workspace-read-only?
-               (st/emit! (dw/show-shape-context-menu {:position position :shape frame}))))))
+               (st/emit! (dw/show-shape-context-menu {:position position
+                                                      :shape frame}))))))
 
         on-pointer-enter
         (mf/use-fn
@@ -263,7 +268,8 @@
         grid-edition?        (ctl/grid-layout? objects edition)]
 
     [:g.frame-titles
-     (for [{:keys [id parent-id] :as shape} shapes]
+     (for [{:keys [id parent-id]
+            :as shape} shapes]
        (when (and
               (not= id uuid/zero)
               (or (dbg/enabled? :shape-titles) (= parent-id uuid/zero))

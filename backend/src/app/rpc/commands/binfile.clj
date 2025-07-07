@@ -44,7 +44,8 @@
    [:embed-assets ::sm/boolean]])
 
 (defn stream-export-v1
-  [cfg {:keys [file-id include-libraries embed-assets] :as params}]
+  [cfg {:keys [file-id include-libraries embed-assets]
+        :as params}]
   (yres/stream-body
    (fn [_ output-stream]
      (try
@@ -59,7 +60,8 @@
                 :cause cause))))))
 
 (defn stream-export-v3
-  [cfg {:keys [file-id include-libraries embed-assets] :as params}]
+  [cfg {:keys [file-id include-libraries embed-assets]
+        :as params}]
   (yres/stream-body
    (fn [_ output-stream]
      (try
@@ -78,7 +80,9 @@
   {::doc/added "1.15"
    ::webhooks/event? true
    ::sm/params schema:export-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id version file-id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id version file-id]
+              :as params}]
   (files/check-read-permissions! pool profile-id file-id)
   (fn [_]
     (let [version (or version 1)
@@ -94,7 +98,8 @@
 ;; --- Command: import-binfile
 
 (defn- import-binfile
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id project-id version name file]}]
+  [{:keys [::db/pool ::wrk/executor]
+    :as cfg} {:keys [profile-id project-id version name file]}]
   (let [team   (teams/get-team pool
                                :profile-id profile-id
                                :project-id project-id)
@@ -134,7 +139,9 @@
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version file] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id project-id version file]
+              :as params}]
   (projects/check-edition-permissions! pool profile-id project-id)
   (let [version  (or version 1)
         params   (-> params

@@ -26,12 +26,16 @@
                            (gpt/add (:start-p %) (hv (:size %)))))))))
 
 (defn layout-content-bounds
-  [bounds {:keys [layout-padding] :as parent} layout-data]
+  [bounds {:keys [layout-padding]
+           :as parent} layout-data]
 
   (let [parent-id (:id parent)
         parent-bounds @(get bounds parent-id)
 
-        {pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding
+        {pad-top :p1
+         pad-right :p2
+         pad-bottom :p3
+         pad-left :p4} layout-padding
         pad-top    (or pad-top 0)
         pad-right  (or pad-right 0)
         pad-bottom (or pad-bottom 0)

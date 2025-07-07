@@ -22,7 +22,9 @@
   (constantly false))
 
 (defn invoke!
-  [{:keys [::max-retries] :or {max-retries 3} :as cfg} f & args]
+  [{:keys [::max-retries]
+    :or {max-retries 3}
+    :as cfg} f & args]
   (loop [rnum 1]
     (let [match? (get cfg ::when always-false)
           result (try
@@ -39,7 +41,8 @@
 
 
 (defn wrap-retry
-  [_ f {:keys [::sv/name] :as mdata}]
+  [_ f {:keys [::sv/name]
+        :as mdata}]
 
   (if (::enabled mdata)
     (let [max-retries (get mdata ::max-retries 3)

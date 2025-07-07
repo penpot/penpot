@@ -25,7 +25,8 @@
   (mf/create-context false))
 
 (mf/defc render-xml
-  [{{:keys [tag attrs content] :as node} :xml}]
+  [{{:keys [tag attrs content]
+     :as node} :xml}]
 
   (cond
     (map? node)
@@ -33,7 +34,8 @@
                     (json/->js :key-fn name))]
       [:> (d/name tag) props
        (for [child content]
-         [:& render-xml {:xml child :key (swap! internal-counter inc)}])])
+         [:& render-xml {:xml child
+                         :key (swap! internal-counter inc)}])])
 
     (string? node)
     node
@@ -192,7 +194,8 @@
         guides (get page :guides)]
     [:> "penpot:page" #js {:id id}
      (when (d/not-empty? grids)
-       (let [parse-grid (fn [[type params]] {:type type :params params})
+       (let [parse-grid (fn [[type params]] {:type type
+                                             :params params})
              grids (mapv parse-grid grids)]
          [:& export-grid-data {:grids grids}]))
 

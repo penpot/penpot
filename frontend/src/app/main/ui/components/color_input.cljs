@@ -25,7 +25,8 @@
 
 (mf/defc color-input*
   {::mf/forward-ref true}
-  [{:keys [value on-change on-blur on-focus select-on-focus class aria-label] :rest props} external-ref]
+  [{:keys [value on-change on-blur on-focus select-on-focus class aria-label]
+    :rest props} external-ref]
   (let [select-on-focus? (d/nilv select-on-focus true)
         class            (d/nilv class "color-input")
         aria-label       (or aria-label (tr "inspect.attributes.color"))

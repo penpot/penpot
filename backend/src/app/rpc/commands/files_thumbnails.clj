@@ -82,7 +82,9 @@
                 [:file-id ::sm/uuid]
                 [:tag {:optional true} [:string {:max 50}]]]
    ::sm/result [:map-of [:string {:max 250}] [:string {:max 250}]]}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id tag] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id file-id tag]
+              :as params}]
   (dm/with-open [conn (db/open pool)]
     (files/check-read-permissions! conn profile-id file-id)
     (if tag
@@ -95,7 +97,9 @@
 ;; loading all pages into memory for find the frame set for thumbnail.
 
 (defn get-file-data-for-thumbnail
-  [{:keys [::db/conn] :as cfg} {:keys [data id] :as file}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [data id]
+              :as file}]
   (letfn [;; function responsible on finding the frame marked to be
           ;; used as thumbnail; the returned frame always have
           ;; the :page-id set to the page that it belongs.
@@ -194,8 +198,10 @@
    ::doc/module :files
    ::sm/params schema:get-file-data-for-thumbnail
    ::sm/result schema:partial-file}
-  [cfg {:keys [::rpc/profile-id file-id] :as params}]
-  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  [cfg {:keys [::rpc/profile-id file-id]
+        :as params}]
+  (db/run! cfg (fn [{:keys [::db/conn]
+                     :as cfg}]
                  (files/check-read-permissions! conn profile-id file-id)
 
                  (let [team (teams/get-team conn
@@ -245,7 +251,8 @@
                       :bucket "file-object-thumbnail"})))
 
 (defn- create-file-object-thumbnail!
-  [{:keys [::sto/storage] :as cfg} file object-id media tag]
+  [{:keys [::sto/storage]
+    :as cfg} file object-id media tag]
   (let [file-id   (:id file)
         timestamp (dt/now)
         media     (persist-thumbnail! storage media timestamp)
@@ -319,7 +326,8 @@
    ::audit/skip true}
   [cfg {:keys [::rpc/profile-id file-id object-id]}]
   (files/check-edition-permissions! cfg profile-id file-id)
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn]
+                        :as cfg}]
                     (-> cfg
                         (update ::sto/storage sto/configure conn)
                         (delete-file-object-thumbnail! file-id object-id))
@@ -328,7 +336,8 @@
 ;; --- MUTATION COMMAND: create-file-thumbnail
 
 (defn- create-file-thumbnail!
-  [{:keys [::db/conn ::sto/storage]} {:keys [file-id revn props media] :as params}]
+  [{:keys [::db/conn ::sto/storage]} {:keys [file-id revn props media]
+                                      :as params}]
   (media/validate-media-type! media)
   (media/validate-media-size! media)
 
@@ -395,8 +404,10 @@
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-file-thumbnail}
 
-  [cfg {:keys [::rpc/profile-id file-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  [cfg {:keys [::rpc/profile-id file-id]
+        :as params}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn]
+                        :as cfg}]
                     ;; TODO For now we check read permissions instead of write,
                     ;; to allow viewer users to update thumbnails. We might
                     ;; review this approach on the future.

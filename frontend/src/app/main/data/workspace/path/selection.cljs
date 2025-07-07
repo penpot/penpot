@@ -112,7 +112,8 @@
 
 (defn handle-area-selection
   [append? remove?]
-  (letfn [(valid-rect? [zoom {width :width height :height}]
+  (letfn [(valid-rect? [zoom {width :width
+                              height :height}]
             (or (> width (/ 10 zoom)) (> height (/ 10 zoom))))]
 
     (ptk/reify ::handle-area-selection

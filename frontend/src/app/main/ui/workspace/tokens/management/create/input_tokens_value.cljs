@@ -30,7 +30,8 @@
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema::input-tokens-value}
-  [{:keys [class label is-color-token placeholder error value color display-colorpicker] :rest props} ref]
+  [{:keys [class label is-color-token placeholder error value color display-colorpicker]
+    :rest props} ref]
   (let [id (mf/use-id)
         input-ref (mf/use-ref)
         is-color-token (d/nilv is-color-token false)

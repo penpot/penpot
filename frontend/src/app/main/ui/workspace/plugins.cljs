@@ -126,7 +126,9 @@
                    (reset! fetching-manifest? false)
                    (if plugin
                      (do
-                       (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                       (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin"
+                                                        :name (:name plugin)
+                                                        :url plugin-url}))
                        (modal/show!
                         :plugin-permissions
                         {:plugin plugin
@@ -168,7 +170,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-management)}
-      [:button {:class (stl/css :close-btn) :on-click modal/hide!} close-icon]
+      [:button {:class (stl/css :close-btn)
+                :on-click modal/hide!} close-icon]
       [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.title")]
 
       [:div {:class (stl/css :modal-content)}
@@ -314,7 +317,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-permissions)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:button {:class (stl/css :close-btn)
+                :on-click handle-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)} (tr "workspace.plugins.permissions.title" (str/upper (:name plugin)))]
 
       [:div {:class (stl/css :modal-content)}
@@ -369,7 +373,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-permissions)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:button {:class (stl/css :close-btn)
+                :on-click handle-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)}
        (tr "workspace.plugins.permissions-update.title" (str/upper (:name plugin)))]
 
@@ -418,7 +423,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :plugin-try-out)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} close-icon]
+      [:button {:class (stl/css :close-btn)
+                :on-click handle-close-dialog} close-icon]
       [:div {:class (stl/css :modal-title)}
        [:div {:class (stl/css :plugin-icon)}
         [:img {:src (if (some? icon)

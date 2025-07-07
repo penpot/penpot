@@ -255,8 +255,18 @@
 ;; FIXME: optimize?
 
 (defn substract
-  [{m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f}
-   {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f}]
+  [{m1a :a
+    m1b :b
+    m1c :c
+    m1d :d
+    m1e :e
+    m1f :f}
+   {m2a :a
+    m2b :b
+    m2c :c
+    m2d :d
+    m2e :e
+    m2f :f}]
   (pos->Matrix
    (- m1a m2a) (- m1b m2b) (- m1c m2c)
    (- m1d m2d) (- m1e m2e) (- m1f m2f)))
@@ -371,8 +381,18 @@
 
 (defn m-equal [m1 m2 threshold]
   (let [th-eq (fn [a b] (<= (mth/abs (- a b)) threshold))
-        {m1a :a m1b :b m1c :c m1d :d m1e :e m1f :f} m1
-        {m2a :a m2b :b m2c :c m2d :d m2e :e m2f :f} m2]
+        {m1a :a
+         m1b :b
+         m1c :c
+         m1d :d
+         m1e :e
+         m1f :f} m1
+        {m2a :a
+         m2b :b
+         m2c :c
+         m2d :d
+         m2e :e
+         m2f :f} m2]
     (and (th-eq m1a m2a)
          (th-eq m1b m2b)
          (th-eq m1c m2c)
@@ -398,7 +418,8 @@
 
 (defn inverse
   "Gets the inverse of the affinity transform `mtx`"
-  [{:keys [a b c d e f] :as mtx}]
+  [{:keys [a b c d e f]
+    :as mtx}]
   (let [det (determinant mtx)]
     (when-not ^boolean (mth/almost-zero? det)
       (let [a' (/  d det)

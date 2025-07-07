@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Beta release 1.15"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Beta release 1.15"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Beta 1.15 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-nested-boards.gif" :border "0" :alt "Nested boards"}]]
+         [:img {:src "images/features/1.15-nested-boards.gif"
+                :border "0"
+                :alt "Nested boards"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Nested boards"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-share.gif" :border "0" :alt "Share prototype options"}]]
+         [:img {:src "images/features/1.15-share.gif"
+                :border "0"
+                :alt "Share prototype options"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Share prototype options"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-comments.gif" :border "0" :alt "Comments positioning"}]]
+         [:img {:src "images/features/1.15-comments.gif"
+                :border "0"
+                :alt "Comments positioning"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Comments positioning"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.15-view-mode.gif" :border "0" :alt "View Mode improvements"}]]
+         [:img {:src "images/features/1.15-view-mode.gif"
+                :border "0"
+                :alt "View Mode improvements"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "View Mode improvements"]]

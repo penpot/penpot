@@ -40,11 +40,15 @@
 (defn emit!
   ([type data]
    (when default-channel
-     (.postMessage ^js default-channel (t/encode-str {:id nil :type type :data data}))
+     (.postMessage ^js default-channel (t/encode-str {:id nil
+                                                      :type type
+                                                      :data data}))
      nil))
   ([id type data]
    (when default-channel
-     (.postMessage ^js default-channel (t/encode-str {:id id :type type :data data}))
+     (.postMessage ^js default-channel (t/encode-str {:id id
+                                                      :type type
+                                                      :data data}))
      nil)))
 
 (defn type?

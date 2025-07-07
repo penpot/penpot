@@ -18,7 +18,8 @@
 
 (mf/defc tab*
   {::mf/private true}
-  [{:keys [selected icon label aria-label id ref] :rest props}]
+  [{:keys [selected icon label aria-label id ref]
+    :rest props}]
   (let [class (stl/css-case
                :tab true
                :selected selected)
@@ -49,7 +50,8 @@
 (mf/defc tab-nav*
   {::mf/private true
    ::mf/memo true}
-  [{:keys [ref tabs selected on-click button-position action-button] :rest props}]
+  [{:keys [ref tabs selected on-click button-position action-button]
+    :rest props}]
   (let [nav-class
         (stl/css-case :tab-nav true
                       :tab-nav-start (= "start" button-position)
@@ -111,7 +113,8 @@
 
 (mf/defc tab-switcher*
   {::mf/schema schema:tab-switcher}
-  [{:keys [tabs class on-change selected action-button-position action-button children] :rest props}]
+  [{:keys [tabs class on-change selected action-button-position action-button children]
+    :rest props}]
   (let [nodes-ref (mf/use-ref nil)
 
         tabs

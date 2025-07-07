@@ -75,13 +75,22 @@
 
         shape  (cond
                  (and flip-x flip-y)
-                 (set/rename-keys shape {:r1 :r3 :r2 :r4 :r3 :r1 :r4 :r2})
+                 (set/rename-keys shape {:r1 :r3
+                                         :r2 :r4
+                                         :r3 :r1
+                                         :r4 :r2})
 
                  flip-x
-                 (set/rename-keys shape {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
+                 (set/rename-keys shape {:r1 :r2
+                                         :r2 :r1
+                                         :r3 :r4
+                                         :r4 :r3})
 
                  flip-y
-                 (set/rename-keys shape {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1})
+                 (set/rename-keys shape {:r1 :r4
+                                         :r2 :r3
+                                         :r3 :r2
+                                         :r4 :r1})
 
                  :else
                  shape)]
@@ -161,7 +170,8 @@
                    (not= (:height values) :multiple) (assoc :height height)))
 
         ;; The :rotation, however, does use the transforms.
-        values (let [{:keys [rotation] :or {rotation 0}} (-> shapes first)]
+        values (let [{:keys [rotation]
+                      :or {rotation 0}} (-> shapes first)]
                  (cond-> values
                    (not= (:rotation values) :multiple) (assoc :rotation rotation)))
 
@@ -408,7 +418,11 @@
              :class (stl/css :numeric-input)
              :value (:rotation values)}]])
         (when (options :radius)
-          [:> border-radius-menu* {:class (stl/css :border-radius) :ids ids :ids-with-children ids-with-children :values values :shape shape}])])
+          [:> border-radius-menu* {:class (stl/css :border-radius)
+                                   :ids ids
+                                   :ids-with-children ids-with-children
+                                   :values values
+                                   :shape shape}])])
      (when (or (options :clip-content) (options :show-in-viewer))
        [:div {:class (stl/css :clip-show)}
         (when (options :clip-content)

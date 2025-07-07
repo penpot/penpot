@@ -296,7 +296,9 @@
     (if (or (not= r (bit-and r 255))
             (not= g (bit-and g 255))
             (not= b (bit-and b 255)))
-      (throw (ex-info "not valid rgb" {:r r :g g :b b}))
+      (throw (ex-info "not valid rgb" {:r r
+                                       :g g
+                                       :b b}))
       (let [rgb (bit-or (bit-shift-left r 16)
                         (bit-shift-left g 8) b)]
         (if (< r 16)
@@ -460,7 +462,9 @@
   [[r g b]]
   (cond
     (and (= 255 r) (= 255 g) (= 255 b))
-    (throw (ex-info "cannot get next color" {:r r :g g :b b}))
+    (throw (ex-info "cannot get next color" {:r r
+                                             :g g
+                                             :b b}))
 
     (and (= 255 g) (= 255 b))
     [(inc r) 0 0]

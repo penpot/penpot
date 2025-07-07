@@ -60,7 +60,8 @@
                                               :fill-color-ref-id :fill-color-ref-file]))]
 
           (nil? (:fills node))
-          [{:fill-color "#000000" :fill-opacity 1}]
+          [{:fill-color "#000000"
+            :fill-opacity 1}]
 
           :else
           (:fills node))]

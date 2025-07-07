@@ -75,7 +75,8 @@
     (update-shape-with-content shape content editor-content)))
 
 (defn- update-text-shape
-  [{:keys [grow-type id migrate] :as shape} node]
+  [{:keys [grow-type id migrate]
+    :as shape} node]
   ;; Check if we need to update the size because it's auto-width or auto-height
   ;; Update the position-data of every text fragment
   (->> (tsp/calc-position-data id)
@@ -99,7 +100,8 @@
                  (st/emit! (dwt/clean-text-modifier id))))))
 
 (defn- update-text-modifier
-  [{:keys [grow-type id] :as shape} node]
+  [{:keys [grow-type id]
+    :as shape} node]
   (->> (tsp/calc-position-data id)
        (p/fmap (fn [position-data]
                  (let [props {:position-data position-data}]
@@ -192,7 +194,8 @@
               #(swap! pending-update* dissoc uid)))))]
 
     [:.text-changes-renderer
-     (for [{:keys [id] :as shape} changed-texts]
+     (for [{:keys [id]
+            :as shape} changed-texts]
        [:& text-container {:key (dm/str "text-container-" id)
                            :shape shape
                            :on-update handle-update-shape}])]))
@@ -224,7 +227,8 @@
         handle-update-shape (mf/use-callback update-text-modifier)]
 
     [:.text-changes-renderer
-     (for [{:keys [id] :as shape} changed-texts]
+     (for [{:keys [id]
+            :as shape} changed-texts]
        [:& text-container {:key (dm/str "text-container-" id)
                            :shape shape
                            :on-update handle-update-shape}])]))

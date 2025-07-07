@@ -17,7 +17,8 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc attribute-value [{:keys [attr value on-change on-delete] :as props}]
+(mf/defc attribute-value [{:keys [attr value on-change on-delete]
+                           :as props}]
   (let [last-value (mf/use-state value)
 
         handle-change*
@@ -55,7 +56,8 @@
         [:div  {:class (stl/css :attr-title)}
          (str (d/name (last attr)))]
         (for [[key value] value]
-          [:div {:class (stl/css :attr-row) :key key}
+          [:div {:class (stl/css :attr-row)
+                 :key key}
            [:& attribute-value {:key key
                                 :attr (conj attr key)
                                 :value value

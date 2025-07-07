@@ -84,7 +84,8 @@
   "Given a seq of blobs and the team id, creates a ready-to-use fonts
   map with temporal ID's associated to each font entry."
   [blobs team-id]
-  (letfn [(prepare [{:keys [font type name data] :as params}]
+  (letfn [(prepare [{:keys [font type name data]
+                     :as params}]
             (let [family          (or (.getEnglishName ^js font "preferredFamily")
                                       (.getEnglishName ^js font "fontFamily"))
                   variant         (or (.getEnglishName ^js font "preferredSubfamily")
@@ -126,7 +127,8 @@
                :font-style  (cm/parse-font-style variant)
                :height-warning? height-warning?}))
 
-          (join [res {:keys [content] :as font}]
+          (join [res {:keys [content]
+                      :as font}]
             (let [key-fn   (juxt :font-family :font-weight :font-style)
                   existing (d/seek #(= (key-fn font) (key-fn %)) (vals res))]
               (if existing
@@ -154,7 +156,8 @@
                 "0 1 0 0"         "font/ttf"
                 "167 117 106 106" "font/woff")))
 
-          (parse-font [{:keys [data] :as params}]
+          (parse-font [{:keys [data]
+                        :as params}]
             (try
               (assoc params :font (ot/parse data))
               (catch :default _e
@@ -169,7 +172,8 @@
                             :type (parse-mtype data)}))
                  (rx/catch (fn []
                              (rx/of {:error (.-name blob)})))
-                 (rx/mapcat (fn [{:keys [type, error] :as font}]
+                 (rx/mapcat (fn [{:keys [type, error]
+                                  :as font}]
                               (if (or type error)
                                 (rx/of font)
                                 (rx/empty))))))]
@@ -210,7 +214,8 @@
                     (calculate-family-to-id-mapping))
          items  (vals incoming-fonts)
          result current-fonts]
-    (if-let [{:keys [id font-family] :as item} (first items)]
+    (if-let [{:keys [id font-family]
+              :as item} (first items)]
       (let [font-id (or (get famdb font-family)
                         (uuid/next))
             font    (assoc item :font-id font-id)]
@@ -255,7 +260,8 @@
                                            :font-weight (:font-weight font)}))))))
 
 (defn update-font
-  [{:keys [id name] :as params}]
+  [{:keys [id name]
+    :as params}]
   (dm/assert! (uuid? id))
   (dm/assert! (string? name))
   (ptk/reify ::update-font
@@ -271,7 +277,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
-        (->> (rp/cmd! :update-font {:id id :name name :team-id team-id})
+        (->> (rp/cmd! :update-font {:id id
+                                    :name name
+                                    :team-id team-id})
              (rx/ignore))))))
 
 (defn delete-font
@@ -294,7 +302,8 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/concat
-         (->> (rp/cmd! :delete-font {:id font-id :team-id team-id})
+         (->> (rp/cmd! :delete-font {:id font-id
+                                     :team-id team-id})
               (rx/ignore))
          (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font"
                                             :team-id team-id
@@ -315,7 +324,8 @@
     (watch [_ state _]
       (let [team-id (:current-team-id state)]
         (rx/concat
-         (->> (rp/cmd! :delete-font-variant {:id id :team-id team-id})
+         (->> (rp/cmd! :delete-font-variant {:id id
+                                             :team-id team-id})
               (rx/ignore))
          (rx/of (ptk/data-event ::ev/event {::ev/name "delete-font-variant"
                                             :id id

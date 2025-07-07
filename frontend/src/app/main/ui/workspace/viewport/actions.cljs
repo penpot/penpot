@@ -206,7 +206,8 @@
              alt? (kbd/alt? event)
              meta? (kbd/meta? event)
 
-             {:keys [id type] :as shape} (or @hover (get objects (first @hover-ids)))
+             {:keys [id type]
+              :as shape} (or @hover (get objects (first @hover-ids)))
 
              editable? (contains? #{:text :rect :path :image :circle} type)
 
@@ -263,7 +264,8 @@
      (dom/stop-propagation event)
      (when-not read-only?
        (let [position (dom/get-client-position event)]
-         (st/emit! (dw/show-shape-context-menu {:position position :hover-ids @hover-ids})))))))
+         (st/emit! (dw/show-shape-context-menu {:position position
+                                                :hover-ids @hover-ids})))))))
 
 (defn on-pointer-up
   [disable-paste]
@@ -432,7 +434,9 @@
                       file-id
                       (:id component)
                       (gpt/point final-x final-y)
-                      {:start-move? true :initial-point viewport-coord :origin "sidebar"})))))
+                      {:start-move? true
+                       :initial-point viewport-coord
+                       :origin "sidebar"})))))
      (when (or (dnd/has-type? e "penpot/shape")
                (dnd/has-type? e "penpot/component")
                (dnd/has-type? e "Files")

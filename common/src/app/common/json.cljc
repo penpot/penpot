@@ -35,7 +35,8 @@
 #?(:cljs
    (defn ->js
      [x & {:keys [key-fn]
-           :or {key-fn write-camel-key} :as opts}]
+           :or {key-fn write-camel-key}
+           :as opts}]
      (let [f (fn this-fn [x]
                (cond
                  (nil? x)
@@ -75,7 +76,9 @@
 
 #?(:cljs
    (defn ->clj
-     [o & {:keys [key-fn val-fn] :or {key-fn read-kebab-key val-fn identity}}]
+     [o & {:keys [key-fn val-fn]
+           :or {key-fn read-kebab-key
+                val-fn identity}}]
      (let [f (fn this-fn [x]
                (let [x (val-fn x)]
                  (cond

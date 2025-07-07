@@ -39,11 +39,13 @@
 
       (tho/add-simple-component :c-ellipse :r-ellipse :ellipse
                                 :root-params {:name "Ellipse"}
-                                :child-params {:name "Ellipse" :type :circle})
+                                :child-params {:name "Ellipse"
+                                               :type :circle})
 
       (tho/add-simple-component :c-rectangle :r-rectangle :rectangle
                                 :root-params {:name "Rectangle"}
-                                :child-params {:name "rectangle" :type :rect})
+                                :child-params {:name "rectangle"
+                                               :type :rect})
 
       (tho/add-frame :board-with-ellipse :name "Board with ellipse")
       (thc/instantiate-component :c-ellipse :nested-h-ellipse :parent-label :board-with-ellipse

@@ -16,10 +16,14 @@
 
 (defmulti visit (fn [name _schema _children _options] name) :default ::default)
 (defmethod visit ::default [_ _ _ _] {})
-(defmethod visit :> [_ _ [value] _] {:type "number" :exclusiveMinimum value})
-(defmethod visit :>= [_ _ [value] _] {:type "number" :minimum value})
-(defmethod visit :< [_ _ [value] _] {:type "number" :exclusiveMaximum value})
-(defmethod visit :<= [_ _ [value] _] {:type "number" :maximum value})
+(defmethod visit :> [_ _ [value] _] {:type "number"
+                                     :exclusiveMinimum value})
+(defmethod visit :>= [_ _ [value] _] {:type "number"
+                                      :minimum value})
+(defmethod visit :< [_ _ [value] _] {:type "number"
+                                     :exclusiveMaximum value})
+(defmethod visit :<= [_ _ [value] _] {:type "number"
+                                      :maximum value})
 (defmethod visit := [_ _ [value] _] {:const value})
 (defmethod visit :not= [_ _ _ _] {})
 
@@ -44,7 +48,8 @@
                         (apply array-map))
 
         closed?    (:closed (m/properties schema))
-        object     {:type "object" :properties props}]
+        object     {:type "object"
+                    :properties props}]
     (cond-> object
       (seq required)
       (assoc :required required)
@@ -61,7 +66,8 @@
    (-> schema
        m/properties
        (select-keys [:min :max])
-       (set/rename-keys {:min kmin, :max kmax}))))
+       (set/rename-keys {:min kmin,
+                         :max kmax}))))
 
 (defmethod visit :map-of [_ schema children _]
   (minmax-properties
@@ -75,48 +81,60 @@
   (let [child (-> schema m/children first)
         props (m/properties (m/deref child))]
     (minmax-properties
-     {:type "array", :items (first children) :title (:title props)}
+     {:type "array",
+      :items (first children)
+      :title (:title props)}
      schema
      :minItems
      :maxItems)))
 
 (defmethod visit :sequential [_ schema children _]
   (minmax-properties
-   {:type "array", :items (first children)}
+   {:type "array",
+    :items (first children)}
    schema
    :minItems
    :maxItems))
 
 (defmethod visit :set [_ schema children _]
   (minmax-properties
-   {:type "array", :items (first children), :uniqueItems true}
+   {:type "array",
+    :items (first children),
+    :uniqueItems true}
    schema
    :minItems
    :maxItems))
 
 (defmethod visit :enum [_ _ children options] (merge (some-> (m/-infer children) (transform* options)) {:enum children}))
 (defmethod visit :maybe [_ _ children _] {:oneOf (conj children {:type "null"})})
-(defmethod visit :tuple [_ _ children _] {:type "array", :items children, :additionalItems false})
+(defmethod visit :tuple [_ _ children _] {:type "array",
+                                          :items children,
+                                          :additionalItems false})
 (defmethod visit :re [_ schema _ options]
-  {:type "string", :pattern (str (first (m/children schema options)))})
+  {:type "string",
+   :pattern (str (first (m/children schema options)))})
 (defmethod visit :nil [_ _ _ _] {:type "null"})
 
 (defmethod visit :string [_ schema _ _]
-  (merge {:type "string"} (-> schema m/properties (select-keys [:min :max]) (set/rename-keys {:min :minLength, :max :maxLength}))))
+  (merge {:type "string"} (-> schema m/properties (select-keys [:min :max]) (set/rename-keys {:min :minLength,
+                                                                                              :max :maxLength}))))
 
 (defmethod visit :int [_ schema _ _]
-  (merge {:type "integer"} (-> schema m/properties (select-keys [:min :max]) (set/rename-keys {:min :minimum, :max :maximum}))))
+  (merge {:type "integer"} (-> schema m/properties (select-keys [:min :max]) (set/rename-keys {:min :minimum,
+                                                                                               :max :maximum}))))
 
 (defmethod visit :double [_ schema _ _]
   (merge {:type "number"}
-         (-> schema m/properties (select-keys [:min :max]) (set/rename-keys {:min :minimum, :max :maximum}))))
+         (-> schema m/properties (select-keys [:min :max]) (set/rename-keys {:min :minimum,
+                                                                             :max :maximum}))))
 
 (defmethod visit :boolean [_ _ _ _] {:type "boolean"})
 (defmethod visit :keyword [_ _ _ _] {:type "string"})
 (defmethod visit :qualified-keyword [_ _ _ _] {:type "string"})
 (defmethod visit :symbol [_ _ _ _] {:type "string"})
 (defmethod visit :qualified-symbol [_ _ _ _] {:type "string"})
-(defmethod visit :uuid [_ _ _ _] {:type "string" :format "uuid"})
+(defmethod visit :uuid [_ _ _ _] {:type "string"
+                                  :format "uuid"})
 
 (defmethod visit :schema [_ schema children options]
   (visit ::m/schema schema children options))

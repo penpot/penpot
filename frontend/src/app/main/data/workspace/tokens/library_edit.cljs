@@ -351,7 +351,8 @@
                                            token))]
 
             (rx/of (dch/commit-changes changes)
-                   (ptk/data-event ::ev/event {::ev/name "create-token" :type token-type})))
+                   (ptk/data-event ::ev/event {::ev/name "create-token"
+                                               :type token-type})))
 
           (rx/of (create-token-with-set token)))))))
 
@@ -376,7 +377,8 @@
                                          token'))]
 
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type}))))))
+               (ptk/data-event ::ev/event {::ev/name "edit-token"
+                                           :type token-type}))))))
 
 (defn delete-token
   [set-name token-name]
@@ -418,7 +420,8 @@
       (update-in state [:workspace-tokens :open-status-by-type] assoc token-type open?))))
 
 (defn assign-token-context-menu
-  [{:keys [position] :as params}]
+  [{:keys [position]
+    :as params}]
 
   (when params
     (assert (gpt/point? position) "expected a point instance for `position` param"))
@@ -435,7 +438,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn assign-token-set-context-menu
-  [{:keys [position] :as params}]
+  [{:keys [position]
+    :as params}]
   (when params
     (assert (gpt/point? position) "expected valid point for `position` param"))
 

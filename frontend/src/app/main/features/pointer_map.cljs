@@ -12,10 +12,12 @@
    [beicon.v2.core :as rx]))
 
 (defn resolve-file
-  [{:keys [id data] :as file}]
+  [{:keys [id data]
+    :as file}]
   (letfn [(resolve-pointer [[key val :as kv]]
             (if (t/pointer? val)
-              (->> (rp/cmd! :get-file-fragment {:file-id id :fragment-id @val})
+              (->> (rp/cmd! :get-file-fragment {:file-id id
+                                                :fragment-id @val})
                    (rx/map #(get % :data))
                    (rx/map #(vector key %)))
               (rx/of kv)))

@@ -21,7 +21,8 @@
    [potok.v2.core :as ptk]))
 
 (defn impl-update-zoom
-  [{:keys [vbox] :as local} center zoom]
+  [{:keys [vbox]
+    :as local} center zoom]
   (let [new-zoom (if (fn? zoom) (zoom (:zoom local)) zoom)
         old-zoom (:zoom local)
         center   (if center center (grc/rect->center vbox))
@@ -89,7 +90,8 @@
         (if (empty? shapes)
           state
           (update state :workspace-local
-                  (fn [{:keys [vport] :as local}]
+                  (fn [{:keys [vport]
+                        :as local}]
                     (let [srect (gal/adjust-to-viewport vport srect {:padding 160})
                           zoom  (/ (:width vport) (:width srect))]
                       (-> local
@@ -110,7 +112,8 @@
                              (map #(get objects %))
                              (gsh/shapes->rect))]
             (update state :workspace-local
-                    (fn [{:keys [vport] :as local}]
+                    (fn [{:keys [vport]
+                          :as local}]
                       (let [srect (gal/adjust-to-viewport vport srect {:padding 40})
                             zoom  (/ (:width vport) (:width srect))]
                         (-> local
@@ -132,7 +135,8 @@
                            (gsh/shapes->rect))]
 
           (update state :workspace-local
-                  (fn [{:keys [vport] :as local}]
+                  (fn [{:keys [vport]
+                        :as local}]
                     (let [srect (gal/adjust-to-viewport
                                  vport srect
                                  {:padding 40})

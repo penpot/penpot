@@ -34,7 +34,8 @@
     (l/derived get-library st/state)))
 
 (defn- use-colors-library
-  [{:keys [ref-file] :as color}]
+  [{:keys [ref-file]
+    :as color}]
   (let [library (mf/with-memo [ref-file]
                   (make-colors-library-ref :files ref-file))]
     (mf/deref library)))
@@ -107,9 +108,12 @@
           [:& select
            {:default-value format
             :class (stl/css :select-format-wrapper)
-            :options [{:value :hex :label (tr "inspect.attributes.color.hex")}
-                      {:value :rgba :label (tr "inspect.attributes.color.rgba")}
-                      {:value :hsla :label (tr "inspect.attributes.color.hsla")}]
+            :options [{:value :hex
+                       :label (tr "inspect.attributes.color.hex")}
+                      {:value :rgba
+                       :label (tr "inspect.attributes.color.rgba")}
+                      {:value :hsla
+                       :label (tr "inspect.attributes.color.hsla")}]
             :on-change on-change-format}])
         (when (:gradient color)
           [:div {:class (stl/css :format-info)} "rgba"])]
@@ -124,7 +128,8 @@
           [:span {:class (stl/css-case :color-value-wrapper true
                                        :gradient-name (:gradient color))}
            (if (:gradient color)
-             [:& cb/color-name {:color color :size 90}]
+             [:& cb/color-name {:color color
+                                :size 90}]
              (case format
                :hex [:& cb/color-name {:color color}]
                :rgba (let [[r g b a] (cc/hex->rgba (:color color) (:opacity color))

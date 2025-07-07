@@ -40,13 +40,21 @@
    (mg/generator s (assoc opts :registry sr/default-registry))))
 
 (defn small-double
-  [& {:keys [min max] :or {min -100 max 100}}]
-  (->> (tg/double* {:min min, :max max, :infinite? false, :NaN? false})
+  [& {:keys [min max]
+      :or {min -100
+           max 100}}]
+  (->> (tg/double* {:min min,
+                    :max max,
+                    :infinite? false,
+                    :NaN? false})
        (tg/fmap #(mth/precision % 2))))
 
 (defn small-int
-  [& {:keys [min max] :or {min -100 max 100}}]
-  (tg/large-integer* {:min min, :max max}))
+  [& {:keys [min max]
+      :or {min -100
+           max 100}}]
+  (tg/large-integer* {:min min,
+                      :max max}))
 
 (defn word-string
   []
@@ -100,7 +108,8 @@
 
 (defn map-of
   ([kg vg]
-   (tg/map kg vg {:min-elements 1 :max-elements 3}))
+   (tg/map kg vg {:min-elements 1
+                  :max-elements 3}))
   ([kg vg opts]
    (tg/map kg vg opts)))
 

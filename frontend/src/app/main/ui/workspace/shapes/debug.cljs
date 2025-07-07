@@ -148,11 +148,26 @@
                   nil)]
          [:*
           (when p1
-            [:circle {:data-i i :key (dm/str "c11-" i) :cx (:x p1) :cy (:y p1) :r radius :fill "red"}])
-          [:circle {:data-i i :key (dm/str "c12-" i) :cx (:x p2) :cy (:y p2) :r radius :fill "red"}]
+            [:circle {:data-i i
+                      :key (dm/str "c11-" i)
+                      :cx (:x p1)
+                      :cy (:y p1)
+                      :r radius
+                      :fill "red"}])
+          [:circle {:data-i i
+                    :key (dm/str "c12-" i)
+                    :cx (:x p2)
+                    :cy (:y p2)
+                    :r radius
+                    :fill "red"}]
 
           (when hp
-            [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "orange"}])]))
+            [:circle {:data-i i
+                      :key (dm/str "c13-" i)
+                      :cx (:x hp)
+                      :cy (:y hp)
+                      :r radius
+                      :fill "orange"}])]))
 
      (for [[i segment] (d/enumerate content-b-split)]
        (let [p1 (:prev segment)
@@ -167,11 +182,24 @@
                   nil)]
          [:*
           (when p1
-            [:circle {:key (dm/str "c21-" i) :cx (:x p1) :cy (:y p1) :r radius :fill "blue"}])
-          [:circle {:key (dm/str "c22-" i) :cx (:x p2) :cy (:y p2) :r radius :fill "blue"}]
+            [:circle {:key (dm/str "c21-" i)
+                      :cx (:x p1)
+                      :cy (:y p1)
+                      :r radius
+                      :fill "blue"}])
+          [:circle {:key (dm/str "c22-" i)
+                    :cx (:x p2)
+                    :cy (:y p2)
+                    :r radius
+                    :fill "blue"}]
 
           (when hp
-            [:circle {:data-i i :key (dm/str "c13-" i) :cx (:x hp) :cy (:y hp) :r radius :fill "green"}])]))]))
+            [:circle {:data-i i
+                      :key (dm/str "c13-" i)
+                      :cx (:x hp)
+                      :cy (:y hp)
+                      :r radius
+                      :fill "green"}])]))]))
 
 (mf/defc shape-debug
   [{:keys [shape]}]

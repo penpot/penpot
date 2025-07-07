@@ -17,7 +17,9 @@
   (let [href (str "#icon-" (name id))
         class (or class (str "icon-" (name id)))]
     `(rumext.v2/html
-      [:svg {:width 500 :height 500 :class ~class}
+      [:svg {:width 500
+             :height 500
+             :class ~class}
        [:use {:href ~href}]])))
 
 (defmacro collect-icons
@@ -27,5 +29,6 @@
       ~@(->> (:defs ns-info)
              (map val)
              (filter (fn [entry] (-> entry :meta :icon)))
-             (mapcat (fn [{:keys [name] :as entry}]
+             (mapcat (fn [{:keys [name]
+                           :as entry}]
                        [(-> name c/name str/camel str/capital) name]))))))

@@ -78,16 +78,12 @@ h.watch("translations", null, async function (path) {
 });
 
 log.info("watch: assets (~)");
-h.watch(
-  ["resources/images", "resources/fonts"],
-  null,
-  async function (path) {
-    log.info("changed:", path);
-    await h.compileSvgSprites();
-    await h.copyAssets();
-    await h.compileTemplates();
-  },
-);
+h.watch(["resources/images", "resources/fonts"], null, async function (path) {
+  log.info("changed:", path);
+  await h.compileSvgSprites();
+  await h.copyAssets();
+  await h.compileTemplates();
+});
 
 log.info("watch: wasm playground (~)");
 h.watch(["resources/wasm-playground"], null, async function (path) {

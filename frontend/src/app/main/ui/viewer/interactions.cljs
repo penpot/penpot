@@ -132,7 +132,8 @@
                :xmlnsXlink "http://www.w3.org/1999/xlink"
                :xmlns "http://www.w3.org/2000/svg"
                :fill "none"}
-         [:& wrapper-not-fixed {:shape frame :view-box vbox}]]
+         [:& wrapper-not-fixed {:shape frame
+                                :view-box vbox}]]
 
         [:*
          ;; We have two different svgs for fixed and not fixed elements so we can emulate the sticky css attribute in svg
@@ -147,7 +148,8 @@
                 :style {:width (:width size)
                         :height (:height size)
                         :z-index 1}}
-          [:& wrapper-fixed {:shape fixed-frame :view-box vbox}]]
+          [:& wrapper-fixed {:shape fixed-frame
+                             :view-box vbox}]]
 
          [:svg {:class (stl/css :not-fixed)
                 :view-box vbox
@@ -157,7 +159,8 @@
                 :xmlnsXlink "http://www.w3.org/1999/xlink"
                 :xmlns "http://www.w3.org/2000/svg"
                 :fill "none"}
-          [:& wrapper-not-fixed {:shape frame :view-box vbox}]]])]]))
+          [:& wrapper-not-fixed {:shape frame
+                                 :view-box vbox}]]])]]))
 
 (mf/defc viewport
   {::mf/wrap [mf/memo]

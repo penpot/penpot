@@ -55,7 +55,8 @@
   ([shape]
    (resize-wasm-text-modifiers shape (:content shape)))
 
-  ([{:keys [id points selrect] :as shape} content]
+  ([{:keys [id points selrect]
+     :as shape} content]
    (wasm.api/use-shape id)
    (wasm.api/set-shape-text id content)
    (let [dimension (wasm.api/text-dimensions)
@@ -118,7 +119,8 @@
       (when (not= result "") result))))
 
 (defn update-editor-state
-  [{:keys [id] :as shape} editor-state]
+  [{:keys [id]
+    :as shape} editor-state]
   (ptk/reify ::update-editor-state
     ptk/UpdateEvent
     (update [_ state]
@@ -191,7 +193,8 @@
                      (dwsh/delete-shapes #{id})))))))))
 
 (defn initialize-editor-state
-  [{:keys [id name content] :as shape} decorator]
+  [{:keys [id name content]
+    :as shape} decorator]
   (ptk/reify ::initialize-editor-state
     ptk/UpdateEvent
     (update [_ state]
@@ -220,14 +223,16 @@
 (defn select-all
   "Select all content of the current editor. When not editor found this
   event is noop."
-  [{:keys [id] :as shape}]
+  [{:keys [id]
+    :as shape}]
   (ptk/reify ::editor-select-all
     ptk/UpdateEvent
     (update [_ state]
       (d/update-in-when state [:workspace-editor-state id] ted/editor-select-all))))
 
 (defn cursor-to-end
-  [{:keys [id] :as shape}]
+  [{:keys [id]
+    :as shape}]
   (ptk/reify ::cursor-to-end
     ptk/UpdateEvent
     (update [_ state]
@@ -280,7 +285,8 @@
     (shape-current-values shape txt/is-paragraph-node? attrs)))
 
 (defn current-paragraph-values
-  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  [{:keys [editor-state editor-instance attrs shape]
+    :as options}]
   (cond
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-paragraph-values options)
@@ -294,7 +300,8 @@
     result))
 
 (defn current-text-values
-  [{:keys [editor-state editor-instance attrs shape] :as options}]
+  [{:keys [editor-state editor-instance attrs shape]
+    :as options}]
   (cond
     (some? editor-instance) (v2-current-text-values options)
     (some? editor-state) (v1-current-text-values options)
@@ -320,7 +327,8 @@
 (defn decorate-range-info
   "Adds information about ranges inside the metadata of the text nodes"
   [content]
-  (->> (with-meta content {:start 0 :end (count-node-chars content)})
+  (->> (with-meta content {:start 0
+                           :end (count-node-chars content)})
        (txt/transform-nodes
         (fn [node]
           (d/update-when
@@ -332,7 +340,8 @@
                     (reduce (fn [[result start] node]
                               (let [end (+ start (count-node-chars node))]
                                 [(-> result
-                                     (conj (with-meta node {:start start :end end})))
+                                     (conj (with-meta node {:start start
+                                                            :end end})))
                                  end]))
                             [[] start])
                     (first)))))))))
@@ -568,8 +577,10 @@
                         (and (not-changed? (:height shape) new-height)
                              (or (= (:grow-type shape) :auto-height) (= (:grow-type shape) :auto-width))))))
 
-                (update-fn [{:keys [id selrect grow-type] :as shape}]
-                  (let [{shape-width :width shape-height :height} selrect
+                (update-fn [{:keys [id selrect grow-type]
+                             :as shape}]
+                  (let [{shape-width :width
+                         shape-height :height} selrect
                         [new-width new-height] (get props id)
 
                         shape
@@ -733,7 +744,8 @@
                  (fn [shape]
                    (-> shape
                        (assoc :position-data (get position-data (:id shape)))))
-                 {:stack-undo? true :reg-objects? false}))
+                 {:stack-undo? true
+                  :reg-objects? false}))
          (rx/of (fn [state]
                   (dissoc state ::update-position-data-debounce ::update-position-data))))))))
 
@@ -775,17 +787,20 @@
           (rx/concat
            (let [attrs (select-keys attrs txt/root-attrs)]
              (if-not (empty? attrs)
-               (rx/of (update-root-attrs {:id id :attrs attrs}))
+               (rx/of (update-root-attrs {:id id
+                                          :attrs attrs}))
                (rx/empty)))
 
            (let [attrs (select-keys attrs txt/paragraph-attrs)]
              (if-not (empty? attrs)
-               (rx/of (update-paragraph-attrs {:id id :attrs attrs}))
+               (rx/of (update-paragraph-attrs {:id id
+                                               :attrs attrs}))
                (rx/empty)))
 
            (let [attrs (select-keys attrs txt/text-node-attrs)]
              (if-not (empty? attrs)
-               (rx/of (update-text-attrs {:id id :attrs attrs}))
+               (rx/of (update-text-attrs {:id id
+                                          :attrs attrs}))
                (rx/empty)))
 
            (when (features/active-feature? state "text-editor/v2")
@@ -841,11 +856,14 @@
           (->> (rx/from (seq ids))
                (rx/map (fn [id]
                          (let [editor (get editor-state id)]
-                           (update-text-attrs {:id id :editor editor :attrs attrs})))))
+                           (update-text-attrs {:id id
+                                               :editor editor
+                                               :attrs attrs})))))
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn generate-typography-name
-  [{:keys [font-id font-variant-id] :as typography}]
+  [{:keys [font-id font-variant-id]
+    :as typography}]
   (let [{:keys [name]} (fonts/get-font-data font-id)]
     (assoc typography :name (str name " " (str/title font-variant-id)))))
 
@@ -919,7 +937,9 @@
 
 (defn v2-update-text-shape-content
   [id content & {:keys [update-name? name finalize?]
-                 :or {update-name? false name nil finalize? false}}]
+                 :or {update-name? false
+                      name nil
+                      finalize? false}}]
   (ptk/reify ::v2-update-text-shape-content
     ptk/WatchEvent
     (watch [_ state _]

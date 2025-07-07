@@ -55,9 +55,12 @@
 (defn- text-props
   [shape]
   (d/merge
-   (dwt/current-root-values {:shape shape :attrs txt/root-attrs})
-   (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
-   (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})))
+   (dwt/current-root-values {:shape shape
+                             :attrs txt/root-attrs})
+   (dwt/current-paragraph-values {:shape shape
+                                  :attrs txt/paragraph-attrs})
+   (dwt/current-text-values {:shape shape
+                             :attrs txt/text-node-attrs})))
 
 (defn text-range-proxy?
   [range]
@@ -66,10 +69,14 @@
 (defn text-range-proxy
   [plugin-id file-id page-id id start end]
   (obj/reify {:name "TextRange"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly id)}
-    :$file {:enumerable false :get (constantly file-id)}
-    :$page {:enumerable false :get (constantly page-id)}
+    :$plugin {:enumerable false
+              :get (constantly plugin-id)}
+    :$id {:enumerable false
+          :get (constantly id)}
+    :$file {:enumerable false
+            :get (constantly file-id)}
+    :$page {:enumerable false
+            :get (constantly page-id)}
 
     :shape
     {:this true
@@ -183,7 +190,8 @@
              style   (obj/get self "fontStyle")
              variant
              (or
-              (fonts/find-variant font {:style style :weight weight})
+              (fonts/find-variant font {:style style
+                                        :weight weight})
               (fonts/find-variant font {:weight weight}))]
          (cond
            (nil? variant)
@@ -209,7 +217,8 @@
              weight  (obj/get self "fontWeight")
              variant
              (or
-              (fonts/find-variant font {:weight weight :style style})
+              (fonts/find-variant font {:weight weight
+                                        :style style})
               (fonts/find-variant font {:style style}))]
          (cond
            (nil? variant)
@@ -490,7 +499,8 @@
             style   (obj/get self "fontStyle")
             variant
             (or
-             (fonts/find-variant font {:style style :weight weight})
+             (fonts/find-variant font {:style style
+                                       :weight weight})
              (fonts/find-variant font {:weight weight}))]
         (cond
           (nil? variant)
@@ -512,7 +522,8 @@
             weight  (obj/get self "fontWeight")
             variant
             (or
-             (fonts/find-variant font {:weight weight :style style})
+             (fonts/find-variant font {:weight weight
+                                       :style style})
              (fonts/find-variant font {:style style}))]
         (cond
           (nil? variant)

@@ -48,7 +48,8 @@
 
 (def ^:private schema:create-access-token
   [:map {:title "create-access-token"}
-   [:name [:string {:max 250 :min 1}]]
+   [:name [:string {:max 250
+                    :min 1}]]
    [:expiration {:optional true} ::dt/duration]])
 
 (sv/defmethod ::create-access-token
@@ -69,7 +70,8 @@
   {::doc/added "1.18"
    ::sm/params schema:delete-access-token}
   [{:keys [::db/pool]} {:keys [::rpc/profile-id id]}]
-  (db/delete! pool :access-token {:id id :profile-id profile-id})
+  (db/delete! pool :access-token {:id id
+                                  :profile-id profile-id})
   nil)
 
 (def ^:private schema:get-access-tokens

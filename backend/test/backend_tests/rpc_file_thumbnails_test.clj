@@ -115,7 +115,8 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})
+      (th/run-task! :file-gc {:min-age 0
+                              :file-id (:id file)})
 
       (let [result (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 3 (:processed result))))
@@ -217,7 +218,8 @@
 
       ;; Run the File GC task that should remove unused file object
       ;; thumbnails
-      (t/is (true? (th/run-task! :file-gc {:min-age 0 :file-id (:id file)})))
+      (t/is (true? (th/run-task! :file-gc {:min-age 0
+                                           :file-id (:id file)})))
 
       (let [result (th/run-task! :objects-gc {:min-age 0})]
         (t/is (= 2 (:processed result))))

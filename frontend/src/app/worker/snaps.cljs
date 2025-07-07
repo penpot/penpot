@@ -15,17 +15,20 @@
 
 ;; Public API
 (defmethod impl/handler :snaps/initialize-page-index
-  [{:keys [page] :as message}]
+  [{:keys [page]
+    :as message}]
   (swap! state sd/add-page page)
   nil)
 
 (defmethod impl/handler :snaps/update-page-index
-  [{:keys [old-page new-page] :as message}]
+  [{:keys [old-page new-page]
+    :as message}]
   (swap! state sd/update-page old-page new-page)
   nil)
 
 (defmethod impl/handler :snaps/range-query
-  [{:keys [page-id frame-id axis ranges bounds] :as message}]
+  [{:keys [page-id frame-id axis ranges bounds]
+    :as message}]
   (let [match-bounds?
         (fn [[_ data]]
           (some #(or (= :guide (:type %))

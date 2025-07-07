@@ -51,8 +51,11 @@
               :aria-label title
               :type "button"
               :on-click select-color}
-     [:> swatch* {:background color :size "medium"}]
-     [:& cb/color-name {:color color :size size :origin :palette}]]))
+     [:> swatch* {:background color
+                  :size "medium"}]
+     [:& cb/color-name {:color color
+                        :size size
+                        :origin :palette}]]))
 
 (mf/defc palette*
   {::mf/wrap [mf/memo]}
@@ -149,7 +152,10 @@
                        :max-width (str width "px")
                        :right (str (* offset-step offset) "px")}}
          (for [[idx item] (map-indexed vector colors)]
-           [:> palette-item* {:color item :key idx :size size :selected selected}])])]
+           [:> palette-item* {:color item
+                              :key idx
+                              :size size
+                              :selected selected}])])]
 
      (when show-arrows?
        [:button {:class (stl/css :right-arrow)
@@ -164,7 +170,8 @@
         colors     (mf/with-memo [colors libraries]
                      (->> (reverse colors)
                           (filter ctc/valid-color?)
-                          (map (fn [{:keys [ref-id ref-file] :as color}]
+                          (map (fn [{:keys [ref-id ref-file]
+                                     :as color}]
                                  ;; For make the UI consistent we need to ensure that a
                                  ;; library color looks exactly as it is actually and not
                                  ;; how it was saved first time
@@ -188,7 +195,8 @@
 
 (mf/defc file-color-palette*
   {::mf/private true}
-  [{:keys [file-id] :as props}]
+  [{:keys [file-id]
+    :as props}]
   (let [colors-ref (mf/with-memo [file-id]
                      (make-library-colors-ref file-id))
         colors     (mf/deref colors-ref)
@@ -204,7 +212,8 @@
 
 (mf/defc color-palette*
   {::mf/wrap [mf/memo]}
-  [{:keys [selected] :as props}]
+  [{:keys [selected]
+    :as props}]
   (let [file-id (mf/use-ctx ctx/current-file-id)]
     (cond
       (= selected :recent)

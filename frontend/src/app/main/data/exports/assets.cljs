@@ -73,7 +73,8 @@
                            (assoc :name (:name shape))))]
 
         (rx/of (modal/show :export-shapes
-                           {:exports (vec exports) :origin origin}))))))
+                           {:exports (vec exports)
+                            :origin origin}))))))
 
 (defn show-viewer-export-dialog
   [{:keys [shapes page-id file-id share-id exports]}]
@@ -90,7 +91,8 @@
                           (assoc :shape (dissoc shape :exports))
                           (assoc :name (:name shape))
                           (cond-> share-id (assoc :share-id share-id))))]
-        (rx/of (modal/show :export-shapes {:exports (vec exports) :origin "viewer"})))))) #_TODO
+        (rx/of (modal/show :export-shapes {:exports (vec exports)
+                                           :origin "viewer"})))))) #_TODO
 
 (defn show-workspace-export-frames-dialog
   [frames]
@@ -108,7 +110,8 @@
                         :name (:name frame)})]
 
         (rx/of (modal/show :export-frames
-                           {:exports (vec exports) :origin "workspace:menu"}))))))
+                           {:exports (vec exports)
+                            :origin "workspace:menu"}))))))
 
 (defn- initialize-export-status
   [exports cmd resource]
@@ -127,7 +130,8 @@
                             :cmd cmd}))))
 
 (defn- update-export-status
-  [{:keys [done status resource-id filename] :as data}]
+  [{:keys [done status resource-id filename]
+    :as data}]
   (ptk/reify ::update-export-status
     ptk/UpdateEvent
     (update [_ state]
@@ -147,7 +151,9 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (when (= status "ended")
-        (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id resource-id})
+        (->> (rp/cmd! :export {:cmd :get-resource
+                               :blob? true
+                               :id resource-id})
              (rx/delay 500)
              (rx/map #(dom/trigger-download filename %)))))))
 
@@ -176,7 +182,9 @@
 
          (->> (rp/cmd! :export params)
               (rx/mapcat (fn [{:keys [id filename]}]
-                           (->> (rp/cmd! :export {:cmd :get-resource :blob? true :id id})
+                           (->> (rp/cmd! :export {:cmd :get-resource
+                                                  :blob? true
+                                                  :id id})
                                 (rx/map (fn [data]
                                           (dom/trigger-download filename data)
                                           (clear-export-state uuid/zero))))))
@@ -223,7 +231,8 @@
          ;; Launch the exportation process and stores the resource id
          ;; locally.
          (->> (rp/cmd! :export params)
-              (rx/map (fn [{:keys [id] :as resource}]
+              (rx/map (fn [{:keys [id]
+                            :as resource}]
                         (vreset! resource-id id)
                         (initialize-export-status exports cmd resource))))
 
@@ -249,7 +258,8 @@
               (rx/take-until (rx/delay 6000 stopper))))))))
 
 (defn request-export
-  [{:keys [exports] :as params}]
+  [{:keys [exports]
+    :as params}]
   (if (= 1 (count exports))
     (request-simple-export (assoc params :export (first exports)))
     (request-multiple-export params)))
@@ -269,7 +279,11 @@
                         (if (#{:png :jpeg :webp :svg :pdf} type)
                           (update counts type inc)
                           counts))
-                      {:png 0, :jpeg 0, :webp 0, :pdf 0, :svg 0}
+                      {:png 0,
+                       :jpeg 0,
+                       :webp 0,
+                       :pdf 0,
+                       :svg 0}
                       exports)]
     (ptk/event
      ::ev/event (merge types

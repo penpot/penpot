@@ -38,7 +38,9 @@
           :opt-un [::name]))
 
 (defn handler
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports] :as params}]
+  [{:keys [:request/auth-token]
+    :as exchange} {:keys [exports]
+                   :as params}]
   ;; NOTE: we need to have the `:type` prop because the exports
   ;; datastructure preparation uses it for creating the groups.
   (let [exports  (-> (map #(assoc % :type :pdf :scale 1 :suffix "") exports)
@@ -46,7 +48,8 @@
     (handle-export exchange (assoc params :exports exports))))
 
 (defn handle-export
-  [exchange {:keys [exports wait name profile-id] :as params}]
+  [exchange {:keys [exports wait name profile-id]
+             :as params}]
   (let [total       (count exports)
         topic       (str profile-id)
         resource    (rsc/create :pdf (or name (-> exports first :name)))
@@ -102,7 +105,8 @@
         result    (atom [])
 
         on-object
-        (fn [{:keys [path] :as object}]
+        (fn [{:keys [path]
+              :as object}]
           (let [res (swap! result conj path)]
             (on-progress {:done (count res)})))]
 
@@ -132,7 +136,8 @@
     path))
 
 (defn- move-file
-  [{:keys [path] :as resource} output-path]
+  [{:keys [path]
+    :as resource} output-path]
   (p/do
     (sh/move! output-path path)
     resource))

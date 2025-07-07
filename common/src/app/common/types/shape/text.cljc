@@ -24,12 +24,16 @@
    [:children
     {:optional true}
     [:maybe
-     [:vector {:min 1 :gen/max 2 :gen/min 1}
+     [:vector {:min 1
+               :gen/max 2
+               :gen/min 1}
       [:map
        [:type [:= "paragraph-set"]]
        [:key {:optional true} :string]
        [:children
-        [:vector {:min 1 :gen/max 2 :gen/min 1}
+        [:vector {:min 1
+                  :gen/max 2
+                  :gen/min 1}
          [:map
           [:type [:= "paragraph"]]
           [:key {:optional true} :string]
@@ -46,7 +50,9 @@
           [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
           [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
           [:children
-           [:vector {:min 1 :gen/max 2 :gen/min 1}
+           [:vector {:min 1
+                     :gen/max 2
+                     :gen/min 1}
             [:map
              [:text :string]
              [:key {:optional true} :string]
@@ -70,7 +76,8 @@
 
 (sm/register!
  ^{::sm/type ::position-data}
- [:vector {:min 1 :gen/max 2}
+ [:vector {:min 1
+           :gen/max 2}
   [:map
    [:x ::sm/safe-number]
    [:y ::sm/safe-number]

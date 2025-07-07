@@ -306,10 +306,17 @@
 
 (mf/defc icon*
   {::mf/schema schema:icon}
-  [{:keys [icon-id size class] :rest props}]
+  [{:keys [icon-id size class]
+    :rest props}]
   (let [class (dm/str (or class "") " " (stl/css :icon))
-        props (mf/spread-props props {:class class :width icon-size-m :height icon-size-m})
+        props (mf/spread-props props {:class class
+                                      :width icon-size-m
+                                      :height icon-size-m})
         size-px (cond (= size "s") icon-size-s :else icon-size-m)
         offset (/ (- icon-size-m size-px) 2)]
     [:> "svg" props
-     [:use {:href (dm/str "#icon-" icon-id) :width size-px :height size-px :x offset :y offset}]]))
+     [:use {:href (dm/str "#icon-" icon-id)
+            :width size-px
+            :height size-px
+            :x offset
+            :y offset}]]))

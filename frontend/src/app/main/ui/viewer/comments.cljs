@@ -119,7 +119,8 @@
 
 
 (defn- update-thread-position
-  [positions {:keys [id] :as thread}]
+  [positions {:keys [id]
+              :as thread}]
   (if-let [data (get positions id)]
     (-> thread
         (assoc :position (:position data))
@@ -170,7 +171,8 @@
         on-bubble-click
         (mf/use-fn
          (mf/deps open-thread-id)
-         (fn [{:keys [id] :as thread}]
+         (fn [{:keys [id]
+               :as thread}]
            (st/emit! (if (= open-thread-id id)
                        (dcm/close-thread)
                        (-> (dcm/open-thread thread)
@@ -222,7 +224,10 @@
          [:> cmt/comment-floating-thread*
           {:thread thread
            :position-modifier modifier1
-           :viewport {:offset-x 0 :offset-y 0 :width (:width vsize) :height (:height vsize)}
+           :viewport {:offset-x 0
+                      :offset-y 0
+                      :width (:width vsize)
+                      :height (:height vsize)}
            :zoom zoom}])
 
        (when-let [draft (:draft local)]

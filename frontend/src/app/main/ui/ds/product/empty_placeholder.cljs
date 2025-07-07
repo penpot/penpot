@@ -23,17 +23,24 @@
 
 (mf/defc empty-placeholder*
   {::mf/schema schema:empty-placeholder}
-  [{:keys [class title subtitle type children] :rest props}]
+  [{:keys [class title subtitle type children]
+    :rest props}]
 
   (let [class (dm/str class " " (stl/css :empty-placeholder))
-        props (mf/spread-props props {:class class :data-testid "empty-placeholder"})
+        props (mf/spread-props props {:class class
+                                      :data-testid "empty-placeholder"})
         type  (or type 1)
         decoration-type (dm/str "empty-placeholder-" (str type))]
     [:> "div" props
-     [:> raw-svg* {:id (dm/str decoration-type "-left") :class (stl/css :svg-decor)}]
+     [:> raw-svg* {:id (dm/str decoration-type "-left")
+                   :class (stl/css :svg-decor)}]
      [:div {:class (stl/css :text-wrapper)}
-      [:> text* {:as "span" :typography t/title-medium :class (stl/css :placeholder-title)} title]
+      [:> text* {:as "span"
+                 :typography t/title-medium
+                 :class (stl/css :placeholder-title)} title]
       (when subtitle
-        [:> text* {:as "span" :typography t/body-large} subtitle])
+        [:> text* {:as "span"
+                   :typography t/body-large} subtitle])
       children]
-     [:> raw-svg* {:id (dm/str decoration-type "-right") :class (stl/css :svg-decor)}]]))
+     [:> raw-svg* {:id (dm/str decoration-type "-right")
+                   :class (stl/css :svg-decor)}]]))

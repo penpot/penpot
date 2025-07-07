@@ -52,7 +52,8 @@
 (defn set-profile
   "Initialize profile state, only logged-in profile data should be
   passed to this event"
-  [{:keys [id] :as profile}]
+  [{:keys [id]
+    :as profile}]
   (ptk/reify ::set-profile
     IDeref
     (-deref [_] profile)
@@ -188,7 +189,8 @@
 ;; --- Request Email Change
 
 (defn request-email-change
-  [{:keys [email] :as data}]
+  [{:keys [email]
+    :as data}]
   (assert (sm/email-string? email) "exepected a valid email")
 
   (ptk/reify ::request-email-change
@@ -353,7 +355,8 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/cmd! :get-profiles-for-file-comments {:team-id team-id :share-id share-id})
+          (->> (rp/cmd! :get-profiles-for-file-comments {:team-id team-id
+                                                         :share-id share-id})
                (rx/map #(partial fetched %))))))))
 
 ;; --- EVENT: request-account-deletion
@@ -380,7 +383,8 @@
 
 (def ^:private
   schema:request-profile-recovery
-  [:map {:title "request-profile-recovery" :closed true}
+  [:map {:title "request-profile-recovery"
+         :closed true}
    [:email ::sm/email]])
 
 (def ^:private check-request-profile-recovery
@@ -404,7 +408,8 @@
 
 (def ^:private
   schema:recover-profile
-  [:map {:title "recover-profile" :closed true}
+  [:map {:title "recover-profile"
+         :closed true}
    [:password :string]
    [:token :string]])
 
@@ -451,7 +456,8 @@
       (assoc state :access-token-created access-token))))
 
 (defn create-access-token
-  [{:keys [] :as params}]
+  [{:keys []
+    :as params}]
   (ptk/reify ::create-access-token
     ptk/WatchEvent
     (watch [_ _ _]
@@ -466,7 +472,8 @@
 ;; --- EVENT: delete-access-token
 
 (defn delete-access-token
-  [{:keys [id] :as params}]
+  [{:keys [id]
+    :as params}]
   (us/assert! ::us/uuid id)
   (ptk/reify ::delete-access-token
     ptk/WatchEvent

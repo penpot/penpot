@@ -7,7 +7,9 @@
 (ns app.common.geom.line)
 
 (defn line-value
-  [[{px :x py :y} {vx :x vy :y}] {:keys [x y]}]
+  [[{px :x
+     py :y} {vx :x
+             vy :y}] {:keys [x y]}]
   (let [a vy
         b (- vx)
         c (+ (* (- vy) px) (* vx py))]

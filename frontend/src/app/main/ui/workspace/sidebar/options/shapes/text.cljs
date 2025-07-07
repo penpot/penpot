@@ -29,7 +29,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options
-  [{:keys [shape file-id libraries] :as props}]
+  [{:keys [shape file-id libraries]
+    :as props}]
   (let [ids    [(:id shape)]
         type   (:type shape)
 
@@ -149,7 +150,8 @@
          :file-id file-id
          :libraries libraries}])
 
-     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+     [:> shadow-menu* {:ids ids
+                       :values (get shape :shadow)}]
 
      [:& blur-menu
       {:ids ids

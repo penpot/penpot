@@ -66,7 +66,8 @@
                         (dm/get-prop shape :transform-inverse))
         transform-inv (d/nilv transform-inv gmt/base)
 
-        {:keys [start-x start-y end-x end-y] gwidth :width} gradient
+        {:keys [start-x start-y end-x end-y]
+         gwidth :width} gradient
 
         gstart-pt     (gpt/point start-x start-y)
         gend-pt       (gpt/point end-x end-y)

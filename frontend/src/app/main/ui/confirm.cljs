@@ -30,7 +30,8 @@
            items
            cancel-label
            accept-label
-           accept-style] :as props}]
+           accept-style]
+    :as props}]
   (let [on-accept    (or on-accept identity)
         on-cancel    (or on-cancel identity)
         message      (or message (tr "ds.confirm-title"))

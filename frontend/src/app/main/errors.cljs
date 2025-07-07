@@ -36,9 +36,12 @@
 
 (defn- print-explain!
   [data]
-  (when-let [{:keys [errors] :as explain} (::sm/explain data)]
+  (when-let [{:keys [errors]
+              :as explain} (::sm/explain data)]
     (let [errors (mapv #(update % :schema sm/form) errors)]
-      (pp/pprint errors {:width 100 :level 15 :length 20})))
+      (pp/pprint errors {:width 100
+                         :level 15
+                         :length 20})))
 
   (when-let [explain (:explain data)]
     (js/console.log explain)))
@@ -127,7 +130,8 @@
 ;; and frontend.
 
 (defmethod ptk/handle-error :validation
-  [{:keys [code] :as error}]
+  [{:keys [code]
+    :as error}]
   (print-group! "Validation Error"
                 (fn []
                   (print-data! error)
@@ -217,47 +221,63 @@
   (let [team-id    (:current-team-id @st/state)
         project-id (:current-project-id @st/state)]
     (if (and project-id team-id)
-      (st/emit! (rt/nav :dashboard-files {:team-id team-id :project-id project-id}))
+      (st/emit! (rt/nav :dashboard-files {:team-id team-id
+                                          :project-id project-id}))
       (set! (.-href glob/location) ""))))
 
 (defmethod ptk/handle-error :restriction
-  [{:keys [code] :as error}]
+  [{:keys [code]
+    :as error}]
   (cond
     (= :migration-in-progress code)
     (let [message    (tr "errors.migration-in-progress" (:feature error))
           on-accept  (constantly nil)]
-      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+      (st/emit! (modal/show {:type :alert
+                             :message message
+                             :on-accept on-accept})))
 
     (= :team-feature-mismatch code)
     (let [message    (tr "errors.team-feature-mismatch" (:feature error))
           on-accept  (constantly nil)]
-      (st/emit! (modal/show {:type :alert :message message :on-accept on-accept})))
+      (st/emit! (modal/show {:type :alert
+                             :message message
+                             :on-accept on-accept})))
 
     (= :file-feature-mismatch code)
     (let [message (tr "errors.file-feature-mismatch" (:feature error))]
-      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
+      (st/emit! (modal/show {:type :alert
+                             :message message
+                             :on-accept redirect-to-dashboard})))
 
     (= :feature-mismatch code)
     (let [message (tr "errors.feature-mismatch" (:feature error))]
-      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
+      (st/emit! (modal/show {:type :alert
+                             :message message
+                             :on-accept redirect-to-dashboard})))
 
     (= :feature-not-supported code)
     (let [message (tr "errors.feature-not-supported" (:feature error))]
-      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
+      (st/emit! (modal/show {:type :alert
+                             :message message
+                             :on-accept redirect-to-dashboard})))
 
     (= :file-version-not-supported code)
     (let [message (tr "errors.version-not-supported")]
-      (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
+      (st/emit! (modal/show {:type :alert
+                             :message message
+                             :on-accept redirect-to-dashboard})))
 
     (= :max-quote-reached code)
     (let [message (tr "errors.max-quote-reached" (:target error))]
-      (st/emit! (modal/show {:type :alert :message message})))
+      (st/emit! (modal/show {:type :alert
+                             :message message})))
 
     (or (= :paste-feature-not-enabled code)
         (= :missing-features-in-paste-content code)
         (= :paste-feature-not-supported code))
     (let [message (tr "errors.feature-not-supported" (:feature error))]
-      (st/emit! (modal/show {:type :alert :message message})))
+      (st/emit! (modal/show {:type :alert
+                             :message message})))
 
     (= :file-in-components-v1 code)
     (st/emit! (modal/show {:type :alert

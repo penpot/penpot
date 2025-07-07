@@ -34,7 +34,8 @@
   (case (ctsr/radius-mode shape)
     :radius-1
     (let [radius (gsh/shape-corners-1 shape)]
-      #js {:rx radius :ry radius})
+      #js {:rx radius
+           :ry radius})
 
     :radius-4
     (let [[r1 r2 r3 r4] (gsh/shape-corners-4 shape)

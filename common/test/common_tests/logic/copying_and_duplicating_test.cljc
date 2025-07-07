@@ -27,7 +27,9 @@
 (defn- setup []
   (-> (thf/sample-file :file1)
       (tho/add-simple-component :simple-1 :frame-simple-1 :rect-simple-1
-                                :child-params {:type :rect :fills (ths/sample-fills-color :fill-color "#2152e5") :name "rect-simple-1"})
+                                :child-params {:type :rect
+                                               :fills (ths/sample-fills-color :fill-color "#2152e5")
+                                               :name "rect-simple-1"})
 
       (tho/add-frame :frame-composed-1 :name "frame-composed-1")
       (thc/instantiate-component :simple-1 :copy-simple-1 :parent-label :frame-composed-1 :children-labels [:composed-1-simple-1])

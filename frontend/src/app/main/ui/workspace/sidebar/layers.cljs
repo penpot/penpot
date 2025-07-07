@@ -39,7 +39,8 @@
 ;; affected by the selected set.
 (mf/defc frame-wrapper
   {::mf/props :obj}
-  [{:keys [selected] :as props}]
+  [{:keys [selected]
+    :as props}]
   (let [pending-selected (mf/use-var selected)
         current-selected (mf/use-state selected)
         props            (mf/spread-object props {:selected @current-selected})
@@ -64,13 +65,15 @@
 (mf/defc layers-tree
   {::mf/wrap [mf/memo #(mf/throttle % 200)]
    ::mf/wrap-props false}
-  [{:keys [objects filtered? parent-size] :as props}]
+  [{:keys [objects filtered? parent-size]
+    :as props}]
   (let [selected       (mf/deref refs/selected-shapes)
         selected       (hooks/use-equal-memo selected)
         highlighted    (mf/deref refs/highlighted-shapes)
         highlighted    (hooks/use-equal-memo highlighted)
         root           (get objects uuid/zero)]
-    [:div {:class (stl/css :element-list) :data-testid "layer-item"}
+    [:div {:class (stl/css :element-list)
+           :data-testid "layer-item"}
      [:& hooks/sortable-container {}
       (for [[index id] (reverse (d/enumerate (:shapes root)))]
         (when-let [obj (get objects id)]
@@ -513,7 +516,8 @@
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
 
-    [:div#layers {:class (stl/css :layers) :data-testid "layer-tree"}
+    [:div#layers {:class (stl/css :layers)
+                  :data-testid "layer-tree"}
      (if (d/not-empty? focus)
        [:div {:class (stl/css :tool-window-bar)}
         [:button {:class (stl/css :focus-title)
@@ -525,7 +529,9 @@
           (or title (tr "workspace.sidebar.layers"))]
 
          [:div {:class (stl/css :focus-mode-tag-wrapper)}
-          [:& badge-notification {:content (tr "workspace.focus.focus-mode") :size :small :is-focus true}]]]]
+          [:& badge-notification {:content (tr "workspace.focus.focus-mode")
+                                  :size :small
+                                  :is-focus true}]]]]
 
        (filter-component))
 

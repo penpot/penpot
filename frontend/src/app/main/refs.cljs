@@ -158,7 +158,8 @@
    (fn [state]
      (let [objects  (dsh/lookup-page-objects state)
            selected (dm/get-in state [:workspace-local :selected])]
-       {:objects objects :selected selected}))
+       {:objects objects
+        :selected selected}))
    st/state
    (fn [v1 v2]
      (and (identical? (:objects v1) (:objects v2))
@@ -259,7 +260,8 @@
   (l/derived dsh/lookup-file-data st/state))
 
 (def workspace-file-colors
-  (l/derived (fn [{:keys [id] :as data}]
+  (l/derived (fn [{:keys [id]
+                   :as data}]
                (some-> (:colors data) (update-vals #(assoc % :file-id id))))
              workspace-data
              =))

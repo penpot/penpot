@@ -55,14 +55,24 @@
        (aset js/window "load" handle-load)
        #(js-delete js/window "load")))
 
-    [:div {:style {:display "flex" :width "100%" :height "100%" :flex-direction "column" :overflow "auto" :align-items "center"}}
+    [:div {:style {:display "flex"
+                   :width "100%"
+                   :height "100%"
+                   :flex-direction "column"
+                   :overflow "auto"
+                   :align-items "center"}}
      [:input {:id "zoom-input"
               :ref zoom-ref
-              :type "range" :min 1 :max 400 :default-value 100
+              :type "range"
+              :min 1
+              :max 400
+              :default-value 100
               :on-change change-zoom
               :style {:max-width "500px"}}]
 
-     [:div {:style {:width "100%" :height "100%" :overflow "auto"}}
+     [:div {:style {:width "100%"
+                    :height "100%"
+                    :overflow "auto"}}
       [:iframe {:ref load-ref
                 :frame-border "0"
                 :scrolling "no"

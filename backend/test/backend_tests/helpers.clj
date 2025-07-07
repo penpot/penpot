@@ -192,7 +192,8 @@
 
 (defn create-project*
   ([i params] (create-project* *system* i params))
-  ([system i {:keys [profile-id team-id] :as params}]
+  ([system i {:keys [profile-id team-id]
+              :as params}]
    (us/assert uuid? profile-id)
    (us/assert uuid? team-id)
 
@@ -206,7 +207,8 @@
 (defn create-file*
   ([i params]
    (create-file* *system* i params))
-  ([system i {:keys [profile-id project-id] :as params}]
+  ([system i {:keys [profile-id project-id]
+              :as params}]
    (dm/assert! "expected uuid" (uuid? profile-id))
    (dm/assert! "expected uuid" (uuid? project-id))
    (db/tx-run! system
@@ -221,12 +223,14 @@
 (defn mark-file-deleted*
   ([params]
    (mark-file-deleted* *system* params))
-  ([conn {:keys [id] :as params}]
+  ([conn {:keys [id]
+          :as params}]
    (#'files/mark-file-deleted conn {} id)))
 
 (defn create-team*
   ([i params] (create-team* *system* i params))
-  ([system i {:keys [profile-id] :as params}]
+  ([system i {:keys [profile-id]
+              :as params}]
    (us/assert uuid? profile-id)
    (dm/with-open [conn (db/open system)]
      (let [id       (mk-uuid "team" i)
@@ -239,7 +243,11 @@
 (defn create-file-media-object*
   ([params] (create-file-media-object* *system* params))
   ([system {:keys [name width height mtype file-id is-local media-id]
-            :or {name "sample" width 100 height 100 mtype "image/svg+xml" is-local true}}]
+            :or {name "sample"
+                 width 100
+                 height 100
+                 mtype "image/svg+xml"
+                 is-local true}}]
 
    (dm/with-open [conn (db/open system)]
      (db/insert! conn :file-media-object
@@ -254,9 +262,11 @@
 
 (defn link-file-to-library*
   ([params] (link-file-to-library* *system* params))
-  ([system {:keys [file-id library-id] :as params}]
+  ([system {:keys [file-id library-id]
+            :as params}]
    (dm/with-open [conn (db/open system)]
-     (#'files/link-file-to-library conn {:file-id file-id :library-id library-id}))))
+     (#'files/link-file-to-library conn {:file-id file-id
+                                         :library-id library-id}))))
 
 (defn create-complaint-for
   [system {:keys [id created-at type]}]
@@ -278,7 +288,8 @@
 
 (defn create-team-role*
   ([params] (create-team-role* *system* params))
-  ([system {:keys [team-id profile-id role] :or {role :owner}}]
+  ([system {:keys [team-id profile-id role]
+            :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
      (#'teams/create-team-role conn {:team-id team-id
                                      :profile-id profile-id
@@ -286,7 +297,8 @@
 
 (defn create-project-role*
   ([params] (create-project-role* *system* params))
-  ([system {:keys [project-id profile-id role] :or {role :owner}}]
+  ([system {:keys [project-id profile-id role]
+            :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
      (#'teams/create-project-role conn {:project-id project-id
                                         :profile-id profile-id
@@ -294,7 +306,8 @@
 
 (defn create-file-role*
   ([params] (create-file-role* *system* params))
-  ([system {:keys [file-id profile-id role] :or {role :owner}}]
+  ([system {:keys [file-id profile-id role]
+            :or {role :owner}}]
    (dm/with-open [conn (db/open system)]
      (files.create/create-file-role! conn {:file-id file-id
                                            :profile-id profile-id
@@ -303,10 +316,12 @@
 (defn update-file*
   ([params] (update-file* *system* params))
   ([system {:keys [file-id changes session-id profile-id revn]
-            :or {session-id (uuid/next) revn 0}}]
+            :or {session-id (uuid/next)
+                 revn 0}}]
    (-> system
        (assoc ::files.update/timestamp (dt/now))
-       (db/tx-run! (fn [{:keys [::db/conn] :as system}]
+       (db/tx-run! (fn [{:keys [::db/conn]
+                         :as system}]
                      (let [file (files.update/get-file conn file-id)]
                        (#'files.update/update-file* system
                                                     {:id file-id
@@ -320,7 +335,8 @@
 
 (declare command!)
 
-(defn update-file! [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+(defn update-file! [& {:keys [profile-id file-id changes revn]
+                       :or {revn 0}}]
   (let [features (cfeat/get-enabled-features cf/flags)
         params   {::type :update-file
                   ::rpc/profile-id profile-id
@@ -369,7 +385,8 @@
         :result nil})))
 
 (defn command!
-  [{:keys [::type] :as data}]
+  [{:keys [::type]
+    :as data}]
   (let [[mdata method-fn] (get-in *system* [:app.rpc/methods type])]
     (when-not method-fn
       (ex/raise :type :assertion
@@ -396,7 +413,8 @@
 
 (defn run-pending-tasks!
   []
-  (db/tx-run! *system* (fn [{:keys [::db/conn] :as cfg}]
+  (db/tx-run! *system* (fn [{:keys [::db/conn]
+                             :as cfg}]
                          (let [tasks (->> (db/exec! conn [sql:pending-tasks])
                                           (map #'app.worker.runner/decode-task-row))]
                            (doseq [task tasks]
@@ -554,7 +572,8 @@
 
 (defn consume-sse
   [callback]
-  (let [{:keys [::yres/status ::yres/body ::yres/headers] :as response} (callback {})
+  (let [{:keys [::yres/status ::yres/body ::yres/headers]
+         :as response} (callback {})
         output (PipedOutputStream.)
         input  (PipedInputStream. output)]
 

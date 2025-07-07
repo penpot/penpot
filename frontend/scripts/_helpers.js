@@ -255,9 +255,9 @@ const markedOptions = {
         const text = token.text;
         return `<a href="${href}" target="${target}">${text}</a>`;
       }
-    }
-  }
-}
+    },
+  },
+};
 
 marked.use(markedOptions);
 

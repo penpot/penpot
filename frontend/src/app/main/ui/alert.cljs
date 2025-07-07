@@ -28,7 +28,8 @@
            on-accept
            hint
            accept-label
-           accept-style] :as props}]
+           accept-style]
+    :as props}]
 
   (let [on-accept    (or on-accept identity)
         message      (or message (tr "ds.alert-title"))

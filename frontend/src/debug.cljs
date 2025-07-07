@@ -298,7 +298,8 @@
   []
   (st/emit!
    dw/reset-zoom
-   (dw/update-viewport-position {:x (constantly 0) :y (constantly 0)})))
+   (dw/update-viewport-position {:x (constantly 0)
+                                 :y (constantly 0)})))
 
 (defn ^:export hide-ui
   []

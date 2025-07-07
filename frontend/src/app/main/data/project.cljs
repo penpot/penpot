@@ -15,7 +15,8 @@
 (log/set-level! :warn)
 
 (defn- project-fetched
-  [{:keys [id] :as project}]
+  [{:keys [id]
+    :as project}]
   (ptk/reify ::project-fetched
     ptk/UpdateEvent
     (update [_ state]

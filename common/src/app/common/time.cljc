@@ -57,7 +57,8 @@
 
     (int? s)
     #?(:clj  (Instant/ofEpochMilli s)
-       :cljs (.fromMillis ^js DateTime s #js {:zone "local" :setZone false}))
+       :cljs (.fromMillis ^js DateTime s #js {:zone "local"
+                                              :setZone false}))
 
     (string? s)
     #?(:clj (Instant/parse s)

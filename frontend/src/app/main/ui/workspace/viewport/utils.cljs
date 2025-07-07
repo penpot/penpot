@@ -72,7 +72,8 @@
       :else                                cur)))
 
 (defn title-transform
-  [{:keys [points] :as shape} zoom grid-edition?]
+  [{:keys [points]
+    :as shape} zoom grid-edition?]
   (let [leftmost  (->> points (reduce left?))
         topmost   (->> points (remove #{leftmost}) (reduce top?))
         rightmost (->> points (remove #{leftmost topmost}) (reduce right?))

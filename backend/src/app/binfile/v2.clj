@@ -136,7 +136,8 @@
 
     (write! cfg :team team-id team)
 
-    (doseq [{:keys [id] :as font} fonts]
+    (doseq [{:keys [id]
+             :as font} fonts]
       (vswap! bfc/*state* update :team-font-variants conj id)
       (write! cfg :team-font-variant id font))))
 
@@ -187,7 +188,8 @@
            :media (count media))))
 
 (defn- write-storage-object!
-  [{:keys [::sto/storage] :as cfg} id]
+  [{:keys [::sto/storage]
+    :as cfg} id]
   (let [sobj (sto/get-object storage id)
         data (with-open [input (sto/get-object-data storage sobj)]
                (io/read input))]
@@ -196,7 +198,8 @@
     (write! cfg :storage-object id (meta sobj) data)))
 
 (defn- read-storage-object!
-  [{:keys [::sto/storage ::bfc/timestamp] :as cfg} id]
+  [{:keys [::sto/storage ::bfc/timestamp]
+    :as cfg} id]
   (let [mdata   (read-obj cfg :storage-object id)
         data    (read-blob cfg :storage-object id)
         hash    (sto/calculate-hash data)
@@ -219,7 +222,8 @@
            :size (:size sobject))))
 
 (defn read-team!
-  [{:keys [::db/conn ::bfc/timestamp] :as cfg} team-id]
+  [{:keys [::db/conn ::bfc/timestamp]
+    :as cfg} team-id]
   (l/trc :hint "read" :obj "team" :id (str team-id))
 
   (let [team (read-obj cfg :team team-id)
@@ -256,7 +260,8 @@
     team))
 
 (defn read-project!
-  [{:keys [::db/conn ::bfc/timestamp] :as cfg} project-id]
+  [{:keys [::db/conn ::bfc/timestamp]
+    :as cfg} project-id]
   (l/trc :hint "read" :obj "project" :id (str project-id))
 
   (let [project (read-obj cfg :project project-id)
@@ -276,7 +281,8 @@
                 ::db/return-keys false)))
 
 (defn read-file!
-  [{:keys [::db/conn ::bfc/timestamp] :as cfg} file-id]
+  [{:keys [::db/conn ::bfc/timestamp]
+    :as cfg} file-id]
   (l/trc :hint "read" :obj "file" :id (str file-id))
 
   (let [file (-> (read-obj cfg :file file-id)
@@ -394,7 +400,8 @@
            :path (str (::path cfg)))
 
     (try
-      (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+      (db/tx-run! cfg (fn [{:keys [::db/conn]
+                            :as cfg}]
                         (db/exec-one! conn ["SET idle_in_transaction_session_timeout = 0"])
                         (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 

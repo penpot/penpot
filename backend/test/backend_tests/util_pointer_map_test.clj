@@ -28,7 +28,8 @@
       (t/is (= 1 (count obj)))))
 
   (t/testing "dissoc"
-    (let [obj (pmap/wrap {:a 1 :b 2})]
+    (let [obj (pmap/wrap {:a 1
+                          :b 2})]
       (t/is (contains? obj :a))
       (t/is (contains? obj :b))
       (let [obj (dissoc obj :a)]
@@ -36,7 +37,8 @@
         (t/is (contains? obj :b)))))
 
   (t/testing "seq"
-    (let [obj (pmap/wrap {:a 1 :b 2})
+    (let [obj (pmap/wrap {:a 1
+                          :b 2})
           s1  (first obj)]
       (t/is (= (key s1) :a))
       (t/is (= (val s1) 1))))

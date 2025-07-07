@@ -52,7 +52,8 @@
     :or {is-active true}}]
   (some-> (get-current-system)
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (let [password (cmd.profile/derive-password system password)
                    params   {:id (uuid/next)
                              :email email
@@ -67,7 +68,8 @@
   [{:keys [fullname email password is-active]}]
   (some-> (get-current-system)
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (let [params (cond-> {}
                             (some? fullname)
                             (assoc :fullname fullname)
@@ -98,11 +100,13 @@
 
   (some-> (get-current-system)
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (let [res (if soft
                          (db/update! conn :profile
                                      {:deleted-at (dt/now)}
-                                     {:email email :deleted-at nil})
+                                     {:email email
+                                      :deleted-at nil})
                          (db/delete! conn :profile
                                      {:email email}))]
                (pos? (db/get-update-count res)))))))
@@ -116,7 +120,8 @@
 
   (some-> (get-current-system)
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (let [sql (str "select email, fullname, created_at, deleted_at from profile "
                             " where email similar to ? order by created_at desc limit 100")]
                (db/exec! conn [sql email]))))))
@@ -129,7 +134,8 @@
   [{:keys [token]}]
   (when-let [system (get-current-system)]
     (let [props  (get system ::setup/props)]
-      (tokens/verify props {:token token :iss "authentication"}))))
+      (tokens/verify props {:token token
+                            :iss "authentication"}))))
 
 (def ^:private schema:get-customer
   [:map [:id ::sm/uuid]])
@@ -165,8 +171,10 @@
 (defmethod exec-command "get-customer"
   [params]
   (when-let [system (get-current-system)]
-    (let [{:keys [id] :as params} (coerce-get-customer-params params)
-          {:keys [props] :as profile} (cmd.profile/get-profile system id)]
+    (let [{:keys [id]
+           :as params} (coerce-get-customer-params params)
+          {:keys [props]
+           :as profile} (cmd.profile/get-profile system id)]
       {:id (get profile :id)
        :name (get profile :fullname)
        :email (get profile :email)
@@ -240,7 +248,8 @@
   (when-let [system (get-current-system)]
     (let [{:keys [id subscription]} (coerce-update-customer-subscription-params params)
           ;; FIXME: locking
-          {:keys [props] :as profile} (cmd.profile/get-profile system id)
+          {:keys [props]
+           :as profile} (cmd.profile/get-profile system id)
           props (assoc props :subscription subscription)]
 
       (db/update! system :profile

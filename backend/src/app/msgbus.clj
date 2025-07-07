@@ -66,7 +66,8 @@
   (assert (sm/check schema:params params)))
 
 (defmethod ig/init-key ::msgbus
-  [_ {:keys [::buffer-size ::wrk/executor ::timeout ::rds/redis] :as cfg}]
+  [_ {:keys [::buffer-size ::wrk/executor ::timeout ::rds/redis]
+      :as cfg}]
   (l/info :hint "initialize msgbus" :buffer-size buffer-size)
   (let [cmd-ch (sp/chan :buf buffer-size)
         rcv-ch (sp/chan :buf (sp/dropping-buffer buffer-size))
@@ -107,7 +108,8 @@
 
       (-pub [_ topic message]
         (let [message (assoc message :topic topic)]
-          (sp/put! pub-ch {:topic topic :message message})))
+          (sp/put! pub-ch {:topic topic
+                           :message message})))
 
       (-purge [_ chans]
         (l/debug :hint "purge" :chans (count chans))
@@ -194,12 +196,14 @@
                  ;; There are no back pressure, so we use a slidding
                  ;; buffer for cases when the pubsub broker sends
                  ;; more messages that we can process.
-                 (let [val {:topic topic :message (t/decode message)}]
+                 (let [val {:topic topic
+                            :message (t/decode message)}]
                    (when-not (sp/offer! rcv-ch val)
                      (l/warn :msg "dropping message on subscription loop"))))))
 
 (defn- process-input
-  [{:keys [::state ::wrk/executor] :as cfg} topic message]
+  [{:keys [::state ::wrk/executor]
+    :as cfg} topic message]
   (let [chans (get-in @state [:topics topic])]
     (when-let [closed (loop [chans  (seq chans)
                              closed #{}]
@@ -212,7 +216,8 @@
 
 
 (defn start-io-loop
-  [{:keys [::sconn ::rcv-ch ::pub-ch ::state ::wrk/executor] :as cfg}]
+  [{:keys [::sconn ::rcv-ch ::pub-ch ::state ::wrk/executor]
+    :as cfg}]
   (rds/add-listener sconn (create-listener rcv-ch))
 
   (px/thread
@@ -261,7 +266,8 @@
 (defn- redis-pub
   "Publish a message to the redis server. Asynchronous operation,
   intended to be used in core.async go blocks."
-  [{:keys [::pconn] :as cfg} {:keys [topic message]}]
+  [{:keys [::pconn]
+    :as cfg} {:keys [topic message]}]
   (try
     (p/await! (rds/publish pconn topic (t/encode message)))
     (catch InterruptedException cause
@@ -274,7 +280,8 @@
 (defn- redis-sub
   "Create redis subscription. Blocking operation, intended to be used
   inside an agent."
-  [{:keys [::sconn] :as cfg} topic]
+  [{:keys [::sconn]
+    :as cfg} topic]
   (try
     (rds/subscribe sconn [topic])
     (catch InterruptedException cause
@@ -285,7 +292,8 @@
 (defn- redis-unsub
   "Removes redis subscription. Blocking operation, intended to be used
   inside an agent."
-  [{:keys [::sconn] :as cfg} topic]
+  [{:keys [::sconn]
+    :as cfg} topic]
   (try
     (rds/unsubscribe sconn [topic])
     (catch InterruptedException cause

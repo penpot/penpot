@@ -15,7 +15,8 @@
   ([value]
    (format-percent value nil))
 
-  ([value {:keys [precision] :or {precision 2}}]
+  ([value {:keys [precision]
+           :or {precision 2}}]
    (let [value (if (string? value) (d/parse-double value) value)]
      (when (d/num? value)
        (let [percent-val (mth/precision (* value 100) precision)]
@@ -24,7 +25,8 @@
 (defn format-frs
   ([value]
    (format-frs value nil))
-  ([value {:keys [precision] :or {precision 2}}]
+  ([value {:keys [precision]
+           :or {precision 2}}]
    (let [value (if (string? value) (d/parse-double value) value)]
      (when (d/num? value)
        (let [value (mth/precision value precision)]
@@ -33,7 +35,8 @@
 (defn format-number
   ([value]
    (format-number value nil))
-  ([value {:keys [precision] :or {precision 2}}]
+  ([value {:keys [precision]
+           :or {precision 2}}]
    (let [value (if (string? value) (d/parse-double value) value)]
      (when (d/num? value)
        (let [value (mth/precision value precision)]
@@ -43,7 +46,8 @@
   ([value]
    (format-pixels value nil))
 
-  ([value {:keys [precision] :or {precision 2}}]
+  ([value {:keys [precision]
+           :or {precision 2}}]
    (let [value (if (string? value) (d/parse-double value) value)]
      (when (d/num? value)
        (let [value (mth/precision value precision)]
@@ -69,15 +73,24 @@
       {:p1 p1}
 
       (= 4 (count (set [p1 p2 p3 p4])))
-      {:p1 p1 :p2 p2 :p3 p3 :p4 p4}
+      {:p1 p1
+       :p2 p2
+       :p3 p3
+       :p4 p4}
 
       (and (= p1 p3) (= p2 p4))
-      {:p1 p1 :p2 p2}
+      {:p1 p1
+       :p2 p2}
 
       (and (not= p1 p3) (= p2 p4))
-      {:p1 p1 :p2 p2 :p3 p3}
+      {:p1 p1
+       :p2 p2
+       :p3 p3}
       :else
-      {:p1 p1 :p2 p2 :p3 p3 :p4 p4})))
+      {:p1 p1
+       :p2 p2
+       :p3 p3
+       :p4 p4})))
 
 (defn format-size [type value shape]
   (let [sizing (if (= type :width)
@@ -92,8 +105,14 @@
 (defn format-padding
   [padding-values type]
   (let [new-padding (if (= :margin type)
-                      {:m1 0 :m2 0 :m3 0 :m4 0}
-                      {:p1 0 :p2 0 :p3 0 :p4 0})
+                      {:m1 0
+                       :m2 0
+                       :m3 0
+                       :m4 0}
+                      {:p1 0
+                       :p2 0
+                       :p3 0
+                       :p4 0})
         merged-padding (merge new-padding padding-values)
         short-hand (format-padding-margin-shorthand (vals merged-padding))
         parsed-values (map #(str/fmt "%spx" %) (vals short-hand))]

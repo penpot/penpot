@@ -145,7 +145,8 @@
                           :onBlurInput handle-name-input-blur
                           :onKeyDownInput handle-name-input-key-down}]
 
-     [:& dropdown {:show @show-menu? :on-close handle-close-menu}
+     [:& dropdown {:show @show-menu?
+                   :on-close handle-close-menu}
       [:ul {:class (stl/css :version-options-dropdown)}
        [:li {:class (stl/css :menu-option)
              :role "button"
@@ -199,7 +200,8 @@
                     :snapshot (:id snapshot)
                     :offset offset))))]
 
-    [:li {:ref entry-ref :class (stl/css :version-entry-wrap)}
+    [:li {:ref entry-ref
+          :class (stl/css :version-entry-wrap)}
      [:> autosaved-milestone*
       {:label (tr "workspace.versions.autosaved.version"
                   (dt/format (:created-at entry) :date-full))
@@ -329,14 +331,17 @@
      [:& select
       {:default-value :all
        :aria-label (tr "workspace.versions.filter.label")
-       :options (into [{:value :all :label (tr "workspace.versions.filter.all")}
-                       {:value :own :label (tr "workspace.versions.filter.mine")}]
+       :options (into [{:value :all
+                        :label (tr "workspace.versions.filter.all")}
+                       {:value :own
+                        :label (tr "workspace.versions.filter.mine")}]
                       (->> data-users
                            (keep
                             (fn [id]
                               (let [{:keys [fullname]} (get profiles id)]
                                 (when (not= id (:id profile))
-                                  {:value id :label (tr "workspace.versions.filter.user" fullname)}))))))
+                                  {:value id
+                                   :label (tr "workspace.versions.filter.user" fullname)}))))))
        :on-change handle-change-filter}]
 
      (cond

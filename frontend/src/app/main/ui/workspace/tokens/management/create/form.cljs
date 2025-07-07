@@ -69,7 +69,8 @@
           :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))}})]
     (m/schema
      [:and
-      [:string {:min 1 :max 255}]
+      [:string {:min 1
+                :max 255}]
       valid-token-name-schema
       path-exists-schema])))
 
@@ -121,7 +122,8 @@
              (sd/resolve-tokens-interactive)
              (rx/mapcat
               (fn [resolved-tokens]
-                (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
+                (let [{:keys [errors resolved-value]
+                       :as resolved-token} (get resolved-tokens token-name)]
                   (cond
                     resolved-value (rx/of resolved-token)
                     :else (rx/throw {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
@@ -130,7 +132,8 @@
   "Resolves a token values using `StyleDictionary`.
   This function is debounced as the resolving might be an expensive calculation.
   Uses a custom debouncing logic, as the resolve function is async."
-  [name-ref token tokens callback & {:keys [timeout] :or {timeout 160}}]
+  [name-ref token tokens callback & {:keys [timeout]
+                                     :or {timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
         debounced-resolver-callback
         (mf/use-fn
@@ -165,8 +168,12 @@
           [r g b] (c/hex->rgb hex)
           [h s v] (c/hex->hsv hex)]
       {:hex hex
-       :r r :g g :b b
-       :h h :s s :v v
+       :r r
+       :g g
+       :b b
+       :h h
+       :s s
+       :v v
        :alpha alpha})))
 
 (mf/defc ramp*
@@ -189,7 +196,8 @@
         on-change'
         (mf/use-fn
          (mf/deps on-change)
-         (fn [{:keys [hex alpha] :as selector-color}]
+         (fn [{:keys [hex alpha]
+               :as selector-color}]
            (let [dragging? (mf/ref-val dragging-ref)]
              (when-not (and dragging? hex)
                (reset! internal-color* selector-color)
@@ -520,7 +528,9 @@
     [:form {:class (stl/css :form-wrapper)
             :on-submit on-submit}
      [:div {:class (stl/css :token-rows)}
-      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
+      [:> heading* {:level 2
+                    :typography "headline-medium"
+                    :class (stl/css :form-modal-title)}
        (if (= action "edit")
          (tr "workspace.tokens.edit-token")
          (tr "workspace.tokens.create-token" token-type))]
@@ -552,7 +562,8 @@
        (when (and warning-name-change? (= action "edit"))
          [:div {:class (stl/css :warning-name-change-notification-wrapper)}
           [:> context-notification*
-           {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
+           {:level :warning
+            :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
        [:> input-tokens-value*

@@ -113,8 +113,10 @@
 
         type-options
         (mf/with-memo []
-          [{:value "drop-shadow" :label (tr "workspace.options.shadow-options.drop-shadow")}
-           {:value "inner-shadow" :label (tr "workspace.options.shadow-options.inner-shadow")}])
+          [{:value "drop-shadow"
+            :label (tr "workspace.options.shadow-options.drop-shadow")}
+           {:value "inner-shadow"
+            :label (tr "workspace.options.shadow-options.inner-shadow")}])
 
         on-open-row
         (mf/use-fn #(st/emit! (dwu/start-undo-transaction :color-row)))
@@ -215,7 +217,8 @@
                  (assoc shadow ::index index))))
 
 (mf/defc shadow-menu*
-  [{:keys [ids type values] :as props}]
+  [{:keys [ids type values]
+    :as props}]
   (let [shadows        (mf/with-memo [values]
                          (if (= :multiple values)
                            values
@@ -319,7 +322,8 @@
          (some? shadows)
          [:& h/sortable-container {}
           [:div {:class (stl/css :element-set-content)}
-           (for [{:keys [::index id] :as shadow} shadows]
+           (for [{:keys [::index id]
+                  :as shadow} shadows]
              [:> shadow-entry*
               {:key (dm/str index)
                :index index

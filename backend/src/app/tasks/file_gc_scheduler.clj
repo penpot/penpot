@@ -27,14 +27,17 @@
      SKIP LOCKED")
 
 (defn- get-candidates
-  [{:keys [::db/conn ::min-age] :as cfg}]
+  [{:keys [::db/conn ::min-age]
+    :as cfg}]
   (let [min-age (db/interval min-age)]
     (db/cursor conn [sql:get-candidates min-age] {:chunk-size 10})))
 
 (defn- schedule!
-  [{:keys [::min-age] :as cfg}]
+  [{:keys [::min-age]
+    :as cfg}]
   (let [total (reduce (fn [total {:keys [id]}]
-                        (let [params {:file-id id :min-age min-age}]
+                        (let [params {:file-id id
+                                      :min-age min-age}]
                           (wrk/submit! (assoc cfg ::wrk/params params))
                           (inc total)))
                       0
@@ -52,7 +55,8 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as task}]
+  (fn [{:keys [props]
+        :as task}]
     (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))]
       (-> cfg
           (assoc ::db/rollback (:rollback? props))

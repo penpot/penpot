@@ -216,7 +216,8 @@
   (.closeEntry output))
 
 (defn- get-file
-  [{:keys [::bfc/embed-assets ::bfc/include-libraries] :as cfg} file-id]
+  [{:keys [::bfc/embed-assets ::bfc/include-libraries]
+    :as cfg} file-id]
 
   (when (and include-libraries embed-assets)
     (throw (IllegalArgumentException.
@@ -236,7 +237,8 @@
                         (bfc/clean-file-features))))))
 
 (defn- export-storage-objects
-  [{:keys [::output] :as cfg}]
+  [{:keys [::output]
+    :as cfg}]
   (let [storage (sto/resolve cfg)]
     (doseq [id (-> bfc/*state* deref :storage-objects not-empty)]
       (let [sobject (sto/get-object storage id)
@@ -256,7 +258,8 @@
           (.closeEntry output))))))
 
 (defn- export-file
-  [{:keys [::file-id ::output] :as cfg}]
+  [{:keys [::file-id ::output]
+    :as cfg}]
   (let [file         (get-file cfg file-id)
 
         media        (->> (bfc/get-file-media cfg file)
@@ -311,7 +314,8 @@
     (vswap! bfc/*state* bfc/collect-storage-objects media)
     (vswap! bfc/*state* bfc/collect-storage-objects thumbnails)
 
-    (doseq [{:keys [id] :as media} media]
+    (doseq [{:keys [id]
+             :as media} media]
       (let [path  (str "files/" file-id "/media/" id ".json")
             media (encode-media media)]
         (write-entry! output path media)))
@@ -351,7 +355,8 @@
         (write-entry! output path encoded-tokens)))))
 
 (defn- export-files
-  [{:keys [::bfc/ids ::bfc/include-libraries ::output] :as cfg}]
+  [{:keys [::bfc/ids ::bfc/include-libraries ::output]
+    :as cfg}]
   (let [ids  (into ids (when include-libraries (bfc/get-libraries cfg ids)))
         rels (if include-libraries
                (->> (bfc/get-files-rels cfg ids)
@@ -645,7 +650,8 @@
          (validate-tokens-lib))))
 
 (defn- read-file-shapes
-  [{:keys [::bfc/input ::file-id ::page-id ::entries] :as cfg}]
+  [{:keys [::bfc/input ::file-id ::page-id ::entries]
+    :as cfg}]
   (->> (keep (match-shape-entry-fn file-id page-id) entries)
        (reduce (fn [result {:keys [id entry]}]
                  (let [object (->> (read-entry input entry)
@@ -659,7 +665,8 @@
        (not-empty)))
 
 (defn- read-file-pages
-  [{:keys [::bfc/input ::file-id ::entries] :as cfg}]
+  [{:keys [::bfc/input ::file-id ::entries]
+    :as cfg}]
   (->> (keep (match-page-entry-fn file-id) entries)
        (keep (fn [{:keys [id entry]}]
                (let [page (->> (read-entry input entry)
@@ -670,12 +677,14 @@
                                      (read-file-shapes))]
                      (assoc page :objects objects))))))
        (sort-by :index)
-       (reduce (fn [result {:keys [id] :as page}]
+       (reduce (fn [result {:keys [id]
+                            :as page}]
                  (assoc result id (dissoc page :index)))
                (d/ordered-map))))
 
 (defn- read-file-thumbnails
-  [{:keys [::bfc/input ::file-id ::entries] :as cfg}]
+  [{:keys [::bfc/input ::file-id ::entries]
+    :as cfg}]
   (->> (keep (match-thumbnail-entry-fn file-id) entries)
        (reduce (fn [result {:keys [page-id frame-id tag entry]}]
                  (let [object (->> (read-entry input entry)
@@ -706,7 +715,8 @@
      :plugin-data plugin-data}))
 
 (defn- import-file
-  [{:keys [::bfc/project-id ::file-id ::file-name] :as cfg}]
+  [{:keys [::bfc/project-id ::file-id ::file-name]
+    :as cfg}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg)
         media      (read-file-media cfg)
@@ -719,7 +729,8 @@
            :version (:version file)
            ::l/sync? true)
 
-    (events/tap :progress {:section :file :name file-name})
+    (events/tap :progress {:section :file
+                           :name file-name})
 
     (when media
       ;; Update index with media
@@ -762,7 +773,8 @@
       file-id')))
 
 (defn- import-file-relations
-  [{:keys [::db/conn ::manifest ::bfc/timestamp] :as cfg}]
+  [{:keys [::db/conn ::manifest ::bfc/timestamp]
+    :as cfg}]
   (events/tap :progress {:section :relations})
   (doseq [[file-id libr-id] (:relations manifest)]
 
@@ -780,7 +792,8 @@
                      :library-file-id libr-id})))))
 
 (defn- import-storage-objects
-  [{:keys [::bfc/input ::entries ::bfc/timestamp] :as cfg}]
+  [{:keys [::bfc/input ::entries ::bfc/timestamp]
+    :as cfg}]
   (events/tap :progress {:section :storage-objects})
 
   (let [storage (sto/resolve cfg)
@@ -837,7 +850,8 @@
             (vswap! bfc/*state* update :index assoc id (:id sobject))))))))
 
 (defn- import-file-media
-  [{:keys [::db/conn] :as cfg}]
+  [{:keys [::db/conn]
+    :as cfg}]
   (events/tap :progress {:section :media})
 
   (doseq [item (:media @bfc/*state*)]
@@ -856,7 +870,8 @@
       (db/insert! conn :file-media-object params))))
 
 (defn- import-file-thumbnails
-  [{:keys [::db/conn] :as cfg}]
+  [{:keys [::db/conn]
+    :as cfg}]
   (events/tap :progress {:section :thumbnails})
   (doseq [item (:thumbnails @bfc/*state*)]
     (let [file-id   (bfc/lookup-index (:file-id item))
@@ -876,7 +891,9 @@
       (db/insert! conn :file-tagged-object-thumbnail params))))
 
 (defn- import-files
-  [{:keys [::bfc/timestamp ::bfc/input ::bfc/name] :or {timestamp (dt/now)} :as cfg}]
+  [{:keys [::bfc/timestamp ::bfc/input ::bfc/name]
+    :or {timestamp (dt/now)}
+    :as cfg}]
 
   (assert (instance? ZipFile input) "expected zip file")
   (assert (dt/instant? timestamp) "expected valid instant")
@@ -893,7 +910,8 @@
 
 
     ;; Check if all files referenced on manifest are present
-    (doseq [{file-id :id features :features} (:files manifest)]
+    (doseq [{file-id :id
+             features :features} (:files manifest)]
       (let [path (str "files/" file-id ".json")]
 
         (when-not (get-zip-entry input path)
@@ -908,7 +926,8 @@
     (events/tap :progress {:section :manifest})
 
     (let [index (bfc/update-index (map :id (:files manifest)))
-          state {:media [] :index index}
+          state {:media []
+                 :index index}
           cfg   (-> cfg
                     (assoc ::entries entries)
                     (assoc ::manifest manifest)
@@ -918,7 +937,8 @@
         (db/tx-run! cfg (fn [cfg]
                           (bfc/disable-database-timeouts! cfg)
                           (let [ids (->> (:files manifest)
-                                         (reduce (fn [result {:keys [id] :as file}]
+                                         (reduce (fn [result {:keys [id]
+                                                              :as file}]
                                                    (let [name' (get file :name)
                                                          name' (if (map? name)
                                                                  (get name id)
@@ -950,7 +970,8 @@
   `::bfc/embed-assets`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
 
-  [{:keys [::bfc/ids] :as cfg} output]
+  [{:keys [::bfc/ids]
+    :as cfg} output]
 
   (assert
    (and (set? ids) (every? uuid? ids))
@@ -995,7 +1016,8 @@
                 :cause @cs)))))
 
 (defn import-files!
-  [{:keys [::bfc/input] :as cfg}]
+  [{:keys [::bfc/input]
+    :as cfg}]
 
   (assert
    (and (uuid? (::bfc/profile-id cfg))

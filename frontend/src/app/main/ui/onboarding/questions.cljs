@@ -75,20 +75,39 @@
   [{:keys [on-next form show-step-3]}]
   (let [use-options
         (mf/with-memo []
-          (shuffle [{:label (tr "onboarding.questions.use.work") :value "work"}
-                    {:label (tr "onboarding.questions.use.education") :value "education"}
-                    {:label (tr "onboarding.questions.use.personal") :value "personal"}]))
+          (shuffle [{:label (tr "onboarding.questions.use.work")
+                     :value "work"}
+                    {:label (tr "onboarding.questions.use.education")
+                     :value "education"}
+                    {:label (tr "onboarding.questions.use.personal")
+                     :value "personal"}]))
 
         role-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "labels.select-option") :value "" :key "role" :disabled true}
-                        {:label (tr "labels.product-design") :value "ux" :key "ux"}
-                        {:label (tr "labels.developer") :value "developer"  :key "developer"}
-                        {:label (tr "labels.student-teacher") :value "student-teacher" :key "student"}
-                        {:label (tr "labels.graphic-design") :value "designer" :key "design"}
-                        {:label (tr "labels.marketing") :value "marketing" :key "marketing"}
-                        {:label (tr "labels.product-management") :value "manager" :key "manager"}])
-              (conj {:label (tr "labels.other-short") :value "other"})))
+          (-> (shuffle [{:label (tr "labels.select-option")
+                         :value ""
+                         :key "role"
+                         :disabled true}
+                        {:label (tr "labels.product-design")
+                         :value "ux"
+                         :key "ux"}
+                        {:label (tr "labels.developer")
+                         :value "developer"
+                         :key "developer"}
+                        {:label (tr "labels.student-teacher")
+                         :value "student-teacher"
+                         :key "student"}
+                        {:label (tr "labels.graphic-design")
+                         :value "designer"
+                         :key "design"}
+                        {:label (tr "labels.marketing")
+                         :value "marketing"
+                         :key "marketing"}
+                        {:label (tr "labels.product-management")
+                         :value "manager"
+                         :key "manager"}])
+              (conj {:label (tr "labels.other-short")
+                     :value "other"})))
 
 
         current-role
@@ -153,17 +172,34 @@
   [{:keys [on-next on-prev form show-step-3]}]
   (let [design-tool-options
         (mf/with-memo []
-          (-> (shuffle [{:label (tr "labels.figma")  :img-width "48px" :img-height "60px"
-                         :value "figma" :image "images/form/figma.png"}
-                        {:label (tr "labels.sketch") :img-width "48px" :img-height "60px"
-                         :value "sketch" :image "images/form/sketch.png"}
-                        {:label (tr "labels.adobe-xd") :img-width "48px" :img-height "60px"
-                         :value "adobe-xd" :image "images/form/adobe-xd.png"}
-                        {:label (tr "labels.canva") :img-width "48px" :img-height "60px"
-                         :value "canva" :image "images/form/canva.png"}
-                        {:label (tr "labels.invision")  :img-width "48px" :img-height "60px"
-                         :value "invision" :image "images/form/invision.png"}])
-              (conj {:label (tr "labels.other-short")  :value "other" :icon i/curve})))
+          (-> (shuffle [{:label (tr "labels.figma")
+                         :img-width "48px"
+                         :img-height "60px"
+                         :value "figma"
+                         :image "images/form/figma.png"}
+                        {:label (tr "labels.sketch")
+                         :img-width "48px"
+                         :img-height "60px"
+                         :value "sketch"
+                         :image "images/form/sketch.png"}
+                        {:label (tr "labels.adobe-xd")
+                         :img-width "48px"
+                         :img-height "60px"
+                         :value "adobe-xd"
+                         :image "images/form/adobe-xd.png"}
+                        {:label (tr "labels.canva")
+                         :img-width "48px"
+                         :img-height "60px"
+                         :value "canva"
+                         :image "images/form/canva.png"}
+                        {:label (tr "labels.invision")
+                         :img-width "48px"
+                         :img-height "60px"
+                         :value "invision"
+                         :image "images/form/invision.png"}])
+              (conj {:label (tr "labels.other-short")
+                     :value "other"
+                     :icon i/curve})))
 
         current-experience
         (dm/get-in @form [:data :experience-design-tool])
@@ -227,18 +263,34 @@
   [{:keys [on-next on-prev form show-step-3]}]
   (let [team-size-options
         (mf/with-memo []
-          [{:label (tr "labels.select-option") :value "" :key "team-size" :disabled true}
-           {:label (tr "onboarding.questions.team-size.more-than-50") :value "more-than-50" :key "more-than-50"}
-           {:label (tr "onboarding.questions.team-size.31-50") :value "31-50"  :key "31-50"}
-           {:label (tr "onboarding.questions.team-size.11-30") :value "11-30" :key "11-30"}
-           {:label (tr "onboarding.questions.team-size.2-10") :value "2-10" :key "2-10"}
-           {:label (tr "onboarding.questions.team-size.freelancer") :value "freelancer" :key "freelancer"}
-           {:label (tr "onboarding.questions.team-size.personal-project") :value "personal-project" :key "personal-project"}])
+          [{:label (tr "labels.select-option")
+            :value ""
+            :key "team-size"
+            :disabled true}
+           {:label (tr "onboarding.questions.team-size.more-than-50")
+            :value "more-than-50"
+            :key "more-than-50"}
+           {:label (tr "onboarding.questions.team-size.31-50")
+            :value "31-50"
+            :key "31-50"}
+           {:label (tr "onboarding.questions.team-size.11-30")
+            :value "11-30"
+            :key "11-30"}
+           {:label (tr "onboarding.questions.team-size.2-10")
+            :value "2-10"
+            :key "2-10"}
+           {:label (tr "onboarding.questions.team-size.freelancer")
+            :value "freelancer"
+            :key "freelancer"}
+           {:label (tr "onboarding.questions.team-size.personal-project")
+            :value "personal-project"
+            :key "personal-project"}])
 
         planning-options
         (mf/with-memo []
           (-> (shuffle [{:label (tr "labels.select-option")
-                         :value "" :key "questions:what-brings-you-here"
+                         :value ""
+                         :key "questions:what-brings-you-here"
                          :disabled true}
                         {:label (tr "onboarding.questions.reasons.exploring")
                          :value "discover-more-about-penpot"
@@ -252,7 +304,8 @@
                         {:label (tr "onboarding.questions.reasons.testing")
                          :value "try-out-before-using-penpot-on-premise"
                          :key "try-out-before-using-penpot-on-premise"}])
-              (conj {:label (tr "labels.other-short") :value "other"})))
+              (conj {:label (tr "labels.other-short")
+                     :value "other"})))
 
         current-planning
         (dm/get-in @form [:data :planning])]
@@ -312,16 +365,23 @@
   (let [start-options
         (mf/with-memo []
           (-> (shuffle [{:label (tr "onboarding.questions.start-with.ui")
-                         :value "ui" :image "images/form/Design.png"}
+                         :value "ui"
+                         :image "images/form/Design.png"}
                         {:label (tr "onboarding.questions.start-with.wireframing")
-                         :value "wireframing" :image "images/form/templates.png"}
+                         :value "wireframing"
+                         :image "images/form/templates.png"}
                         {:label (tr "onboarding.questions.start-with.prototyping")
-                         :value "prototyping" :image "images/form/Prototype.png"}
+                         :value "prototyping"
+                         :image "images/form/Prototype.png"}
                         {:label (tr "onboarding.questions.start-with.ds")
-                         :value "ds" :image "images/form/components.png"}
+                         :value "ds"
+                         :image "images/form/components.png"}
                         {:label (tr "onboarding.questions.start-with.code")
-                         :value "code" :image "images/form/design-and-dev.png"}])
-              (conj {:label (tr "labels.other-short") :value "other" :icon i/curve})))
+                         :value "code"
+                         :image "images/form/design-and-dev.png"}])
+              (conj {:label (tr "labels.other-short")
+                     :value "other"
+                     :icon i/curve})))
 
         current-start (dm/get-in @form [:data :start-with])
 
@@ -413,10 +473,25 @@
             :ref container}
 
       (case @step
-        1 [:& step-1 {:on-next on-next :on-prev on-prev :form step-1-form :show-step-3 show-step-3}]
-        2 [:& step-2 {:on-next on-next :on-prev on-prev :form step-2-form :show-step-3 show-step-3}]
+        1 [:& step-1 {:on-next on-next
+                      :on-prev on-prev
+                      :form step-1-form
+                      :show-step-3 show-step-3}]
+        2 [:& step-2 {:on-next on-next
+                      :on-prev on-prev
+                      :form step-2-form
+                      :show-step-3 show-step-3}]
         3 (if @show-step-3
-            [:& step-3 {:on-next on-next :on-prev on-prev :form step-3-form :show-step-3 show-step-3}]
-            [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}])
+            [:& step-3 {:on-next on-next
+                        :on-prev on-prev
+                        :form step-3-form
+                        :show-step-3 show-step-3}]
+            [:& step-4 {:on-next on-submit
+                        :on-prev on-prev
+                        :form step-4-form
+                        :show-step-3 show-step-3}])
         (when @show-step-3
-          4 [:& step-4 {:on-next on-submit :on-prev on-prev :form step-4-form :show-step-3 show-step-3}]))]]))
+          4 [:& step-4 {:on-next on-submit
+                        :on-prev on-prev
+                        :form step-4-form
+                        :show-step-3 show-step-3}]))]]))

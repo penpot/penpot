@@ -73,7 +73,8 @@
                      (dd/clear-selected-files))))]
 
 
-    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+    [:header {:class (stl/css :dashboard-header)
+              :data-testid "dashboard-header"}
      (if (:is-default project)
        [:div#dashboard-drafts-title {:class (stl/css :dashboard-title)}
         [:h1 (tr "labels.drafts")]]
@@ -170,7 +171,8 @@
            (let [mdata  {:on-success on-file-created}
                  params {:project-id (:id project)}]
              (st/emit! (-> (dd/create-file (with-meta params mdata))
-                           (with-meta {::ev/origin origin :has-files (> file-count 0)}))))))]
+                           (with-meta {::ev/origin origin
+                                       :has-files (> file-count 0)}))))))]
 
     (mf/with-effect [project]
       (when project

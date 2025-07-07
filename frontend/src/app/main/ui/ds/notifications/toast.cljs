@@ -27,7 +27,8 @@
 
 (mf/defc toast*
   {::mf/schema schema:toast}
-  [{:keys [class level appearance type is-html children detail show-detail on-close on-toggle-detail] :rest props}]
+  [{:keys [class level appearance type is-html children detail show-detail on-close on-toggle-detail]
+    :rest props}]
   (let [class (dm/str class " " (stl/css :toast))
         level (if (string? level)
                 (keyword level)

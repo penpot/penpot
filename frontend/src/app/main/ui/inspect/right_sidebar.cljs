@@ -68,7 +68,8 @@
            (when on-change-section
              (on-change-section (keyword new-section))
              (st/emit!
-              (ptk/event ::ev/event {::ev/name "change-inspect-tab" :tab new-section})))))
+              (ptk/event ::ev/event {::ev/name "change-inspect-tab"
+                                     :tab new-section})))))
 
         handle-expand
         (mf/use-fn
@@ -107,7 +108,8 @@
             [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
            [:*
             [:span {:class (stl/css :shape-icon)}
-             [:& sir/element-icon {:shape first-shape :main-instance? main-instance?}]]
+             [:& sir/element-icon {:shape first-shape
+                                   :main-instance? main-instance?}]]
             ;; Execution time translation strings:
             ;;   (tr "inspect.tabs.code.selected.circle")
             ;;   (tr "inspect.tabs.code.selected.component")

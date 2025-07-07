@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.7"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Alpha release 1.7"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Alpha 1.7 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/export.gif" :border "0" :alt "Export & Import"}]]
+         [:img {:src "images/features/export.gif"
+                :border "0"
+                :alt "Export & Import"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Export and import Penpot files"]]
@@ -58,7 +64,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/constraints.gif" :border "0" :alt "Resizing constraints"}]]
+         [:img {:src "images/features/constraints.gif"
+                :border "0"
+                :alt "Resizing constraints"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Resizing constraints"]]
@@ -80,7 +88,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/group-components.gif" :border "0" :alt "Library assets management improvements"}]]
+         [:img {:src "images/features/group-components.gif"
+                :border "0"
+                :alt "Library assets management improvements"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Library assets management"]]
@@ -100,7 +110,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/copy-paste.gif" :border "0" :alt "Paste components from file to file"}]]
+         [:img {:src "images/features/copy-paste.gif"
+                :border "0"
+                :alt "Paste components from file to file"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Paste components from file to file"]]

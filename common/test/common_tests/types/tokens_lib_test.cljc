@@ -51,7 +51,8 @@
     (t/is (ctob/check-token token2))))
 
 (t/deftest make-invalid-token
-  (let [params {:name 777 :type :invalid}]
+  (let [params {:name 777
+                :type :invalid}]
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token"
                             (ctob/make-token params)))))
 
@@ -83,7 +84,8 @@
     (t/is (empty? (ctob/get-tokens-map token-set2)))))
 
 (t/deftest make-invalid-token-set
-  (let [params {:name 777 :description 999}]
+  (let [params {:name 777
+                :description 999}]
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid params for token-set"
                             (ctob/make-token-set params)))))
 
@@ -227,7 +229,8 @@
     (t/is (= (ctob/set-count tokens-lib) 0))))
 
 (t/deftest make-invalid-tokens-lib
-  (let [params {:sets {} :themes {}}]
+  (let [params {:sets {}
+                :themes {}}]
     (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token sets"
                             (ctob/make-tokens-lib params)))))
 
@@ -1366,7 +1369,8 @@
                                  "name" "theme-1"
                                  "selectedTokenSets" {"core" "enabled"}}]
                      "$metadata" {"tokenSetOrder" ["core"]
-                                  "activeSets" #{},  "activeThemes" #{}}
+                                  "activeSets" #{},
+                                  "activeThemes" #{}}
                      "core"
                      {"colors" {"red" {"600" {"$value" "#e53e3e"
                                               "$type" "color"
@@ -1434,7 +1438,8 @@
            result   (ctob/export-dtcg-json tokens-lib)
            expected {"$themes" []
                      "$metadata" {"tokenSetOrder" ["core"]
-                                  "activeSets" #{},  "activeThemes" #{}}
+                                  "activeSets" #{},
+                                  "activeThemes" #{}}
                      "core"
                      {"colors" {"red" {"600" {"$value" "#e53e3e"
                                               "$type" "color"

@@ -49,7 +49,8 @@
 ;; ---- COMMAND: login with password
 
 (defn login-with-password
-  [cfg {:keys [email password] :as params}]
+  [cfg {:keys [email password]
+        :as params}]
 
   (when-not (or (contains? cf/flags :login)
                 (contains? cf/flags :login-with-password))
@@ -91,14 +92,16 @@
 
             profile)
 
-          (login [{:keys [::db/conn] :as cfg}]
+          (login [{:keys [::db/conn]
+                   :as cfg}]
             (let [profile    (->> (profile/clean-email email)
                                   (profile/get-profile-by-email conn)
                                   (validate-profile cfg)
                                   (profile/strip-private-attrs))
 
                   invitation (when-let [token (:invitation-token params)]
-                               (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
+                               (tokens/verify (::setup/props cfg) {:token token
+                                                                   :iss :team-invitation}))
 
                   ;; If invitation member-id does not matches the profile-id, we just proceed to ignore the
                   ;; invitation because invitations matches exactly; and user can't login with other email and
@@ -150,14 +153,17 @@
 ;; ---- COMMAND: Recover Profile
 
 (defn recover-profile
-  [{:keys [::db/conn] :as cfg} {:keys [token password]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [token password]}]
   (letfn [(validate-token [token]
-            (let [tdata (tokens/verify (::setup/props cfg) {:token token :iss :password-recovery})]
+            (let [tdata (tokens/verify (::setup/props cfg) {:token token
+                                                            :iss :password-recovery})]
               (:profile-id tdata)))
 
           (update-password [conn profile-id]
             (let [pwd (profile/derive-password cfg password)]
-              (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
+              (db/update! conn :profile {:password pwd
+                                         :is-active true} {:id profile-id})
               nil))]
 
     (->> (validate-token token)
@@ -231,7 +237,9 @@
               :hint "email has complaint reports")))
 
 (defn prepare-register
-  [{:keys [::db/pool] :as cfg} {:keys [fullname email accept-newsletter-updates] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [fullname email accept-newsletter-updates]
+              :as params}]
 
   (validate-register-attempt! cfg params)
 
@@ -273,14 +281,16 @@
 (defn create-profile!
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
-  [conn {:keys [email] :as params}]
+  [conn {:keys [email]
+         :as params}]
   (dm/assert! ::sm/email email)
   (let [id        (or (:id params) (uuid/next))
         props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
                       (merge {:viewed-tutorial? false
                               :viewed-walkthrough? false
-                              :nudge {:big 10 :small 1}
+                              :nudge {:big 10
+                                      :small 1}
                               :v2-info-shown true
                               :release-notes-viewed (:main cf/version)})
                       (db/tjson))
@@ -326,7 +336,8 @@
                         :cause cause))))))))
 
 (defn create-profile-rels!
-  [conn {:keys [id] :as profile}]
+  [conn {:keys [id]
+         :as profile}]
   (let [features (cfeat/get-enabled-features cf/flags)
         team     (teams/create-team conn
                                     {:profile-id id
@@ -341,7 +352,8 @@
         (profile/decode-row))))
 
 (defn send-email-verification!
-  [{:keys [::db/conn] :as cfg} profile]
+  [{:keys [::db/conn]
+    :as cfg} profile]
   (let [vtoken (tokens/generate (::setup/props cfg)
                                 {:iss :verify-email
                                  :exp (dt/in-future "72h")
@@ -362,8 +374,11 @@
                 :extra-data ptoken})))
 
 (defn register-profile
-  [{:keys [::db/conn ::wrk/executor] :as cfg} {:keys [token] :as params}]
-  (let [claims     (tokens/verify (::setup/props cfg) {:token token :iss :prepared-register})
+  [{:keys [::db/conn ::wrk/executor]
+    :as cfg} {:keys [token]
+              :as params}]
+  (let [claims     (tokens/verify (::setup/props cfg) {:token token
+                                                       :iss :prepared-register})
         params     (into claims params)
 
         profile    (if-let [profile-id (:profile-id claims)]
@@ -386,7 +401,8 @@
         created?   (-> profile meta :created true?)
 
         invitation (when-let [token (:invitation-token params)]
-                     (tokens/verify (::setup/props cfg) {:token token :iss :team-invitation}))
+                     (tokens/verify (::setup/props cfg) {:token token
+                                                         :iss :team-invitation}))
 
         props      (-> (audit/profile->props profile)
                        (assoc :from-invitation (some? invitation)))
@@ -491,8 +507,11 @@
 ;; ---- COMMAND: Request Profile Recovery
 
 (defn- request-profile-recovery
-  [{:keys [::db/conn] :as cfg} {:keys [email] :as params}]
-  (letfn [(create-recovery-token [{:keys [id] :as profile}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [email]
+              :as params}]
+  (letfn [(create-recovery-token [{:keys [id]
+                                   :as profile}]
             (let [token (tokens/generate (::setup/props cfg)
                                          {:iss :password-recovery
                                           :exp (dt/in-future "15m")

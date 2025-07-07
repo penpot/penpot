@@ -53,7 +53,8 @@
               (->> stream
                    (rx/filter (ptk/type? ::dws/message))
                    (rx/map deref)
-                   (rx/filter (fn [{:keys [topic] :as msg}]
+                   (rx/filter (fn [{:keys [topic]
+                                    :as msg}]
                                 (or (= topic uuid/zero)
                                     (= topic profile-id))))
                    (rx/map process-message)))
@@ -75,7 +76,8 @@
   (ptk/reify ::projects-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (reduce (fn [state {:keys [id] :as project}]
+      (reduce (fn [state {:keys [id]
+                          :as project}]
                 (update-in state [:projects id] merge project))
               state
               projects))))
@@ -167,7 +169,8 @@
           (update :dashboard-local dissoc :menu-open :menu-pos)))))
 
 (defn toggle-file-select
-  [{:keys [id project-id] :as file}]
+  [{:keys [id project-id]
+    :as file}]
   (ptk/reify ::toggle-file-select
     ptk/UpdateEvent
     (update [_ state]
@@ -233,7 +236,8 @@
 ;; --- EVENT: create-project
 
 (defn- project-created
-  [{:keys [id] :as project}]
+  [{:keys [id]
+    :as project}]
   (ptk/reify ::project-created
     IDeref
     (-deref [_] project)
@@ -269,14 +273,16 @@
 ;; --- EVENT: duplicate-project
 
 (defn project-duplicated
-  [{:keys [id] :as project}]
+  [{:keys [id]
+    :as project}]
   (ptk/reify ::project-duplicated
     ptk/UpdateEvent
     (update [_ state]
       (assoc-in state [:projects id] project))))
 
 (defn duplicate-project
-  [{:keys [id name] :as params}]
+  [{:keys [id name]
+    :as params}]
   (dm/assert! (uuid? id))
   (ptk/reify ::duplicate-project
     ev/Event
@@ -297,13 +303,15 @@
                                     (when (> copy-count 1)
                                       (str " " copy-count))))
             new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
-        (->> (rp/cmd! :duplicate-project {:project-id id :name new-name})
+        (->> (rp/cmd! :duplicate-project {:project-id id
+                                          :name new-name})
              (rx/tap on-success)
              (rx/map project-duplicated)
              (rx/catch on-error))))))
 
 (defn move-project
-  [{:keys [id team-id] :as params}]
+  [{:keys [id team-id]
+    :as params}]
   (dm/assert! (uuid? id))
   (dm/assert! (uuid? team-id))
 
@@ -319,12 +327,14 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
 
-        (->> (rp/cmd! :move-project {:project-id id :team-id team-id})
+        (->> (rp/cmd! :move-project {:project-id id
+                                     :team-id team-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
 (defn toggle-project-pin
-  [{:keys [id is-pinned] :as project}]
+  [{:keys [id is-pinned]
+    :as project}]
   (ptk/reify ::toggle-project-pin
     ptk/UpdateEvent
     (update [_ state]
@@ -340,7 +350,8 @@
 ;; --- EVENT: rename-project
 
 (defn rename-project
-  [{:keys [id name] :as params}]
+  [{:keys [id name]
+    :as params}]
   (ptk/reify ::rename-project
     ptk/UpdateEvent
     (update [_ state]
@@ -350,14 +361,16 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :name name}]
+      (let [params {:id id
+                    :name name}]
         (->> (rp/cmd! :rename-project params)
              (rx/ignore))))))
 
 ;; --- EVENT: delete-project
 
 (defn delete-project
-  [{:keys [id] :as params}]
+  [{:keys [id]
+    :as params}]
   (ptk/reify ::delete-project
     ptk/UpdateEvent
     (update [_ state]
@@ -378,7 +391,8 @@
       (update-in state [:projects project-id :count] dec))))
 
 (defn delete-file
-  [{:keys [id project-id] :as params}]
+  [{:keys [id project-id]
+    :as params}]
   (ptk/reify ::delete-file
     ptk/UpdateEvent
     (update [_ state]
@@ -395,7 +409,8 @@
 ;; --- Rename File
 
 (defn rename-file
-  [{:keys [id name] :as params}]
+  [{:keys [id name]
+    :as params}]
   (ptk/reify ::rename-file
     ev/Event
     (-data [_]
@@ -419,7 +434,8 @@
 ;; --- Set File shared
 
 (defn set-file-shared
-  [{:keys [id is-shared] :as params}]
+  [{:keys [id is-shared]
+    :as params}]
   (ptk/reify ::set-file-shared
     ev/Event
     (-data [_]
@@ -437,7 +453,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :is-shared is-shared}]
+      (let [params {:id id
+                    :is-shared is-shared}]
         (->> (rp/cmd! :set-file-shared params)
              (rx/ignore))))))
 
@@ -461,7 +478,8 @@
 (declare file-created)
 
 (defn file-created
-  [{:keys [id project-id] :as file}]
+  [{:keys [id project-id]
+    :as file}]
   (ptk/reify ::file-created
     IDeref
     (-deref [_] {:file-id id
@@ -476,7 +494,8 @@
             (update-in [:projects project-id :count] inc))))))
 
 (defn create-file
-  [{:keys [project-id name] :as params}]
+  [{:keys [project-id name]
+    :as params}]
   (dm/assert! (uuid? project-id))
 
   (ptk/reify ::create-file
@@ -509,7 +528,8 @@
 ;; --- EVENT: duplicate-file
 
 (defn duplicate-file
-  [{:keys [id name] :as params}]
+  [{:keys [id name]
+    :as params}]
   (dm/assert! (uuid? id))
   (dm/assert! (string? name))
   (ptk/reify ::duplicate-file
@@ -525,7 +545,8 @@
                                     (when (> copy-count 1)
                                       (str " " copy-count))))
             new-name (cfh/generate-unique-name name unames :suffix-fn suffix-fn)]
-        (->> (rp/cmd! :duplicate-file {:file-id id :name new-name})
+        (->> (rp/cmd! :duplicate-file {:file-id id
+                                       :name new-name})
              (rx/tap on-success)
              (rx/map file-created)
              (rx/catch on-error))))))
@@ -533,7 +554,8 @@
 ;; --- EVENT: move-files
 
 (defn move-files
-  [{:keys [ids project-id] :as params}]
+  [{:keys [ids project-id]
+    :as params}]
   (assert (uuid? project-id))
   (assert (sm/check-set-of-uuid ids))
 
@@ -559,14 +581,16 @@
       (let [{:keys [on-success on-error]
              :or {on-success identity
                   on-error rx/throw}} (meta params)]
-        (->> (rp/cmd! :move-files {:ids ids :project-id project-id})
+        (->> (rp/cmd! :move-files {:ids ids
+                                   :project-id project-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
 ;; --- EVENT: clone-template
 
 (defn clone-template
-  [{:keys [template-id project-id] :as params}]
+  [{:keys [template-id project-id]
+    :as params}]
   (ptk/reify ::clone-template
     ev/Event
     (-data [_]
@@ -644,7 +668,8 @@
              (modal/hide)))))
 
 (defn- process-message
-  [{:keys [type] :as msg}]
+  [{:keys [type]
+    :as msg}]
   (case type
     :notification           (dcm/handle-notification msg)
     :team-role-change       (handle-change-team-role msg)

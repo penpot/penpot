@@ -55,7 +55,9 @@
         (let [surl   (get body "SubscribeURL")
               stopic (get body "TopicArn")]
           (l/info :action "subscription received" :topic stopic :url surl)
-          (http/req! cfg {:uri surl :method :post :timeout 10000} {:sync? true}))
+          (http/req! cfg {:uri surl
+                          :method :post
+                          :timeout 10000} {:sync? true}))
 
         (= mtype "Notification")
         (when-let [message (parse-json (get body "Message"))]
@@ -109,7 +111,8 @@
   [cfg headers]
   (let [tdata (get headers "x-penpot-data")]
     (when-not (str/empty? tdata)
-      (let [result (tokens/verify (::setup/props cfg) {:token tdata :iss :profile-identity})]
+      (let [result (tokens/verify (::setup/props cfg) {:token tdata
+                                                       :iss :profile-identity})]
         (:profile-id result)))))
 
 (defn- parse-notification
@@ -145,7 +148,8 @@
              :cause cause))))
 
 (defn- register-bounce-for-profile
-  [{:keys [::db/pool]} {:keys [type kind profile-id] :as report}]
+  [{:keys [::db/pool]} {:keys [type kind profile-id]
+                        :as report}]
   (when (= kind "permanent")
     (try
       (db/insert! pool :profile-complaint-report
@@ -184,7 +188,8 @@
                     {::db/return-keys false})))))
 
 (defn- register-complaint-for-profile
-  [{:keys [::db/pool]} {:keys [type profile-id] :as report}]
+  [{:keys [::db/pool]} {:keys [type profile-id]
+                        :as report}]
 
   (try
     (db/insert! pool :profile-complaint-report
@@ -220,7 +225,8 @@
                   {::db/return-keys false}))))
 
 (defn- process-report
-  [cfg {:keys [type profile-id] :as report}]
+  [cfg {:keys [type profile-id]
+        :as report}]
   (cond
     ;; In this case we receive a bounce/complaint notification without
     ;; confirmed identity, we just emit a warning but do nothing about
@@ -228,20 +234,24 @@
     ;; come with profile identity.
     (nil? profile-id)
     (l/wrn :hint "not-identified report"
-           ::l/body (pp/pprint-str report {:length 40 :level 6}))
+           ::l/body (pp/pprint-str report {:length 40
+                                           :level 6}))
 
     (= "bounce" type)
     (do
       (l/trc :hint "bounce report"
-             ::l/body (pp/pprint-str report {:length 40 :level 6}))
+             ::l/body (pp/pprint-str report {:length 40
+                                             :level 6}))
       (register-bounce-for-profile cfg report))
 
     (= "complaint" type)
     (do
       (l/trc :hint "complaint report"
-             ::l/body (pp/pprint-str report {:length 40 :level 6}))
+             ::l/body (pp/pprint-str report {:length 40
+                                             :level 6}))
       (register-complaint-for-profile cfg report))
 
     :else
     (l/wrn :hint "unrecognized report"
-           ::l/body (pp/pprint-str report {:length 20 :level 4}))))
+           ::l/body (pp/pprint-str report {:length 20
+                                           :level 4}))))

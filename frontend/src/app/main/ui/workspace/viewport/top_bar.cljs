@@ -45,7 +45,8 @@
                  :viewport-actions-path true
                  :viewport-actions-no-rulers (not rulers?))]
     [:div {:class class}
-     [:> path-actions* {:shape shape :state edit-path-state}]]))
+     [:> path-actions* {:shape shape
+                        :state edit-path-state}]]))
 
 (mf/defc grid-edition-bar*
   [{:keys [shape]}]

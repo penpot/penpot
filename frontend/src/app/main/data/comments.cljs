@@ -73,13 +73,15 @@
 
 (defn update-mentions
   "Updates the params object with the mentiosn"
-  [{:keys [content] :as props}]
+  [{:keys [content]
+    :as props}]
   (assoc props :mentions (extract-mentions content)))
 
 (defn created-thread-on-workspace
   ([params]
    (created-thread-on-workspace params true))
-  ([{:keys [id comment page-id] :as thread} open?]
+  ([{:keys [id comment page-id]
+     :as thread} open?]
    (ptk/reify ::created-thread-on-workspace
      ptk/UpdateEvent
      (update [_ state]
@@ -126,17 +128,20 @@
                         (update-mentions)
                         (assoc :frame-id frame-id))]
          (->> (rp/cmd! :create-comment-thread params)
-              (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %)}))
+              (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %)
+                                                        :id (:id %)}))
               (rx/tap on-thread-created)
               (rx/map #(created-thread-on-workspace % open?))
-              (rx/catch (fn [{:keys [type code] :as cause}]
+              (rx/catch (fn [{:keys [type code]
+                              :as cause}]
                           (if (and (= type :restriction)
                                    (= code :max-quote-reached))
                             (rx/throw cause)
                             (rx/throw {:type :comment-error}))))))))))
 
 (defn created-thread-on-viewer
-  [{:keys [id comment page-id] :as thread}]
+  [{:keys [id comment page-id]
+    :as thread}]
   (ptk/reify ::created-thread-on-viewer
     ptk/UpdateEvent
     (update [_ state]
@@ -180,9 +185,12 @@
                        (update-mentions)
                        (assoc :share-id share-id :frame-id frame-id))]
         (->> (rp/cmd! :create-comment-thread params)
-             (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %) :id (:id %) :share-id share-id}))
+             (rx/mapcat #(rp/cmd! :get-comment-thread {:file-id (:file-id %)
+                                                       :id (:id %)
+                                                       :share-id share-id}))
              (rx/map created-thread-on-viewer)
-             (rx/catch (fn [{:keys [type code] :as cause}]
+             (rx/catch (fn [{:keys [type code]
+                             :as cause}]
                          (if (and (= type :restriction)
                                   (= code :max-quote-reached))
                            (rx/throw cause)
@@ -195,12 +203,14 @@
     (watch [_ state _]
       (let [done #(d/update-in-when % [:comment-threads thread-id] assoc :count-unread-comments 0)
             share-id (-> state :viewer-local :share-id)]
-        (->> (rp/cmd! :update-comment-thread-status {:id thread-id :share-id share-id})
+        (->> (rp/cmd! :update-comment-thread-status {:id thread-id
+                                                     :share-id share-id})
              (rx/map (constantly done))
              (rx/catch #(rx/throw {:type :comment-error})))))))
 
 (defn update-comment-thread
-  [{:keys [id is-resolved] :as thread}]
+  [{:keys [id is-resolved]
+    :as thread}]
 
   (dm/assert!
    "expected valid comment thread"
@@ -219,9 +229,13 @@
       (let [share-id (-> state :viewer-local :share-id)]
         (rx/concat
          (when is-resolved (rx/of
-                            (ptk/event ::ev/event {::ev/name "resolve-comment-thread" :thread-id id})))
-         (->> (rp/cmd! :update-comment-thread {:id id :is-resolved is-resolved :share-id share-id})
-              (rx/catch (fn [{:keys [type code] :as cause}]
+                            (ptk/event ::ev/event {::ev/name "resolve-comment-thread"
+                                                   :thread-id id})))
+         (->> (rp/cmd! :update-comment-thread {:id id
+                                               :is-resolved is-resolved
+                                               :share-id share-id})
+              (rx/catch (fn [{:keys [type code]
+                              :as cause}]
                           (if (and (= type :restriction)
                                    (= code :max-quote-reached))
                             (rx/throw cause)
@@ -260,7 +274,8 @@
         (rx/concat
          (->> (rp/cmd! :create-comment params)
               (rx/map (fn [comment] (partial created comment)))
-              (rx/catch (fn [{:keys [type code] :as cause}]
+              (rx/catch (fn [{:keys [type code]
+                              :as cause}]
                           (if (and (= type :restriction)
                                    (= code :max-quote-reached))
                             (rx/throw cause)
@@ -268,7 +283,8 @@
          (rx/of (refresh-comment-thread thread)))))))
 
 (defn update-comment
-  [{:keys [id content thread-id file-id] :as comment}]
+  [{:keys [id content thread-id file-id]
+    :as comment}]
   (dm/assert!
    "expected valid comment"
    (check-comment! comment))
@@ -287,7 +303,9 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)
-            params   {:id id :content content :share-id share-id}
+            params   {:id id
+                      :content content
+                      :share-id share-id}
             params   (update-mentions params)]
         (->> (rp/cmd! :update-comment params)
              (rx/catch #(rx/throw {:type :comment-error}))
@@ -296,7 +314,8 @@
 (defn delete-comment-thread-on-workspace
   ([params]
    (delete-comment-thread-on-workspace params identity))
-  ([{:keys [id] :as thread} on-delete]
+  ([{:keys [id]
+     :as thread} on-delete]
    (dm/assert! (uuid? id))
 
    (ptk/reify ::delete-comment-thread-on-workspace
@@ -320,7 +339,8 @@
                                 :id id})))))))
 
 (defn delete-comment-thread-on-viewer
-  [{:keys [id] :as thread}]
+  [{:keys [id]
+    :as thread}]
   (dm/assert!
    "expected valid comment thread"
    (check-comment-thread! thread))
@@ -337,7 +357,8 @@
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
         (rx/concat
-         (->> (rp/cmd! :delete-comment-thread {:id id :share-id share-id})
+         (->> (rp/cmd! :delete-comment-thread {:id id
+                                               :share-id share-id})
               (rx/catch #(rx/throw {:type :comment-error}))
               (rx/ignore))
          (rx/of (ptk/data-event ::ev/event
@@ -345,7 +366,8 @@
                                  ::ev/origin "viewer"
                                  :id id})))))))
 (defn delete-comment
-  [{:keys [id thread-id] :as comment}]
+  [{:keys [id thread-id]
+    :as comment}]
   (dm/assert!
    "expected valid comment"
    (check-comment! comment))
@@ -363,12 +385,14 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
-        (->> (rp/cmd! :delete-comment {:id id :share-id share-id})
+        (->> (rp/cmd! :delete-comment {:id id
+                                       :share-id share-id})
              (rx/catch #(rx/throw {:type :comment-error}))
              (rx/ignore))))))
 
 (defn refresh-comment-thread
-  [{:keys [id file-id] :as thread}]
+  [{:keys [id file-id]
+    :as thread}]
   (dm/assert!
    "expected valid comment thread"
    (check-comment-thread! thread))
@@ -378,7 +402,9 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/cmd! :get-comment-thread {:file-id file-id :id id :share-id share-id})
+          (->> (rp/cmd! :get-comment-thread {:file-id file-id
+                                             :id id
+                                             :share-id share-id})
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
@@ -388,7 +414,8 @@
   (ptk/reify ::comment-threads-fetched
     ptk/UpdateEvent
     (update [_ state]
-      (reduce (fn [state {:keys [id file-id page-id] :as thread}]
+      (reduce (fn [state {:keys [id file-id page-id]
+                          :as thread}]
                 (-> state
                     (update :comment-threads assoc id thread)
                     (dsh/update-page file-id page-id
@@ -412,7 +439,8 @@
     (watch [_ state _]
       (let [share-id (-> state :viewer-local :share-id)]
         (rx/merge
-         (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
+         (->> (rp/cmd! :get-comment-threads {:file-id file-id
+                                             :share-id share-id})
               (rx/map comment-threads-fetched))
 
          (when (:workspace-local state)
@@ -427,7 +455,8 @@
       ptk/WatchEvent
       (watch [_ state _]
         (let [share-id (-> state :viewer-local :share-id)]
-          (->> (rp/cmd! :get-comments {:thread-id thread-id :share-id share-id})
+          (->> (rp/cmd! :get-comments {:thread-id thread-id
+                                       :share-id share-id})
                (rx/map #(partial fetched %))
                (rx/catch #(rx/throw {:type :comment-error}))))))))
 
@@ -480,7 +509,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn open-thread
-  [{:keys [id] :as thread}]
+  [{:keys [id]
+    :as thread}]
   (dm/assert!
    "expected valid comment thread"
    (check-comment-thread! thread))
@@ -505,7 +535,8 @@
           (update :comments-local dissoc :open :draft :options)))))
 
 (defn update-filters
-  [{:keys [mode show list] :as params}]
+  [{:keys [mode show list]
+    :as params}]
   (ptk/reify ::update-filters
     ptk/UpdateEvent
     (update [_ state]
@@ -641,8 +672,10 @@
      ptk/WatchEvent
      (watch [_ _ _]
        (let [thread-id (:id thread)]
-         (->> (rp/cmd! :update-comment-thread-frame {:id thread-id  :frame-id frame-id})
-              (rx/catch #(rx/throw {:type :comment-error :code :update-comment-thread-frame}))
+         (->> (rp/cmd! :update-comment-thread-frame {:id thread-id
+                                                     :frame-id frame-id})
+              (rx/catch #(rx/throw {:type :comment-error
+                                    :code :update-comment-thread-frame}))
               (rx/ignore)))))))
 
 (defn detach-comment-thread
@@ -673,7 +706,8 @@
       (let [file-id (:current-file-id state)
             share-id (or (-> state :viewer-local :share-id)
                          (:current-share-id state))]
-        (->> (rp/cmd! :get-profiles-for-file-comments {:file-id file-id :share-id share-id})
+        (->> (rp/cmd! :get-profiles-for-file-comments {:file-id file-id
+                                                       :share-id share-id})
              (rx/map (fn [profiles]
                        #(update % :profiles merge (d/index-by :id profiles)))))))))
 

@@ -26,7 +26,8 @@
 (mf/defc icon-button*
   {::mf/schema schema:icon-button
    ::mf/memo true}
-  [{:keys [class icon icon-class variant aria-label children] :rest props}]
+  [{:keys [class icon icon-class variant aria-label children]
+    :rest props}]
   (let [variant
         (d/nilv variant "primary")
 
@@ -49,5 +50,7 @@
     [:> tooltip* {:content aria-label
                   :id tooltip-id}
      [:> :button props
-      [:> icon* {:icon-id icon :aria-hidden true :class icon-class}]
+      [:> icon* {:icon-id icon
+                 :aria-hidden true
+                 :class icon-class}]
       children]]))

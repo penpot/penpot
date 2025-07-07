@@ -127,7 +127,8 @@
   ([shape params]
    (transform-matrix shape params (or (gco/shape->center shape) (gpt/point 0 0))))
 
-  ([{:keys [flip-x flip-y transform] :as shape} {:keys [no-flip]} shape-center]
+  ([{:keys [flip-x flip-y transform]
+     :as shape} {:keys [no-flip]} shape-center]
    (-> (gmt/matrix)
        (gmt/translate shape-center)
 
@@ -149,7 +150,8 @@
   ([shape params]
    (inverse-transform-matrix shape params (or (gco/shape->center shape) (gpt/point 0 0))))
 
-  ([{:keys [flip-x flip-y transform-inverse] :as shape} {:keys [no-flip]} shape-center]
+  ([{:keys [flip-x flip-y transform-inverse]
+     :as shape} {:keys [no-flip]} shape-center]
    (-> (gmt/matrix)
        (gmt/translate shape-center)
 
@@ -168,7 +170,9 @@
   ([shape]
    (transform-str shape nil))
 
-  ([{:keys [transform flip-x flip-y] :as shape} {:keys [no-flip] :as params}]
+  ([{:keys [transform flip-x flip-y]
+     :as shape} {:keys [no-flip]
+                 :as params}]
    (if (and (some? shape)
             (or (some? transform)
                 (and no-flip flip-x)
@@ -389,7 +393,8 @@
 
 (defn- update-group-viewbox
   "Updates the viewbox for groups imported from SVG's"
-  [{:keys [selrect svg-viewbox] :as group} new-selrect]
+  [{:keys [selrect svg-viewbox]
+    :as group} new-selrect]
   (let [;; Gets deltas for the selrect to update the svg-viewbox (for svg-imports)
         deltas {:x      (- (:x new-selrect 0)      (:x selrect 0))
                 :y      (- (:y new-selrect 0)      (:y selrect 0))

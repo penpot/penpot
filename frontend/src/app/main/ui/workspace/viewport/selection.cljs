@@ -101,19 +101,23 @@
 
         result           #js [#js {:type :rotation
                                    :position :top-left
-                                   :props #js {:cx x :cy y}}
+                                   :props #js {:cx x
+                                               :cy y}}
 
                               #js {:type :rotation
                                    :position :top-right
-                                   :props #js {:cx (+ x width) :cy y}}
+                                   :props #js {:cx (+ x width)
+                                               :cy y}}
 
                               #js {:type :rotation
                                    :position :bottom-right
-                                   :props #js {:cx (+ x width) :cy (+ y height)}}
+                                   :props #js {:cx (+ x width)
+                                               :cy (+ y height)}}
 
                               #js {:type :rotation
                                    :position :bottom-left
-                                   :props #js {:cx x :cy (+ y height)}}]]
+                                   :props #js {:cx x
+                                               :cy (+ y height)}}]]
 
 
     (when-not ^boolean horizontal-line?
@@ -169,20 +173,29 @@
       (array/conj! result
                    #js {:type :resize-point
                         :position :top-left
-                        :props #js {:cx x :cy y :align align}}
+                        :props #js {:cx x
+                                    :cy y
+                                    :align align}}
                    #js {:type :resize-point
                         :position :top-right
-                        :props #js {:cx (+ x width) :cy y :align align}}
+                        :props #js {:cx (+ x width)
+                                    :cy y
+                                    :align align}}
                    #js {:type :resize-point
                         :position :bottom-right
-                        :props #js {:cx (+ x width) :cy (+ y height) :align align}}
+                        :props #js {:cx (+ x width)
+                                    :cy (+ y height)
+                                    :align align}}
                    #js {:type :resize-point
                         :position :bottom-left
-                        :props #js {:cx x :cy (+ y height) :align align}}))))
+                        :props #js {:cx x
+                                    :cy (+ y height)
+                                    :align align}}))))
 
 (mf/defc rotation-handler
   {::mf/wrap-props false}
-  [{:keys [cx cy transform position rotation zoom on-rotate] :as props}]
+  [{:keys [cx cy transform position rotation zoom on-rotate]
+    :as props}]
   (let [size    (/ rotation-handler-size zoom)
         delta-x (if (or (= position :top-left)
                         (= position :bottom-left))
@@ -416,7 +429,8 @@
         width  (dm/get-prop shape :width)
         height (dm/get-prop shape :height)]
     [:g.controls
-     [:rect.main {:x x :y y
+     [:rect.main {:x x
+                  :y y
                   :transform (gsh/transform-str shape)
                   :width width
                   :height height

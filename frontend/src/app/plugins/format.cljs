@@ -33,10 +33,12 @@
 
 ;; export type Point = { x: number; y: number };
 (defn format-point
-  [{:keys [x y] :as point}]
+  [{:keys [x y]
+    :as point}]
   (when (some? point)
     (obj/without-empty
-     #js {:x x :y y})))
+     #js {:x x
+          :y y})))
 
 (defn shape-type
   [type]
@@ -53,10 +55,14 @@
 ;;  height: number;
 ;;};
 (defn format-bounds
-  [{:keys [x y width height] :as bounds}]
+  [{:keys [x y width height]
+    :as bounds}]
   (when (some? bounds)
     (obj/without-empty
-     #js {:x x :y y :width width :height height})))
+     #js {:x x
+          :y y
+          :width width
+          :height height})))
 
 ;; export interface ColorShapeInfoEntry {
 ;;   readonly property: string;
@@ -64,7 +70,8 @@
 ;;   readonly shapeId: string;
 ;; }
 (defn format-shape-info
-  [{:keys [prop shape-id index] :as info}]
+  [{:keys [prop shape-id index]
+    :as info}]
   (when (some? info)
     (obj/without-empty
      #js {:property (d/name prop)
@@ -81,12 +88,16 @@
 ;;   stops: Array<{ color: string; opacity?: number; offset: number }>;
 ;; };
 (defn format-stop
-  [{:keys [color opacity offset] :as stop}]
+  [{:keys [color opacity offset]
+    :as stop}]
   (when (some? stop)
-    (obj/without-empty #js {:color color :opacity opacity :offset offset})))
+    (obj/without-empty #js {:color color
+                            :opacity opacity
+                            :offset offset})))
 
 (defn format-gradient
-  [{:keys [type start-x start-y end-x end-y width stops] :as gradient}]
+  [{:keys [type start-x start-y end-x end-y width stops]
+    :as gradient}]
   (when (some? gradient)
     (obj/without-empty
      #js {:type (format-key type)
@@ -106,7 +117,8 @@
 ;;   keepAspectRatio?: boolean;
 ;; };
 (defn format-image
-  [{:keys [name width height mtype id keep-aspect-ratio] :as image}]
+  [{:keys [name width height mtype id keep-aspect-ratio]
+    :as image}]
   (when (some? image)
     (obj/without-empty
      #js {:name name
@@ -128,7 +140,8 @@
 ;;   image?: ImageData;
 ;; }
 (defn format-color
-  [{:keys [id file-id name path color opacity ref-id ref-file gradient image] :as color-data}]
+  [{:keys [id file-id name path color opacity ref-id ref-file gradient image]
+    :as color-data}]
   (when (some? color-data)
     (let [id (or (format-id id) (format-id ref-id))
           file-id (or (format-id file-id) (format-id ref-file))]
@@ -164,7 +177,8 @@
 ;;   color?: Color;
 ;; }
 (defn format-shadow
-  [{:keys [id style offset-x offset-y blur spread hidden color] :as shadow}]
+  [{:keys [id style offset-x offset-y blur spread hidden color]
+    :as shadow}]
   (when (some? shadow)
     (obj/without-empty
      #js {:id (-> id format-id)
@@ -192,7 +206,8 @@
 ;;}
 
 (defn format-fill
-  [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-file fill-color-ref-id fill-image] :as fill}]
+  [{:keys [fill-color fill-opacity fill-color-gradient fill-color-ref-file fill-color-ref-id fill-image]
+    :as fill}]
   (when (some? fill)
     (obj/without-empty
      #js {:fillColor fill-color
@@ -229,7 +244,8 @@
 (defn format-stroke
   [{:keys [stroke-color stroke-color-ref-file stroke-color-ref-id
            stroke-opacity stroke-style stroke-width stroke-alignment
-           stroke-cap-start stroke-cap-end stroke-color-gradient] :as stroke}]
+           stroke-cap-start stroke-cap-end stroke-color-gradient]
+    :as stroke}]
 
   (when (some? stroke)
     (obj/without-empty
@@ -256,7 +272,8 @@
 ;;   hidden?: boolean;
 ;; }
 (defn format-blur
-  [{:keys [id type value hidden] :as blur}]
+  [{:keys [id type value hidden]
+    :as blur}]
   (when (some? blur)
     (obj/without-empty
      #js {:id (format-id id)
@@ -270,7 +287,8 @@
 ;;   suffix: string;
 ;; }
 (defn format-export
-  [{:keys [type scale suffix] :as export}]
+  [{:keys [type scale suffix]
+    :as export}]
   (when (some? export)
     (obj/without-empty
      #js {:type (format-key type)
@@ -291,7 +309,8 @@
 ;;   gutter?: number;
 ;; }
 (defn format-frame-guide-column-params
-  [{:keys [color type size margin item-length gutter] :as params}]
+  [{:keys [color type size margin item-length gutter]
+    :as params}]
   (when (some? params)
     (obj/without-empty
      #js {:color (format-color color)
@@ -307,7 +326,8 @@
 ;;   params: GuideColumnParams;
 ;; }
 (defn format-frame-guide-column
-  [{:keys [type display params] :as guide}]
+  [{:keys [type display params]
+    :as guide}]
   (when (some? guide)
     (obj/without-empty
      #js {:type (format-key type)
@@ -320,7 +340,8 @@
 ;;   params: GuideColumnParams;
 ;; }
 (defn format-frame-guide-row
-  [{:keys [type display params] :as guide}]
+  [{:keys [type display params]
+    :as guide}]
   (when (some? guide)
     (obj/without-empty
      #js {:type (format-key type)
@@ -332,7 +353,8 @@
 ;;  size?: number;
 ;;}
 (defn format-frame-guide-square-params
-  [{:keys [color size] :as params}]
+  [{:keys [color size]
+    :as params}]
   (when (some? params)
     (obj/without-empty
      #js {:color (format-color color)
@@ -345,7 +367,8 @@
 ;; }
 
 (defn format-frame-guide-square
-  [{:keys [type display params] :as guide}]
+  [{:keys [type display params]
+    :as guide}]
   (when (some? guide)
     (obj/without-empty
      #js {:type (format-key type)
@@ -353,7 +376,8 @@
           :params (format-frame-guide-column-params params)})))
 
 (defn format-frame-guide
-  [{:keys [type] :as guide}]
+  [{:keys [type]
+    :as guide}]
   (when (some? guide)
     (case type
       :column (format-frame-guide-column guide)
@@ -393,7 +417,8 @@
 ;;  };
 ;;}
 (defn format-command-params
-  [{:keys [x y c1x c1y c2x c2y rx ry x-axis-rotation large-arc-flag sweep-flag] :as props}]
+  [{:keys [x y c1x c1y c2x c2y rx ry x-axis-rotation large-arc-flag sweep-flag]
+    :as props}]
   (when (some? props)
     (obj/without-empty
      #js {:x x
@@ -409,7 +434,8 @@
           :sweepFlag sweep-flag})))
 
 (defn format-command
-  [{:keys [command params] :as props}]
+  [{:keys [command params]
+    :as props}]
   (when (some? props)
     (obj/without-empty
      #js {:command (format-key command)
@@ -427,7 +453,8 @@
 ;;   value: number | null;
 ;; }
 (defn format-track
-  [{:keys [type value] :as track}]
+  [{:keys [type value]
+    :as track}]
   (when (some? track)
     (obj/without-empty
      #js {:type (-> type format-key)

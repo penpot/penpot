@@ -93,7 +93,8 @@
       (when invite-email
         (on-invite-member)))
 
-    [:header {:class (stl/css :dashboard-header :team) :data-testid "dashboard-header"}
+    [:header {:class (stl/css :dashboard-header :team)
+              :data-testid "dashboard-header"}
      [:div {:class (stl/css :dashboard-title)}
       [:h1 (cond
              members-section? (tr "labels.members")
@@ -127,10 +128,13 @@
 
 (defn get-available-roles
   [permissions]
-  (->> [{:value "viewer" :label (tr "labels.viewer")}
-        {:value "editor" :label (tr "labels.editor")}
+  (->> [{:value "viewer"
+         :label (tr "labels.viewer")}
+        {:value "editor"
+         :label (tr "labels.editor")}
         (when (:is-admin permissions)
-          {:value "admin" :label (tr "labels.admin")})]
+          {:value "admin"
+           :label (tr "labels.admin")})]
        (filterv identity)))
 
 (def ^:private schema:invite-member-form
@@ -153,8 +157,11 @@
 
         initial     (mf/with-memo [team-id invite-email]
                       (if invite-email
-                        {:role "editor" :team-id team-id :emails #{invite-email}}
-                        {:role "editor" :team-id team-id}))
+                        {:role "editor"
+                         :team-id team-id
+                         :emails #{invite-email}}
+                        {:role "editor"
+                         :team-id team-id}))
 
         form        (fm/use-form :schema schema:invite-member-form
                                  :initial initial)
@@ -174,7 +181,8 @@
 
         on-error
         (fn [_form cause]
-          (let [{:keys [type code] :as error} (ex-data cause)]
+          (let [{:keys [type code]
+                 :as error} (ex-data cause)]
             (cond
               (and (= :validation type)
                    (= :profile-is-muted code))
@@ -212,7 +220,8 @@
     [:div {:class (stl/css-case :modal-team-container true
                                 :modal-team-container-workspace (= origin :workspace)
                                 :hero (= origin :hero))}
-     [:& fm/form {:on-submit on-submit :form form}
+     [:& fm/form {:on-submit on-submit
+                  :form form}
       [:div {:class (stl/css :modal-title)}
        (tr "modals.invite-team-member.title")]
 
@@ -231,7 +240,8 @@
       [:div {:class (stl/css :role-select)}
        [:p {:class (stl/css :role-title)}
         (tr "onboarding.choice.team-up.roles")]
-       [:& fm/select {:name :role :options roles}]]
+       [:& fm/select {:name :role
+                      :options roles}]]
 
       [:div {:class (stl/css :invitation-row)}
        [:& fm/multi-input {:type "email"
@@ -304,7 +314,8 @@
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} (tr role)]])
 
-     [:& dropdown {:show @show? :on-close on-hide}
+     [:& dropdown {:show @show?
+                   :on-close on-hide}
       [:ul {:class (stl/css :roles-dropdown)
             :role "listbox"}
        [:li {:on-click on-set-viewer
@@ -341,7 +352,8 @@
                  :on-click on-show}
         menu-icon]
 
-       [:& dropdown {:show @show? :on-close on-hide}
+       [:& dropdown {:show @show?
+                     :on-close on-hide}
         [:ul {:class (stl/css :actions-dropdown)}
          (when is-you?
            [:li {:on-click on-leave
@@ -354,7 +366,8 @@
                  :key "is-not-you-option"} (tr "labels.remove-member")])]]])))
 
 (defn- set-role! [member-id role]
-  (let [params {:member-id member-id :role role}]
+  (let [params {:member-id member-id
+                :role role}]
     (st/emit! (dtm/update-member-role params))))
 
 (mf/defc team-member*
@@ -386,7 +399,8 @@
 
         on-error
         (mf/use-fn
-         (fn [{:keys [code] :as error}]
+         (fn [{:keys [code]
+               :as error}]
            (condp = code
              :no-enough-members-for-leave
              (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
@@ -468,7 +482,8 @@
 
     [:div {:class (stl/css :table-row)}
      [:div {:class (stl/css :table-field :field-name)}
-      [:& member-info {:member member :profile profile}]]
+      [:& member-info {:member member
+                       :profile profile}]]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:& rol-info  {:member member
@@ -540,14 +555,17 @@
     (st/emit! (dtm/fetch-members)))
 
   [:*
-   [:& header {:section :dashboard-team-members :team team}]
+   [:& header {:section :dashboard-team-members
+               :team team}]
    [:section {:class (stl/css-case
                       :dashboard-container true
                       :dashboard-team-members true
                       :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
     (when (and (contains? cfg/flags :subscriptions)
                (show-subscription-members-main-banner? team profile))
-      [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
+      [:> members-cta* {:banner-is-expanded true
+                        :team team
+                        :profile profile}])
     [:> team-members*
      {:profile profile
       :team team}]
@@ -555,7 +573,9 @@
     (when (and
            (contains? cfg/flags :subscriptions)
            (show-subscription-members-small-banner? team profile))
-      [:> members-cta* {:banner-is-expanded false :team team :profile profile}])]])
+      [:> members-cta* {:banner-is-expanded false
+                        :team team
+                        :profile profile}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
@@ -592,7 +612,8 @@
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} label]])
 
-     [:& dropdown {:show @show? :on-close on-hide}
+     [:& dropdown {:show @show?
+                   :on-close on-hide}
       [:ul {:class (stl/css :roles-dropdown)}
        [:li {:data-role "admin"
              :class (stl/css :rol-dropdown-item)
@@ -620,7 +641,8 @@
         (mf/use-fn
          (mf/deps email)
          (fn [cause]
-           (let [{:keys [type code] :as error} (ex-data cause)]
+           (let [{:keys [type code]
+                  :as error} (ex-data cause)]
              (cond
                (and (= :validation type)
                     (= :profile-is-muted code))
@@ -642,7 +664,8 @@
         (mf/use-fn
          (mf/deps email team-id)
          (fn []
-           (let [params {:email email :team-id team-id}
+           (let [params {:email email
+                         :team-id team-id}
                  mdata  {:on-success #(st/emit! (dtm/fetch-invitations))}]
              (st/emit! (dtm/delete-invitation (with-meta params mdata))))))
 
@@ -677,7 +700,8 @@
         (mf/use-fn
          (mf/deps email team-id)
          (fn []
-           (let [params (with-meta {:email email :team-id team-id}
+           (let [params (with-meta {:email email
+                                    :team-id team-id}
                           {:on-success on-copy-success
                            :on-error on-error})]
              (st/emit!
@@ -692,7 +716,8 @@
                :on-click on-show}
       menu-icon]
 
-     [:& dropdown {:show @show? :on-close on-hide}
+     [:& dropdown {:show @show?
+                   :on-close on-hide}
       [:ul {:class (stl/css :actions-dropdown :invitations-dropdown)}
        [:li {:on-click on-copy
              :class (stl/css :action-dropdown-item)}
@@ -725,7 +750,9 @@
         (mf/use-fn
          (mf/deps email team-id)
          (fn [role _event]
-           (let [params {:email email :team-id team-id :role role}
+           (let [params {:email email
+                         :team-id team-id
+                         :role role}
                  mdata  {:on-success #(st/emit! (dtm/fetch-invitations))}]
              (st/emit! (dtm/update-invitation-role (with-meta params mdata))))))]
 
@@ -740,7 +767,8 @@
         :on-change on-change-role}]]
 
      [:div {:class (stl/css :table-field :field-status)}
-      [:& badge-notification {:type type :content badge-content}]]
+      [:& badge-notification {:type type
+                              :content badge-content}]]
 
      [:div {:class (stl/css :table-field :field-actions)}
       (when ^boolean can-invite
@@ -792,7 +820,8 @@
       [:div {:class (stl/css :title-field-role)} (tr "labels.role")]
       [:div {:class (stl/css :title-field-status)} (tr "labels.status")]]
      (if (empty? invitations)
-       [:> empty-invitation-table* {:can-invite can-invite? :team team}]
+       [:> empty-invitation-table* {:can-invite can-invite?
+                                    :team team}]
        [:div {:class (stl/css :table-rows)}
         (for [invitation invitations]
           [:> invitation-row*
@@ -823,11 +852,15 @@
                       :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
     (when (and (contains? cfg/flags :subscriptions)
                (show-subscription-members-main-banner? team profile))
-      [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
+      [:> members-cta* {:banner-is-expanded true
+                        :team team
+                        :profile profile}])
     [:> invitation-section* {:team team}]
     (when (and (contains? cfg/flags :subscriptions)
                (show-subscription-members-small-banner? team profile))
-      [:> members-cta* {:banner-is-expanded false :team team :profile profile}])]])
+      [:> members-cta* {:banner-is-expanded false
+                        :team team
+                        :profile profile}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION
@@ -835,13 +868,16 @@
 
 (def ^:private schema:webhook-form
   [:map {:title "WebhookForm"}
-   [:uri [::sm/uri {:max 4069 :prefix #"^http[s]?://"
+   [:uri [::sm/uri {:max 4069
+                    :prefix #"^http[s]?://"
                     :error/code "errors.webhooks.invalid-uri"}]]
    [:mtype ::sm/text]])
 
 (def valid-webhook-mtypes
-  [{:label "application/json" :value "application/json"}
-   {:label "application/transit+json" :value "application/transit+json"}])
+  [{:label "application/json"
+    :value "application/json"}
+   {:label "application/transit+json"
+    :value "application/transit+json"}])
 
 (defn- extract-status
   [error-code]
@@ -854,7 +890,8 @@
 
   (let [initial (mf/with-memo []
                   (or (some-> webhook (update :uri str))
-                      {:is-active false :mtype "application/json"}))
+                      {:is-active false
+                       :mtype "application/json"}))
         form    (fm/use-form :schema schema:webhook-form
                              :initial initial)
         on-success
@@ -916,7 +953,8 @@
                (on-create-submit form)))))]
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-container)}
-      [:& fm/form {:form form :on-submit on-submit}
+      [:& fm/form {:form form
+                   :on-submit on-submit}
        [:div {:class (stl/css :modal-header)}
         [:h2 {:class (stl/css :modal-title)}
          (if webhook
@@ -982,7 +1020,8 @@
        [:button {:class (stl/css :menu-btn)
                  :on-click on-show}
         menu-icon]
-       [:& dropdown {:show @show? :on-close on-hide}
+       [:& dropdown {:show @show?
+                     :on-close on-hide}
         [:ul {:class (stl/css :webhook-actions-dropdown)}
          [:li {:on-click on-edit
                :class (stl/css :webhook-dropdown-item)} (tr "labels.edit")]
@@ -1087,7 +1126,8 @@
       (st/emit! (dtm/fetch-webhooks)))
 
     [:*
-     [:& header {:team team :section :dashboard-team-webhooks}]
+     [:& header {:team team
+                 :section :dashboard-team-webhooks}]
      [:section {:class (stl/css :dashboard-container :dashboard-team-webhooks)}
       [:*
        [:> webhooks-hero* {}]
@@ -1135,7 +1175,8 @@
                 (dtm/fetch-stats)))
 
     [:*
-     [:& header {:section :dashboard-team-settings :team team}]
+     [:& header {:section :dashboard-team-settings
+                 :team team}]
      [:section {:class (stl/css :dashboard-team-settings)}
       [:div {:class (stl/css :block :info-block)}
        [:div {:class (stl/css :team-icon)}
@@ -1185,5 +1226,6 @@
          (tr "labels.num-of-files" (i18n/c (:files stats)))]]]
 
       (when (contains? cfg/flags :subscriptions)
-        [:> team* {:is-owner (:is-owner permissions) :team team}])]]))
+        [:> team* {:is-owner (:is-owner permissions)
+                   :team team}])]]))
 

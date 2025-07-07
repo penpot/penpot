@@ -66,7 +66,8 @@
              :on-click on-click
              :title (color-title color)}]
       ;; No multiple selection
-      (let [color    (if (string? color) {:color color :opacity 1} color)
+      (let [color    (if (string? color) {:color color
+                                          :opacity 1} color)
             id       (or (:ref-id color) (:id color))
             gradient (:gradient color)
             opacity  (:opacity color)
@@ -107,7 +108,8 @@
   {::mf/wrap-props false}
   [{:keys [color size on-click on-double-click origin]}]
   (let [{:keys [name]} (meta color)
-        {:keys [color gradient]} (if (string? color) {:color color :opacity 1} color)]
+        {:keys [color gradient]} (if (string? color) {:color color
+                                                      :opacity 1} color)]
     (when (or (not size) (> size 64))
       [:span {:class (stl/css-case
                       :color-text (and (= origin :palette) (< size 72))

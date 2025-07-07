@@ -24,7 +24,8 @@
        (l/derived st/state)))
 
 (mf/defc layer-item
-  [{:keys [item selected objects  depth component-child? hide-toggle?] :as props}]
+  [{:keys [item selected objects  depth component-child? hide-toggle?]
+    :as props}]
   (let [id        (:id item)
         hidden?   (:hidden item)
         selected? (contains? selected id)

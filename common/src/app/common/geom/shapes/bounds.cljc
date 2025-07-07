@@ -35,14 +35,16 @@
 (defn shape->filters
   [shape]
   (d/concat-vec
-   [{:id "BackgroundImageFix" :type :image-fix}]
+   [{:id "BackgroundImageFix"
+     :type :image-fix}]
 
    ;; Background blur won't work in current SVG specification
    ;; We can revisit this in the future
    #_(->> shape :blur (into []) (blur-filters :background-blur))
 
    (->> shape :shadow (apply-filters :style :drop-shadow))
-   [{:id "shape" :type :blend-filters}]
+   [{:id "shape"
+     :type :blend-filters}]
    (->> shape :shadow (apply-filters :style :inner-shadow))
    (->> shape :blur list (apply-filters :type :layer-blur))))
 
@@ -54,7 +56,10 @@
         h (dm/get-prop selrect :height)
 
         {:keys [offset-x offset-y blur spread]
-         :or {offset-x 0 offset-y 0 blur 0 spread 0}}
+         :or {offset-x 0
+              offset-y 0
+              blur 0
+              spread 0}}
         (:params filter-entry)
 
         filter-x (mth/min x (+ x offset-x (- spread) (- blur) -5))
@@ -169,7 +174,8 @@
   ([objects shape]
    (get-object-bounds objects shape nil))
   ([objects shape {:keys [ignore-margin? ignore-shadow-margin?]
-                   :or {ignore-margin? true ignore-shadow-margin? false}}]
+                   :or {ignore-margin? true
+                        ignore-shadow-margin? false}}]
    (let [base-bounds (calculate-base-bounds shape ignore-margin? ignore-shadow-margin?)
          bounds
          (cond
@@ -213,6 +219,8 @@
 (defn get-frame-bounds
   ([shape]
    (get-frame-bounds shape nil))
-  ([shape {:keys [ignore-margin? ignore-shadow-margin?] :or {ignore-margin? false ignore-shadow-margin? false}}]
+  ([shape {:keys [ignore-margin? ignore-shadow-margin?]
+           :or {ignore-margin? false
+                ignore-shadow-margin? false}}]
    (get-object-bounds [] shape {:ignore-margin? ignore-margin?
                                 :ignore-shadow-margin? ignore-shadow-margin?})))

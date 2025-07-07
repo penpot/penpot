@@ -42,7 +42,9 @@
                     :auth-section true
                     :register is-register)}
      [:h1 {:class (stl/css :logo-container)}
-      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
+      [:a {:href "#/"
+           :title "Penpot"
+           :class (stl/css :logo-btn)} i/logo]]
      [:div {:class (stl/css :login-illustration)}
       i/login-illustration]
 

@@ -56,7 +56,8 @@
    ::mf/private true}
   [{:keys [section team]}]
   (use-page-title team section)
-  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+  [:header {:class (stl/css :dashboard-header)
+            :data-testid "dashboard-header"}
    [:div#dashboard-fonts-title {:class (stl/css :dashboard-title)}
     [:h1 (tr "labels.fonts")]]])
 
@@ -108,7 +109,8 @@
 
         on-upload*
         (mf/use-fn
-         (fn [{:keys [id] :as item}]
+         (fn [{:keys [id]
+               :as item}]
            (swap! uploading* conj id)
            (->> (rp/cmd! :create-font-variant item)
                 (rx/delay-at-least 2000)
@@ -217,7 +219,8 @@
                     :data-testid "dismiss-all"}
            [:span (tr "dashboard.fonts.dismiss-all")]]]])
 
-      (for [{:keys [id] :as item} (sort-by :font-family font-vals)]
+      (for [{:keys [id]
+             :as item} (sort-by :font-family font-vals)]
         (let [uploading?      (contains? uploading id)
               disable-upload? (or uploading? (bad-font-family-tmp? item))]
           [:div {:class (stl/css :font-item :table-row)
@@ -318,7 +321,8 @@
          (fn [_]
            (reset! edition* false)
            (when-not (str/blank? font-family)
-             (st/emit! (df/update-font {:id font-id :name font-family})))))
+             (st/emit! (df/update-font {:id font-id
+                                        :name font-family})))))
 
         on-key-down
         (mf/use-fn
@@ -370,7 +374,8 @@
         [:span (:font-family font)])]
 
      [:div {:class (stl/css :table-field :variants)}
-      (for [{:keys [id] :as item} variants]
+      (for [{:keys [id]
+             :as item} variants]
         [:div {:class (stl/css-case :variant true
                                     :inhert-variant (not can-edit))
                :key (dm/str id)}
@@ -467,17 +472,22 @@
         permissions (:permissions team)
         can-edit    (:can-edit permissions)]
     [:*
-     [:> header* {:team team :section :fonts}]
+     [:> header* {:team team
+                  :section :fonts}]
      [:section {:class (stl/css :dashboard-container :dashboard-fonts)}
       (when ^boolean can-edit
-        [:> uploaded-fonts* {:team team :installed-fonts fonts}])
+        [:> uploaded-fonts* {:team team
+                             :installed-fonts fonts}])
       [:> installed-fonts*
-       {:team team :fonts fonts :can-edit can-edit}]]]))
+       {:team team
+        :fonts fonts
+        :can-edit can-edit}]]]))
 
 (mf/defc font-providers-page*
   {::mf/props :obj}
   [{:keys [team]}]
   [:*
-   [:> header* {:team team :section :providers}]
+   [:> header* {:team team
+                :section :providers}]
    [:section {:class (stl/css :dashboard-container)}
     [:span "font providers"]]])

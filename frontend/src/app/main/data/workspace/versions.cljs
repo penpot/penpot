@@ -52,7 +52,8 @@
     (watch [_ state _]
       (when-let [file-id (:current-file-id state)]
         (->> (rp/cmd! :get-file-snapshots {:file-id file-id})
-             (rx/map #(update-version-state {:status :loaded :data %})))))))
+             (rx/map #(update-version-state {:status :loaded
+                                             :data %})))))))
 
 (defn create-version
   []
@@ -70,7 +71,8 @@
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
               (rx/take 1)
-              (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id :label label}))
+              (rx/mapcat #(rp/cmd! :create-file-snapshot {:file-id file-id
+                                                          :label label}))
               (rx/mapcat
                (fn [{:keys [id]}]
                  (rx/of (update-version-state {:editing id})
@@ -89,7 +91,8 @@
          (rx/of (update-version-state {:editing false})
                 (ptk/event ::ev/event {::ev/name "rename-version"
                                        :file-id file-id}))
-         (->> (rp/cmd! :update-file-snapshot {:id id :label label})
+         (->> (rp/cmd! :update-file-snapshot {:id id
+                                              :label label})
               (rx/map fetch-versions)))))))
 
 (defn restore-version
@@ -106,7 +109,8 @@
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
               (rx/take 1)
-              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
+              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id
+                                                           :id id}))
               (rx/tap #(th/clear-queue!))
               (rx/map #(dw/initialize-workspace team-id file-id)))
          (case origin
@@ -182,7 +186,8 @@
                      (rx/of :nothing))
                    (rx/mapcat
                     (fn [_]
-                      (rp/cmd! :create-file-snapshot {:file-id file-id :label label})))
+                      (rp/cmd! :create-file-snapshot {:file-id file-id
+                                                      :label label})))
                    (rx/mapcat
                     (fn [{:keys [id]}]
                       (->> (rp/cmd! :get-file-snapshots {:file-id file-id})
@@ -213,7 +218,8 @@
          (->> (rx/from-atom refs/persistence-state {:emit-current-value? true})
               (rx/filter #(or (nil? %) (= :saved %)))
               (rx/take 1)
-              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id :id id}))
+              (rx/mapcat #(rp/cmd! :restore-file-snapshot {:file-id file-id
+                                                           :id id}))
               (rx/map #(dw/initialize-workspace team-id file-id)))
 
          (->> (rx/of 1)

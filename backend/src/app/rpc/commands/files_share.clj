@@ -35,7 +35,8 @@
    ::doc/module :files
    ::sm/params schema:create-share-link
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id]
+                        :as params}]
   (files/check-edition-permissions! conn profile-id file-id)
   (create-share-link conn (assoc params :profile-id profile-id)))
 
@@ -63,7 +64,8 @@
    ::doc/module ::files
    ::sm/params schema:delete-share-link
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]
+                        :as params}]
   (let [slink (db/get-by-id conn :share-link id)]
     (files/check-edition-permissions! conn profile-id (:file-id slink))
     (db/delete! conn :share-link {:id id})

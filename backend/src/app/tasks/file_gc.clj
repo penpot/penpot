@@ -56,7 +56,9 @@
 
 (defn- clean-file-media!
   "Performs the garbage collection of file media objects."
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id]
+              :as file}]
   (let [xform  (comp
                 (map (partial bfc/decode-file cfg))
                 xf:collect-used-media)
@@ -86,7 +88,8 @@
    RETURNING object_id")
 
 (defn- clean-file-object-thumbnails!
-  [{:keys [::db/conn]} {:keys [data] :as file}]
+  [{:keys [::db/conn]} {:keys [data]
+                        :as file}]
   (let [file-id (:id file)
         using   (->> (vals (:pages-index data))
                      (into #{} (comp
@@ -119,7 +122,8 @@
    RETURNING revn")
 
 (defn- clean-file-thumbnails!
-  [{:keys [::db/conn]} {:keys [id revn] :as file}]
+  [{:keys [::db/conn]} {:keys [id revn]
+                        :as file}]
   (let [unused (->> (db/exec! conn [sql:mark-file-thumbnails-deleted id revn])
                     (into #{} (map :revn)))]
 
@@ -155,7 +159,9 @@
 
 (defn- clean-deleted-components!
   "Performs the garbage collection of unreferenced deleted components."
-  [{:keys [::db/conn] :as cfg} {:keys [data] :as file}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [data]
+              :as file}]
   (let [file-id (:id file)
 
         deleted-components
@@ -203,7 +209,8 @@
         (mapcat feat.fdata/get-used-pointer-ids)))
 
 (defn- clean-fragments!
-  [{:keys [::db/conn]} {:keys [id] :as file}]
+  [{:keys [::db/conn]} {:keys [id]
+                        :as file}]
   (let [used   (into #{} xf:collect-pointers [file])
 
         unused (->> (db/exec! conn [sql:mark-deleted-data-fragments id
@@ -281,7 +288,8 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as task}]
+  (fn [{:keys [props]
+        :as task}]
     (let [min-age (dt/duration (or (:min-age props)
                                    (cf/get-deletion-delay)))
           file-id (get props :file-id)
@@ -290,7 +298,8 @@
                       (assoc ::min-age min-age))]
 
       (try
-        (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+        (db/tx-run! cfg (fn [{:keys [::db/conn]
+                              :as cfg}]
                           (let [cfg        (update cfg ::sto/storage sto/configure conn)
                                 processed? (process-file! cfg file-id)]
                             (when (and processed? (contains? cf/flags :tiered-file-data-storage))

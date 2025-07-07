@@ -44,7 +44,8 @@
     {:message (translate-code code)}))
 
 (defn- interpret-schema-problem
-  [acc {:keys [schema in value type] :as problem}]
+  [acc {:keys [schema in value type]
+        :as problem}]
   (let [props  (m/properties schema)
         tprops (m/type-properties schema)
         field  (or (first in)
@@ -162,7 +163,8 @@
         (rerender-fn)))))
 
 (defn use-form
-  [& {:keys [initial] :as opts}]
+  [& {:keys [initial]
+      :as opts}]
   (let [rerender-fn (use-rerender-fn)
 
         initial

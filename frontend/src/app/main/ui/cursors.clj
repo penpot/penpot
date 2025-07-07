@@ -87,5 +87,6 @@
       ~@(->> (:defs ns-info)
              (map val)
              (filter (fn [entry] (-> entry :meta :cursor)))
-             (mapcat (fn [{:keys [name] :as entry}]
+             (mapcat (fn [{:keys [name]
+                           :as entry}]
                        [(-> name c/name str/camel str/capital) name]))))))

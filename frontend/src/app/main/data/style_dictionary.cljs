@@ -39,7 +39,8 @@
   {:platforms {:json
                {:transformGroup "tokens-studio"
                 ;; Required: The StyleDictionary API is focused on files even when working in the browser
-                :files [{:format "custom/json" :destination "penpot"}]}}
+                :files [{:format "custom/json"
+                         :destination "penpot"}]}}
    :preprocessors ["tokens-studio"]
    ;; Silences style dictionary logs and errors
    ;; We handle token errors in the UI
@@ -52,7 +53,8 @@
   If the value is not parseable and/or has missing references returns a map with `:errors`."
   [value]
   (if-let [tc (tinycolor/valid-color value)]
-    {:value value :unit (tinycolor/color-format tc)}
+    {:value value
+     :unit (tinycolor/color-format tc)}
     {:errors [(wte/error-with-value :error.token/invalid-color value)]}))
 
 (defn- numeric-string? [s]

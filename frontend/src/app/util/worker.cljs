@@ -19,7 +19,9 @@
   ([worker message]
    (send-message! worker message nil))
 
-  ([worker {sender-id :sender-id :as message} {:keys [many?] :or {many? false}}]
+  ([worker {sender-id :sender-id
+            :as message} {:keys [many?]
+                          :or {many? false}}]
    (let [take-messages
          (fn [ob]
            (if many?

@@ -34,7 +34,8 @@
   (rx/sub!
    tokens-lib-stream
    (fn [lib]
-     (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens" :type type})
+     (st/emit! (ptk/data-event ::ev/event {::ev/name "import-tokens"
+                                           :type type})
                (dwtl/import-tokens-lib lib))
      (modal/hide!))
    (fn [err]
@@ -107,7 +108,8 @@
                   :on-click toggle-dropdown
                   :aria-label "Show options"}]
 
-     [:& dropdown {:show @show-dropdown? :on-close close-dropdown}
+     [:& dropdown {:show @show-dropdown?
+                   :on-close close-dropdown}
       [:> options-dropdown* {:options file-type-options
                              :selected (str (:value selected-option))
                              :on-click handle-option-click
@@ -232,10 +234,14 @@
            (tr "workspace.tokens.import-button-prefix" (:label option))))]
 
     [:div {:class (stl/css :import-modal-wrapper)}
-     [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :import-modal-title)}
+     [:> heading* {:level 2
+                   :typography "headline-medium"
+                   :class (stl/css :import-modal-title)}
       (tr "workspace.tokens.import-tokens")]
 
-     [:> text* {:as "ul" :typography "body-medium" :class (stl/css :import-description)}
+     [:> text* {:as "ul"
+                :typography "body-medium"
+                :class (stl/css :import-description)}
       [:li (tr "workspace.tokens.import-single-file")]
       [:li (tr "workspace.tokens.import-multiple-files")]]
 
@@ -267,9 +273,12 @@
                    :on-click modal/hide!}
        (tr "labels.cancel")]
       [:> import-type-dropdown*
-       {:options [{:label (tr "workspace.tokens.import-menu-zip-option") :value :zip}
-                  {:label (tr "workspace.tokens.import-menu-json-option") :value :file}
-                  {:label (tr "workspace.tokens.import-menu-folder-option") :value :folder}]
+       {:options [{:label (tr "workspace.tokens.import-menu-zip-option")
+                   :value :zip}
+                  {:label (tr "workspace.tokens.import-menu-json-option")
+                   :value :file}
+                  {:label (tr "workspace.tokens.import-menu-folder-option")
+                   :value :folder}]
         :on-click handle-import-action
         :text-render render-button-text
         :default :zip}]]]))

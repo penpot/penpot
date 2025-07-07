@@ -355,8 +355,12 @@
             num-props    (max 1 (dec (count cpath)))
             cont-props   {:layout-item-h-sizing :auto
                           :layout-item-v-sizing :auto
-                          :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
-                          :layout-gap     {:row-gap 0 :column-gap 20}
+                          :layout-padding {:p1 30
+                                           :p2 30
+                                           :p3 30
+                                           :p4 30}
+                          :layout-gap     {:row-gap 0
+                                           :column-gap 20}
                           :name name
                           :r1 20
                           :r2 20
@@ -392,7 +396,8 @@
 
           ;; Create variant container
           (dwsh/create-artboard-from-selection variant-id nil nil nil delta)
-          (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
+          (cl/remove-all-fills variant-vec {:color clr/black
+                                            :opacity 1})
           (dwsl/create-layout-from-id variant-id :flex)
           (dwsh/update-shapes variant-vec #(merge % cont-props))
           (dwsh/update-shapes [main-instance-id] #(merge % main-props))

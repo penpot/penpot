@@ -105,7 +105,10 @@
                 (str/ends-with? url ".svg")))
 
           (upload [uri]
-            (->> (http/send! {:method :get :uri uri :mode :no-cors :response-type :blob})
+            (->> (http/send! {:method :get
+                              :uri uri
+                              :mode :no-cors
+                              :response-type :blob})
                  (rx/map :body)
                  (rx/map (fn [content]
                            {:file-id file-id
@@ -115,7 +118,9 @@
                  (rx/mapcat #(rp/cmd! :upload-file-media-object %))))
 
           (fetch-svg [name uri]
-            (->> (http/send! {:method :get :uri uri :mode :no-cors})
+            (->> (http/send! {:method :get
+                              :uri uri
+                              :mode :no-cors})
                  (rx/map #(vector
                            (or name (svg/extract-name uri))
                            (:body %)))))]
@@ -210,7 +215,8 @@
    [:mtype {:optional true} :string]])
 
 (defn- process-media-objects
-  [{:keys [uris on-error] :as params}]
+  [{:keys [uris on-error]
+    :as params}]
   (dm/assert!
    (and (sm/check schema:process-media-objects params)
         (or (contains? params :blobs)
@@ -237,7 +243,8 @@
             (rx/finalize #(st/emit! (ntf/hide :tag :media-loading))))))))
 
 (defn upload-media-workspace
-  [{:keys [position file-id] :as params}]
+  [{:keys [position file-id]
+    :as params}]
   (let [params (assoc params
                       :local? true
                       :on-image #(st/emit! (image-uploaded % position))
@@ -324,7 +331,8 @@
 (defn create-shapes-img
   "Convert a media object that contains a bitmap image into shapes,
   one shape of type :rect containing an image fill and one group that contains it."
-  [pos {:keys [name width height id mtype] :as media-obj}]
+  [pos {:keys [name width height id mtype]
+        :as media-obj}]
   (let [frame-shape (cts/setup-shape
                      {:type :frame
                       :x (:x pos)
@@ -418,7 +426,8 @@
    [:object-id ::sm/uuid]])
 
 (defn clone-media-object
-  [{:keys [file-id object-id] :as params}]
+  [{:keys [file-id object-id]
+    :as params}]
   (dm/assert!
    (sm/check schema:clone-media-object params))
 

@@ -50,7 +50,8 @@
 
 (defn repl-close-connection
   [id]
-  (when-let [{:keys [::ws/close-ch] :as wsp} (get @state id)]
+  (when-let [{:keys [::ws/close-ch]
+              :as wsp} (get @state id)]
     (sp/put! close-ch [8899 "closed from server"])
     (sp/close! close-ch)))
 
@@ -86,7 +87,8 @@
     (:type message)))
 
 (defmethod handle-message :open
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/output-ch ::ws/state ::profile-id ::session-id] :as wsp} _]
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/output-ch ::ws/state ::profile-id ::session-id]
+                            :as wsp} _]
   (l/trace :fn "handle-message" :event "open" :conn-id id)
   (let [ch (sp/chan :buf (sp/dropping-buffer 16)
                     :xf  (remove #(= (:session-id %) session-id)))]
@@ -131,7 +133,8 @@
       (mbus/pub! msgbus :topic topic :message msg))))
 
 (defmethod handle-message :subscribe-team
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id]} {:keys [team-id] :as params}]
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id]} {:keys [team-id]
+                                                                                     :as params}]
   (l/trace :fn "handle-message" :event "subscribe-team" :team-id team-id :conn-id id)
   (let [prev-subs (get @state ::team-subscription)
         channel   (sp/chan :buf (sp/dropping-buffer 64)
@@ -140,7 +143,9 @@
     (sp/pipe channel output-ch false)
     (mbus/sub! msgbus :topic team-id :chan channel)
 
-    (let [subs {:team-id team-id :channel channel :topic team-id}]
+    (let [subs {:team-id team-id
+                :channel channel
+                :topic team-id}]
       (swap! state assoc ::team-subscription subs))
 
     ;; Close previous subscription if exists
@@ -150,13 +155,16 @@
 
 
 (defmethod handle-message :subscribe-file
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id]
+                                                                                                  :as params}]
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
   (let [psub (::file-subscription @state)
         fch  (sp/chan :buf (sp/dropping-buffer 64)
                       :xf  (remove #(= (:session-id %) session-id)))]
 
-    (let [subs {:file-id file-id :channel fch :topic file-id}]
+    (let [subs {:file-id file-id
+                :channel fch
+                :topic file-id}]
       (swap! state assoc ::file-subscription subs))
 
     ;; Close previous subscription if exists
@@ -165,7 +173,8 @@
       (mbus/purge! msgbus [ch]))
 
     (sp/go-loop []
-      (when-let [{:keys [type] :as message} (sp/take! fch)]
+      (when-let [{:keys [type]
+                  :as message} (sp/take! fch)]
         (sp/put! output-ch message)
         (when (or (= :join-file type)
                   (= :leave-file type)
@@ -190,7 +199,8 @@
       (mbus/pub! msgbus :topic file-id :message message))))
 
 (defmethod handle-message :unsubscribe-file
-  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id ::profile-id]} {:keys [file-id] :as params}]
+  [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::session-id ::profile-id]} {:keys [file-id]
+                                                                                   :as params}]
   (l/trace :fn "handle-message" :event "unsubscribe-file" :file-id file-id :conn-id id)
 
   (let [subs    (::file-subscription @state)
@@ -219,7 +229,8 @@
     (mbus/pub! msgbus :topic profile-id :message message)))
 
 (defmethod handle-message :pointer-update
-  [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} {:keys [file-id] :as message}]
+  [{:keys [::mbus/msgbus]} {:keys [::ws/state ::session-id ::profile-id]} {:keys [file-id]
+                                                                           :as message}]
   (when (::file-subscription @state)
     (let [message (-> message
                       (assoc :subs-id file-id)
@@ -238,7 +249,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- on-connect
-  [{:keys [::mtx/metrics]} {:keys [::ws/id] :as wsp}]
+  [{:keys [::mtx/metrics]} {:keys [::ws/id]
+                            :as wsp}]
   (let [created-at (dt/now)]
     (l/trace :fn "on-connect" :conn-id id)
     (swap! state assoc id wsp)
@@ -272,7 +284,8 @@
   message)
 
 (defn- http-handler
-  [cfg {:keys [params ::session/profile-id] :as request}]
+  [cfg {:keys [params ::session/profile-id]
+        :as request}]
   (let [session-id (some-> params :session-id uuid/parse*)]
     (when-not (uuid? session-id)
       (ex/raise :type :validation

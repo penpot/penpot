@@ -29,7 +29,8 @@
                        :frame-id])
 
 (mf/defc constraints-menu
-  [{:keys [ids values] :as props}]
+  [{:keys [ids values]
+    :as props}]
   (let [state*          (mf/use-state true)
         open?           (deref state*)
 
@@ -134,23 +135,35 @@
         (mf/with-memo [constraints-h]
           (d/concat-vec
            (when (= constraints-h :multiple)
-             [{:value "" :label (tr "settings.multiple")}])
-           [{:value "left" :label (tr "workspace.options.constraints.left")}
-            {:value "right" :label (tr "workspace.options.constraints.right")}
-            {:value "leftright" :label (tr "workspace.options.constraints.leftright")}
-            {:value "center" :label (tr "workspace.options.constraints.center")}
-            {:value "scale" :label (tr "workspace.options.constraints.scale")}]))
+             [{:value ""
+               :label (tr "settings.multiple")}])
+           [{:value "left"
+             :label (tr "workspace.options.constraints.left")}
+            {:value "right"
+             :label (tr "workspace.options.constraints.right")}
+            {:value "leftright"
+             :label (tr "workspace.options.constraints.leftright")}
+            {:value "center"
+             :label (tr "workspace.options.constraints.center")}
+            {:value "scale"
+             :label (tr "workspace.options.constraints.scale")}]))
 
         options-v
         (mf/with-memo [constraints-v]
           (d/concat-vec
            (when (= constraints-v :multiple)
-             [{:value "" :label (tr "settings.multiple")}])
-           [{:value "top" :label (tr "workspace.options.constraints.top")}
-            {:value "bottom" :label (tr "workspace.options.constraints.bottom")}
-            {:value "topbottom" :label (tr "workspace.options.constraints.topbottom")}
-            {:value "center" :label (tr "workspace.options.constraints.center")}
-            {:value "scale" :label (tr "workspace.options.constraints.scale")}]))]
+             [{:value ""
+               :label (tr "settings.multiple")}])
+           [{:value "top"
+             :label (tr "workspace.options.constraints.top")}
+            {:value "bottom"
+             :label (tr "workspace.options.constraints.bottom")}
+            {:value "topbottom"
+             :label (tr "workspace.options.constraints.topbottom")}
+            {:value "center"
+             :label (tr "workspace.options.constraints.center")}
+            {:value "scale"
+             :label (tr "workspace.options.constraints.scale")}]))]
 
 
     ;; CONSTRAINTS
@@ -207,12 +220,14 @@
                       :on-click on-constraint-button-clicked}
              [:span {:class (stl/css :resalted-area)}]]]]
           [:div {:class (stl/css :contraints-selects)}
-           [:div {:class (stl/css :horizontal-select) :data-testid "constraint-h-select"}
+           [:div {:class (stl/css :horizontal-select)
+                  :data-testid "constraint-h-select"}
             [:& select
              {:default-value (if (not= constraints-h :multiple) (d/nilv (d/name constraints-h) "scale") "")
               :options options-h
               :on-change on-constraint-h-select-changed}]]
-           [:div {:class (stl/css :vertical-select) :data-testid "constraint-v-select"}
+           [:div {:class (stl/css :vertical-select)
+                  :data-testid "constraint-v-select"}
             [:& select
              {:default-value (if (not= constraints-v :multiple) (d/nilv (d/name constraints-v) "scale") "")
               :options options-v

@@ -42,7 +42,8 @@
         on-error
         (mf/use-fn
          (mf/deps profile)
-         (fn [{:keys [code] :as error}]
+         (fn [{:keys [code]
+               :as error}]
            (reset! loading false)
            (if (= code :feedback-disabled)
              (st/emit! (ntf/error (tr "labels.feedback-disabled")))

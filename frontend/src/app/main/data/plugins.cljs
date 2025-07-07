@@ -72,7 +72,8 @@
       (.error js/console "Error" e))))
 
 (defn open-plugin!
-  [{:keys [url] :as manifest} user-can-edit?]
+  [{:keys [url]
+    :as manifest} user-can-edit?]
   (if url
     ;; If the saved manifest has a URL we fetch the manifest to check
     ;; for updates

@@ -55,7 +55,8 @@
   (dt/duration {:days 7}))
 
 (defn decode-row
-  [{:keys [data changes features] :as row}]
+  [{:keys [data changes features]
+    :as row}]
   (when row
     (cond-> row
       features (assoc :features (db/decode-pgarray features #{}))
@@ -127,7 +128,8 @@
 
   ([conn profile-id file-id share-id]
    (let [perms  (get-permissions conn profile-id file-id)
-         ldata  (some-> (db/get* conn :share-link {:id share-id :file-id file-id})
+         ldata  (some-> (db/get* conn :share-link {:id share-id
+                                                   :file-id file-id})
                         (dissoc :flags)
                         (update :pages db/decode-pgarray #{}))]
 
@@ -210,7 +212,9 @@
    [:project-id {:optional true} ::sm/uuid]])
 
 (defn- migrate-file
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} {:keys [read-only?]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id]
+              :as file} {:keys [read-only?]}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)
             pmap/*tracked* (pmap/create-tracked)]
     (let [libs (delay (bfc/get-resolved-file-libraries cfg file))
@@ -250,7 +254,8 @@
           (feat.fmigr/resolve-applied-migrations cfg file))))))
 
 (defn get-file
-  [{:keys [::db/conn ::wrk/executor] :as cfg} id
+  [{:keys [::db/conn ::wrk/executor]
+    :as cfg} id
    & {:keys [project-id
              migrate?
              include-deleted?
@@ -316,7 +321,9 @@
    ::sm/params schema:get-file
    ::sm/result schema:file-with-permissions
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id project-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id id project-id]
+              :as params}]
   ;; The COND middleware makes initial request for a file and
   ;; permissions when the incoming request comes with an
   ;; ETAG. When ETAG does not matches, the request is resolved
@@ -368,7 +375,8 @@
 (defn- get-file-fragment
   [cfg file-id fragment-id]
   (let [resolve-file-data (partial feat.fdata/resolve-file-data cfg)]
-    (some-> (db/get cfg :file-data-fragment {:file-id file-id :id fragment-id})
+    (some-> (db/get cfg :file-data-fragment {:file-id file-id
+                                             :id fragment-id})
             (resolve-file-data)
             (update :data blob/decode))))
 
@@ -423,7 +431,8 @@
   {::doc/added "1.17"
    ::sm/params schema:get-project-files
    ::sm/result schema:files}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id project-id]}]
   (dm/with-open [conn (db/open pool)]
     (projects/check-read-permissions! conn profile-id project-id)
     (get-project-files conn project-id)))
@@ -441,7 +450,8 @@
   {::doc/added "1.15.1"
    ::sm/params schema:has-file-libraries
    ::sm/result ::sm/boolean}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! pool profile-id file-id)
     (get-has-file-libraries conn file-id)))
@@ -485,7 +495,9 @@
   (update page :objects update-vals #(dissoc % :thumbnail)))
 
 (defn get-page
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id page-id object-id share-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id file-id page-id object-id share-id]
+              :as params}]
 
   (when (and (uuid? object-id)
              (not (uuid? page-id)))
@@ -543,9 +555,11 @@
   accepts client features."
   {::doc/added "1.17"
    ::sm/params schema:get-page}
-  [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id share-id]
+        :as params}]
   (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
+              (fn [{:keys [::db/conn]
+                    :as cfg}]
                 (check-read-permissions! conn profile-id file-id share-id)
                 (get-page cfg (assoc params :profile-id profile-id)))))
 
@@ -576,7 +590,8 @@
     order by f.modified_at desc")
 
 (defn- get-library-summary
-  [cfg {:keys [id data] :as file}]
+  [cfg {:keys [id data]
+        :as file}]
   (letfn [(assets-sample [assets limit]
             (let [sorted-assets (->> (vals assets)
                                      (sort-by #(str/lower (:name %))))]
@@ -594,7 +609,8 @@
          :typographies (assets-sample (:typographies data) 3)}))))
 
 (defn- get-team-shared-files
-  [{:keys [::db/conn] :as cfg} {:keys [team-id profile-id]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [team-id profile-id]}]
   (teams/check-read-permissions! conn profile-id team-id)
   (->> (db/exec! conn [sql:team-shared-files team-id])
        (into #{} (comp
@@ -620,7 +636,8 @@
   "Get all file (libraries) for the specified team."
   {::doc/added "1.17"
    ::sm/params schema:get-team-shared-files}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg get-team-shared-files (assoc params :profile-id profile-id)))
 
 ;; --- COMMAND QUERY: get-file-libraries
@@ -633,7 +650,8 @@
   "Get libraries used by the specified file."
   {::doc/added "1.17"
    ::sm/params schema:get-file-libraries}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (bfc/get-file-libraries conn file-id)))
@@ -661,7 +679,9 @@
   "Returns all the file references that use specified file (library) id."
   {::doc/added "1.17"
    ::sm/params schema:get-library-file-references}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id file-id]
+              :as params}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id file-id)
     (get-library-file-references conn file-id)))
@@ -705,7 +725,8 @@
 (sv/defmethod ::get-team-recent-files
   {::doc/added "1.17"
    ::sm/params schema:get-team-recent-files}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (get-team-recent-files conn team-id)))
@@ -714,7 +735,9 @@
 ;; --- COMMAND QUERY: get-file-summary
 
 (defn- get-file-summary
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id id project-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id id project-id]
+              :as params}]
   (check-read-permissions! conn profile-id id)
   (let [team (teams/get-team conn
                              :profile-id profile-id
@@ -740,14 +763,17 @@
   "Retrieve a file summary by its ID. Only authenticated users."
   {::doc/added "1.20"
    ::sm/params schema:get-file}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg get-file-summary (assoc params :profile-id profile-id)))
 
 
 ;; --- COMMAND QUERY: get-file-info
 
 (defn- get-file-info
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id]
+              :as params}]
   (db/get* conn :file
            {:id id}
            {::sql/columns [:id]}))
@@ -788,7 +814,8 @@
 
    ::sm/params
    [:map {:title "RenameFileParams"}
-    [:name [:string {:min 1 :max 250}]]
+    [:name [:string {:min 1
+                     :max 250}]]
     [:id ::sm/uuid]]
 
    ::sm/result
@@ -799,7 +826,9 @@
     [:modified-at ::dt/instant]]
 
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id id]
+              :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [file (rename-file conn params)]
     (rph/with-meta
@@ -848,7 +877,8 @@
 (defn- absorb-library
   "Find all files using a shared library, and absorb all library assets
   into the file local libraries"
-  [cfg {:keys [id] :as library}]
+  [cfg {:keys [id]
+        :as library}]
 
   (dm/assert!
    "expected cfg with valid connection"
@@ -867,7 +897,8 @@
     library))
 
 (defn absorb-library!
-  [{:keys [::db/conn] :as cfg} id]
+  [{:keys [::db/conn]
+    :as cfg} id]
   (let [file (-> (get-file cfg id
                            :lock-for-update? true
                            :include-deleted? true)
@@ -885,7 +916,9 @@
     (absorb-library cfg file)))
 
 (defn- set-file-shared
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id id]
+              :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [file (db/get-by-id conn :file id {:columns [:id :name :is-shared]})
         file (cond
@@ -936,7 +969,8 @@
   {::doc/added "1.17"
    ::webhooks/event? true
    ::sm/params schema:set-file-shared}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg set-file-shared (assoc params :profile-id profile-id)))
 
 ;; --- MUTATION COMMAND: delete-file
@@ -962,7 +996,9 @@
    [:id ::sm/uuid]])
 
 (defn- delete-file
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id id]
+              :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [team (teams/get-team conn
                              :profile-id profile-id
@@ -979,7 +1015,8 @@
   {::doc/added "1.17"
    ::webhooks/event? true
    ::sm/params schema:delete-file}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg delete-file (assoc params :profile-id profile-id)))
 
 ;; --- MUTATION COMMAND: link-file-to-library
@@ -990,7 +1027,8 @@
        on conflict do nothing;")
 
 (defn link-file-to-library
-  [conn {:keys [file-id library-id] :as params}]
+  [conn {:keys [file-id library-id]
+         :as params}]
   (db/exec-one! conn [sql:link-file-to-library file-id library-id]))
 
 (def ^:private
@@ -1003,7 +1041,8 @@
   {::doc/added "1.17"
    ::webhooks/event? true
    ::sm/params schema:link-file-to-library}
-  [cfg {:keys [::rpc/profile-id file-id library-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id library-id]
+        :as params}]
   (when (= file-id library-id)
     (ex/raise :type :validation
               :code :invalid-library
@@ -1033,7 +1072,9 @@
    ::webhooks/event? true
    ::sm/params schema:unlink-file-to-library
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id file-id]
+              :as params}]
   (check-edition-permissions! conn profile-id file-id)
   (unlink-file-from-library conn params)
   nil)
@@ -1041,7 +1082,8 @@
 ;; --- MUTATION COMMAND: update-sync
 
 (defn update-sync
-  [conn {:keys [file-id library-id] :as params}]
+  [conn {:keys [file-id library-id]
+         :as params}]
   (db/update! conn :file-library-rel
               {:synced-at (dt/now)}
               {:file-id file-id
@@ -1058,14 +1100,16 @@
   {::doc/added "1.17"
    ::sm/params schema:update-file-library-sync-status
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id]
+                        :as params}]
   (check-edition-permissions! conn profile-id file-id)
   (update-sync conn params))
 
 ;; --- MUTATION COMMAND: ignore-sync
 
 (defn ignore-sync
-  [conn {:keys [file-id date] :as params}]
+  [conn {:keys [file-id date]
+         :as params}]
   (db/update! conn :file
               {:ignore-sync-until date
                :modified-at (dt/now)}
@@ -1083,7 +1127,8 @@
   {::doc/added "1.17"
    ::sm/params schema:ignore-file-library-sync-status
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id file-id]
+                        :as params}]
   (check-edition-permissions! conn profile-id file-id)
   (->  (ignore-sync conn params)
        (update :features db/decode-pgarray #{})))

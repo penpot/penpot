@@ -27,7 +27,8 @@
 (mf/defc text-shape
   {::mf/wrap-props false}
   [props]
-  (let [{:keys [position-data content] :as shape} (obj/get props "shape")
+  (let [{:keys [position-data content]
+         :as shape} (obj/get props "shape")
         is-component? (mf/use-ctx ctx/is-component?)]
 
     (mf/with-memo [content]

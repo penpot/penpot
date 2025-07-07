@@ -28,7 +28,11 @@
         props (mf/with-memo [shape]
                 (-> #js {}
                     (attrs/add-border-props! shape)
-                    (obj/merge! #js {:x x :y y :transform t :width w :height h})))
+                    (obj/merge! #js {:x x
+                                     :y y
+                                     :transform t
+                                     :width w
+                                     :height h})))
 
         path? (some? (.-d props))]
 

@@ -85,7 +85,8 @@
 (declare persist-layout-flags!)
 
 (defn toggle-layout-flag
-  [flag & {:keys [force?] :as opts}]
+  [flag & {:keys [force?]
+           :as opts}]
   (ptk/reify ::toggle-layout-flag
     ev/Event
     (-data [_] {:name flag})

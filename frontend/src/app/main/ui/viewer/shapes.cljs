@@ -503,6 +503,12 @@
               :path    [:> path-wrapper opts]
               :image   [:> image-wrapper opts]
               :circle  [:> circle-wrapper opts]
-              :group   [:> group-container {:shape shape :frame frame :objects objects}]
-              :bool    [:> bool-container {:shape shape :frame frame :objects objects}]
-              :svg-raw [:> svg-raw-container {:shape shape :frame frame :objects objects}])))))))
+              :group   [:> group-container {:shape shape
+                                            :frame frame
+                                            :objects objects}]
+              :bool    [:> bool-container {:shape shape
+                                           :frame frame
+                                           :objects objects}]
+              :svg-raw [:> svg-raw-container {:shape shape
+                                              :frame frame
+                                              :objects objects}])))))))

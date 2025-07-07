@@ -154,7 +154,8 @@
             :comment-url comment-url}))))))
 
 (defn- decode-row
-  [{:keys [participants position mentions] :as row}]
+  [{:keys [participants position mentions]
+    :as row}]
   (cond-> row
     (db/pgpoint? position) (assoc :position (db/decode-pgpoint position))
     (db/pgobject? participants) (assoc :participants (db/decode-transit-pgobject participants))
@@ -246,7 +247,8 @@
 (sv/defmethod ::get-comment-threads
   {::doc/added "1.15"
    ::sm/params schema:get-comment-threads}
-  [cfg {:keys [::rpc/profile-id file-id share-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id share-id]
+        :as params}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (files/check-comment-permissions! conn profile-id file-id share-id)
                  (get-comment-threads conn profile-id file-id))))
@@ -297,7 +299,8 @@
 (sv/defmethod ::get-unread-comment-threads
   {::doc/added "1.15"
    ::sm/params schema:get-unread-comment-threads}
-  [cfg {:keys [::rpc/profile-id team-id] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id]
+        :as params}]
   (db/run!
    cfg
    (fn [{:keys [::db/conn]}]
@@ -346,7 +349,8 @@
 (sv/defmethod ::get-comment-thread
   {::doc/added "1.15"
    ::sm/params schema:get-comment-thread}
-  [cfg {:keys [::rpc/profile-id file-id id share-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id id share-id]
+        :as params}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (files/check-comment-permissions! conn profile-id file-id share-id)
                  (let [sql (str "WITH threads AS (" sql:comment-threads ")"
@@ -470,10 +474,12 @@
    ::rtry/enabled true
    ::rtry/when rtry/conflict-exception?
    ::sm/params schema:create-comment-thread}
-  [cfg {:keys [::rpc/profile-id file-id page-id share-id] :as params}]
+  [cfg {:keys [::rpc/profile-id file-id page-id share-id]
+        :as params}]
   (files/check-comment-permissions! cfg profile-id file-id share-id)
 
-  (let [{:keys [team-id project-id] :as file} (get-file cfg file-id page-id)]
+  (let [{:keys [team-id project-id]
+         :as file} (get-file cfg file-id page-id)]
     (-> cfg
         (assoc ::quotes/profile-id profile-id)
         (assoc ::quotes/team-id team-id)
@@ -488,8 +494,10 @@
       (vary-meta thread assoc ::audit/props thread))))
 
 (defn- create-comment-thread
-  [{:keys [::db/conn] :as cfg}
-   {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg}
+   {:keys [::rpc/profile-id ::rpc/request-at ::file position content mentions frame-id]
+    :as params}]
 
   (let [;; NOTE: we take the next seq number from a separate query
         ;; because we need to lock the file for avoid race conditions
@@ -596,11 +604,14 @@
    ::webhooks/event? true
    ::sm/params schema:create-comment
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at thread-id share-id content mentions]}]
-  (let [{:keys [file-id page-id] :as thread}
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id ::rpc/request-at thread-id share-id content mentions]}]
+  (let [{:keys [file-id page-id]
+         :as thread}
         (get-comment-thread conn thread-id ::sql/for-update true)
 
-        {:keys [team-id project-id] :as file}
+        {:keys [team-id project-id]
+         :as file}
         (get-file cfg file-id page-id)]
 
     (files/check-comment-permissions! conn profile-id file-id share-id)
@@ -667,11 +678,14 @@
   {::doc/added "1.15"
    ::sm/params schema:update-comment
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id share-id content mentions]}]
-  (let [{:keys [thread-id owner-id] :as comment}
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id ::rpc/request-at id share-id content mentions]}]
+  (let [{:keys [thread-id owner-id]
+         :as comment}
         (get-comment conn id ::sql/for-update true)
 
-        {:keys [file-id page-id] :as thread}
+        {:keys [file-id page-id]
+         :as thread}
         (get-comment-thread conn thread-id ::sql/for-update true)]
 
     (files/check-comment-permissions! conn profile-id file-id share-id)
@@ -712,7 +726,8 @@
    ::sm/params schema:delete-comment-thread
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [owner-id file-id] :as thread} (get-comment-thread conn id ::sql/for-update true)]
+  (let [{:keys [owner-id file-id]
+         :as thread} (get-comment-thread conn id ::sql/for-update true)]
     (files/check-comment-permissions! conn profile-id file-id share-id)
     (when-not (= owner-id profile-id)
       (ex/raise :type :validation
@@ -735,7 +750,8 @@
    ::sm/params schema:delete-comment
    ::db/transaction true}
   [{:keys [::db/conn]} {:keys [::rpc/profile-id id share-id]}]
-  (let [{:keys [owner-id thread-id] :as comment}
+  (let [{:keys [owner-id thread-id]
+         :as comment}
         (get-comment conn id ::sql/for-update true)
 
         {:keys [file-id]}
@@ -806,7 +822,8 @@
 (sv/defmethod ::mark-all-threads-as-read
   {::doc/added "1.15"
    ::sm/params schema:mark-all-threads-as-read}
-  [cfg {:keys [::rpc/profile-id threads] :as params}]
+  [cfg {:keys [::rpc/profile-id threads]
+        :as params}]
   (db/tx-run!
    cfg
    (fn [{:keys [::db/conn]}]

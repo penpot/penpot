@@ -106,7 +106,8 @@
 (defn fix-broken-children
   "Checks and fix the children relations of the shape. If a children does not
   exists on the objects tree, it will be removed from shape."
-  [{:keys [objects] :as container} id]
+  [{:keys [objects]
+    :as container} id]
   (let [contains? (partial contains? objects)]
     (d/update-in-when container [:objects id :shapes]
                       (fn [shapes]
@@ -236,7 +237,8 @@
   ([objects ids]
    (sort-z-index objects ids nil))
 
-  ([objects ids {:keys [bottom-frames?] :as options
+  ([objects ids {:keys [bottom-frames?]
+                 :as options
                  :or   {bottom-frames? false}}]
    ;; Create an index of the parents of the shapes. This will speed the sorting because we use
    ;; this information down the line.

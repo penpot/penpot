@@ -16,7 +16,8 @@
   "SELECT name FROM file_migration WHERE file_id = ? ORDER BY created_at ASC")
 
 (defn resolve-applied-migrations
-  [cfg {:keys [id] :as file}]
+  [cfg {:keys [id]
+        :as file}]
   (let [conn (db/get-connection cfg)]
     (assoc file :migrations
            (->> (db/plan conn [sql:get-file-migrations id])
@@ -26,7 +27,8 @@
 (defn upsert-migrations!
   "Persist or update file migrations. Return the updated/inserted number
   of rows"
-  [conn {:keys [id] :as file}]
+  [conn {:keys [id]
+         :as file}]
   (let [migrations (or (-> file meta ::fmg/migrated)
                        (-> file :migrations not-empty)
                        fmg/available-migrations)

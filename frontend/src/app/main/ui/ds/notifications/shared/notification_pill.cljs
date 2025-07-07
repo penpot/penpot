@@ -50,7 +50,8 @@
         icon-id (icons-by-level level)]
     [:div {:class (dm/str class " " (stl/css :notification-pill))}
      [:div {:class (stl/css :error-message)}
-      [:> i/icon* {:icon-id icon-id :class (stl/css :icon)}]
+      [:> i/icon* {:icon-id icon-id
+                   :class (stl/css :icon)}]
       ;; The content can arrive in markdown format, in these cases
       ;;  we will use the prop is-html to true to indicate it and
       ;; that the html injection is performed and the necessary css classes are applied.

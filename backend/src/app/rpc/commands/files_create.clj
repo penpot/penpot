@@ -34,11 +34,14 @@
          (db/insert! conn :file-profile-rel))))
 
 (defn create-file
-  [{:keys [::db/conn] :as cfg}
+  [{:keys [::db/conn]
+    :as cfg}
    {:keys [id name project-id is-shared revn
            modified-at deleted-at create-page page-id
            ignore-sync-until features]
-    :or {is-shared false revn 0 create-page true}
+    :or {is-shared false
+         revn 0
+         create-page true}
     :as params}]
 
   (dm/assert!
@@ -84,7 +87,9 @@
    ::webhooks/event? true
    ::sm/params schema:create-file
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id project-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id project-id]
+              :as params}]
   (projects/check-edition-permissions! conn profile-id project-id)
   (let [team     (teams/get-team conn
                                  :profile-id profile-id

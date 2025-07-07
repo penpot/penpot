@@ -18,7 +18,8 @@
     (binfile.v2/export-team! main/system team-id)))
 
 (defn import-team!
-  [path & {:keys [owner rollback?] :or {rollback? true}}]
+  [path & {:keys [owner rollback?]
+           :or {rollback? true}}]
   (db/tx-run! (assoc main/system ::db/rollback rollback?)
               (fn [cfg]
                 (let [team  (binfile.v2/import-team! cfg path)

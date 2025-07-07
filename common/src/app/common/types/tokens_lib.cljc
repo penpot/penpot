@@ -421,7 +421,8 @@
        (-> acc
            (assoc-in (concat [:tokens-tree] path) token)
            (assoc-in [:ids temp-id] token))))
-   {:tokens-tree {} :ids {}}
+   {:tokens-tree {}
+    :ids {}}
    tokens))
 
 ;; === TokenSets (collection)

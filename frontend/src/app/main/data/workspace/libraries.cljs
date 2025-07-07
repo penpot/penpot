@@ -112,7 +112,8 @@
   ([color]
    (add-color color nil))
 
-  ([color {:keys [rename?] :or {rename? true}}]
+  ([color {:keys [rename?]
+           :or {rename? true}}]
    (let [color (-> color
                    (update :id #(or % (uuid/next)))
                    (assoc :name (or (get-in color [:image :name])
@@ -201,7 +202,8 @@
             (update-color* it state color file-id)))))))
 
 (defn delete-color
-  [{:keys [id] :as params}]
+  [{:keys [id]
+    :as params}]
   (assert (uuid? id) "expected valid uuid instance for `id`")
 
   (ptk/reify ::delete-color
@@ -319,7 +321,8 @@
   (dm/assert! (string? new-name))
   (ptk/reify ::rename-typography
     ev/Event
-    (-data [_] {:id id :name new-name})
+    (-data [_] {:id id
+                :name new-name})
 
     ptk/WatchEvent
     (watch [it state _]
@@ -462,7 +465,8 @@
              (rx/of (rename-component component-id clean-name))
 
              (when (and shape-id page-id)
-               (rx/of (dwsh/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id :stack-undo? true}))))))))))
+               (rx/of (dwsh/update-shapes [shape-id] #(assoc % :name clean-name) {:page-id page-id
+                                                                                  :stack-undo? true}))))))))))
 
 (defn duplicate-component
   "Create a new component copied from the one with the given id."
@@ -514,7 +518,8 @@
          (dwt/clear-thumbnail (:current-file-id state) page-id root-id "component")
          (dc/detach-comment-thread #{root-id})
          (dch/commit-changes changes)
-         (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
+         (ptk/data-event :layout/update {:ids all-parents
+                                         :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn restore-component
@@ -541,7 +546,8 @@
             (->> changes :redo-changes (keep :frame-id))]
 
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:page-id page-id :ids frames}))))))
+               (ptk/data-event :layout/update {:page-id page-id
+                                               :ids frames}))))))
 
 
 (defn restore-components
@@ -684,7 +690,8 @@
         (rx/of (rt/nav :workspace params ::rt/new-window true))))))
 
 (defn go-to-local-component
-  [& {:keys [id] :as options}]
+  [& {:keys [id]
+      :as options}]
   (ptk/reify ::go-to-local-component
     ptk/WatchEvent
     (watch [_ state stream]
@@ -726,7 +733,8 @@
   (ptk/reify ::fetch-library-thumbnails
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
+      (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id
+                                                 :tag "component"})
            (rx/map library-thumbnails-fetched)))))
 
 (defn ext-library-changed
@@ -986,7 +994,8 @@
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
          (dws/select-shape (:id new-shape) true)
-         (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
+         (ptk/data-event :layout/update {:ids all-parents
+                                         :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn component-multi-swap
@@ -1095,7 +1104,8 @@
               (rx/of (dch/commit-changes changes)))
             (when-not (empty? updated-frames)
               (rx/merge
-               (rx/of (ptk/data-event :layout/update {:ids (map :id updated-frames) :undo-group undo-group}))
+               (rx/of (ptk/data-event :layout/update {:ids (map :id updated-frames)
+                                                      :undo-group undo-group}))
                (->> (rx/from updated-frames)
                     (rx/mapcat
                      (fn [shape]
@@ -1163,7 +1173,8 @@
             (filter #(seq (assets-need-sync % file-data ignore-until))
                     (vals (get state :files)))
             do-more-info
-            #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
+            #(modal/show! :libraries-dialog {:starting-tab "updates"
+                                             :file-id file-id})
 
             do-update
             #(do (apply st/emit! (map (fn [library]
@@ -1326,7 +1337,8 @@
 
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [params {:id id :is-shared is-shared}]
+      (let [params {:id id
+                    :is-shared is-shared}]
         (->> (rp/cmd! :set-file-shared params)
              (rx/ignore))))))
 
@@ -1359,9 +1371,11 @@
       (let [features (get state :features)]
         (rx/concat
          (rx/merge
-          (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
+          (->> (rp/cmd! :link-file-to-library {:file-id file-id
+                                               :library-id library-id})
                (rx/ignore))
-          (->> (rp/cmd! :get-file {:id library-id :features features})
+          (->> (rp/cmd! :get-file {:id library-id
+                                   :features features})
                (rx/merge-map fpmap/resolve-file)
                ;; FIXME: this should call the libraries-fetched event instead of ad-hoc assoc event
                (rx/map (fn [file]
@@ -1369,7 +1383,8 @@
                (rx/map (fn [file]
                          (fn [state]
                            (assoc-in state [:files library-id] file)))))
-          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
+          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id
+                                                     :tag "component"})
                (rx/map (fn [thumbnails]
                          (fn [state]
                            (update state :thumbnails merge thumbnails))))))

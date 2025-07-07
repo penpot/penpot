@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.4.0"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Alpha release 1.4.0"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Alpha 1.4.0 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/select-files.gif" :border "0" :alt "New file selection"}]]
+         [:img {:src "images/features/select-files.gif"
+                :border "0"
+                :alt "New file selection"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "New file selection and open files"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/manage-files.gif" :border "0" :alt "Manage files"}]]
+         [:img {:src "images/features/manage-files.gif"
+                :border "0"
+                :alt "Manage files"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "New files/projects management"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/rtl.gif" :border "0" :alt "RTL support"}]]
+         [:img {:src "images/features/rtl.gif"
+                :border "0"
+                :alt "RTL support"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "RTL support is now available!"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/blend-modes.gif" :border "0" :alt "Blend modes"}]]
+         [:img {:src "images/features/blend-modes.gif"
+                :border "0"
+                :alt "Blend modes"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "New layer opacity and blend modes"]]

@@ -29,12 +29,16 @@
 
 (defn send!
   ([client req] (send! client req {}))
-  ([client req {:keys [response-type sync?] :or {response-type :string sync? false}}]
+  ([client req {:keys [response-type sync?]
+                :or {response-type :string
+                     sync? false}}]
    (assert (client? client) "expected valid http client")
    (if sync?
-     (http/send req {:client client :as response-type})
+     (http/send req {:client client
+                     :as response-type})
      (try
-       (http/send-async req {:client client :as response-type})
+       (http/send-async req {:client client
+                             :as response-type})
        (catch Throwable cause
          (p/rejected cause))))))
 

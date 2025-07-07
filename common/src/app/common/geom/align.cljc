@@ -124,7 +124,8 @@
 
 (defn adjust-to-viewport
   ([viewport srect] (adjust-to-viewport viewport srect nil))
-  ([viewport srect {:keys [padding] :or {padding 0}}]
+  ([viewport srect {:keys [padding]
+                    :or {padding 0}}]
    (let [gprop  (/ (:width viewport)
                    (:height viewport))
          srect  (-> srect

@@ -16,7 +16,8 @@
    [integrant.core :as ig]))
 
 (defn- offload-file-data!
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
+  [{:keys [::db/conn ::sto/storage ::file-id]
+    :as cfg}]
   (let [file (db/get conn :file {:id file-id}
                      {::sql/for-update true})]
     (when (nil? (:data file))
@@ -45,7 +46,8 @@
                   {::db/return-keys false}))))
 
 (defn- offload-file-data-fragments!
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
+  [{:keys [::db/conn ::sto/storage ::file-id]
+    :as cfg}]
   (doseq [fragment (db/query conn :file-data-fragment
                              {:file-id file-id
                               :deleted-at nil
@@ -81,7 +83,8 @@
       AND fc.data_backend IS NULL")
 
 (defn- offload-file-snapshots!
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
+  [{:keys [::db/conn ::sto/storage ::file-id]
+    :as cfg}]
   (doseq [snapshot (db/exec! conn [sql:get-snapshots file-id])]
     (let [data (sto/content (:data snapshot))
           sobj (sto/put-object! storage
@@ -115,7 +118,8 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as task}]
+  (fn [{:keys [props]
+        :as task}]
     (-> cfg
         (assoc ::db/rollback (:rollback? props))
         (assoc ::file-id (:file-id props))

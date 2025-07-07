@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.5.0"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Alpha release 1.5.0"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Alpha 1.5.0 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/path-tool.gif" :border "0" :alt "New path tool"}]]
+         [:img {:src "images/features/path-tool.gif"
+                :border "0"
+                :alt "New path tool"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "New features for paths"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/assets-organiz.gif" :border "0" :alt "Manage libraries"}]]
+         [:img {:src "images/features/assets-organiz.gif"
+                :border "0"
+                :alt "Manage libraries"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "New libraries organization"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/smart-inputs.gif" :border "0" :alt "Smart inputs"}]]
+         [:img {:src "images/features/smart-inputs.gif"
+                :border "0"
+                :alt "Smart inputs"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Smart inputs"]]

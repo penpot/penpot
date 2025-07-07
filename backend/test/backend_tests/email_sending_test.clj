@@ -16,7 +16,8 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest register-email-rendering
-  (let [result (emails/render emails/register {:to "example@app.io" :name "foo"})]
+  (let [result (emails/render emails/register {:to "example@app.io"
+                                               :name "foo"})]
     (t/is (map? result))
     (t/is (contains? result :subject))
     (t/is (contains? result :body))

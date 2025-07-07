@@ -274,9 +274,12 @@
            (let [pos (find-position (:name prop) props used-pos)
                  used-pos (conj used-pos pos)]
              (if (< pos (count props))
-               {:props (assoc-in (vec props) [pos :value] (:value prop)) :used-pos used-pos}
-               {:props (add-new-prop props (:value prop)) :used-pos used-pos})))
-         {:props (vec props1) :used-pos (matching-indices props1 props2)}
+               {:props (assoc-in (vec props) [pos :value] (:value prop))
+                :used-pos used-pos}
+               {:props (add-new-prop props (:value prop))
+                :used-pos used-pos})))
+         {:props (vec props1)
+          :used-pos (matching-indices props1 props2)}
          props2)
         :props)))
 
@@ -294,7 +297,8 @@
                             (first vals)
                             distinct-mark)))]
      (mapv (fn [[name values]]
-             {:name name :value (check-values values)})
+             {:name name
+              :value (check-values values)})
            grouped))))
 
 (defn same-variant?

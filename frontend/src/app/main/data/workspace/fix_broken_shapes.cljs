@@ -12,8 +12,11 @@
    [potok.v2.core :as ptk]))
 
 (defn- generate-broken-link-changes
-  [attr {:keys [objects id] :as container}]
-  (let [base      {:type :fix-obj :fix :broken-children attr id}
+  [attr {:keys [objects id]
+         :as container}]
+  (let [base      {:type :fix-obj
+                   :fix :broken-children
+                   attr id}
         contains? (partial contains? objects)
         xform     (comp
                    ;; FIXME: Ensure all obj have id field (this is needed

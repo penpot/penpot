@@ -428,7 +428,8 @@
 ;; FIXME: REMOVE
 (defn pretty-explain
   ([data] (pretty-explain data nil))
-  ([data {:keys [max-problems] :or {max-problems 10}}]
+  ([data {:keys [max-problems]
+          :or {max-problems 10}}]
    (when (and (::s/problems data)
               (::s/value data)
               (::s/spec data))

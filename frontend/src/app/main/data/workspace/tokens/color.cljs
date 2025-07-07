@@ -16,6 +16,7 @@
        :opacity (tinycolor/alpha tc)}
       (tinycolor/->hex-string tc))))
 
-(defn resolved-token-bullet-color [{:keys [resolved-value] :as token}]
+(defn resolved-token-bullet-color [{:keys [resolved-value]
+                                    :as token}]
   (when (and resolved-value (cft/color-token? token))
     (color-bullet-color resolved-value)))

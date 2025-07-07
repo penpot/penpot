@@ -38,9 +38,14 @@
         on-click
         (fn []
           (reset! downloading? true)
-          (->> (http/send! {:method :get :uri link :response-type :blob :mode :no-cors})
-               (rx/subs! (fn [{:keys [body] :as response}]
-                           (open-import-modal {:name name :uri (wapi/create-uri body)}))
+          (->> (http/send! {:method :get
+                            :uri link
+                            :response-type :blob
+                            :mode :no-cors})
+               (rx/subs! (fn [{:keys [body]
+                               :as response}]
+                           (open-import-modal {:name name
+                                               :uri (wapi/create-uri body)}))
                          (fn [error]
                            (js/console.log "error" error))
                          (fn []

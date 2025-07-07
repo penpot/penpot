@@ -142,9 +142,11 @@
   (t/testing "shows `rect-attributes` dimension items for rect"
     (let [actions (token-menu-actions [:rect1] "token-dimensions")
           action-titles (mapv #(if (keyword? %) % (select-keys % [:title :submenu])) actions)]
-      (t/is (= action-titles [{:title "Sizing", :submenu :sizing}
+      (t/is (= action-titles [{:title "Sizing",
+                               :submenu :sizing}
                               :separator
-                              {:title "Border Radius", :submenu :border-radius}
+                              {:title "Border Radius",
+                               :submenu :border-radius}
                               :separator
                               {:title "Stroke Width"}
                               :separator
@@ -154,10 +156,13 @@
   (t/testing "shows all attribute dimension items for frame"
     (let [actions (token-menu-actions [:frame1] "token-dimensions")
           action-titles (mapv #(if (keyword? %) % (select-keys % [:title :submenu])) actions)]
-      (t/is (= action-titles [{:title "Sizing", :submenu :sizing}
-                              {:title "Spacing", :submenu :spacing}
+      (t/is (= action-titles [{:title "Sizing",
+                               :submenu :sizing}
+                              {:title "Spacing",
+                               :submenu :spacing}
                               :separator
-                              {:title "Border Radius", :submenu :border-radius}
+                              {:title "Border Radius",
+                               :submenu :border-radius}
                               :separator
                               {:title "Stroke Width"}
                               :separator
@@ -167,7 +172,8 @@
   (t/testing "shows `text-attributes` dimension items for text"
     (let [actions (token-menu-actions [:text1] "token-dimensions")
           action-titles (mapv #(if (keyword? %) % (select-keys % [:title :submenu])) actions)]
-      (t/is (= action-titles [{:title "Sizing", :submenu :sizing}
+      (t/is (= action-titles [{:title "Sizing",
+                               :submenu :sizing}
                               :separator
                               {:title "Stroke Width"}
                               :separator

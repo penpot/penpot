@@ -85,7 +85,8 @@
             (rx/of (dcmt/create-draft params))))))))
 
 (defn center-to-comment-thread
-  [{:keys [position] :as thread}]
+  [{:keys [position]
+    :as thread}]
   (dm/assert!
    "expected valid comment thread"
    (dcmt/check-comment-thread! thread))
@@ -94,7 +95,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              (fn [{:keys [vbox zoom] :as local}]
+              (fn [{:keys [vbox zoom]
+                    :as local}]
                 (let [pw (/ 160 zoom)
                       ph (/ 160 zoom)
                       nw (- (/ (:width vbox) 2) pw)

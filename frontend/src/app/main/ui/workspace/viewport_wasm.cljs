@@ -358,7 +358,9 @@
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
-    [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (stl/css :viewport)
+           :style #js {"--zoom" zoom}
+           :data-testid "viewport"}
      (when (:can-edit permissions)
        (if read-only?
          [:> view-only-bar* {}]

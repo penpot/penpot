@@ -13,7 +13,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc inline-edition
-  [{:keys [content on-end max-length] :as props}]
+  [{:keys [content on-end max-length]
+    :as props}]
   (let [name      (mf/use-state content)
         input-ref (mf/use-ref)
 

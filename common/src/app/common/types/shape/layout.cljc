@@ -328,21 +328,26 @@
 
 (defn paddings
   [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-top :p1 pad-right :p2 pad-bottom :p3 pad-left :p4} layout-padding]
+  (let [{pad-top :p1
+         pad-right :p2
+         pad-bottom :p3
+         pad-left :p4} layout-padding]
     (if (= :simple layout-padding-type)
       [pad-top pad-right pad-top pad-right]
       [pad-top pad-right pad-bottom pad-left])))
 
 (defn h-padding
   [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-right :p2 pad-left :p4} layout-padding]
+  (let [{pad-right :p2
+         pad-left :p4} layout-padding]
     (if (= :simple layout-padding-type)
       (+ pad-right pad-right)
       (+ pad-right pad-left))))
 
 (defn v-padding
   [{:keys [layout-padding-type layout-padding]}]
-  (let [{pad-top :p1 pad-bottom :p3} layout-padding]
+  (let [{pad-top :p1
+         pad-bottom :p3} layout-padding]
     (if (= :simple layout-padding-type)
       (+ pad-top pad-top)
       (+ pad-top pad-bottom))))
@@ -376,7 +381,8 @@
     ##Inf))
 
 (defn child-margins
-  [{{:keys [m1 m2 m3 m4]} :layout-item-margin :keys [layout-item-margin-type]}]
+  [{{:keys [m1 m2 m3 m4]} :layout-item-margin
+    :keys [layout-item-margin-type]}]
   (let [m1 (or m1 0)
         m2 (or m2 0)
         m3 (or m3 0)
@@ -396,42 +402,48 @@
     (+ right left)))
 
 (defn h-start?
-  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  [{:keys [layout-align-items layout-justify-content]
+    :as shape}]
   (or (and (col? shape)
            (= layout-align-items :start))
       (and (row? shape)
            (= layout-justify-content :start))))
 
 (defn h-center?
-  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  [{:keys [layout-align-items layout-justify-content]
+    :as shape}]
   (or (and (col? shape)
            (= layout-align-items :center))
       (and (row? shape)
            (= layout-justify-content :center))))
 
 (defn h-end?
-  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  [{:keys [layout-align-items layout-justify-content]
+    :as shape}]
   (or (and (col? shape)
            (= layout-align-items :end))
       (and (row? shape)
            (= layout-justify-content :end))))
 
 (defn v-start?
-  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  [{:keys [layout-align-items layout-justify-content]
+    :as shape}]
   (or (and (row? shape)
            (= layout-align-items :start))
       (and (col? shape)
            (= layout-justify-content :start))))
 
 (defn v-center?
-  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  [{:keys [layout-align-items layout-justify-content]
+    :as shape}]
   (or (and (row? shape)
            (= layout-align-items :center))
       (and (col? shape)
            (= layout-justify-content :center))))
 
 (defn v-end?
-  [{:keys [layout-align-items layout-justify-content] :as shape}]
+  [{:keys [layout-align-items layout-justify-content]
+    :as shape}]
   (or (and (row? shape)
            (= layout-align-items :end))
       (and (col? shape)
@@ -1005,7 +1017,8 @@
   (reorder-grid-track parent from-index to-index move-content? :layout-grid-rows :row))
 
 (defn cells-seq
-  [{:keys [layout-grid-cells layout-grid-dir]} & {:keys [sort?] :or {sort? false}}]
+  [{:keys [layout-grid-cells layout-grid-dir]} & {:keys [sort?]
+                                                  :or {sort? false}}]
 
   (let [comp-fn (if (= layout-grid-dir :row)
                   (juxt :row :column)
@@ -1021,7 +1034,8 @@
   ([parent]
    (get-free-cells parent nil))
 
-  ([parent {:keys [sort?] :or {sort? false}}]
+  ([parent {:keys [sort?]
+            :or {sort? false}}]
    (->> (cells-seq parent :sort? sort?)
         (filter (comp empty? :shapes))
         (map :id))))
@@ -1030,7 +1044,9 @@
   ([parent]
    (get-cells parent nil))
 
-  ([parent {:keys [sort? remove-empty?] :or {sort? false remove-empty? false}}]
+  ([parent {:keys [sort? remove-empty?]
+            :or {sort? false
+                 remove-empty? false}}]
    (let [maybe-remove?
          (if remove-empty? (partial remove (comp empty? :shapes)) identity)]
 
@@ -1255,7 +1271,9 @@
 
 (defn in-cell?
   "Given a cell check if the row+column is inside this cell"
-  [{cell-row :row cell-column :column :keys [row-span column-span]} row column]
+  [{cell-row :row
+    cell-column :column
+    :keys [row-span column-span]} row column]
   (and (>= row cell-row)
        (>= column cell-column)
        (<= row (+ cell-row row-span -1))
@@ -1462,7 +1480,8 @@
 
 (defn get-cell-by-index
   [parent to-index]
-  (let [cells (get-cells parent {:sort? true :remove-empty? true})
+  (let [cells (get-cells parent {:sort? true
+                                 :remove-empty? true})
         to-index (- (count cells) to-index 1)]
     (nth cells to-index nil)))
 
@@ -1508,7 +1527,8 @@
    (->> (:layout-grid-cells parent)
         (vals)
         (filter
-         (fn [{:keys [column column-span] :as cell}]
+         (fn [{:keys [column column-span]
+               :as cell}]
            (if check-span?
              (and (>= (inc index) column)
                   (< (inc index) (+ column column-span)))
@@ -1519,7 +1539,8 @@
   (->> (:layout-grid-cells parent)
        (vals)
        (filter
-        (fn [{:keys [row column row-span column-span] :as cell}]
+        (fn [{:keys [row column row-span column-span]
+              :as cell}]
           (and
            (or (<= row first-row (+ row row-span -1))
                (<= row last-row (+ row row-span -1))

@@ -25,15 +25,18 @@
                     (assoc :iat (dt/now))
                     (d/without-nils)
                     (t/encode))]
-    (jwe/encrypt payload tokens-key {:alg :a256kw :enc :a256gcm})))
+    (jwe/encrypt payload tokens-key {:alg :a256kw
+                                     :enc :a256gcm})))
 
 (defn decode
   [{:keys [tokens-key]} token]
-  (let [payload (jwe/decrypt token tokens-key {:alg :a256kw :enc :a256gcm})]
+  (let [payload (jwe/decrypt token tokens-key {:alg :a256kw
+                                               :enc :a256gcm})]
     (t/decode payload)))
 
 (defn verify
-  [sprops {:keys [token] :as params}]
+  [sprops {:keys [token]
+           :as params}]
   (let [claims (decode sprops token)]
     (when (and (dt/instant? (:exp claims))
                (dt/is-before? (:exp claims) (dt/now)))

@@ -28,7 +28,10 @@
    [cuerdas.core :as str]))
 
 (def default-rect
-  {:x 0 :y 0 :width 1 :height 1})
+  {:x 0
+   :y 0
+   :width 1
+   :height 1})
 
 (defn- assert-valid-num [attr num]
   (when-not (and (d/num? num)
@@ -62,7 +65,8 @@
     value))
 
 (defn- svg-dimensions
-  [{:keys [attrs] :as data}]
+  [{:keys [attrs]
+    :as data}]
   (let [width   (:width attrs 100)
         height  (:height attrs 100)
         viewbox (or (:viewBox attrs)
@@ -147,7 +151,8 @@
      [root-shape children])))
 
 (defn create-raw-svg
-  [name frame-id {:keys [x y width height offset-x offset-y]} {:keys [attrs] :as data}]
+  [name frame-id {:keys [x y width height offset-x offset-y]} {:keys [attrs]
+                                                               :as data}]
   (let [props (csvg/attrs->props attrs)
         vbox  (grc/make-rect offset-x offset-y width height)]
     (cts/setup-shape
@@ -198,7 +203,8 @@
 
 
 (defn create-group
-  [name frame-id {:keys [x y width height offset-x offset-y] :as svg-data} {:keys [attrs]}]
+  [name frame-id {:keys [x y width height offset-x offset-y]
+                  :as svg-data} {:keys [attrs]}]
   (let [transform (csvg/parse-transform (:transform attrs))
         attrs     (-> attrs
                       (d/without-keys csvg/inheritable-props)
@@ -216,7 +222,8 @@
       :svg-attrs attrs
       :svg-viewbox vbox})))
 
-(defn create-path-shape [name frame-id svg-data {:keys [attrs] :as data}]
+(defn create-path-shape [name frame-id svg-data {:keys [attrs]
+                                                 :as data}]
   (when (and (contains? attrs :d) (seq (:d attrs)))
     (let [transform (csvg/parse-transform (:transform attrs))
           content   (cond-> (path/from-string (:d attrs))
@@ -269,7 +276,8 @@
    (d/parse-double width 1)
    (d/parse-double height 1)))
 
-(defn create-rect-shape [name frame-id svg-data {:keys [attrs] :as data}]
+(defn create-rect-shape [name frame-id svg-data {:keys [attrs]
+                                                 :as data}]
   (let [transform (->> (csvg/parse-transform (:transform attrs))
                        (gmt/transform-in (gpt/point svg-data)))
 
@@ -303,7 +311,8 @@
         [:cx :cy :r :rx :ry]))
 
 (defn create-circle-shape
-  [name frame-id svg-data {:keys [attrs] :as data}]
+  [name frame-id svg-data {:keys [attrs]
+                           :as data}]
   (let [[cx cy r rx ry]
         (parse-circle-attrs attrs)
 
@@ -339,7 +348,8 @@
          (assoc :fills [])))))
 
 (defn create-image-shape
-  [name frame-id svg-data {:keys [attrs] :as data}]
+  [name frame-id svg-data {:keys [attrs]
+                           :as data}]
   (let [transform  (->> (csvg/parse-transform (:transform attrs))
                         (gmt/transform-in (gpt/point svg-data)))
 
@@ -509,7 +519,8 @@
     (dm/str "svg-" suffix)))
 
 (defn parse-svg-element
-  [frame-id svg-data {:keys [tag attrs hidden] :as element} unames]
+  [frame-id svg-data {:keys [tag attrs hidden]
+                      :as element} unames]
 
   ;; FIXME: there are cases where element is directly a string, I
   ;; think we should handle this case early and avoid some code

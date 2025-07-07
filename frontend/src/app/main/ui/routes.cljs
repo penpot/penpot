@@ -114,7 +114,8 @@
                         (->> (rp/cmd! :get-teams {})
                              (rx/map (fn [teams]
                                        (assoc profile ::teams (into #{} (map :id) teams)))))))
-           (rx/subs! (fn [{:keys [id ::teams] :as profile}]
+           (rx/subs! (fn [{:keys [id ::teams]
+                           :as profile}]
                        (cond
                          (= id uuid/zero)
                          (do

@@ -78,7 +78,8 @@
     changes))
 
 (defn- generate-update-shape-flags
-  [changes ids objects {:keys [blocked hidden] :as flags}]
+  [changes ids objects {:keys [blocked hidden]
+                        :as flags}]
   (let [update-fn
         (fn [obj]
           (cond-> obj
@@ -168,7 +169,8 @@
                  (vals objects))
 
          changes
-         (reduce (fn [changes {:keys [id] :as flow}]
+         (reduce (fn [changes {:keys [id]
+                               :as flow}]
                    (if (contains? ids-to-delete (:starting-frame flow))
                      (-> changes
                          (pcb/with-page page)

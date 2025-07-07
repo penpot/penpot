@@ -43,7 +43,8 @@
 
 (defn shape-corners-1
   "Retrieve the effective value for the corner given a single value for corner."
-  [{:keys [width height r1] :as shape}]
+  [{:keys [width height r1]
+    :as shape}]
   (if (and (some? r1) (not (mth/almost-zero? r1)))
     (fix-radius width height r1)
     0))

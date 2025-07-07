@@ -12,7 +12,8 @@
 
 (mf/defc file-uploader
   {::mf/forward-ref true}
-  [{:keys [accept multi label-text label-class input-id on-selected data-testid] :as props} input-ref]
+  [{:keys [accept multi label-text label-class input-id on-selected data-testid]
+    :as props} input-ref]
   (let [opt-pick-one #(if multi % (first %))
 
         on-files-selected
@@ -28,7 +29,8 @@
              (dom/clean-value! target))))]
     [:*
      (when label-text
-       [:label {:for input-id :class-name label-class} label-text])
+       [:label {:for input-id
+                :class-name label-class} label-text])
 
      [:input {:style {:display "none"
                       :width 0}

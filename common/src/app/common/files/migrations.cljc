@@ -60,7 +60,8 @@
   (map :name))
 
 (defn migrate
-  [{:keys [id] :as file} libs]
+  [{:keys [id]
+    :as file} libs]
 
   (let [diff
         (set/difference available-migrations (:migrations file))
@@ -388,7 +389,8 @@
                      shapes  (->> (vals objects)
                                   (filter cfh/image-shape?))]
                 (if-let [shape (first shapes)]
-                  (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
+                  (let [{:keys [id frame-id]
+                         :as shape'} (process-shape shape)]
                     (if (identical? shape shape')
                       (recur objects (rest shapes))
                       (recur (-> objects
@@ -715,7 +717,8 @@
 
 (defmethod migrate-data "legacy-38"
   [data _]
-  (letfn [(fix-gradient [{:keys [type] :as gradient}]
+  (letfn [(fix-gradient [{:keys [type]
+                          :as gradient}]
             (if (string? type)
               (assoc gradient :type (keyword type))
               gradient))
@@ -765,7 +768,8 @@
 
 (defmethod migrate-data "legacy-40"
   [data _]
-  (letfn [(update-shape [{:keys [content shapes] :as shape}]
+  (letfn [(update-shape [{:keys [content shapes]
+                          :as shape}]
             ;; Fix frame shape that in reallity is a path shape
             (if (and (cfh/frame-shape? shape)
                      (contains? shape :selrect)
@@ -915,12 +919,15 @@
 (defmethod migrate-data "legacy-47"
   [data _]
   (letfn [(fix-shape [page shape]
-            (let [file {:id (:id data) :data data}
+            (let [file {:id (:id data)
+                        :data data}
                   component-file (:component-file shape)
                   ;; On cloning a file, the component-file of the shapes point to the old file id
                   ;; this is a workaround to be able to found the components in that case
-                  libraries {component-file {:id component-file :data data}}
-                  ref-shape  (ctf/find-ref-shape file page libraries shape {:include-deleted? true :with-context? true})
+                  libraries {component-file {:id component-file
+                                             :data data}}
+                  ref-shape  (ctf/find-ref-shape file page libraries shape {:include-deleted? true
+                                                                            :with-context? true})
                   ref-parent (get (:objects (:container (meta ref-shape))) (:parent-id ref-shape))
                   shape-swap-slot (ctk/get-swap-slot shape)
                   ref-swap-slot   (ctk/get-swap-slot ref-shape)]
@@ -977,7 +984,8 @@
 (defmethod migrate-data "legacy-50"
   [data _]
   (let [update-segment
-        (fn [{:keys [command params] :as segment}]
+        (fn [{:keys [command params]
+              :as segment}]
           (let [params (into {} params)
                 params (cond
                          (= :curve-to command)
@@ -1063,7 +1071,8 @@
 (defmethod migrate-data "legacy-55"
   [data _]
   (let [update-page
-        (fn [{:keys [options] :as page}]
+        (fn [{:keys [options]
+              :as page}]
           (cond-> page
             (and (some? (:saved-grids options))
                  (not (contains? page :default-grids)))
@@ -1119,7 +1128,8 @@
 (defmethod migrate-data "legacy-57"
   [data _]
   (letfn [(fix-thread-positions [positions]
-            (reduce-kv (fn [result id {:keys [position] :as data}]
+            (reduce-kv (fn [result id {:keys [position]
+                                       :as data}]
                          (let [data (cond
                                       (gpt/point? position)
                                       data
@@ -1523,11 +1533,13 @@
   (letfn [(update-object [page object]
             (if (and (cfh/text-shape? object)
                      (ctk/in-component-copy? object))
-              (let [file            {:id (:id data) :data data}
+              (let [file            {:id (:id data)
+                                     :data data}
                     libs            (when (:libs data)
                                       (deref (:libs data)))
                     ref-shape       (ctf/find-ref-shape file page libs object
-                                                        {:include-deleted? true :with-context? true})
+                                                        {:include-deleted? true
+                                                         :with-context? true})
                     partial-touched (when ref-shape
                                       (cttx/get-diff-type (:content object) (:content ref-shape)))]
                 (if (seq partial-touched)

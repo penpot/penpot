@@ -31,7 +31,8 @@
        (= valign "bottom")  (obj/set! "alignItems" "flex-end")))))
 
 (defn generate-paragraph-set-styles
-  [{:keys [grow-type] :as shape}]
+  [{:keys [grow-type]
+    :as shape}]
   ;; This element will control the auto-width/auto-height size for the
   ;; shape. The properties try to adjust to the shape and "overflow" if
   ;; the shape is not big enough.
@@ -69,7 +70,9 @@
   ([shape data]
    (generate-text-styles shape data nil))
 
-  ([{:keys [grow-type] :as shape} data {:keys [show-text?] :or {show-text? true}}]
+  ([{:keys [grow-type]
+     :as shape} data {:keys [show-text?]
+                      :or {show-text? true}}]
    (let [letter-spacing  (:letter-spacing data 0)
          text-decoration (:text-decoration data)
          text-transform  (:text-transform data)
@@ -118,7 +121,8 @@
                                                :fill-color-ref-id :fill-color-ref-file]))]
 
            (nil? (:fills data))
-           [{:fill-color "#000000" :fill-opacity 1}]
+           [{:fill-color "#000000"
+             :fill-opacity 1}]
 
            :else
            (:fills data))

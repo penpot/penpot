@@ -324,7 +324,8 @@
                (query-coord point :y))))
 
 (defn merge-matches
-  ([] {:x nil :y nil})
+  ([] {:x nil
+       :y nil})
   ([matches other]
    (let [merge-coord
          (fn [matches other]

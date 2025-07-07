@@ -12,7 +12,10 @@
    [rumext.v2 :as mf]))
 
 (mf/defc hsva-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
-  (let [{hue :h saturation :s value :v alpha :alpha} color
+  (let [{hue :h
+         saturation :s
+         value :v
+         alpha :alpha} color
         handle-change-slider (fn [key]
                                (fn [new-value]
                                  (let [change (hash-map key new-value)
@@ -21,7 +24,9 @@
                                        [r g b] (cc/hex->rgb hex)]
                                    (on-change (merge change
                                                      {:hex hex
-                                                      :r r :g g :b b})))))
+                                                      :r r
+                                                      :g g
+                                                      :b b})))))
         on-change-opacity (fn [new-alpha] (on-change {:alpha new-alpha}))]
     [:div {:class (stl/css :hsva-selector)}
      [:div {:class (stl/css :hsva-row)}

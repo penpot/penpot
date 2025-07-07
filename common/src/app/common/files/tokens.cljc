@@ -29,7 +29,8 @@
 
 ;; FIXME: looks very redundant function
 (defn token-identifier
-  [{:keys [name] :as _token}]
+  [{:keys [name]
+    :as _token}]
   name)
 
 (defn attributes-map

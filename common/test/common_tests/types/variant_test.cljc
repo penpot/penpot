@@ -20,21 +20,36 @@
   ;; c3: 1 differences in pos 5
   ;; The min distance should be c3
 
-  (let [target [{:name "type" :value "primary"}
-                {:name "status" :value "default"}
-                {:name "borders" :value "squared"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "dark"}]
-        props2 [{:name "type" :value "primary"}
-                {:name "status" :value "hover"}
-                {:name "borders" :value "rounded"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "dark"}]
-        props3 [{:name "type" :value "primary"}
-                {:name "status" :value "default"}
-                {:name "borders" :value "rounded"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "light"}]
+  (let [target [{:name "type"
+                 :value "primary"}
+                {:name "status"
+                 :value "default"}
+                {:name "borders"
+                 :value "squared"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "dark"}]
+        props2 [{:name "type"
+                 :value "primary"}
+                {:name "status"
+                 :value "hover"}
+                {:name "borders"
+                 :value "rounded"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "dark"}]
+        props3 [{:name "type"
+                 :value "primary"}
+                {:name "status"
+                 :value "default"}
+                {:name "borders"
+                 :value "rounded"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "light"}]
         dist2 (ctv/distance target props2)
         dist3 (ctv/distance target props3)]
     (t/is (< dist3 dist2))))
@@ -50,21 +65,36 @@
   ;; c3: 1 differences in pos 1
   ;; The min distance should be c2
 
-  (let [target [{:name "type" :value "primary"}
-                {:name "status" :value "hover"}
-                {:name "borders" :value "rounded"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "dark"}]
-        props2 [{:name "type" :value "primary"}
-                {:name "status" :value "hover"}
-                {:name "borders" :value "squared"}
-                {:name "color" :value "red"}
-                {:name "theme" :value "dark"}]
-        props3 [{:name "type" :value "secondary"}
-                {:name "status" :value "hover"}
-                {:name "borders" :value "rounded"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "dark"}]
+  (let [target [{:name "type"
+                 :value "primary"}
+                {:name "status"
+                 :value "hover"}
+                {:name "borders"
+                 :value "rounded"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "dark"}]
+        props2 [{:name "type"
+                 :value "primary"}
+                {:name "status"
+                 :value "hover"}
+                {:name "borders"
+                 :value "squared"}
+                {:name "color"
+                 :value "red"}
+                {:name "theme"
+                 :value "dark"}]
+        props3 [{:name "type"
+                 :value "secondary"}
+                {:name "status"
+                 :value "hover"}
+                {:name "borders"
+                 :value "rounded"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "dark"}]
         dist2 (ctv/distance target props2)
         dist3 (ctv/distance target props3)]
     (t/is (< dist2 dist3))))
@@ -81,26 +111,46 @@
   ;; c4: 1 difference in pos 1
   ;; The distances should be c2 < c4 < c3
 
-  (let [target [{:name "type" :value "secondary"}
-                {:name "status" :value "default"}
-                {:name "borders" :value "rounded"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "dark"}]
-        props2 [{:name "type" :value "secondary"}
-                {:name "status" :value "default"}
-                {:name "borders" :value "rounded"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "light"}]
-        props3 [{:name "type" :value "secondary"}
-                {:name "status" :value "hover"}
-                {:name "borders" :value "squared"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "dark"}]
-        props4 [{:name "type" :value "secondary"}
-                {:name "status" :value "hover"}
-                {:name "borders" :value "rounded"}
-                {:name "color" :value "blue"}
-                {:name "theme" :value "dark"}]
+  (let [target [{:name "type"
+                 :value "secondary"}
+                {:name "status"
+                 :value "default"}
+                {:name "borders"
+                 :value "rounded"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "dark"}]
+        props2 [{:name "type"
+                 :value "secondary"}
+                {:name "status"
+                 :value "default"}
+                {:name "borders"
+                 :value "rounded"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "light"}]
+        props3 [{:name "type"
+                 :value "secondary"}
+                {:name "status"
+                 :value "hover"}
+                {:name "borders"
+                 :value "squared"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "dark"}]
+        props4 [{:name "type"
+                 :value "secondary"}
+                {:name "status"
+                 :value "hover"}
+                {:name "borders"
+                 :value "rounded"}
+                {:name "color"
+                 :value "blue"}
+                {:name "theme"
+                 :value "dark"}]
         dist2 (ctv/distance target props2)
         dist3 (ctv/distance target props3)
         dist4 (ctv/distance target props4)]

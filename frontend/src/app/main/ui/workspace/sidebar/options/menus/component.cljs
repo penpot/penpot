@@ -354,7 +354,8 @@
     [:*
      [:div {:class (stl/css :variant-property-list)}
       (for [[pos prop] (map vector (range) properties)]
-        [:div {:key (str variant-id "-" pos) :class (stl/css :variant-property-container)}
+        [:div {:key (str variant-id "-" pos)
+               :class (stl/css :variant-property-container)}
          [:*
           [:div {:class (stl/css :variant-property-name-wrapper)}
            [:> input-with-meta* {:value (:name prop)
@@ -434,7 +435,8 @@
     [:*
      [:div {:class (stl/css :variant-property-list)}
       (for [[pos prop] (map vector (range) properties)]
-        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
+        [:div {:key (str (:id shape) pos)
+               :class (stl/css :variant-property-container)}
          [:*
           [:span {:class (stl/css :variant-property-name)}
            (:name prop)]
@@ -613,7 +615,8 @@
         parent-components (mapcat find-parent-components shapes)
 
 
-        libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
+        libraries-options  (map (fn [library] {:value (:id library)
+                                               :label (:name library)})
                                 (vals libraries))
 
         on-library-change
@@ -695,7 +698,8 @@
        (when (:listing-thumbs? filters)
          [:div {:class (stl/css :component-list)}
           (for [item groups]
-            [:& component-group-item {:item item :on-enter-group on-enter-group}])])
+            [:& component-group-item {:item item
+                                      :on-enter-group on-enter-group}])])
 
        [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
                                    :component-list (not (:listing-thumbs? filters)))}
@@ -731,7 +735,8 @@
           (dom/stop-propagation event)
           (action)
           (on-close))]
-    [:& dropdown {:show show :on-close on-close}
+    [:& dropdown {:show show
+                  :on-close on-close}
      [:ul {:class (stl/css-case :custom-select-dropdown true
                                 :not-main (not main-instance))}
       (for [{:keys [title action]} menu-entries]
@@ -893,7 +898,10 @@
             [:& component-swap {:shapes copies}])
 
           (when (and (not swap-opened?) (not multi))
-            [:& component-annotation {:id id :shape shape :component component :rerender-fn rerender-fn}])
+            [:& component-annotation {:id id
+                                      :shape shape
+                                      :component component
+                                      :rerender-fn rerender-fn}])
 
           (when (and is-variant?
                      (not main-instance?)

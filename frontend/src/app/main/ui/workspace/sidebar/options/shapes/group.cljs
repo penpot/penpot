@@ -67,8 +67,13 @@
 
 
     [:div {:class (stl/css :options)}
-     [:& layer-menu {:type type :ids layer-ids :values layer-values}]
-     [:> measures-menu* {:type type :ids measure-ids :values measure-values :shape shape}]
+     [:& layer-menu {:type type
+                     :ids layer-ids
+                     :values layer-values}]
+     [:> measures-menu* {:type type
+                         :ids measure-ids
+                         :values measure-values
+                         :shape shape}]
 
      [:& layout-container-menu
       {:type type
@@ -92,13 +97,18 @@
          :values layout-item-values}])
 
      (when (or (not ^boolean is-layout-child?) ^boolean is-layout-child-absolute?)
-       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
+       [:& constraints-menu {:ids constraint-ids
+                             :values constraint-values}])
 
      (when-not (empty? fill-ids)
-       [:> fill/fill-menu* {:type type :ids fill-ids :values fill-values}])
+       [:> fill/fill-menu* {:type type
+                            :ids fill-ids
+                            :values fill-values}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
+       [:& stroke-menu {:type type
+                        :ids stroke-ids
+                        :values stroke-values}])
 
      [:> color-selection-menu*
       {:type type
@@ -107,13 +117,19 @@
        :libraries libraries}]
 
      (when-not (empty? shadow-ids)
-       [:> shadow-menu* {:ids ids :values (get shape :shadow) :type type}])
+       [:> shadow-menu* {:ids ids
+                         :values (get shape :shadow)
+                         :type type}])
 
      (when-not (empty? blur-ids)
-       [:& blur-menu {:type type :ids blur-ids :values blur-values}])
+       [:& blur-menu {:type type
+                      :ids blur-ids
+                      :values blur-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+       [:& ot/text-menu {:type type
+                         :ids text-ids
+                         :values text-values}])
 
      (when-not (empty? svg-values)
        [:& svg-attrs-menu {:ids svg-ids

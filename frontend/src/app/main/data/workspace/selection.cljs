@@ -433,7 +433,10 @@
 
 (defn duplicate-shapes
   [ids & {:keys [move-delta? alt-duplication? change-selection? return-ref]
-          :or {move-delta? false alt-duplication? false change-selection? true return-ref nil}}]
+          :or {move-delta? false
+               alt-duplication? false
+               change-selection? true
+               return-ref nil}}]
   (ptk/reify ::duplicate-shapes
     ptk/WatchEvent
     (watch [it state _]

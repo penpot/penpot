@@ -31,7 +31,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc text-align-options
-  [{:keys [values on-change on-blur] :as props}]
+  [{:keys [values on-change on-blur]
+    :as props}]
   (let [{:keys [text-align]} values
         handle-change
         (mf/use-fn
@@ -63,7 +64,8 @@
                         :icon i/text-justify}]]]))
 
 (mf/defc text-direction-options
-  [{:keys [values on-change on-blur] :as props}]
+  [{:keys [values on-change on-blur]
+    :as props}]
   (let [direction     (:text-direction values)
         handle-change
         (mf/use-fn
@@ -91,7 +93,8 @@
                         :icon i/text-rtl}]]]))
 
 (mf/defc vertical-align
-  [{:keys [values on-change on-blur] :as props}]
+  [{:keys [values on-change on-blur]
+    :as props}]
   (let [{:keys [vertical-align]} values
         vertical-align (or vertical-align "top")
         handle-change
@@ -119,7 +122,8 @@
                         :icon i/text-bottom}]]]))
 
 (mf/defc grow-options
-  [{:keys [ids values on-blur] :as props}]
+  [{:keys [ids values on-blur]
+    :as props}]
   (let [grow-type (:grow-type values)
 
         handle-change-grow
@@ -156,7 +160,8 @@
                         :icon i/text-auto-height}]]]))
 
 (mf/defc text-decoration-options
-  [{:keys [values on-change on-blur] :as props}]
+  [{:keys [values on-change on-blur]
+    :as props}]
   (let [text-decoration (or (:text-decoration values) "none")
         handle-change
         (mf/use-fn
@@ -184,7 +189,8 @@
 
 (mf/defc text-menu
   {::mf/wrap [mf/memo]}
-  [{:keys [ids type values] :as props}]
+  [{:keys [ids type values]
+    :as props}]
 
   (let [file-id        (mf/use-ctx ctx/current-file-id)
         typographies   (mf/deref refs/workspace-file-typography)

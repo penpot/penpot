@@ -147,7 +147,8 @@
 
       (t/testing " - shadows"
         (let [shadow #js {:style "drop-shadow"
-                          :color #js {:color "#FABADA" :opacity 1}}]
+                          :color #js {:color "#FABADA"
+                                      :opacity 1}}]
           (set! (.-shadows shape) #js [shadow])
           (let [shadow-id (uuid/uuid (aget (aget (aget shape "shadows") 0) "id"))]
             (t/is (= (-> (. shape -shadows) (aget 0) (aget "style")) "drop-shadow"))
@@ -157,7 +158,8 @@
                                                                 :offset-y 4
                                                                 :blur 4
                                                                 :spread 0
-                                                                :color {:color "#fabada" :opacity 1}
+                                                                :color {:color "#fabada"
+                                                                        :opacity 1}
                                                                 :hidden false}]))))
         (let [shadow #js {:style "fail"}]
           (set! (.-shadows shape) #js [shadow])
@@ -169,17 +171,30 @@
         (t/is (= (-> (. shape -blur) (aget "value")) 10))
         (t/is (= (-> (. shape -blur) (aget "hidden")) false))
         (let [id (-> (. shape -blur) (aget "id") uuid/uuid)]
-          (t/is (= (get-in @store (get-shape-path :blur)) {:id id :type :layer-blur :value 10 :hidden false}))))
+          (t/is (= (get-in @store (get-shape-path :blur)) {:id id
+                                                           :type :layer-blur
+                                                           :value 10
+                                                           :hidden false}))))
 
       (t/testing " - exports"
-        (set! (.-exports shape) #js [#js {:type "pdf" :scale 2 :suffix "test"}])
+        (set! (.-exports shape) #js [#js {:type "pdf"
+                                          :scale 2
+                                          :suffix "test"}])
         (t/is (= (-> (. shape -exports) (aget 0) (aget "type")) "pdf"))
         (t/is (= (-> (. shape -exports) (aget 0) (aget "scale")) 2))
         (t/is (= (-> (. shape -exports) (aget 0) (aget "suffix")) "test"))
-        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}]))
+        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf
+                                                             :scale 2
+                                                             :suffix "test"
+                                                             :skip-children false}]))
 
-        (set! (.-exports shape) #js [#js {:type 10 :scale 2 :suffix "test"}])
-        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf :scale 2 :suffix "test" :skip-children false}])))
+        (set! (.-exports shape) #js [#js {:type 10
+                                          :scale 2
+                                          :suffix "test"}])
+        (t/is (= (get-in @store (get-shape-path :exports)) [{:type :pdf
+                                                             :scale 2
+                                                             :suffix "test"
+                                                             :skip-children false}])))
 
       (t/testing " - flipX"
         (set! (.-flipX shape) true)
@@ -202,17 +217,24 @@
 
       (t/testing " - fills"
         (set! (.-fills shape) #js [#js {:fillColor 100}])
-        (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#B1B2B5" :fill-opacity 1}]))
+        (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#B1B2B5"
+                                                           :fill-opacity 1}]))
         (t/is (= (-> (. shape -fills) (aget 0) (aget "fillColor")) "#B1B2B5"))
 
-        (set! (.-fills shape) #js [#js {:fillColor "#fabada" :fillOpacity 1}])
-        (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#fabada" :fill-opacity 1}]))
+        (set! (.-fills shape) #js [#js {:fillColor "#fabada"
+                                        :fillOpacity 1}])
+        (t/is (= (get-in @store (get-shape-path :fills)) [{:fill-color "#fabada"
+                                                           :fill-opacity 1}]))
         (t/is (= (-> (. shape -fills) (aget 0) (aget "fillColor")) "#fabada"))
         (t/is (= (-> (. shape -fills) (aget 0) (aget "fillOpacity")) 1)))
 
       (t/testing " - strokes"
-        (set! (.-strokes shape) #js [#js {:strokeColor "#fabada" :strokeOpacity 1 :strokeWidth 5}])
-        (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#fabada" :stroke-opacity 1 :stroke-width 5}]))
+        (set! (.-strokes shape) #js [#js {:strokeColor "#fabada"
+                                          :strokeOpacity 1
+                                          :strokeWidth 5}])
+        (t/is (= (get-in @store (get-shape-path :strokes)) [{:stroke-color "#fabada"
+                                                             :stroke-opacity 1
+                                                             :stroke-width 5}]))
         (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeColor")) "#fabada"))
         (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeOpacity")) 1))
         (t/is (= (-> (. ^js shape -strokes) (aget 0) (aget "strokeWidth")) 5))))

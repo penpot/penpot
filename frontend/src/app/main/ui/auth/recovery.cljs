@@ -45,7 +45,8 @@
     (st/emit! (du/recover-profile (with-meta params mdata)))))
 
 (mf/defc recovery-form
-  [{:keys [params] :as props}]
+  [{:keys [params]
+    :as props}]
   (let [form (fm/use-form :schema schema:recovery-form
                           :initial params)]
 
@@ -74,7 +75,8 @@
 ;; --- Recovery Request Page
 
 (mf/defc recovery-page
-  [{:keys [params] :as props}]
+  [{:keys [params]
+    :as props}]
   [:div {:class (stl/css :auth-form-wrapper)}
    [:h1 {:class (stl/css :auth-title)} "Forgot your password?"]
    [:div {:class (stl/css :auth-subtitle)} "Please enter your new password"]

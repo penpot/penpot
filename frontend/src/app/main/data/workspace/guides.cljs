@@ -18,7 +18,8 @@
    [potok.v2.core :as ptk]))
 
 (defn update-guides
-  [{:keys [id] :as guide}]
+  [{:keys [id]
+    :as guide}]
 
   (dm/assert!
    "expected valid guide"
@@ -39,7 +40,8 @@
         (rx/of (dwc/commit-changes changes))))))
 
 (defn remove-guide
-  [{:keys [id] :as guide}]
+  [{:keys [id]
+    :as guide}]
 
   (dm/assert!
    "expected valid guide"
@@ -73,7 +75,8 @@
   (ptk/reify ::remove-guides
     ptk/WatchEvent
     (watch [_ state _]
-      (let [{:keys [guides] :as page} (dsh/lookup-page state)
+      (let [{:keys [guides]
+             :as page} (dsh/lookup-page state)
             guides (-> (select-keys guides ids) (vals))]
         (rx/from (mapv remove-guide guides))))))
 

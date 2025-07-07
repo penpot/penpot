@@ -213,9 +213,12 @@
                (sort-by (comp str/lower :name))))
 
         importing*       (mf/use-state nil)
-        sample-libraries [{:id "penpot-design-system", :name "Design system example"}
-                          {:id "wireframing-kit", :name "Wireframe library"}
-                          {:id "whiteboarding-kit", :name "Whiteboarding Kit"}]
+        sample-libraries [{:id "penpot-design-system",
+                           :name "Design system example"}
+                          {:id "wireframing-kit",
+                           :name "Wireframe library"}
+                          {:id "whiteboarding-kit",
+                           :name "Whiteboarding Kit"}]
 
         change-search-term
         (mf/use-fn
@@ -308,7 +311,8 @@
                    :value (tr "common.publish")
                    :on-click publish}])]
 
-       (for [{:keys [id name data] :as library} linked-libraries]
+       (for [{:keys [id name data]
+              :as library} linked-libraries]
          [:div {:class (stl/css :section-list-item)
                 :key (dm/str id)
                 :data-testid "library-item"}
@@ -336,7 +340,8 @@
 
       (if (seq shared-libraries)
         [:div {:class (stl/css :section-list-shared)}
-         (for [{:keys [id name] :as library} shared-libraries]
+         (for [{:keys [id name]
+                :as library} shared-libraries]
            [:div {:class (stl/css :section-list-item)
                   :key (dm/str id)
                   :data-testid "library-item"}
@@ -467,7 +472,8 @@
          [:div {:class (stl/css :section-title)} (tr "workspace.libraries.library-updates")]
 
          [:div {:class (stl/css :section-list)}
-          (for [[{:keys [id name] :as library}
+          (for [[{:keys [id name]
+                  :as library}
                  exceeded
                  {:keys [components colors typographies]}] libs-assets]
             [:div {:class (stl/css :section-list-item)

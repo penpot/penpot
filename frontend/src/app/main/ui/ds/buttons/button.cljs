@@ -23,7 +23,8 @@
 
 (mf/defc button*
   {::mf/schema schema:button}
-  [{:keys [variant icon children class on-ref] :rest props}]
+  [{:keys [variant icon children class on-ref]
+    :rest props}]
   (let [variant (or variant "primary")
         class (dm/str class " " (stl/css-case :button true
                                               :button-primary (= variant "primary")
@@ -35,5 +36,6 @@
                                              (when on-ref
                                                (on-ref node)))})]
     [:> "button" props
-     (when icon [:> icon* {:icon-id icon :size "m"}])
+     (when icon [:> icon* {:icon-id icon
+                           :size "m"}])
      [:span {:class (stl/css :label-wrapper)} children]]))

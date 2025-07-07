@@ -110,7 +110,8 @@
     :mov-objects})
 
 (defn- library-change?
-  [{:keys [type] :as change}]
+  [{:keys [type]
+    :as change}]
   (or (contains? library-change-types type)
       (contains? file-change-types type)))
 
@@ -130,9 +131,12 @@
    ::sm/result schema:update-file-result
    ::doc/module :files
    ::doc/added "1.17"}
-  [{:keys [::mtx/metrics] :as cfg}
-   {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  [{:keys [::mtx/metrics]
+    :as cfg}
+   {:keys [::rpc/profile-id id changes changes-with-metadata]
+    :as params}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn]
+                        :as cfg}]
                     (files/check-edition-permissions! conn profile-id id)
                     (db/xact-lock! conn id)
 
@@ -192,7 +196,8 @@
                                       {::db/return-keys false})))
 
 
-                      (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+                      (mtx/run! metrics {:id :update-file-changes
+                                         :inc (count changes)})
 
                       (binding [l/*context* (some-> (meta params)
                                                     (get :app.http/request)
@@ -209,8 +214,10 @@
   Follow the inner implementation to `update-file-data!` function.
 
   Only intended for internal use on this module."
-  [{:keys [::db/conn ::wrk/executor ::timestamp] :as cfg}
-   {:keys [profile-id file team features changes session-id skip-validate] :as params}]
+  [{:keys [::db/conn ::wrk/executor ::timestamp]
+    :as cfg}
+   {:keys [profile-id file team features changes session-id skip-validate]
+    :as params}]
 
   (let [;; Retrieve the file data
         file  (feat.fmigr/resolve-applied-migrations cfg file)
@@ -273,7 +280,8 @@
 
 (defn update-file!
   "A public api that allows apply a transformation to a file with all context setup."
-  [{:keys [::db/conn] :as cfg} file-id update-fn & args]
+  [{:keys [::db/conn]
+    :as cfg} file-id update-fn & args]
   (let [file (get-file cfg file-id)
         file (apply update-file-data! cfg file update-fn args)]
     (feat.fmigr/upsert-migrations! conn file)
@@ -334,7 +342,8 @@
   This function is not responsible of saving the file. It only saves
   fdata/pointer-map modified fragments."
 
-  [cfg {:keys [id] :as file} update-fn & args]
+  [cfg {:keys [id]
+        :as file} update-fn & args]
   (binding [pmap/*tracked* (pmap/create-tracked)
             pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
     (let [file (update file :data (fn [data]
@@ -448,7 +457,8 @@
 
 (defn- take-snapshot?
   "Defines the rule when file `data` snapshot should be saved."
-  [{:keys [revn modified-at] :as file}]
+  [{:keys [revn modified-at]
+    :as file}]
   (when (contains? cf/flags :auto-file-snapshot)
     (let [freq    (or (cf/get :auto-file-snapshot-every) 20)
           timeout (or (cf/get :auto-file-snapshot-timeout)
@@ -468,13 +478,15 @@
     order by s.created_at asc")
 
 (defn- get-lagged-changes
-  [conn {:keys [id revn] :as params}]
+  [conn {:keys [id revn]
+         :as params}]
   (->> (db/exec! conn [sql:lagged-changes id revn])
        (map files/decode-row)
        (vec)))
 
 (defn- send-notifications!
-  [cfg {:keys [team changes session-id] :as params} file]
+  [cfg {:keys [team changes session-id]
+        :as params} file]
   (let [lchanges (filter library-change? changes)
         msgbus   (::mbus/msgbus cfg)]
 

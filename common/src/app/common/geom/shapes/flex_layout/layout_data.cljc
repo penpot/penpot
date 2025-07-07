@@ -277,7 +277,8 @@
               row?
               (->> layout-lines
                    (reduce
-                    (fn [[result rest-layout-height] {:keys [line-height] :as line}]
+                    (fn [[result rest-layout-height] {:keys [line-height]
+                                                      :as line}]
                       [(conj! result (assoc line :to-bound-height rest-layout-height))
                        (- rest-layout-height line-height layout-gap-row)])
                     [(transient []) layout-height])
@@ -287,7 +288,8 @@
               col?
               (->> layout-lines
                    (reduce
-                    (fn [[result rest-layout-width] {:keys [line-width] :as line}]
+                    (fn [[result rest-layout-width] {:keys [line-width]
+                                                     :as line}]
                       [(conj! result (assoc line :to-bound-width rest-layout-width))
                        (- rest-layout-width line-width layout-gap-col)])
                     [(transient []) layout-width])
@@ -308,7 +310,8 @@
 
 (defn add-line-spacing
   "Calculates the baseline for a flex layout"
-  [shape layout-bounds auto? {:keys [num-children line-width line-height] :as line-data}]
+  [shape layout-bounds auto? {:keys [num-children line-width line-height]
+                              :as line-data}]
 
   (let [width (gpo/width-points layout-bounds)
         height (gpo/height-points layout-bounds)
@@ -388,7 +391,8 @@
            :margin-y margin-y)))
 
 (defn add-children-resizes
-  [shape {:keys [line-min-width line-width line-min-height line-height] :as line-data}]
+  [shape {:keys [line-min-width line-width line-min-height line-height]
+          :as line-data}]
 
   (let [row? (ctl/row? shape)
         col? (ctl/col? shape)]

@@ -14,7 +14,8 @@
    They are small messages in specific areas off the app"
 
   {::mf/props :obj}
-  [{:keys [type content size is-focus] :as props}]
+  [{:keys [type content size is-focus]
+    :as props}]
 
   [:aside {:class (stl/css-case :badge-notification true
                                 :warning      (= type :warning)

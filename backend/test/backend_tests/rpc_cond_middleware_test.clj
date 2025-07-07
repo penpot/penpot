@@ -32,7 +32,8 @@
                  :features cfeat/supported-features}]
 
     (binding [cond/*enabled* true]
-      (let [{:keys [error result] :as out} (th/command! params)]
+      (let [{:keys [error result]
+             :as out} (th/command! params)]
         ;; NOTE: Fails on print because fipps used for pretty print
         ;; tries to load pointers
         ;; (th/print-result! out)

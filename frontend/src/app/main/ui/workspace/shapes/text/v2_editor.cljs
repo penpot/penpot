@@ -231,7 +231,8 @@
   {::mf/wrap [mf/memo]
    ::mf/props :obj
    ::mf/forward-ref true}
-  [{:keys [shape modifiers] :as props} _]
+  [{:keys [shape modifiers]
+    :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
 
@@ -305,9 +306,15 @@
                      :transform (dm/str (gsh/transform-matrix shape))}
      [:defs
       [:clipPath {:id clip-id}
-       [:rect {:x x :y y :width width :height height}]]]
+       [:rect {:x x
+               :y y
+               :width width
+               :height height}]]]
 
-     [:foreignObject {:x x :y y :width width :height height}
+     [:foreignObject {:x x
+                      :y y
+                      :width width
+                      :height height}
       [:div {:style style}
        [:& text-editor-html {:shape shape
                              :key (dm/str shape-id)}]]]]))

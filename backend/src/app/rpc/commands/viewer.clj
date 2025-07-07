@@ -50,7 +50,9 @@
       (assoc :can-read true)))
 
 (defn- get-view-only-bundle
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id ::perms] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id file-id ::perms]
+              :as params}]
   (let [file    (files/get-file cfg file-id)
 
         project (db/get conn :project
@@ -80,7 +82,8 @@
                   (update :data select-keys [:id :options :pages :pages-index :components]))
 
         libs    (->> (bfc/get-file-libraries conn file-id)
-                     (mapv (fn [{:keys [id] :as lib}]
+                     (mapv (fn [{:keys [id]
+                                 :as lib}]
                              (merge lib (files/get-file cfg id)))))
 
         links   (->> (db/query conn :share-link {:file-id file-id})
@@ -118,9 +121,11 @@
   {::rpc/auth false
    ::doc/added "1.17"
    ::sm/params schema:get-view-only-bundle}
-  [system {:keys [::rpc/profile-id file-id share-id] :as params}]
+  [system {:keys [::rpc/profile-id file-id share-id]
+           :as params}]
   (db/run! system
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (let [perms  (files/get-permissions conn profile-id file-id share-id)
                    params (-> params
                               (assoc ::perms perms)

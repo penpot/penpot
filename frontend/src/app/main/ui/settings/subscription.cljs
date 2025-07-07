@@ -44,7 +44,8 @@
    (when benefits-title [:h5 {:class (stl/css :benefits-title)} benefits-title])
    [:ul {:class (stl/css :benefits-list)}
     (for [benefit  benefits]
-      [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
+      [:li {:key (dm/str benefit)
+            :class (stl/css :benefit)} "- " benefit])]
    (when (and cta-link-with-icon cta-text-with-icon) [:button {:class (stl/css :cta-button :more-info)
                                                                :on-click cta-link-with-icon} cta-text-with-icon i/open-link])
    (when (and cta-link cta-text) [:button {:class (stl/css-case :cta-button true
@@ -105,7 +106,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} i/close]
+      [:button {:class (stl/css :close-btn)
+                :on-click handle-close-dialog} i/close]
       [:div {:class (stl/css :modal-title :subscription-title)}
        (tr "subscription.settings.management.dialog.title" formatted-subscription-name)]
 
@@ -115,13 +117,15 @@
              (tr "subscription.settings.management.dialog.choose-this-plan")]
           [:ul {:class (stl/css :teams-list)}
            (for [team (js->clj teams :keywordize-keys true)]
-             [:li {:key (dm/str (:id team)) :class (stl/css :team-name)}
+             [:li {:key (dm/str (:id team))
+                   :class (stl/css :team-name)}
               (:name team) (tr "subscription.settings.management.dialog.members" (:total-editors team))])]]
          [:div {:class (stl/css :modal-text)}
           (tr "subscription.settings.management.dialog.no-teams")])
 
        (when (and (= subscription-name "unlimited") subscribe-to-trial)
-         [[:label {:for "editors-subscription" :class (stl/css :modal-text :editors-label)}
+         [[:label {:for "editors-subscription"
+                   :class (stl/css :modal-text :editors-label)}
            (tr "subscription.settings.management.dialog.select-editors")]
           [:div {:class (stl/css :editors-wrapper)}
            [:div {:class (stl/css :input-wrapper)}
@@ -177,7 +181,8 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} i/close]
+      [:button {:class (stl/css :close-btn)
+                :on-click handle-close-dialog} i/close]
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
         (if (= "light" (:theme profile))
@@ -216,7 +221,9 @@
         subscription-member             (dt/format-date-locale-short (:start-date subscription) {:locale locale})
         go-to-pricing-page              (mf/use-fn
                                          (fn []
-                                           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "settings" :section "subscription"}))
+                                           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click"
+                                                                            ::ev/origin "settings"
+                                                                            :section "subscription"}))
                                            (dom/open-new-window "https://penpot.app/pricing")))
         go-to-payments                  (mf/use-fn
                                          (fn []
@@ -234,7 +241,8 @@
                                            (st/emit!
                                             (modal/show :management-dialog
                                                         {:subscription-name subscription-name
-                                                         :teams teams :subscribe-to-trial (not subscription)}))))]
+                                                         :teams teams
+                                                         :subscribe-to-trial (not subscription)}))))]
 
     (mf/with-effect []
       (->> (rp/cmd! :get-owned-teams)

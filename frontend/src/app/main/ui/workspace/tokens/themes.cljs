@@ -33,10 +33,14 @@
            (modal/show! :tokens/themes {})))]
 
     [:div {:class (stl/css :themes-wrapper)}
-     [:> text* {:as "div" :typography "headline-small" :class (stl/css :themes-header)} (tr "labels.themes")]
+     [:> text* {:as "div"
+                :typography "headline-small"
+                :class (stl/css :themes-header)} (tr "labels.themes")]
      (if (empty? ordered-themes)
        [:div {:class (stl/css :empty-theme-wrapper)}
-        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+        [:> text* {:as "span"
+                   :typography "body-small"
+                   :class (stl/css :empty-state-message)}
          (tr "workspace.tokens.no-themes")]
         (when can-edit?
           [:button {:on-click open-modal

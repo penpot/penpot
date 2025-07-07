@@ -22,7 +22,8 @@
 ;; ----- Files
 
 (defn sample-file
-  [label & {:keys [page-label name view-only?] :as params}]
+  [label & {:keys [page-label name view-only?]
+            :as params}]
   (let [params
         (cond-> params
           label
@@ -71,11 +72,13 @@
 ;; ----- Pages
 
 (defn sample-page
-  [label & {:keys [] :as params}]
+  [label & {:keys []
+            :as params}]
   (ctp/make-empty-page (assoc params :id (thi/new-id! label))))
 
 (defn add-sample-page
-  [file label & {:keys [] :as params}]
+  [file label & {:keys []
+                 :as params}]
   (let [page (sample-page label params)]
     (-> file
         (ctf/update-file-data #(ctpl/add-page % page))
@@ -101,9 +104,11 @@
 
 (defn dump-tree
   "Dump a file using dump-tree function in common.types.file."
-  [file & {:keys [page-label libraries] :as params}]
+  [file & {:keys [page-label libraries]
+           :as params}]
   (let [params    (-> params
-                      (or {:show-ids true :show-touched true})
+                      (or {:show-ids true
+                           :show-touched true})
                       (dissoc page-label libraries))
         page      (if (some? page-label)
                     (:id (get-page file page-label))
@@ -114,8 +119,11 @@
 
 (defn pprint-file
   "Pretry print a file trying to limit the quantity of info shown."
-  [file & {:keys [level length] :or {level 10 length 1000}}]
-  (pprint file {:level level :length length}))
+  [file & {:keys [level length]
+           :or {level 10
+                length 1000}}]
+  (pprint file {:level level
+                :length length}))
 
 (defn dump-shape
   "Dump a shape, with each attribute in a line."
@@ -158,7 +166,8 @@
                          (when (and (:main-instance shape) show-refs?) "}")
                          (when (seq keys)
                            (stringify-keys shape keys)))
-                    {:length 50 :type :right})
+                    {:length 50
+                     :type :right})
            (if (nil? (:shape-ref shape))
              (if (and (:component-root shape) show-refs?)
                (str "# [Component " (thi/label (:component-id shape)) "]")
@@ -181,7 +190,10 @@
             to show the corresponding label.
     - show-refs?: if true, the component references will be shown."
   [page & {:keys [keys root-id padding show-refs?]
-           :or {keys [:name :swap-slot-label] root-id uuid/zero padding "" show-refs? true}}]
+           :or {keys [:name :swap-slot-label]
+                root-id uuid/zero
+                padding ""
+                show-refs? true}}]
   (let [lookupf (d/getf (:objects page))
         root-shape (lookupf root-id)
         shapes (map lookupf (:shapes root-shape))]
@@ -196,5 +208,6 @@
 (defn dump-file
   "Dump the current page of the file, using dump-page above.
    Example: (thf/dump-file file :keys [:name :swap-slot-label] :show-refs? false)"
-  [file & {:keys [] :as params}]
+  [file & {:keys []
+           :as params}]
   (dump-page (current-page file) params))

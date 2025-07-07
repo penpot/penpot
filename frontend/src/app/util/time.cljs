@@ -106,10 +106,13 @@
 
 (defn datetime
   ([s] (datetime s nil))
-  ([s {:keys [zone force-zone] :or {zone "local" force-zone false}}]
+  ([s {:keys [zone force-zone]
+       :or {zone "local"
+            force-zone false}}]
    (cond
      (integer? s)
-     (.fromMillis ^js DateTime s #js {:zone zone :setZone force-zone})
+     (.fromMillis ^js DateTime s #js {:zone zone
+                                      :setZone force-zone})
 
      (map? s)
      (.fromObject ^js DateTime (-> (clj->js s)
@@ -121,8 +124,11 @@
 
 (defn epoch->datetime
   ([seconds] (epoch->datetime seconds nil))
-  ([seconds {:keys [zone force-zone] :or {zone "local" force-zone false}}]
-   (.fromSeconds ^js DateTime seconds #js {:zone zone :setZone force-zone})))
+  ([seconds {:keys [zone force-zone]
+             :or {zone "local"
+                  force-zone false}}]
+   (.fromSeconds ^js DateTime seconds #js {:zone zone
+                                           :setZone force-zone})))
 
 (defn iso->datetime
   "A faster option for transit date parsing."
@@ -132,13 +138,19 @@
 (defn parse-datetime
   ([s] (parse-datetime s :iso nil))
   ([s fmt] (parse-datetime s fmt nil))
-  ([s fmt {:keys [zone force-zone] :or {zone "local" force-zone false}}]
+  ([s fmt {:keys [zone force-zone]
+           :or {zone "local"
+                force-zone false}}]
    (if (string? fmt)
-     (.fromFormat ^js DateTime s fmt #js {:zone zone :setZone force-zone})
+     (.fromFormat ^js DateTime s fmt #js {:zone zone
+                                          :setZone force-zone})
      (case fmt
-       :iso     (.fromISO ^js DateTime s #js {:zone zone :setZone force-zone})
-       :rfc2822 (.fromRFC2822 ^js DateTime s #js {:zone zone :setZone force-zone})
-       :http    (.fromHTTP ^js DateTime s #js {:zone zone :setZone force-zone})))))
+       :iso     (.fromISO ^js DateTime s #js {:zone zone
+                                              :setZone force-zone})
+       :rfc2822 (.fromRFC2822 ^js DateTime s #js {:zone zone
+                                                  :setZone force-zone})
+       :http    (.fromHTTP ^js DateTime s #js {:zone zone
+                                               :setZone force-zone})))))
 
 (dm/export common-time/now)
 
@@ -259,7 +271,8 @@
 
 (defn timeago
   ([v] (timeago v nil))
-  ([v {:keys [locale] :or {locale "en"}}]
+  ([v {:keys [locale]
+       :or {locale "en"}}]
    (when v
      (let [v (if (datetime? v) (format v :date) v)]
        (->> #js {:includeSeconds true
@@ -269,7 +282,8 @@
 
 (defn format-date-locale
   ([v] (format-date-locale v nil))
-  ([v {:keys [locale] :or {locale "en"}}]
+  ([v {:keys [locale]
+       :or {locale "en"}}]
    (when v
      (let [v (if (datetime? v) (format v :date) v)
            locale (obj/get locales locale)
@@ -279,7 +293,8 @@
 
 (defn format-date-locale-short
   ([v] (format-date-locale-short v nil))
-  ([v {:keys [locale] :or {locale "en"}}]
+  ([v {:keys [locale]
+       :or {locale "en"}}]
    (when v
      (let [v (if (datetime? v) (format v :date) v)
            locale-obj (obj/get locales locale)

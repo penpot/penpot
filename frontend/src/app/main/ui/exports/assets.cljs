@@ -58,7 +58,8 @@
         (fn [event]
           (dom/prevent-default event)
           (st/emit! (modal/hide)
-                    (de/request-multiple-export {:exports enabled-exports :cmd cmd})
+                    (de/request-multiple-export {:exports enabled-exports
+                                                 :cmd cmd})
                     (de/export-shapes-event enabled-exports origin)))
 
         on-toggle-enabled
@@ -110,7 +111,8 @@
            [:div {:class (stl/css :selection-wrapper)}
             [:div {:class (stl/css-case :selection-list true
                                         :selection-shadow (> (count all-exports) 8))}
-             (for [[index {:keys [shape suffix] :as export}] (d/enumerate @exports)]
+             (for [[index {:keys [shape suffix]
+                           :as export}] (d/enumerate @exports)]
                (let [{:keys [x y width height]} (:selrect shape)]
                  [:div {:class (stl/css :selection-row)
                         :key (:id shape)}
@@ -251,7 +253,8 @@
      (when widget-visible?
        [:div {:class (stl/css :export-progress-widget)
               :on-click toggle-detail-visibility}
-        [:svg {:width "24" :height "24"}
+        [:svg {:width "24"
+               :height "24"}
          [:circle {:r "10"
                    :cx "12"
                    :cy "12"

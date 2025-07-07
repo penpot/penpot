@@ -92,7 +92,8 @@
 
 
 (defn- clean-deleted!
-  [{:keys [::db/conn ::min-age] :as cfg}]
+  [{:keys [::db/conn ::min-age]
+    :as cfg}]
   (reduce (fn [total [backend-id ids]]
             (let [deleted (delete-in-bulk! cfg backend-id ids)]
               (+ total (or deleted 0))))
@@ -109,8 +110,10 @@
   {k (assoc v ::min-age (dt/duration {:hours 2}))})
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props] :as task}]
+  [_ {:keys [::min-age]
+      :as cfg}]
+  (fn [{:keys [props]
+        :as task}]
     (let [min-age (dt/duration (or (:min-age props) min-age))]
       (db/tx-run! cfg (fn [cfg]
                         (let [cfg   (assoc cfg ::min-age min-age)

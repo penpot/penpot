@@ -192,7 +192,8 @@
                   (empty? typographies)
                   (some? groups))
              [:div  {:class (stl/css :drop-space)}])
-           (for [{:keys [id] :as typography} typographies]
+           (for [{:keys [id]
+                  :as typography} typographies]
              [:& typography-item {:typography typography
                                   :key (dm/str "typography-" id)
                                   :file-id file-id
@@ -233,7 +234,8 @@
   {::mf/wrap-props false}
   [{:keys [file file-id local? typographies open? force-open? open-status-ref selected reverse-sort?
            on-asset-click on-assets-delete on-clear-selection]}]
-  (let [state          (mf/use-state {:detail-open? false :id nil})
+  (let [state          (mf/use-state {:detail-open? false
+                                      :id nil})
         local-data     (mf/deref lens:typography-section-state)
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)

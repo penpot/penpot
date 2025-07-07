@@ -23,7 +23,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options
-  [{:keys [shape] :as props}]
+  [{:keys [shape]
+    :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
 
@@ -91,7 +92,8 @@
                       :type type
                       :show-caps true
                       :values stroke-values}]
-     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+     [:> shadow-menu* {:ids ids
+                       :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
      [:& svg-attrs-menu {:ids ids

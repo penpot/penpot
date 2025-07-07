@@ -39,7 +39,8 @@
   (reduce-kv clojure.string/replace s replacements))
 
 (defn- search-user
-  [{:keys [::conn base-dn] :as cfg} email]
+  [{:keys [::conn base-dn]
+    :as cfg} email]
   (let [query  (replace-several (:query cfg) ":username" email)
         attrs  [(:attrs-username cfg)
                 (:attrs-email cfg)
@@ -50,8 +51,10 @@
     (first (ldap/search conn base-dn params))))
 
 (defn- retrieve-user
-  [{:keys [::conn] :as cfg} {:keys [email password]}]
-  (when-let [{:keys [dn] :as user} (search-user cfg email)]
+  [{:keys [::conn]
+    :as cfg} {:keys [email password]}]
+  (when-let [{:keys [dn]
+              :as user} (search-user cfg email)]
     (when (ldap/bind? conn dn password)
       {:fullname (get user (-> cfg :attrs-fullname keyword))
        :email    email

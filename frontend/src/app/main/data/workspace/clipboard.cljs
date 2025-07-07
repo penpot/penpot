@@ -120,7 +120,8 @@
           ;; Collects all the items together and split images into a
           ;; separated data structure for a more easy paste process.
           ;; Also collects the variant properties of the copied variants
-          (collect-data [state result {:keys [id ::images] :as item}]
+          (collect-data [state result {:keys [id ::images]
+                                       :as item}]
             (cond-> result
               :always
               (update :objects assoc id (dissoc item ::images))
@@ -553,7 +554,8 @@
     [:map-of :keyword :any]]])
 
 (def schema:paste-data
-  [:multi {:title "paste-data" :dispatch :type}
+  [:multi {:title "paste-data"
+           :dispatch :type}
    [:copied-shapes schema:paste-data-shapes]
    [:copied-props schema:paste-data-props]])
 
@@ -561,7 +563,8 @@
   (sm/lazy-validator schema:paste-data))
 
 (defn- paste-transit-shapes
-  [{:keys [images] :as pdata}]
+  [{:keys [images]
+    :as pdata}]
   (letfn [(upload-media [file-id imgpart]
             (->> (http/send! {:uri (:data imgpart)
                               :response-type :blob
@@ -672,7 +675,8 @@
               (rx/empty))))))))
 
 (defn paste-shapes
-  [{in-viewport? :in-viewport :as pdata}]
+  [{in-viewport? :in-viewport
+    :as pdata}]
   (letfn [(translate-media [mdata media-idx attr]
             (let [id   (-> (get mdata attr) :id)
                   mobj (get media-idx id)]
@@ -929,7 +933,8 @@
     ;; if text is composed only by line breaks paragraphs is an empty list and should be nil
     (when (d/not-empty? paragraphs)
       {:type "root"
-       :children [{:type "paragraph-set" :children paragraphs}]})))
+       :children [{:type "paragraph-set"
+                   :children paragraphs}]})))
 
 (defn- calculate-paste-position [state]
   (cond

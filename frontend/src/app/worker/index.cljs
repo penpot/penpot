@@ -15,13 +15,15 @@
 (defonce state (l/atom {:pages-index {}}))
 
 (defmethod impl/handler :index/initialize-page-index
-  [{:keys [page] :as message}]
+  [{:keys [page]
+    :as message}]
   (swap! state update :pages-index assoc (:id page) page)
   (impl/handler (assoc message :cmd :selection/initialize-page-index))
   (impl/handler (assoc message :cmd :snaps/initialize-page-index)))
 
 (defmethod impl/handler :index/update-page-index
-  [{:keys [page-id changes] :as message}]
+  [{:keys [page-id changes]
+    :as message}]
 
   (let [old-page (dm/get-in @state [:pages-index page-id])
         new-page (-> state

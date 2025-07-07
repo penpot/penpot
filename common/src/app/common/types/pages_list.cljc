@@ -20,7 +20,8 @@
       (get-page file-data id))))
 
 (defn add-page
-  [file-data {:keys [id index] :as page}]
+  [file-data {:keys [id index]
+              :as page}]
   (-> file-data
       ;; It's legitimate to add a page that is already there, for
       ;; example in an idempotent changes operation.

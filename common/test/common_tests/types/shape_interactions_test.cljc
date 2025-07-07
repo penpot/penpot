@@ -276,7 +276,8 @@
             new-interaction (ctsi/set-position-relative-to i3 relative-to-id)]
         (t/is (= relative-to-id (:position-relative-to new-interaction)))))))
 
-(defn setup-selrect [{:keys [x y width height] :as obj}]
+(defn setup-selrect [{:keys [x y width height]
+                      :as obj}]
   (let [rect    (grc/make-rect x y width height)
         center  (grc/rect->center rect)
         points  (grc/rect->points rect)]

@@ -103,7 +103,8 @@
      :encode/string point->str}}))
 
 (defn point-like?
-  [{:keys [x y] :as v}]
+  [{:keys [x y]
+    :as v}]
   (and (map? v)
        (d/num? x)
        (d/num? y)))

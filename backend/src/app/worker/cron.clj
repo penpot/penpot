@@ -46,7 +46,8 @@
 (declare ^:private schedule-cron-task)
 
 (defn- execute-cron-task
-  [cfg {:keys [id cron] :as task}]
+  [cfg {:keys [id cron]
+        :as task}]
   (px/thread
     {:name (str "penpot/cron-task/" id)}
     (let [tpoint (dt/tpoint)]
@@ -88,7 +89,9 @@
     (dt/diff now next)))
 
 (defn- schedule-cron-task
-  [{:keys [::running] :as cfg} {:keys [cron id] :as task}]
+  [{:keys [::running]
+    :as cfg} {:keys [cron id]
+              :as task}]
   (let [ts (ms-until-valid cron)
         ft (px/schedule! ts (partial execute-cron-task cfg task))]
 
@@ -116,20 +119,23 @@
   (assert (sm/check schema:params params)))
 
 (defmethod ig/init-key ::wrk/cron
-  [_ {:keys [::wrk/entries ::wrk/registry ::db/pool] :as cfg}]
+  [_ {:keys [::wrk/entries ::wrk/registry ::db/pool]
+      :as cfg}]
   (if (db/read-only? pool)
     (l/wrn :hint "service not started (db is read-only)")
     (let [running (atom #{})
           entries (->> entries
                        (filter some?)
                        ;; If id is not defined, use the task as id.
-                       (map (fn [{:keys [id task] :as item}]
+                       (map (fn [{:keys [id task]
+                                  :as item}]
                               (if (some? id)
                                 (assoc item :id (d/name id))
                                 (assoc item :id (d/name task)))))
                        (map (fn [item]
                               (update item :task d/name)))
-                       (map (fn [{:keys [task] :as item}]
+                       (map (fn [{:keys [task]
+                                  :as item}]
                               (let [f (wrk/get-task registry task)]
                                 (when-not f
                                   (ex/raise :type :internal

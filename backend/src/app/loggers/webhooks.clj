@@ -55,7 +55,8 @@
     (db/exec! pool sql)))
 
 (defn- lookup-webhooks
-  [{:keys [::db/pool]} {:keys [props] :as event}]
+  [{:keys [::db/pool]} {:keys [props]
+                        :as event}]
   (or (some->> (:team-id props) (lookup-webhooks-by-team pool))
       (some->> (:project-id props) (lookup-webhooks-by-project pool))
       (some->> (:file-id props) (lookup-webhooks-by-file pool))))
@@ -67,7 +68,8 @@
 
 (defmethod ig/init-key ::process-event-handler
   [_ cfg]
-  (fn [{:keys [props] :as task}]
+  (fn [{:keys [props]
+        :as task}]
 
     (let [items (lookup-webhooks cfg props)
           event {::audit/profile-id (:profile-id props)
@@ -108,7 +110,8 @@
   {k (merge {::max-errors 3} (d/without-nils v))})
 
 (defmethod ig/init-key ::run-webhook-handler
-  [_ {:keys [::db/pool ::max-errors] :as cfg}]
+  [_ {:keys [::db/pool ::max-errors]
+      :as cfg}]
   (letfn [(update-webhook! [whook err]
             (if err
               (let [sql [(str "update webhook "
@@ -137,7 +140,8 @@
                          :req-data (db/tjson req)
                          :rsp-data (db/tjson rsp)}))]
 
-    (fn [{:keys [props] :as task}]
+    (fn [{:keys [props]
+          :as task}]
       (let [event (:event props)
             whook (:config props)
 
@@ -159,7 +163,8 @@
                    :method :post
                    :body body}]
           (try
-            (let [rsp (http/req! cfg req {:response-type :input-stream :sync? true})
+            (let [rsp (http/req! cfg req {:response-type :input-stream
+                                          :sync? true})
                   err (interpret-response rsp)]
               (report-delivery! whook req rsp err)
               (update-webhook! whook err))
@@ -172,7 +177,8 @@
                          :cause cause))))))))))
 
 (defn interpret-response
-  [{:keys [status] :as response}]
+  [{:keys [status]
+    :as response}]
   (when-not (or (= 200 status)
                 (= 204 status))
     (str/ffmt "unexpected-status:%" status)))

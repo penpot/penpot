@@ -50,25 +50,33 @@
   {:layout                 :flex
    :layout-flex-dir        :row
    :layout-gap-type        :multiple
-   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-gap             {:row-gap 0
+                            :column-gap 0}
    :layout-align-items     :start
    :layout-justify-content :start
    :layout-align-content   :stretch
    :layout-wrap-type       :nowrap
    :layout-padding-type    :simple
-   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}})
+   :layout-padding         {:p1 0
+                            :p2 0
+                            :p3 0
+                            :p4 0}})
 
 (def initial-grid-layout
   {:layout :grid
    :layout-grid-dir        :row
    :layout-gap-type        :multiple
-   :layout-gap             {:row-gap 0 :column-gap 0}
+   :layout-gap             {:row-gap 0
+                            :column-gap 0}
    :layout-align-items     :start
    :layout-justify-items   :start
    :layout-align-content   :stretch
    :layout-justify-content :stretch
    :layout-padding-type    :simple
-   :layout-padding         {:p1 0 :p2 0 :p3 0 :p4 0}
+   :layout-padding         {:p1 0
+                            :p2 0
+                            :p3 0
+                            :p4 0}
    :layout-grid-cells      {}
    :layout-grid-rows       []
    :layout-grid-columns    []})
@@ -135,7 +143,8 @@
               (fn [data]
                 (let [page-id (->> data (keep :page-id) first)
                       ids (reduce #(into %1 (:ids %2)) #{} data)]
-                  (update-layout-positions {:page-id page-id :ids ids}))))
+                  (update-layout-positions {:page-id page-id
+                                            :ids ids}))))
              (rx/take-until stopper))))))
 
 (defn finalize-shape-layout
@@ -143,7 +152,9 @@
   (ptk/data-event ::finalize-shape-layout))
 
 (defn create-layout-from-id
-  [id type & {:keys [from-frame? calculate-params?] :or {from-frame? false calculate-params? true}}]
+  [id type & {:keys [from-frame? calculate-params?]
+              :or {from-frame? false
+                   calculate-params? true}}]
   (dm/assert!
    "expected uuid for `id`"
    (uuid? id))
@@ -198,7 +209,8 @@
                (rx/of
                 (dwse/select-shapes ordered-ids)
                 (dwsh/create-artboard-from-selection new-shape-id parent-id group-index (:name (first selected-shapes)))
-                (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
+                (cl/remove-all-fills [new-shape-id] {:color clr/black
+                                                     :opacity 1})
                 (create-layout-from-id new-shape-id type)
                 (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
                 (dwsh/update-shapes selected ctl/toggle-fix-if-auto)
@@ -209,7 +221,8 @@
              ;; Create Layout from selection
              (rx/of
               (dwsh/create-artboard-from-selection new-shape-id)
-              (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
+              (cl/remove-all-fills [new-shape-id] {:color clr/black
+                                                   :opacity 1})
               (create-layout-from-id new-shape-id type)
               (dwsh/update-shapes [new-shape-id] #(assoc % :layout-item-h-sizing :auto :layout-item-v-sizing :auto))
               (dwsh/update-shapes selected ctl/toggle-fix-if-auto)))
@@ -322,7 +335,8 @@
                 (dwu/commit-undo-transaction undo-id)))))))
 
 (defn remove-layout-track
-  [ids type index & {:keys [with-shapes?] :or {with-shapes? false}}]
+  [ids type index & {:keys [with-shapes?]
+                     :or {with-shapes? false}}]
   (assert (#{:row :column} type))
 
   (ptk/reify ::remove-layout-track

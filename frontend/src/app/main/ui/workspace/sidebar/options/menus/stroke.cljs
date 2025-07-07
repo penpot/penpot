@@ -36,7 +36,8 @@
 
 (mf/defc stroke-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps"]))]}
-  [{:keys [ids type values show-caps disable-stroke-style] :as props}]
+  [{:keys [ids type values show-caps disable-stroke-style]
+    :as props}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")

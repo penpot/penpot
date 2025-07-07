@@ -91,7 +91,8 @@
                      {:p1 (- min-y (:y1 parent-selrect))
                       :p2 (- min-x (:x1 parent-selrect))})]
 
-       (cond-> {:layout-flex-dir direction :layout-gap layout-gap}
+       (cond-> {:layout-flex-dir direction
+                :layout-gap layout-gap}
          (not (nil? padding))
          (assoc :layout-padding {:p1 (:p1 padding)
                                  :p2 (:p2 padding)

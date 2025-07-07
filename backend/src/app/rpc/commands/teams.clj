@@ -77,7 +77,8 @@
   (perms/make-check-fn has-read-permissions?))
 
 (defn decode-row
-  [{:keys [features subscription] :as row}]
+  [{:keys [features subscription]
+    :as row}]
   (cond-> row
     (some? features) (assoc :features (db/decode-pgarray features #{}))
     (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription))))
@@ -186,7 +187,9 @@
 (sv/defmethod ::get-teams
   {::doc/added "1.17"
    ::sm/params schema:get-teams}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id]
+              :as params}]
   (dm/with-open [conn (db/open pool)]
     (get-teams conn profile-id)))
 
@@ -233,14 +236,16 @@
   (get-team pool :profile-id profile-id :team-id id :file-id file-id))
 
 (defn get-team
-  [conn & {:keys [profile-id team-id project-id file-id] :as params}]
+  [conn & {:keys [profile-id team-id project-id file-id]
+           :as params}]
 
   (assert (uuid? profile-id) "profile-id is mandatory")
   (assert (or (db/connection? conn)
               (db/pool? conn))
           "connection or pool is mandatory")
 
-  (let [{:keys [default-team-id] :as profile}
+  (let [{:keys [default-team-id]
+         :as profile}
         (profile/get-profile conn profile-id)
 
         sql
@@ -305,7 +310,8 @@
 (sv/defmethod ::get-team-members
   {::doc/added "1.17"
    ::sm/params schema:get-team-memebrs}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (get-team-members conn team-id)))
@@ -329,7 +335,8 @@
   "Get team users by team-id or by file-id"
   {::doc/added "1.17"
    ::sm/params schema:get-team-users}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id file-id]}]
   (dm/with-open [conn (db/open pool)]
     (if team-id
       (do
@@ -421,7 +428,8 @@
 (sv/defmethod ::get-team-stats
   {::doc/added "1.17"
    ::sm/params schema:get-team-stats}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (get-team-stats conn team-id)))
@@ -452,7 +460,8 @@
 (sv/defmethod ::get-team-invitations
   {::doc/added "1.17"
    ::sm/params schema:get-team-invitations}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id]}]
   (dm/with-open [conn (db/open pool)]
     (check-read-permissions! conn profile-id team-id)
     (get-team-invitations conn team-id)))
@@ -461,7 +470,9 @@
 ;; --- COMMAND QUERY: get-team-info
 
 (defn- get-team-info
-  [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id]
+              :as params}]
   (db/get* conn :team
            {:id id}
            {::sql/columns [:id :is-default]}))
@@ -493,7 +504,8 @@
 (sv/defmethod ::create-team
   {::doc/added "1.17"
    ::sm/params schema:create-team}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
 
   (quotes/check! cfg {::quotes/id ::quotes/teams-per-profile
                       ::quotes/profile-id profile-id})
@@ -523,7 +535,8 @@
     (assoc team :default-project-id (:id project))))
 
 (defn- create-team*
-  [conn {:keys [id name is-default features] :as params}]
+  [conn {:keys [id name is-default features]
+         :as params}]
   (let [id         (or id (uuid/next))
         is-default (if (boolean? is-default) is-default false)
         features   (db/create-array conn "text" features)
@@ -535,14 +548,16 @@
     (decode-row team)))
 
 (defn- create-team-role
-  [conn {:keys [profile-id team-id role] :as params}]
+  [conn {:keys [profile-id team-id role]
+         :as params}]
   (let [params {:team-id team-id
                 :profile-id profile-id}]
     (->> (perms/assign-role-flags params role)
          (db/insert! conn :team-profile-rel))))
 
 (defn- create-team-default-project
-  [conn {:keys [profile-id team-id] :as params}]
+  [conn {:keys [profile-id team-id]
+         :as params}]
   (let [project {:id (uuid/next)
                  :team-id team-id
                  :name "Drafts"
@@ -587,7 +602,8 @@
   {::doc/added "1.17"
    ::sm/params schema:update-team
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id name]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id id name]}]
   (check-edition-permissions! conn profile-id id)
   (db/update! conn :team
               {:name name}
@@ -627,7 +643,8 @@
         ;; assign owner role to new profile
         (db/update! conn :team-profile-rel
                     (get tt/permissions-for-role :owner)
-                    {:team-id id :profile-id reassign-to}))
+                    {:team-id id
+                     :profile-id reassign-to}))
 
       ;; and finally, if all other conditions does not match and the
       ;; current profile is owner, we dont allow it because there
@@ -652,14 +669,17 @@
   {::doc/added "1.17"
    ::sm/params schema:leave-team
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id]
+              :as params}]
   (leave-team conn (assoc params :profile-id profile-id)))
 
 ;; --- Mutation: Delete Team
 
 (defn- delete-team
   "Mark a team for deletion"
-  [conn {:keys [id] :as team}]
+  [conn {:keys [id]
+         :as team}]
 
   (let [delay (ldel/get-deletion-delay team)
         team  (db/update! conn :team
@@ -687,7 +707,9 @@
   {::doc/added "1.17"
    ::sm/params schema:delete-team
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id id]
+              :as params}]
   (let [team  (get-team conn :profile-id profile-id :team-id id)
         perms (get team :permissions)]
 
@@ -701,7 +723,8 @@
 ;; --- Mutation: Team Update Role
 
 (defn update-team-member-role
-  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id team-id member-id role] :as params}]
+  [{:keys [::db/conn ::mbus/msgbus]} {:keys [profile-id team-id member-id role]
+                                      :as params}]
   ;; We retrieve all team members instead of query the
   ;; database for a single member. This is just for
   ;; convenience, if this becomes a bottleneck or problematic,
@@ -762,7 +785,8 @@
 (sv/defmethod ::update-team-member-role
   {::doc/added "1.17"
    ::sm/params schema:update-team-member-role}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg update-team-member-role (assoc params :profile-id profile-id)))
 
 ;; --- Mutation: Delete Team Member
@@ -776,7 +800,9 @@
   {::doc/added "1.17"
    ::sm/params schema:delete-team-member
    ::db/transaction true}
-  [{:keys [::db/conn ::mbus/msgbus] :as cfg} {:keys [::rpc/profile-id team-id member-id] :as params}]
+  [{:keys [::db/conn ::mbus/msgbus]
+    :as cfg} {:keys [::rpc/profile-id team-id member-id]
+              :as params}]
   (let [team  (get-team conn :profile-id profile-id :team-id team-id)
         perms (get-permissions conn profile-id team-id)]
     (when-not (or (:is-owner perms)
@@ -812,14 +838,17 @@
 (sv/defmethod ::update-team-photo
   {::doc/added "1.17"
    ::sm/params schema:update-team-photo}
-  [cfg {:keys [::rpc/profile-id file] :as params}]
+  [cfg {:keys [::rpc/profile-id file]
+        :as params}]
   ;; Validate incoming mime type
 
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
   (update-team-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-team-photo
-  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [::db/pool ::sto/storage]
+    :as cfg} {:keys [profile-id team-id]
+              :as params}]
   (let [team  (get-team pool :profile-id profile-id :team-id team-id)
         photo (profile/upload-photo cfg params)]
 

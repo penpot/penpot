@@ -180,7 +180,8 @@
 
 (mf/defc text-palette
   {::mf/wrap [mf/memo]}
-  [{:keys [size width selected] :as props}]
+  [{:keys [size width selected]
+    :as props}]
   (let [selected-ids      (mf/deref refs/selected-shapes)
 
         ;; FIXME: we have duplicate operations, if we already have the

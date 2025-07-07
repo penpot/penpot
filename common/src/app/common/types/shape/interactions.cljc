@@ -487,7 +487,8 @@
                                                 :y (- (:y relative-to-shape-size) (:y base-frame-size))}
             relative-to-is-auto?   (and (nil? (:position-relative-to interaction)) (not= :manual (:overlay-pos-type interaction)))
             base-position          (if relative-to-is-auto?
-                                     {:x 0 :y 0}
+                                     {:x 0
+                                      :y 0}
                                      {:x (+ (:x frame-offset)
                                             (:x relative-to-adjusted-to-base-frame))
                                       :y (+ (:y frame-offset)

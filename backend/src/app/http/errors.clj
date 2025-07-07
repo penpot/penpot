@@ -55,7 +55,8 @@
 
 (defmethod handle-error :restriction
   [err request _]
-  (let [{:keys [code] :as data} (ex-data err)]
+  (let [{:keys [code]
+         :as data} (ex-data err)]
     (if (= code :method-not-allowed)
       {::yres/status 405
        ::yres/body data}
@@ -80,7 +81,8 @@
 
 (defmethod handle-error :validation
   [err request parent-cause]
-  (let [{:keys [code] :as data} (ex-data err)]
+  (let [{:keys [code]
+         :as data} (ex-data err)]
     (cond
       (or (= code :spec-validation)
           (= code :params-validation)
@@ -97,21 +99,25 @@
        ::yres/body data}
 
       (= code :request-body-too-large)
-      {::yres/status 413 ::yres/body data}
+      {::yres/status 413
+       ::yres/body data}
 
       (= code :invalid-image)
       (binding [l/*context* (request->context request)]
         (let [cause (or parent-cause err)]
           (l/warn :hint "image process error" :cause cause)
-          {::yres/status 400 ::yres/body data}))
+          {::yres/status 400
+           ::yres/body data}))
 
       :else
-      {::yres/status 400 ::yres/body data})))
+      {::yres/status 400
+       ::yres/body data})))
 
 (defmethod handle-error :assertion
   [error request parent-cause]
   (binding [l/*context* (request->context request)]
-    (let [{:keys [code] :as data} (ex-data error)
+    (let [{:keys [code]
+           :as data} (ex-data error)
           cause (or parent-cause error)]
       (cond
         (= code :data-validation)

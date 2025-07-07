@@ -41,15 +41,18 @@
                     (dm/str (str/slice fullname 0 12) "...")
                     fullname)]
 
-    [:g {:class (stl/css :multiuser-cursor) :transform transform}
-     [:path {:fill bg-color :d pointer-path}]
+    [:g {:class (stl/css :multiuser-cursor)
+         :transform transform}
+     [:path {:fill bg-color
+             :d pointer-path}]
      [:g {:transform "translate(17 -10)"}
       [:foreignObject {:x -0.3
                        :y -12.5
                        :width 300
                        :height 120}
        [:div {:class (stl/css :profile-name)
-              :style {:background-color bg-color :color fg-color}}
+              :style {:background-color bg-color
+                      :color fg-color}}
         fullname]]]]))
 
 (mf/defc active-cursors

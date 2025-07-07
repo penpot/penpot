@@ -13,7 +13,8 @@
 (mf/defc reorder-handler*
   [{:keys [ref]}]
   [:*
-   [:div {:ref ref :class (stl/css :reorder)}
+   [:div {:ref ref
+          :class (stl/css :reorder)}
     [:> ic/icon*
      {:icon-id ic/reorder
       :class (stl/css :reorder-icon)

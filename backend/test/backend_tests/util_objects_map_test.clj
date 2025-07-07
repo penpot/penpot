@@ -67,7 +67,8 @@
   (t/testing "modified & compact"
     (let [id1 (uuid/custom 0 1)
           id2 (uuid/custom 0 2)
-          obj (omap/wrap {id1 1 id2 2})]
+          obj (omap/wrap {id1 1
+                          id2 2})]
       (t/is (= 2 (count obj)))
       (t/is (omap/modified? obj))
       (omap/compact! obj)
@@ -77,7 +78,8 @@
   (t/testing "low-level serialize/deserialize"
     (let [id1 (uuid/custom 0 1)
           id2 (uuid/custom 0 2)
-          obj1 (omap/wrap {id1 1 id2 2})
+          obj1 (omap/wrap {id1 1
+                           id2 2})
           obj2 (omap/create (deref obj1))]
       (t/is (= (get obj1 id1) (get obj2 id1)))
       (t/is (= (get obj1 id2) (get obj2 id2)))

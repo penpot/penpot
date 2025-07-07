@@ -83,7 +83,8 @@
         on-error
         (mf/use-fn
          (fn [cause]
-           (let [{:keys [type code] :as edata} (ex-data cause)]
+           (let [{:keys [type code]
+                  :as edata} (ex-data cause)]
              (condp = [type code]
                [:restriction :email-does-not-match-invitation]
                (st/emit! (ntf/error (tr "errors.email-does-not-match-invitation")))
@@ -153,7 +154,8 @@
                   (rx/finalize #(reset! submitted? false))
                   (rx/subs! on-register-profile on-error)))))]
 
-    [:& fm/form {:on-submit on-submit :form form}
+    [:& fm/form {:on-submit on-submit
+                 :form form}
      [:div {:class (stl/css :fields-row)}
 
       [:& fm/input {:name :fullname
@@ -196,7 +198,8 @@
    (when (or login/show-alt-login-buttons? (false? hide-separator))
      [:hr {:class (stl/css :separator)}])
    (when (contains? cf/flags :login-with-password)
-     [:& register-form {:params params :on-success-callback on-success-callback}])])
+     [:& register-form {:params params
+                        :on-success-callback on-success-callback}])])
 
 (mf/defc register-page
   {::mf/props :obj}
@@ -249,7 +252,9 @@
     (when show-all?
       [:div {:class (stl/css :terms-register)}
        (when show-terms?
-         [:a {:href cf/terms-of-service-uri :target "_blank" :class (stl/css :auth-link)}
+         [:a {:href cf/terms-of-service-uri
+              :target "_blank"
+              :class (stl/css :auth-link)}
           (tr "auth.terms-of-service")])
 
        (when show-all?
@@ -257,7 +262,9 @@
           (dm/str " " (tr "labels.and") "  ")])
 
        (when show-privacy?
-         [:a {:href cf/privacy-policy-uri :target "_blank" :class (stl/css :auth-link)}
+         [:a {:href cf/privacy-policy-uri
+              :target "_blank"
+              :class (stl/css :auth-link)}
           (tr "auth.privacy-policy")])])))
 
 ;; --- PAGE: register validation

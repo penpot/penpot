@@ -20,7 +20,8 @@
   (fn [_ props] (:object props)))
 
 (defmethod delete-object :file
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id deleted-at]}]
   (when-let [file (db/get* conn :file {:id id} {::db/remove-deleted false})]
     (l/trc :hint "marking for deletion" :rel "file" :id (str id)
            :deleted-at (dt/format-instant deleted-at))
@@ -60,7 +61,8 @@
                 {:file-id id})))
 
 (defmethod delete-object :project
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id deleted-at]}]
   (l/trc :hint "marking for deletion" :rel "project" :id (str id)
          :deleted-at (dt/format-instant deleted-at))
 
@@ -77,7 +79,8 @@
                               :deleted-at deleted-at))))
 
 (defmethod delete-object :team
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id deleted-at]}]
   (l/trc :hint "marking for deletion" :rel "team" :id (str id)
          :deleted-at (dt/format-instant deleted-at))
   (db/update! conn :team
@@ -99,7 +102,8 @@
                                 :deleted-at deleted-at)))))
 
 (defmethod delete-object :profile
-  [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id deleted-at]}]
   (l/trc :hint "marking for deletion" :rel "profile" :id (str id)
          :deleted-at (dt/format-instant deleted-at))
 
@@ -123,5 +127,6 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as task}]
+  (fn [{:keys [props]
+        :as task}]
     (db/tx-run! cfg delete-object props)))

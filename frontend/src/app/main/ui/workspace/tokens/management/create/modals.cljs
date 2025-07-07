@@ -38,7 +38,9 @@
         left-position (dm/str (- x x-pos) "px")]
     (cond
       (or (nil? x) (nil? y))
-      {:left "auto" :right "16rem" :top "4rem"}
+      {:left "auto"
+       :right "16rem"
+       :top "4rem"}
 
       (= position :left)
       (if (> y max-y)
@@ -68,7 +70,8 @@
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-name] :as _args}]
+  [{:keys [x y position token token-type action selected-token-set-name]
+    :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position (= token-type :color))
         modal-size-large* (mf/use-state false)
         modal-size-large? (deref modal-size-large*)

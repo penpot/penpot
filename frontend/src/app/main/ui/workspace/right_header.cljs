@@ -76,7 +76,8 @@
                                  :selected open?)
             :title (tr "workspace.header.zoom")}
       [:span {:class (stl/css :label)} zoom]]
-     [:& dropdown {:show open? :on-close close-dropdown}
+     [:& dropdown {:show open?
+                   :on-close close-dropdown}
       [:ul {:class (stl/css :dropdown)}
        [:li {:class (stl/css :basic-zoom-bar)}
         [:span {:class (stl/css :zoom-btns)}

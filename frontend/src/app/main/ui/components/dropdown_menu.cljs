@@ -93,7 +93,8 @@
         #(doseq [key keys]
            (events/unlistenByKey key))))
 
-    [:ul {:class list-class :role "menu"} children]))
+    [:ul {:class list-class
+          :role "menu"} children]))
 
 (mf/defc dropdown-menu
   {::mf/props :obj}

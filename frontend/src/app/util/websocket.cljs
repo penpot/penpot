@@ -26,11 +26,14 @@
         ws   (WebSocket. #js {:autoReconnect true})
         data (atom {})
         lk1  (ev/listen ws EventType.MESSAGE
-                        #(rx/push! sb {:type :message :payload (.-message %)}))
+                        #(rx/push! sb {:type :message
+                                       :payload (.-message %)}))
         lk2  (ev/listen ws EventType.ERROR
-                        #(rx/push! sb {:type :error :payload %}))
+                        #(rx/push! sb {:type :error
+                                       :payload %}))
         lk3  (ev/listen ws EventType.OPENED
-                        #(rx/push! sb {:type :opened :payload %}))]
+                        #(rx/push! sb {:type :opened
+                                       :payload %}))]
 
     (.open ws (str uri))
     (reify
@@ -67,7 +70,8 @@
       IWebSocket
       (-stream [_]
         (->> sb
-             (rx/map (fn [{:keys [type payload] :as message}]
+             (rx/map (fn [{:keys [type payload]
+                           :as message}]
                        (cond-> message
                          (= :message type)
                          (assoc :payload (t/decode-str payload)))))))

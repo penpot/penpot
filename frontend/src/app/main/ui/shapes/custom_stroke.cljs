@@ -143,7 +143,10 @@
                  :orient "auto-start-reverse"
                  :fill color
                  :fillOpacity opacity}
-        [:rect {:x 0 :y 0 :width 6 :height 6}]])
+        [:rect {:x 0
+                :y 0
+                :width 6
+                :height 6}]])
 
      (when (or (= cap-start :circle-marker)
                (= cap-end :circle-marker))
@@ -156,7 +159,9 @@
                  :orient "auto-start-reverse"
                  :fill color
                  :fillOpacity opacity}
-        [:circle {:cx "3" :cy "3" :r "3"}]])
+        [:circle {:cx "3"
+                  :cy "3"
+                  :r "3"}]])
 
      (when (or (= cap-start :diamond-marker)
                (= cap-end :diamond-marker))
@@ -199,7 +204,10 @@
                  :orient "auto-start-reverse"
                  :fill color
                  :fillOpacity opacity}
-        [:rect {:x 3 :y 2.5 :width 0.5 :height 1}]])]))
+        [:rect {:x 3
+                :y 2.5
+                :width 0.5
+                :height 1}]])]))
 
 (mf/defc stroke-defs
   {::mf/wrap-props false}
@@ -302,7 +310,10 @@
 
     [:g.outer-stroke-shape
      [:defs
-      [:& stroke-defs {:shape shape :stroke stroke :render-id render-id :index index}]
+      [:& stroke-defs {:shape shape
+                       :stroke stroke
+                       :render-id render-id
+                       :index index}]
       (let [type  (obj/get children "type")
             style (-> (obj/clone style)
                       (obj/unset! "fill")
@@ -368,7 +379,10 @@
     [:g.inner-stroke-shape
      {:transform transform}
      [:defs
-      [:& stroke-defs {:shape shape :stroke stroke :render-id render-id :index index}]
+      [:& stroke-defs {:shape shape
+                       :stroke stroke
+                       :render-id render-id
+                       :index index}]
       [:> type props]]
 
      [:use {:href (dm/str "#" shape-id)
@@ -404,15 +418,22 @@
 
     (cond
       (and has-stroke? inner? closed?)
-      [:& inner-stroke {:shape shape :stroke stroke :index index} child]
+      [:& inner-stroke {:shape shape
+                        :stroke stroke
+                        :index index} child]
 
       (and has-stroke? outer? closed?)
-      [:& outer-stroke {:shape shape :stroke stroke :index index} child]
+      [:& outer-stroke {:shape shape
+                        :stroke stroke
+                        :index index} child]
 
       :else
       [:g.stroke-shape
        [:defs
-        [:& stroke-defs {:shape shape :stroke stroke :render-id render-id :index index}]]
+        [:& stroke-defs {:shape shape
+                         :stroke stroke
+                         :render-id render-id
+                         :index index}]]
        child])))
 
 (defn- build-fill-element

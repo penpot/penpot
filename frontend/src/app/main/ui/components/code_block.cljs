@@ -27,5 +27,6 @@
         (p/let [highlight-fn (lazy/load highlight-fn)]
           (highlight-fn node))))
 
-    [:pre {:class (dm/str type " " (stl/css :code-display)) :ref block-ref} code]))
+    [:pre {:class (dm/str type " " (stl/css :code-display))
+           :ref block-ref} code]))
 

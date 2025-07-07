@@ -138,7 +138,8 @@
         `(~'-assoc [~this-sym ~key-sym ~val-sym]
                    (case ~key-sym
                      ~@(mapcat (fn [fld]
-                                 [(keyword fld) `(new ~tagname ~@(->> (replace {fld val-sym '$hash nil} fields)
+                                 [(keyword fld) `(new ~tagname ~@(->> (replace {fld val-sym
+                                                                                '$hash nil} fields)
                                                                       (generate-field-access this-sym val-sym)))])
                                base-fields)
                      (new ~tagname ~@(->> (remove #{'$extmap '$hash} fields)
@@ -257,7 +258,8 @@
         `(~'assoc [~this-sym ~key-sym ~val-sym]
                   (case ~key-sym
                     ~@(mapcat (fn [fld]
-                                [(keyword fld) `(new ~tagname ~@(->> (replace {fld val-sym '$hash nil} fields)
+                                [(keyword fld) `(new ~tagname ~@(->> (replace {fld val-sym
+                                                                               '$hash nil} fields)
                                                                      (generate-field-access this-sym val-sym)))])
                               base-fields)
                     (new ~tagname ~@(->> (remove #{'$extmap '$hash} fields)

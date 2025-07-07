@@ -197,7 +197,8 @@
   "Calculates the position for the current shape given the layout-data context"
   [parent child
    child-width child-height
-   {:keys [start-p layout-gap-row layout-gap-col margin-x margin-y line-height line-width layout-bounds] :as layout-data}]
+   {:keys [start-p layout-gap-row layout-gap-col margin-x margin-y line-height line-width layout-bounds]
+    :as layout-data}]
 
   (let [row?         (ctl/row? parent)
         col?         (ctl/col? parent)

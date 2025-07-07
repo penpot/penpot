@@ -61,7 +61,10 @@
 (mf/defc harmony-selector [{:keys [color disable-opacity on-change on-start-drag on-finish-drag]}]
   (let [canvas-ref     (mf/use-ref nil)
         canvas-side    192
-        {hue :h saturation :s value :v alpha :alpha} color
+        {hue :h
+         saturation :s
+         value :v
+         alpha :alpha} color
 
         pos-current    (color->point canvas-side hue saturation)
         pos-complement (color->point canvas-side (mod (+ hue 180) 360) saturation)
@@ -82,7 +85,9 @@
                               hex (cc/hsv->hex [new-hue new-saturation value])
                               [r g b] (cc/hex->rgb hex)]
                           (on-change {:hex hex
-                                      :r r :g g :b b
+                                      :r r
+                                      :g g
+                                      :b b
                                       :h new-hue
                                       :s new-saturation})))
 
@@ -108,14 +113,18 @@
                           (let [hex (cc/hsv->hex [hue saturation new-value])
                                 [r g b] (cc/hex->rgb hex)]
                             (on-change {:hex hex
-                                        :r r :g g :b b
+                                        :r r
+                                        :g g
+                                        :b b
                                         :v new-value})))
         on-complement-click (fn [_]
                               (let [new-hue (mod (+ hue 180) 360)
                                     hex (cc/hsv->hex [new-hue saturation value])
                                     [r g b] (cc/hex->rgb hex)]
                                 (on-change {:hex hex
-                                            :r r :g g :b b
+                                            :r r
+                                            :g g
+                                            :b b
                                             :h new-hue
                                             :s saturation})))
 

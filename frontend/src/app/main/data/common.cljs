@@ -46,7 +46,8 @@
            (rx/map share-link-created)))))
 
 (defn delete-share-link
-  [{:keys [id] :as link}]
+  [{:keys [id]
+    :as link}]
   (ptk/reify ::delete-share-link
     ptk/UpdateEvent
     (update [_ state]
@@ -72,7 +73,8 @@
   (st/emit! (ntf/hide)))
 
 (defn handle-notification
-  [{:keys [message code] :as params}]
+  [{:keys [message code]
+    :as params}]
   (ptk/reify ::show-notification
     ptk/WatchEvent
     (watch [_ _ _]
@@ -116,7 +118,8 @@
                        :graphics-count   (count (:media data))
                        :colors-count     (count (:colors data))
                        :typography-count (count (:typographies data))})
-               (rp/cmd! :get-file-summary {:id file-id :features features}))
+               (rp/cmd! :get-file-summary {:id file-id
+                                           :features features}))
              (rx/map (fn [summary]
                        (let [count (+ (:components-count summary)
                                       (:graphics-count summary)
@@ -255,7 +258,8 @@
                      ::rt/window-name "penpot-feedback")))))
 
 (defn go-to-dashboard-files
-  [& {:keys [project-id team-id] :as options}]
+  [& {:keys [project-id team-id]
+      :as options}]
   (ptk/reify ::go-to-dashboard-files
     ptk/WatchEvent
     (watch [_ state _]
@@ -270,7 +274,8 @@
         (rx/of (rt/nav :dashboard-files params options))))))
 
 (defn go-to-dashboard-search
-  [& {:keys [term] :as options}]
+  [& {:keys [term]
+      :as options}]
   (ptk/reify ::go-to-dashboard-search
     ptk/WatchEvent
     (watch [_ state stream]
@@ -290,7 +295,8 @@
                                    {:name "search-input"})))))))))
 
 (defn go-to-dashboard-libraries
-  [& {:keys [team-id] :as options}]
+  [& {:keys [team-id]
+      :as options}]
   (ptk/reify ::go-to-dashboard-libraries
     ptk/WatchEvent
     (watch [_ state _]
@@ -299,7 +305,8 @@
 
 
 (defn go-to-dashboard-fonts
-  [& {:keys [team-id] :as options}]
+  [& {:keys [team-id]
+      :as options}]
   (ptk/reify ::go-to-dashboard-fonts
     ptk/WatchEvent
     (watch [_ state _]
@@ -307,7 +314,8 @@
         (rx/of (rt/nav :dashboard-fonts {:team-id team-id}))))))
 
 (defn go-to-dashboard-recent
-  [& {:keys [team-id] :as options}]
+  [& {:keys [team-id]
+      :as options}]
   (ptk/reify ::go-to-dashboard-recent
     ptk/WatchEvent
     (watch [_ state _]
@@ -358,7 +366,8 @@
         (rx/of (rt/nav :dashboard-settings {:team-id team-id}))))))
 
 (defn go-to-workspace
-  [& {:keys [team-id file-id page-id layout] :as options}]
+  [& {:keys [team-id file-id page-id layout]
+      :as options}]
   (ptk/reify ::go-to-workspace
     ptk/WatchEvent
     (watch [_ state _]
@@ -378,7 +387,8 @@
         (rx/of (rt/nav :workspace params options))))))
 
 (defn go-to-viewer
-  [& {:keys [file-id page-id section frame-id index] :as options}]
+  [& {:keys [file-id page-id section frame-id index]
+      :as options}]
   (ptk/reify ::go-to-viewer
     ptk/WatchEvent
     (watch [_ state _]

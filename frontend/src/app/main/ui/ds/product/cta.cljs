@@ -20,12 +20,16 @@
 
 (mf/defc cta*
   {::mf/schema schema:cta}
-  [{:keys [class title children] :rest props}]
+  [{:keys [class title children]
+    :rest props}]
 
   (let [class (d/append-class class (stl/css :cta))
-        props (mf/spread-props props {:class class :data-testid "cta"})]
+        props (mf/spread-props props {:class class
+                                      :data-testid "cta"})]
     [:> "div" props
      [:div {:class (stl/css :cta-title)}
-      [:> text* {:as "span" :typography t/headline-small :class (stl/css :placeholder-title)} title]]
+      [:> text* {:as "span"
+                 :typography t/headline-small
+                 :class (stl/css :placeholder-title)} title]]
      [:div {:class (stl/css :cta-message)}
       children]]))

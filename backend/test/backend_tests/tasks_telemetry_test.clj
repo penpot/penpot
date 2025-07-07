@@ -22,7 +22,8 @@
     (let [prof (th/create-profile* 1 {:is-active true
                                       :props {:newsletter-news true}})]
 
-      (th/run-task! :telemetry {:send? true :enabled? true})
+      (th/run-task! :telemetry {:send? true
+                                :enabled? true})
 
       (t/is (:called? @mock))
       (let [[_ data] (-> @mock :call-args)]

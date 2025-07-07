@@ -20,7 +20,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc editable-select
-  [{:keys [value type options class on-change placeholder on-blur input-class aria-label] :as params}]
+  [{:keys [value type options class on-change placeholder on-blur input-class aria-label]
+    :as params}]
   (let [state* (mf/use-state {:id (uuid/next)
                               :is-open? false
                               :current-value value

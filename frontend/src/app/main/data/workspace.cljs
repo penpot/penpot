@@ -138,12 +138,14 @@
   (->> (fpmap/resolve-file file)
        (rx/map :data)
        (rx/mapcat
-        (fn [{:keys [pages-index] :as data}]
+        (fn [{:keys [pages-index]
+              :as data}]
           (->> (rx/from (seq pages-index))
                (rx/mapcat
                 (fn [[id page]]
                   (let [page (update page :objects ctst/start-page-index)]
-                    (->> (mw/ask! {:cmd :index/initialize-page-index :page page})
+                    (->> (mw/ask! {:cmd :index/initialize-page-index
+                                   :page page})
                          (rx/map (fn [_] [id page]))))))
                (rx/reduce conj {})
                (rx/map (fn [pages-index]
@@ -199,14 +201,16 @@
                 (->> (rx/from libraries)
                      (rx/merge-map
                       (fn [{:keys [id synced-at]}]
-                        (->> (rp/cmd! :get-file {:id id :features features})
+                        (->> (rp/cmd! :get-file {:id id
+                                                 :features features})
                              (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
                      (rx/mapcat resolve-file)
                      (rx/map library-resolved))
                 (->> (rx/from libraries)
                      (rx/map :id)
                      (rx/mapcat (fn [file-id]
-                                  (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                                  (rp/cmd! :get-file-object-thumbnails {:file-id file-id
+                                                                        :tag "component"})))
                      (rx/map dwl/library-thumbnails-fetched)))
                (rx/of (check-libraries-synchronozation file-id libraries)))))))))
 
@@ -226,7 +230,8 @@
              (fbs/fix-broken-shapes)))))
 
 (defn- bundle-fetched
-  [{:keys [file file-id thumbnails] :as bundle}]
+  [{:keys [file file-id thumbnails]
+    :as bundle}]
   (ptk/reify ::bundle-fetched
     IDeref
     (-deref [_] bundle)
@@ -260,7 +265,8 @@
     ptk/WatchEvent
     (watch [_ _ stream]
       (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
-        (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
+        (->> (rx/zip (rp/cmd! :get-file {:id file-id
+                                         :features features})
                      (get-file-object-thumbnails file-id))
              (rx/take 1)
              (rx/mapcat
@@ -454,7 +460,9 @@
     (ptk/reify ::rename-file
       IDeref
       (-deref [_]
-        {::ev/origin "workspace" :id id :name name})
+        {::ev/origin "workspace"
+         :id id
+         :name name})
 
       ptk/UpdateEvent
       (update [_ state]
@@ -463,7 +471,8 @@
 
       ptk/WatchEvent
       (watch [_ _ _]
-        (let [params {:id id :name name}]
+        (let [params {:id id
+                      :name name}]
           (->> (rp/cmd! :rename-file params)
                (rx/ignore)))))))
 
@@ -479,7 +488,8 @@
 ;; --- Profile
 
 (defn update-nudge
-  [{:keys [big small] :as params}]
+  [{:keys [big small]
+    :as params}]
   (ptk/reify ::update-nudge
     IDeref
     (-deref [_] (d/without-nils params))
@@ -717,7 +727,8 @@
 
         (condp = (count selected)
           0 (rx/empty)
-          1 (let [{:keys [id type] :as shape} (get objects (first selected))]
+          1 (let [{:keys [id type]
+                   :as shape} (get objects (first selected))]
               (case type
                 :text
                 (rx/of (dwe/start-edition-mode id))
@@ -987,7 +998,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn show-context-menu
-  [{:keys [position] :as params}]
+  [{:keys [position]
+    :as params}]
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-context-menu
     ptk/UpdateEvent
@@ -995,7 +1007,8 @@
       (assoc-in state [:workspace-local :context-menu] params))))
 
 (defn show-shape-context-menu
-  [{:keys [shape] :as params}]
+  [{:keys [shape]
+    :as params}]
   (ptk/reify ::show-shape-context-menu
     ptk/WatchEvent
     (watch [_ state _]
@@ -1022,7 +1035,8 @@
                        :selected (conj selected (:id shape)))))))))))
 
 (defn show-page-item-context-menu
-  [{:keys [position page] :as params}]
+  [{:keys [position page]
+    :as params}]
   (dm/assert! (gpt/point? position))
   (ptk/reify ::show-page-item-context-menu
     ptk/WatchEvent
@@ -1031,7 +1045,8 @@
               (-> params (assoc :kind :page :selected (:id page))))))))
 
 (defn show-track-context-menu
-  [{:keys [grid-id type index] :as params}]
+  [{:keys [grid-id type index]
+    :as params}]
   (ptk/reify ::show-track-context-menu
     ptk/WatchEvent
     (watch [_ _ _]
@@ -1042,7 +1057,8 @@
                                 :index index)))))))
 
 (defn show-grid-cell-context-menu
-  [{:keys [grid-id] :as params}]
+  [{:keys [grid-id]
+    :as params}]
   (ptk/reify ::show-grid-cell-context-menu
     ptk/WatchEvent
     (watch [_ state _]

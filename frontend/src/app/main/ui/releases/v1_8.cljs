@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.8"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Alpha release 1.8"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Alpha 1.8 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/share-viewer.gif" :border "0" :alt "Share options and pages at view mode"}]]
+         [:img {:src "images/features/share-viewer.gif"
+                :border "0"
+                :alt "Share options and pages at view mode"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Share options and pages at view mode"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/stroke-caps.gif" :border "0" :alt "Path stroke caps"}]]
+         [:img {:src "images/features/stroke-caps.gif"
+                :border "0"
+                :alt "Path stroke caps"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Path stroke caps"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/navigate-history.gif" :border "0" :alt "Navigable history"}]]
+         [:img {:src "images/features/navigate-history.gif"
+                :border "0"
+                :alt "Navigable history"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Navigable history"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/export-artboards.gif" :border "0" :alt "Export artboards PDF"}]]
+         [:img {:src "images/features/export-artboards.gif"
+                :border "0"
+                :alt "Export artboards PDF"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Export artboards PDF"]]

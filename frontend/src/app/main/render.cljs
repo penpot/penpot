@@ -72,7 +72,10 @@
   (let [root-objects (ctst/get-root-objects objects)]
     (if (empty? root-objects)
       ;; Empty page, we create an arbitrary rect for the thumbnail
-      (-> (grc/make-rect {:x 0 :y 0 :width 100 :height 100})
+      (-> (grc/make-rect {:x 0
+                          :y 0
+                          :width 100
+                          :height 100})
           (grc/update-rect :position)
           (grc/fix-aspect-ratio aspect-ratio))
 
@@ -100,15 +103,18 @@
       (let [thumbnails? (mf/use-ctx muc/render-thumbnails)
             childs      (mapv (d/getf objects) (:shapes shape))]
         (if (and thumbnails? (some? (:thumbnail-id shape)))
-          [:& frame/frame-thumbnail {:shape shape :bounds (:children-bounds shape)}]
-          [:& frame-shape {:shape shape :childs childs}])))))
+          [:& frame/frame-thumbnail {:shape shape
+                                     :bounds (:children-bounds shape)}]
+          [:& frame-shape {:shape shape
+                           :childs childs}])))))
 
 (defn group-wrapper-factory
   [objects]
   (let [shape-wrapper (shape-wrapper-factory objects)
         group-shape   (group/group-shape shape-wrapper)]
     (mf/fnc group-wrapper
-      [{:keys [shape] :as props}]
+      [{:keys [shape]
+        :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
         [:& group-shape {:shape shape
                          :is-child-selected? true
@@ -119,18 +125,21 @@
   (let [shape-wrapper (shape-wrapper-factory objects)
         bool-shape   (bool/bool-shape shape-wrapper)]
     (mf/fnc bool-wrapper
-      [{:keys [shape] :as props}]
+      [{:keys [shape]
+        :as props}]
       (let [childs (mf/with-memo [(:id shape) objects]
                      (->> (cfh/get-children-ids objects (:id shape))
                           (select-keys objects)))]
-        [:& bool-shape {:shape shape :childs childs}]))))
+        [:& bool-shape {:shape shape
+                        :childs childs}]))))
 
 (defn svg-raw-wrapper-factory
   [objects]
   (let [shape-wrapper (shape-wrapper-factory objects)
         svg-raw-shape (svg-raw/svg-raw-shape shape-wrapper)]
     (mf/fnc svg-raw-wrapper
-      [{:keys [shape] :as props}]
+      [{:keys [shape]
+        :as props}]
       (let [childs (mapv #(get objects %) (:shapes shape))]
         (if (and (map? (:content shape))
                 ;;  tspan shouldn't be contained in a group or have svg defs
@@ -147,7 +156,8 @@
 (defn shape-wrapper-factory
   [objects]
   (mf/fnc shape-wrapper
-    [{:keys [frame shape] :as props}]
+    [{:keys [frame shape]
+      :as props}]
     (let [group-wrapper   (mf/use-memo (mf/deps objects) #(group-wrapper-factory objects))
           svg-raw-wrapper (mf/use-memo (mf/deps objects) #(svg-raw-wrapper-factory objects))
           bool-wrapper    (mf/use-memo (mf/deps objects) #(bool-wrapper-factory objects))
@@ -164,16 +174,23 @@
                :image   [:> image/image-shape opts]
                :circle  [:> circle/circle-shape opts]
                :frame   [:> frame-wrapper {:shape shape}]
-               :group   [:> group-wrapper {:shape shape :frame frame}]
-               :bool    [:> bool-wrapper  {:shape shape :frame frame}]
+               :group   [:> group-wrapper {:shape shape
+                                           :frame frame}]
+               :bool    [:> bool-wrapper  {:shape shape
+                                           :frame frame}]
                nil)]
 
             ;; Don't wrap svg elements inside a <g> otherwise some can break
-            [:> svg-raw-wrapper {:shape shape :frame frame}]))))))
+            [:> svg-raw-wrapper {:shape shape
+                                 :frame frame}]))))))
 
 (defn format-viewbox
   "Format a viewbox given a rectangle"
-  [{:keys [x y width height] :or {x 0 y 0 width 100 height 100}}]
+  [{:keys [x y width height]
+    :or {x 0
+         y 0
+         width 100
+         height 100}}]
   (str/join
    " "
    (->> [x y width height]
@@ -207,8 +224,10 @@
 
 (mf/defc page-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [data use-thumbnails embed include-metadata aspect-ratio] :as props
-    :or {embed false include-metadata false}}]
+  [{:keys [data use-thumbnails embed include-metadata aspect-ratio]
+    :as props
+    :or {embed false
+         include-metadata false}}]
   (let [objects (:objects data)
         shapes  (cfh/get-immediate-children objects)
         dim     (calculate-dimensions objects aspect-ratio)
@@ -259,14 +278,20 @@
             :xmlnsXlink "http://www.w3.org/1999/xlink"
             :fill "none"}
       (when (some? background)
-        [:rect {:x x :y y :width width :height height :fill background}])
+        [:rect {:x x
+                :y y
+                :width width
+                :height height
+                :fill background}])
       [:& shape-wrapper {:shape frame}]]]))
 
 ;; Component that serves for render frame thumbnails, mainly used in
 ;; the viewer and inspector
 (mf/defc frame-svg
   {::mf/wrap [mf/memo]}
-  [{:keys [objects frame zoom use-thumbnails aspect-ratio background-color] :or {zoom 1} :as props}]
+  [{:keys [objects frame zoom use-thumbnails aspect-ratio background-color]
+    :or {zoom 1}
+    :as props}]
   (let [frame-id         (:id frame)
 
         bgcolor (d/nilv background-color default-color)
@@ -311,7 +336,8 @@
 
         width  (* (:width bounds) zoom)
         height (* (:height bounds) zoom)
-        vbox   (format-viewbox {:width (:width bounds 0) :height (:height bounds 0)})]
+        vbox   (format-viewbox {:width (:width bounds 0)
+                                :height (:height bounds 0)})]
 
     [:& (mf/provider muc/render-thumbnails) {:value use-thumbnails}
      [:svg {:view-box vbox
@@ -334,13 +360,16 @@
              (map #(get objects %))
              (filter #(empty? (:shapes %))))]
     (for [grid empty-grids]
-      [:& grid-layout-viewer {:shape grid :objects objects}])))
+      [:& grid-layout-viewer {:shape grid
+                              :objects objects}])))
 
 ;; Component for rendering a thumbnail of a single componenent. Mainly
 ;; used to render thumbnails on assets panel.
 (mf/defc component-svg
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
-  [{:keys [objects root-shape show-grids? is-hidden zoom class] :or {zoom 1} :as props}]
+  [{:keys [objects root-shape show-grids? is-hidden zoom class]
+    :or {zoom 1}
+    :as props}]
   (when root-shape
     (let [root-shape-id (:id root-shape)
           include-metadata (mf/use-ctx export/include-metadata-ctx)
@@ -387,15 +416,19 @@
          [:*
           [:> shape-container {:shape root-shape'}
            [:& (mf/provider muc/is-component?) {:value true}
-            [:& root-shape-wrapper {:shape root-shape' :view-box vbox}]]]
+            [:& root-shape-wrapper {:shape root-shape'
+                                    :view-box vbox}]]]
 
           (when show-grids?
-            [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])])))
+            [:& empty-grids {:root-shape-id root-shape-id
+                             :objects objects}])])])))
 
 (mf/defc component-svg-thumbnail
   {::mf/wrap [mf/memo #(mf/deferred % ts/idle-then-raf)]}
   [{:keys [thumbnail-uri on-error show-grids? class
-           objects root-shape zoom] :or {zoom 1} :as props}]
+           objects root-shape zoom]
+    :or {zoom 1}
+    :as props}]
 
   (when root-shape
     (let [root-shape-id (:id root-shape)
@@ -421,7 +454,8 @@
           height      (:height root-shape' 0)
           width-zoom  (* (:width root-shape') zoom)
           height-zoom (* (:height root-shape') zoom)
-          vbox        (format-viewbox {:width width :height height})]
+          vbox        (format-viewbox {:width width
+                                       :height height})]
 
       [:svg {:view-box vbox
              :width (ust/format-precision width-zoom viewbox-decimal-precision)
@@ -440,7 +474,8 @@
                 :loading "lazy"
                 :decoding "async"}]
        (when show-grids?
-         [:& empty-grids {:root-shape-id root-shape-id :objects objects}])])))
+         [:& empty-grids {:root-shape-id root-shape-id
+                          :objects objects}])])))
 
 (mf/defc object-svg
   {::mf/wrap [mf/memo]}
@@ -455,7 +490,8 @@
                  skip-children
                  (assoc :shapes []))
 
-        {:keys [width height] :as bounds} (gsb/get-object-bounds objects object {:ignore-margin? false})
+        {:keys [width height]
+         :as bounds} (gsb/get-object-bounds objects object {:ignore-margin? false})
         vbox (format-viewbox bounds)
         fonts (ff/shape->fonts object objects)
 
@@ -485,7 +521,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (mf/defc component-symbol
-  [{:keys [component] :as props}]
+  [{:keys [component]
+    :as props}]
   (let [name       (:name component)
         path       (:path component)
         root-id    (or (:main-instance-id component)
@@ -531,8 +568,10 @@
        [:title name]
        [:> shape-container {:shape root-shape}
         (case (:type root-shape)
-          :group [:& group-wrapper {:shape root-shape :view-box vbox}]
-          :frame [:& frame-wrapper {:shape root-shape :view-box vbox}])]])))
+          :group [:& group-wrapper {:shape root-shape
+                                    :view-box vbox}]
+          :frame [:& frame-wrapper {:shape root-shape
+                                    :view-box vbox}])]])))
 
 (mf/defc components-svg
   {::mf/wrap-props false}
@@ -551,7 +590,8 @@
        [:defs
         (for [component components]
           (let [component (ctf/load-component-objects data component)]
-            [:& component-symbol {:key (dm/str (:id component)) :component component}]))]
+            [:& component-symbol {:key (dm/str (:id component))
+                                  :component component}]))]
 
        children]]]))
 
@@ -604,7 +644,9 @@
    (->> (rx/of data)
         (rx/map
          (fn [data]
-           (let [elem (mf/element page-svg #js {:data data :embed true :include-metadata true})]
+           (let [elem (mf/element page-svg #js {:data data
+                                                :embed true
+                                                :include-metadata true})]
              (rds/renderToStaticMarkup elem)))))))
 
 (defn render-components

@@ -25,7 +25,8 @@
    [app.srepl.helpers :as h]))
 
 (defn disable-fdata-features
-  [{:keys [id features] :as file} _]
+  [{:keys [id features]
+    :as file} _]
   (when (or (contains? features "fdata/pointer-map")
             (contains? features "fdata/objects-map"))
     (l/warn :hint "disable fdata features" :file-id (str id))
@@ -42,7 +43,8 @@
     ORDER BY created_at DESC")
 
 (defn find-fdata-pointers
-  [{:keys [id features data] :as file} _]
+  [{:keys [id features data]
+    :as file} _]
   (when (contains? features "fdata/pointer-map")
     (let [pointers (feat.fdata/get-used-pointer-ids data)]
       (l/warn :hint "found pointers" :file-id (str id) :pointers pointers)
@@ -51,7 +53,8 @@
 (defn repair-file-media
   "A helper intended to be used with `srepl.main/process-files!` that
   fixes all not propertly referenced file-media-object for a file"
-  [{:keys [id data] :as file} & _]
+  [{:keys [id data]
+    :as file} & _]
   (let [conn  (db/get-connection h/*system*)
         used  (cfh/collect-used-media data)
         ids   (db/create-array conn "uuid" used)
@@ -87,7 +90,8 @@
   "Internal helper for validate and repair the file. The operation is
   applied multiple times untile file is fixed or max iteration counter
   is reached (default 10)"
-  [file libs & {:keys [max-iterations] :or {max-iterations 10}}]
+  [file libs & {:keys [max-iterations]
+                :or {max-iterations 10}}]
 
   (let [validate-and-repair
         (fn [file libs iteration]

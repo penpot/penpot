@@ -37,7 +37,10 @@
 
 (defn- select-margins
   [m1? m2? m3? m4?]
-  (st/emit! (udw/set-margins-selected {:m1 m1? :m2 m2? :m3 m3? :m4 m4?})))
+  (st/emit! (udw/set-margins-selected {:m1 m1?
+                                       :m2 m2?
+                                       :m3 m3?
+                                       :m4 m4?})))
 
 (defn- select-margin
   [prop]
@@ -185,7 +188,8 @@
 (mf/defc margin-section*
   {::mf/private true
    ::mf/expect-props #{:value :type :on-type-change :on-change}}
-  [{:keys [type on-type-change] :as props}]
+  [{:keys [type on-type-change]
+    :as props}]
   (let [type       (d/nilv type :simple)
         on-blur    (mf/use-fn #(select-margins false false false false))
         props      (mf/spread-props props {:on-blur on-blur})
@@ -392,10 +396,12 @@
          (fn [type prop val]
            (cond
              (and (= type :simple) (= prop :m1))
-             (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m1 val :m3 val}}))
+             (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m1 val
+                                                                           :m3 val}}))
 
              (and (= type :simple) (= prop :m2))
-             (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m2 val :m4 val}}))
+             (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {:m2 val
+                                                                           :m4 val}}))
 
              :else
              (st/emit! (dwsl/update-layout-child ids {:layout-item-margin {prop val}})))))

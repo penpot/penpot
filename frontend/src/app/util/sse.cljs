@@ -32,7 +32,8 @@
                             data (decode-fn data)]
                         (if (= "error" type)
                           (rx/throw (ex-info "stream exception" data))
-                          (rx/of #js {:type type :data data}))))))))
+                          (rx/of #js {:type type
+                                      :data data}))))))))
 
 (defn get-type
   [event]

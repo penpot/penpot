@@ -17,10 +17,13 @@
    [app.main.refs :as refs]
    [rumext.v2 :as mf]))
 
-(mf/defc square-grid [{:keys [frame zoom grid] :as props}]
+(mf/defc square-grid [{:keys [frame zoom grid]
+                       :as props}]
   (let [grid-id (mf/use-memo #(uuid/next))
-        {:keys [size] :as params} (-> grid :params)
-        {color-value :color color-opacity :opacity} (-> grid :params :color)
+        {:keys [size]
+         :as params} (-> grid :params)
+        {color-value :color
+         color-opacity :opacity} (-> grid :params :color)
         ;; Support for old color format
         color-value (or color-value (:value (get-in grid [:params :color :value])))]
 
@@ -47,14 +50,16 @@
 
 (mf/defc layout-grid
   [{:keys [key frame grid zoom]}]
-  (let [{color-value :color color-opacity :opacity} (-> grid :params :color)
+  (let [{color-value :color
+         color-opacity :opacity} (-> grid :params :color)
         ;; Support for old color format
         color-value (or color-value (:value (get-in grid [:params :color :value])))
         gutter (gg/grid-gutter frame grid)
         gutter? (and (not (nil? gutter)) (not (mth/almost-zero? gutter)))]
 
     [:g.grid
-     (for [[idx {:keys [x y width height] :as area}] (d/enumerate (gg/grid-areas frame grid))]
+     (for [[idx {:keys [x y width height]
+                 :as area}] (d/enumerate (gg/grid-areas frame grid))]
        (cond
          gutter?
          [:rect {:key (str key "-" x "-" y)

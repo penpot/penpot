@@ -45,7 +45,8 @@
         (update-in [:data :pages-index page-id :objects shape-id] dissoc :position-data))))
 
 (defn create-welcome-file
-  [cfg {:keys [id fullname] :as profile}]
+  [cfg {:keys [id fullname]
+        :as profile}]
   (try
     (let [cfg             (dissoc cfg ::db/conn)
           params          {:profile-id (:id profile)
@@ -55,8 +56,10 @@
                               first)
           file-name       (str fullname "'s first file")]
 
-      (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                        (files/rename-file conn {:id file-id :name file-name})
+      (db/tx-run! cfg (fn [{:keys [::db/conn]
+                            :as cfg}]
+                        (files/rename-file conn {:id file-id
+                                                 :name file-name})
                         (fupdate/update-file! cfg file-id update-welcome-shape fullname)
                         (profile/update-profile-props cfg id {:welcome-file-id file-id})
                         (db/exec-one! conn [sql:mark-file-object-thumbnails-deleted file-id])

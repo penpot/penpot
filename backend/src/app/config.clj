@@ -264,7 +264,8 @@
 (defn read-config
   "Reads the configuration from enviroment variables and decodes all
   known values."
-  [& {:keys [prefix default] :or {prefix "penpot"}}]
+  [& {:keys [prefix default]
+      :or {prefix "penpot"}}]
   (->> (read-env prefix)
        (merge default)
        (decode-config)))
@@ -280,7 +281,8 @@
 
 (defn validate!
   "Validate the currently loaded configuration data."
-  [& {:keys [exit-on-error?] :or {exit-on-error? true}}]
+  [& {:keys [exit-on-error?]
+      :or {exit-on-error? true}}]
   (if (validate-config config)
     true
     (let [explain (explain-config config)]

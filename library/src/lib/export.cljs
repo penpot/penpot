@@ -86,7 +86,8 @@
     :version})
 
 (defn- encode-shape*
-  [{:keys [type] :as shape}]
+  [{:keys [type]
+    :as shape}]
   (let [shape (if (or (= type :path)
                       (= type :bool))
                 (update shape :content vec)
@@ -94,7 +95,8 @@
     (-> shape encode-shape json/encode)))
 
 (defn- generate-file-export-procs
-  [{:keys [id data] :as file}]
+  [{:keys [id data]
+    :as file}]
   (cons
    (let [file (cond-> (select-keys file file-attrs)
                 (:options data)

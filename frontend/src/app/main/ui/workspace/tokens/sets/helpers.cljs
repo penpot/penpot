@@ -30,7 +30,8 @@
                (ctob/join-set-path))
           (ctob/normalize-set-name name))]
 
-    (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set" :name name})
+    (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set"
+                                          :name name})
               (dwtl/create-token-set name))))
 
 

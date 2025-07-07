@@ -87,7 +87,9 @@
     (not= :none (:email-invites notifications))))
 
 (defn- create-invitation
-  [{:keys [::db/conn] :as cfg} {:keys [team profile role email] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [team profile role email]
+              :as params}]
 
   (assert (db/connection? conn) "expected valid connection on cfg parameter")
   (assert (check-create-invitation-params params))
@@ -194,11 +196,13 @@
 
     ;; Delete any request
     (db/delete! conn :team-access-request
-                {:team-id team-id :requester-id (:id member)})
+                {:team-id team-id
+                 :requester-id (:id member)})
 
     ;; Delete any invitation
     (db/delete! conn :team-invitation
-                {:team-id team-id :email-to (:email member)})
+                {:team-id team-id
+                 :email-to (:email member)})
 
     (eml/send! {::eml/conn conn
                 ::eml/factory eml/join-team
@@ -224,7 +228,9 @@
 (def ^:private xf:map-email (map :email))
 
 (defn- create-team-invitations
-  [{:keys [::db/conn] :as cfg} {:keys [profile team role emails] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile team role emails]
+              :as params}]
   (let [emails           (set emails)
 
         join-requests    (->> (get-valid-access-request-profiles conn (:id team))
@@ -270,7 +276,8 @@
   {::doc/added "1.17"
    ::doc/module :teams
    ::sm/params schema:create-team-invitations}
-  [cfg {:keys [::rpc/profile-id team-id emails] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id emails]
+        :as params}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
         emails   (into #{} (map profile/clean-email) emails)]
@@ -325,7 +332,9 @@
    ::doc/module :teams
    ::sm/params schema:create-team-with-invitations
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id emails role name] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id emails role name]
+              :as params}]
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (cfeat/check-client-features! (:features params)))
 
@@ -350,7 +359,8 @@
                 :hint "the maximum of invitation on single request is reached"
                 :threshold max-invitations-by-request-threshold))
 
-    (let [props {:name name :features features}
+    (let [props {:name name
+                 :features features}
           event (-> (audit/event-from-rpc-params params)
                     (assoc ::audit/name "create-team")
                     (assoc ::audit/props props))]
@@ -379,7 +389,9 @@
   {::doc/added "1.17"
    ::doc/module :teams
    ::sm/params schema:get-team-invitation-token}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id email] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id email]
+              :as params}]
   (teams/check-read-permissions! pool profile-id team-id)
   (let [email (profile/clean-email email)
         invit (-> (db/get pool :team-invitation
@@ -410,7 +422,8 @@
    ::doc/module :teams
    ::sm/params schema:update-team-invitation-role
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email role] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email role]
+                        :as params}]
   (let [perms (teams/get-permissions conn profile-id team-id)]
 
     (when-not (:is-admin perms)
@@ -418,8 +431,10 @@
                 :code :insufficient-permissions))
 
     (db/update! conn :team-invitation
-                {:role (name role) :updated-at (dt/now)}
-                {:team-id team-id :email-to (profile/clean-email email)})
+                {:role (name role)
+                 :updated-at (dt/now)}
+                {:team-id team-id
+                 :email-to (profile/clean-email email)})
 
     nil))
 
@@ -434,7 +449,8 @@
   {::doc/added "1.17"
    ::sm/params schema:delete-team-invition
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id email]
+                        :as params}]
   (let [perms (teams/get-permissions conn profile-id team-id)]
 
     (when-not (:is-admin perms)
@@ -522,8 +538,10 @@
    ::doc/module :teams
    ::sm/params schema:create-team-access-request
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg}
-   {:keys [::rpc/profile-id file-id team-id is-viewer] :as params}]
+  [{:keys [::db/conn]
+    :as cfg}
+   {:keys [::rpc/profile-id file-id team-id is-viewer]
+    :as params}]
 
   (let [requester  (profile/get-profile conn profile-id)
         team       (if team-id

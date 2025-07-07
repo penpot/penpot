@@ -133,7 +133,8 @@
     (fn []
       (st/emit! (dtm/finalize-team team-id))))
 
-  (let [{:keys [permissions] :as team} (mf/deref refs/team)]
+  (let [{:keys [permissions]
+         :as team} (mf/deref refs/team)]
     (when (= team-id (:id team))
       [:> (mf/provider ctx/current-team-id) {:value team-id}
        [:> (mf/provider ctx/permissions) {:value permissions}
@@ -335,7 +336,8 @@
        :viewer-legacy
        (let [{:keys [query-params path-params]} route
              {:keys [index share-id section page-id interactions-mode frame-id share]
-              :or {section :interactions interactions-mode :show-on-click}} query-params
+              :or {section :interactions
+                   interactions-mode :show-on-click}} query-params
              {:keys [file-id]} path-params]
 
          [:> viewer-legacy-redirect*
@@ -365,8 +367,10 @@
     [:& (mf/provider ctx/current-route) {:value route}
      [:& (mf/provider ctx/current-profile) {:value profile}
       (if edata
-        [:> static/exception-page* {:data edata :route route}]
+        [:> static/exception-page* {:data edata
+                                    :route route}]
         [:> error-boundary* {:fallback static/internal-error*}
          [:> notifications/current-notification*]
          (when route
-           [:> page* {:route route :profile profile}])])]]))
+           [:> page* {:route route
+                      :profile profile}])])]]))

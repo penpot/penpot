@@ -129,16 +129,19 @@
                             :default-project default-project}]
 
        :dashboard-members
-       [:> team-members-page* {:team team :profile profile}]
+       [:> team-members-page* {:team team
+                               :profile profile}]
 
        :dashboard-invitations
-       [:> team-invitations-page* {:team team :profile profile}]
+       [:> team-invitations-page* {:team team
+                                   :profile profile}]
 
        :dashboard-webhooks
        [:> webhooks-page* {:team team}]
 
        :dashboard-settings
-       [:> team-settings-page* {:team team :profile profile}]
+       [:> team-settings-page* {:team team
+                                :profile profile}]
 
        nil)]))
 
@@ -200,7 +203,9 @@
               (fn [plugin]
                 (if plugin
                   (do
-                    (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin" :name (:name plugin) :url plugin-url}))
+                    (st/emit! (ptk/event ::ev/event {::ev/name "install-plugin"
+                                                     :name (:name plugin)
+                                                     :url plugin-url}))
                     (open-permissions-dialog plugin))
                   (st/emit! (notif/error (tr "dashboard.plugins.parse-error")))))
               (fn [_]
@@ -234,11 +239,14 @@
                                                                 :url template-url}))]
             (if valid-url?
               (st/emit!
-               (ptk/event ::ev/event {::ev/name "install-template-from-link" :name template-name :url template-url})
+               (ptk/event ::ev/event {::ev/name "install-template-from-link"
+                                      :name template-name
+                                      :url template-url})
                (modal/show
                 {:type :import
                  :project-id project-id
-                 :entries [{:name template-name :uri template-url}]
+                 :entries [{:name template-name
+                            :uri template-url}]
                  :on-finish-import on-import}))
               (st/emit! (notif/error (tr "dashboard.import.bad-url")))))
           (st/emit! (notif/error (tr "dashboard.import.no-perms"))))

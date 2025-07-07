@@ -61,13 +61,19 @@
           y      (:y vbox)
           width  (- (:width vbox) (* 21 zoom-inverse))
           height (* 25 zoom-inverse)]
-      {:x x :y y :width width :height height})
+      {:x x
+       :y y
+       :width width
+       :height height})
 
     (let [x      (:x vbox)
           y      (+ (:y vbox) (* 25 zoom-inverse))
           width  (* 25 zoom-inverse)
           height (- (:height vbox) (* 21 zoom-inverse))]
-      {:x x :y y :width width :height height})))
+      {:x x
+       :y y
+       :width width
+       :height height})))
 
 (defn get-background-area
   [vbox zoom-inverse axis]
@@ -76,24 +82,32 @@
           y      (:y vbox)
           width  (:width vbox)
           height (* ruler-area-size zoom-inverse)]
-      {:x x :y y :width width :height height})
+      {:x x
+       :y y
+       :width width
+       :height height})
 
     (let [x      (:x vbox)
           y      (+ (:y vbox) (* ruler-area-size zoom-inverse))
           width  (* ruler-area-size zoom-inverse)
           height (- (:height vbox) (* 21 zoom-inverse))]
-      {:x x :y y :width width :height height})))
+      {:x x
+       :y y
+       :width width
+       :height height})))
 
 (defn get-ruler-params
   [vbox axis]
   (if (= axis :x)
     (let [start (:x vbox)
           end   (+ start (:width vbox))]
-      {:start start :end end})
+      {:start start
+       :end end})
 
     (let [start (:y vbox)
           end   (+ start (:height vbox))]
-      {:start start :end end})))
+      {:start start
+       :end end})))
 
 (defn get-ruler-axis
   [val vbox zoom-inverse axis]
@@ -162,7 +176,10 @@
      [:defs
       [:clipPath {:id clip-id}
        (let [{:keys [x y width height]} (get-clip-area vbox zoom-inverse axis)]
-         [:rect {:x x :y y :width width :height height}])]]
+         [:rect {:x x
+                 :y y
+                 :width width
+                 :height height}])]]
 
      (for [step-val (range minv (inc maxv) step)]
        (let [{:keys [text-x text-y line-x1 line-y1 line-x2 line-y2]}
@@ -189,7 +206,9 @@
 (mf/defc viewport-frame
   [{:keys [show-rulers? zoom zoom-inverse vbox offset-x offset-y]}]
 
-  (let [{:keys [width height] x1 :x y1 :y} vbox
+  (let [{:keys [width height]
+         x1 :x
+         y1 :y} vbox
         x2 (+ x1 width)
         y2 (+ y1 height)
         bw (if show-rulers? (* ruler-area-size zoom-inverse) 0)
@@ -198,7 +217,10 @@
     [:*
      [:g.viewport-frame-background
       ;; Fix for a Firefox bug that shows some strange artifacts when creating shape
-      [:rect {:x 0 :y 0 :width 1 :height 1
+      [:rect {:x 0
+              :y 0
+              :width 1
+              :height 1
               :fill "none"
               :stroke-width 0.1
               :stroke "rgba(0,0,0,0)"}]
@@ -217,8 +239,16 @@
      (when show-rulers?
        (let [step (calculate-step-size zoom)]
          [:g.viewport-frame-rulers
-          [:& rulers-text {:vbox vbox :offset offset-x :step step :zoom-inverse zoom-inverse :axis :x}]
-          [:& rulers-text {:vbox vbox :offset offset-y :step step :zoom-inverse zoom-inverse :axis :y}]]))]))
+          [:& rulers-text {:vbox vbox
+                           :offset offset-x
+                           :step step
+                           :zoom-inverse zoom-inverse
+                           :axis :x}]
+          [:& rulers-text {:vbox vbox
+                           :offset offset-y
+                           :step step
+                           :zoom-inverse zoom-inverse
+                           :axis :y}]]))]))
 
 (mf/defc selection-area
   [{:keys [vbox zoom-inverse selection-rect offset-x offset-y]}]
@@ -226,14 +256,26 @@
   [:g.selection-area
    [:defs
     [:linearGradient {:id "selection-gradient-start"}
-     [:stop {:offset "0%" :stop-color rulers-background :stop-opacity 0}]
-     [:stop {:offset "40%" :stop-color rulers-background :stop-opacity 1}]
-     [:stop {:offset "100%" :stop-color rulers-background :stop-opacity 1}]]
+     [:stop {:offset "0%"
+             :stop-color rulers-background
+             :stop-opacity 0}]
+     [:stop {:offset "40%"
+             :stop-color rulers-background
+             :stop-opacity 1}]
+     [:stop {:offset "100%"
+             :stop-color rulers-background
+             :stop-opacity 1}]]
 
     [:linearGradient {:id "selection-gradient-end"}
-     [:stop {:offset "0%" :stop-color rulers-background :stop-opacity 1}]
-     [:stop {:offset "60%" :stop-color rulers-background :stop-opacity 1}]
-     [:stop {:offset "100%" :stop-color rulers-background :stop-opacity 0}]]]
+     [:stop {:offset "0%"
+             :stop-color rulers-background
+             :stop-opacity 1}]
+     [:stop {:offset "60%"
+             :stop-color rulers-background
+             :stop-opacity 1}]
+     [:stop {:offset "100%"
+             :stop-color rulers-background
+             :stop-opacity 0}]]]
    [:g
     [:rect {:x (- (:x selection-rect) (* (* over-number-size over-number-percent) zoom-inverse))
             :y (:y vbox)

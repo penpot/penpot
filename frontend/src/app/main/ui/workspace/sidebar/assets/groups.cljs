@@ -77,7 +77,8 @@
   "
   [assets reverse-sort?]
   (when-not (empty? assets)
-    (reduce (fn [groups {:keys [path] :as asset}]
+    (reduce (fn [groups {:keys [path]
+                         :as asset}]
               (let [path (cfh/split-path (or path ""))]
                 (update-in groups
                            (conj path "")
@@ -98,8 +99,10 @@
 (mf/defc name-group-dialog
   {::mf/register modal/components
    ::mf/register-as :name-group-dialog}
-  [{:keys [path last-path accept] :as ctx
-    :or {path "" last-path ""}}]
+  [{:keys [path last-path accept]
+    :as ctx
+    :or {path ""
+         last-path ""}}]
   (let [initial  (mf/with-memo [last-path]
                    {:asset-name last-path})
         form     (fm/use-form :schema schema:group-form
@@ -128,7 +131,8 @@
                  :on-click modal/hide!} i/close]]
 
       [:div {:class (stl/css :modal-content)}
-       [:& fm/form {:form form :on-submit on-accept}
+       [:& fm/form {:form form
+                    :on-submit on-accept}
         [:& fm/input {:name :name
                       :class (stl/css :input-wrapper)
                       :auto-focus? true

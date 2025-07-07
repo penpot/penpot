@@ -95,7 +95,8 @@
              (st/emit! (dwta/toggle-token {:token token
                                            :shapes selected-shapes})))))]
 
-    [:div {:on-click on-toggle-open-click :class (stl/css :token-section-wrapper)}
+    [:div {:on-click on-toggle-open-click
+           :class (stl/css :token-section-wrapper)}
      [:& cmm/asset-section {:icon (token-section-icon type)
                             :title title
                             :section :tokens

@@ -41,13 +41,15 @@
         (bfc/decode-file h/*system* snapshot)))))
 
 (defn restore-color
-  [{:keys [data] :as snapshot} color]
+  [{:keys [data]
+    :as snapshot} color]
   (when-let [scolor (get-in data [:colors (:id color)])]
     (-> (select-keys scolor types.color/library-color-attrs)
         (types.color/check-library-color))))
 
 (defn restore-missing-colors
-  [{:keys [id] :as file} & _opts]
+  [{:keys [id]
+    :as file} & _opts]
   (l/inf :hint "process file" :file-id (str id) :name (:name file) :has-colors (-> file :data :colors not-empty boolean))
   (if-let [colors (-> file :data :colors not-empty)]
     (let [migration (get-affected-migration h/*system* id)]

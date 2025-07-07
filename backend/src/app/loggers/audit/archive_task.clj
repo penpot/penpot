@@ -25,7 +25,8 @@
 ;; external service for archival.
 
 (defn- decode-row
-  [{:keys [props ip-addr context] :as row}]
+  [{:keys [props ip-addr context]
+    :as row}]
   (cond-> row
     (db/pgobject? props)
     (assoc :props (db/decode-transit-pgobject props))
@@ -52,7 +53,8 @@
   (select-keys row event-keys))
 
 (defn- send!
-  [{:keys [::uri] :as cfg} events]
+  [{:keys [::uri]
+    :as cfg} events]
   (let [token   (tokens/generate (::setup/props cfg)
                                  {:iss "authentication"
                                   :iat (dt/now)
@@ -94,12 +96,14 @@
      SKIP LOCKED")
 
 (defn- get-event-rows
-  [{:keys [::db/conn] :as cfg}]
+  [{:keys [::db/conn]
+    :as cfg}]
   (->> (db/exec! conn [sql:get-audit-log-chunk])
        (not-empty)))
 
 (defn- archive-events!
-  [{:keys [::uri] :as cfg}]
+  [{:keys [::uri]
+    :as cfg}]
   (db/tx-run! cfg (fn [cfg]
                     (when-let [rows (get-event-rows cfg)]
                       (let [events (into [] xf:create-event rows)]

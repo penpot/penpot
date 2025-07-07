@@ -42,7 +42,8 @@
     (ust/format-precision value 2)))
 
 (defn- get-next-font
-  [{:keys [id] :as current} fonts]
+  [{:keys [id]
+    :as current} fonts]
   (if (seq fonts)
     (let [index (d/index-of-pred fonts #(= (:id %) id))
           index (or index -1)
@@ -51,7 +52,8 @@
     current))
 
 (defn- get-prev-font
-  [{:keys [id] :as current} fonts]
+  [{:keys [id]
+    :as current} fonts]
   (if (seq fonts)
     (let [index (d/index-of-pred fonts #(= (:id %) id))
           next  (ex/ignoring (nth fonts (dec index)))]
@@ -98,7 +100,8 @@
   [{:keys [on-select on-close current-font show-recent full-size]}]
   (let [selected     (mf/use-state current-font)
         state*       (mf/use-state
-                      #(do {:term "" :backends #{}}))
+                      #(do {:term ""
+                            :backends #{}}))
         state        (deref state*)
 
         flist        (mf/use-ref)
@@ -175,7 +178,8 @@
       (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
             inst   (mf/ref-val flist)]
         (tm/schedule
-         #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
+         #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center"
+                                                       :index index})]
             (.scrollToPosition ^js inst offset)))))
 
     [:div {:class (stl/css :font-selector)}
@@ -243,7 +247,8 @@
         (mf/use-fn
          (mf/deps on-change fonts)
          (fn [new-font-id]
-           (let [{:keys [family] :as font} (get fonts new-font-id)
+           (let [{:keys [family]
+                  :as font} (get fonts new-font-id)
                  {:keys [id name weight style]} (fonts/get-default-variant font)]
              (on-change {:font-id new-font-id
                          :font-family family

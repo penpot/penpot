@@ -98,7 +98,8 @@
             srect (get-in objects [grid-id :selrect])]
         (-> state
             (update :workspace-local
-                    (fn [{:keys [zoom vport] :as local}]
+                    (fn [{:keys [zoom vport]
+                          :as local}]
                       (let [{:keys [x y width height]} srect
                             x     (+ x (/ width 2) (- (/ (:width vport) 2 zoom)))
                             y     (+ y (/ height 2) (- (/ (:height vport) 2 zoom)))

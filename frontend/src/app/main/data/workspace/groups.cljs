@@ -184,7 +184,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn group-shapes
-  [id ids & {:keys [change-selection?] :or {change-selection? false}}]
+  [id ids & {:keys [change-selection?]
+             :or {change-selection? false}}]
   (ptk/reify ::group-shapes
     ptk/WatchEvent
     (watch [it state _]
@@ -217,7 +218,8 @@
         (rx/of (group-shapes nil selected :change-selection? true))))))
 
 (defn ungroup-shapes
-  [ids & {:keys [change-selection?] :or {change-selection? false}}]
+  [ids & {:keys [change-selection?]
+          :or {change-selection? false}}]
   (ptk/reify ::ungroup-shapes
     ptk/WatchEvent
     (watch [it state _]

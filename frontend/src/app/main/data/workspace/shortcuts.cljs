@@ -602,7 +602,8 @@
                            :subsections [:basics]
                            :fn #(when (features/active-feature? @st/state "plugins/runtime")
                                   (st/emit!
-                                   (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:shortcuts"})
+                                   (ptk/event ::ev/event {::ev/name "open-plugins-manager"
+                                                          ::ev/origin "workspace:shortcuts"})
                                    (modal/show :plugin-management {})))}})
 
 (def debug-shortcuts

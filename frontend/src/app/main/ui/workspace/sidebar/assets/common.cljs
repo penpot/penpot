@@ -46,7 +46,8 @@
 (def assets-toggle-list-style (mf/create-context nil))
 
 (defn apply-filters
-  [coll {:keys [ordering term] :as filters}]
+  [coll {:keys [ordering term]
+         :as filters}]
   (let [reverse? (= :desc ordering)]
     (cond->> coll
       (not ^boolean (str/empty? term))
@@ -58,7 +59,8 @@
       ;; Sort by folder order, but putting all "root" items always
       ;; first, independently of sort order.
       :always
-      (sort-by (fn [{:keys [path name] :as item}]
+      (sort-by (fn [{:keys [path name]
+                     :as item}]
                  (let [path (if (str/empty? path)
                               (if reverse? "z" "a")
                               path)]
@@ -101,7 +103,9 @@
   (s/keys :req-un [::asset-name]))
 
 (def initial-context-menu-state
-  {:open? false :top nil :left nil})
+  {:open? false
+   :top nil
+   :left nil})
 
 (defn open-context-menu
   [state pos]
@@ -164,7 +168,8 @@
                                       :title-tokens (= section :tokens)
                                       :title-tokens-active (and (= section :tokens) (< 0 assets-count)))}
           [:span {:class (stl/css :section-icon)}
-           [:> icon* {:icon-id (or icon (section-icon section)) :size "s"}]]
+           [:> icon* {:icon-id (or icon (section-icon section))
+                      :size "s"}]]
           [:span {:class (stl/css :section-name)}
            title]
 

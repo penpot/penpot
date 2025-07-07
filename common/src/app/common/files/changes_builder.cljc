@@ -196,15 +196,21 @@
 (defn add-empty-page
   [changes id name]
   (-> changes
-      (update :redo-changes conj {:type :add-page :id id :name name})
-      (update :undo-changes conj {:type :del-page :id id})
+      (update :redo-changes conj {:type :add-page
+                                  :id id
+                                  :name name})
+      (update :undo-changes conj {:type :del-page
+                                  :id id})
       (apply-changes-local)))
 
 (defn add-page
   [changes id page]
   (-> changes
-      (update :redo-changes conj {:type :add-page :id id :page page})
-      (update :undo-changes conj {:type :del-page :id id})
+      (update :redo-changes conj {:type :add-page
+                                  :id id
+                                  :page page})
+      (update :undo-changes conj {:type :del-page
+                                  :id id})
       (apply-changes-local)))
 
 (defn mod-page
@@ -214,7 +220,8 @@
      (mod-page changes page options)))
 
   ([changes page {:keys [name background]}]
-   (let [change {:type :mod-page :id (:id page)}
+   (let [change {:type :mod-page
+                 :id (:id page)}
          redo   (cond-> change
                   (some? name)
                   (assoc :name name)
@@ -294,15 +301,22 @@
 (defn del-page
   [changes page]
   (-> changes
-      (update :redo-changes conj {:type :del-page :id (:id page)})
-      (update :undo-changes conj {:type :add-page :id (:id page) :page page})
+      (update :redo-changes conj {:type :del-page
+                                  :id (:id page)})
+      (update :undo-changes conj {:type :add-page
+                                  :id (:id page)
+                                  :page page})
       (apply-changes-local)))
 
 (defn move-page
   [changes page-id index prev-index]
   (-> changes
-      (update :redo-changes conj {:type :mov-page :id page-id :index index})
-      (update :undo-changes conj {:type :mov-page :id page-id :index prev-index})
+      (update :redo-changes conj {:type :mov-page
+                                  :id page-id
+                                  :index index})
+      (update :undo-changes conj {:type :mov-page
+                                  :id page-id
+                                  :index prev-index})
       (apply-changes-local)))
 
 (defn set-guide
@@ -344,7 +358,8 @@
     (apply-changes-local changes)))
 
 (defn set-comment-thread-position
-  [changes {:keys [id frame-id position] :as thread}]
+  [changes {:keys [id frame-id position]
+            :as thread}]
   (assert-page-id! changes)
   (assert-page! changes)
   (let [page-id (::page-id (meta changes))
@@ -391,7 +406,9 @@
   ([changes obj]
    (add-object changes obj nil))
 
-  ([changes obj {:keys [index ignore-touched] :or {index ::undefined ignore-touched false}}]
+  ([changes obj {:keys [index ignore-touched]
+                 :or {index ::undefined
+                      ignore-touched false}}]
 
    ;; FIXME: add shape validation
 
@@ -522,7 +539,9 @@
    (update-shapes changes ids update-fn nil))
 
   ([changes ids update-fn {:keys [attrs ignore-geometry? ignore-touched with-objects?]
-                           :or {ignore-geometry? false ignore-touched false with-objects? false}}]
+                           :or {ignore-geometry? false
+                                ignore-touched false
+                                with-objects? false}}]
    (assert-container-id! changes)
    (assert-objects! changes)
    (let [page-id      (::page-id (meta changes))
@@ -542,14 +561,18 @@
                      rops
                      (cond-> rops
                        changed?
-                       (conj  {:type :set :attr attr :val new-val
+                       (conj  {:type :set
+                               :attr attr
+                               :val new-val
                                :ignore-geometry ignore-geometry?
                                :ignore-touched ignore-touched}))
 
                      uops
                      (cond-> uops
                        changed?
-                       (conj  {:type :set :attr attr :val old-val
+                       (conj  {:type :set
+                               :attr attr
+                               :val old-val
                                :ignore-touched true}))]
 
                  (recur rops uops (rest attrs)))
@@ -566,9 +589,11 @@
 
                      uops        (cond-> uops
                                    (seq uops)
-                                   (conj {:type :set-touched :touched (:touched old-obj)}))
+                                   (conj {:type :set-touched
+                                          :touched (:touched old-obj)}))
 
-                     change      (cond-> {:type :mod-obj :id id}
+                     change      (cond-> {:type :mod-obj
+                                          :id id}
                                    (some? page-id)
                                    (assoc :page-id page-id)
 
@@ -587,7 +612,8 @@
 
 (defn remove-objects
   ([changes ids] (remove-objects changes ids nil))
-  ([changes ids {:keys [ignore-touched] :or {ignore-touched false}}]
+  ([changes ids {:keys [ignore-touched]
+                 :or {ignore-touched false}}]
    (assert-page-id! changes)
    (assert-objects! changes)
    (let [page-id (::page-id (meta changes))
@@ -675,8 +701,14 @@
             (if equal?
               operations
               (-> operations
-                  (update :rops conj {:type :set :attr attr :val new-val :ignore-touched true})
-                  (update :uops conj {:type :set :attr attr :val old-val :ignore-touched true})))))
+                  (update :rops conj {:type :set
+                                      :attr attr
+                                      :val new-val
+                                      :ignore-touched true})
+                  (update :uops conj {:type :set
+                                      :attr attr
+                                      :val old-val
+                                      :ignore-touched true})))))
 
         resize-parent
         (fn [changes parent]
@@ -698,9 +730,11 @@
                                    (gsh/update-mask-selrect parent children)
                                    (gsh/update-group-selrect parent children)))]
             (if resized-parent
-              (let [{rops :rops uops :uops}
+              (let [{rops :rops
+                     uops :uops}
                     (reduce #(generate-operation %1 %2 parent resized-parent)
-                            {:rops [] :uops []}
+                            {:rops []
+                             :uops []}
                             (keys parent))
 
                     change {:type :mod-obj
@@ -721,8 +755,10 @@
 (defn add-color
   [changes color]
   (-> changes
-      (update :redo-changes conj {:type :add-color :color color})
-      (update :undo-changes conj {:type :del-color :id (:id color)})
+      (update :redo-changes conj {:type :add-color
+                                  :color color})
+      (update :undo-changes conj {:type :del-color
+                                  :id (:id color)})
       (apply-changes-local)))
 
 (defn update-color
@@ -731,8 +767,10 @@
   (let [library-data (::library-data (meta changes))
         prev-color (get-in library-data [:colors (:id color)])]
     (-> changes
-        (update :redo-changes conj {:type :mod-color :color color})
-        (update :undo-changes conj {:type :mod-color :color prev-color})
+        (update :redo-changes conj {:type :mod-color
+                                    :color color})
+        (update :undo-changes conj {:type :mod-color
+                                    :color prev-color})
         (apply-changes-local))))
 
 (defn delete-color
@@ -741,15 +779,19 @@
   (let [library-data (::library-data (meta changes))
         prev-color (get-in library-data [:colors color-id])]
     (-> changes
-        (update :redo-changes conj {:type :del-color :id color-id})
-        (update :undo-changes conj {:type :add-color :color prev-color})
+        (update :redo-changes conj {:type :del-color
+                                    :id color-id})
+        (update :undo-changes conj {:type :add-color
+                                    :color prev-color})
         (apply-changes-local))))
 
 (defn add-media
   [changes object]
   (-> changes
-      (update :redo-changes conj {:type :add-media :object object})
-      (update :undo-changes conj {:type :del-media :id (:id object)})
+      (update :redo-changes conj {:type :add-media
+                                  :object object})
+      (update :undo-changes conj {:type :del-media
+                                  :id (:id object)})
       (apply-changes-local)))
 
 (defn update-media
@@ -758,8 +800,10 @@
   (let [library-data (::library-data (meta changes))
         prev-object (get-in library-data [:media (:id object)])]
     (-> changes
-        (update :redo-changes conj {:type :mod-media :object object})
-        (update :undo-changes conj {:type :mod-media :object prev-object})
+        (update :redo-changes conj {:type :mod-media
+                                    :object object})
+        (update :undo-changes conj {:type :mod-media
+                                    :object prev-object})
         (apply-changes-local))))
 
 (defn delete-media
@@ -768,15 +812,19 @@
   (let [library-data (::library-data (meta changes))
         prev-object (get-in library-data [:media id])]
     (-> changes
-        (update :redo-changes conj {:type :del-media :id id})
-        (update :undo-changes conj {:type :add-media :object prev-object})
+        (update :redo-changes conj {:type :del-media
+                                    :id id})
+        (update :undo-changes conj {:type :add-media
+                                    :object prev-object})
         (apply-changes-local))))
 
 (defn add-typography
   [changes typography]
   (-> changes
-      (update :redo-changes conj {:type :add-typography :typography typography})
-      (update :undo-changes conj {:type :del-typography :id (:id typography)})
+      (update :redo-changes conj {:type :add-typography
+                                  :typography typography})
+      (update :undo-changes conj {:type :del-typography
+                                  :id (:id typography)})
       (apply-changes-local)))
 
 (defn update-typography
@@ -785,8 +833,10 @@
   (let [library-data (::library-data (meta changes))
         prev-typography (get-in library-data [:typographies (:id typography)])]
     (-> changes
-        (update :redo-changes conj {:type :mod-typography :typography typography})
-        (update :undo-changes conj {:type :mod-typography :typography prev-typography})
+        (update :redo-changes conj {:type :mod-typography
+                                    :typography typography})
+        (update :undo-changes conj {:type :mod-typography
+                                    :typography prev-typography})
         (apply-changes-local))))
 
 (defn delete-typography
@@ -795,15 +845,19 @@
   (let [library-data (::library-data (meta changes))
         prev-typography (get-in library-data [:typographies typography-id])]
     (-> changes
-        (update :redo-changes conj {:type :del-typography :id typography-id})
-        (update :undo-changes conj {:type :add-typography :typography prev-typography})
+        (update :redo-changes conj {:type :del-typography
+                                    :id typography-id})
+        (update :undo-changes conj {:type :add-typography
+                                    :typography prev-typography})
         (apply-changes-local))))
 
 (defn update-active-token-themes
   [changes active-theme-paths prev-active-theme-paths]
   (-> changes
-      (update :redo-changes conj {:type :update-active-token-themes :theme-paths active-theme-paths})
-      (update :undo-changes conj {:type :update-active-token-themes :theme-paths prev-active-theme-paths})
+      (update :redo-changes conj {:type :update-active-token-themes
+                                  :theme-paths active-theme-paths})
+      (update :undo-changes conj {:type :update-active-token-themes
+                                  :theme-paths prev-active-theme-paths})
       (apply-changes-local)))
 
 (defn set-token-theme [changes group theme-name theme]
@@ -837,12 +891,17 @@
   (let [undo-path (ctob/replace-last-path-name set-group-path set-group-fname)
         undo-fname (last set-group-path)]
     (-> changes
-        (update :redo-changes conj {:type :rename-token-set-group :set-group-path set-group-path :set-group-fname set-group-fname})
-        (update :undo-changes conj {:type :rename-token-set-group :set-group-path undo-path :set-group-fname undo-fname})
+        (update :redo-changes conj {:type :rename-token-set-group
+                                    :set-group-path set-group-path
+                                    :set-group-fname set-group-fname})
+        (update :undo-changes conj {:type :rename-token-set-group
+                                    :set-group-path undo-path
+                                    :set-group-fname undo-fname})
         (apply-changes-local))))
 
 (defn move-token-set
-  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?] :as opts}]
+  [changes {:keys [from-path to-path before-path before-group? prev-before-path prev-before-group?]
+            :as opts}]
   (-> changes
       (update :redo-changes conj {:type :move-token-set
                                   :from-path from-path
@@ -877,8 +936,10 @@
   (let [library-data (::library-data (meta changes))
         prev-tokens-lib (get library-data :tokens-lib)]
     (-> changes
-        (update :redo-changes conj {:type :set-tokens-lib :tokens-lib tokens-lib})
-        (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
+        (update :redo-changes conj {:type :set-tokens-lib
+                                    :tokens-lib tokens-lib})
+        (update :undo-changes conj {:type :set-tokens-lib
+                                    :tokens-lib prev-tokens-lib})
         (apply-changes-local))))
 
 (defn set-token [changes set-name token-name token]

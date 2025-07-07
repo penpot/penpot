@@ -210,7 +210,8 @@
   (let [;; Set old value for previous properties
         clean-props
         (->> prev-wasm-props
-             (map (fn [[id {:keys [property] :as change}]]
+             (map (fn [[id {:keys [property]
+                            :as change}]]
                     (let [shape (get objects id)]
                       [id (assoc change :value (get shape property))]))))
 
@@ -575,7 +576,8 @@
 #_:clj-kondo/ignore
 (defn set-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel]
-                 :or {ignore-constraints false ignore-snap-pixel false}
+                 :or {ignore-constraints false
+                      ignore-snap-pixel false}
                  :as params}]
   (ptk/reify ::set-wasm-modifiers
     ptk/UpdateEvent
@@ -629,7 +631,10 @@
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-group]
-                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-group nil}
+                 :or {ignore-constraints false
+                      ignore-snap-pixel false
+                      snap-ignore-axis nil
+                      undo-group nil}
                  :as params}]
   (ptk/reify ::apply-wasm-modifiesr
     ptk/WatchEvent
@@ -674,7 +679,8 @@
                     (ctm/apply-structure-modifiers modifiers))))]
         (rx/of
          (clear-local-transform)
-         (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
+         (ptk/event ::dwg/move-frame-guides {:ids ids
+                                             :transforms transforms})
          (ptk/event ::dwcm/move-frame-comment-threads transforms)
          (dwsh/update-shapes ids update-shape options))))))
 
@@ -739,7 +745,9 @@
 ;; - It consideres the center for everyshape instead of the center of the total selrect
 ;; - The angle param is the desired final value, not a delta
 (defn set-delta-rotation-modifiers
-  [angle shapes {:keys [center delta? page-id] :or {center nil delta? false}}]
+  [angle shapes {:keys [center delta? page-id]
+                 :or {center nil
+                      delta? false}}]
   (ptk/reify ::set-delta-rotation-modifiers
     ptk/UpdateEvent
     (update [_ state]
@@ -806,7 +814,8 @@
                     (cond-> text-shape?
                       (update-grow-type shape)))))]
 
-        (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children :modifiers object-modifiers})
+        (rx/of (ptk/event ::dwg/move-frame-guides {:ids ids-with-children
+                                                   :modifiers object-modifiers})
                (ptk/event ::dwcm/move-frame-comment-threads ids-with-children)
                (dwsh/update-shapes ids update-shape options))))))
 
@@ -815,7 +824,8 @@
    (apply-modifiers nil))
   ([{:keys [modifiers undo-transation? ignore-constraints
             ignore-snap-pixel page-id]
-     :or {undo-transation? true  ignore-constraints false
+     :or {undo-transation? true
+          ignore-constraints false
           ignore-snap-pixel false}
      :as options}]
    (ptk/reify ::apply-modifiers

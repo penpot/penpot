@@ -26,7 +26,8 @@
   [{:keys [themes active-theme-paths on-close grouped?]}]
   (when (seq themes)
     [:ul {:class (stl/css :theme-options)}
-     (for [[_ {:keys [group name] :as theme}] themes
+     (for [[_ {:keys [group name]
+               :as theme}] themes
            :let [theme-id (ctob/theme-path theme)
                  selected? (get active-theme-paths theme-id)
                  select-theme (fn [e]
@@ -41,7 +42,10 @@
                      :sub-item grouped?
                      :is-selected selected?)
              :on-click select-theme}
-        [:> text* {:as "span" :typography "body-small" :class (stl/css :label) :title name} name]
+        [:> text* {:as "span"
+                   :typography "body-small"
+                   :class (stl/css :label)
+                   :title name} name]
         [:> icon* {:icon-id i/tick
                    :aria-hidden true
                    :class (stl/css-case :check-icon true
@@ -60,7 +64,11 @@
            :aria-labelledby (dm/str group "-label")
            :role "group"}
       (when (seq group)
-        [:> text* {:as "span" :typography "headline-small" :class (stl/css :group) :id (dm/str (str/kebab group) "-label") :title group} group])
+        [:> text* {:as "span"
+                   :typography "headline-small"
+                   :class (stl/css :group)
+                   :id (dm/str (str/kebab group) "-label")
+                   :title group} group])
       [:& themes-list {:themes themes
                        :active-theme-paths active-theme-paths
                        :on-close on-close
@@ -71,8 +79,10 @@
                               :checked-element-button true)
          :role "option"
          :on-click open-tokens-theme-modal}
-    [:> text* {:as "span" :typography "body-small"} (tr "workspace.tokens.edit-themes")]
-    [:> icon* {:icon-id i/arrow-right :aria-hidden true}]]])
+    [:> text* {:as "span"
+               :typography "body-small"} (tr "workspace.tokens.edit-themes")]
+    [:> icon* {:icon-id i/arrow-right
+               :aria-hidden true}]]])
 
 (mf/defc theme-selector
   [{:keys []}]
@@ -122,9 +132,13 @@
            :data-testid "theme-select"
            :class (stl/css-case :custom-select true
                                 :disabled-select (not can-edit?))}
-     [:> text* {:as "span" :typography "body-small" :class (stl/css :current-label)}
+     [:> text* {:as "span"
+                :typography "body-small"
+                :class (stl/css :current-label)}
       current-label]
-     [:> icon* {:icon-id i/arrow-down :class (stl/css :dropdown-button) :aria-hidden true}]
+     [:> icon* {:icon-id i/arrow-down
+                :class (stl/css :dropdown-button)
+                :aria-hidden true}]
 
      (when is-open?
        (mf/portal

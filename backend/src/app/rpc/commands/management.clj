@@ -35,7 +35,9 @@
 ;; --- COMMAND: Duplicate File
 
 (defn duplicate-file
-  [{:keys [::db/conn ::bfc/timestamp] :as cfg} {:keys [profile-id file-id name reset-shared-flag] :as params}]
+  [{:keys [::db/conn ::bfc/timestamp]
+    :as cfg} {:keys [profile-id file-id name reset-shared-flag]
+              :as params}]
   (let [;; We don't touch the original file on duplication
         file       (bfc/get-file cfg file-id)
         project-id (:project-id file)
@@ -99,8 +101,10 @@
   {::doc/added "1.16"
    ::webhooks/event? true
    ::sm/params schema:duplicate-file}
-  [cfg {:keys [::rpc/profile-id file-id] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  [cfg {:keys [::rpc/profile-id file-id]
+        :as params}]
+  (db/tx-run! cfg (fn [{:keys [::db/conn]
+                        :as cfg}]
                     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
                     (binding [bfc/*state* (volatile! {:index {file-id (uuid/next)}})]
@@ -112,7 +116,9 @@
 ;; --- COMMAND: Duplicate Project
 
 (defn duplicate-project
-  [{:keys [::db/conn ::bfc/timestamp] :as cfg} {:keys [profile-id project-id name] :as params}]
+  [{:keys [::db/conn ::bfc/timestamp]
+    :as cfg} {:keys [profile-id project-id name]
+              :as params}]
   (binding [bfc/*state* (volatile! {:index {project-id (uuid/next)}})]
     (let [project (-> (db/get-by-id conn :project project-id)
                       (assoc :created-at timestamp)
@@ -160,7 +166,8 @@
   {::doc/added "1.16"
    ::webhooks/event? true
    ::sm/params schema:duplicate-project}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg (fn [cfg]
                     ;; Defer all constraints
                     (db/exec-one! cfg ["SET CONSTRAINTS ALL DEFERRED"])
@@ -168,7 +175,9 @@
                         (duplicate-project (assoc params :profile-id profile-id))))))
 
 (defn duplicate-team
-  [{:keys [::db/conn ::bfc/timestamp] :as cfg} & {:keys [profile-id team-id name] :as params}]
+  [{:keys [::db/conn ::bfc/timestamp]
+    :as cfg} & {:keys [profile-id team-id name]
+                :as params}]
 
   ;; Check if the source team-id allowed to be read by the user if
   ;; profile-id is present; it can be ommited if this function is
@@ -274,7 +283,9 @@
       and rel.library_file_id = br.library_file_id")
 
 (defn move-files
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id ids project-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id ids project-id]
+              :as params}]
 
   (let [fids    (db/create-array conn "uuid" ids)
         files   (->> (db/exec! conn [sql:get-files fids])
@@ -336,13 +347,16 @@
   {::doc/added "1.16"
    ::webhooks/event? true
    ::sm/params schema:move-files}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg move-files (assoc params :profile-id profile-id)))
 
 ;; --- COMMAND: Move project
 
 (defn move-project
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id project-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id team-id project-id]
+              :as params}]
   (let [project (db/get-by-id conn :project project-id {:columns [:id :team-id]})
         pids    (->> (db/query conn :project {:team-id (:team-id project)} {:columns [:id]})
                      (map :id)
@@ -390,13 +404,16 @@
   {::doc/added "1.16"
    ::webhooks/event? true
    ::sm/params schema:move-project}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg #(move-project % (assoc params :profile-id profile-id))))
 
 ;; --- COMMAND: Clone Template
 
 (defn clone-template
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [project-id profile-id] :as params} template]
+  [{:keys [::db/pool ::wrk/executor]
+    :as cfg} {:keys [project-id profile-id]
+              :as params} template]
 
   ;; NOTE: the importation process performs some operations
   ;; that are not very friendly with virtual threads, and for
@@ -423,7 +440,8 @@
                    (px/invoke! executor (partial bf.v1/import-files! cfg)))]
 
     (db/tx-run! cfg
-                (fn [{:keys [::db/conn] :as cfg}]
+                (fn [{:keys [::db/conn]
+                      :as cfg}]
                   (db/update! conn :project
                               {:modified-at (dt/now)}
                               {:id project-id}
@@ -452,7 +470,9 @@
    ::sse/stream? true
    ::webhooks/event? true
    ::sm/params schema:clone-template}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id template-id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id project-id template-id]
+              :as params}]
   (let [project   (db/get-by-id pool :project project-id {:columns [:id :team-id]})
         _         (teams/check-edition-permissions! pool profile-id (:team-id project))
         template  (tmpl/get-template-stream cfg template-id)

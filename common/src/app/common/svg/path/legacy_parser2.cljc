@@ -23,8 +23,11 @@
 
 (defn- get-point
   "Get a point for a segment"
-  [prev-pos {:keys [relative params] :as segment}]
-  (let [{:keys [x y] :or {x (:x prev-pos) y (:y prev-pos)}} params]
+  [prev-pos {:keys [relative params]
+             :as segment}]
+  (let [{:keys [x y]
+         :or {x (:x prev-pos)
+              y (:y prev-pos)}} params]
     (if relative
       (-> prev-pos (update :x + x) (update :y + y))
       (path.helpers/segment->point segment))))
@@ -193,7 +196,8 @@
 
 (defn smooth->curve
   [{:keys [params]} pos handler]
-  (let [{c1x :x c1y :y} (path.segment/calculate-opposite-handler pos handler)]
+  (let [{c1x :x
+         c1y :y} (path.segment/calculate-opposite-handler pos handler)]
     {:c1x c1x
      :c1y c1y
      :c2x (:cx params)
@@ -334,16 +338,21 @@
 
 
 (defn arc->beziers
-  [from-p {:keys [params] :as command}]
+  [from-p {:keys [params]
+           :as command}]
   (let [to-command
         (fn [[_ _ c1x c1y c2x c2y x y]]
           {:command :curve-to
            :relative (:relative command)
-           :params {:c1x c1x :c1y c1y
-                    :c2x c2x :c2y c2y
-                    :x   x   :y   y}})
+           :params {:c1x c1x
+                    :c1y c1y
+                    :c2x c2x
+                    :c2y c2y
+                    :x   x
+                    :y   y}})
 
-        {from-x :x from-y :y} from-p
+        {from-x :x
+         from-y :y} from-p
 
         x               (get params :x 0.0)
         y               (get params :y 0.0)

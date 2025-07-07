@@ -125,7 +125,9 @@
                    (assoc response :body body))))))
 
 (defn send!
-  [{:keys [response-type] :or {response-type :text} :as params}]
+  [{:keys [response-type]
+    :or {response-type :text}
+    :as params}]
   (->> (fetch params)
        (rx/map response->map)
        (rx/mapcat (partial process-response-type response-type))))
@@ -147,7 +149,8 @@
       (assoc headers "content-type" "application/transit+json"))))
 
 (defn conditional-decode-transit
-  [{:keys [body headers] :as response}]
+  [{:keys [body headers]
+    :as response}]
   (let [contenttype (get headers "content-type")]
     (if (and (str/starts-with? contenttype "application/transit+json")
              (string? body)
@@ -156,7 +159,8 @@
       response)))
 
 (defn conditional-error-decode-transit
-  [{:keys [body status] :as response}]
+  [{:keys [body status]
+    :as response}]
   (if (and (>= status 400) (string? body))
     (assoc response :body (t/decode-str body))
     response))
@@ -198,7 +202,8 @@
               (rx/map :body)
               (rx/mapcat wapi/read-file-as-data-url)
               (rx/map #(hash-map uri %))
-              (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}))]
+              (c/with-cache {:key uri
+                             :max-age (dt/duration {:hours 4})}))]
 
      ;; We need to check `throw-err?` after the cache is resolved otherwise we cannot cache request
      ;; with different values of throw-err. By default we throw always the exception and then we just
@@ -215,4 +220,5 @@
          :uri url
          :response-type :text})
        (rx/map :body)
-       (c/with-cache {:key url :max-age (dt/duration {:hours 4})})))
+       (c/with-cache {:key url
+                      :max-age (dt/duration {:hours 4})})))

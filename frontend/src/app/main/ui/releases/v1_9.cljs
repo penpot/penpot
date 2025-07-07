@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.9"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Alpha release 1.9"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Alpha 1.9 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/advanced-proto.gif" :border "0" :alt "Advanced interactions"}]]
+         [:img {:src "images/features/advanced-proto.gif"
+                :border "0"
+                :alt "Advanced interactions"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Prototyping triggers and actions"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/flows-proto.gif" :border "0" :alt "Multiple flows"}]]
+         [:img {:src "images/features/flows-proto.gif"
+                :border "0"
+                :alt "Multiple flows"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Multiple flows"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/booleans.gif" :border "0" :alt "Boolean shapes"}]]
+         [:img {:src "images/features/booleans.gif"
+                :border "0"
+                :alt "Boolean shapes"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Boolean operations"]]
@@ -93,13 +103,17 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/libraries-feature.gif" :border "0" :alt "Libraries & templates"}]]
+         [:img {:src "images/features/libraries-feature.gif"
+                :border "0"
+                :alt "Libraries & templates"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Libraries & templates"]]
          [:div.modal-content
           [:p "We’ve created a new space on Penpot where you can share your libraries and templates and download the ones you like.   Material Design, Cocomaterial or Penpot’s Design System are among them (and a lot more to come!)."]
-          [:p [:a {:alt "Explore libraries & templates" :target "_blank" :href "https://penpot.app/libraries-templates"} "Explore libraries & templates"]]]
+          [:p [:a {:alt "Explore libraries & templates"
+                   :target "_blank"
+                   :href "https://penpot.app/libraries-templates"} "Explore libraries & templates"]]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click finish} "Start!"]
           [:& c/navigation-bullets

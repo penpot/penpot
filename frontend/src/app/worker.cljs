@@ -40,7 +40,8 @@
 
 (defn- handle-message
   "Process the message and returns to the client"
-  [{:keys [sender-id payload transfer] :as message}]
+  [{:keys [sender-id payload transfer]
+    :as message}]
 
   (dm/assert!
    "expected valid message"
@@ -91,7 +92,8 @@
 
 (defn- drop-message
   "Sends to the client a notification that its messages have been dropped"
-  [{:keys [sender-id] :as message}]
+  [{:keys [sender-id]
+    :as message}]
   (dm/assert!
    "expected valid message"
    (sm/check schema:message message))

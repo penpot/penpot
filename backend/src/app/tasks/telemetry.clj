@@ -211,7 +211,8 @@
   (assert (some? (::setup/props params)) "expected setup props to be available"))
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [::db/pool ::setup/props] :as cfg}]
+  [_ {:keys [::db/pool ::setup/props]
+      :as cfg}]
   (fn [task]
     (let [params   (:props task)
           send?    (get params :send? true)

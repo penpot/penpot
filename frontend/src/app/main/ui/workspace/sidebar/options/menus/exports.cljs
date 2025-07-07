@@ -28,7 +28,8 @@
 
 (mf/defc exports-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
-  [{:keys [ids type values page-id file-id] :as props}]
+  [{:keys [ids type values page-id file-id]
+    :as props}]
   (let [exports            (:exports values [])
         has-exports?       (or (= :multiple exports) (some? (seq exports)))
 
@@ -79,7 +80,8 @@
                   (de/request-simple-export {:export full-export})
                   (de/export-shapes-event [full-export] "workspace:sidebar")))
                (st/emit!
-                (de/show-workspace-export-dialog {:selected (reverse ids) :origin "workspace:sidebar"})))
+                (de/show-workspace-export-dialog {:selected (reverse ids)
+                                                  :origin "workspace:sidebar"})))
 
              ;; In other all cases we only allowed to have a single
              ;; shape-id because multiple shape-ids are handled
@@ -100,7 +102,9 @@
         (mf/use-fn
          (mf/deps ids)
          (fn []
-           (let [xspec {:type :png :suffix "" :scale 1}]
+           (let [xspec {:type :png
+                        :suffix ""
+                        :scale 1}]
              (st/emit! (dwsh/update-shapes ids
                                            (fn [shape]
                                              (assoc shape :exports (into [xspec] (:exports shape)))))))))
@@ -163,19 +167,31 @@
              (when esc?
                (dom/blur! (dom/get-target event))))))
 
-        size-options [{:value "0.5" :label "0.5x"}
-                      {:value "0.75" :label "0.75x"}
-                      {:value "1" :label "1x"}
-                      {:value "1.5" :label "1.5x"}
-                      {:value "2" :label "2x"}
-                      {:value "4" :label "4x"}
-                      {:value "6" :label "6x"}]
+        size-options [{:value "0.5"
+                       :label "0.5x"}
+                      {:value "0.75"
+                       :label "0.75x"}
+                      {:value "1"
+                       :label "1x"}
+                      {:value "1.5"
+                       :label "1.5x"}
+                      {:value "2"
+                       :label "2x"}
+                      {:value "4"
+                       :label "4x"}
+                      {:value "6"
+                       :label "6x"}]
 
-        format-options [{:value "png" :label "PNG"}
-                        {:value "jpeg" :label "JPG"}
-                        {:value "webp" :label "WEBP"}
-                        {:value "svg" :label "SVG"}
-                        {:value "pdf" :label "PDF"}]]
+        format-options [{:value "png"
+                         :label "PNG"}
+                        {:value "jpeg"
+                         :label "JPG"}
+                        {:value "webp"
+                         :label "WEBP"}
+                        {:value "svg"
+                         :label "SVG"}
+                        {:value "pdf"
+                         :label "PDF"}]]
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}

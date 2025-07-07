@@ -103,10 +103,11 @@
              handler-position (cond-> (gpt/point x y)
                                 shift? (path.helpers/position-fixed-angle position))
 
-             {dx :x dy :y} (if (some? old-handler)
-                             (gpt/add (gpt/to-vec old-handler position)
-                                      (gpt/to-vec position handler-position))
-                             (gpt/to-vec position handler-position))
+             {dx :x
+              dy :y} (if (some? old-handler)
+                       (gpt/add (gpt/to-vec old-handler position)
+                                (gpt/to-vec position handler-position))
+                       (gpt/to-vec position handler-position))
 
              match-opposite? (not alt?)
 
@@ -326,7 +327,8 @@
   (ptk/reify ::handle-new-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [shape (cts/setup-shape {:type :path :content (path/content nil)})]
+      (let [shape (cts/setup-shape {:type :path
+                                    :content (path/content nil)})]
         (update state :workspace-drawing assoc :object shape)))
 
     ptk/WatchEvent

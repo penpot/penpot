@@ -27,7 +27,8 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options*
-  [{:keys [shape file-id shapes-with-children libraries] :as props}]
+  [{:keys [shape file-id shapes-with-children libraries]
+    :as props}]
   (let [shape-id   (dm/get-prop shape :id)
         shape-type (dm/get-prop shape :type)
 
@@ -129,7 +130,8 @@
                                 :shapes shapes-with-children
                                 :file-id file-id
                                 :libraries libraries}]
-     [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+     [:> shadow-menu* {:ids ids
+                       :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
      [:& frame-grid {:shape shape}]]))

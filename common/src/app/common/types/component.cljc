@@ -26,7 +26,8 @@
      [:name :string]
      [:path {:optional true} [:maybe :string]]
      [:modified-at {:optional true} ::sm/inst]
-     [:objects {:gen/max 10 :optional true} ctp/schema:objects]
+     [:objects {:gen/max 10
+                :optional true} ctp/schema:objects]
      [:main-instance-id ::sm/uuid]
      [:main-instance-page ::sm/uuid]
      [:plugin-data {:optional true} ctpg/schema:plugin-data]]

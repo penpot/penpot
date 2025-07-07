@@ -175,7 +175,8 @@
   "Validate that the frame-id shape exists and is indeed a frame. Also
   it must point to the parent shape (if this is a frame) or to the
   frame-id of the parent (if not)."
-  [{:keys [frame-id] :as shape} file page]
+  [{:keys [frame-id]
+    :as shape} file page]
   (let [frame (ctst/get-shape page frame-id)]
     (if (nil? frame)
       (report-error :frame-not-found
@@ -488,7 +489,9 @@
    - :main-any
    - :copy-any
   "
-  [shape-id file page libraries & {:keys [context library-exists] :or {context :not-component library-exists false}}]
+  [shape-id file page libraries & {:keys [context library-exists]
+                                   :or {context :not-component
+                                        library-exists false}}]
   (let [shape (ctst/get-shape page shape-id)]
     (when (some? shape)
       (check-geometry shape file page)
@@ -605,7 +608,8 @@
     (check-variant-component component file)))
 
 (defn- get-orphan-shapes
-  [{:keys [objects] :as page}]
+  [{:keys [objects]
+    :as page}]
   (let [xf (comp (map #(contains? objects (:parent-id %)))
                  (map :id))]
     (into [] xf (vals objects))))
@@ -620,7 +624,8 @@
   "Validate full referential integrity and semantic coherence on file data.
 
   Return a list of errors or `nil`"
-  [{:keys [data features] :as file} libraries]
+  [{:keys [data features]
+    :as file} libraries]
   (when (contains? features "components/v2")
     (binding [*errors* (volatile! [])]
 
@@ -662,7 +667,8 @@
   "Validates the file itself, without external dependencies, it
   performs the schema checking and some semantical validation of the
   content."
-  [{:keys [id data] :as file}]
+  [{:keys [id data]
+    :as file}]
   (when-not (valid-fdata? data)
     (ex/raise :type :validation
               :code :schema-validation

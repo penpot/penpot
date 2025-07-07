@@ -74,7 +74,10 @@
   if the window loses focus or the esc key is pressed."
   ([stream]
    (drag-stopper stream nil))
-  ([stream {:keys [blur? up-mouse? interrupt?] :or {blur? true up-mouse? true interrupt? true}}]
+  ([stream {:keys [blur? up-mouse? interrupt?]
+            :or {blur? true
+                 up-mouse? true
+                 interrupt? true}}]
    (rx/merge
     (if blur?
       (->> stream

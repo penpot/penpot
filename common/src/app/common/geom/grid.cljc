@@ -52,17 +52,21 @@
     [size item-length next-v gutter]))
 
 (defn- calculate-column-grid
-  [{:keys [width height x y] :as frame} params]
+  [{:keys [width height x y]
+    :as frame} params]
   (let [[size width next-x] (calculate-generic-grid x width params)]
     [size width height next-x (constantly y)]))
 
 (defn- calculate-row-grid
-  [{:keys [width height x y] :as frame} params]
+  [{:keys [width height x y]
+    :as frame} params]
   (let [[size height next-y] (calculate-generic-grid y height params)]
     [size width height (constantly x) next-y]))
 
 (defn- calculate-square-grid
-  [{:keys [width height x y] :as frame} {:keys [size] :as params}]
+  [{:keys [width height x y]
+    :as frame} {:keys [size]
+                :as params}]
   (let [col-size   (quot width size)
         row-size   (quot height size)
         as-row-col (fn [value] [(quot value col-size) (rem value col-size)])
@@ -74,7 +78,8 @@
     [(* col-size row-size) size size next-x next-y]))
 
 (defn grid-gutter
-  [{:keys [x y width height]} {:keys [type params] :as grid}]
+  [{:keys [x y width height]} {:keys [type params]
+                               :as grid}]
 
   (case type
     :column
@@ -110,7 +115,8 @@
 
 (defn grid-snap-points
   "Returns the snap points for a given grid"
-  [shape {:keys [type params] :as grid} coord]
+  [shape {:keys [type params]
+          :as grid} coord]
   (when (:display grid)
     (case type
       :square

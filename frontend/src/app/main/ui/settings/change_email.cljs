@@ -22,7 +22,8 @@
 
 (defn- on-error
   [form cause]
-  (let [{:keys [code] :as error} (ex-data cause)]
+  (let [{:keys [code]
+         :as error} (ex-data cause)]
     (case code
       :email-already-exists
       (swap! form (fn [data]

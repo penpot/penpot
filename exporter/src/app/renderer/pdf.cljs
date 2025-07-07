@@ -17,7 +17,8 @@
    [promesa.core :as p]))
 
 (defn render
-  [{:keys [file-id page-id share-id token scale type objects] :as params} on-object]
+  [{:keys [file-id page-id share-id token scale type objects]
+    :as params} on-object]
   (letfn [(prepare-options [uri]
             #js {:screen #js {:width bw/default-viewport-width
                               :height bw/default-viewport-height}
@@ -38,7 +39,8 @@
                   (assoc :path "/render.html")
                   (assoc :query (u/map->query-string params)))))
 
-          (render-object [page base-uri {:keys [id] :as object}]
+          (render-object [page base-uri {:keys [id]
+                                         :as object}]
             (p/let [uri  (prepare-uri base-uri id)
                     path (sh/tempfile :prefix "penpot.tmp.render.pdf." :suffix (mime/get-extension type))]
               (l/info :uri uri)

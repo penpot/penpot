@@ -20,7 +20,9 @@
   [user-proxy session-id]
   (crc/add-properties!
    user-proxy
-   {:name "$session" :enumerable false :get (constantly session-id)}
+   {:name "$session"
+    :enumerable false
+    :get (constantly session-id)}
 
    {:name "id"
     :get (fn [_] (-> (u/locate-profile session-id) :id str))}
@@ -45,7 +47,8 @@
   [plugin-id session-id]
   (-> (obj/reify {:name "CurrentUserProxy"}
         :$plugin
-        {:enumerable false :get (fn [] plugin-id)})
+        {:enumerable false
+         :get (fn [] plugin-id)})
       (add-session-properties session-id)))
 
 (defn active-user-proxy? [p]
@@ -55,7 +58,8 @@
   [plugin-id session-id]
   (-> (obj/reify {:name "ActiveUserProxy"}
         :$plugin
-        {:enumerable false :get (fn [] plugin-id)}
+        {:enumerable false
+         :get (fn [] plugin-id)}
 
         :position
         {:get (fn [] (-> (u/locate-presence session-id) :point format/format-point))}
@@ -80,7 +84,8 @@
 (defn user-proxy
   [plugin-id data]
   (-> (obj/reify {:name "UserProxy"}
-        :$plugin {:enumerable false :get (fn [] plugin-id)})
+        :$plugin {:enumerable false
+                  :get (fn [] plugin-id)})
       (add-user-properties data)))
 
 (defn user-proxy?

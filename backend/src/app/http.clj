@@ -63,7 +63,8 @@
   (assert (sm/check schema:server-params params)))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [::handler ::router ::host ::port] :as cfg}]
+  [_ {:keys [::handler ::router ::host ::port]
+      :as cfg}]
   (l/info :hint "starting http server" :port port :host host)
   (let [options {:http/port port
                  :http/host host
@@ -91,7 +92,8 @@
     (assoc cfg ::server (yt/start! server))))
 
 (defmethod ig/halt-key! ::server
-  [_ {:keys [::server ::port] :as cfg}]
+  [_ {:keys [::server ::port]
+      :as cfg}]
   (l/info :msg "stopping http server" :port port)
   (yt/stop! server))
 
@@ -111,7 +113,8 @@
               (partial not-found-handler request)))
 
           (on-error [cause request]
-            (let [{:keys [::yres/body] :as response} (errors/handle cause request)]
+            (let [{:keys [::yres/body]
+                   :as response} (errors/handle cause request)]
               (cond-> response
                 (map? body)
                 (-> (update ::yres/headers assoc "content-type" "application/transit+json")

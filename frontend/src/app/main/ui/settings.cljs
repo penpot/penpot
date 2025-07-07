@@ -29,12 +29,14 @@
 (mf/defc header
   {::mf/wrap [mf/memo]}
   []
-  [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+  [:header {:class (stl/css :dashboard-header)
+            :data-testid "dashboard-header"}
    [:div {:class (stl/css :dashboard-title)}
     [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
 
 (mf/defc settings
-  [{:keys [route] :as props}]
+  [{:keys [route]
+    :as props}]
   (let [section (get-in route [:data :name])
         profile (mf/deref refs/profile)]
 

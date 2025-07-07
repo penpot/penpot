@@ -620,7 +620,8 @@
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
          (->> (rx/from operations)
-              (rx/map (fn [{:keys [shape-id index] :as operation}]
+              (rx/map (fn [{:keys [shape-id index]
+                            :as operation}]
                         (case (:prop operation)
                           :fill    (change-fill [shape-id] new-color index)
                           :stroke  (change-stroke-color [shape-id] new-color index)
@@ -741,18 +742,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn split-color-components
-  [{:keys [color opacity] :as data}]
+  [{:keys [color opacity]
+    :as data}]
   (let [value (if (cc/valid-hex-color? color) color cc/black)
         [r g b] (cc/hex->rgb value)
         [h s v] (cc/hex->hsv value)]
     (merge data
            {:hex (or value "000000")
             :alpha (or opacity 1)
-            :r r :g g :b b
-            :h h :s s :v v})))
+            :r r
+            :g g
+            :b b
+            :h h
+            :s s
+            :v v})))
 
 (defn materialize-color-components
-  [{:keys [hex alpha] :as data}]
+  [{:keys [hex alpha]
+    :as data}]
   (-> data
       (assoc :color hex)
       (assoc :opacity alpha)
@@ -775,7 +782,8 @@
    :width  1.0})
 
 (defn get-color-from-colorpicker-state
-  [{:keys [type current-color stops gradient opacity] :as state}]
+  [{:keys [type current-color stops gradient opacity]
+    :as state}]
   (cond
     (= type :color)
     (-> (clear-color-components current-color)
@@ -843,7 +851,8 @@
       (dissoc state :colorpicker))))
 
 (defn update-colorpicker
-  [{:keys [gradient] :as data}]
+  [{:keys [gradient]
+    :as data}]
   (ptk/reify ::update-colorpicker
     ptk/UpdateEvent
     (update [_ state]
@@ -891,7 +900,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :colorpicker
-              (fn [{:keys [stops editing-stop] :as state}]
+              (fn [{:keys [stops editing-stop]
+                    :as state}]
                 (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
                       can-add-stop? (or (not cap-stops?) (< (count stops) types.fill/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
@@ -994,7 +1004,8 @@
      ptk/UpdateEvent
      (update [_ state]
        (update state :colorpicker
-               (fn [{:keys [editing-stop stops] :as state}]
+               (fn [{:keys [editing-stop stops]
+                     :as state}]
                  (if (> (count stops) 2)
                    (let [delete-index (or index editing-stop 0)
                          delete-stop  (get stops delete-index)

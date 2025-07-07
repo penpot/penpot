@@ -44,8 +44,10 @@
                          (refs/children-objects shape-id))
             childs     (mf/deref childs-ref)]
 
-        [:& shape-container {:shape shape :ref ref}
-         [:& frame-shape {:shape shape :childs childs}]
+        [:& shape-container {:shape shape
+                             :ref ref}
+         [:& frame-shape {:shape shape
+                          :childs childs}]
          (when *assert*
            [:& wsd/shape-debug {:shape shape}])]))))
 
@@ -80,7 +82,8 @@
             modifiers  (mf/deref modifiers*)]
 
         (fdm/use-dynamic-modifiers objects (mf/ref-val node-ref) modifiers)
-        [:& frame-shape {:shape shape :ref node-ref}]))))
+        [:& frame-shape {:shape shape
+                         :ref node-ref}]))))
 
 (defn image-size
   [href]
@@ -91,7 +94,8 @@
            (fn []
              (let [width (.-naturalWidth img)
                    height (.-naturalHeight img)]
-               (resolve {:width width :height height})))]
+               (resolve {:width width
+                         :height height})))]
        (set! (.-onload img) load-fn)
        (set! (.-src img) href)))))
 
@@ -227,7 +231,8 @@
             [:g.frame-content
              {:id (dm/str "frame-content-" frame-id)
               :ref container-ref}
-             [:& frame-shape {:shape shape :ref content-ref}]])]
+             [:& frame-shape {:shape shape
+                              :ref content-ref}]])]
 
          (when *assert*
            [:& wsd/shape-debug {:shape shape}])]))))

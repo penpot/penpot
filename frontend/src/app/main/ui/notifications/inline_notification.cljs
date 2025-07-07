@@ -18,7 +18,8 @@
    of the application and require user interaction to disappear."
 
   {::mf/props :obj}
-  [{:keys [content accept cancel links] :as props}]
+  [{:keys [content accept cancel links]
+    :as props}]
 
   [:> actionable* {:class (stl/css :new-inline)
                    :cancel-label (:label cancel)

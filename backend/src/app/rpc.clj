@@ -90,7 +90,8 @@
 (defn- rpc-handler
   "Ring handler that dispatches cmd requests and convert between
   internal async flow into ring async flow."
-  [methods {:keys [params path-params method] :as request}]
+  [methods {:keys [params path-params method]
+            :as request}]
   (let [handler-name (:type path-params)
         etag         (yreq/get-header request "if-none-match")
         profile-id   (or (::session/profile-id request)
@@ -295,7 +296,8 @@
   (assert (valid-methods? (::methods params)) "expect valid methods map"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::methods] :as cfg}]
+  [_ {:keys [::methods]
+      :as cfg}]
   (let [methods (update-vals methods peek)]
     [["/rpc" {:middleware [[session/authz cfg]
                            [actoken/authz cfg]]}

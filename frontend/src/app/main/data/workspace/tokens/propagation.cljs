@@ -105,7 +105,8 @@
          frame-ids #{}
          text-ids []
          tokens {}]
-    (if-let [[shape-id {:keys [applied-tokens] :as shape}] (first items)]
+    (if-let [[shape-id {:keys [applied-tokens]
+                        :as shape}] (first items)]
       (let [applied-tokens
             (-> (invert-collect-key-vals applied-tokens resolved-tokens shape)
                 (shape-ids-by-values shape-id)

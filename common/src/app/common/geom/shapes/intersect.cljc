@@ -21,9 +21,12 @@
   "Given three ordered points gives the orientation
   (clockwise, counterclock or coplanar-line)"
   [p1 p2 p3]
-  (let [{x1 :x y1 :y} p1
-        {x2 :x y2 :y} p2
-        {x3 :x y3 :y} p3
+  (let [{x1 :x
+         y1 :y} p1
+        {x2 :x
+         y2 :y} p2
+        {x3 :x
+         y3 :y} p3
         v (- (* (- y2 y1) (- x3 x2))
              (* (- y3 y2) (- x2 x1)))]
     (cond
@@ -33,7 +36,10 @@
 
 (defn on-segment?
   "Given three colinear points p, q, r checks if q lies on segment pr"
-  [{qx :x qy :y} {px :x py :y} {rx :x ry :y}]
+  [{qx :x
+    qy :y} {px :x
+            py :y} {rx :x
+                    ry :y}]
   (and (<= qx (mth/max px rx))
        (>= qx (mth/min px rx))
        (<= qy (mth/max py ry))
@@ -97,7 +103,10 @@
 (defn intersect-ray?
   "Checks the intersection between segment qr and a ray
   starting in point p with an angle of 0 degrees"
-  [{px :x py :y} [{x1 :x y1 :y} {x2 :x y2 :y}]]
+  [{px :x
+    py :y} [{x1 :x
+             y1 :y} {x2 :x
+                     y2 :y}]]
 
   (if (or (and (<= y1 py) (>  y2 py))
           (and (>  y1 py) (<= y2 py)))
@@ -122,7 +131,10 @@
 
 (defn- next-windup
   "Calculates the next windup number for the nonzero algorithm"
-  [wn {px :x py :y} [{x1 :x y1 :y} {x2 :x y2 :y}]]
+  [wn {px :x
+       py :y} [{x1 :x
+                y1 :y} {x2 :x
+                        y2 :y}]]
 
   (let [line-side (- (* (- x2 x1) (- py y1))
                      (* (- px x1) (- y2 y1)))]
@@ -201,7 +213,8 @@
 
   (let [center (gpt/point cx cy)
         transform (when (some? transform) (gmt/transform-in center transform))
-        {px :x py :y} (if (some? transform) (gpt/transform point transform) point)
+        {px :x
+         py :y} (if (some? transform) (gpt/transform point transform) point)
         ;; Ellipse inequality formula
         ;; https://en.wikipedia.org/wiki/Ellipse#Shifted_ellipse
         v (+ (/ (mth/sq (- px cx))
@@ -212,7 +225,9 @@
 
 (defn intersects-line-ellipse?
   "Checks whether a single line intersects with the given ellipse"
-  [[{x1 :x y1 :y} {x2 :x y2 :y}] {:keys [cx cy rx ry]}]
+  [[{x1 :x
+     y1 :y} {x2 :x
+             y2 :y}] {:keys [cx cy rx ry]}]
 
   ;; Given the ellipse inequality after inserting the line parametric equations
   ;; we resolve t and gives us a quadratic formula
@@ -258,7 +273,8 @@
 
 (defn intersects-lines-ellipse?
   "Checks if a set of lines intersect with an ellipse in any point"
-  [rect-lines {:keys [cx cy transform] :as ellipse-data}]
+  [rect-lines {:keys [cx cy transform]
+               :as ellipse-data}]
   (let [center (gpt/point cx cy)
         transform (when (some? transform) (gmt/transform-in center transform))]
     (some (fn [[p1 p2]]
@@ -288,7 +304,8 @@
         (intersects-lines-ellipse? rect-lines ellipse-data))))
 
 (defn overlaps-text?
-  [{:keys [position-data] :as shape} rect]
+  [{:keys [position-data]
+    :as shape} rect]
 
   (if (and (some? position-data) (d/not-empty? position-data))
     (let [center (gco/shape->center shape)

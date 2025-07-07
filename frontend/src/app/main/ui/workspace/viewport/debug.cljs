@@ -62,7 +62,8 @@
 
         [:g.debug-layout {:pointer-events "none"}
          [:polygon {:points (->> layout-bounds (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
-                    :style  {:stroke "red" :fill "none"}}]
+                    :style  {:stroke "red"
+                             :fill "none"}}]
 
          [:*
           (for [p layout-points]
@@ -114,7 +115,9 @@
 
              [:g.layout-line {:key (dm/str "line-" idx)}
               [:polygon {:points (->> points (map #(dm/fmt "%, %" (:x %) (:y %))) (str/join " "))
-                         :style {:stroke "red" :stroke-width (/ 2 zoom) :stroke-dasharray (dm/str (/ 10 zoom) " " (/ 5 zoom))}}]]))]))))
+                         :style {:stroke "red"
+                                 :stroke-width (/ 2 zoom)
+                                 :stroke-dasharray (dm/str (/ 10 zoom) " " (/ 5 zoom))}}]]))]))))
 
 (mf/defc debug-drop-zones
   "Debug component to show the auto-layout drop areas"
@@ -169,18 +172,22 @@
         [i1 i2 i3 i4] (gpo/parent-coords-bounds (:points shape) (:points parent))]
     [:*
      [:polygon {:points (->> [i1 i2 i3 i4] (map #(dm/fmt "%,%" (:x %) (:y %))) (str/join ","))
-                :style {:fill "none" :stroke "red" :stroke-width (/ 1 zoom)}}]
+                :style {:fill "none"
+                        :stroke "red"
+                        :stroke-width (/ 1 zoom)}}]
 
      [:line {:x1 (:x i1)
              :y1 (:y i1)
              :x2 (:x i2)
              :y2 (:y i2)
-             :style {:stroke "green" :stroke-width (/ 1 zoom)}}]
+             :style {:stroke "green"
+                     :stroke-width (/ 1 zoom)}}]
      [:line {:x1 (:x i1)
              :y1 (:y i1)
              :x2 (:x i4)
              :y2 (:y i4)
-             :style {:stroke "blue" :stroke-width (/ 1 zoom)}}]]))
+             :style {:stroke "blue"
+                     :stroke-width (/ 1 zoom)}}]]))
 
 (mf/defc debug-parent-bounds
   {::mf/wrap-props false}

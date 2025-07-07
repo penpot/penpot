@@ -161,7 +161,10 @@
             :layout-grid-rows layout-grid-rows
             :layout-gap {:row-gap row-gap
                          :column-gap column-gap}
-            :layout-padding {:p1 p-top :p2 p-left :p3 p-top :p4 p-left}
+            :layout-padding {:p1 p-top
+                             :p2 p-left
+                             :p3 p-top
+                             :p4 p-left}
             :layout-grid-dir (if (> num-cols num-rows) :row :column)}
            (ctl/create-cells [1 1 num-cols num-rows])
            (assign-shape-cells rows cols))))))

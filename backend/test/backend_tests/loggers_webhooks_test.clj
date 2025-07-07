@@ -18,7 +18,8 @@
 (t/use-fixtures :each th/database-reset)
 
 (t/deftest process-event-handler-with-no-webhooks
-  (with-mocks [submit-mock {:target 'app.worker/submit! :return nil}]
+  (with-mocks [submit-mock {:target 'app.worker/submit!
+                            :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           res  (th/run-task! :process-webhook-event
                              {:type "command"
@@ -29,7 +30,8 @@
       (t/is (nil? res)))))
 
 (t/deftest process-event-handler
-  (with-mocks [submit-mock {:target 'app.worker/submit! :return nil}]
+  (with-mocks [submit-mock {:target 'app.worker/submit!
+                            :return nil}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           res  (th/run-task! :process-webhook-event
@@ -41,7 +43,8 @@
       (t/is (nil? res)))))
 
 (t/deftest run-webhook-handler-1
-  (with-mocks [http-mock {:target 'app.http.client/req! :return {:status 200}}]
+  (with-mocks [http-mock {:target 'app.http.client/req!
+                          :return {:status 200}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           evt  {:type "command"
@@ -63,7 +66,8 @@
         (t/is (nil? (:error-code whk')))))))
 
 (t/deftest run-webhook-handler-2
-  (with-mocks [http-mock {:target 'app.http.client/req! :return {:status 400}}]
+  (with-mocks [http-mock {:target 'app.http.client/req!
+                          :return {:status 400}}]
     (let [prof (th/create-profile* 1 {:is-active true})
           whk  (th/create-webhook* {:team-id (:default-team-id prof)})
           evt  {:type "command"

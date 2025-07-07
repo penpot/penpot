@@ -133,7 +133,8 @@
 
   ([file-id page-id]
    (let [page (when (some? page-id)
-                (ctp/make-empty-page {:id page-id :name "Page 1"}))]
+                (ctp/make-empty-page {:id page-id
+                                      :name "Page 1"}))]
 
      (cond-> (assoc empty-file-data :id file-id)
        (some? page)
@@ -146,7 +147,8 @@
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
            ignore-sync-until modified-at deleted-at]
-    :or {is-shared false revn 0}}
+    :or {is-shared false
+         revn 0}}
 
    & {:keys [create-page page-id]
       :or {create-page true}}]
@@ -213,12 +215,14 @@
 
 (defn get-component
   "Retrieve a component from a library."
-  [libraries library-id component-id & {:keys [include-deleted?] :or {include-deleted? false}}]
+  [libraries library-id component-id & {:keys [include-deleted?]
+                                        :or {include-deleted? false}}]
   (ctkl/get-component (dm/get-in libraries [library-id :data]) component-id include-deleted?))
 
 (defn resolve-component
   "Retrieve the referenced component, from the local file or from a library"
-  [shape file libraries & {:keys [include-deleted?] :or {include-deleted? false}}]
+  [shape file libraries & {:keys [include-deleted?]
+                           :or {include-deleted? false}}]
   (if (= (:component-file shape) (:id file))
     (ctkl/get-component (:data file) (:component-id shape) include-deleted?)
     (get-component libraries (:component-file shape) (:component-id shape) :include-deleted? include-deleted?)))
@@ -243,7 +247,8 @@
     (cfh/make-container component :component)))
 
 (defn get-component-container-from-head
-  [instance-head libraries & {:keys [include-deleted?] :or {include-deleted? true}}]
+  [instance-head libraries & {:keys [include-deleted?]
+                              :or {include-deleted? true}}]
   (let [library-data   (-> (get-component-library libraries instance-head)
                            :data)
         component (ctkl/get-component library-data (:component-id instance-head) include-deleted?)]
@@ -261,7 +266,8 @@
 (defn get-component-shape
   "Retrieve one shape in the component by id. If with-context? is true, add the
    file and container where the shape resides in its metadata."
-  [file-data component shape-id & {:keys [with-context?] :or {with-context? false}}]
+  [file-data component shape-id & {:keys [with-context?]
+                                   :or {with-context? false}}]
   (if (not (:deleted component))
     (let [component-page (get-component-page file-data component)]
       (when component-page
@@ -283,7 +289,8 @@
 
 (defn get-ref-shape
   "Retrieve the shape in the component that is referenced by the instance shape."
-  [file-data component shape & {:keys [with-context?] :or {with-context? false}}]
+  [file-data component shape & {:keys [with-context?]
+                                :or {with-context? false}}]
   (when (:shape-ref shape)
     (get-component-shape file-data component (:shape-ref shape) :with-context? with-context?)))
 
@@ -297,7 +304,9 @@
 (defn find-ref-shape
   "Locate the nearest component in the local file or libraries, and retrieve the shape
    referenced by the instance shape."
-  [file container libraries shape & {:keys [include-deleted? with-context?] :or {include-deleted? false with-context? false}}]
+  [file container libraries shape & {:keys [include-deleted? with-context?]
+                                     :or {include-deleted? false
+                                          with-context? false}}]
   (let [find-ref-shape-in-head
         (fn [head-shape]
           (let [component-file (find-component-file file libraries (:component-file head-shape))
@@ -310,7 +319,8 @@
 (defn advance-shape-ref
   "Get the shape-ref of the near main of the shape, recursively repeated as many times
    as the given levels."
-  [file container libraries shape levels & {:keys [include-deleted?] :or {include-deleted? false}}]
+  [file container libraries shape levels & {:keys [include-deleted?]
+                                            :or {include-deleted? false}}]
   (let [ref-shape (find-ref-shape file container libraries shape :include-deleted? include-deleted? :with-context? true)]
     (if (or (nil? (:shape-ref ref-shape)) (not (pos? levels)))
       (:id ref-shape)
@@ -319,7 +329,8 @@
 (defn find-ref-component
   "Locate the nearest component in the local file or libraries that is referenced by the
    instance shape."
-  [file page libraries shape & {:keys [include-deleted?] :or {include-deleted? false}}]
+  [file page libraries shape & {:keys [include-deleted?]
+                                :or {include-deleted? false}}]
   (let [find-ref-component-in-head
         (fn [head-shape]
           (let [component-file (find-component-file file libraries (:component-file head-shape))
@@ -600,7 +611,8 @@
                              (gpt/point 0 0)
                              (ctn/shapes-seq library-page))]
         [file-data (:id library-page) position])
-      (let [library-page (ctp/make-empty-page {:id (uuid/next) :name "Main components"})]
+      (let [library-page (ctp/make-empty-page {:id (uuid/next)
+                                               :name "Main components"})]
         [(ctpl/add-page file-data library-page) (:id library-page) (gpt/point 0 0)]))))
 
 (defn- absorb-components
@@ -770,7 +782,8 @@
 
 (defn dump-shape
   "Display a summary of a shape and its relationships, and recursively of all children."
-  [shape-id level objects file libraries {:keys [show-ids show-touched] :as flags}]
+  [shape-id level objects file libraries {:keys [show-ids show-touched]
+                                          :as flags}]
   (let [shape (get objects shape-id)]
     (println (str/pad (str (str/repeat "  " level)
                            (when (:main-instance shape) "{")
@@ -860,7 +873,8 @@
 (defn dump-component
   "Display a summary of a component and the links to the main instance.
    If the component contains an :objects, display also all shapes inside."
-  [component file libraries {:keys [show-ids show-modified] :as flags}]
+  [component file libraries {:keys [show-ids show-modified]
+                             :as flags}]
   (println (str/format "[%sComponent: %s]%s%s"
                        (when (:deleted component) "DELETED ")
                        (:name component)
@@ -890,7 +904,8 @@
 
 (defn dump-page
   "Display a summary of a page, and of all shapes inside."
-  [page file libraries {:keys [show-ids root-id] :as flags
+  [page file libraries {:keys [show-ids root-id]
+                        :as flags
                         :or {root-id uuid/zero}}]
   (let [objects (:objects page)
         root    (get objects root-id)]
@@ -906,7 +921,8 @@
 
 (defn dump-library
   "Display a summary of a library, and of all components inside."
-  [library file libraries {:keys [show-ids only include-deleted?] :as flags}]
+  [library file libraries {:keys [show-ids only include-deleted?]
+                           :as flags}]
   (let [lib-components (ctkl/components (:data library) {:include-deleted? include-deleted?})]
     (println)
     (println (str/format "========= %s%s"

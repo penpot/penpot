@@ -87,20 +87,23 @@
       [:div {:class (stl/css :cell-shape)}
        (if (empty? (:shapes cell))
          [:div "<empty>"]
-         [:& shape-link {:id (first (:shapes cell)) :objects objects}])]])])
+         [:& shape-link {:id (first (:shapes cell))
+                         :objects objects}])]])])
 
 (mf/defc debug-shape-attr
   [{:keys [attr value objects]}]
 
   (case (get custom-renderer attr)
     :shape-link
-    [:& shape-link {:id value :objects objects}]
+    [:& shape-link {:id value
+                    :objects objects}]
 
     :shape-list
     [:div {:class (stl/css :shape-list)}
      (for [id value]
        [:& shape-link {:key (dm/str "child-" id)
-                       :id id :objects objects}])]
+                       :id id
+                       :objects objects}])]
 
     :matrix-render
     [:div (dm/str (gmt/format-precision value 2))]
@@ -114,7 +117,8 @@
        [:div {:key (dm/str "point-" idx)} (dm/fmt "(%, %)" (:x point) (:y point))])]
 
     :cells-render
-    [:& cells-render {:cells value :objects objects}]
+    [:& cells-render {:cells value
+                      :objects objects}]
 
     [:div {:class (stl/css :attrs-container-value)} (str value)]))
 
@@ -134,7 +138,8 @@
      (if (empty? selected)
        [:div {:class (stl/css :attrs-container)} "No shapes selected"]
        (for [[idx current] (d/enumerate selected)]
-         [:div {:class (stl/css :attrs-container) :key (dm/str "shape" idx)}
+         [:div {:class (stl/css :attrs-container)
+                :key (dm/str "shape" idx)}
           [:div {:class (stl/css :shape-title)}
            [:div {:class (stl/css :shape-name)} (:name current)]
            [:button {:on-click #(debug/dump-object (dm/str (:id current)))} "object"]
@@ -149,4 +154,6 @@
                         :key (dm/str "att-" idx "-" attr)}
                   [:div {:class (stl/css :attrs-container-name)} (d/name attr)]
 
-                  [:& debug-shape-attr {:attr attr :value value :objects objects}]])))]]))]))
+                  [:& debug-shape-attr {:attr attr
+                                        :value value
+                                        :objects objects}]])))]]))]))

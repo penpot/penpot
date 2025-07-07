@@ -173,7 +173,8 @@
               :hint (str/ffmt "looks like '%' does not have a valid format" opts))))
 
 (defmethod process-limit :bucket
-  [redis user-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
+  [redis user-id now {:keys [::key ::params ::service ::capacity ::interval ::rate]
+                      :as limit}]
   (let [script    (-> bucket-rate-limit-script
                       (assoc ::rscript/keys [(str key "." service "." user-id)])
                       (assoc ::rscript/vals (conj params (dt/->seconds now))))
@@ -195,7 +196,8 @@
         (assoc ::lresult/remaining remaining))))
 
 (defmethod process-limit :window
-  [redis user-id now {:keys [::nreq ::unit ::key ::service] :as limit}]
+  [redis user-id now {:keys [::nreq ::unit ::key ::service]
+                      :as limit}]
   (let [ts        (dt/truncate now unit)
         ttl       (dt/diff now (dt/plus ts {unit 1}))
         script    (-> window-rate-limit-script
@@ -249,14 +251,16 @@
     (into [] (map #(assoc % ::service sname)) limits)))
 
 (defn- get-uid
-  [{:keys [::rpc/profile-id] :as params}]
+  [{:keys [::rpc/profile-id]
+    :as params}]
   (let [request (-> params meta ::http/request)]
     (or profile-id
         (some-> request inet/parse-request)
         uuid/zero)))
 
 (defn process-request!
-  [{:keys [::rpc/rlimit ::rds/redis ::skey ::sname] :as cfg} params]
+  [{:keys [::rpc/rlimit ::rds/redis ::skey ::sname]
+    :as cfg} params]
   (when-let [limits (get-limits rlimit skey sname)]
     (let [redis  (rds/get-or-connect redis ::rpc/rlimit default-options)
           uid    (get-uid params)
@@ -281,7 +285,8 @@
         result))))
 
 (defn wrap
-  [{:keys [::rpc/rlimit ::rds/redis] :as cfg} f mdata]
+  [{:keys [::rpc/rlimit ::rds/redis]
+    :as cfg} f mdata]
   (assert (rds/redis? redis) "expected a valid redis instance")
   (assert (or (nil? rlimit) (valid-rlimit-instance? rlimit)) "expected a valid rlimit instance")
 
@@ -358,8 +363,10 @@
          ::limits limits}))))
 
 (defn- refresh-config
-  [{:keys [::state ::path ::wrk/executor] :as cfg}]
-  (letfn [(update-config [{:keys [::updated-at] :as state}]
+  [{:keys [::state ::path ::wrk/executor]
+    :as cfg}]
+  (letfn [(update-config [{:keys [::updated-at]
+                           :as state}]
             (let [updated-at' (fs/last-modified-time path)]
               (merge state
                      {::updated-at updated-at'}
@@ -400,7 +407,8 @@
   (assert (sm/valid? ::wrk/executor executor) "expect valid executor"))
 
 (defmethod ig/init-key ::rpc/rlimit
-  [_ {:keys [::wrk/executor] :as cfg}]
+  [_ {:keys [::wrk/executor]
+      :as cfg}]
   (when (contains? cf/flags :rpc-rlimit)
     (let [state (agent {})]
       (set-error-handler! state on-refresh-error)

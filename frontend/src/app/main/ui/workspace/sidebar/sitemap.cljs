@@ -33,7 +33,8 @@
 (def ^:private ref:file-with-pages
   "A derived state of the current file, without data with the
   exception of list of pages"
-  (l/derived (fn [{:keys [data] :as file}]
+  (l/derived (fn [{:keys [data]
+                   :as file}]
                (-> file
                    (dissoc :data)
                    (assoc :pages (:pages data))))
@@ -101,7 +102,8 @@
         on-drop
         (mf/use-fn
          (mf/deps id index)
-         (fn [side {:keys [id] :as data}]
+         (fn [side {:keys [id]
+                    :as data}]
            (let [index (if (= :bot side) (inc index) index)]
              (st/emit! (dw/relocate-page id index)))))
 
@@ -170,7 +172,9 @@
                   :auto-focus true
                   :default-value (:name page "")}]]
         [:*
-         [:span {:class (stl/css :page-name) :title (:name page) :data-testid "page-name"}
+         [:span {:class (stl/css :page-name)
+                 :title (:name page)
+                 :data-testid "page-name"}
           (:name page)]
          [:div {:class  (stl/css :page-actions)}
           (when (and deletable? (not read-only?))
@@ -222,7 +226,8 @@
         on-create      (mf/use-fn
                         (mf/deps file-id project-id)
                         (fn [event]
-                          (st/emit! (dw/create-page {:file-id file-id :project-id project-id}))
+                          (st/emit! (dw/create-page {:file-id file-id
+                                                     :project-id project-id}))
                           (-> event dom/get-current-target dom/blur!)))
 
         read-only?     (mf/use-ctx ctx/workspace-read-only?)
@@ -251,5 +256,6 @@
 
      (when-not ^boolean collapsed
        [:div {:class (stl/css :tool-window-content)}
-        [:> pages-list* {:file file :key (dm/str (:id file))}]])]))
+        [:> pages-list* {:file file
+                         :key (dm/str (:id file))}]])]))
 

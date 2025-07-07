@@ -21,7 +21,8 @@
 
 (mf/defc exports
   {::mf/wrap [#(mf/memo % =)]}
-  [{:keys [shapes page-id file-id share-id type] :as props}]
+  [{:keys [shapes page-id file-id share-id type]
+    :as props}]
   (let [exports     (mf/use-state [])
         xstate      (mf/deref refs/export)
         vstate      (mf/deref refs/viewer-data)
@@ -113,19 +114,31 @@
              (when esc?
                (dom/blur! (dom/get-target event))))))
 
-        size-options [{:value "0.5" :label "0.5x"}
-                      {:value "0.75" :label "0.75x"}
-                      {:value "1" :label "1x"}
-                      {:value "1.5" :label "1.5x"}
-                      {:value "2" :label "2x"}
-                      {:value "4" :label "4x"}
-                      {:value "6" :label "6x"}]
+        size-options [{:value "0.5"
+                       :label "0.5x"}
+                      {:value "0.75"
+                       :label "0.75x"}
+                      {:value "1"
+                       :label "1x"}
+                      {:value "1.5"
+                       :label "1.5x"}
+                      {:value "2"
+                       :label "2x"}
+                      {:value "4"
+                       :label "4x"}
+                      {:value "6"
+                       :label "6x"}]
 
-        format-options [{:value "png" :label "PNG"}
-                        {:value "jpeg" :label "JPG"}
-                        {:value "webp" :label "WEBP"}
-                        {:value "svg" :label "SVG"}
-                        {:value "pdf" :label "PDF"}]]
+        format-options [{:value "png"
+                         :label "PNG"}
+                        {:value "jpeg"
+                         :label "JPG"}
+                        {:value "webp"
+                         :label "WEBP"}
+                        {:value "svg"
+                         :label "SVG"}
+                        {:value "pdf"
+                         :label "PDF"}]]
 
     (mf/use-effect
      (mf/deps shapes)

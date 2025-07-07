@@ -201,7 +201,8 @@
          (mf/deps data handle-change-color)
          (fn [_ color]
            (if (and (some? (:color color)) (some? (:gradient data)))
-             (handle-change-color {:hex (:color color) :alpha (:opacity color)})
+             (handle-change-color {:hex (:color color)
+                                   :alpha (:opacity color)})
              (let [color (d/without-qualified color)]
                (st/emit! (dc/add-recent-color color)
                          (dc/apply-color-from-colorpicker color))
@@ -239,11 +240,14 @@
         options
         (mf/with-memo [selected-mode disable-gradient disable-image]
           (d/concat-vec
-           [{:value :color :label (tr "media.solid")}]
+           [{:value :color
+             :label (tr "media.solid")}]
            (when (not disable-gradient)
-             [{:value :gradient :label (tr "media.gradient")}])
+             [{:value :gradient
+               :label (tr "media.gradient")}])
            (when (not disable-image)
-             [{:value :image :label (tr "media.image")}])))
+             [{:value :image
+               :label (tr "media.image")}])))
 
         handle-change-gradient-selected-stop
         (mf/use-fn
@@ -376,8 +380,12 @@
               hex (cc/rgb->hex [r g b])
               [h s v] (cc/hex->hsv hex)]
           (handle-change-color {:hex hex
-                                :r r :g g :b b
-                                :h h :s s :v v
+                                :r r
+                                :g g
+                                :b b
+                                :h h
+                                :s s
+                                :v v
                                 :alpha (/ alpha 255)}))))
 
     [:*
@@ -468,7 +476,9 @@
            (if picking-color?
              [:div {:class (stl/css :picker-detail-wrapper)}
               [:div {:class (stl/css :center-circle)}]
-              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
+              [:canvas#picker-detail {:class (stl/css :picker-detail)
+                                      :width 256
+                                      :height 140}]]
 
 
              (case active-color-tab
@@ -535,7 +545,10 @@
         max-height-bottom (str "calc(100vh -" bottom-offset)]
     (cond
       (or (nil? x) (nil? y))
-      #js {:left "auto" :right "16rem" :top "4rem" :maxHeight "calc(100vh - 4rem)"}
+      #js {:left "auto"
+           :right "16rem"
+           :top "4rem"
+           :maxHeight "calc(100vh - 4rem)"}
 
       (= position :left)
       (if (> y max-y)

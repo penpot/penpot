@@ -56,7 +56,8 @@
 
 (mf/defc select*
   {::mf/schema schema:select}
-  [{:keys [options class disabled default-selected empty-to-end on-change] :rest props}]
+  [{:keys [options class disabled default-selected empty-to-end on-change]
+    :rest props}]
   (let [;; NOTE: we use mfu/bean here for transparently handle
         ;; options provide as clojure data structures or javascript
         ;; plain objects and lists.

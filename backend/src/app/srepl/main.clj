@@ -88,7 +88,8 @@
 (defn resend-email-verification-email!
   [email]
   (db/tx-run! main/system
-              (fn [{:keys [::db/conn] :as cfg}]
+              (fn [{:keys [::db/conn]
+                    :as cfg}]
                 (let [email   (profile/clean-email email)
                       profile (profile/get-profile-by-email conn email)]
                   (#'auth/send-email-verification! cfg profile)))))
@@ -103,7 +104,8 @@
   [email]
   (some-> main/system
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (when-let [profile (db/get* conn :profile
                                          {:email (str/lower email)}
                                          {:columns [:id :email]})]
@@ -117,7 +119,8 @@
   [email]
   (some-> main/system
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (when-let [profile (db/get* conn :profile
                                          {:email (str/lower email)}
                                          {:columns [:id :email]})]
@@ -129,13 +132,16 @@
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
   if email is `:all` keyword."
-  [& {:keys [email password] :or {password "123123"} :as params}]
+  [& {:keys [email password]
+      :or {password "123123"}
+      :as params}]
   (when-not email
     (throw (IllegalArgumentException. "email is mandatory")))
 
   (some-> main/system
           (db/tx-run!
-           (fn [{:keys [::db/conn] :as system}]
+           (fn [{:keys [::db/conn]
+                 :as system}]
              (let [password (derive-password password)]
                (if (= email :all)
                  (db/exec! conn ["update profile set password=?" password])
@@ -166,7 +172,8 @@
   (enable-pointer-map-feature-on-file! file-id opts))
 
 (defn enable-team-feature!
-  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  [team-id feature & {:keys [skip-check]
+                      :or {skip-check false}}]
   (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
     (ex/raise :type :assertion
               :code :feature-not-supported
@@ -185,7 +192,8 @@
                       :enabled))))))
 
 (defn disable-team-feature!
-  [team-id feature & {:keys [skip-check] :or {skip-check false}}]
+  [team-id feature & {:keys [skip-check]
+                      :or {skip-check false}}]
   (when (and (not skip-check) (not (contains? cfeat/supported-features feature)))
     (ex/raise :type :assertion
               :code :feature-not-supported
@@ -225,7 +233,8 @@
   (notify! :dest :all :code :upgrade-version)
   "
   [& {:keys [dest code message level]
-      :or {code :generic level :info}
+      :or {code :generic
+           level :info}
       :as params}]
 
   (when-not (contains? #{:success :error :info :warning} level)
@@ -338,14 +347,16 @@
   collectable file-changes entry."
   [& {:keys [file-id label]}]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id :label label})))
+    (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id
+                                                         :label label})))
 
 (defn restore-file-snapshot!
   [file-id & {:keys [label id]}]
   (let [file-id     (h/parse-uuid file-id)
         snapshot-id (some-> id h/parse-uuid)]
     (db/tx-run! main/system
-                (fn [{:keys [::db/conn] :as system}]
+                (fn [{:keys [::db/conn]
+                      :as system}]
                   (cond
                     (uuid? snapshot-id)
                     (fsnap/restore-file-snapshot! system file-id snapshot-id)
@@ -368,7 +379,8 @@
                        (print-table [:label :id :revn :created-at]))))))
 
 (defn take-team-snapshot!
-  [team-id & {:keys [label rollback?] :or {rollback? true}}]
+  [team-id & {:keys [label rollback?]
+              :or {rollback? true}}]
   (let [team-id (h/parse-uuid team-id)]
     (-> (assoc main/system ::db/rollback rollback?)
         (db/tx-run! h/take-team-snapshot! team-id label))))
@@ -376,7 +388,8 @@
 (defn restore-team-snapshot!
   "Restore a snapshot on all files of the team. The snapshot should
   exists for all files; if is not the case, an exception is raised."
-  [team-id label & {:keys [rollback?] :or {rollback? true}}]
+  [team-id label & {:keys [rollback?]
+                    :or {rollback? true}}]
   (let [team-id (h/parse-uuid team-id)]
     (-> (assoc main/system ::db/rollback rollback?)
         (db/tx-run! h/restore-team-snapshot! team-id label))))
@@ -414,7 +427,9 @@
 
 (defn repair-file!
   "Repair the list of errors detected by validation."
-  [file-id & {:keys [rollback?] :or {rollback? true} :as opts}]
+  [file-id & {:keys [rollback?]
+              :or {rollback? true}
+              :as opts}]
   (let [system  (assoc main/system ::db/rollback rollback?)
         file-id (h/parse-uuid file-id)
         opts    (assoc opts :with-libraries? true)]
@@ -432,7 +447,9 @@
 (defn process-file!
   "Apply a function to the file. Optionally save the changes or not.
   The function receives the decoded and migrated file data."
-  [file-id update-fn & {:keys [rollback?] :or {rollback? true} :as opts}]
+  [file-id update-fn & {:keys [rollback?]
+                        :or {rollback? true}
+                        :as opts}]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! (assoc main/system ::db/rollback rollback?)
                 (fn [system]
@@ -442,11 +459,14 @@
 
 (defn process-team-files!
   "Apply a function to each file of the specified team."
-  [team-id update-fn & {:keys [rollback? label] :or {rollback? true} :as opts}]
+  [team-id update-fn & {:keys [rollback? label]
+                        :or {rollback? true}
+                        :as opts}]
   (let [team-id (h/parse-uuid team-id)
         opts    (dissoc opts :label)]
     (db/tx-run! (assoc main/system ::db/rollback rollback?)
-                (fn [{:keys [::db/conn] :as system}]
+                (fn [{:keys [::db/conn]
+                      :as system}]
                   (when (string? label)
                     (h/take-team-snapshot! system team-id label))
 
@@ -520,7 +540,8 @@
           (inc idx))
 
         process-files
-        (fn [{:keys [::db/conn] :as system}]
+        (fn [{:keys [::db/conn]
+              :as system}]
           (db/exec! conn ["SET statement_timeout = 0"])
           (db/exec! conn ["SET idle_in_transaction_session_timeout = 0"])
 
@@ -645,7 +666,8 @@
     :deleted))
 
 (defn- restore-project*
-  [{:keys [::db/conn] :as cfg} project-id]
+  [{:keys [::db/conn]
+    :as cfg} project-id]
   (db/update! conn :project
               {:deleted-at nil}
               {:id project-id})
@@ -700,7 +722,8 @@
     :deleted))
 
 (defn- restore-team*
-  [{:keys [::db/conn] :as cfg} team-id]
+  [{:keys [::db/conn]
+    :as cfg} team-id]
   (db/update! conn :team
               {:deleted-at nil}
               {:id team-id})
@@ -818,7 +841,8 @@
                   (recur (rest emails)
                          deleted
                          (inc total)))
-                {:deleted deleted :total total})))]
+                {:deleted deleted
+                 :total total})))]
 
     (let [path       (fs/path path)
           deleted-at (dt/minus (dt/now) (cf/get-deletion-delay))]
@@ -903,7 +927,8 @@
   [team-id & {:keys [name]}]
   (let [team-id (h/parse-uuid team-id)]
     (db/tx-run! main/system
-                (fn [{:keys [::db/conn] :as cfg}]
+                (fn [{:keys [::db/conn]
+                      :as cfg}]
                   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
                   (let [team (-> (assoc cfg ::bfc/timestamp (dt/now))
                                  (mgmt/duplicate-team :team-id team-id :name name))

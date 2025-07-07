@@ -363,7 +363,8 @@
 
 (mf/defc colors-section
   [{:keys [file-id local? colors open? force-open? open-status-ref selected reverse-sort?
-           on-asset-click on-assets-delete on-clear-selection] :as props}]
+           on-asset-click on-assets-delete on-clear-selection]
+    :as props}]
 
   (let [selected        (:colors selected)
         selected-full   (mf/with-memo [selected colors]

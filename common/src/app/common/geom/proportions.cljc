@@ -18,14 +18,16 @@
 ;; --- Setup Proportions                                 ; two integers it does not create a float, but
                                                          ; a clojure.lang.Ratio object.
 (defn setup-proportions-image
-  [{:keys [metadata] :as shape}]
+  [{:keys [metadata]
+    :as shape}]
   (let [{:keys [width height]} metadata]
     (assoc shape
            :proportion (float (/ width height))
            :proportion-lock true)))
 
 (defn setup-proportions-size
-  [{{:keys [width height]} :selrect :as shape}]
+  [{{:keys [width height]} :selrect
+    :as shape}]
   (assoc shape
          :proportion (float (/ width height))
          :proportion-lock true))
@@ -37,7 +39,8 @@
          :proportion-lock false))
 
 (defn setup-proportions
-  [{:keys [type] :as shape}]
+  [{:keys [type]
+    :as shape}]
   (let [image-fill? (and (d/not-empty? (:fills shape))
                          (every? #(some? (:fill-image %)) (:fills shape)))]
     (cond

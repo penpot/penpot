@@ -26,7 +26,8 @@
         (assoc-in [:params cox] (:x point))
         (assoc-in [:params coy] (:y point)))))
 
-(defn get-handler [{:keys [params] :as command} prefix]
+(defn get-handler [{:keys [params]
+                    :as command} prefix]
   (let [cx (d/prefix-keyword prefix :x)
         cy (d/prefix-keyword prefix :y)]
     (when (and command
@@ -190,7 +191,9 @@
       (if (<= (mth/abs (- t1 t2)) precision)
         (-> (helpers/curve-values start end h1 h2 t1)
             ;; store the segment info
-            (with-meta {:t t1 :from-p start :to-p end}))
+            (with-meta {:t t1
+                        :from-p start
+                        :to-p end}))
 
         (let [ht  (+ t1 (/ (- t2 t1) 2))
               ht1 (+ t1 (/ (- t2 t1) 4))
@@ -476,7 +479,8 @@
            start-point nil
            index       0
            content     (seq content)]
-      (if-let [{:keys [command] :as segment} (first content)]
+      (if-let [{:keys [command]
+                :as segment} (first content)]
         (let [close-path? (= command :close-path)
               move-to?    (= command :move-to)
 
@@ -516,7 +520,8 @@
   [content points value]
 
   (let [split-command
-        (fn [{:keys [command start end index] :as segment}]
+        (fn [{:keys [command start end index]
+              :as segment}]
           (case command
             :line-to [index (helpers/split-line-to start segment value)]
             :curve-to [index (helpers/split-curve-to start segment value)]
@@ -712,7 +717,9 @@
 ;; FIXME: revisit impl of this fn
 (defn- group-segments [segments]
   (loop [result []
-         {point-a :start point-b :end :as segment} (first segments)
+         {point-a :start
+          point-b :end
+          :as segment} (first segments)
          segments (rest segments)]
 
     (if (nil? segment)

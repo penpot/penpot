@@ -22,7 +22,8 @@
 (defn viewport-proxy
   [plugin-id]
   (obj/reify {:name "ViewportProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
 
     :center
     {:get
@@ -30,7 +31,8 @@
        (let [vp (dm/get-in @st/state [:workspace-local :vbox])
              x (+ (:x vp) (/ (:width vp) 2))
              y (+ (:y vp) (/ (:height vp) 2))]
-         (.freeze js/Object #js {:x x :y y})))
+         (.freeze js/Object #js {:x x
+                                 :y y})))
 
      :set
      (fn [value]

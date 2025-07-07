@@ -27,9 +27,15 @@
 (defn- setup []
   (-> (thf/sample-file :file1)
 
-      (tho/add-simple-component :component-1 :frame-component-1 :child-component-1 :child-params {:name "child-component-1" :type :rect :fills (ths/sample-fills-color :fill-color "#111111")})
-      (tho/add-simple-component :component-2 :frame-component-2 :child-component-2 :child-params {:name "child-component-2" :type :rect :fills (ths/sample-fills-color :fill-color "#222222")})
-      (tho/add-simple-component :component-3 :frame-component-3 :child-component-3 :child-params {:name "child-component-3" :type :rect :fills (ths/sample-fills-color :fill-color "#333333")})
+      (tho/add-simple-component :component-1 :frame-component-1 :child-component-1 :child-params {:name "child-component-1"
+                                                                                                  :type :rect
+                                                                                                  :fills (ths/sample-fills-color :fill-color "#111111")})
+      (tho/add-simple-component :component-2 :frame-component-2 :child-component-2 :child-params {:name "child-component-2"
+                                                                                                  :type :rect
+                                                                                                  :fills (ths/sample-fills-color :fill-color "#222222")})
+      (tho/add-simple-component :component-3 :frame-component-3 :child-component-3 :child-params {:name "child-component-3"
+                                                                                                  :type :rect
+                                                                                                  :fills (ths/sample-fills-color :fill-color "#333333")})
 
       (tho/add-frame :frame-icon-and-text)
       (thc/instantiate-component :component-1 :copy-component-1 :parent-label :frame-icon-and-text :children-labels [:component-1-icon-and-text])

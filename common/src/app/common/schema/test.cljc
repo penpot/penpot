@@ -29,24 +29,30 @@
 (defn default-reporter-fn
   "Default function passed as the :reporter-fn to clojure.test.check/quick-check.
   Delegates to clojure.test/report."
-  [{:keys [type] :as args}]
+  [{:keys [type]
+    :as args}]
   (case type
     :complete
-    (ct/report {:type ::complete ::params args})
+    (ct/report {:type ::complete
+                ::params args})
 
     :trial
-    (ct/report {:type ::trial ::params args})
+    (ct/report {:type ::trial
+                ::params args})
 
     :failure
-    (ct/report {:type ::fail ::params args})
+    (ct/report {:type ::fail
+                ::params args})
 
     :shrunk
-    (ct/report {:type ::thrunk ::params args})
+    (ct/report {:type ::thrunk
+                ::params args})
 
     nil))
 
 (defmethod ct/report #?(:clj ::complete :cljs [:cljs.test/default ::complete])
-  [{:keys [::params] :as m}]
+  [{:keys [::params]
+    :as m}]
   #?(:clj  (ct/inc-report-counter :pass)
      :cljs (ct/inc-report-counter! :pass))
   (let [tvar (get-testing-var)
@@ -65,7 +71,8 @@
      :cljs (ct/inc-report-counter! :pass)))
 
 (defmethod ct/report #?(:clj ::fail :cljs [:cljs.test/default ::fail])
-  [{:keys [::params] :as m}]
+  [{:keys [::params]
+    :as m}]
   #?(:clj  (ct/inc-report-counter :fail)
      :cljs (ct/inc-report-counter! :fail))
   (let [tvar (get-testing-var)
@@ -87,7 +94,9 @@
   `(tp/for-all ~bindings ~@body))
 
 (defn check!
-  [p & {:keys [num] :or {num 20} :as options}]
+  [p & {:keys [num]
+        :or {num 20}
+        :as options}]
   (let [result (tc/quick-check num p (assoc options :reporter-fn default-reporter-fn :max-size 50))
         pass?        (:pass? result)
         total-tests  (:num-tests result)]

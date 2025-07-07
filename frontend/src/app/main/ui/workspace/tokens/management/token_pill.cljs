@@ -31,8 +31,12 @@
    :stroke-width "Stroke Width"
 
    ;; Spacing
-   :p1 "Top" :p2 "Right" :p3 "Bottom" :p4 "Left"
-   :column-gap "Column Gap" :row-gap "Row Gap"
+   :p1 "Top"
+   :p2 "Right"
+   :p3 "Bottom"
+   :p4 "Left"
+   :column-gap "Column Gap"
+   :row-gap "Row Gap"
 
    ;; Sizing
    :width "Width"
@@ -43,10 +47,14 @@
    :layout-item-max-h "Max Height"
 
    ;; Border Radius
-   :r1 "Top Left" :r2 "Top Right" :r4 "Bottom Left" :r3 "Bottom Right"
+   :r1 "Top Left"
+   :r2 "Top Right"
+   :r4 "Bottom Left"
+   :r3 "Bottom Right"
 
    ;; Dimensions
-   :x "X" :y "Y"
+   :x "X"
+   :y "Y"
 
    ;; Color
    :fill "Fill"
@@ -109,7 +117,8 @@
   (let [{:keys [name value type resolved-value]} token
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
-        {:keys [title] :as token-props} (dwta/get-token-properties theme-token)
+        {:keys [title]
+         :as token-props} (dwta/get-token-properties theme-token)
         applied-tokens (:applied-tokens shape)
         app-token-vals (set (vals applied-tokens))
         app-token-keys (keys applied-tokens)
@@ -298,7 +307,8 @@
          :class (stl/css :token-pill-icon)}]
 
        color
-       [:& color-bullet {:color color :mini true}]
+       [:& color-bullet {:color color
+                         :mini true}]
 
        status-icon?
        [:> token-status-icon*

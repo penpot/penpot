@@ -19,7 +19,8 @@
 (t/use-fixtures :each th/database-reset)
 
 (defn decode-row
-  [{:keys [props context] :as row}]
+  [{:keys [props context]
+    :as row}]
   (cond-> row
     (db/pgobject? props) (assoc :props (db/decode-transit-pgobject props))
     (db/pgobject? context) (assoc :context (db/decode-transit-pgobject context))))

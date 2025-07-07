@@ -31,9 +31,11 @@
 (mf/defc autosaved-milestone*
   {::mf/schema schema:milestone}
   [{:keys [class active versionToggled label autosavedMessage snapshots
-           onClickSnapshotMenu onToggleExpandSnapshots] :rest props}]
+           onClickSnapshotMenu onToggleExpandSnapshots]
+    :rest props}]
   (let [class (d/append-class class (stl/css-case :milestone true :is-selected active))
-        props (mf/spread-props props {:class class :data-testid "milestone"})
+        props (mf/spread-props props {:class class
+                                      :data-testid "milestone"})
 
         handle-click-menu
         (mf/use-fn
@@ -45,21 +47,29 @@
              (when onClickSnapshotMenu
                (onClickSnapshotMenu event index)))))]
     [:> "div" props
-     [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label]
+     [:> text*  {:as "span"
+                 :typography t/body-small
+                 :class (stl/css :name)} label]
 
      [:div {:class (stl/css :snapshots)}
       [:button {:class (stl/css :toggle-snapshots)
                 :aria-label (tr "workspace.versions.expand-snapshot")
                 :on-click onToggleExpandSnapshots}
-       [:> i/icon* {:icon-id i/clock :class (stl/css :icon-clock)}]
-       [:> text* {:as "span" :typography t/body-medium :class (stl/css :toggle-message)} autosavedMessage]
-       [:> i/icon* {:icon-id i/arrow :class (stl/css-case :icon-arrow true :icon-arrow-toggled versionToggled)}]]
+       [:> i/icon* {:icon-id i/clock
+                    :class (stl/css :icon-clock)}]
+       [:> text* {:as "span"
+                  :typography t/body-medium
+                  :class (stl/css :toggle-message)} autosavedMessage]
+       [:> i/icon* {:icon-id i/arrow
+                    :class (stl/css-case :icon-arrow true :icon-arrow-toggled versionToggled)}]]
 
       (when versionToggled
         (for [[idx d] (d/enumerate snapshots)]
           [:div {:key (dm/str "entry-" idx)
                  :class (stl/css :version-entry)}
-           [:> date* {:date d :class (stl/css :date) :typography t/body-small}]
+           [:> date* {:date d
+                      :class (stl/css :date)
+                      :typography t/body-small}]
            [:> icon-button* {:class (stl/css :entry-button)
                              :variant "ghost"
                              :icon "menu"

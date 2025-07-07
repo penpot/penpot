@@ -10,7 +10,8 @@
    [app.util.blob :as blob]))
 
 (defn decode-row
-  [{:keys [data] :as row}]
+  [{:keys [data]
+    :as row}]
   (when row
     (cond-> row
       data (assoc :data (blob/decode data)))))
@@ -33,7 +34,8 @@
 
 (defn pages->data
   [pages]
-  (reduce (fn [acc {:keys [id data name] :as page}]
+  (reduce (fn [acc {:keys [id data name]
+                    :as page}]
             (let [data (-> data
                            (dissoc :version)
                            (assoc :id id :name name))]
@@ -44,7 +46,8 @@
           pages))
 
 (defn migrate-file
-  [conn {:keys [id] :as file}]
+  [conn {:keys [id]
+         :as file}]
   (let [pages (retrieve-pages conn (:id file))
         data  (pages->data pages)]
     (db/update! conn :file

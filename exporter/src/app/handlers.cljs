@@ -21,7 +21,8 @@
 
 (defn on-error
   [error exchange]
-  (let [{:keys [type code] :as data} (ex-data error)]
+  (let [{:keys [type code]
+         :as data} (ex-data error)]
     (cond
       (or (= :validation type)
           (= :assertion type))
@@ -79,8 +80,10 @@
          (s/multi-spec command-spec :cmd)))
 
 (defn handler
-  [{:keys [:request/params] :as exchange}]
-  (let [{:keys [cmd] :as params} (us/conform ::params params)]
+  [{:keys [:request/params]
+    :as exchange}]
+  (let [{:keys [cmd]
+         :as params} (us/conform ::params params)]
     (l/debug :hint "process-request" :cmd cmd)
     (case cmd
       :get-resource  (resources/handler exchange)

@@ -103,7 +103,8 @@
 
 (defn info
   ([content] (info content {}))
-  ([content {:keys [timeout] :or {timeout default-timeout}}]
+  ([content {:keys [timeout]
+             :or {timeout default-timeout}}]
    (show {:content content
           :level :info
           :type :toast
@@ -112,7 +113,8 @@
 
 (defn success
   ([content] (success content {}))
-  ([content {:keys [timeout] :or {timeout default-timeout}}]
+  ([content {:keys [timeout]
+             :or {timeout default-timeout}}]
    (show {:content content
           :level :success
           :type :toast
@@ -121,7 +123,8 @@
 
 (defn warn
   ([content] (warn content {}))
-  ([content {:keys [timeout] :or {timeout default-timeout}}]
+  ([content {:keys [timeout]
+             :or {timeout default-timeout}}]
    (show {:content content
           :level :warning
           :type :toast

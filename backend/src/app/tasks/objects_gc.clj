@@ -24,7 +24,8 @@
      SKIP LOCKED")
 
 (defn- delete-profiles!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage]
+    :as cfg}]
   (->> (db/plan conn [sql:get-profiles deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id]}]
                  (l/trc :hint "permanently delete" :rel "profile" :id (str id))
@@ -47,7 +48,8 @@
      SKIP LOCKED")
 
 (defn- delete-teams!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage]
+    :as cfg}]
   (->> (db/plan conn [sql:get-teams deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id photo-id deleted-at]}]
                  (l/trc :hint "permanently delete"
@@ -75,9 +77,11 @@
      SKIP LOCKED")
 
 (defn- delete-fonts!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage]
+    :as cfg}]
   (->> (db/plan conn [sql:get-fonts deletion-threshold chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [id team-id deleted-at] :as font}]
+       (reduce (fn [total {:keys [id team-id deleted-at]
+                           :as font}]
                  (l/trc :hint "permanently delete"
                         :rel "team-font-variant"
                         :id (str id)
@@ -107,7 +111,8 @@
      SKIP LOCKED")
 
 (defn- delete-projects!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size]
+    :as cfg}]
   (->> (db/plan conn [sql:get-projects deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id team-id deleted-at]}]
                  (l/trc :hint "permanently delete"
@@ -133,9 +138,11 @@
      SKIP LOCKED")
 
 (defn- delete-files!
-  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
+  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size]
+    :as cfg}]
   (->> (db/plan conn [sql:get-files deletion-threshold chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
+       (reduce (fn [total {:keys [id deleted-at project-id]
+                           :as file}]
                  (l/trc :hint "permanently delete"
                         :rel "file"
                         :id (str id)
@@ -162,7 +169,8 @@
      SKIP LOCKED")
 
 (defn delete-file-thumbnails!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage]
+    :as cfg}]
   (->> (db/plan conn [sql:get-file-thumbnails deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id revn media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
@@ -175,7 +183,8 @@
                  (some->> media-id (sto/touch-object! storage))
 
                  ;; And finally, permanently delete the object
-                 (db/delete! conn :file-thumbnail {:file-id file-id :revn revn})
+                 (db/delete! conn :file-thumbnail {:file-id file-id
+                                                   :revn revn})
 
                  (inc total))
                0)))
@@ -191,7 +200,8 @@
      SKIP LOCKED")
 
 (defn delete-file-object-thumbnails!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage]
+    :as cfg}]
   (->> (db/plan conn [sql:get-file-object-thumbnails deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id object-id media-id deleted-at]}]
                  (l/trc :hint "permanently delete"
@@ -204,7 +214,8 @@
                  (some->> media-id (sto/touch-object! storage))
 
                  ;; And finally, permanently delete the object
-                 (db/delete! conn :file-tagged-object-thumbnail {:file-id file-id :object-id object-id})
+                 (db/delete! conn :file-tagged-object-thumbnail {:file-id file-id
+                                                                 :object-id object-id})
 
                  (inc total))
                0)))
@@ -220,7 +231,8 @@
      SKIP LOCKED")
 
 (defn- delete-file-data-fragments!
-  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
+  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size]
+    :as cfg}]
   (->> (db/plan conn [sql:get-file-data-fragments deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [file-id id deleted-at data-ref-id]}]
                  (l/trc :hint "permanently delete"
@@ -230,7 +242,8 @@
                         :deleted-at (dt/format-instant deleted-at))
 
                  (some->> data-ref-id (sto/touch-object! storage))
-                 (db/delete! conn :file-data-fragment {:file-id file-id :id id})
+                 (db/delete! conn :file-data-fragment {:file-id file-id
+                                                       :id id})
 
                  (inc total))
                0)))
@@ -246,9 +259,11 @@
      SKIP LOCKED")
 
 (defn- delete-file-media-objects!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage]
+    :as cfg}]
   (->> (db/plan conn [sql:get-file-media-objects deletion-threshold chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [id file-id deleted-at] :as fmo}]
+       (reduce (fn [total {:keys [id file-id deleted-at]
+                           :as fmo}]
                  (l/trc :hint "permanently delete"
                         :rel "file-media-object"
                         :id (str id)
@@ -275,9 +290,11 @@
      SKIP LOCKED")
 
 (defn- delete-file-changes!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage]
+    :as cfg}]
   (->> (db/plan conn [sql:get-file-change deletion-threshold chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [id file-id deleted-at] :as xlog}]
+       (reduce (fn [total {:keys [id file-id deleted-at]
+                           :as xlog}]
                  (l/trc :hint "permanently delete"
                         :rel "file-change"
                         :id (str id)
@@ -309,7 +326,8 @@
   until 0 results is returned"
   [cfg proc-fn]
   (loop [total 0]
-    (let [result (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
+    (let [result (db/tx-run! cfg (fn [{:keys [::db/conn]
+                                       :as cfg}]
                                    (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                                    (proc-fn cfg)))]
       (if (pos? result)
@@ -327,7 +345,8 @@
 
 (defmethod ig/init-key ::handler
   [_ cfg]
-  (fn [{:keys [props] :as task}]
+  (fn [{:keys [props]
+        :as task}]
     (let [threshold (dt/duration (get props :deletion-threshold 0))
           cfg       (assoc cfg ::deletion-threshold (db/interval threshold))]
       (loop [procs (map deref deletion-proc-vars)

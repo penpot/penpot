@@ -162,7 +162,8 @@
                       (assoc ::yres/body (yres/stream-body (partial transit-streamable-body body opts)))))
                 response)))
 
-          (format-from-params [{:keys [query-params] :as request}]
+          (format-from-params [{:keys [query-params]
+                                :as request}]
             (and (= "json" (get query-params :_fmt))
                  "application/json"))
 

@@ -50,7 +50,8 @@
    ::mf/private true}
   [{:keys [can-edit]}]
   (let [on-click (mf/use-fn #(st/emit! (dd/create-project)))]
-    [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+    [:header {:class (stl/css :dashboard-header)
+              :data-testid "dashboard-header"}
      [:div#dashboard-projects-title {:class (stl/css :dashboard-title)}
       [:h1 (tr "dashboard.projects-title")]]
      (when can-edit
@@ -182,7 +183,8 @@
            (let [mdata  {:on-success on-file-created}
                  params {:project-id project-id}]
              (st/emit! (-> (dd/create-file (with-meta params mdata))
-                           (with-meta {::ev/origin origin :has-files (> file-count 0)}))))))
+                           (with-meta {::ev/origin origin
+                                       :has-files (> file-count 0)}))))))
 
         on-create-click
         (mf/use-fn
@@ -246,7 +248,10 @@
         [:div {:class (stl/css-case :project-actions true
                                     :pinned-project (:is-pinned project))}
          (when-not (:is-default project)
-           [:> pin-button* {:class (stl/css :pin-button) :is-pinned (:is-pinned project) :on-click toggle-pin :tab-index 0}])
+           [:> pin-button* {:class (stl/css :pin-button)
+                            :is-pinned (:is-pinned project)
+                            :on-click toggle-pin
+                            :tab-index 0}])
 
          (when ^boolean can-edit
            [:button {:class (stl/css :add-file-btn)
@@ -276,7 +281,8 @@
             :on-menu-close on-menu-close
             :on-import on-import}])]]]
 
-     [:div {:class (stl/css :grid-container) :ref rowref}
+     [:div {:class (stl/css :grid-container)
+            :ref rowref}
       (if ^boolean empty?
         [:> empty-placeholder* {:title (if ^boolean is-draft?
                                          (tr "dashboard.empty-placeholder-drafts-title")
@@ -362,7 +368,8 @@
          (when (and show-team-hero?
                     can-invite
                     (not is-defalt-team?))
-           [:> team-hero* {:team team :on-close on-close}])
+           [:> team-hero* {:team team
+                           :on-close on-close}])
 
          [:div {:class (stl/css-case :dashboard-container true
                                      :no-bg true
@@ -371,7 +378,8 @@
                                                           (not is-defalt-team?)
                                                           show-team-hero?
                                                           can-invite))}
-          (for [{:keys [id] :as project} projects]
+          (for [{:keys [id]
+                 :as project} projects]
             ;; FIXME: refactor this, looks inneficient
             (let [files (when recent-map
                           (->> (vals recent-map)

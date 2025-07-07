@@ -16,7 +16,9 @@
   (let [coords (hooks/use-rxsub ms/mouse-position)]
     [:div {:class (stl/css-case :container-color-palette-open colorpalette?
                                 :container true)}
-     [:span {:alt "x" :class (stl/css :coordinate)}
+     [:span {:alt "x"
+             :class (stl/css :coordinate)}
       (str "X: " (:x coords "-"))]
-     [:span {:alt "y" :class (stl/css :coordinate)}
+     [:span {:alt "y"
+             :class (stl/css :coordinate)}
       (str "Y: " (:y coords "-"))]]))

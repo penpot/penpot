@@ -52,11 +52,13 @@
 (defn- show-release-notes
   [event]
   (let [version (:main cf/version)]
-    (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+    (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes"
+                                     :version version}))
 
     (if (and (kbd/alt? event) (kbd/mod? event))
       (st/emit! (modal/show {:type :onboarding}))
-      (st/emit! (modal/show {:type :release-notes :version version})))))
+      (st/emit! (modal/show {:type :release-notes
+                             :version version})))))
 
 (mf/defc sidebar-content
   {::mf/props :obj}
@@ -124,7 +126,8 @@
 
        [:hr {:class (stl/css :sidebar-separator)}]
 
-       [:li {:on-click show-release-notes :data-testid "release-notes"
+       [:li {:on-click show-release-notes
+             :data-testid "release-notes"
              :class (stl/css :settings-item)}
         [:span {:class (stl/css :element-title)} (tr "labels.release-notes")]]
 

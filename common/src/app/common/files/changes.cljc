@@ -148,7 +148,8 @@
 
         check1 [:fn {:error/path [:page-id]
                      :error/message "missing page-id"}
-                (fn [{:keys [object-type] :as change}]
+                (fn [{:keys [object-type]
+                      :as change}]
                   (if (= :shape object-type)
                     (uuid? (:page-id change))
                     true))]
@@ -156,7 +157,8 @@
         gen    (->> (sg/generator schema)
                     (sg/filter :object-id)
                     (sg/filter :page-id)
-                    (sg/fmap (fn [{:keys [object-type] :as change}]
+                    (sg/fmap (fn [{:keys [object-type]
+                                   :as change}]
                                (cond
                                  (= :file object-type)
                                  (-> change
@@ -433,7 +435,8 @@
       [:base-font-size :string]]]]])
 
 (def schema:changes
-  [:sequential {:gen/max 5 :gen/min 1} schema:change])
+  [:sequential {:gen/max 5
+                :gen/min 1} schema:change])
 
 (sm/register! ::change schema:change)
 (sm/register! ::changes schema:changes)
@@ -495,7 +498,8 @@
     (->> (into #{} (map :page-id) items)
          (mapcat (fn [page-id]
                    (filter #(= page-id (:page-id %)) items)))
-         (mapcat (fn [{:keys [type id page-id] :as item}]
+         (mapcat (fn [{:keys [type id page-id]
+                       :as item}]
                    (sequence
                     (map (partial vector page-id))
                     (case type
@@ -642,7 +646,8 @@
       (d/update-in-when data [:components component-id] update-container))))
 
 (defn- process-operations
-  [objects {:keys [page-id id operations] :as change}]
+  [objects {:keys [page-id id operations]
+            :as change}]
   (if-let [shape (get objects id)]
     (let [shape    (reduce process-operation shape operations)
           touched? (-> shape meta ::ctn/touched)]
@@ -660,13 +665,15 @@
     objects))
 
 (defmethod process-change :mod-obj
-  [data {:keys [page-id component-id] :as change}]
+  [data {:keys [page-id component-id]
+         :as change}]
   (if page-id
     (d/update-in-when data [:pages-index page-id :objects] process-operations change)
     (d/update-in-when data [:components component-id :objects] process-operations change)))
 
 (defn- process-children-reordering
-  [objects {:keys [parent-id shapes] :as change}]
+  [objects {:keys [parent-id shapes]
+            :as change}]
   (if-let [old-shapes (dm/get-in objects [parent-id :shapes])]
     (let [id->idx
           (update-vals
@@ -686,7 +693,8 @@
     objects))
 
 (defmethod process-change :reorder-children
-  [data {:keys [page-id component-id] :as change}]
+  [data {:keys [page-id component-id]
+         :as change}]
   (if page-id
     (d/update-in-when data [:pages-index page-id :objects] process-children-reordering change)
     (d/update-in-when data [:components component-id :objects] process-children-reordering change)))
@@ -698,7 +706,8 @@
     (d/update-in-when data [:components component-id] ctst/delete-shape id ignore-touched)))
 
 (defmethod process-change :fix-obj
-  [data {:keys [page-id component-id id] :as params}]
+  [data {:keys [page-id component-id id]
+         :as params}]
   (letfn [(fix-container [container]
             (case (:fix params :broken-children)
               :broken-children (ctst/fix-broken-children container id)
@@ -871,12 +880,14 @@
     (ex/raise :type :conflict
               :hint "id+name or page should be provided, never both"))
   (let [page (if (and (string? name) (uuid? id))
-               (ctp/make-empty-page {:id id :name name})
+               (ctp/make-empty-page {:id id
+                                     :name name})
                page)]
     (ctpl/add-page data page)))
 
 (defmethod process-change :mod-page
-  [data {:keys [id] :as params}]
+  [data {:keys [id]
+         :as params}]
   (d/update-in-when data [:pages-index id]
                     (fn [page]
                       (let [name (get params :name)
@@ -1063,7 +1074,8 @@
                                  (ctob/rename-set-group set-group-path set-group-fname)))))
 
 (defmethod process-change :move-token-set
-  [data {:keys [from-path to-path before-path before-group] :as changes}]
+  [data {:keys [from-path to-path before-path before-group]
+         :as changes}]
   (update data :tokens-lib #(-> %
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set from-path to-path before-path before-group))))
@@ -1087,7 +1099,9 @@
   (sm/decoder cts/schema:shape sm/json-transformer))
 
 (defmethod process-operation :assign
-  [{:keys [type] :as shape} {:keys [value] :as op}]
+  [{:keys [type]
+    :as shape} {:keys [value]
+                :as op}]
   (let [modifications (assoc value :type type)
         modifications (decode-shape modifications)]
     (reduce-kv (fn [shape k v]
@@ -1159,7 +1173,8 @@
           #{component-id})))))
 
 (defmethod components-changed :mov-objects
-  [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
+  [file-data {:keys [page-id _component-id parent-id shapes]
+              :as change}]
   (when page-id
     (let [page  (ctpl/get-page file-data page-id)
           xform (comp (filter :main-instance)
@@ -1176,7 +1191,8 @@
               shapes))))
 
 (defmethod components-changed :add-obj
-  [file-data {:keys [parent-id page-id _component-id] :as change}]
+  [file-data {:keys [parent-id page-id _component-id]
+              :as change}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)
           parents (map (partial ctn/get-shape page)
@@ -1186,7 +1202,8 @@
       (into #{} xform parents))))
 
 (defmethod components-changed :del-obj
-  [file-data {:keys [id page-id _component-id] :as change}]
+  [file-data {:keys [id page-id _component-id]
+              :as change}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)
           shape-and-parents (map (partial ctn/get-shape page)
@@ -1228,7 +1245,8 @@
         (parents-frames id (:objects page))))))
 
 (defmethod frames-changed :mov-objects
-  [file-data {:keys [page-id _component-id parent-id shapes] :as change}]
+  [file-data {:keys [page-id _component-id parent-id shapes]
+              :as change}]
   (when page-id
     (let [page  (ctpl/get-page file-data page-id)]
       (concat
@@ -1236,13 +1254,15 @@
        (mapcat #(parents-frames (:parent-id %) (:objects page)) shapes)))))
 
 (defmethod frames-changed :add-obj
-  [file-data {:keys [parent-id page-id _component-id] :as change}]
+  [file-data {:keys [parent-id page-id _component-id]
+              :as change}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)]
       (parents-frames parent-id (:objects page)))))
 
 (defmethod frames-changed :del-obj
-  [file-data {:keys [id page-id _component-id] :as change}]
+  [file-data {:keys [id page-id _component-id]
+              :as change}]
   (when page-id
     (let [page (ctpl/get-page file-data page-id)]
       (parents-frames id (:objects page)))))

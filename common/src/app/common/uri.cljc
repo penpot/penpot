@@ -28,7 +28,8 @@
   (if (keyword? v) (name v) v))
 
 (defn get-domain
-  [{:keys [host port] :as uri}]
+  [{:keys [host port]
+    :as uri}]
   (cond-> host
     port (str ":" port)))
 

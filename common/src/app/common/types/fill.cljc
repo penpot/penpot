@@ -19,10 +19,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:fill-attrs
-  [:map {:title "FillAttrs" :closed true}
+  [:map {:title "FillAttrs"
+         :closed true}
    [:fill-color-ref-file {:optional true} ::sm/uuid]
    [:fill-color-ref-id {:optional true} ::sm/uuid]
-   [:fill-opacity {:optional true} [::sm/number {:min 0 :max 1}]]
+   [:fill-opacity {:optional true} [::sm/number {:min 0
+                                                 :max 1}]]
    [:fill-color {:optional true} types.color/schema:hex-color]
    [:fill-color-gradient {:optional true} types.color/schema:gradient]
    [:fill-image {:optional true} types.color/schema:image]])

@@ -29,7 +29,8 @@
        "(KHTML, like Gecko) Chrome/99.0.3729.169 Safari/537.36"))
 
 (defn create-cookies
-  [uri {:keys [name token] :or {name "auth-token"}}]
+  [uri {:keys [name token]
+        :or {name "auth-token"}}]
   (let [domain (str (:host uri)
                     (when (:port uri)
                       (str ":" (:port uri))))]
@@ -40,8 +41,11 @@
 
 (defn nav!
   ([page url] (nav! page url nil))
-  ([page url {:keys [wait-until timeout] :or {wait-until "networkidle" timeout 20000}}]
-   (.goto ^js page (str url) #js {:waitUntil wait-until :timeout timeout})))
+  ([page url {:keys [wait-until timeout]
+              :or {wait-until "networkidle"
+                   timeout 20000}}]
+   (.goto ^js page (str url) #js {:waitUntil wait-until
+                                  :timeout timeout})))
 
 (defn sleep
   [page ms]
@@ -49,13 +53,19 @@
 
 (defn wait-for
   ([locator] (wait-for locator nil))
-  ([locator {:keys [state timeout] :or {state "visible" timeout 10000}}]
-   (.waitFor ^js locator #js {:state state :timeout timeout})))
+  ([locator {:keys [state timeout]
+             :or {state "visible"
+                  timeout 10000}}]
+   (.waitFor ^js locator #js {:state state
+                              :timeout timeout})))
 
 (defn screenshot
   ([frame] (screenshot frame {}))
   ([frame {:keys [full-page? omit-background? type quality path]
-           :or {type "png" full-page? false omit-background? false quality 95}}]
+           :or {type "png"
+                full-page? false
+                omit-background? false
+                quality 95}}]
    (let [options (-> (obj/new)
                      (obj/set! "type" (name type))
                      (obj/set! "omitBackground" omit-background?)

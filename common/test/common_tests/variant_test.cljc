@@ -10,14 +10,25 @@
    [clojure.test :as t]))
 
 (t/deftest convert-between-variant-properties-maps-and-formulas
-  (let [map-with-two-props           [{:name "border" :value "yes"} {:name "color" :value "gray"}]
-        map-with-two-props-one-blank [{:name "border" :value "no"} {:name "color" :value ""}]
-        map-with-two-props-dashes    [{:name "border" :value "no"} {:name "color" :value "--"}]
-        map-with-one-prop            [{:name "border" :value "no"}]
-        map-with-equal               [{:name "border" :value "yes color=yes"}]
-        map-with-spaces              [{:name "border (1)" :value "of course"}
-                                      {:name "color (2)" :value "dark gray"}
-                                      {:name "background (3)" :value "anoth€r co-lor"}]
+  (let [map-with-two-props           [{:name "border"
+                                       :value "yes"} {:name "color"
+                                                      :value "gray"}]
+        map-with-two-props-one-blank [{:name "border"
+                                       :value "no"} {:name "color"
+                                                     :value ""}]
+        map-with-two-props-dashes    [{:name "border"
+                                       :value "no"} {:name "color"
+                                                     :value "--"}]
+        map-with-one-prop            [{:name "border"
+                                       :value "no"}]
+        map-with-equal               [{:name "border"
+                                       :value "yes color=yes"}]
+        map-with-spaces              [{:name "border (1)"
+                                       :value "of course"}
+                                      {:name "color (2)"
+                                       :value "dark gray"}
+                                      {:name "background (3)"
+                                       :value "anoth€r co-lor"}]
 
         string-valid-with-two-props  "border=yes, color=gray"
         string-valid-with-one-prop   "border=no"
@@ -63,15 +74,26 @@
 
 
 (t/deftest find-properties
-  (let [prev-props  [{:name "border" :value "yes"} {:name "color" :value "gray"}]
-        upd-props-1 [{:name "border" :value "yes"}]
-        upd-props-2 [{:name "border" :value "yes"} {:name "color" :value "blue"}]
-        upd-props-3 [{:name "border" :value "yes"} {:name "color" :value "gray"} {:name "shadow" :value "large"}]
-        upd-props-4 [{:name "color" :value "yellow"} {:name "shadow" :value "large"}]]
+  (let [prev-props  [{:name "border"
+                      :value "yes"} {:name "color"
+                                     :value "gray"}]
+        upd-props-1 [{:name "border"
+                      :value "yes"}]
+        upd-props-2 [{:name "border"
+                      :value "yes"} {:name "color"
+                                     :value "blue"}]
+        upd-props-3 [{:name "border"
+                      :value "yes"} {:name "color"
+                                     :value "gray"} {:name "shadow"
+                                                     :value "large"}]
+        upd-props-4 [{:name "color"
+                      :value "yellow"} {:name "shadow"
+                                        :value "large"}]]
 
     (t/testing "a property to remove"
       (t/is (= (ctv/find-properties-to-remove prev-props upd-props-1)
-               [{:name "color" :value "gray"}]))
+               [{:name "color"
+                 :value "gray"}]))
       (t/is (= (ctv/find-properties-to-update prev-props upd-props-1)
                []))
       (t/is (= (ctv/find-properties-to-add prev-props upd-props-1)
@@ -81,7 +103,8 @@
       (t/is (= (ctv/find-properties-to-remove prev-props upd-props-2)
                []))
       (t/is (= (ctv/find-properties-to-update prev-props upd-props-2)
-               [{:name "color" :value "blue"}]))
+               [{:name "color"
+                 :value "blue"}]))
       (t/is (= (ctv/find-properties-to-add prev-props upd-props-2)
                [])))
 
@@ -91,15 +114,19 @@
       (t/is (= (ctv/find-properties-to-update prev-props upd-props-3)
                []))
       (t/is (= (ctv/find-properties-to-add prev-props upd-props-3)
-               [{:name "shadow" :value "large"}])))
+               [{:name "shadow"
+                 :value "large"}])))
 
     (t/testing "properties to remove, update & add"
       (t/is (= (ctv/find-properties-to-remove prev-props upd-props-4)
-               [{:name "border" :value "yes"}]))
+               [{:name "border"
+                 :value "yes"}]))
       (t/is (= (ctv/find-properties-to-update prev-props upd-props-4)
-               [{:name "color" :value "yellow"}]))
+               [{:name "color"
+                 :value "yellow"}]))
       (t/is (= (ctv/find-properties-to-add prev-props upd-props-4)
-               [{:name "shadow" :value "large"}])))
+               [{:name "shadow"
+                 :value "large"}])))
 
     (t/testing "find property index"
       (t/is (= (ctv/find-index-for-property-name prev-props "border") 0))
@@ -107,17 +134,29 @@
 
 
 (t/deftest compare-properties
-  (let [props-1  [{:name "border" :value "yes"} {:name "color" :value "gray"}]
-        props-2  [{:name "border" :value "yes"} {:name "color" :value "red"}]
-        props-3  [{:name "border" :value "no"} {:name "color" :value "gray"}]]
+  (let [props-1  [{:name "border"
+                   :value "yes"} {:name "color"
+                                  :value "gray"}]
+        props-2  [{:name "border"
+                   :value "yes"} {:name "color"
+                                  :value "red"}]
+        props-3  [{:name "border"
+                   :value "no"} {:name "color"
+                                 :value "gray"}]]
 
     (t/testing "compare properties"
       (t/is (= (ctv/compare-properties [props-1 props-2])
-               [{:name "border" :value "yes"} {:name "color" :value nil}]))
+               [{:name "border"
+                 :value "yes"} {:name "color"
+                                :value nil}]))
       (t/is (= (ctv/compare-properties [props-1 props-2 props-3])
-               [{:name "border" :value nil} {:name "color" :value nil}]))
+               [{:name "border"
+                 :value nil} {:name "color"
+                              :value nil}]))
       (t/is (= (ctv/compare-properties [props-1 props-2 props-3] "&")
-               [{:name "border" :value "&"} {:name "color" :value "&"}])))))
+               [{:name "border"
+                 :value "&"} {:name "color"
+                              :value "&"}])))))
 
 
 (t/deftest check-belong-same-variant
@@ -146,16 +185,26 @@
 
 
 (t/deftest update-number-in-repeated-prop-names
-  (let [props          [{:name "color"      :value "yellow"}
-                        {:name "color"      :value "blue"}
-                        {:name "color"      :value "red"}
-                        {:name "border (1)" :value "no"}
-                        {:name "border (1)" :value "yes"}]
-        numbered-props [{:name "color"      :value "yellow"}
-                        {:name "color (1)"  :value "blue"}
-                        {:name "color (2)"  :value "red"}
-                        {:name "border (1)" :value "no"}
-                        {:name "border (2)" :value "yes"}]]
+  (let [props          [{:name "color"
+                         :value "yellow"}
+                        {:name "color"
+                         :value "blue"}
+                        {:name "color"
+                         :value "red"}
+                        {:name "border (1)"
+                         :value "no"}
+                        {:name "border (1)"
+                         :value "yes"}]
+        numbered-props [{:name "color"
+                         :value "yellow"}
+                        {:name "color (1)"
+                         :value "blue"}
+                        {:name "color (2)"
+                         :value "red"}
+                        {:name "border (1)"
+                         :value "no"}
+                        {:name "border (2)"
+                         :value "yes"}]]
 
     (t/testing "update-number-in-repeated-prop-names"
       (t/is (= (ctv/update-number-in-repeated-prop-names props) numbered-props)))))

@@ -77,7 +77,8 @@
   (assert (db/pool? (::db/pool params)) "expected valid database pool"))
 
 (defmethod ig/init-key ::props
-  [_ {:keys [::db/pool ::key] :as cfg}]
+  [_ {:keys [::db/pool ::key]
+      :as cfg}]
 
   (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                     (db/xact-lock! conn 0)

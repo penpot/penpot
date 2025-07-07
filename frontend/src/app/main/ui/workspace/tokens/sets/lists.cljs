@@ -93,13 +93,17 @@
   (let [can-edit? (mf/use-ctx ctx/can-edit?)]
     (if can-edit?
       [:div {:class (stl/css :empty-sets-wrapper)}
-       [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+       [:> text* {:as "span"
+                  :typography "body-small"
+                  :class (stl/css :empty-state-message)}
         (tr "workspace.tokens.no-sets-yet")]
        [:button {:on-click on-start-creation
                  :class (stl/css :create-set-button)}
         (tr "workspace.tokens.create-one")]]
       [:div {:class (stl/css :empty-sets-wrapper)}
-       [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message)}
+       [:> text* {:as "span"
+                  :typography "body-small"
+                  :class (stl/css :empty-state-message)}
         (tr "workspace.tokens.no-sets-yet")]])))
 
 (mf/defc add-button*
@@ -354,7 +358,8 @@
                                       (disj % path)
                                       (conj % path)))))]
 
-    (for [{:keys [id token-set index is-new is-group path parent-path depth] :as node}
+    (for [{:keys [id token-set index is-new is-group path parent-path depth]
+           :as node}
           (ctob/sets-tree-seq token-sets
                               {:skip-children-pred collapsed?
                                :new-at-path new-path})]
@@ -471,7 +476,9 @@
 
     [:div {:class (stl/css :sets-list)}
      (if ^boolean empty-state?
-       [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message-sets)}
+       [:> text* {:as "span"
+                  :typography "body-small"
+                  :class (stl/css :empty-state-message-sets)}
         (tr "workspace.tokens.no-sets-create")]
 
        [:> token-sets-tree*

@@ -48,7 +48,8 @@
    (db/tjson (d/without-nils (:context event)))])
 
 (defn- adjust-timestamp
-  [{:keys [timestamp created-at] :as event}]
+  [{:keys [timestamp created-at]
+    :as event}]
   (let [margin (inst-ms (dt/diff timestamp created-at))]
     (if (or (neg? margin)
             (> margin 3600000))
@@ -60,7 +61,8 @@
       event)))
 
 (defn- handle-events
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id events]
+                        :as params}]
   (let [request (-> params meta ::http/request)
         ip-addr (inet/parse-request request)
         tnow    (dt/now)
@@ -107,7 +109,8 @@
    ::audit/skip true
    ::doc/skip true
    ::doc/added "1.17"}
-  [{:keys [::db/pool] :as cfg} params]
+  [{:keys [::db/pool]
+    :as cfg} params]
   (if (or (db/read-only? pool)
           (not (contains? cf/flags :audit-log)))
     (do

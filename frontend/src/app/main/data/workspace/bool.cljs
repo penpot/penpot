@@ -124,7 +124,8 @@
       (let [objects   (dsh/lookup-page-objects state)
             update-fn (partial group->bool type)]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
-          (rx/of (dwsh/update-shapes [shape-id] update-fn {:with-objects? true :reg-objects? true})))))))
+          (rx/of (dwsh/update-shapes [shape-id] update-fn {:with-objects? true
+                                                           :reg-objects? true})))))))
 
 (defn- bool->group
   [shape objects]
@@ -143,7 +144,8 @@
     (watch [_ state _]
       (let [objects (dsh/lookup-page-objects state)]
         (when-not (ctn/has-any-copy-parent? objects (get objects shape-id))
-          (rx/of (dwsh/update-shapes [shape-id] bool->group {:with-objects? true :reg-objects? true})))))))
+          (rx/of (dwsh/update-shapes [shape-id] bool->group {:with-objects? true
+                                                             :reg-objects? true})))))))
 
 (defn change-bool-type
   [shape-id type]

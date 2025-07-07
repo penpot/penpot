@@ -79,7 +79,8 @@
 
 (defmethod ig/init-key ::pool
   [_ cfg]
-  (let [{:keys [::uri ::read-only] :as cfg}
+  (let [{:keys [::uri ::read-only]
+         :as cfg}
         (merge defaults cfg)]
     (when uri
       (l/info :hint "initialize connection pool"
@@ -106,7 +107,8 @@
        "SET idle_in_transaction_session_timeout = 300000;"))
 
 (defn- create-datasource-config
-  [{:keys [::uri] :as cfg}]
+  [{:keys [::uri]
+    :as cfg}]
 
   ;; (app.common.pprint/pprint cfg)
   (let [config (HikariConfig.)]
@@ -200,7 +202,8 @@
 (defn lobj-open
   ([manager oid]
    (lobj-open manager oid {}))
-  ([manager oid {:keys [mode] :or {mode :rw}}]
+  ([manager oid {:keys [mode]
+                 :or {mode :rw}}]
    (let [mode (case mode
                 (:r :read) LargeObjectManager/READ
                 (:w :write) LargeObjectManager/WRITE
@@ -421,7 +424,8 @@
 
 (defn cursor
   "Return a lazy seq of rows using server side cursors"
-  [conn query & {:keys [chunk-size] :or {chunk-size 25}}]
+  [conn query & {:keys [chunk-size]
+                 :or {chunk-size 25}}]
   (let [cname  (str (gensym "cursor_"))
         fquery [(str "FETCH " chunk-size " FROM " cname)]]
 

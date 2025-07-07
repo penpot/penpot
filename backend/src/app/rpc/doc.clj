@@ -48,7 +48,8 @@
               (if (= type :js)
                 (smdj/describe (sm/schema schema) {::smdj/max-level 4})
                 (-> (smdn/describe (sm/schema schema))
-                    (pp/pprint-str {:level 5 :width 70})))))
+                    (pp/pprint-str {:level 5
+                                    :width 70})))))
 
           (get-context [mdata]
             {:name (::sv/name mdata)
@@ -207,7 +208,8 @@
   (assert (sm/valid? ::rpc/methods (::rpc/methods params)) "expected valid methods"))
 
 (defmethod ig/init-key ::routes
-  [_ {:keys [::rpc/methods] :as cfg}]
+  [_ {:keys [::rpc/methods]
+      :as cfg}]
   [(let [context (delay (prepare-doc-context methods))]
      [["/_doc"
        {:handler (doc-handler context)

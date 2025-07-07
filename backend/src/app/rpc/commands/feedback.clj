@@ -27,7 +27,8 @@
 (sv/defmethod ::send-user-feedback
   {::doc/added "1.18"
    ::sm/params schema:send-user-feedback}
-  [{:keys [::db/pool]} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/pool]} {:keys [::rpc/profile-id]
+                        :as params}]
   (when-not (contains? cf/flags :user-feedback)
     (ex/raise :type :restriction
               :code :feedback-disabled

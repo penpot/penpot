@@ -115,7 +115,9 @@
 (defn get-component-shape
   "Get the parent top shape linked to a component main for this shape, if any"
   ([objects shape] (get-component-shape objects shape nil))
-  ([objects shape {:keys [allow-main?] :or {allow-main? false} :as options}]
+  ([objects shape {:keys [allow-main?]
+                   :or {allow-main? false}
+                   :as options}]
    (let [parent (get objects (:parent-id shape))]
      (cond
        (nil? shape)
@@ -139,7 +141,9 @@
 (defn get-head-shape
   "Get the parent top or nested shape linked to a component for this shape, if any"
   ([objects shape] (get-head-shape objects shape nil))
-  ([objects shape {:keys [allow-main?] :or {allow-main? false} :as options}]
+  ([objects shape {:keys [allow-main?]
+                   :or {allow-main? false}
+                   :as options}]
    (cond
      (nil? shape)
      nil
@@ -295,7 +299,10 @@
    (make-component-instance page component library-data position {}))
   ([page component library-data position
     {:keys [main-instance? force-id force-frame-id keep-ids?]
-     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
+     :or {main-instance? false
+          force-id nil
+          force-frame-id nil
+          keep-ids? false}}]
    (let [component-page  (ctpl/get-page library-data (:main-instance-page component))
 
          component-shape (-> (get-shape component-page (:main-instance-id component))

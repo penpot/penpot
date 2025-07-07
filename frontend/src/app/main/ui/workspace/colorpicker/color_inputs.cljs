@@ -28,9 +28,14 @@
   (* (/ val 255) 100))
 
 (mf/defc color-inputs [{:keys [type color disable-opacity on-change]}]
-  (let [{red :r green :g blue :b
-         hue :h saturation :s value :v
-         hex :hex alpha :alpha} color
+  (let [{red :r
+         green :g
+         blue :b
+         hue :h
+         saturation :s
+         value :v
+         hex :hex
+         alpha :alpha} color
 
         refs {:hex   (mf/use-ref nil)
               :r     (mf/use-ref nil)
@@ -46,8 +51,12 @@
           (let [[r g b] (cc/hex->rgb hex)
                 [h s v] (cc/hex->hsv hex)]
             (on-change {:hex hex
-                        :h h :s s :v v
-                        :r r :g g :b b})))
+                        :h h
+                        :s s
+                        :v v
+                        :r r
+                        :g g
+                        :b b})))
         on-change-hex
         (fn [e]
           (let [val (-> e dom/get-target-val parse-hex)]
@@ -81,15 +90,23 @@
                         hex (cc/rgb->hex [r g b])
                         [h s v] (cc/hex->hsv hex)]
                     (on-change {:hex hex
-                                :h h :s s :v v
-                                :r r :g g :b b}))
+                                :h h
+                                :s s
+                                :v v
+                                :r r
+                                :g g
+                                :b b}))
 
                   (let [{:keys [h s v]} (merge color (hash-map property val))
                         hex (cc/hsv->hex [h s v])
                         [r g b] (cc/hex->rgb hex)]
                     (on-change {:hex hex
-                                :h h :s s :v v
-                                :r r :g g :b b})))))))
+                                :h h
+                                :s s
+                                :v v
+                                :r r
+                                :g g
+                                :b b})))))))
 
         on-change-opacity
         (fn [e]
@@ -120,7 +137,8 @@
       (if (= type :rgb)
         [:*
          [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "red-value" :class (stl/css :input-label)} "R"]
+          [:label {:for "red-value"
+                   :class (stl/css :input-label)} "R"]
           [:input {:id "red-value"
                    :ref (:r refs)
                    :type "number"
@@ -129,7 +147,8 @@
                    :default-value red
                    :on-change (on-change-property :r 255)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "green-value" :class (stl/css :input-label)} "G"]
+          [:label {:for "green-value"
+                   :class (stl/css :input-label)} "G"]
           [:input {:id "green-value"
                    :ref (:g refs)
                    :type "number"
@@ -138,7 +157,8 @@
                    :default-value green
                    :on-change (on-change-property :g 255)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "blue-value" :class (stl/css :input-label)} "B"]
+          [:label {:for "blue-value"
+                   :class (stl/css :input-label)} "B"]
           [:input {:id "blue-value"
                    :ref (:b refs)
                    :type "number"
@@ -149,7 +169,8 @@
 
         [:*
          [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "hue-value" :class (stl/css :input-label)} "H"]
+          [:label {:for "hue-value"
+                   :class (stl/css :input-label)} "H"]
           [:input {:id "hue-value"
                    :ref (:h refs)
                    :type "number"
@@ -158,7 +179,8 @@
                    :default-value hue
                    :on-change (on-change-property :h 360)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "saturation-value" :class (stl/css :input-label)} "S"]
+          [:label {:for "saturation-value"
+                   :class (stl/css :input-label)} "S"]
           [:input {:id "saturation-value"
                    :ref (:s refs)
                    :type "number"
@@ -168,7 +190,8 @@
                    :default-value saturation
                    :on-change (on-change-property :s 100)}]]
          [:div {:class (stl/css :input-wrapper)}
-          [:label {:for "value-value" :class (stl/css :input-label)} "V"]
+          [:label {:for "value-value"
+                   :class (stl/css :input-label)} "V"]
           [:input {:id "value-value"
                    :ref (:v refs)
                    :type "number"
@@ -179,7 +202,8 @@
      [:div {:class (stl/css :hex-alpha-wrapper)}
       [:div {:class (stl/css-case :input-wrapper true
                                   :hex true)}
-       [:label {:for "hex-value" :class (stl/css :input-label)} "HEX"]
+       [:label {:for "hex-value"
+                :class (stl/css :input-label)} "HEX"]
        [:input {:id "hex-value"
                 :ref (:hex refs)
                 :default-value hex
@@ -187,7 +211,8 @@
                 :on-blur on-blur-hex}]]
       (when (not disable-opacity)
         [:div {:class (stl/css-case :input-wrapper true)}
-         [:label {:for "alpha-value" :class (stl/css :input-label)} "A"]
+         [:label {:for "alpha-value"
+                  :class (stl/css :input-label)} "A"]
          [:input {:id "alpha-value"
                   :ref (:alpha refs)
                   :type "number"

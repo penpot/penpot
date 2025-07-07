@@ -118,7 +118,8 @@
     :fixed})
 
 (def schema:points
-  [:vector {:gen/max 4 :gen/min 4} ::gpt/point])
+  [:vector {:gen/max 4
+            :gen/min 4} ::gpt/point])
 
 ;; FIXME: the register is necessary until this is moved to a separated
 ;; ns because it is used on shapes.text
@@ -135,7 +136,8 @@
     (= 1 (count result))))
 
 (def schema:stroke-attrs
-  [:map {:title "StrokeAttrs" :closed true}
+  [:map {:title "StrokeAttrs"
+         :closed true}
    [:stroke-color-ref-file {:optional true} ::sm/uuid]
    [:stroke-color-ref-id {:optional true} ::sm/uuid]
    [:stroke-opacity {:optional true} ::sm/safe-number]
@@ -233,18 +235,21 @@
 
 (def schema:group-attrs
   [:map {:title "GroupAttrs"}
-   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]])
+   [:shapes [:vector {:gen/max 10
+                      :gen/min 1} ::sm/uuid]]])
 
 (def ^:private schema:frame-attrs
   [:map {:title "FrameAttrs"}
-   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
+   [:shapes [:vector {:gen/max 10
+                      :gen/min 1} ::sm/uuid]]
    [:hide-fill-on-export {:optional true} :boolean]
    [:show-content {:optional true} :boolean]
    [:hide-in-viewer {:optional true} :boolean]])
 
 (def ^:private schema:bool-attrs
   [:map {:title "BoolAttrs"}
-   [:shapes [:vector {:gen/max 10 :gen/min 1} ::sm/uuid]]
+   [:shapes [:vector {:gen/max 10
+                      :gen/min 1} ::sm/uuid]]
    [:bool-type [::sm/one-of bool-types]]
    [:content path/schema:content]])
 
@@ -287,7 +292,8 @@
   "Get the shape generator."
   []
   (->> (sg/generator schema:shape-base-attrs)
-       (sg/mcat (fn [{:keys [type] :as shape}]
+       (sg/mcat (fn [{:keys [type]
+                      :as shape}]
                   (sg/let [attrs1 (sg/generator schema:shape-generic-attrs)
                            attrs2 (sg/generator schema:shape-geom-attrs)
                            attrs3 (case type
@@ -572,7 +578,8 @@
 
 (defn setup-rect
   "Initializes the selrect and points for a shape."
-  [{:keys [selrect points transform] :as shape}]
+  [{:keys [selrect points transform]
+    :as shape}]
   (let [selrect   (or selrect (gsh/shape->rect shape))
         center    (grc/rect->center selrect)
         transform (or transform (gmt/matrix))
@@ -585,7 +592,8 @@
         (assoc :points points))))
 
 (defn setup-path
-  [{:keys [content selrect points] :as shape}]
+  [{:keys [content selrect points]
+    :as shape}]
   (let [selrect (or selrect
                     (path.segment/content->selrect content)
                     (grc/make-rect))
@@ -595,7 +603,8 @@
         (assoc :points points))))
 
 (defn- setup-image
-  [{:keys [metadata] :as shape}]
+  [{:keys [metadata]
+    :as shape}]
   (-> shape
       (assoc :proportion (float (/ (:width metadata)
                                    (:height metadata))))
@@ -604,7 +613,8 @@
 (defn setup-shape
   "A function that initializes the geometric data of the shape. The props must
   contain at least :x :y :width :height."
-  [{:keys [type] :as props}]
+  [{:keys [type]
+    :as props}]
   (let [shape (make-minimal-shape type)
 
         ;; The props can be custom records that does not

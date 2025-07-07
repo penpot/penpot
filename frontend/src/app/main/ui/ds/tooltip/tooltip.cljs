@@ -177,7 +177,8 @@
 
 (mf/defc tooltip*
   {::mf/schema schema:tooltip}
-  [{:keys [class id children content placement offset delay] :rest props}]
+  [{:keys [class id children content placement offset delay]
+    :rest props}]
   (let [internal-id
         (mf/use-id)
 

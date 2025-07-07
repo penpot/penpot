@@ -31,7 +31,8 @@
 (t/use-fixtures :each th/database-reset)
 
 (defn- update-file!
-  [& {:keys [profile-id file-id changes revn] :or {revn 0}}]
+  [& {:keys [profile-id file-id changes revn]
+      :or {revn 0}}]
   (let [params {::th/type :update-file
                 ::rpc/profile-id profile-id
                 :id file-id

@@ -50,7 +50,9 @@
 
 (defn- persist-thumbnail
   [file-id revn blob]
-  (let [params {:file-id file-id :revn revn :media blob}]
+  (let [params {:file-id file-id
+                :revn revn
+                :media blob}]
     (->> (rp/cmd! :create-file-thumbnail params)
          (rx/map :id))))
 
@@ -59,7 +61,8 @@
   (->> (mw/ask! {:cmd :thumbnails/generate-for-file
                  :revn revn
                  :file-id file-id})
-       (rx/mapcat (fn [{:keys [fonts] :as result}]
+       (rx/mapcat (fn [{:keys [fonts]
+                        :as result}]
                     (->> (fonts/render-font-styles fonts)
                          (rx/map (fn [styles]
                                    (assoc result
@@ -405,7 +408,8 @@
 
       (if ^boolean is-library-view?
         [:> grid-item-library* {:file file}]
-        [:> grid-item-thumbnail* {:file file :can-edit can-edit}])
+        [:> grid-item-thumbnail* {:file file
+                                  :can-edit can-edit}])
 
       (when (and (:is-shared file) (not is-library-view?))
         [:div {:class (stl/css :item-badge)} i/library])
@@ -518,7 +522,8 @@
        (seq files)
        (for [[index slice] (d/enumerate (partition-all limit files))]
 
-         [:ul {:class (stl/css :grid-row) :key (dm/str index)}
+         [:ul {:class (stl/css :grid-row)
+               :key (dm/str index)}
           (when @dragging?
             [:li {:class (stl/css :grid-item)}])
           (for [item slice]
@@ -540,7 +545,8 @@
          :on-finish-import on-finish-import}])]))
 
 (mf/defc line-grid-row
-  [{:keys [files selected-files dragging? limit can-edit] :as props}]
+  [{:keys [files selected-files dragging? limit can-edit]
+    :as props}]
   (let [elements limit
         limit (if dragging? (dec limit) limit)]
     [:ul {:class (stl/css :grid-row :no-wrap)
@@ -558,7 +564,8 @@
          :key (dm/str (:id item))}])]))
 
 (mf/defc line-grid
-  [{:keys [project team files limit create-fn can-edit] :as props}]
+  [{:keys [project team files limit create-fn can-edit]
+    :as props}]
   (let [dragging?        (mf/use-state false)
         project-id       (:id project)
         team-id          (:id team)

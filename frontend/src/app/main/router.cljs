@@ -89,7 +89,8 @@
           (dissoc :exception)))))
 
 (defn navigate
-  [id params & {:keys [::replace ::new-window] :as options}]
+  [id params & {:keys [::replace ::new-window]
+                :as options}]
   (ptk/reify ::navigate
     IDeref
     (-deref [_]

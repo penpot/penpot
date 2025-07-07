@@ -33,16 +33,60 @@
     :name "Source Sans Pro"
     :family "sourcesanspro"
     :variants
-    [{:id "200" :name "200" :weight "200" :style "normal" :suffix "extralight" :ttf-url "sourcesanspro-extralight.ttf"}
-     {:id "200italic" :name "200 (italic)" :weight "200" :style "italic" :suffix "extralightitalic" :ttf-url "sourcesanspro-extralightitalic.ttf"}
-     {:id "300" :name "300" :weight "300" :style "normal" :suffix "light" :ttf-url "sourcesanspro-light.ttf"}
-     {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
-     {:id "regular" :name "regular" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
-     {:id "italic" :name "italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
-     {:id "bold" :name "bold" :weight "bold" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
-     {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
-     {:id "black" :name "black" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
-     {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic" :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
+    [{:id "200"
+      :name "200"
+      :weight "200"
+      :style "normal"
+      :suffix "extralight"
+      :ttf-url "sourcesanspro-extralight.ttf"}
+     {:id "200italic"
+      :name "200 (italic)"
+      :weight "200"
+      :style "italic"
+      :suffix "extralightitalic"
+      :ttf-url "sourcesanspro-extralightitalic.ttf"}
+     {:id "300"
+      :name "300"
+      :weight "300"
+      :style "normal"
+      :suffix "light"
+      :ttf-url "sourcesanspro-light.ttf"}
+     {:id "300italic"
+      :name "300 (italic)"
+      :weight "300"
+      :style "italic"
+      :suffix "lightitalic"
+      :ttf-url "sourcesanspro-lightitalic.ttf"}
+     {:id "regular"
+      :name "regular"
+      :weight "400"
+      :style "normal"
+      :ttf-url "sourcesanspro-regular.ttf"}
+     {:id "italic"
+      :name "italic"
+      :weight "400"
+      :style "italic"
+      :ttf-url "sourcesanspro-italic.ttf"}
+     {:id "bold"
+      :name "bold"
+      :weight "bold"
+      :style "normal"
+      :ttf-url "sourcesanspro-bold.ttf"}
+     {:id "bolditalic"
+      :name "bold (italic)"
+      :weight "bold"
+      :style "italic"
+      :ttf-url "sourcesanspro-bolditalic.ttf"}
+     {:id "black"
+      :name "black"
+      :weight "900"
+      :style "normal"
+      :ttf-url "sourcesanspro-black.ttf"}
+     {:id "blackitalic"
+      :name "black (italic)"
+      :weight "900"
+      :style "italic"
+      :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
 
 (defonce fontsdb (l/atom {}))
 (defonce fonts (l/atom []))
@@ -111,11 +155,13 @@
 (defmulti ^:private load-font :backend)
 
 (defmethod load-font :default
-  [{:keys [backend] :as font}]
+  [{:keys [backend]
+    :as font}]
   (log/warn :msg "no implementation found for" :backend backend))
 
 (defmethod load-font :builtin
-  [{:keys [id ::on-loaded] :as font}]
+  [{:keys [id ::on-loaded]
+    :as font}]
   (log/debug :hint "load-font" :font-id id :backend "builtin")
   (when (fn? on-loaded)
     (on-loaded id)))
@@ -139,14 +185,18 @@
 
 (defn- fetch-gfont-css
   [url]
-  (->> (http/send! {:method :get :uri url :mode :cors :response-type :text})
+  (->> (http/send! {:method :get
+                    :uri url
+                    :mode :cors
+                    :response-type :text})
        (rx/map :body)
        (rx/catch (fn [err]
                    (.warn js/console "Cannot find the font" (obj/get err "message"))
                    (rx/empty)))))
 
 (defmethod load-font :google
-  [{:keys [id ::on-loaded] :as font}]
+  [{:keys [id ::on-loaded]
+    :as font}]
   (when (exists? js/window)
     (log/info :hint "load-font" :font-id id :backend "google")
     (let [url (generate-gfonts-url font)]
@@ -180,13 +230,15 @@
             :uri (asset-id->uri (::woff1-file-id variant))}))
 
 (defn- generate-custom-font-css
-  [{:keys [family variants] :as font}]
+  [{:keys [family variants]
+    :as font}]
   (->> variants
        (map #(generate-custom-font-variant-css family %))
        (str/join "\n")))
 
 (defmethod load-font :custom
-  [{:keys [id ::on-loaded] :as font}]
+  [{:keys [id ::on-loaded]
+    :as font}]
   (when (exists? js/window)
     (log/info :hint "load-font" :font-id id :backend "custom")
     (let [css (generate-custom-font-css font)]
@@ -206,7 +258,8 @@
     ;; If we are in the worker environment, we just mark it as loaded
     ;; without really loading it.
      (do
-       (swap! loaded-hints conj {:font-id font-id :font-variant-id variant-id})
+       (swap! loaded-hints conj {:font-id font-id
+                                 :font-variant-id variant-id})
        (p/resolved font-id))
 
      (let [font (get @fontsdb font-id)]
@@ -252,12 +305,14 @@
       (first variants)))
 
 (defn get-variant
-  [{:keys [variants] :as font} font-variant-id]
+  [{:keys [variants]
+    :as font} font-variant-id]
   (or (d/seek #(= (:id %) font-variant-id) variants)
       (get-default-variant font)))
 
 (defn find-variant
-  [{:keys [variants] :as font} variant-data]
+  [{:keys [variants]
+    :as font} variant-data]
   (let [props (keys variant-data)]
     (d/seek #(= (select-keys % props) variant-data) variants)))
 
@@ -291,7 +346,8 @@
   (->> (txt/node-seq content)
        (filter txt/is-text-node?)
        (reduce
-        (fn [result {:keys [font-id] :as node}]
+        (fn [result {:keys [font-id]
+                     :as node}]
           (let [current-font
                 (if (some? font-id)
                   (select-keys node [:font-id :font-variant-id])
@@ -303,14 +359,16 @@
   "Given a font and the variant-id, retrieves the fontface CSS"
   [{:keys [font-id font-variant-id]
     :or   {font-variant-id "regular"}}]
-  (let [{:keys [backend family] :as font} (get @fontsdb font-id)]
+  (let [{:keys [backend family]
+         :as font} (get @fontsdb font-id)]
     (cond
       (nil? font)
       (rx/empty)
 
       (= :google backend)
       (let [variant (get-variant font font-variant-id)]
-        (->> (rx/of (generate-gfonts-url {:family family :variants [variant]}))
+        (->> (rx/of (generate-gfonts-url {:family family
+                                          :variants [variant]}))
              (rx/mapcat fetch-gfont-css)
              (rx/map process-gfont-css)))
 

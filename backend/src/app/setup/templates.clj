@@ -40,7 +40,8 @@
         templates (check-templates! templates)
         dest      (fs/join fs/*cwd* "builtin-templates")]
 
-    (doseq [{:keys [id path] :as template} templates]
+    (doseq [{:keys [id path]
+             :as template} templates]
       (let [path (or path (fs/join dest id))]
         (if (fs/exists? path)
           (l/dbg :hint "template file" :id id :state "present" :path (dm/str path))
@@ -58,8 +59,10 @@
       (if (fs/exists? path)
         (io/input-stream path)
         (let [resp (http/req! cfg
-                              {:method :get :uri (:file-uri template)}
-                              {:response-type :input-stream :sync? true})]
+                              {:method :get
+                               :uri (:file-uri template)}
+                              {:response-type :input-stream
+                               :sync? true})]
           (when-not (= 200 (:status resp))
             (ex/raise :type :internal
                       :code :unexpected-status-code

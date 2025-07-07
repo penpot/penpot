@@ -30,7 +30,8 @@
   ([shape bounds-map objects modif-tree]
    (create-bounds shape bounds-map objects modif-tree nil))
 
-  ([{:keys [id] :as shape} bounds-map objects modif-tree current-ref]
+  ([{:keys [id]
+     :as shape} bounds-map objects modif-tree current-ref]
    (if (cfh/group-shape? shape)
      (let [modifiers (dm/get-in modif-tree [id :modifiers])
 

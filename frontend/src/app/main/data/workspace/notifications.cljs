@@ -69,7 +69,8 @@
                              (->> stream
                                   (rx/filter (ptk/type? ::dws/message))
                                   (rx/map deref)
-                                  (rx/filter (fn [{:keys [topic] :as msg}]
+                                  (rx/filter (fn [{:keys [topic]
+                                                   :as msg}]
                                                (or (= topic uuid/zero)
                                                    (= topic profile-id)
                                                    (= topic team-id)
@@ -102,7 +103,8 @@
         (rx/concat stream (rx/of (dws/send endmsg)))))))
 
 (defn- handle-change-team-role
-  [{:keys [role] :as msg}]
+  [{:keys [role]
+    :as msg}]
   (ptk/reify ::handle-change-team-role
     ptk/WatchEvent
     (watch [_ _ _]
@@ -121,7 +123,8 @@
          (rx/of (dwly/set-options-mode :design)))))))
 
 (defn- process-message
-  [{:keys [type] :as msg}]
+  [{:keys [type]
+    :as msg}]
   (case type
     :join-file              (handle-presence msg)
     :leave-file             (handle-presence msg)
@@ -175,7 +178,8 @@
     })
 
 (defn handle-presence
-  [{:keys [type session-id profile-id version] :as message}]
+  [{:keys [type session-id profile-id version]
+    :as message}]
   (letfn [(get-next-color [presence]
             (let [xfm   (comp (map second)
                               (map :color)
@@ -212,7 +216,8 @@
           (update state :workspace-presence update-presence))))))
 
 (defn handle-pointer-update
-  [{:keys [page-id session-id position zoom zoom-inverse vbox vport] :as msg}]
+  [{:keys [page-id session-id position zoom zoom-inverse vbox vport]
+    :as msg}]
   (ptk/reify ::handle-pointer-update
     ptk/UpdateEvent
     (update [_ state]
@@ -242,7 +247,8 @@
   (sm/check-fn schema:handle-file-change))
 
 (defn handle-file-change
-  [{:keys [file-id changes revn vern] :as msg}]
+  [{:keys [file-id changes revn vern]
+    :as msg}]
 
   (dm/assert!
    "expected valid parameters"
@@ -277,7 +283,8 @@
   (sm/check-fn schema:handle-file-restore))
 
 (defn handle-file-restore
-  [{:keys [file-id vern] :as msg}]
+  [{:keys [file-id vern]
+    :as msg}]
 
   (dm/assert!
    "expected valid parameters"
@@ -308,7 +315,8 @@
   (sm/check-fn schema:handle-library-change))
 
 (defn handle-library-change
-  [{:keys [file-id modified-at changes revn] :as msg}]
+  [{:keys [file-id modified-at changes revn]
+    :as msg}]
   (dm/assert!
    "expected valid arguments"
    (check-library-change-params! msg))

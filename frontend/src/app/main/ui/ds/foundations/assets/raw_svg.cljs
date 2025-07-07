@@ -35,7 +35,8 @@
 (def raw-svg-list "A collection of all raw SVG assets" (collect-raw-svgs))
 
 (mf/defc raw-svg*
-  [{:keys [id] :rest props}]
+  [{:keys [id]
+    :rest props}]
   (assert (contains? raw-svg-list id) "invalid raw svg id")
   [:> "svg" props
    [:use {:href (dm/str "#asset-" id)}]])

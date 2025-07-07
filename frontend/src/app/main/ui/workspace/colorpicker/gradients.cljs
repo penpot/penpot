@@ -46,7 +46,11 @@
        (sort-by :offset)
        (map (fn [{:keys [color opacity offset]}]
               (let [[r g b] (cc/hex->rgb color)]
-                {:r r :g g :b b :alpha opacity :offset offset})))
+                {:r r
+                 :g g
+                 :b b
+                 :alpha opacity
+                 :offset offset})))
        (map format-rgb)
        (str/join ", ")
        (str/ffmt "linear-gradient(90deg, %1)")))
@@ -178,7 +182,8 @@
            on-rotate-stops
            on-reorder-stops]}]
 
-  (let [preview-state  (mf/use-state #(do {:hover? false :offset 0.5}))
+  (let [preview-state  (mf/use-state #(do {:hover? false
+                                           :offset 0.5}))
         dragging-ref   (mf/use-ref false)
         start-ref      (mf/use-ref nil)
         start-offset   (mf/use-ref nil)
@@ -328,8 +333,10 @@
      [:div {:class (stl/css :gradient-options)}
       [:& select
        {:default-value type
-        :options [{:value :linear-gradient :label "Linear"}
-                  {:value :radial-gradient :label "Radial"}]
+        :options [{:value :linear-gradient
+                   :label "Linear"}
+                  {:value :radial-gradient
+                   :label "Radial"}]
         :on-change handle-change-type
         :class (stl/css :gradient-options-select)}]
 

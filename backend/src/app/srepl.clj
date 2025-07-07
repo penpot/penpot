@@ -68,10 +68,13 @@
 
         tapfn
         (fn [val]
-          (out-fn {:tag :tap :val val}))]
+          (out-fn {:tag :tap
+                   :val val}))]
 
-    (binding [*out* (PrintWriter-on #(out-fn {:tag :out :val %1}) nil true)
-              *err* (PrintWriter-on #(out-fn {:tag :err :val %1}) nil true)]
+    (binding [*out* (PrintWriter-on #(out-fn {:tag :out
+                                              :val %1}) nil true)
+              *err* (PrintWriter-on #(out-fn {:tag :err
+                                              :val %1}) nil true)]
       (try
         (add-tap tapfn)
         (loop []
@@ -119,7 +122,8 @@
   {k (assoc v ::flag (keyword (str (name type) "-server")))})
 
 (defmethod ig/init-key ::server
-  [[type _] {:keys [::flag ::port ::host] :as cfg}]
+  [[type _] {:keys [::flag ::port ::host]
+             :as cfg}]
   (when (contains? cf/flags flag)
 
     (l/inf :hint "initializing repl server"

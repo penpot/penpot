@@ -300,7 +300,9 @@
     (hooks/setup-shortcuts path-editing? path-drawing? text-editing? grid-editing?)
     (hooks/setup-active-frames base-objects hover-ids selected active-frames zoom transform vbox)
 
-    [:div {:class (stl/css :viewport) :style #js {"--zoom" zoom} :data-testid "viewport"}
+    [:div {:class (stl/css :viewport)
+           :style #js {"--zoom" zoom}
+           :data-testid "viewport"}
      (when (:can-edit permissions)
        (if read-only?
          [:> view-only-bar* {}]
@@ -321,8 +323,16 @@
      [:div {:class (stl/css :viewport-overlays)}
       ;; The behaviour inside a foreign object is a bit different that in plain HTML so we wrap
       ;; inside a foreign object "dummy" so this awkward behaviour is take into account
-      [:svg {:style {:top 0 :left 0 :position "fixed" :width "100%" :height "100%" :opacity (when-not (dbg/enabled? :html-text) 0)}}
-       [:foreignObject {:x 0 :y 0 :width "100%" :height "100%"}
+      [:svg {:style {:top 0
+                     :left 0
+                     :position "fixed"
+                     :width "100%"
+                     :height "100%"
+                     :opacity (when-not (dbg/enabled? :html-text) 0)}}
+       [:foreignObject {:x 0
+                        :y 0
+                        :width "100%"
+                        :height "100%"}
         [:div {:style {:pointer-events (when-not (dbg/enabled? :html-text) "none")
                        ;; some opacity because to debug auto-width events will fill the screen
                        :opacity 0.6}}
@@ -371,9 +381,15 @@
           :to "1 0"
           :dur "2s"
           :repeatCount "indefinite"}]
-        [:stop {:offset "0%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]
-        [:stop {:offset "50%" :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)") :stop-opacity 1}]
-        [:stop {:offset "100%" :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)") :stop-opacity 1}]]]
+        [:stop {:offset "0%"
+                :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)")
+                :stop-opacity 1}]
+        [:stop {:offset "50%"
+                :stop-color (str "color-mix(in srgb-linear, " background " 80%, #777)")
+                :stop-opacity 1}]
+        [:stop {:offset "100%"
+                :stop-color (str "color-mix(in srgb-linear, " background " 90%, #777)")
+                :stop-opacity 1}]]]
 
       (when (dbg/enabled? :show-export-metadata)
         [:& use/export-page {:page page}])

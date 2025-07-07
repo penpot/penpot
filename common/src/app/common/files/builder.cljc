@@ -260,7 +260,8 @@
 
 (defn add-board
   [state params]
-  (let [{:keys [id] :as shape}
+  (let [{:keys [id]
+         :as shape}
         (-> params
             (update :id default-uuid)
             (assoc :type :frame)
@@ -284,7 +285,8 @@
 
 (defn add-group
   [state params]
-  (let [{:keys [id] :as shape}
+  (let [{:keys [id]
+         :as shape}
         (-> params
             (update :id default-uuid)
             (assoc :type :group)
@@ -311,25 +313,67 @@
                         change {:type :mod-obj
                                 :id group-id
                                 :operations
-                                [{:type :set :attr :x :val (-> mask :selrect :x) :ignore-touched true}
-                                 {:type :set :attr :y :val (-> mask :selrect :y) :ignore-touched true}
-                                 {:type :set :attr :width :val (-> mask :selrect :width) :ignore-touched true}
-                                 {:type :set :attr :height :val (-> mask :selrect :height) :ignore-touched true}
-                                 {:type :set :attr :flip-x :val (-> mask :flip-x) :ignore-touched true}
-                                 {:type :set :attr :flip-y :val (-> mask :flip-y) :ignore-touched true}
-                                 {:type :set :attr :selrect :val (-> mask :selrect) :ignore-touched true}
-                                 {:type :set :attr :points :val (-> mask :points) :ignore-touched true}]}]
+                                [{:type :set
+                                  :attr :x
+                                  :val (-> mask :selrect :x)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :y
+                                  :val (-> mask :selrect :y)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :width
+                                  :val (-> mask :selrect :width)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :height
+                                  :val (-> mask :selrect :height)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :flip-x
+                                  :val (-> mask :flip-x)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :flip-y
+                                  :val (-> mask :flip-y)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :selrect
+                                  :val (-> mask :selrect)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :points
+                                  :val (-> mask :points)
+                                  :ignore-touched true}]}]
                     (commit-change state change :add-container true))
                   (let [group  (gsh/update-group-selrect group children)
                         change {:type :mod-obj
                                 :id group-id
                                 :operations
-                                [{:type :set :attr :selrect :val (:selrect group) :ignore-touched true}
-                                 {:type :set :attr :points  :val (:points group) :ignore-touched true}
-                                 {:type :set :attr :x       :val (-> group :selrect :x) :ignore-touched true}
-                                 {:type :set :attr :y       :val (-> group :selrect :y) :ignore-touched true}
-                                 {:type :set :attr :width   :val (-> group :selrect :width) :ignore-touched true}
-                                 {:type :set :attr :height  :val (-> group :selrect :height) :ignore-touched true}]}]
+                                [{:type :set
+                                  :attr :selrect
+                                  :val (:selrect group)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :points
+                                  :val (:points group)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :x
+                                  :val (-> group :selrect :x)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :y
+                                  :val (-> group :selrect :y)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :width
+                                  :val (-> group :selrect :width)
+                                  :ignore-touched true}
+                                 {:type :set
+                                  :attr :height
+                                  :val (-> group :selrect :height)
+                                  :ignore-touched true}]}]
 
                     (commit-change state change :add-container true)))]
       (update state ::parent-stack pop))))
@@ -384,17 +428,50 @@
         (get bool :selrect)
 
         operations
-        [{:type :set :attr :content :val (:content bool) :ignore-touched true}
-         {:type :set :attr :type :val :bool :ignore-touched true}
-         {:type :set :attr :bool-type :val type :ignore-touched true}
-         {:type :set :attr :selrect :val selrect :ignore-touched true}
-         {:type :set :attr :points :val (:points bool) :ignore-touched true}
-         {:type :set :attr :x :val (get selrect :x) :ignore-touched true}
-         {:type :set :attr :y :val (get selrect :y) :ignore-touched true}
-         {:type :set :attr :width :val (get selrect :width) :ignore-touched true}
-         {:type :set :attr :height :val (get selrect :height) :ignore-touched true}
-         {:type :set :attr :fills :val (:fills bool) :ignore-touched true}
-         {:type :set :attr :strokes :val (:strokes bool) :ignore-touched true}]
+        [{:type :set
+          :attr :content
+          :val (:content bool)
+          :ignore-touched true}
+         {:type :set
+          :attr :type
+          :val :bool
+          :ignore-touched true}
+         {:type :set
+          :attr :bool-type
+          :val type
+          :ignore-touched true}
+         {:type :set
+          :attr :selrect
+          :val selrect
+          :ignore-touched true}
+         {:type :set
+          :attr :points
+          :val (:points bool)
+          :ignore-touched true}
+         {:type :set
+          :attr :x
+          :val (get selrect :x)
+          :ignore-touched true}
+         {:type :set
+          :attr :y
+          :val (get selrect :y)
+          :ignore-touched true}
+         {:type :set
+          :attr :width
+          :val (get selrect :width)
+          :ignore-touched true}
+         {:type :set
+          :attr :height
+          :val (get selrect :height)
+          :ignore-touched true}
+         {:type :set
+          :attr :fills
+          :val (:fills bool)
+          :ignore-touched true}
+         {:type :set
+          :attr :strokes
+          :val (:strokes bool)
+          :ignore-touched true}]
 
         change
         {:type :mod-obj
@@ -470,10 +547,18 @@
          :id frame-id
          :page-id page-id
          :operations
-         [{:type :set :attr :component-root :val true}
-          {:type :set :attr :main-instance :val true}
-          {:type :set :attr :component-id :val component-id}
-          {:type :set :attr :component-file :val file-id}]}]
+         [{:type :set
+           :attr :component-root
+           :val true}
+          {:type :set
+           :attr :main-instance
+           :val true}
+          {:type :set
+           :attr :component-id
+           :val component-id}
+          {:type :set
+           :attr :component-file
+           :val file-id}]}]
 
     (-> state
         (commit-change change1)
@@ -506,7 +591,10 @@
                 new-val (get new-shape attr)]
             (if (= old-val new-val)
               changes
-              (conj changes {:type :set :attr attr :val new-val :ignore-touched true}))))]
+              (conj changes {:type :set
+                             :attr attr
+                             :val new-val
+                             :ignore-touched true}))))]
 
     (-> state
         (commit-change

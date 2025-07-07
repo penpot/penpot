@@ -26,8 +26,10 @@
   {k (assoc v ::min-age (cf/get-deletion-delay))})
 
 (defmethod ig/init-key ::handler
-  [_ {:keys [::min-age] :as cfg}]
-  (fn [{:keys [props] :as task}]
+  [_ {:keys [::min-age]
+      :as cfg}]
+  (fn [{:keys [props]
+        :as task}]
     (let [min-age (or (:min-age props) min-age)]
       (-> cfg
           (assoc ::db/rollback (:rollback? props))

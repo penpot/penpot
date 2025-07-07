@@ -41,10 +41,14 @@
 (defn flow-proxy
   [plugin-id file-id page-id id]
   (obj/reify {:name "FlowProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
-    :$file {:enumerable false :get (fn [] file-id)}
-    :$page {:enumerable false :get (fn [] page-id)}
-    :$id {:enumerable false :get (fn [] id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
+    :$file {:enumerable false
+            :get (fn [] file-id)}
+    :$page {:enumerable false
+            :get (fn [] page-id)}
+    :$id {:enumerable false
+          :get (fn [] id)}
 
     :page
     {:enumerable false
@@ -89,9 +93,12 @@
 (defn page-proxy
   [plugin-id file-id id]
   (obj/reify {:name "PageProxy"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
-    :$file {:enumerable false :get (fn [] file-id)}
-    :$id {:enumerable false :get (fn [] id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
+    :$file {:enumerable false
+            :get (fn [] file-id)}
+    :$id {:enumerable false
+          :get (fn [] id)}
 
     :id
     {:get #(dm/str id)}

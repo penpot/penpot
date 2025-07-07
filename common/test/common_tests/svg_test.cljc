@@ -20,7 +20,9 @@
                 :style {:fill "none"
                         :stroke-dashoffset 1}}
         result (svg/attrs->props attrs true)]
-    (t/is (= result {:overlinePosition "top", :style {:fill "none", :strokeDashoffset 1}}))))
+    (t/is (= result {:overlinePosition "top",
+                     :style {:fill "none",
+                             :strokeDashoffset 1}}))))
 
 (t/deftest clean-attrs-3
   (let [attrs  {:overline-position "top"

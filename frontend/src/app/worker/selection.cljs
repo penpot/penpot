@@ -40,7 +40,10 @@
             :else
             (grc/points->rect (:points shape)))
 
-          shape-bound #js {:x x :y y :width width :height height}
+          shape-bound #js {:x x
+                           :y y
+                           :width width
+                           :height height}
 
           parents      (get parents-index (:id shape))
           clip-parents (get clip-parents-index (:id shape))
@@ -93,10 +96,12 @@
 
         index              (reduce index-shape initial-quadtree shapes)]
 
-    {:index index :bounds bounds}))
+    {:index index
+     :bounds bounds}))
 
 (defn- update-index
-  [{index :index :as data} old-objects new-objects]
+  [{index :index
+    :as data} old-objects new-objects]
   (let [changes? (fn [id]
                    (not= (get old-objects id)
                          (get new-objects id)))
@@ -233,14 +238,17 @@
 
 
 (defmethod impl/handler :selection/initialize-page-index
-  [{:keys [page] :as message}]
-  (letfn [(add-page [state {:keys [id objects] :as page}]
+  [{:keys [page]
+    :as message}]
+  (letfn [(add-page [state {:keys [id objects]
+                            :as page}]
             (assoc state id (create-index objects)))]
     (swap! state add-page page)
     nil))
 
 (defmethod impl/handler :selection/update-page-index
-  [{:keys [page-id old-page new-page] :as message}]
+  [{:keys [page-id old-page new-page]
+    :as message}]
   (swap! state update page-id
          (fn [index]
            (let [old-objects (:objects old-page)
@@ -259,7 +267,10 @@
 
 (defmethod impl/handler :selection/query
   [{:keys [page-id rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?]
-    :or {full-frame? false include-frames? false clip-children? true using-selrect? false}
+    :or {full-frame? false
+         include-frames? false
+         clip-children? true
+         using-selrect? false}
     :as message}]
   (when-let [index (get @state page-id)]
     (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?)))

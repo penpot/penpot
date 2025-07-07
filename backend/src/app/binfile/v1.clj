@@ -280,7 +280,8 @@
 
 (defn zstd-output-stream
   ^OutputStream
-  [output & {:keys [level] :or {level 0}}]
+  [output & {:keys [level]
+             :or {level 0}}]
   (ZstdOutputStream. ^OutputStream output (int level)))
 
 (defn- get-files
@@ -299,7 +300,8 @@
 (defmulti write-section ::section)
 
 (defn write-export!
-  [{:keys [::bfc/include-libraries ::bfc/embed-assets] :as cfg}]
+  [{:keys [::bfc/include-libraries ::bfc/embed-assets]
+    :as cfg}]
   (when (and include-libraries embed-assets)
     (throw (IllegalArgumentException.
             "the `include-libraries` and `embed-assets` are mutally excluding options")))
@@ -307,7 +309,8 @@
   (write-export cfg))
 
 (defmethod write-export :default
-  [{:keys [::output] :as options}]
+  [{:keys [::output]
+    :as options}]
   (write-header! output :v1)
   (pu/with-open [output (zstd-output-stream output :level 12)
                  output (io/data-output-stream output)]
@@ -324,19 +327,22 @@
             [:v1/metadata :v1/files :v1/rels :v1/sobjects]))))
 
 (defmethod write-section :v1/metadata
-  [{:keys [::output ::bfc/ids ::bfc/include-libraries] :as cfg}]
+  [{:keys [::output ::bfc/ids ::bfc/include-libraries]
+    :as cfg}]
   (if-let [fids (get-files cfg ids)]
     (let [lids (when include-libraries
                  (bfc/get-libraries cfg ids))
           ids  (into fids lids)]
-      (write-obj! output {:version cf/version :files ids})
+      (write-obj! output {:version cf/version
+                          :files ids})
       (vswap! bfc/*state* assoc :files ids))
     (ex/raise :type :not-found
               :code :files-not-found
               :hint "unable to retrieve files for export")))
 
 (defmethod write-section :v1/files
-  [{:keys [::output ::bfc/embed-assets ::bfc/include-libraries] :as cfg}]
+  [{:keys [::output ::bfc/embed-assets ::bfc/include-libraries]
+    :as cfg}]
 
   ;; Initialize SIDS with empty vector
   (vswap! bfc/*state* assoc :sids [])
@@ -383,7 +389,8 @@
       (vswap! bfc/*state* update :sids into bfc/xf-map-media-id thumbnails))))
 
 (defmethod write-section :v1/rels
-  [{:keys [::output ::bfc/include-libraries] :as cfg}]
+  [{:keys [::output ::bfc/include-libraries]
+    :as cfg}]
   (let [ids  (-> bfc/*state* deref :files set)
         rels (when include-libraries
                (bfc/get-files-rels cfg ids))]
@@ -391,7 +398,8 @@
     (write-obj! output rels)))
 
 (defmethod write-section :v1/sobjects
-  [{:keys [::output] :as cfg}]
+  [{:keys [::output]
+    :as cfg}]
   (let [sids    (-> bfc/*state* deref :sids)
         storage (sto/resolve cfg)]
 
@@ -403,7 +411,8 @@
     (write-obj! output sids)
 
     (doseq [id sids]
-      (let [{:keys [size] :as obj} (sto/get-object storage id)]
+      (let [{:keys [size]
+             :as obj} (sto/get-object storage id)]
         (l/dbg :hint "write sobject" :id (str id) ::l/sync? true)
 
         (doto output
@@ -434,7 +443,9 @@
 (defn read-import!
   "Do the importation of the specified resource in penpot custom binary
   format."
-  [{:keys [::bfc/input ::bfc/timestamp] :or {timestamp (dt/now)} :as options}]
+  [{:keys [::bfc/input ::bfc/timestamp]
+    :or {timestamp (dt/now)}
+    :as options}]
 
   (dm/assert!
    "expected input stream"
@@ -448,13 +459,15 @@
     (read-import (assoc options ::version version ::bfc/timestamp timestamp))))
 
 (defn- read-import-v1
-  [{:keys [::db/conn ::bfc/project-id ::bfc/profile-id ::bfc/input] :as cfg}]
+  [{:keys [::db/conn ::bfc/project-id ::bfc/profile-id ::bfc/input]
+    :as cfg}]
 
   (bfc/disable-database-timeouts! cfg)
 
   (pu/with-open [input (zstd-input-stream input)
                  input (io/data-input-stream input)]
-    (binding [bfc/*state* (volatile! {:media [] :index {}})]
+    (binding [bfc/*state* (volatile! {:media []
+                                      :index {}})]
       (let [team      (teams/get-team conn
                                       :profile-id profile-id
                                       :project-id project-id)
@@ -470,7 +483,8 @@
                                   (assoc ::section section)
                                   (assoc ::bfc/input input))]
                   (binding [bfc/*options* options]
-                    (events/tap :progress {:op :import :section section})
+                    (events/tap :progress {:op :import
+                                           :section section})
                     (read-section options))))
               [:v1/metadata :v1/files :v1/rels :v1/sobjects])
 
@@ -504,7 +518,8 @@
         thumbnails))
 
 (defmethod read-section :v1/files
-  [{:keys [::bfc/input ::bfc/project-id ::bfc/name] :as system}]
+  [{:keys [::bfc/input ::bfc/project-id ::bfc/name]
+    :as system}]
   (doseq [[idx expected-file-id] (d/enumerate (-> bfc/*state* deref :files))]
     (let [file       (read-obj! input)
           media      (read-obj! input)
@@ -571,7 +586,8 @@
   (let [rels (read-obj! input)
         ids  (into #{} (-> bfc/*state* deref :files))]
     ;; Insert all file relations
-    (doseq [{:keys [library-file-id] :as rel} rels]
+    (doseq [{:keys [library-file-id]
+             :as rel} rels]
       (let [rel (-> rel
                     (assoc :synced-at timestamp)
                     (update :file-id bfc/lookup-index)
@@ -591,7 +607,8 @@
                   ::l/sync? true))))))
 
 (defmethod read-section :v1/sobjects
-  [{:keys [::db/conn ::bfc/input ::bfc/timestamp] :as cfg}]
+  [{:keys [::db/conn ::bfc/input ::bfc/timestamp]
+    :as cfg}]
   (let [storage (sto/resolve cfg)
         ids     (read-obj! input)
         thumb?  (into #{} (map :media-id) (:thumbnails @bfc/*state*))]
@@ -670,7 +687,8 @@
   `::bfc/embed-assets`: instead of including the libraries, embed in the
   same file library all assets used from external libraries."
 
-  [{:keys [::bfc/ids] :as cfg} output]
+  [{:keys [::bfc/ids]
+    :as cfg} output]
 
   (dm/assert!
    "expected a set of uuid's for `::bfc/ids` parameter"
@@ -708,7 +726,8 @@
                 :cause @cs)))))
 
 (defn import-files!
-  [{:keys [::bfc/input] :as cfg}]
+  [{:keys [::bfc/input]
+    :as cfg}]
 
   (dm/assert!
    "expected valid profile-id and project-id on `cfg`"

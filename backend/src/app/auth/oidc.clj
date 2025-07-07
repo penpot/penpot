@@ -53,9 +53,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- discover-oidc-config
-  [cfg {:keys [base-uri] :as opts}]
+  [cfg {:keys [base-uri]
+        :as opts}]
   (let [uri (dm/str (u/join base-uri ".well-known/openid-configuration"))
-        rsp (http/req! cfg {:method :get :uri uri} {:sync? true})]
+        rsp (http/req! cfg {:method :get
+                            :uri uri} {:sync? true})]
     (if (= 200 (:status rsp))
       (let [data      (-> rsp :body json/decode)
             token-uri (get data :token_endpoint)
@@ -111,7 +113,8 @@
 
 (defn- process-oidc-jwks
   [keys]
-  (reduce (fn [result {:keys [kid] :as kdata}]
+  (reduce (fn [result {:keys [kid]
+                       :as kdata}]
             (let [pkey (ex/try! (jwk/public-key kdata))]
               (if (ex/exception? pkey)
                 (do
@@ -127,7 +130,8 @@
   [cfg {:keys [jwks-uri]}]
   (when jwks-uri
     (try
-      (let [{:keys [status body]} (http/req! cfg {:method :get :uri jwks-uri} {:sync? true})]
+      (let [{:keys [status body]} (http/req! cfg {:method :get
+                                                  :uri jwks-uri} {:sync? true})]
         (if (= 200 status)
           (-> body json/decode :keys process-oidc-jwks)
           (do
@@ -294,12 +298,14 @@
     (into [(keyword (:name provider) fitem)] (map keyword) items)))
 
 (defn- build-redirect-uri
-  [{:keys [::provider] :as cfg}]
+  [{:keys [::provider]
+    :as cfg}]
   (let [public (u/uri (cf/get :public-uri))]
     (str (assoc public :path (str "/api/auth/oauth/" (:name provider) "/callback")))))
 
 (defn- build-auth-uri
-  [{:keys [::provider] :as cfg} state]
+  [{:keys [::provider]
+    :as cfg} state]
   (let [params {:client_id (:client-id provider)
                 :redirect_uri (build-redirect-uri cfg)
                 :response_type "code"
@@ -322,7 +328,8 @@
              props))
 
 (defn- fetch-access-token
-  [{:keys [::provider] :as cfg} code]
+  [{:keys [::provider]
+    :as cfg} code]
   (let [params {:client_id (:client-id provider)
                 :client_secret (:client-secret provider)
                 :code code
@@ -384,7 +391,8 @@
        :props    props})))
 
 (defn- fetch-user-info
-  [{:keys [::provider] :as cfg} tdata]
+  [{:keys [::provider]
+    :as cfg} tdata]
   (l/trc :hint "fetch user info"
          :uri (:user-uri provider)
          :token (obfuscate-string (:token/access tdata)))
@@ -412,7 +420,8 @@
   [{:keys [::provider]} tdata]
   (try
     (when (:token/id tdata)
-      (let [{:keys [kid alg] :as theader} (jwt/decode-header (:token/id tdata))]
+      (let [{:keys [kid alg]
+             :as theader} (jwt/decode-header (:token/id tdata))]
         (when-let [key (if (str/starts-with? (name alg) "hs")
                          (:client-secret provider)
                          (get-in provider [:jwks kid]))]
@@ -434,10 +443,13 @@
   (sm/validator schema:info))
 
 (defn- get-info
-  [{:keys [::provider ::setup/props] :as cfg} {:keys [params] :as request}]
+  [{:keys [::provider ::setup/props]
+    :as cfg} {:keys [params]
+              :as request}]
   (let [state  (get params :state)
         code   (get params :code)
-        state  (tokens/verify props {:token state :iss :oauth})
+        state  (tokens/verify props {:token state
+                                     :iss :oauth})
         tdata  (fetch-access-token cfg code)
         info   (case (cf/get :oidc-user-info-source)
                  :token (get-user-info cfg tdata)
@@ -503,7 +515,8 @@
 (defn- redirect-with-error
   ([error] (redirect-with-error error nil))
   ([error hint]
-   (let [params {:error error :hint hint}
+   (let [params {:error error
+                 :hint hint}
          params (d/without-nils params)
          uri    (-> (u/uri (cf/get :public-uri))
                     (assoc :path "/#/auth/login")
@@ -536,17 +549,21 @@
     (redirect-response uri)))
 
 (defn- provider-has-email-verified?
-  [{:keys [::provider] :as cfg} {:keys [props] :as info}]
+  [{:keys [::provider]
+    :as cfg} {:keys [props]
+              :as info}]
   (let [prop (qualify-prop-key provider :email_verified)]
     (true? (get props prop))))
 
 (defn- profile-has-provider-props?
-  [{:keys [::provider] :as cfg} profile]
+  [{:keys [::provider]
+    :as cfg} profile]
   (let [prop (qualify-prop-key provider :email)]
     (contains? (:props profile) prop)))
 
 (defn- provider-matches-profile?
-  [{:keys [::provider] :as cfg} profile info]
+  [{:keys [::provider]
+    :as cfg} profile info]
   (or (= (:auth-backend profile) (:name provider))
       (profile-has-provider-props? cfg profile)
       (provider-has-email-verified? cfg info)))
@@ -612,7 +629,8 @@
         session-id))))
 
 (defn- auth-handler
-  [cfg {:keys [params] :as request}]
+  [cfg {:keys [params]
+        :as request}]
   (let [props  (audit/extract-utm-params params)
         esid   (rpc/get-external-session-id request)
         params {:iss :oauth
@@ -627,7 +645,8 @@
      ::yres/body {:redirect-uri uri}}))
 
 (defn- callback-handler
-  [{:keys [::provider] :as cfg} request]
+  [{:keys [::provider]
+    :as cfg} request]
   (try
     (if-let [error (dm/get-in request [:params :error])]
       (redirect-with-error "unable-to-auth" error)
@@ -650,7 +669,8 @@
 (def provider-lookup
   {:compile
    (fn [& _]
-     (fn [handler {:keys [::providers] :as cfg}]
+     (fn [handler {:keys [::providers]
+                   :as cfg}]
        (fn [request]
          (let [provider (some-> request :path-params :provider keyword)]
            (if-let [provider (get providers provider)]

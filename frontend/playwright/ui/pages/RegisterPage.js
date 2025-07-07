@@ -3,7 +3,9 @@ import { BasePage } from "./BasePage";
 export class RegisterPage extends BasePage {
   constructor(page) {
     super(page);
-    this.registerButton = page.getByRole("button", { name: "Create an account" });
+    this.registerButton = page.getByRole("button", {
+      name: "Create an account",
+    });
     this.password = page.getByLabel("Password");
     this.email = page.getByLabel("Work email");
     this.fullName = page.getByLabel("Full name");

@@ -26,7 +26,8 @@
         (fn [data]
           (-> data
               (dissoc :fill-color :fill-opacity :fill-color-gradient)
-              (assoc :fills [{:fill-color "#FFFFFF" :fill-opacity 1}])))]
+              (assoc :fills [{:fill-color "#FFFFFF"
+                              :fill-opacity 1}])))]
     (-> shape
         (d/update-when :position-data #(mapv update-color %))
         (assoc :stroke-color "#FFFFFF" :stroke-opacity 1))))
@@ -107,10 +108,14 @@
               ;; Need to create new render-id per text-block
               render-id (dm/str render-id "-" index)]
 
-          [:& (mf/provider muc/render-id) {:key index :value render-id}
+          [:& (mf/provider muc/render-id) {:key index
+                                           :value render-id}
            ;; Text fills definition. Need to be defined per-text block
            [:defs
-            [:& fills/fills          {:shape shape :render-id render-id}]]
+            [:& fills/fills          {:shape shape
+                                      :render-id render-id}]]
 
-           [:& shape-custom-strokes {:shape shape :position index :render-id render-id}
+           [:& shape-custom-strokes {:shape shape
+                                     :position index
+                                     :render-id render-id}
             [:> :text props (:text data)]]]))]]))

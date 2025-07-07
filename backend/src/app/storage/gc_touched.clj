@@ -207,7 +207,8 @@
        (not-empty)))
 
 (defn- process-touched!
-  [{:keys [::db/pool] :as cfg}]
+  [{:keys [::db/pool]
+    :as cfg}]
   (loop [freezed 0
          deleted 0]
     (if-let [chunk (get-chunk pool)]
@@ -219,7 +220,8 @@
                :to-freeze freezed
                :to-delete deleted)
 
-        {:freeze freezed :delete deleted}))))
+        {:freeze freezed
+         :delete deleted}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER

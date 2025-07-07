@@ -511,7 +511,8 @@
   "Rotate shapes a fixed angle, from a keyboard action."
   ([ids rotation]
    (increase-rotation ids rotation nil))
-  ([ids rotation {:keys [center delta?] :as params} & {:as options}]
+  ([ids rotation {:keys [center delta?]
+                  :as params} & {:as options}]
    (ptk/reify ::increase-rotation
      ptk/WatchEvent
      (watch [_ state _]
@@ -915,7 +916,8 @@
       (watch [_ state stream]
         (if (= same-event (get state ::current-move-selected))
           (let [selected (dsh/lookup-selected state {:omit-blocked? true})
-                nudge (get-in state [:profile :props :nudge] {:big 10 :small 1})
+                nudge (get-in state [:profile :props :nudge] {:big 10
+                                                              :small 1})
                 move-events (->> stream
                                  (rx/filter (ptk/type? ::nudge-selected-shapes))
                                  (rx/filter #(= direction (deref %))))
@@ -1150,7 +1152,8 @@
 
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers {:ignore-snap-pixel true}))
-           (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true}))))))))
+           (rx/of (dwm/apply-modifiers {:modifiers modifiers
+                                        :ignore-snap-pixel true}))))))))
 
 (defn flip-vertical-selected
   ([]
@@ -1170,7 +1173,8 @@
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point 1.0 -1.0) center))]
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers {:ignore-snap-pixel true}))
-           (rx/of (dwm/apply-modifiers {:modifiers modifiers :ignore-snap-pixel true}))))))))
+           (rx/of (dwm/apply-modifiers {:modifiers modifiers
+                                        :ignore-snap-pixel true}))))))))
 
 (defn fit-layout-modifiers
   [objects frame]
@@ -1206,7 +1210,8 @@
 
         (if (features/active-feature? state "render-wasm/v1")
           (rx/of (dwm/apply-wasm-modifiers modifiers {:undo-group undo-group}))
-          (rx/of (dwm/apply-modifiers {:modifiers modifiers :undo-group undo-group})))))))
+          (rx/of (dwm/apply-modifiers {:modifiers modifiers
+                                       :undo-group undo-group})))))))
 
 (defn resize-text-editor
   [id {:keys [width height]}]

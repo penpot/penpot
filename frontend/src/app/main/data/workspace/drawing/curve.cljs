@@ -80,7 +80,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-drawing :object]
-                 (fn [{:keys [::points] :as shape}]
+                 (fn [{:keys [::points]
+                       :as shape}]
                    (let [points   (ups/simplify points simplify-tolerance)
                          content  (path.segment/points->content points)
                          selrect  (path.segment/content->selrect content)

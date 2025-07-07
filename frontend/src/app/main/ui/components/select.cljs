@@ -111,8 +111,10 @@
          [:span {:class (stl/css :current-icon)} current-icon-ref])
        [:span {:class (stl/css :current-label)} current-label]
        [:span {:class (stl/css :dropdown-button)} i/arrow]
-       [:& dropdown {:show is-open? :on-close close-dropdown}
-        [:ul {:ref dropdown-element* :data-direction (or data-direction @dropdown-direction*)
+       [:& dropdown {:show is-open?
+                     :on-close close-dropdown}
+        [:ul {:ref dropdown-element*
+              :data-direction (or data-direction @dropdown-direction*)
               :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
          (for [[index item] (d/enumerate options)]
            (if (= :separator item)

@@ -44,9 +44,12 @@
   (assert (uuid? id))
 
   (obj/reify {:name "LibraryColorProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly id)}
-    :$file {:enumerable false :get (constantly file-id)}
+    :$plugin {:enumerable false
+              :get (constantly plugin-id)}
+    :$id {:enumerable false
+          :get (constantly id)}
+    :$file {:enumerable false
+            :get (constantly file-id)}
 
     :id {:get (fn [] (dm/str id))}
     :fileId {:get #(dm/str file-id)}
@@ -287,10 +290,17 @@
   (assert (uuid? id))
 
   (obj/reify {:name "LibraryTypographyProxy"}
-    :$plugin {:name "" :enumerable false :get (constantly plugin-id)}
-    :$id {:name "" :enumerable false :get (constantly id)}
-    :$file {:name "" :enumerable false :get (constantly file-id)}
-    :id {:name "" :get (fn [_] (dm/str id))}
+    :$plugin {:name ""
+              :enumerable false
+              :get (constantly plugin-id)}
+    :$id {:name ""
+          :enumerable false
+          :get (constantly id)}
+    :$file {:name ""
+            :enumerable false
+            :get (constantly file-id)}
+    :id {:name ""
+         :get (fn [_] (dm/str id))}
 
     :name
     {:this true
@@ -622,9 +632,12 @@
   (assert (uuid? id))
 
   (obj/reify {:name "LibraryComponentProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly id)}
-    :$file {:enumerable false :get (constantly file-id)}
+    :$plugin {:enumerable false
+              :get (constantly plugin-id)}
+    :$id {:enumerable false
+          :get (constantly id)}
+    :$file {:enumerable false
+            :get (constantly file-id)}
     :id {:get (fn [_] (dm/str id))}
 
     :name
@@ -678,7 +691,8 @@
 
         :else
         (let [id-ref (atom nil)]
-          (st/emit! (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref :origin "plugin"}))
+          (st/emit! (dwl/instantiate-component file-id id (gpt/point 0 0) {:id-ref id-ref
+                                                                           :origin "plugin"}))
           (shape/shape-proxy plugin-id @id-ref))))
 
     :getPluginData
@@ -774,8 +788,10 @@
   (assert (uuid? file-id) "File id not valid")
 
   (obj/reify {:name "LibraryProxy"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
-    :$id {:enumerable false :get (constantly file-id)}
+    :$plugin {:enumerable false
+              :get (constantly plugin-id)}
+    :$id {:enumerable false
+          :get (constantly file-id)}
 
     :id
     {:this true
@@ -822,7 +838,10 @@
 
         :else
         (let [color-id (uuid/next)]
-          (st/emit! (dwl/add-color {:id color-id :name "Color" :color "#000000" :opacity 1} {:rename? false}))
+          (st/emit! (dwl/add-color {:id color-id
+                                    :name "Color"
+                                    :color "#000000"
+                                    :opacity 1} {:rename? false}))
           (lib-color-proxy plugin-id file-id color-id))))
 
     :createTypography
@@ -833,7 +852,8 @@
 
         :else
         (let [typography-id (uuid/next)]
-          (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id :name "Typography"}) false))
+          (st/emit! (dwl/add-typography (ctt/make-typography {:id typography-id
+                                                              :name "Typography"}) false))
           (lib-typography-proxy plugin-id file-id typography-id))))
 
     :createComponent
@@ -923,7 +943,8 @@
 (defn library-subcontext
   [plugin-id]
   (obj/reify {:name "PenpotLibrarySubcontext"}
-    :$plugin {:enumerable false :get (constantly plugin-id)}
+    :$plugin {:enumerable false
+              :get (constantly plugin-id)}
 
     :local
     {:get #(library-proxy plugin-id (:current-file-id @st/state))}

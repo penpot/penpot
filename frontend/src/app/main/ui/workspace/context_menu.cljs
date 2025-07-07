@@ -126,7 +126,8 @@
        (when (> (count children) 1)
          [:ul {:class (stl/css :workspace-context-submenu)
                :ref submenu-ref
-               :style {:display "none" :left 250}
+               :style {:display "none"
+                       :left 250}
                :on-context-menu prevent-default}
           children])])))
 
@@ -722,18 +723,28 @@
 
     (if (= type :column)
       [:*
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.duplicate") :on-click do-duplicate-track}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-before") :on-click do-add-track-before}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-after") :on-click do-add-track-after}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete") :on-click do-delete-track}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete-shapes") :on-click do-delete-track-shapes}]]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.duplicate")
+                        :on-click do-duplicate-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-before")
+                        :on-click do-add-track-before}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.add-after")
+                        :on-click do-add-track-after}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete")
+                        :on-click do-delete-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.column.delete-shapes")
+                        :on-click do-delete-track-shapes}]]
 
       [:*
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.duplicate") :on-click do-duplicate-track}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-before") :on-click do-add-track-before}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-after") :on-click do-add-track-after}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete") :on-click do-delete-track}]
-       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete-shapes") :on-click do-delete-track-shapes}]])))
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.duplicate")
+                        :on-click do-duplicate-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-before")
+                        :on-click do-add-track-before}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.add-after")
+                        :on-click do-add-track-after}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete")
+                        :on-click do-delete-track}]
+       [:> menu-entry* {:title (tr "workspace.context-menu.grid-track.row.delete-shapes")
+                        :on-click do-delete-track-shapes}]])))
 
 (mf/defc grid-cells-context-menu*
   {::mf/props :obj
@@ -799,7 +810,8 @@
                   :on-close #(st/emit! dw/hide-context-menu)}
      [:div {:class (stl/css :workspace-context-menu)
             :ref dropdown-ref
-            :style {:top top :left left}
+            :style {:top top
+                    :left left}
             :on-context-menu prevent-default}
 
       [:ul {:class (stl/css :context-list)}

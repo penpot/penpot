@@ -34,12 +34,14 @@
              :y1 (- y cross-width)
              :x2 (+ x cross-width)
              :y2 (+ y cross-width)
-             :style {:stroke line-color :stroke-width (str (/ line-width zoom))}}]
+             :style {:stroke line-color
+                     :stroke-width (str (/ line-width zoom))}}]
      [:line {:x1 (- x cross-width)
              :y1 (+ y cross-width)
              :x2 (+ x cross-width)
              :y2 (- y cross-width)
-             :style {:stroke line-color :stroke-width (str (/ line-width zoom))}}]]))
+             :style {:stroke line-color
+                     :stroke-width (str (/ line-width zoom))}}]]))
 
 (mf/defc snap-line
   [{:keys [snap point zoom]}]
@@ -47,7 +49,8 @@
           :y1 (:y snap)
           :x2 (:x point)
           :y2 (:y point)
-          :style {:stroke line-color :stroke-width (str (/ line-width zoom))}
+          :style {:stroke line-color
+                  :stroke-width (str (/ line-width zoom))}
           :opacity line-opacity}])
 
 (defn get-snap
@@ -101,7 +104,8 @@
                                         (hash-map coord fixedv (flip coord) maxv)]))))
 
 (mf/defc snap-feedback
-  [{:keys [shapes remove-snap? zoom modifiers] :as props}]
+  [{:keys [shapes remove-snap? zoom modifiers]
+    :as props}]
   (let [state (mf/use-state [])
         subject (mf/use-memo #(rx/subject))
 
@@ -154,7 +158,8 @@
 
 (mf/defc snap-points
   {::mf/wrap [mf/memo]}
-  [{:keys [layout zoom objects selected page-id drawing focus] :as props}]
+  [{:keys [layout zoom objects selected page-id drawing focus]
+    :as props}]
   (dm/assert! (set? selected))
   (let [shapes  (into [] (keep (d/getf objects)) selected)
 
@@ -168,7 +173,8 @@
         remove-snap?
         (mf/use-callback
          (mf/deps remove-snap-base?)
-         (fn [{:keys [type grid] :as snap}]
+         (fn [{:keys [type grid]
+               :as snap}]
            (or (remove-snap-base? snap)
                (and (= type :layout) (= grid :square))
                (= type :guide))))

@@ -16,7 +16,8 @@
    has changed, it returns :text-content-structure. There are two
    callbacks to specify what to return when there is a text change with
    the same structure, and when attributes change."
-  [a b {:keys [text-cb attribute-cb] :as callbacks}]
+  [a b {:keys [text-cb attribute-cb]
+        :as callbacks}]
   (cond
     ;; If a and b are equal, there is no diff
     (= a b)

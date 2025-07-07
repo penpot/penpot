@@ -13,7 +13,8 @@
    [beicon.v2.core :as rx]))
 
 (defmethod impl/handler :export-files
-  [{:keys [files type format] :as message}]
+  [{:keys [files type format]
+    :as message}]
   (assert (or (= format :binfile-v1)
               (= format :binfile-v3))
           "expected valid format")

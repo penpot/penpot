@@ -50,7 +50,9 @@
           :opt-un [::wait ::name ::skip-children]))
 
 (defn handler
-  [{:keys [:request/auth-token] :as exchange} {:keys [exports] :as params}]
+  [{:keys [:request/auth-token]
+    :as exchange} {:keys [exports]
+                   :as params}]
   (let [exports (prepare-exports exports auth-token)]
     (if (and (= 1 (count exports))
              (= 1 (count (-> exports first :objects))))
@@ -60,11 +62,13 @@
       (handle-multiple-export exchange (assoc params :exports exports)))))
 
 (defn- handle-single-export
-  [exchange {:keys [export wait profile-id name skip-children] :as params}]
+  [exchange {:keys [export wait profile-id name skip-children]
+             :as params}]
   (let [topic       (str profile-id)
         resource    (rsc/create (:type export) (or name (:name export)))
 
-        on-progress (fn [{:keys [path] :as object}]
+        on-progress (fn [{:keys [path]
+                          :as object}]
                       (p/do
                         ;; Move the generated path to the resource
                         ;; path destination.
@@ -99,7 +103,8 @@
       (assoc exchange :response/body (dissoc resource :path)))))
 
 (defn- handle-multiple-export
-  [exchange {:keys [exports wait profile-id name skip-children] :as params}]
+  [exchange {:keys [exports wait profile-id name skip-children]
+             :as params}]
   (let [resource    (rsc/create :zip (or name (-> exports first :name)))
         total       (count exports)
         topic       (str profile-id)
@@ -136,7 +141,8 @@
                                     :on-error on-error
                                     :on-progress on-progress)
 
-        append      (fn [{:keys [filename path] :as object}]
+        append      (fn [{:keys [filename path]
+                          :as object}]
                       (rsc/add-to-zip! zip path (str/replace filename sanitize-file-regex "_")))
 
         proc        (-> (p/do

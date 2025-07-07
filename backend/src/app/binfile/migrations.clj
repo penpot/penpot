@@ -16,7 +16,8 @@
 (defn register-pending-migrations!
   "All features that are enabled and requires explicit migration are
   added to the state for a posterior migration step."
-  [cfg {:keys [id features] :as file}]
+  [cfg {:keys [id features]
+        :as file}]
   (doseq [feature (-> (::features cfg)
                       (set/difference cfeat/no-migration-features)
                       (set/difference cfeat/backend-only-features)

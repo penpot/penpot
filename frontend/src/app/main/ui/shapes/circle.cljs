@@ -31,7 +31,11 @@
 
         props (mf/with-memo [shape]
                 (-> #js {}
-                    (obj/merge! #js {:cx cx :cy cy :rx rx :ry ry :transform t})))]
+                    (obj/merge! #js {:cx cx
+                                     :cy cy
+                                     :rx rx
+                                     :ry ry
+                                     :transform t})))]
 
     [:& shape-custom-strokes {:shape shape}
      [:> :ellipse props]]))

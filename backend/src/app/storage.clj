@@ -72,7 +72,8 @@
   (assert (valid-backends? (::backends params)) "expected valid backends map"))
 
 (defmethod ig/init-key ::storage
-  [_ {:keys [::backends ::db/pool] :as cfg}]
+  [_ {:keys [::backends ::db/pool]
+      :as cfg}]
   (let [backend (or (get-legacy-backend)
                     (cf/get :objects-storage-backend)
                     :fs)
@@ -112,7 +113,8 @@
             (update :metadata db/decode-transit-pgobject))))
 
 (defn- create-database-object
-  [{:keys [::backend ::db/connectable]} {:keys [::content ::expired-at ::touched-at ::touch] :as params}]
+  [{:keys [::backend ::db/connectable]} {:keys [::content ::expired-at ::touched-at ::touch]
+                                         :as params}]
   (let [id     (or (:id params) (uuid/random))
         mdata  (cond-> (get-metadata params)
                  (satisfies? impl/IContentHash content)
@@ -188,7 +190,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn object->relative-path
-  [{:keys [id] :as obj}]
+  [{:keys [id]
+    :as obj}]
   (impl/id->path id))
 
 (defn file-url->path
@@ -201,13 +204,16 @@
 (dm/export impl/object?)
 
 (defn get-object
-  [{:keys [::db/connectable] :as storage}  id]
+  [{:keys [::db/connectable]
+    :as storage}  id]
   (assert (valid-storage? storage))
   (retrieve-database-object connectable id))
 
 (defn put-object!
   "Creates a new object with the provided content."
-  [{:keys [::backend] :as storage} {:keys [::content] :as params}]
+  [{:keys [::backend]
+    :as storage} {:keys [::content]
+                  :as params}]
   (assert (valid-storage? storage))
   (assert (impl/content? content) "expected an instance of content")
 
@@ -220,7 +226,8 @@
 
 (defn touch-object!
   "Mark object as touched."
-  [{:keys [::db/connectable] :as storage} object-or-id]
+  [{:keys [::db/connectable]
+    :as storage} object-or-id]
   (assert (valid-storage? storage))
   (let [id (if (impl/object? object-or-id) (:id object-or-id) object-or-id)]
     (-> (db/update! connectable :storage-object
@@ -270,7 +277,8 @@
       (-> (impl/get-object-url backend object nil) file-url->path))))
 
 (defn del-object!
-  [{:keys [::db/connectable] :as storage} object-or-id]
+  [{:keys [::db/connectable]
+    :as storage} object-or-id]
   (assert (valid-storage? storage))
   (let [id  (if (impl/object? object-or-id) (:id object-or-id) object-or-id)
         res (db/update! connectable :storage-object

@@ -157,7 +157,8 @@
         "*")))
 
 (defmethod visit :map
-  [_ schema children {:keys [::level ::max-level] :as options}]
+  [_ schema children {:keys [::level ::max-level]
+                      :as options}]
   (let [props   (m/properties schema)
         closed? (:closed props)
         title   (some->> (:title props) str/camel str/capital)]
@@ -182,7 +183,8 @@
         (str (pad header level) "{\n" entries "\n" (pad "}\n" level))))))
 
 (defmethod visit :multi
-  [_ s children {:keys [::level ::max-level] :as options}]
+  [_ s children {:keys [::level ::max-level]
+                 :as options}]
   (let [props (m/properties s)
         title (some-> (:title props) str/camel str/capital)]
     (if (>= level max-level)
@@ -223,7 +225,8 @@
   (visit ::m/schema schema children options))
 
 (defmethod visit ::m/schema
-  [_ schema _ {:keys [::level ::limit ::max-level] :as options}]
+  [_ schema _ {:keys [::level ::limit ::max-level]
+               :as options}]
   (let [schema' (m/deref schema)
         props   (merge
                  (m/properties schema)
@@ -254,7 +257,10 @@
       (describe* schema' (assoc options ::base-level level ::base-limit limit)))))
 
 (defn describe* [s options]
-  (letfn [(walk-fn [schema path children {:keys [::base-level ::base-limit] :or {base-level 0 base-limit 0} :as options}]
+  (letfn [(walk-fn [schema path children {:keys [::base-level ::base-limit]
+                                          :or {base-level 0
+                                               base-limit 0}
+                                          :as options}]
             (let [options (assoc options
                                  ::limit (+ base-limit (count path))
                                  ::level (+ base-level (count path)))]

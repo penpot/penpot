@@ -49,7 +49,9 @@
 (sv/defmethod ::get-font-variants
   {::doc/added "1.18"
    ::sm/params schema:get-font-variants}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id file-id project-id share-id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id team-id file-id project-id share-id]
+              :as params}]
   (dm/with-open [conn (db/open pool)]
     (cond
       (uuid? team-id)
@@ -96,9 +98,11 @@
                 [:process-font/global]]
    ::webhooks/event? true
    ::sm/params schema:create-font-variant}
-  [cfg {:keys [::rpc/profile-id team-id] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id]
+        :as params}]
   (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
+              (fn [{:keys [::db/conn]
+                    :as cfg}]
                 (teams/check-edition-permissions! conn profile-id team-id)
                 (quotes/check! cfg {::quotes/id ::quotes/font-variants-per-team
                                     ::quotes/profile-id profile-id
@@ -106,9 +110,11 @@
                 (create-font-variant cfg (assoc params :profile-id profile-id)))))
 
 (defn create-font-variant
-  [{:keys [::sto/storage ::db/conn ::wrk/executor]} {:keys [data] :as params}]
+  [{:keys [::sto/storage ::db/conn ::wrk/executor]} {:keys [data]
+                                                     :as params}]
   (letfn [(generate-missing! [data]
-            (let [data (media/run {:cmd :generate-fonts :input data})]
+            (let [data (media/run {:cmd :generate-fonts
+                                   :input data})]
               (when (and (not (contains? data "font/otf"))
                          (not (contains? data "font/ttf"))
                          (not (contains? data "font/woff"))
@@ -205,7 +211,8 @@
    ::webhooks/event? true
    ::sm/params schema:delete-font
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id team-id]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id id team-id]}]
   (let [team  (teams/get-team conn
                               :profile-id profile-id
                               :team-id team-id)
@@ -250,12 +257,14 @@
    ::webhooks/event? true
    ::sm/params schema:delete-font-variant
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id team-id]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id id team-id]}]
   (let [team    (teams/get-team conn
                                 :profile-id profile-id
                                 :team-id team-id)
         variant (db/get conn :team-font-variant
-                        {:id id :team-id team-id}
+                        {:id id
+                         :team-id team-id}
                         {::sql/for-update true})
         delay   (ldel/get-deletion-delay team)]
 

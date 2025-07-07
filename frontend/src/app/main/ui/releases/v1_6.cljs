@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Alpha release 1.6.0"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Alpha release 1.6.0"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Alpha 1.6.0 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/custom-fonts.gif" :border "0" :alt "Upload/use custom fonts"}]]
+         [:img {:src "images/features/custom-fonts.gif"
+                :border "0"
+                :alt "Upload/use custom fonts"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Upload/use custom fonts"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/scale-text.gif" :border "0" :alt "Interactively scale text"}]]
+         [:img {:src "images/features/scale-text.gif"
+                :border "0"
+                :alt "Interactively scale text"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Scale text layers at resizing"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/performance.gif" :border "0" :alt "Performance improvements"}]]
+         [:img {:src "images/features/performance.gif"
+                :border "0"
+                :alt "Performance improvements"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Performance improvements"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/shapes-to-path.gif" :border "0" :alt "Shapes to path"}]]
+         [:img {:src "images/features/shapes-to-path.gif"
+                :border "0"
+                :alt "Shapes to path"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Shapes to path"]]

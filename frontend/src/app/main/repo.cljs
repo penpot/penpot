@@ -18,7 +18,8 @@
    [cuerdas.core :as str]))
 
 (defn handle-response
-  [{:keys [status body headers uri] :as response}]
+  [{:keys [status body headers uri]
+    :as response}]
   (cond
     (= 204 status)
     ;; We need to send "something" so the streams listening downstream can act
@@ -63,7 +64,8 @@
 
 (def default-options
   {:update-file {:query-params [:id]}
-   :get-raw-file {:rename-to :get-file :raw-transit? true}
+   :get-raw-file {:rename-to :get-file
+                  :raw-transit? true}
 
    :create-file-object-thumbnail
    {:query-params [:file-id :object-id :tag]
@@ -130,7 +132,8 @@
 
     (->> (http/fetch request)
          (rx/map http/response->map)
-         (rx/mapcat (fn [{:keys [headers body] :as response}]
+         (rx/mapcat (fn [{:keys [headers body]
+                          :as response}]
                       (let [ctype (get headers "content-type")
                             response-stream? (str/starts-with? ctype "text/event-stream")]
 
@@ -157,7 +160,8 @@
   (send! id params nil))
 
 (defmethod cmd! :login-with-oidc
-  [_ {:keys [provider] :as params}]
+  [_ {:keys [provider]
+      :as params}]
   (let [uri    (u/join cf/public-uri "api/auth/oauth/" (d/name provider))
         params (dissoc params :provider)]
     (->> (http/send! {:method :post
@@ -170,7 +174,8 @@
          (rx/mapcat handle-response))))
 
 (defn- send-export
-  [{:keys [blob?] :as params}]
+  [{:keys [blob?]
+    :as params}]
   (->> (http/send! {:method :post
                     :uri (u/join cf/public-uri "api/export")
                     :body (http/transit-data (dissoc params :blob?))
@@ -183,7 +188,8 @@
 
 (defmethod cmd! :export
   [_ params]
-  (let [default {:wait false :blob? false}]
+  (let [default {:wait false
+                 :blob? false}]
     (send-export (merge default params))))
 
 (derive :upload-file-media-object ::multipart-upload)

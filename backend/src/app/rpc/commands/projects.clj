@@ -170,7 +170,9 @@
 ;; --- MUTATION: Create Project
 
 (defn- create-project
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id team-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id team-id]
+              :as params}]
   (let [project (teams/create-project conn params)]
     (teams/create-project-role conn profile-id (:id project) :owner)
     (db/insert! conn :team-project-profile-rel
@@ -183,14 +185,16 @@
 (def ^:private schema:create-project
   [:map {:title "create-project"}
    [:team-id ::sm/uuid]
-   [:name [:string {:max 250 :min 1}]]
+   [:name [:string {:max 250
+                    :min 1}]]
    [:id {:optional true} ::sm/uuid]])
 
 (sv/defmethod ::create-project
   {::doc/added "1.18"
    ::webhooks/event? true
    ::sm/params schema:create-project}
-  [cfg {:keys [::rpc/profile-id team-id] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id]
+        :as params}]
 
   (teams/check-edition-permissions! cfg profile-id team-id)
   (quotes/check! cfg {::quotes/id ::quotes/projects-per-team
@@ -222,7 +226,8 @@
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
    ::webhooks/event? true
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id team-id is-pinned] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id team-id is-pinned]
+                        :as params}]
   (check-read-permissions! conn profile-id id)
   (db/exec-one! conn [sql:update-project-pin team-id id profile-id is-pinned is-pinned])
   nil)
@@ -233,7 +238,8 @@
 
 (def ^:private schema:rename-project
   [:map {:title "rename-project"}
-   [:name [:string {:max 250 :min 1}]]
+   [:name [:string {:max 250
+                    :min 1}]]
    [:id ::sm/uuid]])
 
 (sv/defmethod ::rename-project
@@ -241,7 +247,8 @@
    ::sm/params schema:rename-project
    ::webhooks/event? true
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id name] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id name]
+                        :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [project (db/get-by-id conn :project id ::sql/for-update true)]
     (db/update! conn :project
@@ -283,7 +290,8 @@
    ::sm/params schema:delete-project
    ::webhooks/event? true
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id id] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]
+                        :as params}]
   (check-edition-permissions! conn profile-id id)
   (let [team    (teams/get-team conn
                                 :profile-id profile-id

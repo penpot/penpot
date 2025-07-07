@@ -88,10 +88,12 @@
         (mf/use-fn
          (fn [event]
            (let [version (:main cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes"
+                                              :version version}))
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
-               (st/emit! (modal/show {:type :release-notes :version version}))))))]
+               (st/emit! (modal/show {:type :release-notes
+                                      :version version}))))))]
 
     [:& dropdown-menu {:show true
                        :on-close on-close
@@ -163,7 +165,8 @@
       [:span {:class (stl/css :item-name)} (tr "label.shortcuts")]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :show-shortcuts))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      (when (contains? cf/flags :user-feedback)
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
@@ -199,7 +202,8 @@
          (tr "workspace.header.menu.enable-scale-content"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :scale))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    toggle-flag
                               :class       (stl/css :submenu-item)
@@ -215,7 +219,8 @@
       [:span {:class (stl/css :shortcut)}
 
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-ruler-guide))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    toggle-flag
                               :class       (stl/css :submenu-item)
@@ -230,7 +235,8 @@
          (tr "workspace.header.menu.enable-snap-guides"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-snap-guides))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    toggle-flag
                               :class       (stl/css :submenu-item)
@@ -245,7 +251,8 @@
          (tr "workspace.header.menu.enable-dynamic-alignment"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-alignment))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    toggle-flag
                               :class       (stl/css :submenu-item)
@@ -260,7 +267,8 @@
          (tr "workspace.header.menu.enable-snap-pixel-grid"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :snap-pixel-grid))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      [:> dropdown-menu-item* {:on-click    show-nudge-options
                               :class       (stl/css :submenu-item)
@@ -287,7 +295,8 @@
          (tr "workspace.header.menu.toggle-light-theme"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-theme))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]]))
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]]))
 
 (mf/defc view-menu*
   {::mf/props :obj
@@ -330,7 +339,8 @@
          (tr "workspace.header.menu.show-rules"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-rulers))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
@@ -346,7 +356,8 @@
          (tr "workspace.header.menu.show-guides"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :toggle-guides))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
 
      (when-not ^boolean read-only?
@@ -363,7 +374,8 @@
             (tr "workspace.header.menu.show-palette"))]
          [:span {:class (stl/css :shortcut)}
           (for [sc (scd/split-sc (sc/get-tooltip :toggle-colorpalette))]
-            [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+            [:span {:class (stl/css :shortcut-key)
+                    :key sc} sc])]]
 
         [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                                  :on-click    toggle-text-palette
@@ -377,7 +389,8 @@
             (tr "workspace.header.menu.show-textpalette"))]
          [:span {:class (stl/css :shortcut)}
           (for [sc (scd/split-sc (sc/get-tooltip :toggle-textpalette))]
-            [:span {:class (stl/css :shortcut-key) :key sc} sc])]]])
+            [:span {:class (stl/css :shortcut-key)
+                    :key sc} sc])]]])
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    toggle-flag
@@ -404,7 +417,8 @@
          (tr "workspace.header.menu.show-pixel-grid"))]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :show-pixel-grid))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      [:> dropdown-menu-item* {:class (stl/css :submenu-item)
                               :on-click    toggle-flag
@@ -417,7 +431,8 @@
        (tr "workspace.shape.menu.hide-ui")]
       [:span {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :hide-ui))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]]))
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]]))
 
 (mf/defc edit-menu*
   {::mf/props :obj
@@ -633,7 +648,8 @@
           (tr "dashboard.show-version-history")]
          [:span {:class (stl/css :shortcut)}
           (for [sc (scd/split-sc (sc/get-tooltip :toggle-history))]
-            [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+            [:span {:class (stl/css :shortcut-key)
+                    :key sc} sc])]]
 
         [:div {:class (stl/css :separator)}]])
 
@@ -644,7 +660,8 @@
       [:span {:class (stl/css :item-name)} (tr "dashboard.export-shapes")]
       [:span  {:class (stl/css :shortcut)}
        (for [sc (scd/split-sc (sc/get-tooltip :export-shapes))]
-         [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+         [:span {:class (stl/css :shortcut-key)
+                 :key sc} sc])]]
 
      (when-not (contains? cf/flags :export-file-v3)
        [:> dropdown-menu-item* {:class (stl/css :submenu-item)
@@ -704,13 +721,15 @@
          (tr "workspace.plugins.menu.plugins-manager")]
         [:span {:class (stl/css :shortcut)}
          (for [sc (scd/split-sc (sc/get-tooltip :plugins))]
-           [:span {:class (stl/css :shortcut-key) :key sc} sc])]]
+           [:span {:class (stl/css :shortcut-key)
+                   :key sc} sc])]]
 
 
        (when (d/not-empty? plugins)
          [:div {:class (stl/css :separator)}])
 
-       (for [[idx {:keys [plugin-id name host permissions] :as manifest}] (d/enumerate plugins)]
+       (for [[idx {:keys [plugin-id name host permissions]
+                   :as manifest}] (d/enumerate plugins)]
          (let [permissions        (or (get permissions-peek plugin-id) permissions)
                is-edition-plugin? (or (contains? permissions "content:write")
                                       (contains? permissions "library:write"))
@@ -792,7 +811,8 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "workspace-menu"}))
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click"
+                                            ::ev/origin "workspace-menu"}))
            (dom/open-new-window "https://penpot.app/pricing")))
 
         toggle-flag
@@ -821,7 +841,8 @@
            (reset! show-menu* false)
            (reset! sub-menu* nil)
            (st/emit!
-            (ptk/event ::ev/event {::ev/name "open-plugins-manager" ::ev/origin "workspace:menu"})
+            (ptk/event ::ev/event {::ev/name "open-plugins-manager"
+                                   ::ev/origin "workspace:menu"})
             (modal/show :plugin-management {}))))
 
         subscription           (:subscription (:props profile))

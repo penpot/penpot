@@ -33,7 +33,8 @@
 
 (defn get-nodes
   "Retrieve the DOM nodes to apply the matrix transformation"
-  [base-node {:keys [id parent-id] :as shape}]
+  [base-node {:keys [id parent-id]
+              :as shape}]
   (when (some? base-node)
     (let [shape-node     (get-shape-node base-node id)
           parent-node    (get-shape-node base-node parent-id)
@@ -139,7 +140,8 @@
 
 (defn update-transform!
   [base-node shapes transforms modifiers]
-  (doseq [{:keys [id _type] :as shape} shapes]
+  (doseq [{:keys [id _type]
+           :as shape} shapes]
     (when-let [nodes (get-nodes base-node shape)]
       (let [transform (get transforms id)
             modifiers (get-in modifiers [id :modifiers])]
@@ -220,7 +222,8 @@
   "Adds to the object the information about if the current shape is a masking child. We use the metadata
   to not adding new parameters to the object."
   [objects]
-  (fn [{:keys [id parent-id] :as shape}]
+  (fn [{:keys [id parent-id]
+        :as shape}]
     (let [parent (get objects parent-id)
           masking-child? (and (cfh/mask-shape? parent) (= id (first (:shapes parent))))]
 

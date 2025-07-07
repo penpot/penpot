@@ -71,9 +71,12 @@
   [:map [:color schema:hex-color]])
 
 (def schema:image
-  [:map {:title "ImageColor" :closed true}
-   [:width [::sm/int {:min 0 :gen/gen sg/int}]]
-   [:height [::sm/int {:min 0 :gen/gen sg/int}]]
+  [:map {:title "ImageColor"
+         :closed true}
+   [:width [::sm/int {:min 0
+                      :gen/gen sg/int}]]
+   [:height [::sm/int {:min 0
+                       :gen/gen sg/int}]]
    [:mtype {:gen/gen (sg/elements cm/image-types)} ::sm/text]
    [:id ::sm/uuid]
    [:name {:optional true} ::sm/text]
@@ -90,7 +93,8 @@
   #{:linear :radial})
 
 (def schema:gradient
-  [:map {:title "Gradient" :closed true}
+  [:map {:title "Gradient"
+         :closed true}
    [:type [::sm/one-of gradient-types]]
    [:start-x ::sm/safe-number]
    [:start-y ::sm/safe-number]
@@ -98,11 +102,14 @@
    [:end-y ::sm/safe-number]
    [:width ::sm/safe-number]
    [:stops
-    [:vector {:min 1 :gen/max 2}
+    [:vector {:min 1
+              :gen/max 2}
      [:map {:title "GradientStop"}
       [:color schema:hex-color]
-      [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
-      [:offset [::sm/number {:min 0 :max 1}]]]]]])
+      [:opacity {:optional true} [::sm/number {:min 0
+                                               :max 1}]]
+      [:offset [::sm/number {:min 0
+                             :max 1}]]]]]])
 
 (def gradient-attrs
   "A set of attrs that corresponds to gradient data type"
@@ -112,8 +119,10 @@
   [:map [:gradient schema:gradient]])
 
 (def schema:color-attrs
-  [:map {:title "ColorAttrs" :closed true}
-   [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
+  [:map {:title "ColorAttrs"
+         :closed true}
+   [:opacity {:optional true} [::sm/number {:min 0
+                                            :max 1}]]
    [:ref-id {:optional true} ::sm/uuid]
    [:ref-file {:optional true} ::sm/uuid]])
 
@@ -130,11 +139,13 @@
   (into required-color-attrs (sm/keys schema:color-attrs)))
 
 (def schema:library-color-attrs
-  [:map {:title "ColorAttrs" :closed true}
+  [:map {:title "ColorAttrs"
+         :closed true}
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:path {:optional true} :string]
-   [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
+   [:opacity {:optional true} [::sm/number {:min 0
+                                            :max 1}]]
    [:modified-at {:optional true} ::sm/inst]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 

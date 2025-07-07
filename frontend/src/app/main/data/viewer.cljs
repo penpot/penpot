@@ -57,7 +57,8 @@
    [:page-id {:optional true} ::sm/uuid]])
 
 (defn initialize
-  [{:keys [file-id share-id] :as params}]
+  [{:keys [file-id share-id]
+    :as params}]
   (dm/assert!
    "expected valid params"
    (sm/check schema:initialize params))
@@ -110,7 +111,8 @@
    [:share-id {:optional true} ::sm/uuid]])
 
 (defn- fetch-bundle
-  [{:keys [file-id share-id] :as params}]
+  [{:keys [file-id share-id]
+    :as params}]
 
   (dm/assert!
    "expected valid params"
@@ -125,12 +127,14 @@
             ;; report the whole set of supported features instead of
             ;; the enabled ones.
             features cfeat/supported-features
-            params'  (cond-> {:file-id file-id :features features}
+            params'  (cond-> {:file-id file-id
+                              :features features}
                        (uuid? share-id)
                        (assoc :share-id share-id))
 
             resolve  (fn [[key pointer]]
-                       (let [params {:file-id file-id :fragment-id @pointer}
+                       (let [params {:file-id file-id
+                                     :fragment-id @pointer}
                              params (cond-> params
                                       (uuid? share-id)
                                       (assoc :share-id share-id))]
@@ -162,7 +166,8 @@
                      (rx/map (fn [data]
                                (update bundle :file assoc :data data))))))
              (rx/mapcat
-              (fn [{:keys [fonts team] :as bundle}]
+              (fn [{:keys [fonts team]
+                    :as bundle}]
                 (rx/of (df/fonts-fetched fonts)
                        (features/initialize (:features team))
                        (bundle-fetched (merge bundle params))))))))))
@@ -172,7 +177,8 @@
 (declare go-to-frame-auto)
 
 (defn bundle-fetched
-  [{:keys [project file team share-links libraries users permissions thumbnails] :as bundle}]
+  [{:keys [project file team share-links libraries users permissions thumbnails]
+    :as bundle}]
   (let [pages (->> (dm/get-in file [:data :pages])
                    (map (fn [page-id]
                           (let [data (get-in file [:data :pages-index page-id])]
@@ -218,13 +224,15 @@
               :else (go-to-frame-auto)))))))))
 
 (defn fetch-comment-threads
-  [{:keys [file-id page-id share-id] :as params}]
+  [{:keys [file-id page-id share-id]
+    :as params}]
   (letfn [(fetched [data state]
             (->> data
                  (filter #(= page-id (:page-id %)))
                  (d/index-by :id)
                  (assoc state :comment-threads)))
-          (on-error [{:keys [type] :as err}]
+          (on-error [{:keys [type]
+                      :as err}]
             (if (or (= :authentication type)
                     (= :not-found type))
               (rx/empty)
@@ -233,18 +241,21 @@
     (ptk/reify ::fetch-comment-threads
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/cmd! :get-comment-threads {:file-id file-id :share-id share-id})
+        (->> (rp/cmd! :get-comment-threads {:file-id file-id
+                                            :share-id share-id})
              (rx/map #(partial fetched %))
              (rx/catch on-error))))))
 
 (defn refresh-comment-thread
-  [{:keys [id file-id] :as thread}]
+  [{:keys [id file-id]
+    :as thread}]
   (letfn [(fetched [thread state]
             (assoc-in state [:comment-threads id] thread))]
     (ptk/reify ::refresh-comment-thread
       ptk/WatchEvent
       (watch [_ _ _]
-        (->> (rp/cmd! :get-comment-thread {:file-id file-id :id id})
+        (->> (rp/cmd! :get-comment-thread {:file-id file-id
+                                           :id id})
              (rx/map #(partial fetched %)))))))
 
 (defn fetch-comments

@@ -41,11 +41,15 @@
          (mf/deps change-view)
          #(change-view :create-theme))]
     [:div {:class (stl/css :themes-modal-wrapper)}
-     [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
+     [:> heading* {:level 2
+                   :typography "headline-medium"
+                   :class (stl/css :themes-modal-title)}
       (tr "workspace.tokens.themes-list")]
      [:div {:class (stl/css :empty-themes-wrapper)}
       [:div {:class (stl/css :empty-themes-message)}
-       [:> text* {:as "span" :typography "title-medium" :class (stl/css :empty-theme-title)}
+       [:> text* {:as "span"
+                  :typography "title-medium"
+                  :class (stl/css :empty-theme-title)}
         (tr "workspace.tokens.no-themes-currently")]
        [:> text* {:as "span"
                   :class (stl/css :empty-theme-subtitle)
@@ -90,9 +94,13 @@
            (change-view :create-theme)))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
-     [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
+     [:> heading* {:level 2
+                   :typography "headline-medium"
+                   :class (stl/css :themes-modal-title)}
       (tr "workspace.tokens.themes-list")]
-     [:> text* {:as "div" :typography "body-medium" :class (stl/css :themes-modal-description)}
+     [:> text* {:as "div"
+                :typography "body-medium"
+                :class (stl/css :themes-modal-description)}
       (tr "workspace.tokens.themes-description")]
      [:ul {:class (stl/css :theme-group-wrapper)}
       (for [[group themes] themes-groups]
@@ -101,11 +109,16 @@
            [:> heading* {:level 3
                          :class (stl/css :theme-group-label)
                          :typography "body-large"}
-            [:div {:class (stl/css :group-title) :title (str (tr "workspace.tokens.group-name") ": " group)}
-             [:> icon* {:icon-id "group" :class (stl/css :group-title-icon)}]
-             [:> text* {:as "span" :typography "body-medium" :class (stl/css :group-title-name)} group]]])
+            [:div {:class (stl/css :group-title)
+                   :title (str (tr "workspace.tokens.group-name") ": " group)}
+             [:> icon* {:icon-id "group"
+                        :class (stl/css :group-title-icon)}]
+             [:> text* {:as "span"
+                        :typography "body-medium"
+                        :class (stl/css :group-title-name)} group]]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
-          (for [[_ {:keys [group name] :as theme}] themes
+          (for [[_ {:keys [group name]
+                    :as theme}] themes
                 :let [theme-id (ctob/theme-path theme)
                       selected? (some? (get active-theme-ids theme-id))
                       delete-theme
@@ -131,7 +144,10 @@
                            :on-change (constantly nil)
                            :selected? selected?}]]]
              [:div {:class (stl/css :theme-name-row)}
-              [:> text* {:as "span"  :typography "body-medium" :class (stl/css :theme-name) :title name} name]]
+              [:> text* {:as "span"
+                         :typography "body-medium"
+                         :class (stl/css :theme-name)
+                         :title name} name]]
 
 
              [:div {:class (stl/css :theme-actions-row)}
@@ -143,7 +159,8 @@
                              :title (tr "workspace.tokens.sets-hint")
                              :on-click on-edit-theme}
                  [:div {:class (stl/css :label-wrapper)}
-                  [:> text* {:as "span" :typography "body-medium"}
+                  [:> text* {:as "span"
+                             :typography "body-medium"}
                    (if sets-count
                      (tr "workspace.tokens.num-active-sets" sets-count)
                      (tr "workspace.tokens.no-active-sets"))]
@@ -188,7 +205,8 @@
 
     [:div {:class (stl/css :edit-theme-inputs-wrapper)}
      [:div {:class (stl/css :group-input-wrapper)}
-      [:> label* {:for "groups-dropdown" :is-optional true} (tr "workspace.tokens.label.group")]
+      [:> label* {:for "groups-dropdown"
+                  :is-optional true} (tr "workspace.tokens.label.group")]
       [:> combobox* {:id (dm/str "groups-dropdown")
                      :placeholder (tr "workspace.tokens.label.group-placeholder")
                      :default-selected (:group theme)
@@ -205,7 +223,8 @@
                   :on-change on-update-name}]]]))
 
 (mf/defc theme-modal-buttons*
-  [{:keys [close-modal on-save-form disabled?] :as props}]
+  [{:keys [close-modal on-save-form disabled?]
+    :as props}]
   (let [handle-key-down-cancel
         (mf/use-fn
          (mf/deps close-modal)
@@ -323,23 +342,29 @@
              (on-toggle-token-set set-name))))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
-     [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
+     [:> heading* {:level 2
+                   :typography "headline-medium"
+                   :class (stl/css :themes-modal-title)}
       (if is-editing
         (tr "workspace.tokens.edit-theme-title")
         (tr "workspace.tokens.add-new-theme"))]
 
-     [:form {:on-submit on-save-form :class (stl/css :edit-theme-form)}
+     [:form {:on-submit on-save-form
+             :class (stl/css :edit-theme-form)}
       [:div {:class (stl/css :edit-theme-wrapper)}
        (when has-prev-view
          [:button {:on-click on-back
                    :class (stl/css :back-btn)
                    :type "button"}
-          [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
+          [:> icon* {:icon-id ic/arrow-left
+                     :aria-hidden true}]
           (tr "workspace.tokens.back-to-themes")])
 
        [:> theme-inputs* {:theme current-theme
                           :on-change-field on-change-field}]
-       [:> text* {:as "span"  :typography "body-small" :class (stl/css :select-sets-message)}
+       [:> text* {:as "span"
+                  :typography "body-small"
+                  :class (stl/css :select-sets-message)}
         (tr "workspace.tokens.set-selection-theme")]
        [:div {:class (stl/css :sets-list-wrapper)}
 

@@ -44,7 +44,8 @@
 
 (mf/defc shape-options*
   {::mf/wrap [#(mf/throttle % 60)]}
-  [{:keys [shape shapes-with-children page-id file-id libraries] :as props}]
+  [{:keys [shape shapes-with-children page-id file-id libraries]
+    :as props}]
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
@@ -56,8 +57,13 @@
     [:*
      (case shape-type
        :frame   [:> frame/options* props]
-       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :libraries libraries}]
-       :text    [:& text/options {:shape shape  :file-id file-id :libraries libraries}]
+       :group   [:& group/options {:shape shape
+                                   :shape-with-children shapes-with-children
+                                   :file-id file-id
+                                   :libraries libraries}]
+       :text    [:& text/options {:shape shape
+                                  :file-id file-id
+                                  :libraries libraries}]
        :rect    [:& rect/options {:shape shape}]
        :circle  [:& circle/options {:shape shape}]
        :path    [:& path/options {:shape shape}]
@@ -76,7 +82,8 @@
   {::mf/wrap [mf/memo]}
   [{:keys [panel]}]
   (when (= (:type panel) :component-swap)
-    [:& component-menu {:shapes (:shapes panel) :swap-opened? true}]))
+    [:& component-menu {:shapes (:shapes panel)
+                        :swap-opened? true}]))
 
 (mf/defc design-menu*
   {::mf/wrap [mf/memo]}

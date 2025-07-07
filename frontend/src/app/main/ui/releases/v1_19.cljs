@@ -37,8 +37,10 @@
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
 
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
@@ -60,15 +62,25 @@
            "the community."]
           [:p
            "Let’s give kudos to "
-           [:a {:href "https://github.com/astudentinearth" :target "_blank" :rel "noopener noreferrer"} "@astudentinearth"]
+           [:a {:href "https://github.com/astudentinearth"
+                :target "_blank"
+                :rel "noopener noreferrer"} "@astudentinearth"]
            ", "
-           [:a {:href "https://github.com/dfelinto" :target "_blank" :rel "noopener noreferrer"} "@dfelinto"]
+           [:a {:href "https://github.com/dfelinto"
+                :target "_blank"
+                :rel "noopener noreferrer"} "@dfelinto"]
            ", "
-           [:a {:href "https://github.com/akshay-gupta7" :target "_blank" :rel "noopener noreferrer"} "@akshay-gupta7"]
+           [:a {:href "https://github.com/akshay-gupta7"
+                :target "_blank"
+                :rel "noopener noreferrer"} "@akshay-gupta7"]
            ", "
-           [:a {:href "https://github.com/ondrejkonec" :target "_blank" :rel "noopener noreferrer"} "@ondrejkonec"]
+           [:a {:href "https://github.com/ondrejkonec"
+                :target "_blank"
+                :rel "noopener noreferrer"} "@ondrejkonec"]
            " and "
-           [:a {:href "https://github.com/ryanbreen" :target "_blank" :rel "noopener noreferrer"} "@ryanbreen"]
+           [:a {:href "https://github.com/ryanbreen"
+                :target "_blank"
+                :rel "noopener noreferrer"} "@ryanbreen"]
            " in particular and the Penpot community as a whole!"]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]

@@ -57,7 +57,8 @@
         (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
       (let [canvas-width 260
             canvas-height 140
-            {brx :left bry :top} (dom/get-bounding-rect viewport-node)
+            {brx :left
+             bry :top} (dom/get-bounding-rect viewport-node)
 
             x (mth/floor (- client-x brx))
             y (mth/floor (- client-y bry))
@@ -98,7 +99,8 @@
         canvas-image-data (mf/use-ref nil)
         zoom-view-context (mf/use-ref nil)
         canvas-ready      (mf/use-state false)
-        initial-mouse-pos (mf/use-state {:x 0 :y 0})
+        initial-mouse-pos (mf/use-state {:x 0
+                                         :y 0})
         update-str        (rx/subject)
 
         handle-keydown

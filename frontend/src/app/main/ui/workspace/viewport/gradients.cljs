@@ -52,13 +52,22 @@
             :height "120%"
             :filterUnits "objectBoundingBox"
             :color-interpolation-filters "sRGB"}
-   [:feFlood {:flood-opacity "0" :result "BackgroundImageFix"}]
-   [:feColorMatrix {:in "SourceAlpha" :type "matrix" :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"}]
+   [:feFlood {:flood-opacity "0"
+              :result "BackgroundImageFix"}]
+   [:feColorMatrix {:in "SourceAlpha"
+                    :type "matrix"
+                    :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"}]
    [:feOffset {:dy offset}]
    [:feGaussianBlur {:stdDeviation "1"}]
-   [:feColorMatrix {:type "matrix" :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0"}]
-   [:feBlend {:mode "normal" :in2 "BackgroundImageFix" :result id}]
-   [:feBlend {:mode "normal" :in "SourceGraphic" :in2 id :result "shape"}]])
+   [:feColorMatrix {:type "matrix"
+                    :values "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.15 0"}]
+   [:feBlend {:mode "normal"
+              :in2 "BackgroundImageFix"
+              :result id}]
+   [:feBlend {:mode "normal"
+              :in "SourceGraphic"
+              :in2 id
+              :result "shape"}]])
 
 (def checkerboard "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAIAAAC0tAIdAAACvUlEQVQoFQGyAk39AeLi4gAAAAAAAB0dHQAAAAAAAOPj4wAAAAAAAB0dHQAAAAAAAOPj4wAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////AAAAAAAA4+PjAAAAAAAAHR0dAAAAAAAA4+PjAAAAAAAAHR0dAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATj4+MAAAAAAAAdHR0AAAAAAADj4+MAAAAAAAAdHR0AAAAAAADj4+MAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAjScaa0cU7nIAAAAASUVORK5CYII=")
 
@@ -132,7 +141,9 @@
         dragging-ref (mf/use-ref false)
         start-offset (mf/use-ref nil)
 
-        handler-state (mf/use-state {:display? false :offset 0 :hover nil})
+        handler-state (mf/use-state {:display? false
+                                     :offset 0
+                                     :hover nil})
 
         cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
         can-add-stop? (if cap-stops? (< (count stops) types.fill/MAX-GRADIENT-STOPS) true)
@@ -271,7 +282,8 @@
 
     [:g.gradient-handlers {:pointer-events "none"}
      [:defs
-      [:& shadow {:id "gradient-drop-shadow" :offset (/ 2 zoom)}]]
+      [:& shadow {:id "gradient-drop-shadow"
+                  :offset (/ 2 zoom)}]]
 
      (let [lv (-> (gpt/to-vec from-p to-p)
                   (gpt/unit))
@@ -431,7 +443,8 @@
            :selected (= editing index)
            :zoom zoom
            :point stop-p
-           :color {:value (:color stop) :opacity (:opacity stop)}
+           :color {:value (:color stop)
+                   :opacity (:opacity stop)}
            :angle angle
            :index index
            :on-pointer-down handle-marker-pointer-down
@@ -454,7 +467,8 @@
   (let [transform         (gsh/transform-matrix shape)
         transform-inverse (gsh/inverse-transform-matrix shape)
 
-        {:keys [x y width height] :as sr} (:selrect shape)
+        {:keys [x y width height]
+         :as sr} (:selrect shape)
 
         from-p (-> (gpt/point (+ x (* width (:start-x gradient)))
                               (+ y (* height (:start-y gradient))))
@@ -485,7 +499,8 @@
            (let [point (gpt/transform point transform-inverse)
                  start-x (/ (- (:x point) x) width)
                  start-y (/ (- (:y point) y) height)]
-             (change! {:start-x start-x :start-y start-y}))))
+             (change! {:start-x start-x
+                       :start-y start-y}))))
 
         on-change-finish
         (mf/use-fn
@@ -494,7 +509,8 @@
            (let [point (gpt/transform point transform-inverse)
                  end-x (/ (- (:x point) x) width)
                  end-y (/ (- (:y point) y) height)]
-             (change! {:end-x end-x :end-y end-y}))))
+             (change! {:end-x end-x
+                       :end-y end-y}))))
 
         on-change-width
         (mf/use-fn

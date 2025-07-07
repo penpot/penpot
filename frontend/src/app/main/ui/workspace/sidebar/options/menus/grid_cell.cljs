@@ -35,7 +35,8 @@
                  :area-name])
 
 (mf/defc set-self-alignment
-  [{:keys [is-col? alignment set-alignment] :as props}]
+  [{:keys [is-col? alignment set-alignment]
+    :as props}]
   (let [alignment (or alignment :auto)
         type (if is-col? "col" "row")
 
@@ -81,7 +82,8 @@
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
-  [{:keys [shape cell cells] :as props}]
+  [{:keys [shape cell cells]
+    :as props}]
 
   (let [state* (mf/use-state {:open true})
         open?  (:open @state*)
@@ -186,8 +188,10 @@
                             :on-change set-cell-mode
                             :name "cell-mode"
                             :wide true}
-          [:& radio-button {:value "auto" :id :auto}]
-          [:& radio-button {:value "manual" :id :manual}]
+          [:& radio-button {:value "auto"
+                            :id :auto}]
+          [:& radio-button {:value "manual"
+                            :id :manual}]
           [:& radio-button {:value "area"
                             :id :area
                             :disabled (not valid-area-cells?)}]]]

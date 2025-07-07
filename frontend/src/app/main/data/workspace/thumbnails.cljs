@@ -196,7 +196,8 @@
 
 
         extract-ids
-        (fn [{:keys [page-id type] :as change}]
+        (fn [{:keys [page-id type]
+              :as change}]
           (case type
             :add-obj [[page-id (:id change)]]
             :mod-obj [[page-id (:id change)]]

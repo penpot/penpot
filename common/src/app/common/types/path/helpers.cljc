@@ -498,7 +498,9 @@
 
 
 (defn- get-line-tval
-  [[{x1 :x y1 :y} {x2 :x y2 :y}] {:keys [x y]}]
+  [[{x1 :x
+     y1 :y} {x2 :x
+             y2 :y}] {:keys [x y]}]
   (cond
     (and (s= x1 x2) (s= y1 y2))
     ##Inf
@@ -521,9 +523,12 @@
   "Using the line equation we put the x value and check if matches with
   the given Y. If it does the point is inside the line"
   [point [from-p to-p]]
-  (let [{x1 :x y1 :y} from-p
-        {x2 :x y2 :y} to-p
-        {px :x py :y} point
+  (let [{x1 :x
+         y1 :y} from-p
+        {x2 :x
+         y2 :y} to-p
+        {px :x
+         py :y} point
 
         m  (when-not (s= x1 x2) (/ (- y2 y1) (- x2 x1)))
         vy (when (some? m) (+ (* m px) (* (- m) x1) y1))]
@@ -584,11 +589,15 @@
 (defn line-line-crossing
   [[from-p1 to-p1 :as l1] [from-p2 to-p2 :as l2]]
 
-  (let [{x1 :x y1 :y} from-p1
-        {x2 :x y2 :y} to-p1
+  (let [{x1 :x
+         y1 :y} from-p1
+        {x2 :x
+         y2 :y} to-p1
 
-        {x3 :x y3 :y} from-p2
-        {x4 :x y4 :y} to-p2
+        {x3 :x
+         y3 :y} from-p2
+        {x4 :x
+         y4 :y} to-p2
 
         nx (- (* (- x3 x4) (- (* x1 y2) (* y1 x2)))
               (* (- x1 x2) (- (* x3 y4) (* y3 x4))))
@@ -737,7 +746,8 @@
 
                       (d/concat-vec ts-1 ts-2 ts-3 ts-4)))))))
 
-          (remove-close-ts [{cp1 :p1 cp2 :p2}]
+          (remove-close-ts [{cp1 :p1
+                             cp2 :p2}]
             (fn [{:keys [p1 p2]}]
               (and (>= (gpt/distance p1 cp1) curve-range-precision)
                    (>= (gpt/distance p2 cp2) curve-range-precision))))

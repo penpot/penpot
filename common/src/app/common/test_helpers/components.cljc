@@ -23,7 +23,8 @@
    [app.common.types.shape-tree :as ctst]))
 
 (defn make-component
-  [file label root-label & {:keys [] :as params}]
+  [file label root-label & {:keys []
+                            :as params}]
   (let [page (thf/current-page file)
         root (ths/get-shape file root-label)]
 
@@ -57,7 +58,8 @@
                                         :main-instance-page (:id page)))))))))
 
 (defn update-component
-  [file component-label & {:keys [] :as params}]
+  [file component-label & {:keys []
+                           :as params}]
   (let [component-id  (thi/id component-label)]
     (ctf/update-file-data
      file
@@ -65,7 +67,8 @@
        (ctkl/update-component file-data component-id #(merge % params))))))
 
 (defn get-component
-  [file label & {:keys [include-deleted?] :or {include-deleted? false}}]
+  [file label & {:keys [include-deleted?]
+                 :or {include-deleted? false}}]
   (ctkl/get-component (:data file) (thi/id label) include-deleted?))
 
 (defn get-component-by-id
@@ -80,7 +83,8 @@
     (thi/set-id! label id)))
 
 (defn instantiate-component
-  [file component-label copy-root-label & {:keys [parent-label library children-labels] :as params}]
+  [file component-label copy-root-label & {:keys [parent-label library children-labels]
+                                           :as params}]
   (let [page      (thf/current-page file)
         library   (or library file)
         component (get-component library component-label)
@@ -142,7 +146,8 @@
     file'))
 
 (defn component-swap
-  [file shape-label new-component-label new-shape-label & {:keys [library children-labels] :as params}]
+  [file shape-label new-component-label new-shape-label & {:keys [library children-labels]
+                                                           :as params}]
   (let [shape            (ths/get-shape file shape-label)
         library          (or library file)
         libraries        {(:id library) library}

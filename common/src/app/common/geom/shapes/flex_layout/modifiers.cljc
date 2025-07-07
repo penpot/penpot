@@ -21,7 +21,8 @@
    transform-inverse
    child
    child-origin child-width
-   {:keys [children-data line-width to-bound-width] :as layout-data}]
+   {:keys [children-data line-width to-bound-width]
+    :as layout-data}]
 
   (cond
     (ctl/row? parent)
@@ -46,7 +47,8 @@
    transform transform-inverse
    child
    child-origin child-height
-   {:keys [children-data line-height to-bound-height] :as layout-data}]
+   {:keys [children-data line-height to-bound-height]
+    :as layout-data}]
 
   (cond
     (ctl/col? parent)

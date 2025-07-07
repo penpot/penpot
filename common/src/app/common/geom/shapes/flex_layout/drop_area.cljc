@@ -72,8 +72,10 @@
              (assoc :index (if reverse? index (inc index))))]))))
 
 (defn drop-line-area
-  [{:keys [transform-inverse margin-x margin-y] :as frame}
-   {:keys [start-p layout-gap-row layout-gap-col num-children line-width line-height] :as line-data}
+  [{:keys [transform-inverse margin-x margin-y]
+    :as frame}
+   {:keys [start-p layout-gap-row layout-gap-col num-children line-width line-height]
+    :as line-data}
    prev-x prev-y last?]
 
   (let [col?      (ctl/col? frame)
@@ -183,7 +185,8 @@
                  (rest lines)))))))
 
 (defn get-flip-modifiers
-  [{:keys [flip-x flip-y transform transform-inverse] :as shape}]
+  [{:keys [flip-x flip-y transform transform-inverse]
+    :as shape}]
 
   (if (or flip-x flip-y)
     (let [modifiers

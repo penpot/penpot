@@ -20,13 +20,15 @@
 (t/use-fixtures :each th/database-reset)
 
 (defn- decode-row
-  [{:keys [content] :as row}]
+  [{:keys [content]
+    :as row}]
   (cond-> row
     (db/pgobject? content)
     (assoc :content (db/decode-transit-pgobject content))))
 
 (defn bounce-report
-  [{:keys [token email] :or {email "user@example.com"}}]
+  [{:keys [token email]
+    :or {email "user@example.com"}}]
   {"notificationType" "Bounce",
    "bounce" {"feedbackId" "010701776d7dd251-c08d280d-9f47-41aa-b959-0094fec779d9-000000",
              "bounceType" "Permanent",
@@ -46,16 +48,26 @@
            "messageId" "010701776d7dccfc-3c0094e7-01d7-458d-8100-893320186028-000000",
            "destination" [email],
            "headersTruncated" false,
-           "headers" [{"name" "Received","value" "from app-pre"},
-                      {"name" "Date","value" "Thu, 4 Feb 2021 14:41:36 +0000 (UTC)"},
-                      {"name" "From","value" "Penpot <no-reply@penpot.app>"},
-                      {"name" "Reply-To","value" "Penpot <no-reply@penpot.app>"},
-                      {"name" "To","value" email},
-                      {"name" "Message-ID","value" "<2054501.5.1612449696846@penpot.app>"},
-                      {"name" "Subject","value" "test"},
-                      {"name" "MIME-Version","value" "1.0"},
-                      {"name" "Content-Type","value" "multipart/mixed;  boundary=\"----=_Part_3_1150363050.1612449696845\""},
-                      {"name" "X-Penpot-Data","value" token}],
+           "headers" [{"name" "Received",
+                       "value" "from app-pre"},
+                      {"name" "Date",
+                       "value" "Thu, 4 Feb 2021 14:41:36 +0000 (UTC)"},
+                      {"name" "From",
+                       "value" "Penpot <no-reply@penpot.app>"},
+                      {"name" "Reply-To",
+                       "value" "Penpot <no-reply@penpot.app>"},
+                      {"name" "To",
+                       "value" email},
+                      {"name" "Message-ID",
+                       "value" "<2054501.5.1612449696846@penpot.app>"},
+                      {"name" "Subject",
+                       "value" "test"},
+                      {"name" "MIME-Version",
+                       "value" "1.0"},
+                      {"name" "Content-Type",
+                       "value" "multipart/mixed;  boundary=\"----=_Part_3_1150363050.1612449696845\""},
+                      {"name" "X-Penpot-Data",
+                       "value" token}],
            "commonHeaders" {"from" ["Penpot <no-reply@penpot.app>"],
                             "replyTo" ["Penpot <no-reply@penpot.app>"],
                             "date" "Thu, 4 Feb 2021 14:41:36 +0000 (UTC)",
@@ -65,7 +77,8 @@
 
 
 (defn complaint-report
-  [{:keys [token email] :or {email "user@example.com"}}]
+  [{:keys [token email]
+    :or {email "user@example.com"}}]
   {"notificationType" "Complaint",
    "complaint" {"feedbackId" "0107017771528618-dcf4d61f-c889-4c8b-a6ff-6f0b6553b837-000000",
                 "complaintSubType" nil,
@@ -82,16 +95,26 @@
            "messageId" "0107017771510f33-a0696d28-859c-4f08-9211-8392d1b5c226-000000",
            "destination" ["user@yahoo.com"],
            "headersTruncated" false,
-           "headers" [{"name" "Received","value" "from smtp"},
-                      {"name" "Date","value" "Fri, 5 Feb 2021 08:31:13 +0000 (UTC)"},
-                      {"name" "From","value" "Penpot <no-reply@penpot.app>"},
-                      {"name" "Reply-To","value" "Penpot <no-reply@penpot.app>"},
-                      {"name" "To","value" email},
-                      {"name" "Message-ID","value" "<1833063698.279.1612513873536@penpot.app>"},
-                      {"name" "Subject","value" "Verify email."},
-                      {"name" "MIME-Version","value" "1.0"},
-                      {"name" "Content-Type","value" "multipart/mixed;  boundary=\"----=_Part_276_1174403980.1612513873535\""},
-                      {"name" "X-Penpot-Data","value" token}],
+           "headers" [{"name" "Received",
+                       "value" "from smtp"},
+                      {"name" "Date",
+                       "value" "Fri, 5 Feb 2021 08:31:13 +0000 (UTC)"},
+                      {"name" "From",
+                       "value" "Penpot <no-reply@penpot.app>"},
+                      {"name" "Reply-To",
+                       "value" "Penpot <no-reply@penpot.app>"},
+                      {"name" "To",
+                       "value" email},
+                      {"name" "Message-ID",
+                       "value" "<1833063698.279.1612513873536@penpot.app>"},
+                      {"name" "Subject",
+                       "value" "Verify email."},
+                      {"name" "MIME-Version",
+                       "value" "1.0"},
+                      {"name" "Content-Type",
+                       "value" "multipart/mixed;  boundary=\"----=_Part_276_1174403980.1612513873535\""},
+                      {"name" "X-Penpot-Data",
+                       "value" token}],
            "commonHeaders" {"from" ["Penpot <no-reply@penpot.app>"],
                             "replyTo" ["Penpot <no-reply@penpot.app>"],
                             "date" "Fri, 5 Feb 2021 08:31:13 +0000 (UTC)",
@@ -145,7 +168,8 @@
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.setup/props props :app.db/pool pool}
+        cfg     {:app.setup/props props
+                 :app.db/pool pool}
         report  (bounce-report {:token (tokens/generate props
                                                         {:iss :profile-identity
                                                          :profile-id (:id profile)})})
@@ -202,7 +226,8 @@
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.setup/props props :app.db/pool pool}
+        cfg     {:app.setup/props props
+                 :app.db/pool pool}
         report  (bounce-report {:email (:email profile)
                                 :token (tokens/generate props
                                                         {:iss :profile-identity
@@ -224,7 +249,8 @@
   (let [profile (th/create-profile* 1)
         props   (:app.setup/props th/*system*)
         pool    (:app.db/pool th/*system*)
-        cfg     {:app.setup/props props :app.db/pool pool}
+        cfg     {:app.setup/props props
+                 :app.db/pool pool}
         report  (complaint-report {:email (:email profile)
                                    :token (tokens/generate props
                                                            {:iss :profile-identity
@@ -250,14 +276,19 @@
 
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)]
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
-      (th/create-complaint-for pool {:type :bounce :id (:id profile)})
-      (th/create-complaint-for pool {:type :bounce :id (:id profile)})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)
+                                     :created-at (dt/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)})
 
       (t/is (true? (email/allow-send-emails? pool profile)))
       (t/is (= 4 (:call-count @mock)))
 
-      (th/create-complaint-for pool {:type :bounce :id (:id profile)})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)})
       (t/is (false? (email/allow-send-emails? pool profile))))))
 
 
@@ -268,16 +299,24 @@
                                :profile-complaint-threshold 2})}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)]
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
-      (th/create-complaint-for pool {:type :bounce :id (:id profile)})
-      (th/create-complaint-for pool {:type :bounce :id (:id profile)})
-      (th/create-complaint-for pool {:type :complaint :id (:id profile)})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)
+                                     :created-at (dt/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)
+                                     :created-at (dt/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)})
+      (th/create-complaint-for pool {:type :bounce
+                                     :id (:id profile)})
+      (th/create-complaint-for pool {:type :complaint
+                                     :id (:id profile)})
 
       (t/is (true? (email/allow-send-emails? pool profile)))
       (t/is (= 4 (:call-count @mock)))
 
-      (th/create-complaint-for pool {:type :complaint :id (:id profile)})
+      (th/create-complaint-for pool {:type :complaint
+                                     :id (:id profile)})
       (t/is (false? (email/allow-send-emails? pool profile))))))
 
 (t/deftest test-has-complaint-reports-predicate
@@ -286,10 +325,12 @@
 
     (t/is (false? (email/has-complaint-reports? pool (:email profile))))
 
-    (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
+    (th/create-global-complaint-for pool {:type :bounce
+                                          :email (:email profile)})
     (t/is (false? (email/has-complaint-reports? pool (:email profile))))
 
-    (th/create-global-complaint-for pool {:type :complaint :email (:email profile)})
+    (th/create-global-complaint-for pool {:type :complaint
+                                          :email (:email profile)})
     (t/is (true? (email/has-complaint-reports? pool (:email profile))))))
 
 (t/deftest test-has-bounce-reports-predicate
@@ -298,8 +339,10 @@
 
     (t/is (false? (email/has-bounce-reports? pool (:email profile))))
 
-    (th/create-global-complaint-for pool {:type :complaint :email (:email profile)})
+    (th/create-global-complaint-for pool {:type :complaint
+                                          :email (:email profile)})
     (t/is (false? (email/has-bounce-reports? pool (:email profile))))
 
-    (th/create-global-complaint-for pool {:type :bounce :email (:email profile)})
+    (th/create-global-complaint-for pool {:type :bounce
+                                          :email (:email profile)})
     (t/is (true? (email/has-bounce-reports? pool (:email profile))))))

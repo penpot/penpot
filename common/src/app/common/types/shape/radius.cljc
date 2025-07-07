@@ -48,10 +48,16 @@
   [shape attr value]
   (let [attr (cond->> attr
                (:flip-x shape)
-               (get {:r1 :r2 :r2 :r1 :r3 :r4 :r4 :r3})
+               (get {:r1 :r2
+                     :r2 :r1
+                     :r3 :r4
+                     :r4 :r3})
 
                (:flip-y shape)
-               (get {:r1 :r4 :r2 :r3 :r3 :r2 :r4 :r1}))]
+               (get {:r1 :r4
+                     :r2 :r3
+                     :r3 :r2
+                     :r4 :r1}))]
     ;; Only Apply changes to shapes that support border Radius
     (cond-> shape
       (can-get-border-radius? shape)

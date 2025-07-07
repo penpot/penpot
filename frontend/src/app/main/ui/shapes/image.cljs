@@ -32,7 +32,11 @@
                     (-> #js {}
                         (attrs/add-fill-props! shape render-id)
                         (attrs/add-border-props! shape)
-                        (obj/merge! #js {:x x :y y :width w :height h :transform transform})))
+                        (obj/merge! #js {:x x
+                                         :y y
+                                         :width w
+                                         :height h
+                                         :transform transform})))
 
         path?     (some? (.-d props))]
 

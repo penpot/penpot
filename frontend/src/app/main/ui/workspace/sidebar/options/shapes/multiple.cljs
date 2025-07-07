@@ -211,7 +211,8 @@
             :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
 
         extract-attrs
-        (fn [[ids values] {:keys [id type] :as shape}]
+        (fn [[ids values] {:keys [id type]
+                           :as shape}]
           (let [read-mode      (get-in type->read-mode [type attr-group])
                 editable-attrs (filter (get editable-attrs (:type shape)) attrs)]
             (case read-mode
@@ -357,10 +358,16 @@
 
     [:div {:class (stl/css :options)}
      (when-not (empty? layer-ids)
-       [:& layer-menu {:type type :ids layer-ids :values layer-values}])
+       [:& layer-menu {:type type
+                       :ids layer-ids
+                       :values layer-values}])
 
      (when-not (empty? measure-ids)
-       [:> measures-menu* {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
+       [:> measures-menu* {:type type
+                           :all-types all-types
+                           :ids measure-ids
+                           :values measure-values
+                           :shape shapes}])
 
      (when-not (empty? components)
        [:& component-menu {:shapes components}])
@@ -382,16 +389,24 @@
          :values layout-item-values}])
 
      (when-not (or (empty? constraint-ids) ^boolean is-layout-child?)
-       [:& constraints-menu {:ids constraint-ids :values constraint-values}])
+       [:& constraints-menu {:ids constraint-ids
+                             :values constraint-values}])
 
      (when-not (empty? text-ids)
-       [:& ot/text-menu {:type type :ids text-ids :values text-values}])
+       [:& ot/text-menu {:type type
+                         :ids text-ids
+                         :values text-values}])
 
      (when-not (empty? fill-ids)
-       [:> fill/fill-menu* {:type type :ids fill-ids :values fill-values}])
+       [:> fill/fill-menu* {:type type
+                            :ids fill-ids
+                            :values fill-values}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :show-caps show-caps :values stroke-values
+       [:& stroke-menu {:type type
+                        :ids stroke-ids
+                        :show-caps show-caps
+                        :values stroke-values
                         :disable-stroke-style has-text?}])
 
      (when-not (empty? shapes)
@@ -407,7 +422,13 @@
                          :values (get shadow-values :shadow)}])
 
      (when-not (empty? blur-ids)
-       [:& blur-menu {:type type :ids blur-ids :values blur-values}])
+       [:& blur-menu {:type type
+                      :ids blur-ids
+                      :values blur-values}])
 
      (when-not (empty? exports-ids)
-       [:& exports-menu {:type type :ids exports-ids :values exports-values :page-id page-id :file-id file-id}])]))
+       [:& exports-menu {:type type
+                         :ids exports-ids
+                         :values exports-values
+                         :page-id page-id
+                         :file-id file-id}])]))

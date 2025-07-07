@@ -447,7 +447,8 @@
       (scale-content value)))
 
 (defn change-size
-  [{:keys [selrect points transform transform-inverse] :as shape} width height]
+  [{:keys [selrect points transform transform-inverse]
+    :as shape} width height]
   (let [old-width  (-> selrect :width)
         old-height (-> selrect :height)
         width      (or width old-width)
@@ -461,7 +462,9 @@
   ([shape attr value]
    (change-dimensions-modifiers shape attr value nil))
 
-  ([{:keys [transform transform-inverse] :as shape} attr value {:keys [ignore-lock?] :or {ignore-lock? false}}]
+  ([{:keys [transform transform-inverse]
+     :as shape} attr value {:keys [ignore-lock?]
+                            :or {ignore-lock? false}}]
    (dm/assert! (map? shape))
    (dm/assert! (#{:width :height} attr))
    (dm/assert! (number? value))
@@ -481,7 +484,8 @@
          width (:width new-size)
          height (:height new-size)
 
-         {sr-width :width sr-height :height} (:selrect shape)
+         {sr-width :width
+          sr-height :height} (:selrect shape)
 
          origin (-> shape :points first)
          scalex (/ width sr-width)
@@ -504,7 +508,8 @@
         shape-transform (:transform shape)
         shape-transform-inv (:transform-inverse shape)
         shape-center (gco/shape->center shape)
-        {sr-width :width sr-height :height} (:selrect shape)
+        {sr-width :width
+         sr-height :height} (:selrect shape)
 
         origin (cond-> (gpt/point (:selrect shape))
                  (some? shape-transform)
@@ -591,7 +596,8 @@
                     (->> changes
                          (filter (fn [{:keys [type]}] (= type :add-children)))
                          (mapcat (fn [{:keys [value]}]
-                                   (->> value (map (fn [id] {:frame frame-id :shape id}))))))))
+                                   (->> value (map (fn [id] {:frame frame-id
+                                                             :shape id}))))))))
           structure-changes)))
 
 ;; Main transformation functions

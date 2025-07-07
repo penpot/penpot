@@ -37,12 +37,15 @@
    ::doc/added "1.15"
    ::doc/module :auth
    ::sm/params schema:verify-token}
-  [cfg {:keys [token] :as params}]
+  [cfg {:keys [token]
+        :as params}]
   (let [claims (tokens/verify (::setup/props cfg) {:token token})]
     (db/tx-run! cfg process-token params claims)))
 
 (defmethod process-token :change-email
-  [{:keys [::db/conn] :as cfg} _params {:keys [profile-id email] :as claims}]
+  [{:keys [::db/conn]
+    :as cfg} _params {:keys [profile-id email]
+                      :as claims}]
   (let [email (profile/clean-email email)]
     (when (profile/get-profile-by-email conn email)
       (ex/raise :type :validation
@@ -58,7 +61,9 @@
        ::audit/profile-id profile-id})))
 
 (defmethod process-token :verify-email
-  [{:keys [::db/conn] :as cfg} _ {:keys [profile-id] :as claims}]
+  [{:keys [::db/conn]
+    :as cfg} _ {:keys [profile-id]
+                :as claims}]
   (let [profile (profile/get-profile conn profile-id)
         claims  (assoc claims :profile profile)]
 
@@ -79,14 +84,18 @@
                         ::audit/profile-id (:id profile)}))))
 
 (defmethod process-token :auth
-  [{:keys [::db/conn] :as cfg} _params {:keys [profile-id] :as claims}]
+  [{:keys [::db/conn]
+    :as cfg} _params {:keys [profile-id]
+                      :as claims}]
   (let [profile (profile/get-profile conn profile-id)]
     (assoc claims :profile profile)))
 
 ;; --- Team Invitation
 
 (defn- accept-invitation
-  [{:keys [::db/conn] :as cfg} {:keys [team-id role member-email] :as claims} invitation member]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [team-id role member-email]
+              :as claims} invitation member]
   (let [;; Update the role if there is an invitation
         role   (or (some-> invitation :role keyword) role)
         params (merge
@@ -115,11 +124,13 @@
 
     ;; Delete the invitation
     (db/delete! conn :team-invitation
-                {:team-id team-id :email-to member-email})
+                {:team-id team-id
+                 :email-to member-email})
 
     ;; Delete any request
     (db/delete! conn :team-access-request
-                {:team-id team-id :requester-id (:id member)})
+                {:team-id team-id
+                 :requester-id (:id member)})
 
     (assoc member :is-active true)))
 
@@ -137,9 +148,12 @@
   (sm/lazy-validator schema:team-invitation-claims))
 
 (defmethod process-token :team-invitation
-  [{:keys [::db/conn] :as cfg}
-   {:keys [::rpc/profile-id token] :as params}
-   {:keys [member-id team-id member-email] :as claims}]
+  [{:keys [::db/conn]
+    :as cfg}
+   {:keys [::rpc/profile-id token]
+    :as params}
+   {:keys [member-id team-id member-email]
+    :as claims}]
 
   (when-not (valid-team-invitation-claims? claims)
     (ex/raise :type :validation
@@ -147,7 +161,8 @@
               :hint "invitation token contains unexpected data"))
 
   (let [invitation             (db/get* conn :team-invitation
-                                        {:team-id team-id :email-to member-email})
+                                        {:team-id team-id
+                                         :email-to member-email})
         profile                (db/get* conn :profile
                                         {:id profile-id}
                                         {:columns [:id :email]})

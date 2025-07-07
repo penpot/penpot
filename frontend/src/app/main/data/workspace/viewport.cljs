@@ -20,12 +20,14 @@
    [potok.v2.core :as ptk]))
 
 (defn initialize-viewport
-  [{:keys [width height] :as size}]
+  [{:keys [width height]
+    :as size}]
 
   (assert (gpr/rect? size)
           "expected `size` to be a rect instance")
 
-  (letfn [(update* [{:keys [vport] :as local}]
+  (letfn [(update* [{:keys [vport]
+                     :as local}]
             (let [wprop (/ (:width vport) width)
                   hprop (/ (:height vport) height)]
               (-> local
@@ -103,7 +105,9 @@
       (update state :workspace-local calculate-centered-viewbox position))))
 
 (defn update-viewport-position
-  [{:keys [x y] :or {x identity y identity}}]
+  [{:keys [x y]
+    :or {x identity
+         y identity}}]
 
   (dm/assert!
    "expected function for `x`"
@@ -122,12 +126,14 @@
                        (update :y y)))))))
 
 (defn update-viewport-size
-  [resize-type {:keys [width height] :as size}]
+  [resize-type {:keys [width height]
+                :as size}]
   (ptk/reify ::update-viewport-size
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-local
-              (fn [{:keys [vport] :as local}]
+              (fn [{:keys [vport]
+                    :as local}]
                 (if (or (nil? vport)
                         (mth/almost-zero? width)
                         (mth/almost-zero? height))

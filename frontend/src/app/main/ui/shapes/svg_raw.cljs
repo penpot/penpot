@@ -121,13 +121,15 @@
         ^boolean svg-root?
         [:& svg-root {:shape shape}
          (for [item childs]
-           [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
+           [:& shape-wrapper {:shape item
+                              :key (dm/str (:id item))}])]
 
         (and ^boolean svg-tag?
              ^boolean valid-tag?)
         [:& svg-element {:shape shape}
          (for [item childs]
-           [:& shape-wrapper {:shape item :key (dm/str (:id item))}])]
+           [:& shape-wrapper {:shape item
+                              :key (dm/str (:id item))}])]
 
         ^boolean svg-leaf?
         content))))

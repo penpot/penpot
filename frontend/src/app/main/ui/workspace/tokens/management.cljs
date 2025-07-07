@@ -130,16 +130,22 @@
     [:*
      [:& token-context-menu]
      [:div {:class (stl/css :sets-header-container)}
-      [:> text* {:as "span" :typography "headline-small" :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" selected-token-set-name)]
-      [:div {:class (stl/css :sets-header-status) :title (tr "workspace.tokens.inactive-set-description")}
+      [:> text* {:as "span"
+                 :typography "headline-small"
+                 :class (stl/css :sets-header)} (tr "workspace.tokens.tokens-section-title" selected-token-set-name)]
+      [:div {:class (stl/css :sets-header-status)
+             :title (tr "workspace.tokens.inactive-set-description")}
        ;; NOTE: when no set in tokens-lib, the selected-token-set-name
        ;; will be `nil`, so for properly hide the inactive message we
        ;; check that at least `selected-token-set-name` has a value
        (when (and (some? selected-token-set-name)
                   (not (token-set-active? selected-token-set-name)))
          [:*
-          [:> i/icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
-          [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
+          [:> i/icon* {:class (stl/css :sets-header-status-icon)
+                       :icon-id i/eye-off}]
+          [:> text* {:as "span"
+                     :typography "body-small"
+                     :class (stl/css :sets-header-status-text)}
            (tr "workspace.tokens.inactive-set")]])]]
 
      (for [type filled-group]

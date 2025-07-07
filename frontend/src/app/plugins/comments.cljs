@@ -30,11 +30,16 @@
   (let [data* (atom data)]
     (obj/reify {:name "CommentProxy"}
       ;; Private properties
-      :$plugin {:enumerable false :get (fn [] plugin-id)}
-      :$file {:enumerable false :get (fn [] file-id)}
-      :$page {:enumerable false :get (fn [] page-id)}
-      :$thread {:enumerable false :get (fn [] thread-id)}
-      :$id {:enumerable false :get (fn [] (:id data))}
+      :$plugin {:enumerable false
+                :get (fn [] plugin-id)}
+      :$file {:enumerable false
+              :get (fn [] file-id)}
+      :$page {:enumerable false
+              :get (fn [] page-id)}
+      :$thread {:enumerable false
+                :get (fn [] thread-id)}
+      :$id {:enumerable false
+            :get (fn [] (:id data))}
 
       ;; Public properties
 
@@ -69,7 +74,8 @@
              (u/display-not-valid :content "Plugin doesn't have 'comment:write' permission")
 
              :else
-             (->> (rp/cmd! :update-comment {:id (:id data) :content content})
+             (->> (rp/cmd! :update-comment {:id (:id data)
+                                            :content content})
                   (rx/tap #(st/emit! (dc/retrieve-comment-threads file-id)))
                   (rx/subs! #(swap! data* assoc :content content))))))}
 
@@ -96,12 +102,17 @@
   [plugin-id file-id page-id data]
   (let [data* (atom data)]
     (obj/reify {:name "CommentThreadProxy"}
-      :$plugin {:enumerable false :get (fn [] plugin-id)}
-      :$file {:enumerable false :get (fn [] file-id)}
-      :$page {:enumerable false :get (fn [] page-id)}
-      :$id {:enumerable false :get (fn [] (:id data))}
+      :$plugin {:enumerable false
+                :get (fn [] plugin-id)}
+      :$file {:enumerable false
+              :get (fn [] file-id)}
+      :$page {:enumerable false
+              :get (fn [] page-id)}
+      :$id {:enumerable false
+            :get (fn [] (:id data))}
 
-      :page {:enumerable false :get #(u/locate-page file-id page-id)}
+      :page {:enumerable false
+             :get #(u/locate-page file-id page-id)}
       :seqNumber {:get #(:seqn data)}
       :board {:get #(shape/shape-proxy plugin-id file-id page-id (:frame-id data))}
 
@@ -176,7 +187,8 @@
           :else
           (js/Promise.
            (fn [resolve reject]
-             (->> (rp/cmd! :create-comment {:thread-id (:id data) :content content})
+             (->> (rp/cmd! :create-comment {:thread-id (:id data)
+                                            :content content})
                   (rx/subs! #(resolve (comment-proxy plugin-id file-id page-id (:id data) %)) reject))))))
 
       :remove

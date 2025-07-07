@@ -54,9 +54,12 @@
        [:h4 (tr "dashboard.settings.notifications.dashboard-comments.title")]
        [:div {:class (stl/css :fields-row)}
         [:& fm/radio-buttons
-         {:options [{:label (tr "dashboard.settings.notifications.dashboard-comments.all") :value "all"}
-                    {:label (tr "dashboard.settings.notifications.dashboard-comments.partial") :value "partial"}
-                    {:label (tr "dashboard.settings.notifications.dashboard-comments.none") :value "none"}]
+         {:options [{:label (tr "dashboard.settings.notifications.dashboard-comments.all")
+                     :value "all"}
+                    {:label (tr "dashboard.settings.notifications.dashboard-comments.partial")
+                     :value "partial"}
+                    {:label (tr "dashboard.settings.notifications.dashboard-comments.none")
+                     :value "none"}]
           :name :dashboard-comments
           :class (stl/css :radio-btns)}]]
 
@@ -64,19 +67,24 @@
        [:h4 (tr "dashboard.settings.notifications.email-comments.title")]
        [:div {:class (stl/css :fields-row)}
         [:& fm/radio-buttons
-         {:options [{:label (tr "dashboard.settings.notifications.email-comments.all") :value "all"}
-                    {:label (tr "dashboard.settings.notifications.email-comments.partial") :value "partial"}
-                    {:label (tr "dashboard.settings.notifications.email-comments.none") :value "none"}]
+         {:options [{:label (tr "dashboard.settings.notifications.email-comments.all")
+                     :value "all"}
+                    {:label (tr "dashboard.settings.notifications.email-comments.partial")
+                     :value "partial"}
+                    {:label (tr "dashboard.settings.notifications.email-comments.none")
+                     :value "none"}]
           :name :email-comments
           :class (stl/css :radio-btns)}]]
 
        [:h4 (tr "dashboard.settings.notifications.email-invites.title")]
        [:div {:class (stl/css :fields-row)}
         [:& fm/radio-buttons
-         {:options [{:label (tr "dashboard.settings.notifications.email-invites.all") :value "all"}
+         {:options [{:label (tr "dashboard.settings.notifications.email-invites.all")
+                     :value "all"}
                     ;; This type of notifications doesnt't exist yet
                     ;; {:label "Only invites and requests that my response" :value "partial"}
-                    {:label (tr "dashboard.settings.notifications.email-invites.none") :value "none"}]
+                    {:label (tr "dashboard.settings.notifications.email-invites.none")
+                     :value "none"}]
           :name :email-invites
           :class (stl/css :radio-btns)}]]
 

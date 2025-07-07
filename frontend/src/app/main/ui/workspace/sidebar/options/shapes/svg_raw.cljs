@@ -94,12 +94,14 @@
 
 (mf/defc options
   {::mf/wrap [mf/memo]}
-  [{:keys [shape] :as props}]
+  [{:keys [shape]
+    :as props}]
 
   (let [ids [(:id shape)]
         type (:type shape)
 
-        {:keys [tag] :as content} (:content shape)
+        {:keys [tag]
+         :as content} (:content shape)
         measure-values (select-keys shape measure-attrs)
         constraint-values (select-keys shape constraint-attrs)
         fill-values    (get-fill-values shape)
@@ -163,7 +165,8 @@
                         :type type
                         :values stroke-values}]
 
-       [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
+       [:> shadow-menu* {:ids ids
+                         :values (get shape :shadow)}]
 
        [:& blur-menu {:ids ids
                       :values (select-keys shape [:blur])}]

@@ -20,7 +20,8 @@
   (dt/duration {:hours 24}))
 
 (def ^:private signature-max-age
-  (dt/duration {:hours 24 :minutes 15}))
+  (dt/duration {:hours 24
+                :minutes 15}))
 
 (defn get-id
   [{:keys [path-params]}]
@@ -33,8 +34,10 @@
   (db/get pool :file-media-object {:id id}))
 
 (defn- serve-object-from-s3
-  [{:keys [::sto/storage] :as cfg} obj]
-  (let [{:keys [host port] :as url} (sto/get-object-url storage obj {:max-age signature-max-age})]
+  [{:keys [::sto/storage]
+    :as cfg} obj]
+  (let [{:keys [host port]
+         :as url} (sto/get-object-url storage obj {:max-age signature-max-age})]
     {::yres/status  307
      ::yres/headers {"location" (str url)
                      "x-host"   (cond-> host port (str ":" port))
@@ -55,14 +58,16 @@
 (defn- serve-object
   "Helper function that returns the appropriate response depending on
   the storage object backend type."
-  [cfg {:keys [backend] :as obj}]
+  [cfg {:keys [backend]
+        :as obj}]
   (case backend
     (:s3 :assets-s3) (serve-object-from-s3 cfg obj)
     (:fs :assets-fs) (serve-object-from-fs cfg obj)))
 
 (defn objects-handler
   "Handler that servers storage objects by id."
-  [{:keys [::sto/storage] :as cfg} request]
+  [{:keys [::sto/storage]
+    :as cfg} request]
   (let [id  (get-id request)
         obj (sto/get-object storage id)]
     (if obj
@@ -71,7 +76,8 @@
 
 (defn- generic-handler
   "A generic handler helper/common code for file-media based handlers."
-  [{:keys [::sto/storage] :as cfg} request kf]
+  [{:keys [::sto/storage]
+    :as cfg} request kf]
   (let [pool (::db/pool storage)
         id   (get-id request)
         mobj (get-file-media-object pool id)

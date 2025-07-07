@@ -71,7 +71,8 @@
   (icon-xref :exit (stl/css :exit-icon)))
 
 (mf/defc sidebar-project
-  [{:keys [item selected?] :as props}]
+  [{:keys [item selected?]
+    :as props}]
   (let [dstate           (mf/deref refs/dashboard-local)
         selected-files   (:selected-files dstate)
         selected-project (:selected-project dstate)
@@ -197,7 +198,8 @@
                         :on-menu-close on-menu-close}]]))
 
 (mf/defc sidebar-search
-  [{:keys [search-term team-id] :as props}]
+  [{:keys [search-term team-id]
+    :as props}]
   (let [search-term (or search-term "")
         focused?    (mf/use-state false)
         emit!       (mf/use-memo #(f/debounce st/emit! 500))
@@ -275,7 +277,8 @@
 
 (mf/defc teams-selector-dropdown-items
   {::mf/wrap-props false}
-  [{:keys [team profile teams] :as props}]
+  [{:keys [team profile teams]
+    :as props}]
   (let [on-create-clicked
         (mf/use-fn
          #(st/emit! (modal/show :team-form {})))
@@ -335,7 +338,8 @@
         (if (and (contains? cf/flags :subscriptions)
                  (or (= "unlimited" (:type (:subscription team-item))) (= "enterprise" (:type (:subscription team-item)))))
           [:div  {:class (stl/css :team-text-with-icon)}
-           [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
+           [:span {:class (stl/css :team-text)
+                   :title (:name team-item)} (:name team-item)]
            [:> menu-team-icon* {:subscription-name (:type (:subscription team-item))}]]
           [:span {:class (stl/css :team-text)
                   :title (:name team-item)} (:name team-item)])
@@ -356,7 +360,8 @@
   (s/keys :req-un [::member-id]))
 
 (mf/defc team-options-dropdown
-  [{:keys [team profile] :as props}]
+  [{:keys [team profile]
+    :as props}]
   (let [go-members     #(st/emit! (dcm/go-to-dashboard-members))
         go-invitations #(st/emit! (dcm/go-to-dashboard-invitations))
         go-webhooks    #(st/emit! (dcm/go-to-dashboard-webhooks))
@@ -375,7 +380,8 @@
                    (modal/hide))))
 
         on-error
-        (fn [{:keys [code] :as error}]
+        (fn [{:keys [code]
+              :as error}]
           (condp = code
             :no-enough-members-for-leave
             (rx/of (ntf/error (tr "errors.team-leave.insufficient-members")))
@@ -587,7 +593,8 @@
         (tr "dashboard.delete-team")])]))
 
 (mf/defc sidebar-team-switch
-  [{:keys [team profile] :as props}]
+  [{:keys [team profile]
+    :as props}]
   (let [teams                 (mf/deref refs/teams)
         teams-without-default (into {} (filter (fn [[_ v]] (= false (:is-default v))) teams))
         team-ids              (map #(str "teams-selector-" %) (keys teams-without-default))
@@ -675,7 +682,8 @@
                  :class (stl/css :team-picture)
                  :alt (:name team)}]
           [:div  {:class (stl/css :team-text-with-icon)}
-           [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]
+           [:span {:class (stl/css :team-text)
+                   :title (:name team)} (:name team)]
            [:> menu-team-icon* {:subscription-name subscription-name}]]]
 
 
@@ -685,7 +693,8 @@
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
                  :alt (:name team)}]
-          [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]])
+          [:span {:class (stl/css :team-text)
+                  :title (:name team)} (:name team)]])
 
        arrow-icon]
 
@@ -718,7 +727,8 @@
 (mf/defc sidebar-content*
   {::mf/private true
    ::mf/props :obj}
-  [{:keys [projects profile section team project search-term default-project] :as props}]
+  [{:keys [projects profile section team project search-term default-project]
+    :as props}]
   (let [default-project-id
         (get default-project :id)
 
@@ -814,7 +824,8 @@
     [:*
      [:div {:class (stl/css-case :sidebar-content true)
             :ref container}
-      [:& sidebar-team-switch {:team team :profile profile}]
+      [:& sidebar-team-switch {:team team
+                               :profile profile}]
 
       [:& sidebar-search {:search-term search-term
                           :team-id (:id team)}]
@@ -895,10 +906,12 @@
         (mf/use-fn
          (fn [event]
            (let [version (:main cf/version)]
-             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+             (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes"
+                                              :version version}))
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
-               (st/emit! (modal/show {:type :release-notes :version version}))))))
+               (st/emit! (modal/show {:type :release-notes
+                                      :version version}))))))
 
         show-comments* (mf/use-state false)
         show-comments? @show-comments*
@@ -984,7 +997,9 @@
         on-power-up-click
         (mf/use-fn
          (fn []
-           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "dashboard" :section "sidebar"}))
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click"
+                                            ::ev/origin "dashboard"
+                                            :section "sidebar"}))
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*
@@ -1110,8 +1125,10 @@
 (mf/defc sidebar*
   {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [{:keys [team profile] :as props}]
-  [:nav {:class (stl/css :dashboard-sidebar) :data-testid "dashboard-sidebar"}
+  [{:keys [team profile]
+    :as props}]
+  [:nav {:class (stl/css :dashboard-sidebar)
+         :data-testid "dashboard-sidebar"}
    [:> sidebar-content* props]
    [:> profile-section*
     {:profile profile

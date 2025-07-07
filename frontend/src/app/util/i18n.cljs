@@ -20,38 +20,70 @@
 (log/set-level! :info)
 
 (def supported-locales
-  [{:label "English" :value "en"}
-   {:label "Español" :value "es"}
-   {:label "Català" :value "ca"}
-   {:label "Deutsch (community)" :value "de"}
-   {:label "Dutch (community)" :value "nl"}
-   {:label "Euskera (community)" :value "eu"}
-   {:label "Français (community)" :value "fr"}
-   {:label "Gallego (Community)" :value "gl"}
-   {:label "Hausa (Community)" :value "ha"}
-   {:label "Hrvatski (Community)" :value "hr"}
-   {:label "Italiano (community)" :value "it"}
-   {:label "Norsk - Bokmål (community)" :value "nb_no"}
-   {:label "Polski (community)" :value "pl"}
-   {:label "Portuguese - Brazil (community)" :value "pt_br"}
-   {:label "Portuguese - Portugal (community)" :value "pt_pt"}
-   {:label "Bahasa Indonesia (community)" :value "id"}
-   {:label "Rumanian (community)" :value "ro"}
-   {:label "Türkçe (community)" :value "tr"}
-   {:label "Ελληνική γλώσσα (community)" :value "el"}
-   {:label "Русский (community)" :value "ru"}
-   {:label "Украї́нська мо́ва (community)" :value "uk"}
-   {:label "Český jazyk (community)" :value "cs"}
-   {:label "Latviešu valoda (community)" :value "lv"}
-   {:label "Српски (community)" :value "sr"}
-   {:label "Føroyskt mál (community)" :value "fo"}
-   {:label "Korean (community)" :value "ko"}
-   {:label "עִבְרִית (community)" :value "he"}
-   {:label "عربي/عربى (community)" :value "ar"}
-   {:label "فارسی (community)" :value "fa"}
-   {:label "日本語 (Community)" :value "ja_jp"}
-   {:label "简体中文 (community)" :value "zh_cn"}
-   {:label "繁體中文 (community)" :value "zh_hant"}])
+  [{:label "English"
+    :value "en"}
+   {:label "Español"
+    :value "es"}
+   {:label "Català"
+    :value "ca"}
+   {:label "Deutsch (community)"
+    :value "de"}
+   {:label "Dutch (community)"
+    :value "nl"}
+   {:label "Euskera (community)"
+    :value "eu"}
+   {:label "Français (community)"
+    :value "fr"}
+   {:label "Gallego (Community)"
+    :value "gl"}
+   {:label "Hausa (Community)"
+    :value "ha"}
+   {:label "Hrvatski (Community)"
+    :value "hr"}
+   {:label "Italiano (community)"
+    :value "it"}
+   {:label "Norsk - Bokmål (community)"
+    :value "nb_no"}
+   {:label "Polski (community)"
+    :value "pl"}
+   {:label "Portuguese - Brazil (community)"
+    :value "pt_br"}
+   {:label "Portuguese - Portugal (community)"
+    :value "pt_pt"}
+   {:label "Bahasa Indonesia (community)"
+    :value "id"}
+   {:label "Rumanian (community)"
+    :value "ro"}
+   {:label "Türkçe (community)"
+    :value "tr"}
+   {:label "Ελληνική γλώσσα (community)"
+    :value "el"}
+   {:label "Русский (community)"
+    :value "ru"}
+   {:label "Украї́нська мо́ва (community)"
+    :value "uk"}
+   {:label "Český jazyk (community)"
+    :value "cs"}
+   {:label "Latviešu valoda (community)"
+    :value "lv"}
+   {:label "Српски (community)"
+    :value "sr"}
+   {:label "Føroyskt mál (community)"
+    :value "fo"}
+   {:label "Korean (community)"
+    :value "ko"}
+   {:label "עִבְרִית (community)"
+    :value "he"}
+   {:label "عربي/عربى (community)"
+    :value "ar"}
+   {:label "فارسی (community)"
+    :value "fa"}
+   {:label "日本語 (Community)"
+    :value "ja_jp"}
+   {:label "简体中文 (community)"
+    :value "zh_cn"}
+   {:label "繁體中文 (community)"
+    :value "zh_hant"}])
 
 (defn- parse-locale
   [locale]

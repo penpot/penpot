@@ -38,7 +38,8 @@
   "This is the main event that is executed once we have logged in
   profile. The profile can proceed from standard login or from
   accepting invitation, or third party auth signup or singin."
-  [{:keys [props] :as profile}]
+  [{:keys [props]
+    :as profile}]
   (letfn [(get-redirect-events [teams]
             (if-let [token (:invitation-token profile)]
               (rx/of (rt/nav :auth-verify-token {:token token}))
@@ -93,7 +94,8 @@
 (declare login-from-register)
 
 (defn login
-  [{:keys [email password invitation-token] :as data}]
+  [{:keys [email password invitation-token]
+    :as data}]
   (ptk/reify ::login
     ptk/WatchEvent
     (watch [_ _ stream]
@@ -168,7 +170,8 @@
 
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
-  [{:keys [profile] :as tdata}]
+  [{:keys [profile]
+    :as tdata}]
   (ptk/reify ::login-from-token
     ptk/WatchEvent
     (watch [_ _ _]
@@ -242,7 +245,8 @@
 
 (def ^:private
   schema:request-profile-recovery
-  [:map {:title "request-profile-recovery" :closed true}
+  [:map {:title "request-profile-recovery"
+         :closed true}
    [:email ::sm/email]])
 
 (defn request-profile-recovery
@@ -267,7 +271,8 @@
 
 (def ^:private
   schema:recover-profile
-  [:map {:title "recover-profile" :closed true}
+  [:map {:title "recover-profile"
+         :closed true}
    [:password :string]
    [:token :string]])
 

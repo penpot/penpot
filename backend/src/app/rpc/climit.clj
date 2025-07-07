@@ -67,7 +67,8 @@
   (assert (sm/valid? schema:climit-params params)))
 
 (defmethod ig/init-key ::rpc/climit
-  [_ {:keys [::config ::enabled ::mtx/metrics] :as cfg}]
+  [_ {:keys [::config ::enabled ::mtx/metrics]
+      :as cfg}]
   (when enabled
     (when-let [params (some->> config slurp edn/read-string check-config)]
       (l/inf :hint "initializing concurrency limit" :config (str config))
@@ -232,7 +233,8 @@
       (throw (IllegalArgumentException. "unable to normalize limit")))))
 
 (defn wrap
-  [cfg handler {label ::sv/name :as mdata}]
+  [cfg handler {label ::sv/name
+                :as mdata}]
   (if-let [climit (::rpc/climit cfg)]
     (reduce (fn [handler [limit-id key-fn]]
               (if-let [config (get-config climit limit-id)]
@@ -273,7 +275,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- build-exec-chain
-  [{:keys [::label ::rpc/climit] :as cfg} f]
+  [{:keys [::label ::rpc/climit]
+    :as cfg} f]
   (reduce (fn [handler [limit-id limit-key]]
             (if-let [config (get-config climit limit-id)]
               (let [config (-> config
@@ -291,7 +294,8 @@
 (defn invoke!
   "Run a function in context of climit.
   Intended to be used in virtual threads."
-  [{:keys [::executor ::rpc/climit] :as cfg} f params]
+  [{:keys [::executor ::rpc/climit]
+    :as cfg} f params]
   (let [f (if climit
             (let [f (if (some? executor)
                       (fn [cfg params] (px/await! (px/submit! executor (fn [] (f cfg params)))))

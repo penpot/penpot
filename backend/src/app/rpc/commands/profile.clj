@@ -96,7 +96,8 @@
    ::doc/added "1.18"
    ::sm/params [:map]
    ::sm/result schema:profile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id]}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id]}]
   ;; We need to return the anonymous profile object in two cases, when
   ;; no profile-id is in session, and when db call raises not found. In all other
   ;; cases we need to reraise the exception.
@@ -105,7 +106,8 @@
         (strip-private-attrs)
         (update :props filter-props))
     (catch Throwable _
-      {:id uuid/zero :fullname "Anonymous User"})))
+      {:id uuid/zero
+       :fullname "Anonymous User"})))
 
 (defn get-profile
   "Get profile by id. Throws not-found exception if no profile found."
@@ -127,7 +129,8 @@
    ::sm/params schema:update-profile
    ::sm/result schema:profile
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id fullname lang theme] :as params}]
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id fullname lang theme]
+                        :as params}]
   ;; NOTE: we need to retrieve the profile independently if we use
   ;; it or not for explicit locking and avoid concurrent updates of
   ;; the same row/object.
@@ -171,7 +174,8 @@
    ::sm/params schema:update-profile-password
    ::climit/id :auth/global
    ::db/transaction true}
-  [cfg {:keys [::rpc/profile-id password] :as params}]
+  [cfg {:keys [::rpc/profile-id password]
+        :as params}]
   (let [profile    (validate-password! cfg (assoc params :profile-id profile-id))
         session-id (::session/id params)]
 
@@ -191,7 +195,9 @@
     (:next.jdbc/update-count (db/exec-one! conn [sql profile-id session-id]))))
 
 (defn- validate-password!
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id old-password] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id old-password]
+              :as params}]
   (let [profile (db/get-by-id conn :profile profile-id ::sql/for-update true)]
     (when (and (not= (:password profile) "!")
                (not (:valid (verify-password cfg old-password (:password profile)))))
@@ -200,7 +206,9 @@
     profile))
 
 (defn update-profile-password!
-  [{:keys [::db/conn] :as cfg} {:keys [id password] :as profile}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [id password]
+              :as profile}]
   (when-not (db/read-only? conn)
     (db/update! conn :profile
                 {:password (derive-password cfg password)}
@@ -223,11 +231,13 @@
   {::doc/added "2.4.0"
    ::sm/params schema:update-profile-notifications
    ::climit/id :auth/global}
-  [cfg {:keys [::rpc/profile-id] :as params}]
+  [cfg {:keys [::rpc/profile-id]
+        :as params}]
   (db/tx-run! cfg update-notifications! (assoc params :profile-id profile-id)))
 
 (defn- update-notifications!
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id dashboard-comments email-comments email-invites]}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile-id dashboard-comments email-comments email-invites]}]
   (let [profile (get-profile conn profile-id)
 
         notifications
@@ -259,13 +269,16 @@
   {:doc/added "1.1"
    ::sm/params schema:update-profile-photo
    ::sm/result :nil}
-  [cfg {:keys [::rpc/profile-id file] :as params}]
+  [cfg {:keys [::rpc/profile-id file]
+        :as params}]
   ;; Validate incoming mime type
   (media/validate-media-type! file #{"image/jpeg" "image/png" "image/webp"})
   (update-profile-photo cfg (assoc params :profile-id profile-id)))
 
 (defn update-profile-photo
-  [{:keys [::db/pool ::sto/storage] :as cfg} {:keys [profile-id file] :as params}]
+  [{:keys [::db/pool ::sto/storage]
+    :as cfg} {:keys [profile-id file]
+              :as params}]
 
   (let [photo   (upload-photo cfg params)
         profile (db/get-by-id pool :profile profile-id ::sql/for-update true)]
@@ -288,7 +301,8 @@
 
 (defn- generate-thumbnail!
   [_ file]
-  (let [input   (media/run {:cmd :info :input file})
+  (let [input   (media/run {:cmd :info
+                            :input file})
         thumb   (media/run {:cmd :profile-thumbnail
                             :format :jpeg
                             :quality 85
@@ -304,7 +318,9 @@
      :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage ::wrk/executor] :as cfg} {:keys [file] :as params}]
+  [{:keys [::sto/storage ::wrk/executor]
+    :as cfg} {:keys [file]
+              :as params}]
   (let [params (-> cfg
                    (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
                                        [:process-image/global]])
@@ -326,7 +342,8 @@
 (sv/defmethod ::request-email-change
   {::doc/added "1.0"
    ::sm/params schema:request-email-change}
-  [cfg {:keys [::rpc/profile-id email] :as params}]
+  [cfg {:keys [::rpc/profile-id email]
+        :as params}]
   (db/tx-run! cfg
               (fn [cfg]
                 (let [profile (db/get-by-id cfg :profile profile-id)
@@ -338,7 +355,8 @@
                     (change-email-immediately! cfg params))))))
 
 (defn- change-email-immediately!
-  [{:keys [::db/conn]} {:keys [profile email] :as params}]
+  [{:keys [::db/conn]} {:keys [profile email]
+                        :as params}]
   (when (not= email (:email profile))
     (check-profile-existence! conn params))
 
@@ -349,7 +367,9 @@
   {:changed true})
 
 (defn- request-email-change!
-  [{:keys [::db/conn] :as cfg} {:keys [profile email] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [profile email]
+              :as params}]
   (let [token   (tokens/generate (::setup/props cfg)
                                  {:iss :change-email
                                   :exp (dt/in-future "15m")
@@ -410,7 +430,8 @@
    [:props schema:props]])
 
 (defn update-profile-props
-  [{:keys [::db/conn] :as cfg} profile-id props]
+  [{:keys [::db/conn]
+    :as cfg} profile-id props]
   (let [profile (get-profile conn profile-id ::sql/for-update true)
         props   (reduce-kv (fn [props k v]
                              ;; We don't accept namespaced keys
@@ -442,7 +463,9 @@
 (sv/defmethod ::delete-profile
   {::doc/added "1.0"
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id]
+              :as params}]
   (let [teams      (get-owned-teams conn profile-id)
         deleted-at (dt/now)]
 
@@ -498,7 +521,8 @@
                      and deleted_at is null) as val")
 
 (defn- check-profile-existence!
-  [conn {:keys [email] :as params}]
+  [conn {:keys [email]
+         :as params}]
   (let [result (db/exec-one! conn [sql:profile-existence email])]
     (when (:val result)
       (ex/raise :type :validation
@@ -538,7 +562,8 @@
   (px/invoke! executor (partial auth/verify-password password password-data)))
 
 (defn decode-row
-  [{:keys [props] :as row}]
+  [{:keys [props]
+    :as row}]
   (cond-> row
     (db/pgobject? props "jsonb")
     (assoc :props (db/decode-transit-pgobject props))))

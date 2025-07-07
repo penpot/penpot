@@ -135,7 +135,8 @@
 (defmulti create-collector ::mdef/type)
 
 (defn run!
-  [instance & {:keys [id] :as params}]
+  [instance & {:keys [id]
+               :as params}]
   (assert (metrics? instance) "expected valid metrics instance")
   (when-let [mobj (get-collector instance id)]
     (run-collector! mobj params)
@@ -154,24 +155,29 @@
          (= (.getComponentType oc) String))))
 
 (defmethod run-collector! :counter
-  [{:keys [::mdef/instance]} {:keys [inc labels] :or {inc 1 labels default-empty-labels}}]
+  [{:keys [::mdef/instance]} {:keys [inc labels]
+                              :or {inc 1
+                                   labels default-empty-labels}}]
   (let [instance (.labels ^Counter instance (if (is-array? labels) labels (into-array String labels)))]
     (.inc ^Counter$Child instance (double inc))))
 
 (defmethod run-collector! :gauge
-  [{:keys [::mdef/instance]} {:keys [inc dec labels val] :or {labels default-empty-labels}}]
+  [{:keys [::mdef/instance]} {:keys [inc dec labels val]
+                              :or {labels default-empty-labels}}]
   (let [instance (.labels ^Gauge instance (if (is-array? labels) labels (into-array String labels)))]
     (cond (number? inc) (.inc ^Gauge$Child instance (double inc))
           (number? dec) (.dec ^Gauge$Child instance (double dec))
           (number? val) (.set ^Gauge$Child instance (double val)))))
 
 (defmethod run-collector! :summary
-  [{:keys [::mdef/instance]} {:keys [val labels] :or {labels default-empty-labels}}]
+  [{:keys [::mdef/instance]} {:keys [val labels]
+                              :or {labels default-empty-labels}}]
   (let [instance (.labels ^Summary instance (if (is-array? labels) labels (into-array String labels)))]
     (.observe ^Summary$Child instance val)))
 
 (defmethod run-collector! :histogram
-  [{:keys [::mdef/instance]} {:keys [val labels] :or {labels default-empty-labels}}]
+  [{:keys [::mdef/instance]} {:keys [val labels]
+                              :or {labels default-empty-labels}}]
   (let [instance (.labels ^Histogram instance (if (is-array? labels) labels (into-array String labels)))]
     (.observe ^Histogram$Child instance val)))
 
@@ -205,7 +211,9 @@
 (defmethod create-collector :summary
   [{::mdef/keys [name help reg labels max-age quantiles buckets]
     ::keys [registry]
-    :or {max-age 3600 buckets 12 quantiles default-quantiles}
+    :or {max-age 3600
+         buckets 12
+         quantiles default-quantiles}
     :as props}]
   (let [registry (or registry reg)
         builder  (doto (Summary/build)

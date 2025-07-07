@@ -279,7 +279,8 @@
     (toggle-or-apply-token shape token)))
 
 (defn apply-token-to-shape
-  [{:keys [shape token attributes] :as _props}]
+  [{:keys [shape token attributes]
+    :as _props}]
   (let [applied-tokens (apply-token-to-attributes {:shape shape
                                                    :token token
                                                    :attributes attributes})]

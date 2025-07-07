@@ -49,7 +49,8 @@
 
 (mf/defc option*
   {::mf/private true}
-  [{:keys [id ref label icon aria-label on-click selected focused dimmed] :rest props}]
+  [{:keys [id ref label icon aria-label on-click selected focused dimmed]
+    :rest props}]
   (let [class (stl/css-case :option true
                             :option-with-icon (some? icon)
                             :option-selected selected
@@ -85,7 +86,8 @@
 
 (mf/defc options-dropdown*
   {::mf/schema schema:options-dropdown}
-  [{:keys [ref on-click options selected focused empty-to-end] :rest props}]
+  [{:keys [ref on-click options selected focused empty-to-end]
+    :rest props}]
   (let [props
         (mf/spread-props props
                          {:class (stl/css :option-list)

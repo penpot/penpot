@@ -207,7 +207,8 @@
       :xmlns "http://www.w3.org/2000/svg"
       :fill "none"}
 
-     [:& render {:shape frame :view-box (:vbox size)}]
+     [:& render {:shape frame
+                 :view-box (:vbox size)}]
      [:& selection-feedback
       {:frame frame
        :objects objects

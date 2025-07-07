@@ -36,7 +36,8 @@
                  :content (db/tjson report)})))
 
 (defn record->report
-  [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause] :as record}]
+  [{:keys [::l/context ::l/message ::l/props ::l/logger ::l/level ::l/cause]
+    :as record}]
   (assert (l/valid-record? record) "expectd valid log record")
   (if (or (instance? java.util.concurrent.CompletionException cause)
           (instance? java.util.concurrent.ExecutionException cause))
@@ -83,7 +84,8 @@
   (= :error level))
 
 (defn- handle-event
-  [{:keys [::db/pool]} {:keys [::l/id] :as record}]
+  [{:keys [::db/pool]} {:keys [::l/id]
+                        :as record}]
   (try
     (let [uri    (cf/get :public-uri)
           report (-> record record->report d/without-nils)]

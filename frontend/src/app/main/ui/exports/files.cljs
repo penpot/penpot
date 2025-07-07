@@ -200,7 +200,8 @@
         [:*
          [:div {:class (stl/css :modal-content)}
           (for [file (:files state)]
-            [:> export-entry* {:file file :key (dm/str (:id file))}])]
+            [:> export-entry* {:file file
+                               :key (dm/str (:id file))}])]
 
          [:div {:class (stl/css :modal-footer)}
           [:div {:class (stl/css :action-buttons)}

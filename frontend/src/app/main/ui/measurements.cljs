@@ -61,7 +61,8 @@
 (defn calculate-guides
   "Calculates coordinates for the selection guides"
   [bounds selrect]
-  (let [{bounds-width :width bounds-height :height} bounds
+  (let [{bounds-width :width
+         bounds-height :height} bounds
         {:keys [x y width height]} selrect]
     [[(:x bounds) y (+ (:x bounds) bounds-width) y]
      [(:x bounds) (+ y height) (+ (:x bounds) bounds-width) (+ y height)]
@@ -130,7 +131,8 @@
         text-padding (/ 3 zoom)
         distance-border-radius (/ distance-border-radius zoom)
 
-        {bounds-width :width bounds-height :height} bounds
+        {bounds-width :width
+         bounds-height :height} bounds
 
         rect-x (- x (/ distance-pill-width 2))
         rect-y (- y (/ distance-pill-height 2))
@@ -243,20 +245,29 @@
        [:& selection-guides {:selrect selected-selrect
                              :bounds bounds
                              :zoom zoom}]
-       [:& size-display {:selrect selected-selrect :zoom zoom}]
+       [:& size-display {:selrect selected-selrect
+                         :zoom zoom}]
 
        (if (or (not hover-shape) (not hover-selected-shape?))
          (when (and frame (not= uuid/zero (:id frame)))
            (let [frame-bb (-> (:points frame) (grc/points->rect))]
              [:g.hover-shapes
-              [:& selection-rect {:type :hover :selrect frame-bb :zoom zoom}]
+              [:& selection-rect {:type :hover
+                                  :selrect frame-bb
+                                  :zoom zoom}]
               [:& distance-display {:from frame-bb
                                     :to selected-selrect
                                     :zoom zoom
                                     :bounds bounds-selrect}]]))
 
          [:g.hover-shapes
-          [:& selection-rect {:type :hover :selrect hover-selrect :zoom zoom}]
-          [:& size-display {:selrect hover-selrect :zoom zoom}]
-          [:& distance-display {:from hover-selrect :to selected-selrect :zoom zoom :bounds bounds-selrect}]])])))
+          [:& selection-rect {:type :hover
+                              :selrect hover-selrect
+                              :zoom zoom}]
+          [:& size-display {:selrect hover-selrect
+                            :zoom zoom}]
+          [:& distance-display {:from hover-selrect
+                                :to selected-selrect
+                                :zoom zoom
+                                :bounds bounds-selrect}]])])))
 

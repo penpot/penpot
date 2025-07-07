@@ -23,7 +23,8 @@
 
 (mf/defc text*
   {::mf/schema schema:text}
-  [{:keys [as typography children class] :rest props}]
+  [{:keys [as typography children class]
+    :rest props}]
 
   (let [as (if (or (empty? as) (nil? as)) "p" as)
         class (dm/str (or class "") " " (stl/css-case :display-typography (= typography t/display)

@@ -96,7 +96,8 @@
 
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file page-id] :as props}]
+  [{:keys [layout file page-id]
+    :as props}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
@@ -256,7 +257,8 @@
 
 (mf/defc right-sidebar*
   {::mf/memo true}
-  [{:keys [layout section file page-id drawing-tool] :as props}]
+  [{:keys [layout section file page-id drawing-tool]
+    :as props}]
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)

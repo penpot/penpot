@@ -26,7 +26,8 @@
 (def ^:dynamic *data-level* 8)
 
 (defmacro error
-  [& {:keys [type hint] :as params}]
+  [& {:keys [type hint]
+      :as params}]
   `(ex-info ~(or hint (name type))
             (merge
              ~(dissoc params :cause ::data)
@@ -204,7 +205,8 @@
                  (when data?
                    (print-data (dissoc data ::s/problems ::s/spec ::s/value ::sm/explain)))
                  (when explain?
-                   (if-let [explain (explain data {:length data-length :level data-level})]
+                   (if-let [explain (explain data {:length data-length
+                                                   :level data-level})]
                      (print-explain explain)))))
 
              (print-all [^Throwable cause]

@@ -447,7 +447,8 @@
                          :pointer-events "fill"}}]))
 
      (when (:new-position @state)
-       [:& guide* {:guide {:axis axis :position (:new-position @state)}
+       [:& guide* {:guide {:axis axis
+                           :position (:new-position @state)}
                    :get-hover-frame get-hover-frame
                    :vbox vbox
                    :zoom zoom
@@ -501,7 +502,8 @@
                           :get-hover-frame get-hover-frame
                           :disabled-guides disabled-guides}]
 
-     (for [{:keys [id frame-id] :as guide} guides]
+     (for [{:keys [id frame-id]
+            :as guide} guides]
        (when (or (nil? frame-id)
                  (empty? focus)
                  (contains? focus frame-id))

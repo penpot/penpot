@@ -137,7 +137,8 @@
         (mf/use-fn
          (mf/deps page)
          (fn []
-           (modal/show! :share-link {:page page :file file})
+           (modal/show! :share-link {:page page
+                                     :file file})
            (modal/disallow-click-outside!)))
 
         handle-increase
@@ -172,7 +173,8 @@
      (case section
        :interactions [:*
                       (when index
-                        [:> flows-menu* {:page page :index index}])
+                        [:> flows-menu* {:page page
+                                         :index index}])
                       [:> interactions-menu*
                        {:interactions-mode interactions-mode}]]
        :comments [:& comments-menu]
@@ -208,7 +210,8 @@
                :class (stl/css :go-log-btn)} (tr "labels.log-or-sign")])]))
 
 (mf/defc header-sitemap
-  [{:keys [project file page frame toggle-thumbnails] :as props}]
+  [{:keys [project file page frame toggle-thumbnails]
+    :as props}]
   (let [project-name   (:name project)
         file-name      (:name file)
         page-name      (:name page)

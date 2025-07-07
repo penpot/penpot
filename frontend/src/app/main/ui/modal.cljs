@@ -85,5 +85,6 @@
   []
   (when-let [modal (mf/deref ref:modal)]
     (mf/portal
-     (mf/html [:> modal-wrapper* {:data modal :key (dm/str (:id modal))}])
+     (mf/html [:> modal-wrapper* {:data modal
+                                  :key (dm/str (:id modal))}])
      (dom/get-body))))

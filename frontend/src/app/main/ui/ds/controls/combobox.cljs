@@ -35,7 +35,8 @@
 
 (mf/defc combobox*
   {::mf/schema schema:combobox}
-  [{:keys [id options class placeholder disabled has-error default-selected max-length empty-to-end on-change] :rest props}]
+  [{:keys [id options class placeholder disabled has-error default-selected max-length empty-to-end on-change]
+    :rest props}]
   (let [;; NOTE: we use mfu/bean here for transparently handle
         ;; options provide as clojure data structures or javascript
         ;; plain objects and lists.

@@ -44,14 +44,16 @@
   [_ cfg]
   (fs/create-dir default-tmp-dir)
   (px/fn->thread (partial io-loop cfg)
-                 {:name "penpot/storage/tmp-cleaner" :virtual true}))
+                 {:name "penpot/storage/tmp-cleaner"
+                  :virtual true}))
 
 (defmethod ig/halt-key! ::cleaner
   [_ thread]
   (px/interrupt! thread))
 
 (defn- io-loop
-  [{:keys [::min-age] :as cfg}]
+  [{:keys [::min-age]
+    :as cfg}]
   (l/inf :hint "started tmp cleaner" :default-min-age (dt/format-duration min-age))
   (try
     (loop []

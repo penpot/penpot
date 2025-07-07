@@ -32,7 +32,8 @@
 (defn- fix-page-id
   "For events that modifies the page, page-id does not comes
   as a property so we assign it from the `id` property."
-  [{:keys [id type page] :as change}]
+  [{:keys [id type page]
+    :as change}]
   (cond-> change
     (and (page-change? type)
          (nil? (:page-id change)))
@@ -72,7 +73,8 @@
   (map :page-id))
 
 (defn- apply-changes-localy
-  [{:keys [file-id redo-changes] :as commit} pending]
+  [{:keys [file-id redo-changes]
+    :as commit} pending]
   (ptk/reify ::apply-changes-localy
     ptk/UpdateEvent
     (update [_ state]

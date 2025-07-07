@@ -32,7 +32,8 @@
   (obj/type-of? p "FontProxy"))
 
 (defn font-proxy
-  [{:keys [id family name variants] :as font}]
+  [{:keys [id family name variants]
+    :as font}]
   (when (some? font)
     (let [default-variant (fonts/get-default-variant font)]
       (obj/reify {:name "FontProxy"}
@@ -92,7 +93,9 @@
 (defn fonts-subcontext
   [plugin-id]
   (obj/reify {:name "PenpotFontsSubcontext"}
-    :$plugin {:name "" :enumerable false :get (constantly plugin-id)}
+    :$plugin {:name ""
+              :enumerable false
+              :get (constantly plugin-id)}
 
     :all
     {:get

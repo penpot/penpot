@@ -168,12 +168,19 @@
               (if (= type "linear")
                 {"type" "element"
                  "name" "linearGradient"
-                 "attributes" {"id" id "x1" "0.5" "y1" "1" "x2" "0.5" "y2" "0"}
+                 "attributes" {"id" id
+                               "x1" "0.5"
+                               "y1" "1"
+                               "x2" "0.5"
+                               "y2" "0"}
                  "elements" (get-stops data)}
 
                 {"type" "element"
                  "name" "radialGradient"
-                 "attributes" {"id" id "cx" "0.5" "cy" "0.5" "r" "0.5"}
+                 "attributes" {"id" id
+                               "cx" "0.5"
+                               "cy" "0.5"
+                               "r" "0.5"}
                  "elements" (get-stops data)})))
 
           (get-gradients [id mapping]
@@ -182,7 +189,8 @@
                            (= (get data "type") "gradient")))
                  (mapv (partial data->gradient-def id))))
 
-          (join-color-layers [{:keys [id x y width height mapping] :as node} layers]
+          (join-color-layers [{:keys [id x y width height mapping]
+                               :as node} layers]
             (l/trace :fn :join-color-layers :mapping mapping)
             (loop [result (-> (:svgdata (first layers))
                               (assoc "elements" []))
@@ -222,7 +230,9 @@
 
                       elements (cond->> elements
                                  (seq gradient-defs)
-                                 (into [{"type" "element" "name" "defs" "attributes" {}
+                                 (into [{"type" "element"
+                                         "name" "defs"
+                                         "attributes" {}
                                          "elements" gradient-defs}]))]
 
                   (-> result
@@ -230,12 +240,14 @@
                       (assoc "attributes" {})
                       (assoc "elements" elements))))))
 
-          (convert-to-svg [ppmpath {:keys [colors] :as node}]
+          (convert-to-svg [ppmpath {:keys [colors]
+                                    :as node}]
             (l/trace :fn :convert-to-svg :ppmpath ppmpath :colors colors)
             (-> (p/all (map (partial generate-color-layer ppmpath) colors))
                 (p/then (partial join-color-layers node))))
 
-          (trace-node [{:keys [data] :as node}]
+          (trace-node [{:keys [data]
+                        :as node}]
             (l/trace :fn :trace-node)
             (p/let [pngpath (sh/tempfile :prefix "penpot.tmp.render.svg.parse."
                                          :suffix ".origin.png")
@@ -275,7 +287,8 @@
             (p/let [attrs (bw/eval! node extract-element-attrs)
                     id (unchecked-get attrs "id")
                     text-node (bw/select page (str "#screenshot-text-" id " foreignObject"))
-                    shot (bw/screenshot text-node {:omit-background? true :type "png"})]
+                    shot (bw/screenshot text-node {:omit-background? true
+                                                   :type "png"})]
               [shot node]))
 
           (extract-txt-node [page item]
@@ -284,13 +297,15 @@
                 (p/then extract-single-node)
                 (p/then trace-node)))
 
-          (extract-txt-nodes [page {:keys [id] :as objects}]
+          (extract-txt-nodes [page {:keys [id]
+                                    :as objects}]
             (l/trace :fn :process-text-nodes)
             (-> (bw/select-all page (str/concat "#screenshot-" id " foreignObject"))
                 (p/then (fn [nodes] (p/all (map (partial extract-txt-node page) nodes))))
                 (p/then (fn [nodes] (d/index-by :id nodes)))))
 
-          (extract-svg [page {:keys [id] :as object}]
+          (extract-svg [page {:keys [id]
+                              :as object}]
             (let [node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)
               (bw/eval! node (fn [elem] (.-outerHTML ^js elem)))))
@@ -305,7 +320,8 @@
                  :deviceScaleFactor scale
                  :userAgent bw/default-user-agent})
 
-          (render-object [page {:keys [id] :as object}]
+          (render-object [page {:keys [id]
+                                :as object}]
             (p/let [path (sh/tempfile :prefix "penpot.tmp.render.svg." :suffix (mime/get-extension type))
                     node (bw/select page (str/concat "#screenshot-" id))]
               (bw/wait-for node)

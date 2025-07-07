@@ -55,12 +55,15 @@
    ::sm/params schema:upload-file-media-object
    ::climit/id [[:process-image/by-profile ::rpc/profile-id]
                 [:process-image/global]]}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id content] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id file-id content]
+              :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
   (media/validate-media-type! content)
   (media/validate-media-size! content)
 
-  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
+  (db/run! cfg (fn [{:keys [::db/conn]
+                     :as cfg}]
                  ;; We get the minimal file for proper checking if
                  ;; file is not already deleted
                  (let [_     (files/get-minimal-file conn file-id)
@@ -143,7 +146,8 @@
 
 (defn- process-image
   [content]
-  (let [info (media/run {:cmd :info :input content})]
+  (let [info (media/run {:cmd :info
+                         :input content})]
     (cond-> info
       (and (not (svg-image? info))
            (big-enough-for-thumbnail? info))
@@ -153,7 +157,8 @@
       (assoc ::image (process-main-image info)))))
 
 (defn- create-file-media-object
-  [{:keys [::sto/storage ::db/conn ::wrk/executor] :as cfg}
+  [{:keys [::sto/storage ::db/conn ::wrk/executor]
+    :as cfg}
    {:keys [id file-id is-local name content]}]
   (let [result (px/invoke! executor (partial process-image content))
         image  (sto/put-object! storage (::image result))
@@ -184,7 +189,9 @@
 (sv/defmethod ::create-file-media-object-from-url
   {::doc/added "1.17"
    ::sm/params schema:create-file-media-object-from-url}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/pool]
+    :as cfg} {:keys [::rpc/profile-id file-id]
+              :as params}]
   (files/check-edition-permissions! pool profile-id file-id)
   ;; We get the minimal file for proper checking if file is not
   ;; already deleted
@@ -201,7 +208,8 @@
 
 (defn download-image
   [{:keys [::http/client]} uri]
-  (letfn [(parse-and-validate [{:keys [headers] :as response}]
+  (letfn [(parse-and-validate [{:keys [headers]
+                                :as response}]
             (let [size     (some-> (get headers "content-length") d/parse-integer)
                   mtype    (get headers "content-type")
                   format   (cm/mtype->format mtype)
@@ -224,11 +232,16 @@
                           :code :media-type-not-allowed
                           :hint "seems like the url points to an invalid media object"))
 
-              {:size size :mtype mtype :format format}))]
+              {:size size
+               :mtype mtype
+               :format format}))]
 
-    (let [{:keys [body] :as response} (http/req! client
-                                                 {:method :get :uri uri}
-                                                 {:response-type :input-stream :sync? true})
+    (let [{:keys [body]
+           :as response} (http/req! client
+                                    {:method :get
+                                     :uri uri}
+                                    {:response-type :input-stream
+                                     :sync? true})
           {:keys [size mtype]} (parse-and-validate response)
           path    (tmp/tempfile :prefix "penpot.media.download.")
           written (io/write* path body :size size)]
@@ -244,7 +257,8 @@
        :mtype mtype})))
 
 (defn- create-file-media-object-from-url
-  [cfg {:keys [url name] :as params}]
+  [cfg {:keys [url name]
+        :as params}]
   (let [content (download-image cfg url)
         params  (-> params
                     (assoc :content content)
@@ -275,7 +289,9 @@
   {::doc/added "1.17"
    ::sm/params schema:clone-file-media-object
    ::db/transaction true}
-  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id] :as params}]
+  [{:keys [::db/conn]
+    :as cfg} {:keys [::rpc/profile-id file-id]
+              :as params}]
   (files/check-edition-permissions! conn profile-id file-id)
   (clone-file-media-object cfg params))
 

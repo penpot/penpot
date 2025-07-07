@@ -25,7 +25,8 @@
 (defn- decode-token
   [props token]
   (when token
-    (tokens/verify props {:token token :iss "access-token"})))
+    (tokens/verify props {:token token
+                          :iss "access-token"})))
 
 (def sql:get-token-data
   "SELECT perms, profile_id, expires_at

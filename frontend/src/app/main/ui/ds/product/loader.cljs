@@ -48,7 +48,8 @@
 
 (mf/defc loader-icon*
   {::mf/private true}
-  [{:keys [width height title] :rest props}]
+  [{:keys [width height title]
+    :rest props}]
   (let [class (stl/css :loader)
         props (mf/spread-props props {:viewBox "0 0 677.34762 182.15429"
                                       :role "status"
@@ -73,7 +74,8 @@
 
 (mf/defc loader*
   {::mf/schema schema:loader}
-  [{:keys [class width height title overlay children file-loading] :rest props}]
+  [{:keys [class width height title overlay children file-loading]
+    :rest props}]
   (let [width  (or width (when (some? height) (mth/ceil (* height (/ 100 27)))) 100)
         height (or height (when (some? width) (mth/ceil (* width (/ 27 100)))) 27)
 

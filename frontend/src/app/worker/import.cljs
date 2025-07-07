@@ -67,7 +67,8 @@
   (sm/decoder schema:manifest sm/json-transformer))
 
 (defn analyze-file
-  [{:keys [uri] :as file}]
+  [{:keys [uri]
+    :as file}]
   (let [stream (->> (slurp-uri uri :buffer)
                     (rx/merge-map
                      (fn [body]
@@ -104,7 +105,8 @@
 
           (->> stream
                (rx/filter (fn [entry] (= :binfile-v3 (:type entry))))
-               (rx/merge-map (fn [{:keys [files] :as entry}]
+               (rx/merge-map (fn [{:keys [files]
+                                   :as entry}]
                                (->> (rx/from files)
                                     (rx/map (fn [file]
                                               (-> entry

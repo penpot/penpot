@@ -19,10 +19,22 @@
    [clojure.test :as t]))
 
 (def default-path
-  [{:command :move-to :params {:x 0 :y 0}}
-   {:command :line-to :params {:x 20 :y 20}}
-   {:command :line-to :params {:x 30 :y 30}}
-   {:command :curve-to :params {:x 40 :y 40 :c1x 35 :c1y 35 :c2x 45 :c2y 45}}
+  [{:command :move-to
+    :params {:x 0
+             :y 0}}
+   {:command :line-to
+    :params {:x 20
+             :y 20}}
+   {:command :line-to
+    :params {:x 30
+             :y 30}}
+   {:command :curve-to
+    :params {:x 40
+             :y 40
+             :c1x 35
+             :c1y 35
+             :c2x 45
+             :c2y 45}}
    {:command :close-path}])
 
 (defn create-test-shape
@@ -168,7 +180,10 @@
                 (gpt/point 20 65.2)
                 (gpt/point 12 -10)]
         result (grc/points->rect points)
-        expect {:x -1, :y -10, :width 21, :height 75.2}]
+        expect {:x -1,
+                :y -10,
+                :width 21,
+                :height 75.2}]
 
     (t/is (= (:x expect) (:x result)))
     (t/is (= (:y expect) (:y result)))
@@ -223,7 +238,8 @@
 
 
 (t/deftest shape-has-point-pred
-  (let [{:keys [points] :as shape} (create-test-shape :rect {})
+  (let [{:keys [points]
+         :as shape} (create-test-shape :rect {})
         point1 (first points)
         point2 (update point1 :x - 100)]
     (t/is (true? (gsin/fast-has-point? shape point1)))

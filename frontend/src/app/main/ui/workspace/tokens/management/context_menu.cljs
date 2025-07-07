@@ -190,7 +190,8 @@
 
 
 
-(defn spacing-attribute-actions [{:keys [token selected-shapes allowed-shape-attributes] :as context-data}]
+(defn spacing-attribute-actions [{:keys [token selected-shapes allowed-shape-attributes]
+                                  :as context-data}]
   (let [padding-attr-labels {:p1 "Padding top"
                              :p2 "Padding right"
                              :p3 "Padding bottom"
@@ -286,11 +287,14 @@
      :font-size font-size
      :dimensions (fn [context-data]
                    (-> (concat
-                        (when (seq (sizing-attribute-actions context-data)) [{:title "Sizing" :submenu :sizing}])
-                        (when (seq (spacing-attribute-actions context-data)) [{:title "Spacing" :submenu :spacing}])
+                        (when (seq (sizing-attribute-actions context-data)) [{:title "Sizing"
+                                                                              :submenu :sizing}])
+                        (when (seq (spacing-attribute-actions context-data)) [{:title "Spacing"
+                                                                               :submenu :spacing}])
                         [:separator]
                         (when (seq (border-radius context-data))
-                          [{:title "Border Radius" :submenu :border-radius}])
+                          [{:title "Border Radius"
+                            :submenu :border-radius}])
                         [:separator]
                         (stroke-width (assoc context-data :on-update-shape dwta/update-stroke-width))
                         [:separator]
@@ -325,7 +329,8 @@
 (defn- allowed-shape-attributes [shapes]
   (reduce into #{} (map #(ctt/shape-type->attributes (:type %)) shapes)))
 
-(defn menu-actions [{:keys [type token selected-shapes] :as context-data}]
+(defn menu-actions [{:keys [type token selected-shapes]
+                     :as context-data}]
   (let [context-data (assoc context-data :allowed-shape-attributes (allowed-shape-attributes selected-shapes))
         with-actions (get shape-attribute-actions-map (or type (:type token)))
         attribute-actions (if with-actions (with-actions context-data) [])]
@@ -400,12 +405,15 @@
      (when hint
        [:span {:class (stl/css :context-menu-item-hint)} hint])
      (when (not no-selectable)
-       [:> icon* {:icon-id "tick" :size "s" :class (stl/css :icon-wrapper)}])
+       [:> icon* {:icon-id "tick"
+                  :size "s"
+                  :class (stl/css :icon-wrapper)}])
      [:span {:class (stl/css :item-text)}
       title]
      (when children
        [:*
-        [:> icon* {:icon-id "arrow" :size "s"}]
+        [:> icon* {:icon-id "arrow"
+                   :size "s"}]
         [:ul {:ref submenu-ref
               :class (stl/css-case
                       :token-context-submenu true
@@ -416,7 +424,8 @@
          children]])]))
 
 (mf/defc menu-tree
-  [{:keys [selected-shapes submenu-offset type errors] :as context-data}]
+  [{:keys [selected-shapes submenu-offset type errors]
+    :as context-data}]
   (let [shape-types  (into #{} (map :type selected-shapes))
         editing-ref  (mf/deref refs/workspace-editor-state)
         not-editing? (empty? editing-ref)
@@ -428,7 +437,8 @@
                     (submenu-actions-selection-actions context-data)
                     (selection-actions context-data))
                   (default-actions context-data))]
-    (for [[index {:keys [title action selected? hint submenu no-selectable] :as entry}] (d/enumerate entries)]
+    (for [[index {:keys [title action selected? hint submenu no-selectable]
+                  :as entry}] (d/enumerate entries)]
       [:* {:key (dm/str title " " index)}
        (cond
          (= :separator entry) [:li {:class (stl/css :separator)}]
@@ -445,7 +455,8 @@
                  :selected? selected?}])])))
 
 (mf/defc token-context-menu-tree
-  [{:keys [width errors] :as mdata}]
+  [{:keys [width errors]
+    :as mdata}]
   (let [objects (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
         selected-shapes (into [] (keep (d/getf objects)) selected)

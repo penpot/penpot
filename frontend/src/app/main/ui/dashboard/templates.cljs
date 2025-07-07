@@ -191,7 +191,8 @@
 
 
 
-        can-move       (mf/use-state {:left false :right true})
+        can-move       (mf/use-state {:left false
+                                      :right true})
 
         total          (count templates)
 
@@ -239,7 +240,9 @@
     (mf/with-effect [content-ref templates]
       (let [content (mf/ref-val content-ref)]
         (when (and (some? content) (some? templates))
-          (dom/scroll-to content #js {:behavior "instant" :left 0 :top 0})
+          (dom/scroll-to content #js {:behavior "instant"
+                                      :left 0
+                                      :top 0})
           (dom/dispatch-event content (dom/event "scroll")))))
 
     (mf/with-effect [profile collapsed]

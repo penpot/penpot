@@ -34,7 +34,8 @@
     nil))
 
 (defn- impl-migrate-single
-  [pool modname {:keys [name] :as migration}]
+  [pool modname {:keys [name]
+                 :as migration}]
   (when-not (registered? pool modname (:name migration))
     (l/info :action "apply migration" :module modname :name name)
     (register! pool modname name)

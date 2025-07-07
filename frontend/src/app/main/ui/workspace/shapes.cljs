@@ -109,7 +109,8 @@
         (and (some? active-frames)
              (not (contains? active-frames shape-id)))
 
-        props         #js {:shape shape :thumbnail? thumbnail?}
+        props         #js {:shape shape
+                           :thumbnail? thumbnail?}
 
         rawsvg?       (= :svg-raw shape-type)
         wrapper-elem  (if ^boolean rawsvg? mf/Fragment "g")

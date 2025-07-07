@@ -75,7 +75,8 @@
        (case current-section
          :login
          [:div {:class (stl/css :form-container)}
-          [:& login-methods {:on-success-callback success-login :origin :viewer}]
+          [:& login-methods {:on-success-callback success-login
+                             :origin :viewer}]
           [:div {:class (stl/css :links)}
            [:div {:class (stl/css :recovery-request)}
             [:a {:on-click set-section

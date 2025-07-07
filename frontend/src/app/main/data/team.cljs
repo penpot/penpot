@@ -39,7 +39,8 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (reduce (fn [state {:keys [id] :as team}]
+      (reduce (fn [state {:keys [id]
+                          :as team}]
                 (update-in state [:teams id] merge team))
               state
               teams))))
@@ -141,7 +142,8 @@
 ;; --- ROLES
 
 (defn update-member-role
-  [{:keys [role member-id] :as params}]
+  [{:keys [role member-id]
+    :as params}]
   (dm/assert! (uuid? member-id))
   (dm/assert! (contains? ctt/valid-roles role))
 
@@ -161,7 +163,8 @@
                                                   :member-id member-id})))))))))
 
 (defn delete-member
-  [{:keys [member-id] :as params}]
+  [{:keys [member-id]
+    :as params}]
   (dm/assert! (uuid? member-id))
   (ptk/reify ::delete-member
     ptk/WatchEvent
@@ -251,7 +254,8 @@
     (-deref [_] team)))
 
 (defn create-team
-  [{:keys [name] :as params}]
+  [{:keys [name]
+    :as params}]
   (dm/assert! (string? name))
   (ptk/reify ::create-team
     ptk/WatchEvent
@@ -260,7 +264,8 @@
              :or {on-success identity
                   on-error rx/throw}} (meta params)
             features features/global-enabled-features
-            params   {:name name :features features}]
+            params   {:name name
+                      :features features}]
         (->> (rp/cmd! :create-team (with-meta params (meta it)))
              (rx/tap on-success)
              (rx/map team-created)
@@ -269,7 +274,8 @@
 ;; --- EVENT: create-team-with-invitations
 
 (defn create-team-with-invitations
-  [{:keys [name emails role] :as params}]
+  [{:keys [name emails role]
+    :as params}]
   (ptk/reify ::create-team-with-invitations
     ptk/WatchEvent
     (watch [it _ _]
@@ -287,7 +293,8 @@
              (rx/catch on-error))))))
 
 (defn update-team
-  [{:keys [id name] :as params}]
+  [{:keys [id name]
+    :as params}]
   (ptk/reify ::update-team
     ptk/UpdateEvent
     (update [_ state]
@@ -299,7 +306,8 @@
            (rx/ignore)))))
 
 (defn- team-leaved
-  [{:keys [id] :as params}]
+  [{:keys [id]
+    :as params}]
   (ptk/reify ::team-leaved
     IDeref
     (-deref [_] params)
@@ -319,7 +327,8 @@
   "High-level event for leave team, mainly executed from the
   dashboard. It automatically redirects user to the default team, once
   the team-leave operation succeed"
-  [{:keys [reassign-to] :as params}]
+  [{:keys [reassign-to]
+    :as params}]
 
   (when reassign-to
     (assert (uuid? reassign-to) "expect a valid uuid for `reassign-to`"))
@@ -349,7 +358,8 @@
              (rx/catch on-error))))))
 
 (defn create-invitations
-  [{:keys [emails role team-id resend?] :as params}]
+  [{:keys [emails role team-id resend?]
+    :as params}]
 
   (assert (keyword? role))
   (assert (uuid? team-id))
@@ -373,13 +383,15 @@
              (rx/catch on-error))))))
 
 (defn copy-invitation-link
-  [{:keys [email team-id] :as params}]
+  [{:keys [email team-id]
+    :as params}]
   (assert (sm/check-email email))
   (assert (uuid? team-id))
 
   (ptk/reify ::copy-invitation-link
     IDeref
-    (-deref [_] {:email email :team-id team-id})
+    (-deref [_] {:email email
+                 :team-id team-id})
 
     ptk/WatchEvent
     (watch [_ state _]
@@ -400,7 +412,8 @@
              (rx/catch on-error))))))
 
 (defn update-invitation-role
-  [{:keys [email team-id role] :as params}]
+  [{:keys [email team-id role]
+    :as params}]
   (assert (sm/check-email email))
   (assert (uuid? team-id))
   (assert (contains? ctt/valid-roles role))
@@ -419,7 +432,8 @@
              (rx/catch on-error))))))
 
 (defn delete-invitation
-  [{:keys [email team-id] :as params}]
+  [{:keys [email team-id]
+    :as params}]
   (assert (sm/check-email email))
   (assert (uuid? team-id))
 
@@ -441,7 +455,8 @@
       (update state :teams dissoc id))))
 
 (defn delete-team
-  [{:keys [id] :as params}]
+  [{:keys [id]
+    :as params}]
   (ptk/reify ::delete-team
     ptk/WatchEvent
     (watch [_ _ _]
@@ -458,7 +473,8 @@
              (rx/catch on-error))))))
 
 (defn delete-webhook
-  [{:keys [id] :as params}]
+  [{:keys [id]
+    :as params}]
   (dm/assert! (uuid? id))
 
   (ptk/reify ::delete-webhook
@@ -479,7 +495,8 @@
     "application/transit+json"})
 
 (defn update-webhook
-  [{:keys [id uri mtype is-active] :as params}]
+  [{:keys [id uri mtype is-active]
+    :as params}]
   (dm/assert! (uuid? id))
   (dm/assert! (contains? valid-mtypes mtype))
   (dm/assert! (boolean? is-active))
@@ -501,7 +518,8 @@
              (rx/catch on-error))))))
 
 (defn create-webhook
-  [{:keys [uri mtype is-active] :as params}]
+  [{:keys [uri mtype is-active]
+    :as params}]
   (dm/assert! (contains? valid-mtypes mtype))
   (dm/assert! (boolean? is-active))
   (dm/assert! (u/uri? uri))

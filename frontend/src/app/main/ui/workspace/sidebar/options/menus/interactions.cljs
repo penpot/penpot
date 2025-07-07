@@ -66,12 +66,14 @@
        (filter #(and (not= (:id %) (:id shape)) ; A frame cannot navigate to itself
                      (not= (:id %) (:frame-id shape)))) ; nor a shape to its container frame
        (map (fn [frame]
-              {:value (str (:id frame)) :label (:name frame)}))))
+              {:value (str (:id frame))
+               :label (:name frame)}))))
 
 (defn- get-shared-frames-options
   [shared-frames]
   (map (fn [frame]
-         {:value (str (:id frame)) :label (:name frame)}) shared-frames))
+         {:value (str (:id frame))
+          :label (:name frame)}) shared-frames))
 
 (def flow-for-rename-ref
   (l/derived (l/in [:workspace-local :flow-for-rename]) st/state))
@@ -164,7 +166,8 @@
                     :title       (tr "workspace.options.flows.flow-starts")
                     :class       (stl/css :title-spacing-layout-flow)}]
      (for [[id flow] flows]
-       [:& flow-item {:flow flow :key (dm/str id)}])]))
+       [:& flow-item {:flow flow
+                      :key (dm/str id)}])]))
 
 (mf/defc shape-flows
   {::mf/props :obj}
@@ -184,7 +187,8 @@
                             :icon "add"}])]
 
        (when (some? flow)
-         [:& flow-item {:flow flow :key (dm/str (:id flow))}])])))
+         [:& flow-item {:flow flow
+                        :key (dm/str (:id flow))}])])))
 
 (def ^:private corner-center-icon
   (i/icon-xref :corner-center (stl/css :corner-icon)))
@@ -363,27 +367,39 @@
              (update-interaction index #(ctsi/set-offset-effect % value)))))
 
 
-        event-type-options   (-> [{:value :click :label (tr "workspace.options.interaction-on-click")}
+        event-type-options   (-> [{:value :click
+                                   :label (tr "workspace.options.interaction-on-click")}
                                   ;; TODO: need more UX research
                                   ;; :mouse-over (tr "workspace.options.interaction-while-hovering")
                                   ;; :mouse-press (tr "workspace.options.interaction-while-pressing")
-                                  {:value :mouse-enter :label (tr "workspace.options.interaction-mouse-enter")}
-                                  {:value :mouse-leave :label (tr "workspace.options.interaction-mouse-leave")}]
+                                  {:value :mouse-enter
+                                   :label (tr "workspace.options.interaction-mouse-enter")}
+                                  {:value :mouse-leave
+                                   :label (tr "workspace.options.interaction-mouse-leave")}]
                                  (cond-> (cfh/frame-shape? shape)
-                                   (conj {:value :after-delay :label (tr "workspace.options.interaction-after-delay")})))
+                                   (conj {:value :after-delay
+                                          :label (tr "workspace.options.interaction-after-delay")})))
 
-        action-type-options [{:value :navigate :label (tr "workspace.options.interaction-navigate-to")}
-                             {:value :open-overlay :label (tr "workspace.options.interaction-open-overlay")}
-                             {:value :toggle-overlay :label (tr "workspace.options.interaction-toggle-overlay")}
-                             {:value :close-overlay :label (tr "workspace.options.interaction-close-overlay")}
-                             {:value :prev-screen :label (tr "workspace.options.interaction-prev-screen")}
-                             {:value :open-url :label (tr "workspace.options.interaction-open-url")}]
+        action-type-options [{:value :navigate
+                              :label (tr "workspace.options.interaction-navigate-to")}
+                             {:value :open-overlay
+                              :label (tr "workspace.options.interaction-open-overlay")}
+                             {:value :toggle-overlay
+                              :label (tr "workspace.options.interaction-toggle-overlay")}
+                             {:value :close-overlay
+                              :label (tr "workspace.options.interaction-close-overlay")}
+                             {:value :prev-screen
+                              :label (tr "workspace.options.interaction-prev-screen")}
+                             {:value :open-url
+                              :label (tr "workspace.options.interaction-open-url")}]
 
         frames-opts         (get-frames-options frames shape)
 
         default-opts        [(if (= (:action-type interaction) :close-overlay)
-                               {:value "" :label (tr "workspace.options.interaction-self")}
-                               {:value "" :label (tr "workspace.options.interaction-none")})]
+                               {:value ""
+                                :label (tr "workspace.options.interaction-self")}
+                               {:value ""
+                                :label (tr "workspace.options.interaction-none")})]
         destination-options
         (mf/with-memo [frames-opts default-opts]
           (let [sorted-frames-opts (sort-by :label frames-opts)]
@@ -394,35 +410,60 @@
         relative-to-opts
         (mf/with-memo [shape-parents-opts]
           (if (not= (:overlay-pos-type interaction) :manual)
-            (d/concat-vec [{:value "" :label (tr "workspace.options.interaction-auto")}]
+            (d/concat-vec [{:value ""
+                            :label (tr "workspace.options.interaction-auto")}]
                           shape-parents-opts
-                          [{:value (str (:id shape)) :label (str (:name shape) " (" (tr "workspace.options.interaction-self") ")")}])
-            [{:value (str (:id shape)) :label (str (:name shape) " (" (tr "workspace.options.interaction-self") ")")}]))
+                          [{:value (str (:id shape))
+                            :label (str (:name shape) " (" (tr "workspace.options.interaction-self") ")")}])
+            [{:value (str (:id shape))
+              :label (str (:name shape) " (" (tr "workspace.options.interaction-self") ")")}]))
 
-        overlay-position-opts [{:value :manual :label (tr "workspace.options.interaction-pos-manual")}
-                               {:value :center :label  (tr "workspace.options.interaction-pos-center")}
-                               {:value :top-left  :label (tr "workspace.options.interaction-pos-top-left")}
-                               {:value :top-right  :label (tr "workspace.options.interaction-pos-top-right")}
-                               {:value :top-center  :label (tr "workspace.options.interaction-pos-top-center")}
-                               {:value :bottom-left  :label (tr "workspace.options.interaction-pos-bottom-left")}
-                               {:value :bottom-right :label  (tr "workspace.options.interaction-pos-bottom-right")}
-                               {:value :bottom-center  :label (tr "workspace.options.interaction-pos-bottom-center")}]
+        overlay-position-opts [{:value :manual
+                                :label (tr "workspace.options.interaction-pos-manual")}
+                               {:value :center
+                                :label  (tr "workspace.options.interaction-pos-center")}
+                               {:value :top-left
+                                :label (tr "workspace.options.interaction-pos-top-left")}
+                               {:value :top-right
+                                :label (tr "workspace.options.interaction-pos-top-right")}
+                               {:value :top-center
+                                :label (tr "workspace.options.interaction-pos-top-center")}
+                               {:value :bottom-left
+                                :label (tr "workspace.options.interaction-pos-bottom-left")}
+                               {:value :bottom-right
+                                :label  (tr "workspace.options.interaction-pos-bottom-right")}
+                               {:value :bottom-center
+                                :label (tr "workspace.options.interaction-pos-bottom-center")}]
 
-        basic-animation-opts [{:value "" :label  (tr "workspace.options.interaction-animation-none")}
-                              {:value :dissolve :label  (tr "workspace.options.interaction-animation-dissolve")}
-                              {:value :slide :label  (tr "workspace.options.interaction-animation-slide")}]
+        basic-animation-opts [{:value ""
+                               :label  (tr "workspace.options.interaction-animation-none")}
+                              {:value :dissolve
+                               :label  (tr "workspace.options.interaction-animation-dissolve")}
+                              {:value :slide
+                               :label  (tr "workspace.options.interaction-animation-slide")}]
 
         animation-opts
         (mf/with-memo [basic-animation-opts]
           (if (ctsi/allow-push? (:action-type interaction))
-            (d/concat-vec basic-animation-opts [{:value :push :label (tr "workspace.options.interaction-animation-push")}])
+            (d/concat-vec basic-animation-opts [{:value :push
+                                                 :label (tr "workspace.options.interaction-animation-push")}])
             basic-animation-opts))
 
-        easing-options [{:icon  :easing-linear :value :linear :label (tr "workspace.options.interaction-easing-linear")}
-                        {:icon  :easing-ease :value :ease :label (tr "workspace.options.interaction-easing-ease")}
-                        {:icon  :easing-ease-in :value :ease-in :label (tr "workspace.options.interaction-easing-ease-in")}
-                        {:icon  :easing-ease-out :value :ease-out :label (tr "workspace.options.interaction-easing-ease-out")}
-                        {:icon  :easing-ease-in-out :value :ease-in-out :label (tr "workspace.options.interaction-easing-ease-in-out")}]]
+        easing-options [{:icon  :easing-linear
+                         :value :linear
+                         :label (tr "workspace.options.interaction-easing-linear")}
+                        {:icon  :easing-ease
+                         :value :ease
+                         :label (tr "workspace.options.interaction-easing-ease")}
+                        {:icon  :easing-ease-in
+                         :value :ease-in
+                         :label (tr "workspace.options.interaction-easing-ease-in")}
+                        {:icon  :easing-ease-out
+                         :value :ease-out
+                         :label (tr "workspace.options.interaction-easing-ease-out")}
+                        {:icon  :easing-ease-in-out
+                         :value :ease-in-out
+                         :label (tr "workspace.options.interaction-easing-ease-in-out")}]]
 
 
     [:div {:class (stl/css-case  :element-set-options-group true

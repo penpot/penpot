@@ -21,7 +21,9 @@
 
 (defn cell-bounds
   "Retrieves the points that define the bounds for given cell"
-  [{:keys [origin row-tracks column-tracks layout-bounds column-gap row-gap] :as layout-data} {:keys [row column row-span column-span] :as cell}]
+  [{:keys [origin row-tracks column-tracks layout-bounds column-gap row-gap]
+    :as layout-data} {:keys [row column row-span column-span]
+                      :as cell}]
 
   (let [hv     #(gpo/start-hv layout-bounds %)
         vv     #(gpo/start-vv layout-bounds %)
@@ -193,7 +195,8 @@
         make-is-inside-track
         (fn [type]
           (let [[vfn ofn] (if (= type :column) [vv hv] [hv vv])]
-            (fn is-inside-track? [{:keys [start-p size] :as track}]
+            (fn is-inside-track? [{:keys [start-p size]
+                                   :as track}]
               (let [unit-v    (vfn 1)
                     end-p     (gpt/add start-p (ofn size))]
                 (gl/is-inside-lines? [start-p unit-v] [end-p unit-v]  position)))))
@@ -201,7 +204,8 @@
         make-min-distance-track
         (fn [type]
           (let [[vfn ofn] (if (= type :column) [vv hv] [hv vv])]
-            (fn [[selected selected-dist] [cur-idx {:keys [start-p size] :as track}]]
+            (fn [[selected selected-dist] [cur-idx {:keys [start-p size]
+                                                    :as track}]]
               (let [unit-v    (vfn 1)
                     end-p     (gpt/add start-p (ofn size))
                     dist-1    (mth/abs (gl/line-value [start-p unit-v] position))

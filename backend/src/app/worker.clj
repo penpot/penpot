@@ -106,7 +106,11 @@
 
 (defn submit!
   [& {:keys [::params ::task ::delay ::queue ::priority ::max-retries ::dedupe ::label]
-      :or {delay 0 queue :default priority 100 max-retries 3 label ""}
+      :or {delay 0
+           queue :default
+           priority 100
+           max-retries 3
+           label ""}
       :as options}]
 
   (check-options! options)
@@ -137,7 +141,8 @@
     id))
 
 (defn invoke!
-  [{:keys [::task ::params] :as cfg}]
+  [{:keys [::task ::params]
+    :as cfg}]
   (assert (contains? cfg :app.worker/registry)
           "missing worker registry on `cfg`")
   (let [registry (get cfg ::registry)

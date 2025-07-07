@@ -32,7 +32,8 @@
 (mf/defc input-field*
   {::mf/forward-ref true
    ::mf/schema schema:input-field}
-  [{:keys [id icon has-hint hint-type class type max-length variant slot-start slot-end] :rest props} ref]
+  [{:keys [id icon has-hint hint-type class type max-length variant slot-start slot-end]
+    :rest props} ref]
   (let [input-ref (mf/use-ref)
         type  (d/nilv type "text")
         variant (d/nilv variant "dense")
@@ -69,7 +70,9 @@
      (when (some? slot-start)
        slot-start)
      (when (some? icon)
-       [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
+       [:> icon* {:icon-id icon
+                  :class (stl/css :icon)
+                  :on-click on-icon-click}])
      [:> "input" props]
      (when (some? slot-end)
        slot-end)]))

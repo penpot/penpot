@@ -22,7 +22,8 @@
    [app.common.types.typography :as ctt]))
 
 (defn sample-shape
-  [label & {:keys [type] :as params}]
+  [label & {:keys [type]
+            :as params}]
   (let [params (cond-> params
                  label
                  (assoc :id (thi/new-id! label))
@@ -33,7 +34,8 @@
     (cts/setup-shape params)))
 
 (defn add-sample-shape
-  [file label & {:keys [parent-label] :as params}]
+  [file label & {:keys [parent-label]
+                 :as params}]
   (let [page      (thf/current-page file)
         shape     (sample-shape label (dissoc params :parent-label))
         parent-id (when parent-label
@@ -109,7 +111,8 @@
       (d/without-nils)))
 
 (defn sample-fill-color
-  [& {:keys [fill-color fill-opacity] :as params}]
+  [& {:keys [fill-color fill-opacity]
+      :as params}]
   (let [params (cond-> params
                  (nil? fill-color)
                  (assoc :fill-color clr/black)
@@ -119,20 +122,24 @@
     params))
 
 (defn sample-fills-color
-  [& {:keys [] :as params}]
+  [& {:keys []
+      :as params}]
   [(sample-fill-color params)])
 
 (defn add-sample-library-color
-  [file label & {:keys [] :as params}]
+  [file label & {:keys []
+                 :as params}]
   (let [color (sample-library-color label params)]
     (update file :data ctc/add-color color)))
 
 (defn sample-typography
-  [label & {:keys [] :as params}]
+  [label & {:keys []
+            :as params}]
   (ctt/make-typography (assoc params :id (thi/new-id! label))))
 
 (defn add-sample-typography
-  [file label & {:keys [] :as params}]
+  [file label & {:keys []
+                 :as params}]
   (let [typography (sample-typography label params)]
     (update file :data cttl/add-typography typography)))
 

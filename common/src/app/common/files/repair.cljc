@@ -24,7 +24,8 @@
   (fn [code _error _file-data _libraries] code))
 
 (defmethod repair-error :invalid-geometry
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Reset geometry to minimal
@@ -41,7 +42,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :parent-not-found
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Set parent to root frame.
@@ -54,7 +56,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :child-not-in-parent
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [parent-shape]
           ; Add shape to parent's children list
@@ -67,7 +70,8 @@
         (pcb/update-shapes [(:parent-id shape)] repair-shape))))
 
 (defmethod repair-error :duplicated-children
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Remove duplicated
@@ -80,7 +84,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :child-not-found
-  [_ {:keys [shape page-id args] :as error} file-data _]
+  [_ {:keys [shape page-id args]
+      :as error} file-data _]
   (let [repair-shape
         (fn [parent-shape]
           (log/debug :hint "  -> remove child" :child-id (:child-id args))
@@ -92,14 +97,16 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :invalid-parent
-  [_ {:keys [shape page-id args] :as error} file-data _]
+  [_ {:keys [shape page-id args]
+      :as error} file-data _]
   (log/dbg :hint "repairing shape :invalid-parent" :id (:id shape) :name (:name shape) :page-id page-id)
   (-> (pcb/empty-changes nil page-id)
       (pcb/with-file-data file-data)
       (pcb/change-parent (:parent-id args) [shape] nil {:allow-altering-copies true})))
 
 (defmethod repair-error :frame-not-found
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Locate the first frame in parents and set frame-id to it.
@@ -115,7 +122,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :invalid-frame
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Locate the first frame in parents and set frame-id to it.
@@ -131,7 +139,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :component-not-main
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Set the :shape as main instance root
@@ -144,7 +153,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :component-main-external
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Set :component-file to local file
@@ -160,7 +170,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :component-not-found
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [page      (ctpl/get-page file-data page-id)
         shape-ids (cfh/get-children-ids-with-self (:objects page) (:id shape))
 
@@ -179,7 +190,8 @@
         (pcb/update-shapes shape-ids repair-shape))))
 
 (defmethod repair-error :invalid-main-instance-id
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [component (ctkl/get-component file-data (:component-id shape))
 
         repair-component
@@ -204,7 +216,8 @@
           (pcb/update-shapes [(:id shape)] detach-shape)))))
 
 (defmethod repair-error :invalid-main-instance-page
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-component
         (fn [component]
           ; Assign main instance in the component to current shape
@@ -216,7 +229,8 @@
         (pcb/update-component (:component-id shape) repair-component))))
 
 (defmethod repair-error :invalid-main-instance
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; There is no solution that may recover it with confidence
@@ -229,7 +243,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :component-main
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Unset the :shape as main instance root
@@ -242,7 +257,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :should-be-component-root
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a top copy root.
@@ -255,7 +271,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :should-not-be-component-root
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a nested copy root.
@@ -268,7 +285,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :ref-shape-not-found
-  [_ {:keys [shape page-id] :as error} file-data libraries]
+  [_ {:keys [shape page-id]
+      :as error} file-data libraries]
   (let [matching-shape (let [page              (ctpl/get-page file-data page-id)
                              root-shape        (ctn/get-component-shape (:objects page) shape)
                              component-file    (if (= (:component-file root-shape) (:id file-data))
@@ -322,7 +340,8 @@
 
 
 (defmethod repair-error :shape-ref-cycle
-  [_ {:keys [shape args] :as error} file-data _]
+  [_ {:keys [shape args]
+      :as error} file-data _]
   (let [repair-component
         (fn [component]
           (let [objects   (:objects component) ;; we only have encounter this on deleted components,
@@ -350,7 +369,8 @@
         (pcb/update-component (:id shape) repair-component))))
 
 (defmethod repair-error :shape-ref-in-main
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Remove shape-ref
@@ -363,7 +383,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :root-main-not-allowed
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a nested main head.
@@ -376,7 +397,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :nested-main-not-allowed
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a top main head.
@@ -390,7 +412,8 @@
         (pcb/change-parent uuid/zero [shape] nil {:allow-altering-copies true}))))
 
 (defmethod repair-error :root-copy-not-allowed
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a nested copy head.
@@ -403,7 +426,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :nested-copy-not-allowed
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a top copy root.
@@ -416,7 +440,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :not-head-main-not-allowed
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Detach the shape and convert it to non instance.
@@ -429,7 +454,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :not-head-copy-not-allowed
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Detach the shape and convert it to non instance.
@@ -442,7 +468,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :not-component-not-allowed
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; There is no solution that may recover it with confidence
@@ -455,7 +482,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :instance-head-not-frame
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ; Convert the shape in a frame.
@@ -474,7 +502,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :component-nil-objects-not-allowed
-  [_ {:keys [shape] :as error} file-data _]
+  [_ {:keys [shape]
+      :as error} file-data _]
   (let [repair-component
         (fn [component]
           ; Remove the objects key, or set it to {} if the component is deleted
@@ -492,7 +521,8 @@
         (pcb/update-component (:id shape) repair-component))))
 
 (defmethod repair-error :misplaced-slot
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ;; Remove the swap slot
@@ -505,7 +535,8 @@
         (pcb/update-shapes [(:id shape)] repair-shape))))
 
 (defmethod repair-error :duplicate-slot
-  [_ {:keys [shape page-id] :as error} file-data _]
+  [_ {:keys [shape page-id]
+      :as error} file-data _]
   (let [page      (ctpl/get-page file-data page-id)
         childs    (map #(get (:objects page) %) (:shapes shape))
         child-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
@@ -530,7 +561,8 @@
 
 
 (defmethod repair-error :component-duplicate-slot
-  [_ {:keys [shape] :as error} file-data _]
+  [_ {:keys [shape]
+      :as error} file-data _]
   (let [main-shape            (get-in shape [:objects (:main-instance-id shape)])
         childs                (map #(get (:objects shape) %) (:shapes main-shape))
         childs-with-duplicate (let [result (reduce (fn [[seen duplicates] item]
@@ -558,7 +590,8 @@
         (pcb/update-component (:id shape) repair-component))))
 
 (defmethod repair-error :missing-slot
-  [_ {:keys [shape page-id args] :as error} file-data _]
+  [_ {:keys [shape page-id args]
+      :as error} file-data _]
   (let [repair-shape
         (fn [shape]
           ;; Set the desired swap slot
@@ -618,7 +651,8 @@
   file)
 
 (defn repair-file
-  [{:keys [data id] :as file} libraries errors]
+  [{:keys [data id]
+    :as file} libraries errors]
   (log/dbg :hint "repairing file" :id (str id) :errors (count errors))
   (let [{:keys [redo-changes]}
         (reduce (fn [changes error]

@@ -35,7 +35,8 @@
 (mf/defc input*
   {::mf/forward-ref true
    ::mf/schema schema:input}
-  [{:keys [id class label is-optional type max-length variant hint-message hint-type] :rest props} ref]
+  [{:keys [id class label is-optional type max-length variant hint-message hint-type]
+    :rest props} ref]
   (let [id (or id (mf/use-id))
         variant (d/nilv variant "dense")
         is-optional (d/nilv is-optional false)
@@ -56,7 +57,8 @@
                                                   :variant-comfortable (= variant "comfortable")
                                                   :has-hint has-hint))}
      (when has-label
-       [:> label* {:for id :is-optional is-optional} label])
+       [:> label* {:for id
+                   :is-optional is-optional} label])
      [:> input-field* props]
      (when has-hint
        [:> hint-message* {:id id

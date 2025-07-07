@@ -21,7 +21,8 @@
 (log/set-level! :trace)
 
 (defn- handle-response
-  [{:keys [body status] :as response}]
+  [{:keys [body status]
+    :as response}]
   (cond
     (http/success? response)
     (rx/of (:body response))
@@ -56,7 +57,8 @@
          (rx/mapcat handle-response))))
 
 (defn- render-thumbnail
-  [{:keys [page file-id revn] :as params}]
+  [{:keys [page file-id revn]
+    :as params}]
   (try
     (binding [fonts/loaded-hints (l/atom #{})]
       (let [objects  (:objects page)
@@ -85,6 +87,7 @@
       nil)))
 
 (defmethod impl/handler :thumbnails/generate-for-file
-  [{:keys [file-id revn] :as message} _]
+  [{:keys [file-id revn]
+    :as message} _]
   (->> (request-data-for-thumbnail file-id revn)
        (rx/map render-thumbnail)))

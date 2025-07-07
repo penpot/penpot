@@ -167,14 +167,16 @@
    (defn reader
      ([istream]
       (reader istream nil))
-     ([istream {:keys [type] :or {type :json}}]
+     ([istream {:keys [type]
+                :or {type :json}}]
       (t/reader istream type {:handlers @read-handler-map}))))
 
 #?(:clj
    (defn writer
      ([ostream]
       (writer ostream nil))
-     ([ostream {:keys [type] :or {type :json}}]
+     ([ostream {:keys [type]
+                :or {type :json}}]
       (t/writer ostream type {:handlers @write-handler-map}))))
 
 #?(:clj

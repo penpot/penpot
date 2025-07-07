@@ -269,7 +269,8 @@
            (dom/stop-propagation event)
            (when-not read-only?
              (let [pos (dom/get-client-position event)]
-               (st/emit! (dw/show-shape-context-menu {:position pos :shape item}))))))
+               (st/emit! (dw/show-shape-context-menu {:position pos
+                                                      :shape item}))))))
 
         on-drag
         (mf/use-fn
@@ -363,7 +364,9 @@
                #(when (and node scroll-node)
                   (let [scroll-distance-ratio (dom/get-scroll-distance-ratio node scroll-node)
                         scroll-behavior (if (> scroll-distance-ratio 1) "instant" "smooth")]
-                    (dom/scroll-into-view-if-needed! first-child-node #js {:block "center" :behavior scroll-behavior :inline "start"})
+                    (dom/scroll-into-view-if-needed! first-child-node #js {:block "center"
+                                                                           :behavior scroll-behavior
+                                                                           :inline "start"})
                     (reset! scroll-to-middle? true)))))]
 
         #(when (some? subid)

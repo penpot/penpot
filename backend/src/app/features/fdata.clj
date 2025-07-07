@@ -85,7 +85,8 @@
   "A database loader pointer helper"
   [system file-id id]
   (let [fragment (db/get* system :file-data-fragment
-                          {:id id :file-id file-id}
+                          {:id id
+                           :file-id file-id}
                           {::sql/columns [:data :data-backend :data-ref-id :id]})]
 
     (l/trc :hint "load pointer"

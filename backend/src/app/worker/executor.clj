@@ -85,7 +85,8 @@
               completed-inc))]
 
     (px/thread
-      {:name "penpot/executors-monitor" :virtual true}
+      {:name "penpot/executors-monitor"
+       :virtual true}
       (l/inf :hint "monitor started" :name name)
       (try
         (loop [completed 0]

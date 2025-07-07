@@ -24,7 +24,8 @@
 
 (mf/defc input-with-meta*
   {::mf/schema schema:input-with-meta}
-  [{:keys [value meta max-length on-blur] :rest props}]
+  [{:keys [value meta max-length on-blur]
+    :rest props}]
   (let [editing*  (mf/use-state false)
         editing?  (deref editing*)
 

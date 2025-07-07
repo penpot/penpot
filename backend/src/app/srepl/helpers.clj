@@ -51,7 +51,8 @@
               (files/get-file system id :migrate? false)))))
 
 (defn update-team!
-  [system {:keys [id] :as team}]
+  [system {:keys [id]
+           :as team}]
   (let [conn   (db/get-connection system)
         params (-> team
                    (update :features db/encode-pgarray conn "text")
@@ -145,7 +146,9 @@
             snap)))
 
 (defn process-file!
-  [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
+  [system file-id update-fn & {:keys [label validate? with-libraries?]
+                               :or {validate? true}
+                               :as opts}]
   (let [file  (bfc/get-file system file-id ::db/for-update true)
         libs  (when with-libraries?
                 (bfc/get-resolved-file-libraries system file))

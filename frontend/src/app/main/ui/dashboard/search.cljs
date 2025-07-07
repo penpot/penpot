@@ -54,7 +54,8 @@
                 (dd/clear-selected-files)))
 
     [:*
-     [:header {:class (stl/css :dashboard-header) :data-testid "dashboard-header"}
+     [:header {:class (stl/css :dashboard-header)
+               :data-testid "dashboard-header"}
       [:div#dashboard-search-title {:class (stl/css :dashboard-title)}
        [:h1 (tr "dashboard.title-search")]]]
 

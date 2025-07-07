@@ -85,10 +85,14 @@
         (mf/with-memo [stroke-alignment]
           (d/concat-vec
            (when (= :multiple stroke-alignment)
-             [{:value :multiple :label "--"}])
-           [{:value :center :label (tr "workspace.options.stroke.center")}
-            {:value :inner :label (tr "workspace.options.stroke.inner")}
-            {:value :outer :label (tr "workspace.options.stroke.outer")}]))
+             [{:value :multiple
+               :label "--"}])
+           [{:value :center
+             :label (tr "workspace.options.stroke.center")}
+            {:value :inner
+             :label (tr "workspace.options.stroke.inner")}
+            {:value :outer
+             :label (tr "workspace.options.stroke.outer")}]))
 
         on-alignment-change
         (mf/use-callback
@@ -101,11 +105,16 @@
         (mf/with-memo [stroke-style]
           (d/concat-vec
            (when (= :multiple stroke-style)
-             [{:value :multiple :label "--"}])
-           [{:value :solid :label (tr "workspace.options.stroke.solid")}
-            {:value :dotted :label (tr "workspace.options.stroke.dotted")}
-            {:value :dashed :label (tr "workspace.options.stroke.dashed")}
-            {:value :mixed :label (tr "workspace.options.stroke.mixed")}]))
+             [{:value :multiple
+               :label "--"}])
+           [{:value :solid
+             :label (tr "workspace.options.stroke.solid")}
+            {:value :dotted
+             :label (tr "workspace.options.stroke.dotted")}
+            {:value :dashed
+             :label (tr "workspace.options.stroke.dashed")}
+            {:value :mixed
+             :label (tr "workspace.options.stroke.mixed")}]))
 
         on-style-change
         (mf/use-callback
@@ -123,16 +132,31 @@
          #(on-stroke-cap-end-change index (keyword %)))
 
         stroke-caps-options
-        [{:value nil :label (tr "workspace.options.stroke-cap.none")}
+        [{:value nil
+          :label (tr "workspace.options.stroke-cap.none")}
          :separator
-         {:value :line-arrow :label (tr "workspace.options.stroke-cap.line-arrow-short") :icon :stroke-arrow}
-         {:value :triangle-arrow :label (tr "workspace.options.stroke-cap.triangle-arrow-short") :icon :stroke-triangle}
-         {:value :square-marker :label (tr "workspace.options.stroke-cap.square-marker-short") :icon :stroke-rectangle}
-         {:value :circle-marker :label (tr "workspace.options.stroke-cap.circle-marker-short") :icon :stroke-circle}
-         {:value :diamond-marker :label (tr "workspace.options.stroke-cap.diamond-marker-short") :icon :stroke-diamond}
+         {:value :line-arrow
+          :label (tr "workspace.options.stroke-cap.line-arrow-short")
+          :icon :stroke-arrow}
+         {:value :triangle-arrow
+          :label (tr "workspace.options.stroke-cap.triangle-arrow-short")
+          :icon :stroke-triangle}
+         {:value :square-marker
+          :label (tr "workspace.options.stroke-cap.square-marker-short")
+          :icon :stroke-rectangle}
+         {:value :circle-marker
+          :label (tr "workspace.options.stroke-cap.circle-marker-short")
+          :icon :stroke-circle}
+         {:value :diamond-marker
+          :label (tr "workspace.options.stroke-cap.diamond-marker-short")
+          :icon :stroke-diamond}
          :separator
-         {:value :round :label (tr "workspace.options.stroke-cap.round") :icon :stroke-rounded}
-         {:value :square :label (tr "workspace.options.stroke-cap.square") :icon :stroke-squared}]
+         {:value :round
+          :label (tr "workspace.options.stroke-cap.round")
+          :icon :stroke-rounded}
+         {:value :square
+          :label (tr "workspace.options.stroke-cap.square")
+          :icon :stroke-squared}]
 
         on-cap-switch
         (mf/use-callback

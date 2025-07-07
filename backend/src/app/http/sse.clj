@@ -47,7 +47,9 @@
    "Pragma" "no-cache"})
 
 (defn response
-  [handler & {:keys [buf] :or {buf 32} :as opts}]
+  [handler & {:keys [buf]
+              :or {buf 32}
+              :as opts}]
   (fn [request]
     {::yres/headers default-headers
      ::yres/status 200

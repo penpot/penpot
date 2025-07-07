@@ -64,7 +64,8 @@
 
         current-link
         (mf/with-memo [slinks options page-ids]
-          (let [{:keys [pages who-comment who-inspect] :as params} (prepare-params options)
+          (let [{:keys [pages who-comment who-inspect]
+                 :as params} (prepare-params options)
                 slink  (d/seek #(and (= (:who-inspect %) who-inspect)
                                      (= (:who-comment %) who-comment)
                                      (= (:pages %) pages))
@@ -113,7 +114,8 @@
             (when ^boolean should-change?
               (reset! confirm* false)
               (swap! options*
-                     (fn [{:keys [pages] :as state}]
+                     (fn [{:keys [pages]
+                           :as state}]
                        (let [pages (if checked?
                                      (conj pages page-id)
                                      (disj pages page-id))]
@@ -302,8 +304,10 @@
                [:& select
                 {:class (stl/css :who-comment-select)
                  :default-value (dm/str (:who-comment options))
-                 :options [{:value "team" :label (tr "common.share-link.team-members")}
-                           {:value "all" :label (tr "common.share-link.all-users")}]
+                 :options [{:value "team"
+                            :label (tr "common.share-link.team-members")}
+                           {:value "all"
+                            :label (tr "common.share-link.all-users")}]
                  :on-change on-comment-change}]]]
              [:div {:class (stl/css :inspect-mode)}
               [:div {:class (stl/css :subtitle)}
@@ -312,8 +316,10 @@
                [:& select
                 {:class (stl/css :who-inspect-select)
                  :default-value (dm/str (:who-inspect options))
-                 :options [{:value "team" :label (tr "common.share-link.team-members")}
-                           {:value "all" :label (tr "common.share-link.all-users")}]
+                 :options [{:value "team"
+                            :label (tr "common.share-link.team-members")}
+                           {:value "all"
+                            :label (tr "common.share-link.all-users")}]
                  :on-change on-inspect-change}]]]])])]]]))
 
 

@@ -18,7 +18,8 @@
 (defn history-subcontext
   [plugin-id]
   (obj/reify {:name "HistorySubcontext"}
-    :$plugin {:enumerable false :get (fn [] plugin-id)}
+    :$plugin {:enumerable false
+              :get (fn [] plugin-id)}
 
     :undoBlockBegin
     (fn []

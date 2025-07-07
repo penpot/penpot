@@ -50,7 +50,8 @@
       for update skip locked")
 
 (defmethod ig/init-key ::wrk/dispatcher
-  [_ {:keys [::db/pool ::rds/redis ::wrk/tenant ::batch-size ::timeout] :as cfg}]
+  [_ {:keys [::db/pool ::rds/redis ::wrk/tenant ::batch-size ::timeout]
+      :as cfg}]
   (letfn [(get-tasks [conn]
             (let [prefix (str tenant ":%")]
               (seq (db/exec! conn [sql:select-next-tasks prefix batch-size]))))

@@ -82,7 +82,8 @@
         entries))
 
 (defn- update-with-analyze-result
-  [entries {:keys [file-id status] :as updated}]
+  [entries {:keys [file-id status]
+            :as updated}]
   (let [entries (filterv (comp uuid? :file-id) entries)
         status  (case status
                   :success :import-ready
@@ -255,7 +256,8 @@
 
      [:div {:class (stl/css :file-name)}
       (if loading?
-        [:> loader* {:width 16 :title (tr "labels.loading")}]
+        [:> loader* {:width 16
+                     :title (tr "labels.loading")}]
         [:div {:class (stl/css-case
                        :file-icon true
                        :icon-fill import-ready?)}

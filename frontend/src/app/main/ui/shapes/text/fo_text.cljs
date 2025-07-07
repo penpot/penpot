@@ -56,7 +56,8 @@
         children (obj/get props "children")
         style    (sts/generate-paragraph-styles shape node)
         dir      (:text-direction node "auto")]
-    [:p.paragraph {:style style :dir dir} children]))
+    [:p.paragraph {:style style
+                   :dir dir} children]))
 
 ;; -- Text nodes
 (mf/defc render-node

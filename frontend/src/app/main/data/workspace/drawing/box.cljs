@@ -44,7 +44,8 @@
       (> dy dx)
       (assoc :x (- (:x point) (* sx (- dy dx)))))))
 
-(defn resize-shape [{:keys [x y width height] :as shape} initial point lock? mod?]
+(defn resize-shape [{:keys [x y width height]
+                     :as shape} initial point lock? mod?]
   (if (and (some? x) (some? y) (some? width) (some? height))
     (let [draw-rect  (grc/make-rect initial (cond-> point lock? (adjust-ratio initial)))
           shape-rect (grc/make-rect x y width height)

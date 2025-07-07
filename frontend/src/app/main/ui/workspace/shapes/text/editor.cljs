@@ -40,14 +40,16 @@
         dir    (:text-direction data "auto")]
 
 
-    [:div {:style style :dir dir}
+    [:div {:style style
+           :dir dir}
      [:> draft/EditorBlock props]]))
 
 (mf/defc selection-component
   {::mf/wrap-props false}
   [props]
   (let [children (obj/get props "children")]
-    [:span {:style {:background "#ccc" :display "inline-block"}} children]))
+    [:span {:style {:background "#ccc"
+                    :display "inline-block"}} children]))
 
 (defn- render-block
   [block shape]
@@ -100,7 +102,8 @@
    ::mf/wrap-props false
    ::mf/forward-ref true}
   [props _]
-  (let [{:keys [id content] :as shape} (obj/get props "shape")
+  (let [{:keys [id content]
+         :as shape} (obj/get props "shape")
 
         state-map     (mf/deref refs/workspace-editor-state)
         state         (get state-map id empty-editor-state)
@@ -338,9 +341,15 @@
                      :transform (dm/str (gsh/transform-matrix shape))}
      [:defs
       [:clipPath {:id clip-id}
-       [:rect {:x x :y y :width width :height height}]]]
+       [:rect {:x x
+               :y y
+               :width width
+               :height height}]]]
 
-     [:foreignObject {:x x :y y :width width :height height}
+     [:foreignObject {:x x
+                      :y y
+                      :width width
+                      :height height}
       [:div {:style style}
        [:& text-shape-edit-html
         {:shape shape

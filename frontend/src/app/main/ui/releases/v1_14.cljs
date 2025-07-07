@@ -18,7 +18,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/login-on.jpg" :border "0" :alt "What's new Beta release 1.14"}]]
+         [:img {:src "images/login-on.jpg"
+                :border "0"
+                :alt "What's new Beta release 1.14"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "What's new?"]]
@@ -28,15 +30,19 @@
           [:p "We are happy to show you a sneak peek of the most important stuff that the Beta 1.14 version brings."]]
          [:div.modal-navigation
           [:button.btn-secondary {:on-click next} "Continue"]]]
-        [:img.deco {:src "images/deco-left.png" :border "0"}]
-        [:img.deco.right {:src "images/deco-right.png" :border "0"}]]]]
+        [:img.deco {:src "images/deco-left.png"
+                    :border "0"}]
+        [:img.deco.right {:src "images/deco-right.png"
+                          :border "0"}]]]]
 
      0
      [:div.modal-overlay
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.14-shortcuts.gif" :border "0" :alt "Shortcuts panel"}]]
+         [:img {:src "images/features/1.14-shortcuts.gif"
+                :border "0"
+                :alt "Shortcuts panel"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Shortcuts panel"]]
@@ -55,7 +61,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.14-color-group.gif" :border "0" :alt "Colors selection"}]]
+         [:img {:src "images/features/1.14-color-group.gif"
+                :border "0"
+                :alt "Colors selection"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Colors selection"]]
@@ -74,7 +82,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.14-fix-on-scroll.gif" :border "0" :alt "Fix elements at scroll"}]]
+         [:img {:src "images/features/1.14-fix-on-scroll.gif"
+                :border "0"
+                :alt "Fix elements at scroll"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Fix elements at scroll"]]
@@ -93,7 +103,9 @@
       [:div.animated {:class klass}
        [:div.modal-container.onboarding.feature
         [:div.modal-left
-         [:img {:src "images/features/1.14-group-assets.gif" :border "0" :alt "Group library assets with drag & drop"}]]
+         [:img {:src "images/features/1.14-group-assets.gif"
+                :border "0"
+                :alt "Group library assets with drag & drop"}]]
         [:div.modal-right
          [:div.modal-title
           [:h2 "Group library assets with drag & drop"]]
