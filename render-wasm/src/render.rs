@@ -70,7 +70,7 @@ impl PendingNodes {
         self.list.pop()
     }
 
-    pub fn prepare(&mut self, tree: &mut HashMap<Uuid, &mut Shape>) {
+    pub fn prepare(&mut self, tree: &HashMap<Uuid, &mut Shape>) {
         self.list.clear();
         if self.list.capacity() < tree.len() {
             self.list.reserve(tree.len() - self.list.capacity());
@@ -810,15 +810,6 @@ impl RenderState {
             if self.render_in_progress {
                 self.cancel_animation_frame();
                 self.render_request_id = Some(wapi::request_animation_frame!());
-            } else {
-                if self.render_is_full {
-                    // if let Some(next_tile) = self.pending_tiles.pop() {
-                    //     self.update_render_context(&next_tile);
-                    emscripten::log!(emscripten::Log::Default, "whatever {}", self.pending_tiles.len());
-                    let tile_rect = self.get_current_tile_bounds();
-                    self.apply_render_to_final_canvas(tile_rect);
-                }
-                performance::end_measure!("render");
             }
         }
         performance::end_measure!("process_animation_frame");
@@ -830,6 +821,20 @@ impl RenderState {
         self.pending_nodes.is_empty() ||
         (iteration % NODE_BATCH_THRESHOLD == 0
             && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS)
+    }
+
+    #[inline]
+    pub fn render_current_tile_to_final_canvas(&mut self, is_empty: bool) {
+        let tile_rect = self.get_current_tile_bounds();
+        if !is_empty {
+            self.apply_render_to_final_canvas(tile_rect);
+        } else {
+            self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
+                let mut paint = skia::Paint::default();
+                paint.set_color(self.background_color);
+                s.canvas().draw_rect(tile_rect, &paint);
+            });
+        }
     }
 
     #[inline]
@@ -964,7 +969,7 @@ impl RenderState {
 
     pub fn render_shape_tree_full(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -991,13 +996,19 @@ impl RenderState {
         }
 
         debug::render_wasm_label(self);
+        while let Some(next_tile) = self.pending_tiles.pop() {
+            emscripten::log!(emscripten::Log::Default, "next_tile {} {}", next_tile.0, next_tile.1);
+            self.update_render_context(&next_tile);
+            self.render_current_tile_to_final_canvas(false);
+        }
         emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:end");
+
         Ok((is_empty, should_stop_rendering))
     }
 
     pub fn render_shape_tree_full_uncached_shape_tile(
         &mut self,
-        element: &mut Shape,
+        element: &&mut Shape,
         node_render_state: &NodeRenderState,
         tile: &tiles::Tile,
         modifiers: &HashMap<Uuid, Matrix>,
@@ -1034,7 +1045,7 @@ impl RenderState {
 
     pub fn render_shape_tree_full_uncached_shape_tiles(
         &mut self,
-        element: &mut Shape,
+        element: &&mut Shape,
         node_render_state: &NodeRenderState,
         tiles: &HashSet<tiles::Tile>,
         modifiers: &HashMap<Uuid, Matrix>,
@@ -1062,7 +1073,7 @@ impl RenderState {
 
     pub fn render_shape_tree_full_uncached(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &HashMap<Uuid, &mut Shape>,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -1079,14 +1090,14 @@ impl RenderState {
             );
             let NodeRenderState {
                 id: node_id,
-                visited_children: visited_children,
+                visited_children,
                 clip_bounds: _clip_bounds,
                 visited_mask: _visited_mask,
                 mask,
             } = node_render_state;
 
             is_empty = false;
-            let element = tree.get_mut(&node_id).ok_or(
+            let element = tree.get(&node_id).ok_or(
                 "Error: Element with root_id {node_render_state.id} not found in the tree."
                     .to_string(),
             )?;
@@ -1145,7 +1156,7 @@ impl RenderState {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
 
-                let mut children_ids = modified_children_ids(element, structure.get(&element.id), false);
+                let mut children_ids = element.modified_children_ids(structure.get(&element.id), false);
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
@@ -1329,16 +1340,7 @@ impl RenderState {
                         return Ok(());
                     }
                     performance::end_measure!("render_shape_tree::uncached");
-                    let tile_rect = self.get_current_tile_bounds();
-                    if !is_empty {
-                        self.apply_render_to_final_canvas(tile_rect);
-                    } else {
-                        self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
-                            let mut paint = skia::Paint::default();
-                            paint.set_color(self.background_color);
-                            s.canvas().draw_rect(tile_rect, &paint);
-                        });
-                    }
+                    self.render_current_tile_to_final_canvas(is_empty);
                 }
             }
 
@@ -1489,10 +1491,6 @@ impl RenderState {
     }
 
     pub fn get_scale(&self) -> f32 {
-        self.viewbox.zoom() * self.options.dpr()
-    }
-
-    pub fn get_scale_mut(&mut self) -> f32 {
         self.viewbox.zoom() * self.options.dpr()
     }
 

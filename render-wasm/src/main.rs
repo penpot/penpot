@@ -119,7 +119,7 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 
 #[no_mangle]
 pub extern "C" fn render(_: i32, full: bool) {
-    with_state!(state, {
+    with_state_mut!(state, {
         state
             .start_render_loop(performance::get_time(), full)
             .expect("Error rendering");
