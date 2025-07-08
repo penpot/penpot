@@ -350,6 +350,7 @@ impl TextLeaf {
         style.set_letter_spacing(paragraph.letter_spacing);
         style.set_height(paragraph.line_height);
         style.set_height_override(true);
+
         style.set_decoration_type(match self.text_decoration {
             0 => skia::textlayout::TextDecoration::NO_DECORATION,
             1 => skia::textlayout::TextDecoration::UNDERLINE,
@@ -358,8 +359,8 @@ impl TextLeaf {
             _ => skia::textlayout::TextDecoration::NO_DECORATION,
         });
 
-        // FIXME fix decoration styles
-        style.set_decoration_color(paint.color());
+        // Trick to avoid showing the text decoration
+        style.set_decoration_thickness_multiplier(0.0);
 
         let mut font_families = vec![
             self.serialized_font_family(),
@@ -652,13 +653,8 @@ fn get_text_stroke_paints(stroke: &Stroke, bounds: &Rect) -> Vec<Paint> {
     match stroke.kind {
         StrokeKind::Inner => {
             let mut paint = skia::Paint::default();
-            paint.set_blend_mode(skia::BlendMode::DstOver);
-            paint.set_anti_alias(true);
-            paints.push(paint);
-
-            let mut paint = skia::Paint::default();
             paint.set_style(skia::PaintStyle::Stroke);
-            paint.set_blend_mode(skia::BlendMode::SrcATop);
+            paint.set_blend_mode(skia::BlendMode::SrcIn);
             paint.set_anti_alias(true);
             paint.set_stroke_width(stroke.width * 2.0);
 

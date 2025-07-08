@@ -1,6 +1,6 @@
 use super::{RenderState, Shape, SurfaceId};
 use crate::shapes::VerticalAlign;
-use skia_safe::{textlayout::Paragraph, Paint, Path};
+use skia_safe::{textlayout::Paragraph, FontMetrics, Paint, Path};
 
 pub fn render(
     render_state: &mut RenderState,
@@ -13,6 +13,7 @@ pub fn render(
         .canvas(surface_id.unwrap_or(SurfaceId::Fills));
 
     let container_height = shape.selrect().height();
+
     for group in paragraphs {
         let total_paragraphs_height: f32 = group.iter().map(|p| p.height()).sum();
 
@@ -22,11 +23,102 @@ pub fn render(
             _ => 0.0,
         };
 
+        let mut offset_lines_y = offset_y;
+
         for skia_paragraph in group {
-            let xy = (shape.selrect().x(), shape.selrect.y() + offset_y);
+            let xy = (shape.selrect().x(), shape.selrect().y() + offset_y);
             skia_paragraph.paint(canvas, xy);
             offset_y += skia_paragraph.height();
         }
+
+        for skia_paragraph in group {
+            let xy = (shape.selrect().x(), shape.selrect().y() + offset_lines_y);
+
+            for line_metrics in skia_paragraph.get_line_metrics().iter() {
+                let style_metrics: Vec<_> = line_metrics
+                    .get_style_metrics(line_metrics.start_index..line_metrics.end_index)
+                    .into_iter()
+                    .collect();
+
+                let mut current_x_offset = 0.0;
+                let total_line_width = line_metrics.width as f32;
+                let total_chars = line_metrics.end_index - line_metrics.start_index;
+
+                for (i, (index, style_metric)) in style_metrics.iter().enumerate() {
+                    let text_style = style_metric.text_style;
+                    let font_metrics = style_metric.font_metrics;
+                    let next_index = style_metrics
+                        .get(i + 1)
+                        .map(|(next_i, _)| *next_i)
+                        .unwrap_or(line_metrics.end_index);
+                    let char_count = next_index - index;
+                    let segment_width = if total_chars > 0 {
+                        (char_count as f32 / total_chars as f32) * total_line_width
+                    } else {
+                        char_count as f32 * font_metrics.avg_char_width
+                    };
+
+                    if text_style.decoration().ty
+                        != skia_safe::textlayout::TextDecoration::NO_DECORATION
+                    {
+                        let decoration_type = text_style.decoration().ty;
+                        let text_left = xy.0 + current_x_offset;
+                        let text_top =
+                            xy.1 + line_metrics.baseline as f32 - line_metrics.ascent as f32;
+                        let text_width = segment_width;
+                        let line_height = line_metrics.height as f32;
+
+                        let r = calculate_text_decoration_rect(
+                            decoration_type,
+                            font_metrics,
+                            text_left,
+                            text_top,
+                            text_width,
+                            line_height,
+                        );
+                        if let Some(decoration_rect) = r {
+                            let decoration_paint = text_style.foreground().clone();
+                            canvas.draw_rect(decoration_rect, &decoration_paint);
+                        }
+                    }
+
+                    current_x_offset += segment_width;
+                }
+            }
+            offset_lines_y += skia_paragraph.height();
+        }
+    }
+}
+
+pub fn calculate_text_decoration_rect(
+    decoration: skia_safe::textlayout::TextDecoration,
+    font_metrics: FontMetrics,
+    blob_left: f32,
+    blob_offset_y: f32,
+    text_width: f32,
+    blob_height: f32,
+) -> Option<skia_safe::Rect> {
+    let thickness = font_metrics.underline_thickness().unwrap_or(1.0);
+    match decoration {
+        skia_safe::textlayout::TextDecoration::LINE_THROUGH => {
+            let line_position = blob_height / 2.0;
+            Some(skia_safe::Rect::new(
+                blob_left,
+                blob_offset_y + line_position - thickness / 2.0,
+                blob_left + text_width,
+                blob_offset_y + line_position + thickness / 2.0,
+            ))
+        }
+        skia_safe::textlayout::TextDecoration::UNDERLINE => {
+            let underline_y = blob_offset_y + blob_height - thickness;
+            Some(skia_safe::Rect::new(
+                blob_left,
+                underline_y,
+                blob_left + text_width,
+                underline_y + thickness,
+            ))
+        }
+        _ => None,
     }
 }
 
