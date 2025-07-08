@@ -78,6 +78,15 @@
         data))
    (vals @fontsdb)))
 
+(defn find-font-family
+  "Case insensitive lookup of font-family."
+  [family]
+  (let [family' (str/lower family)]
+    (d/seek
+     (fn [{:keys [family]}]
+       (= family' (str/lower family)))
+     (vals @fontsdb))))
+
 (defn resolve-variants
   [id]
   (get-in @fontsdb [id :variants]))

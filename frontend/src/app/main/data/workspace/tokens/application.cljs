@@ -27,7 +27,8 @@
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.v2.core :as ptk]))
+   [potok.v2.core :as ptk]
+   [clojure.string :as str]))
 
 (declare token-properties)
 
@@ -359,16 +360,21 @@
 (defn update-font-family
   ([value shape-ids attributes] (update-font-family value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [font-id (some-> value
-                         (first)
-                         (#(fonts/find-font-data {:family %}))
+   (let [font-family (first value)
+         font-id (some-> font-family
+                         (fonts/find-font-family)
                          :id)
+         text-attrs (cond
+                      font-id {:font-id font-id}
+                      font-family {:font-id font-family
+                                   :family font-family}
+                      :else nil)
          update-node? (fn [node]
                         (or (txt/is-text-node? node)
                             (txt/is-paragraph-node? node)))]
-     (when font-id
+     (when text-attrs
        (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? d/txt-merge {:font-id font-id})
+                           #(txt/update-text-content % update-node? d/txt-merge text-attrs)
                            {:ignore-touched true
                             :page-id page-id})))))
 

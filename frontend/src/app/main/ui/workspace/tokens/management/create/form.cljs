@@ -700,7 +700,7 @@
                                                 (dom/get-value)
                                                 (ctt/split-font-family)
                                                 (first)
-                                                (#(fonts/find-font-data {:family %})))))
+                                                (fonts/find-font-family))))
         current-font (deref current-font*)]
     [:div {:class (stl/css :font-select-wrapper)}
      [:> font-selector* {:current-font current-font
@@ -710,7 +710,7 @@
 
 (mf/defc font-picker*
   [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value]}]
-  (let [font* (mf/use-state (fonts/find-font-data {:family default-value}))
+  (let [font* (mf/use-state (fonts/find-font-family default-value))
         font (deref font*)
         set-font (mf/use-fn
                   (mf/deps font)
