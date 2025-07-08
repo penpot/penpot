@@ -8,6 +8,7 @@
   (:require
    #?(:clj [app.common.fressian :as fres])
    #?(:clj [clojure.data.json :as json])
+   #?(:clj [clojure.pprint :as pp])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -186,7 +187,13 @@
                                    "name" (clj->js name)
                                    "description" (clj->js description)
                                    "modified-at" (clj->js modified-at)
-                                   "tokens" (clj->js tokens)))])
+                                   "tokens" (clj->js tokens)))
+
+             cljs.core/IPrintWithWriter
+             (-pr-writer [^TokenSet this writer opts]
+                         (-write writer "#penpot/token-set ")
+                         (-pr-writer (deref this) writer opts))])
+
   INamedItem
   (get-name [_]
     name)
@@ -250,6 +257,20 @@
 
   (get-tokens-map [_]
     tokens))
+
+#?(:clj
+   (do
+     (defmethod print-method TokenSet [^TokenSet this ^java.io.Writer w]
+       (.write w "#penpot/token-set ")
+       (print-method (deref this) w))
+
+     (defmethod print-dup TokenSet [^TokenSet this ^java.io.Writer w]
+       (print-method this w))
+
+     (defmethod pp/simple-dispatch TokenSet [^TokenSet obj]
+       (.write *out* "#penpot/token-set ")
+       (pp/pprint-newline :miser)
+       (pp/pprint (deref obj)))))
 
 (defn token-set?
   [o]
@@ -1201,7 +1222,26 @@ Will return a value that matches this schema:
   (validate [_]
     (and (valid-token-sets? sets)
          (valid-token-themes? themes)
-         (valid-active-token-themes? active-themes))))
+         (valid-active-token-themes? active-themes)))
+
+  #?@(:cljs [cljs.core/IPrintWithWriter
+             (-pr-writer [this writer opts]
+                         (-write writer "#penpot/tokens-lib ")
+                         (-pr-writer (deref this) writer opts))]))
+
+#?(:clj
+   (do
+     (defmethod print-method TokensLib [^TokensLib this ^java.io.Writer w]
+       (.write w "#penpot/tokens-lib ")
+       (print-method (deref this) w))
+
+     (defmethod print-dup TokensLib [^TokensLib this ^java.io.Writer w]
+       (print-method this w))
+
+     (defmethod pp/simple-dispatch TokensLib [^TokensLib obj]
+       (.write *out* "#penpot/tokens-lib ")
+       (pp/pprint-newline :miser)
+       (pp/pprint (deref obj)))))
 
 (defn get-hidden-theme
   [tokens-lib]
