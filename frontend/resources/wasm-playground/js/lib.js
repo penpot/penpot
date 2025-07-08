@@ -32,7 +32,7 @@ export function assignCanvas(canvas) {
 
 export function hexToU32ARGB(hex, opacity = 1) {
   const rgb = parseInt(hex.slice(1), 16);
-  const a = Math.floor(opacity * 0xFF);
+  const a = Math.floor(opacity * 0xff);
   const argb = (a << 24) | rgb;
   return argb >>> 0;
 }
@@ -42,9 +42,9 @@ export function getRandomInt(min, max) {
 }
 
 export function getRandomColor() {
-  const r = getRandomInt(0, 256).toString(16).padStart(2, '0');
-  const g = getRandomInt(0, 256).toString(16).padStart(2, '0');
-  const b = getRandomInt(0, 256).toString(16).padStart(2, '0');
+  const r = getRandomInt(0, 256).toString(16).padStart(2, "0");
+  const g = getRandomInt(0, 256).toString(16).padStart(2, "0");
+  const b = getRandomInt(0, 256).toString(16).padStart(2, "0");
   return `#${r}${g}${b}`;
 }
 
@@ -103,12 +103,12 @@ export function addShapeSolidStrokeFill(argb) {
 
 function serializePathAttrs(svgAttrs) {
   return Object.entries(svgAttrs).reduce((acc, [key, value]) => {
-    return acc + key + '\0' + value + '\0';
-  }, '');
+    return acc + key + "\0" + value + "\0";
+  }, "");
 }
 
 export function draw_star(x, y, width, height) {
-  const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE 
+  const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE
   const ptr = allocBytes(len * 28);
   const heap = getHeapU32();
   const dv = new DataView(heap.buffer);
@@ -120,7 +120,7 @@ export function draw_star(x, y, width, height) {
 
   const star = [];
   for (let i = 0; i < 10; i++) {
-    const angle = Math.PI / 5 * i - Math.PI / 2;
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
     const r = i % 2 === 0 ? outerRadius : innerRadius;
     const px = cx + r * Math.cos(angle);
     const py = cy + r * Math.sin(angle);
@@ -149,7 +149,7 @@ export function draw_star(x, y, width, height) {
   Module._set_shape_path_content();
 
   const str = serializePathAttrs({
-    "fill": "none",
+    fill: "none",
     "stroke-linecap": "round",
     "stroke-linejoin": "round",
   });
@@ -158,7 +158,6 @@ export function draw_star(x, y, width, height) {
   Module.stringToUTF8(str, offset, size);
   Module._set_shape_path_attrs(3);
 }
-  
 
 export function setShapeChildren(shapeIds) {
   const offset = allocBytes(shapeIds.length * 16);
@@ -227,8 +226,12 @@ export function setupInteraction(canvas) {
     }
   });
 
-  canvas.addEventListener("mouseup", () => { isPanning = false; });
-  canvas.addEventListener("mouseout", () => { isPanning = false; });
+  canvas.addEventListener("mouseup", () => {
+    isPanning = false;
+  });
+  canvas.addEventListener("mouseout", () => {
+    isPanning = false;
+  });
 }
 
 export function addTextShape(x, y, fontSize, text) {

@@ -25,8 +25,8 @@
   <script type="module">
     import initWasmModule from '/js/render_wasm.js';
     import {
-      init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
-      getRandomFloat, useShape, setShapeChildren, setupInteraction, addShapeSolidStrokeFill
+      addShapeSolidFill, hexToU32ARGB, getRandomInt, getRandomColor,
+      getRandomFloat, addShape, setShapeChildren, setup
     } from './js/lib.js';
 
     const canvas = document.getElementById("canvas");
@@ -37,41 +37,38 @@
     const shapes = params.get("shapes") || 1000;
 
     initWasmModule().then(Module => {
-      init(Module);
-      assignCanvas(canvas);
-      Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
-      Module._set_view(1, 0, 0);
-      Module._init_shapes_pool(shapes + 1);
-      setupInteraction(canvas);
+      setup({
+        instance: Module,
+        canvas,
+        shapes
+      })
 
       const children = [];
-      for (let i = 0; i < shapes; i++) {
-        const uuid = crypto.randomUUID();
-        children.push(uuid);
-
-        useShape(uuid);
-        Module._set_parent(0, 0, 0, 0);
-        Module._set_shape_type(3);
-        const x1 = getRandomInt(0, canvas.width);
-        const y1 = getRandomInt(0, canvas.height);
-        const width = getRandomInt(20, 100);
-        const height = getRandomInt(20, 100);
-        Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
-
-        const color = getRandomColor();
-        const argb = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
-        addShapeSolidFill(argb)
-
-        Module._add_shape_center_stroke(10, 0,  0, 0);
-        const argb2 = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
-        addShapeSolidStrokeFill(argb2);
+      for (let shape = 0; shape < shapes; shape++) {
+        const color = getRandomColor()
+        children.push(
+          addShape({
+            parent: "00000000-0000-0000-0000-000000000000",
+            type: "rect", // rect
+            selrect: {
+              x: getRandomInt(0, canvas.width),
+              y: getRandomInt(0, canvas.height),
+              width: getRandomInt(20, 100),
+              height: getRandomInt(20, 100),
+            },
+            fills: [{ type: "solid", color, opacity: getRandomFloat(0.1, 1.0) }],
+            strokes: [{ width: 10, type: "solid", color, opacity: getRandomFloat(0.1, 1.0) }]
+          })
+        );
       }
 
-      useShape("00000000-0000-0000-0000-000000000000");
-      setShapeChildren(children);
+      addShape({
+        id: "00000000-0000-0000-0000-000000000000",
+        children: children
+      })
 
       performance.mark('render:begin');
-      Module._render(Date.now(), false);
+      Module._render(performance.now(), true);
       performance.mark('render:end');
       const { duration } = performance.measure('render', 'render:begin', 'render:end');
       // alert(`render time: ${duration.toFixed(2)}ms`);
