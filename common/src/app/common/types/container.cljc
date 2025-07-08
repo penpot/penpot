@@ -15,7 +15,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.plugins :as ctpg]
+   [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as cttx]
@@ -30,21 +30,22 @@
 (def valid-container-types
   #{:page :component})
 
-(sm/register!
- ^{::sm/type ::container}
- [:map
-  [:id ::sm/uuid]
-  [:type {:optional true}
-   [::sm/one-of valid-container-types]]
-  [:name :string]
-  [:path {:optional true} [:maybe :string]]
-  [:modified-at {:optional true} ::sm/inst]
-  [:objects {:optional true}
-   [:map-of {:gen/max 10} ::sm/uuid :map]]
-  [:plugin-data {:optional true} ::ctpg/plugin-data]])
+(def schema:container
+  (sm/register!
+   ^{::sm/type ::container}
+   [:map
+    [:id ::sm/uuid]
+    [:type {:optional true}
+     [::sm/one-of valid-container-types]]
+    [:name :string]
+    [:path {:optional true} [:maybe :string]]
+    [:modified-at {:optional true} ::sm/inst]
+    [:objects {:optional true}
+     [:map-of {:gen/max 10} ::sm/uuid :map]]
+    [:plugin-data {:optional true} schema:plugin-data]]))
 
 (def check-container
-  (sm/check-fn ::container))
+  (sm/check-fn schema:container))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
