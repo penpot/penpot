@@ -21,7 +21,7 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Corners, Fill, Shape, StructureEntry, Type};
+use crate::shapes::{Corners, Fill, Shape, SolidColor, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
