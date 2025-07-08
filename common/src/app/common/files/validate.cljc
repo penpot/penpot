@@ -669,7 +669,6 @@
               :file-id (:id file)
               :details errors)))
 
-
 (declare compare-slots)
 
 ;; Optional check to look for missing swap slots.
