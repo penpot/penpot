@@ -11,6 +11,7 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.team :as dtm]
+   [app.main.errors :as errors]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
@@ -130,7 +131,10 @@
                                                (assoc query-params :team-id (:default-team-id profile))))))
 
                          :else
-                         (st/emit! (rt/assign-exception {:type :not-found})))))))))
+                         (st/emit! (rt/assign-exception {:type :not-found}))))
+
+                     (fn [cause]
+                       (errors/on-error cause)))))))
 
 (defn init-routes
   []
