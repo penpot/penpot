@@ -7,7 +7,6 @@
 (ns app.rpc.commands.files-create
   (:require
    [app.binfile.common :as bfc]
-   [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.file :as ctf]
@@ -41,9 +40,7 @@
     :or {is-shared false revn 0 create-page true}
     :as params}]
 
-  (dm/assert!
-   "expected a valid connection"
-   (db/connection? conn))
+  (assert (db/connection? conn) "expected a valid connection")
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             cfeat/*current* features]
