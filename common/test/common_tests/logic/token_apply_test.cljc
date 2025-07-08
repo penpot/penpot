@@ -66,7 +66,7 @@
                                   (ctob/add-token-in-set "test-token-set"
                                                          (ctob/make-token :name "token-font-family"
                                                                           :type :font-family
-                                                                          :value "Helvetica"))))
+                                                                          :value ["Helvetica" "Arial" "sans-serif"]))))
       (tho/add-frame :frame1)
       (tho/add-text :text1 "Hello World!")))
 
@@ -82,7 +82,7 @@
       (tht/apply-token-to-shape :frame1 "token-dimensions" [:width :height] [:width :height] 100)
       (tht/apply-token-to-shape :text1 "token-font-size" [:font-size] [:font-size] 24)
       (tht/apply-token-to-shape :text1 "token-letter-spacing" [:letter-spacing] [:letter-spacing] 2)
-      (tht/apply-token-to-shape :text1 "token-font-family" [:font-family] [:font-family] "Helvetica")))
+      (tht/apply-token-to-shape :text1 "token-font-family" [:font-family] [:font-family] ["Helvetica" "Arial" "sans-serif"])))
 
 (t/deftest apply-tokens-to-shape
   (let [;; ==== Setup
