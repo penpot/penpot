@@ -27,8 +27,7 @@
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
-   [potok.v2.core :as ptk]
-   [clojure.string :as str]))
+   [potok.v2.core :as ptk]))
 
 (declare token-properties)
 
