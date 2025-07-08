@@ -1666,19 +1666,26 @@
 
 
 (defn- text-partial-change-value
-  [touched-shape untouched-shape touched]
+  [touched-content untouched-content touched]
   (cond
     (touched :text-content-structure-same-attrs)
-    ;; Keep the touched-shape structure and texts, update its attrs to make them like the untouched-shape
-    (cttx/copy-attrs-keys touched-shape (cttx/get-first-paragraph-text-attrs untouched-shape))
+    (if (touched :text-content-attribute)
+      ;; Both structure and attrs has been touched, keep the
+      ;; touched-content
+      touched-content
+      ;; Keep the touched-content structure and texts, update
+      ;; its attrs to make them like the untouched-content
+      (cttx/copy-attrs-keys touched-content (cttx/get-first-paragraph-text-attrs untouched-content)))
 
     (touched :text-content-text)
-    ;; Keep the texts touched in touched-shape copy the texts from dest over the attrs of untouched-shape
-    (cttx/copy-text-keys touched-shape untouched-shape)
+    ;; Keep the texts touched in touched-content, so copy the
+    ;; texts from touched-content into untouched-content
+    (cttx/copy-text-keys touched-content untouched-content)
 
     (touched :text-content-attribute)
-    ;; Keep the attrs touched in touched-shape copy the texts from untouched-shape over the attrs of touched-shape
-    (cttx/copy-text-keys untouched-shape touched-shape)))
+    ;; Keep the attrs touched in touched-content, so copy the
+    ;; texts from untouched-content into touched-content
+    (cttx/copy-text-keys untouched-content touched-content)))
 
 (defn- add-update-attr-operations
   [attr dest-shape roperations uoperations attr-val]
