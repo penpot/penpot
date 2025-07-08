@@ -117,6 +117,7 @@
    [:ref-id {:optional true} ::sm/uuid]
    [:ref-file {:optional true} ::sm/uuid]])
 
+;; This schema represent an "applied color"
 (def schema:color
   [:and
    [:merge {:title "Color"}

@@ -21,7 +21,7 @@
 - Fix display error message on register form [Taiga #11444](https://tree.taiga.io/project/penpot/issue/11444)
 - Fix toggle focus mode did not restore viewport and selection upon exit [GitHub #6280](https://github.com/penpot/penpot/issues/6820)
 
-## 2.8.0 (Next / Unreleased)
+## 2.8.0
 
 ### :rocket: Epics and highlights
 
@@ -36,8 +36,8 @@ on [its own changelog](library/CHANGES.md)
 **Penpot migrate from Redis to Valkey**
 
 As [Valkey](https://valkey.io/) is an opne-souce fork of [Redis](https://redis.io/)
-version 7.2.4, this version of Penpot will be compatible with Redis but may diverge 
-in future versions. Therefore, **migration from Redis to ValKey is recommended for all 
+version 7.2.4, this version of Penpot will be compatible with Redis but may diverge
+in future versions. Therefore, **migration from Redis to ValKey is recommended for all
 on-premises instances** that want to keep up to date.
 
 ### :heart: Community contributions (Thank you!)
