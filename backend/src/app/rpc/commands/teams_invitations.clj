@@ -310,6 +310,93 @@
                   :invitations invitations}
         {::audit/props {:invitations (count invitations)}}))))
 
+;; --- Helper: Resend Team Invitations (with individual roles)
+
+(defn- resend-team-invitations
+  [{:keys [::db/conn] :as cfg} {:keys [profile team invitations] :as params}]
+  (let [invitation-emails (into #{} (map :email) invitations)
+
+        join-requests     (->> (get-valid-access-request-profiles conn (:id team))
+                               (d/index-by :email))
+
+        team-members      (into #{} xf:map-email
+                                (teams/get-team-members conn (:id team)))
+
+        sent-invitations  (into #{}
+                                (comp
+                                 ;; Filter out already existing members
+                                 (remove #(contains? team-members (:email %)))
+                                 ;; Filter out join-requested members
+                                 (remove #(contains? join-requests (:email %)))
+                                 (map (fn [{:keys [email role]}]
+                                        (create-invitation cfg
+                                                         (-> params
+                                                             (assoc :email email)
+                                                             (assoc :role role)))))
+                                 (remove nil?))
+                                invitations)]
+
+    ;; For requested invitations, do not send invitation emails, add
+    ;; the user directly to the team
+    (->> join-requests
+         (filter #(contains? invitation-emails (key %)))
+         (map (fn [[email member]]
+                (let [role (:role (first (filter #(= (:email %) email) invitations)))]
+                  (add-member-to-team conn profile team role member))))
+         (doall))
+
+    sent-invitations))
+
+(def ^:private schema:resend-team-invitations
+  [:map {:title "resend-team-invitations"}
+   [:team-id ::sm/uuid]
+   [:invitations [:vector [:map
+                           [:email ::sm/email]
+                           [:role ::types.team/role]]]]])
+
+(sv/defmethod ::resend-team-invitations
+  "A rpc call that allows to resend invitations with individual roles per email."
+  {::doc/added "1.17"
+   ::doc/module :teams
+   ::sm/params schema:resend-team-invitations}
+  [cfg {:keys [::rpc/profile-id team-id invitations] :as params}]
+  (let [perms       (teams/get-permissions cfg profile-id team-id)
+        profile     (db/get-by-id cfg :profile profile-id)
+        invitations (mapv (fn [inv]
+                            (update inv :email profile/clean-email))
+                          invitations)]
+
+    (when-not (:is-admin perms)
+      (ex/raise :type :validation
+                :code :insufficient-permissions))
+
+    (when (> (count invitations) max-invitations-by-request-threshold)
+      (ex/raise :type :validation
+                :code :max-invitations-by-request
+                :hint "the maximum of invitation on single request is reached"
+                :threshold max-invitations-by-request-threshold))
+
+    (-> cfg
+        (assoc ::quotes/profile-id profile-id)
+        (assoc ::quotes/team-id team-id)
+        (assoc ::quotes/incr (count invitations))
+        (quotes/check! {::quotes/id ::quotes/invitations-per-team}
+                       {::quotes/id ::quotes/profiles-per-team}))
+
+    ;; Check if the current profile is allowed to send emails
+    (teams/check-profile-muted cfg profile)
+
+    (let [team             (db/get-by-id cfg :team team-id)
+          sent-invitations (db/tx-run! cfg resend-team-invitations
+                                       (-> params
+                                           (assoc :profile profile)
+                                           (assoc :team team)
+                                           (assoc :invitations invitations)))]
+
+      (with-meta {:total (count sent-invitations)
+                  :invitations sent-invitations}
+        {::audit/props {:invitations (count sent-invitations)}}))))
+
 ;; --- Mutation: Create Team & Invite Members
 
 (def ^:private schema:create-team-with-invitations

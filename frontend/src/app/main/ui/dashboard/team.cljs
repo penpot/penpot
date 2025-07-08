@@ -22,11 +22,13 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.change-owner]
-   [app.main.ui.dashboard.subscription :refer [team*
-                                               members-cta*
+   [app.main.ui.dashboard.subscription :refer [members-cta*
                                                show-subscription-members-main-banner?
-                                               show-subscription-members-small-banner?]]
+                                               show-subscription-members-small-banner?
+                                               team*]]
    [app.main.ui.dashboard.team-form]
+   [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.icons :as i]
    [app.main.ui.notifications.badge :refer [badge-notification]]
@@ -35,7 +37,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [linked.set :as s]))
 
 (def ^:private arrow-icon
   (i/icon-xref :arrow (stl/css :arrow-icon)))
@@ -708,7 +711,7 @@
   {::mf/wrap [mf/memo]
    ::mf/private true
    ::mf/props :obj}
-  [{:keys [invitation can-invite team-id]}]
+  [{:keys [invitation can-invite team-id selected on-select-change]}]
 
   (let [expired? (:expired invitation)
         email    (:email invitation)
@@ -721,6 +724,17 @@
           (tr "labels.expired-invitation")
           (tr "labels.pending-invitation"))
 
+        is-selected? (fn [email]
+                        (contains? @selected email))
+
+        on-change
+        (mf/use-fn
+         (mf/deps on-select-change)
+         (fn [event]
+           (let [email (-> (dom/get-current-target event)
+                           (dom/get-data "attr"))]
+             (on-select-change email))))
+
         on-change-role
         (mf/use-fn
          (mf/deps email team-id)
@@ -730,7 +744,19 @@
              (st/emit! (dtm/update-invitation-role (with-meta params mdata))))))]
 
     [:div {:class (stl/css :table-row :table-row-invitations)}
-     [:div {:class (stl/css :table-field :field-email)} email]
+     [:div {:class (stl/css :table-field :field-email)}
+      [:div {:class (stl/css :input-wrapper)}
+       [:label {:for (str "email-" email)}
+        [:span {:class (stl/css-case :global/checked (is-selected? email))}
+         i/status-tick]
+
+        [:input {:type "checkbox"
+                 :id (str "email-" email)
+                 :data-attr email
+                 :value email
+                 :checked (is-selected? email)
+                 :on-change on-change}]]]
+      email]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:> invitation-role-selector*
@@ -773,6 +799,52 @@
          (tr "dashboard.invite-profile")]
         [:div {:class (stl/css :blank-space)}]])]))
 
+(mf/defc invitation-modal
+  {::mf/register modal/components
+   ::mf/register-as :invitation-modal}
+  [{:keys [selected delete on-confirm]}]
+
+  (let [prop true]
+    [:div {:class (stl/css :modal-overlay)}
+     [:div {:class (stl/css :modal-container)}
+      [:div {:class (stl/css :modal-header)}
+       [:h2 {:class (stl/css :modal-title)}
+        (if delete
+          "DELETE INVITATIONS"
+          "RESEND INVITATIONS")
+        ]
+
+       [:button {:class (stl/css :modal-close-btn)
+                 :on-click modal/hide!} i/close]]
+
+      [:div {:class (stl/css :modal-content)}
+        [:p
+           "You're going to "
+          (if delete
+            "delete"
+            "resend")
+          " the invitations to:"
+          ]
+       (for [{:keys [email role]} selected]
+         [:span {:key email}
+          (str "- " email " (" (tr (str "labels." (name role))) ")")])]
+
+      [:div {:class (stl/css :modal-footer)}
+       [:div {:class (stl/css :action-buttons)}
+        (when-not delete
+          [:> button*
+           {:class (stl/css :cancel-button)
+            :variant "secondary"
+            :type "button"
+            :on-click modal/hide!}
+           (tr "labels.cancel")])
+        [:> button*
+         {:class (stl/css :accept-btn)
+          :variant "primary"
+          :type "button"
+          :on-click on-confirm}
+         (tr "labels.accept")]]]]]))
+
 (mf/defc invitation-section*
   {::mf/props :obj
    ::mf/private true}
@@ -784,9 +856,114 @@
 
         owner?      (get permissions :is-owner)
         admin?      (get permissions :is-admin)
-        can-invite? (or owner? admin?)]
+        can-invite? (or owner? admin?)
+
+        selected    (mf/use-state #{})
+
+        selected-invitations (mf/with-memo [selected invitations]
+                               (filterv #(contains? @selected (:email %)) invitations))
+
+        on-select-change
+        (mf/use-fn
+         (mf/deps selected)
+         (fn [email]
+           (if (contains? @selected email)
+             (swap! selected disj email)
+             (swap! selected conj email))))
+
+        on-comfirm-delete
+        (mf/use-fn
+         (mf/deps selected team-id)
+         (fn []
+           (doseq [email @selected]
+             (let [params {:email email :team-id team-id}
+                   mdata  {:on-success #(st/emit! (dtm/fetch-invitations)
+                                                  (modal/hide))}]
+               (st/emit! (dtm/delete-invitation (with-meta params mdata)))))
+           (reset! selected #{})))
+
+        on-delete
+        (mf/use-fn
+         (mf/deps selected-invitations team-id)
+         (fn []
+           (st/emit! (modal/show :invitation-modal {:selected selected-invitations :delete true :on-confirm on-comfirm-delete}))))
+
+
+        error-text  (mf/use-state  "")
+
+        on-error
+        (fn [form]
+          (let [{:keys [type code] :as error} (ex-data form)]
+            (println form)
+            (cond
+              (and (= :validation type)
+                   (= :profile-is-muted code))
+              (st/emit! (ntf/error (tr "errors.profile-is-muted"))
+                        (modal/hide))
+
+              (and (= :validation type)
+                   (= :max-invitations-by-request code))
+              (swap! error-text (tr "errors.maximum-invitations-by-request-reached" (:threshold error)))
+
+              (and (= :restriction type)
+                   (= :max-quote-reached code))
+              (swap! error-text (tr "errors.max-quote-reached" (:target error)))
+
+              (or (= :member-is-muted code)
+                  (= :email-has-permanent-bounces code)
+                  (= :email-has-complaints code))
+              (swap! error-text (tr "errors.email-spam-or-permanent-bounces" (:email error)))
+
+              :else
+              (st/emit! (ntf/error (tr "errors.generic"))
+                        (modal/hide)))))
+
+
+        on-resend-success
+        (mf/use-fn
+         (fn []
+           (st/emit! (ntf/success (tr "notifications.invitation-email-sent"))
+                     (modal/hide)
+                     (dtm/fetch-invitations))
+           (reset! selected #{})))
+
+        on-confirm-resend
+        (mf/use-fn
+         (mf/deps selected-invitations team-id on-resend-success)
+         (fn []
+           (modal/hide!)
+           (let [params (with-meta {:invitations selected-invitations
+                                    :team-id team-id}
+                          {:on-success on-resend-success
+                           :on-error on-error})]
+
+             (st/emit!
+              (-> (dtm/resend-invitations params)
+                  (with-meta {::ev/origin :team}))))))
+
+        on-resend
+        (mf/use-fn
+         (mf/deps team-id selected-invitations)
+         (fn []
+           (st/emit! (modal/show :invitation-modal {:selected selected-invitations :on-confirm on-confirm-resend}))))]
 
     [:div {:class (stl/css :invitations)}
+     (when (> (count @selected) 0)
+       [:div
+        [:div
+         (str (count @selected) " invitations selected")]
+        [:div
+         [:> button* {:variant "secondary"
+                      :type "button"
+                      :on-click on-resend}
+          (tr "labels.resend-invitation")]]
+        [:> icon-button* {:on-click on-delete
+                          :variant "destructive"
+                          :aria-label (tr "labels.delete-invitation")
+                          :icon "delete"}]
+        (when-not (= "" @error-text)
+          [:& context-notification {:content  @error-text
+                                    :level :error}])])
      [:div {:class (stl/css :table-header)}
       [:div {:class (stl/css :title-field-name)} (tr "labels.invitations")]
       [:div {:class (stl/css :title-field-role)} (tr "labels.role")]
@@ -799,7 +976,9 @@
            {:key (:email invitation)
             :invitation invitation
             :can-invite can-invite?
-            :team-id team-id}])])]))
+            :team-id team-id
+            :selected selected
+            :on-select-change on-select-change}])])]))
 
 (mf/defc team-invitations-page*
   {::mf/props :obj}

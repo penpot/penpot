@@ -22,6 +22,7 @@
    [app.util.storage :as storage]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [clojure.string :as str]
    [potok.v2.core :as ptk]))
 
 (log/set-level! :warn)
@@ -369,6 +370,30 @@
                   on-error rx/throw}} (meta params)
             params (dissoc params :resend?)]
         (->> (rp/cmd! :create-team-invitations (with-meta params (meta it)))
+             (rx/tap on-success)
+             (rx/catch on-error))))))
+
+(defn resend-invitations
+  [{:keys [invitations team-id] :as params}]
+  (assert (uuid? team-id))
+  (assert (sm/check-set-of-emails (map :email invitations)))
+  (assert (every? #(contains? ctt/valid-roles (:role %)) invitations))
+  (ptk/reify ::resend-invitations
+    ev/Event
+    (-data [_]
+      {::ev/name "resend-invitations"
+       :roles (->> invitations (map :role) distinct (map name) (str/join ", "))
+       :team-id team-id
+       :resend true})
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [on-success on-error]
+             :or {on-success identity
+                  on-error rx/throw}} (meta params)]
+
+        (->> (rp/cmd! :resend-team-invitations
+                      {:invitations invitations
+                       :team-id team-id})
              (rx/tap on-success)
              (rx/catch on-error))))))
 
