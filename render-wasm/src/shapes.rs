@@ -869,7 +869,11 @@ impl Shape {
 
     pub fn clear_text(&mut self) {
         if let Type::Text(old_text_content) = &self.shape_type {
-            let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type(), self.vertical_align);
+            let new_text_content = TextContent::new(
+                self.selrect,
+                old_text_content.grow_type(),
+                self.vertical_align,
+            );
             self.shape_type = Type::Text(new_text_content);
         }
     }

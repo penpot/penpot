@@ -28,6 +28,7 @@ skia-safe = { version = "0.86.0", default-features = false, features = [
   "webp"
 ] }
 uuid = { version = "1.11.0", features = ["v4", "js"] }
+unicode-segmentation = "1.11.0"
 
 [profile.release]
 opt-level = "s"

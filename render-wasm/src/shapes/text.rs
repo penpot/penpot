@@ -1,15 +1,15 @@
+use crate::shapes::VerticalAlign;
 use crate::{
     math::Rect,
     render::{default_font, DEFAULT_EMOJI_FONT},
 };
 use skia_safe::{
     self as skia, sampling_options,
-    textlayout::{Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle},
-    FontMetrics, Point, Shader, TextBlob,
+    textlayout::{self, Paragraph as SkiaParagraph, ParagraphBuilder, ParagraphStyle},
+    EncodedText, Font, FontMetrics, Point, Shader, TextBlob,
 };
+use std::collections::HashSet;
 use unicode_segmentation::UnicodeSegmentation;
-use crate::shapes::VerticalAlign;
-use std::{collections::HashSet, thread::current};
 
 use super::FontFamily;
 use crate::shapes::{self, merge_fills};
@@ -73,7 +73,7 @@ impl TextContent {
             paragraphs,
             bounds,
             grow_type,
-            vertical_align
+            vertical_align,
         }
     }
 
@@ -176,114 +176,93 @@ impl TextContent {
 
             let mut line_offset_y = offset_y;
 
-            let lines = skia_paragraph.get_line_metrics().len();
-            println!("### Text {}", text);
             let graphemes: Vec<&str> = UnicodeSegmentation::graphemes(text, true).collect();
-            println!("### Graphemes: {:?}", graphemes);
+            let mut text_index = 0;
+            let mut current_line_number = 0;
+            let mut line_offset_x = 0.0; // Track horizontal position within the current line
 
-            let mut index = 0;
-            for line_metrics in skia_paragraph.get_line_metrics() {
-                let mut start = line_metrics.start_index;
-                let end = line_metrics.end_index - 1;
-                let line_baseline = line_metrics.baseline as f32;
-                println!("### Line metrics: start: {}, end: {}", start, end);
-                let mut offset_x = 0.0;
-                let mut current_text_width = 0.0;
-                start = if start == 0 { start } else { start - 1 };
+            for grapheme in graphemes.iter() {
+                let char_size = grapheme.as_bytes().len();
 
-                let line_text = graphemes[start..end].concat();
-                let line_str = line_text.as_str();
-                println!("### Line text: '{}'", line_text);
-
-                let line_graphemes = UnicodeSegmentation::graphemes(line_str, true).collect::<Vec<&str>>();
-                let line_style_metrics = line_metrics.get_style_metrics(start..end);
-                // println!("### Style metrics: {:?}", line_style_metrics);
-                
-
-                for (grapheme_index, grapheme) in line_graphemes.iter().enumerate() {
-                    println!("### Grapheme {}: '{}', len: {}", grapheme_index, grapheme, grapheme.len());
-                    
-                    // Find the style that applies to this grapheme_index
-                    // We want the style with the highest start index that is <= grapheme_index
-                    let style_metric = line_style_metrics
-                        .iter()
-                        .filter(|(start_idx, _)| *start_idx <= grapheme_index)
-                        .last()
-                        .map(|(_, metrics)| metrics)
-                        .unwrap_or(&line_style_metrics[0].1);
-                    // println!("### Style metrics: {:?}", style_metric);
-                    println!("### index: {}", index);
-                    let font = skia_paragraph.get_font_at(index);
-                    index += grapheme.len();
-                    println!("### Font: {:?}", font.typeface());
-                    let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
-                    let blob_offset_y = line_offset_y;
-
-                    // 4. Get the path for each text leaf
-                    if let Some((text_path, paint)) = self.generate_text_path(
-                        &grapheme,
-                        &font,
-                        blob_offset_x,
-                        blob_offset_y,
-                        &self.bounds,
-                        &style_metric,
-                        antialias,
-                    ) {
-                        let text_width = font.measure_text(grapheme, None).0;
-                        offset_x += text_width;
-                        current_text_width = text_width;
-                        paths.push((text_path, paint));
-                    }
+                // FIXME
+                if text_index >= text.len() {
+                    break;
                 }
-                line_offset_y = offset_y + line_baseline;
+
+                let line_number = skia_paragraph.get_line_number_at(text_index).expect("ok"); // FIXME
+                let line_metrics = skia_paragraph.get_line_metrics_at(line_number).expect("ok"); // FIXME
+                let line_style_metrics: Vec<(usize, &textlayout::StyleMetrics<'_>)> = line_metrics
+                    .get_style_metrics(
+                        line_metrics.start_index..line_metrics.end_including_newline,
+                    );
+
+                let style_metric = if line_style_metrics.is_empty() {
+                    continue;
+                } else {
+                    // Find the style metric that contains the current text_index
+                    line_style_metrics
+                        .iter()
+                        .filter(|(start_idx, _)| *start_idx <= text_index)
+                        .last()
+                        .map(|(_, metrics)| *metrics) // Note: dereferencing here
+                        .unwrap_or(line_style_metrics[0].1)
+                };
+
+                let font = if contains_emoji(grapheme) {
+                    with_state_mut!(state, {
+                        let font_provider = state.render_state().fonts().font_provider();
+                        let emoji_typeface = font_provider
+                            .match_family_style(DEFAULT_EMOJI_FONT, skia::FontStyle::default())
+                            .unwrap_or_else(|| {
+                                font_provider
+                                    .match_family_style(&default_font(), skia::FontStyle::default())
+                                    .unwrap()
+                            });
+                        let mut emoji_font = skia::Font::default();
+                        emoji_font.set_typeface(emoji_typeface);
+                        emoji_font.set_size(style_metric.text_style.font_size() as f32);
+                        emoji_font
+                    })
+                } else {
+                    skia_paragraph.get_font_at(text_index)
+                };
+
+                // Move text_index increment after using it to get font
+                text_index += char_size;
+
+                let line_baseline = line_metrics.baseline as f32;
+
+                // Reset horizontal offset when moving to a new line
+                if current_line_number < line_number {
+                    current_line_number = line_number;
+                    line_offset_x = 0.0; // Reset horizontal position for new line
+                    line_offset_y = offset_y + line_baseline;
+                }
+
+                let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + line_offset_x;
+                let blob_offset_y = line_offset_y;
+
+                // Generate the path for this grapheme with its proper style
+                if let Some((text_path, paint)) = self.generate_text_path(
+                    grapheme,
+                    &font,
+                    blob_offset_x,
+                    blob_offset_y,
+                    &self.bounds,
+                    style_metric,
+                    antialias,
+                ) {
+                    let text_width = if contains_emoji(grapheme) {
+                        // For emojis, use the actual rendered width from the text path
+                        text_path.bounds().width()
+                    } else {
+                        font.measure_text(grapheme, None).0
+                    };
+                    line_offset_x += text_width;
+                    paths.push((text_path, paint));
+                }
             }
             offset_y += skia_paragraph.height();
-
-            // 2. Iterate through each line in the paragraph
-            // for line_metrics in skia_paragraph.get_line_metrics() {
-            //     let line_baseline = line_metrics.baseline as f32;
-            //     let start = line_metrics.start_index;
-            //     let end = line_metrics.end_index - 1;
-            //     // let line_text: String = text.chars().skip(start).take(end - start).collect();
-            //     let line_text = graphemes[start..end].concat();
-            //     // println!("### Line text: '{}'", line_text);
-            //     // 3. Get styles present in line for each text leaf
-            //     let style_metrics = line_metrics.get_style_metrics(start..end);
-            //     let mut offset_x = 0.0;
-
-            //     for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
-            //         let mut end_index = 0;
-            //         if i < style_metrics.len() - 1 {
-            //             end_index = style_metrics[i + 1].0;
-            //         } else {
-            //             end_index = line_text.len();
-            //         }
-
-            //         let leaf_text = graphemes[*start_index..end_index].concat();
-            //         println!("### Leaf text: '{}'", leaf_text);
-            //         let font = skia_paragraph.get_font_at(*start_index);
-
-            //         let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
-            //         let blob_offset_y = line_offset_y;
-
-            //         // 4. Get the path for each text leaf
-            //         if let Some((text_path, paint)) = self.generate_text_path(
-            //             &leaf_text,
-            //             &font,
-            //             blob_offset_x,
-            //             blob_offset_y,
-            //             &self.bounds,
-            //             style_metric,
-            //             antialias,
-            //         ) {
-            //             let text_width = font.measure_text(leaf_text, None).0;
-            //             offset_x += text_width;
-            //             paths.push((text_path, paint));
-            //         }
-            //     }
-            //     line_offset_y = offset_y + line_baseline;
-            // }
-            // offset_y += skia_paragraph.height();
         }
         paths
     }
@@ -298,42 +277,48 @@ impl TextContent {
         style_metric: &skia::textlayout::StyleMetrics,
         antialias: bool,
     ) -> Option<(skia::Path, skia::Paint)> {
-        // Convert text to path, including text decoration
-        // TextBlob might be empty and, in this case, we return None
-        // This is used to avoid rendering empty paths, but we can
-        // revisit this logic later
         let mut foreground_paint = style_metric.text_style.foreground();
         foreground_paint.set_anti_alias(antialias);
 
-        if let Some((text_blob_path, text_blob_bounds, paint)) =
-            // Self::get_text_image_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds, foreground_paint)
-            Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)
-        {
-            let mut text_path = text_blob_path.clone();
-            let text_width = font.measure_text(leaf_text, None).0;
+        let (text_blob_path, text_blob_bounds, paint) = if contains_emoji(leaf_text) {
+            let font_size = style_metric.text_style.font_size() as f32;
+            Self::get_text_image_path(
+                leaf_text,
+                font,
+                blob_offset_x,
+                blob_offset_y,
+                &bounds,
+                foreground_paint,
+                font_size,
+            )?
+        } else {
+            let (path, bounds, _) =
+                Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y, &bounds)?;
+            (path, bounds, foreground_paint)
+        };
 
-            let decoration = style_metric.text_style.decoration();
-            let font_metrics = style_metric.font_metrics;
+        let mut text_path = text_blob_path.clone();
+        let text_width = font.measure_text(leaf_text, None).0;
 
-            let blob_left = blob_offset_x;
-            let blob_top = blob_offset_y;
-            let blob_height = text_blob_bounds.height();
+        let decoration = style_metric.text_style.decoration();
+        let font_metrics = style_metric.font_metrics;
 
-            if let Some(decoration_rect) = self.calculate_text_decoration_rect(
-                decoration.ty,
-                font_metrics,
-                blob_left,
-                blob_top,
-                text_width,
-                blob_height,
-            ) {
-                text_path.add_rect(decoration_rect, None);
-            }
+        let blob_left = blob_offset_x;
+        let blob_top = blob_offset_y;
+        let blob_height = text_blob_bounds.height();
 
-            return Some((text_path, foreground_paint));
-            // return Some((text_path, paint));
+        if let Some(decoration_rect) = self.calculate_text_decoration_rect(
+            decoration.ty,
+            font_metrics,
+            blob_left,
+            blob_top,
+            text_width,
+            blob_height,
+        ) {
+            text_path.add_rect(decoration_rect, None);
         }
-        None
+
+        Some((text_path, paint))
     }
 
     fn calculate_text_decoration_rect(
@@ -377,48 +362,67 @@ impl TextContent {
         blob_offset_y: f32,
         blob_bounds: &skia::Rect,
         foreground_paint: skia::Paint,
+        font_size: f32,
     ) -> Option<(skia::Path, skia::Rect, skia::Paint)> {
-        let scale_factor = 1.0; // FIXME: improve emoji image resolution. This should be calculated taking into account the zoom level
-        let width = (blob_bounds.width() * scale_factor).ceil() as i32;
-        let height = (blob_bounds.height() * scale_factor).ceil() as i32;
-
-        let mut surface = create_emoji_surface(width, height)?;
-        let canvas = surface.canvas();
-        canvas.clear(skia::Color::TRANSPARENT);
-
+        let scale_factor = 1.0;
+        let shaper = with_state_mut!(state, {
+            let font_mgr = state.render_state().fonts().font_mgr();
+            skia::Shaper::new_shape_then_wrap(Some(font_mgr.clone()))
+                .unwrap_or_else(|| skia::Shaper::default())
+        });
         let mut sampled_font = font.clone();
-        sampled_font.set_size(font.size() * scale_factor);
+        sampled_font.set_size(font_size * scale_factor);
 
-        let (_, metrics) = sampled_font.metrics();
-        let baseline = -metrics.ascent as f32;
-        canvas.draw_str(
+        let shape = shaper.shape_text_blob(
             leaf_text,
-            skia_safe::Point::new(0.0, baseline),
             &sampled_font,
-            &foreground_paint,
+            true,
+            f32::MAX,
+            skia::Point::default(),
         );
 
-        let image = surface.image_snapshot();
+        if let Some(shape) = shape {
+            let text_blob = shape.0;
+            let text_bounds = text_blob.bounds();
+            let text_width = text_bounds.width();
+            let text_height = text_bounds.height();
 
-        let mut rect = skia_safe::Rect::from_xywh(
-            blob_offset_x,
-            blob_offset_y,
-            blob_bounds.width(),
-            blob_bounds.height(),
-        );
+            // Create surface with proper dimensions
+            let width = (text_width * scale_factor).ceil() as i32;
+            let height = (text_height * scale_factor).ceil() as i32;
 
-        let mut path = skia_safe::Path::new();
-        path.add_rect(&mut rect, None);
+            let mut surface = create_emoji_surface(width, height)?;
+            let canvas = surface.canvas();
+            canvas.clear(skia::Color::TRANSPARENT);
 
-        let mut image_paoint = skia_safe::Paint::default();
-        let shader = skia_safe::Image::to_raw_shader(
-            &image,
-            (skia_safe::TileMode::Clamp, skia_safe::TileMode::Clamp),
-            skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
-            &Some(skia_safe::Matrix::translate((rect.left, rect.top))),
-        );
-        image_paoint.set_shader(shader);
-        Some((path, *blob_bounds, image_paoint))    }
+            // Draw the text blob at the correct position relative to its bounds
+            canvas.draw_text_blob(
+                &text_blob,
+                skia_safe::Point::new(-text_bounds.left, -text_bounds.top),
+                &foreground_paint,
+            );
+
+            let image = surface.image_snapshot();
+
+            // Create the final rect at the correct world position
+            let mut rect =
+                skia_safe::Rect::from_xywh(blob_offset_x, blob_offset_y, text_width, text_height);
+
+            let mut path = skia_safe::Path::new();
+            path.add_rect(&mut rect, None);
+
+            let mut image_paint = skia_safe::Paint::default();
+            let shader = skia_safe::Image::to_raw_shader(
+                &image,
+                (skia_safe::TileMode::Clamp, skia_safe::TileMode::Clamp),
+                skia::SamplingOptions::new(skia::FilterMode::Linear, skia::MipmapMode::Nearest),
+                &Some(skia_safe::Matrix::translate((rect.left, rect.top))),
+            );
+            image_paint.set_shader(shader);
+            return Some((path, rect, image_paint));
+        }
+        None
+    }
 
     fn get_text_blob_path(
         leaf_text: &str,
@@ -895,4 +899,40 @@ pub fn auto_height(paragraphs: &mut [ParagraphBuilder]) -> f32 {
 
 fn create_emoji_surface(width: i32, height: i32) -> Option<skia_safe::Surface> {
     skia_safe::surfaces::raster_n32_premul(skia_safe::ISize::new(width, height))
+}
+
+fn contains_emoji(text: &str) -> bool {
+    let mut chars = text.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        let code = c as u32;
+
+        // Check if current character is followed by variation selector (emoji presentation)
+        if let Some(&next_char) = chars.peek() {
+            if next_char as u32 == 0xFE0F {
+                return true; // Any char + variation selector = emoji
+            }
+        }
+
+        // Check standard emoji ranges
+        if matches!(
+            code,
+            0x1F600..=0x1F64F | // Emoticons
+            0x1F300..=0x1F5FF | // Misc Symbols and Pictographs
+            0x1F680..=0x1F6FF | // Transport and Map
+            0x1F1E6..=0x1F1FF | // Regional indicator symbols
+            0x2600..=0x26FF |   // Misc symbols
+            0x2700..=0x27BF |   // Dingbats
+            0x25A0..=0x25FF |   // Geometric Shapes (includes white small square)
+            0xFE00..=0xFE0F |   // Variation Selectors
+            0x1F900..=0x1F9FF |  // Supplemental Symbols and Pictographs
+            0x1F018..=0x1F270 | // Various symbols
+            0x238C..=0x2454 |   // Various symbols
+            0x20D0..=0x20FF     // Combining Diacritical Marks for Symbols
+        ) {
+            return true;
+        }
+    }
+
+    false
 }

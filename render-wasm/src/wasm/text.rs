@@ -1,7 +1,7 @@
 use crate::mem;
 use crate::shapes::{auto_height, auto_width, max_width, GrowType, RawTextData, Type};
-use crate::STATE;
 use crate::with_current_shape_mut;
+use crate::STATE;
 
 #[no_mangle]
 pub extern "C" fn clear_shape_text() {

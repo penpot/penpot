@@ -56,6 +56,10 @@ impl FontStore {
         &self.font_provider
     }
 
+    pub fn font_mgr(&self) -> &FontMgr {
+        &self.font_mgr
+    }
+
     pub fn font_collection(&self) -> &textlayout::FontCollection {
         &self.font_collection
     }
