@@ -198,7 +198,6 @@
       :type type}]))
 
 (mf/defc form*
-  {::mf/wrap-props false}
   [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve token-value-input token-value-input-props]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
@@ -603,7 +602,6 @@
        :on-change on-change'}]]))
 
 (mf/defc color-picker*
-  {::mf/wrap-props false}
   [{:keys [placeholder label default-value input-ref error on-blur on-update-value on-external-update-value token-value-input-props]}]
   (let [{:keys [color on-display-colorpicker]} token-value-input-props
         color-ramp-open* (mf/use-state false)
@@ -666,7 +664,6 @@
          :on-change on-change'}])]))
 
 (mf/defc color-form*
-  {::mf/wrap-props false}
   [{:keys [token on-display-colorpicker] :rest props}]
   (let [color* (mf/use-state (:value token))
         color (deref color*)
@@ -697,7 +694,6 @@
                              :token-value-input-props token-value-input-props})]))
 
 (mf/defc font-selector-wrapper*
-  {::mf/wrap-props false}
   [{:keys [font input-ref on-select-font on-close-font-selector]}]
   (let [current-font* (mf/use-state (or font
                                         (some-> (mf/ref-val input-ref)
@@ -713,7 +709,6 @@
                          :full-size true}]]))
 
 (mf/defc font-picker*
-  {::mf/wrap-props false}
   [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value]}]
   (let [font* (mf/use-state (fonts/find-font-data {:family default-value}))
         font (deref font*)
@@ -777,7 +772,6 @@
                                    :on-close-font-selector on-close-font-selector}])]))
 
 (mf/defc font-family-form*
-  {::mf/wrap-props false}
   [{:keys [token] :rest props}]
   (let [on-value-resolve
         (mf/use-fn
@@ -790,7 +784,6 @@
                              :on-value-resolve on-value-resolve})]))
 
 (mf/defc form-wrapper*
-  {::mf/wrap-props false}
   [{:keys [token token-type] :as props}]
   (let [token-type' (or (:type token) token-type)]
     (case token-type'
