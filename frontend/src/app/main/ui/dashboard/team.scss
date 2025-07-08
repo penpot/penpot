@@ -338,7 +338,8 @@
 .field-email {
   @include textEllipsis;
   @include bodyLargeTypography;
-  display: grid;
+  display: flex;
+  gap: $s-16;
   align-items: center;
 }
 
@@ -584,4 +585,7 @@
   @extend .input-base;
   @include bodySmallTypography;
   height: auto;
+}
+.input-wrapper {
+  @extend .input-checkbox;
 }
