@@ -292,17 +292,17 @@
                  warnings? (:warnings token-or-err)
                  v (cond
                      error?
-                     token-or-err
+                     (do
+                       (on-value-resolve nil)
+                       token-or-err)
 
                      warnings?
                      (:warnings {:warnings token-or-err})
 
                      :else
-                     (:resolved-value token-or-err))
-                 v' (if on-value-resolve
-                      (on-value-resolve (if error? nil v))
-                      v)]
-             (reset! token-resolve-result* v'))))
+                     (cond-> (:resolved-value token-or-err)
+                       on-value-resolve on-value-resolve))]
+             (reset! token-resolve-result* v))))
 
         on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
         on-update-value
