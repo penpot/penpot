@@ -82,7 +82,7 @@ macro_rules! with_current_shape {
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
-    let state_box = Box::new(State::new(width, height, 2048));
+    let state_box = Box::new(State::new(width, height));
     unsafe {
         STATE = Some(state_box);
     }
@@ -778,7 +778,13 @@ pub extern "C" fn get_grid_coords(pos_x: f32, pos_y: f32) -> *mut u8 {
     let row: i32;
     let col: i32;
     with_state!(state, {
-        (row, col) = state.get_grid_coords(pos_x, pos_y);
+        if let Some((r, c)) = state.get_grid_coords(pos_x, pos_y) {
+            row = r;
+            col = c;
+        } else {
+            row = -1;
+            col = -1;
+        };
     });
     let mut bytes = vec![0; 8];
     bytes[0..4].clone_from_slice(&row.to_le_bytes());
