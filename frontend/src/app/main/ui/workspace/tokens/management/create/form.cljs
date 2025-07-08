@@ -293,7 +293,7 @@
                  v (cond
                      error?
                      (do
-                       (on-value-resolve nil)
+                       (when on-value-resolve (on-value-resolve nil))
                        token-or-err)
 
                      warnings?
