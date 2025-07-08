@@ -650,26 +650,12 @@
     (check-component component file)
     (deref *errors*)))
 
-(def ^:private valid-fdata?
-  "Structural validation of file data using defined schema"
-  (sm/lazy-validator ::ctf/data))
-
-(def ^:private get-fdata-explain
-  "Get schema explain data for file data"
-  (sm/lazy-explainer ::ctf/data))
-
 (defn validate-file-schema!
   "Validates the file itself, without external dependencies, it
   performs the schema checking and some semantical validation of the
   content."
-  [{:keys [id data] :as file}]
-  (when-not (valid-fdata? data)
-    (ex/raise :type :validation
-              :code :schema-validation
-              :hint (str/ffmt "invalid file data structure found on file '%'" id)
-              :file-id id
-              ::sm/explain (get-fdata-explain data)))
-  file)
+  [file]
+  (update file :data ctf/check-file-data))
 
 (defn validate-file!
   "Validate full referential integrity and semantic coherence on file data.
