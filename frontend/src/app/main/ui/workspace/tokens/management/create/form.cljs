@@ -198,7 +198,7 @@
       :type type}]))
 
 (mf/defc form*
-  [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve token-value-input token-value-input-props]}]
+  [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve custom-input-token-value custom-input-token-value-props]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
@@ -495,8 +495,8 @@
              ref value-input-ref
              error (not (nil? (:errors token-resolve-result)))
              on-blur on-update-value]
-         (if (fn? token-value-input)
-           [:> token-value-input
+         (if (fn? custom-input-token-value)
+           [:> custom-input-token-value
             {:placeholder placeholder
              :label label
              :default-value default-value
@@ -505,7 +505,7 @@
              :on-blur on-blur
              :on-update-value on-update-value
              :on-external-update-value on-external-update-value
-             :token-value-input-props token-value-input-props}]
+             :custom-input-token-value-props custom-input-token-value-props}]
            [:> input-tokens-value*
             {:placeholder placeholder
              :label label
@@ -602,8 +602,8 @@
        :on-change on-change'}]]))
 
 (mf/defc color-picker*
-  [{:keys [placeholder label default-value input-ref error on-blur on-update-value on-external-update-value token-value-input-props]}]
-  (let [{:keys [color on-display-colorpicker]} token-value-input-props
+  [{:keys [placeholder label default-value input-ref error on-blur on-update-value on-external-update-value custom-input-token-value-props]}]
+  (let [{:keys [color on-display-colorpicker]} custom-input-token-value-props
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
 
@@ -673,7 +673,7 @@
                             (reset! color* value)
                             value))
 
-        token-value-input-props
+        custom-input-token-value-props
         (mf/use-memo
          (mf/deps color on-display-colorpicker)
          (fn []
@@ -690,8 +690,8 @@
      (mf/spread-props props {:token token
                              :transform-value transform-value
                              :on-value-resolve on-value-resolve
-                             :token-value-input color-picker*
-                             :token-value-input-props token-value-input-props})]))
+                             :custom-input-token-value color-picker*
+                             :custom-input-token-value-props custom-input-token-value-props})]))
 
 (mf/defc font-selector-wrapper*
   [{:keys [font input-ref on-select-font on-close-font-selector]}]
@@ -780,7 +780,7 @@
              (ctt/join-font-family value))))]
     [:> form*
      (mf/spread-props props {:token (when token (update token :value ctt/join-font-family))
-                             :token-value-input font-picker*
+                             :custom-input-token-value font-picker*
                              :on-value-resolve on-value-resolve})]))
 
 (mf/defc form-wrapper*
