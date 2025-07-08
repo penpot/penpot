@@ -7549,7 +7549,7 @@ msgstr "Tools"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "Import was successful. Some tokens may not be included."
+msgstr "Import was successful. Some tokens were not included."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
