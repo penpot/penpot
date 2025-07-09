@@ -6,7 +6,6 @@
 
 (ns app.plugins.shape
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -16,7 +15,7 @@
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.svg.path :as svg.path]
-   [app.common.text :as txt]
+   [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
@@ -31,6 +30,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]

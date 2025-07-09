@@ -6,11 +6,11 @@
 
 (ns app.common.types.path.bool
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
    [app.common.geom.rect :as grc]
    [app.common.math :as mth]
+   [app.common.types.color :as clr]
    [app.common.types.path.helpers :as helpers]
    [app.common.types.path.segment :as segment]
    [app.common.types.path.subpath :as subpath]))

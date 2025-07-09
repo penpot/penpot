@@ -21,7 +21,6 @@
    [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.svg :as csvg]
-   [app.common.text :as txt]
    [app.common.types.color :as types.color]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
@@ -32,7 +31,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
-   [app.common.types.text :as cttx]
+   [app.common.types.text :as types.text]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -623,7 +622,7 @@
             (let [invalid-node? (complement valid-node?)]
               (cond-> object
                 (cfh/text-shape? object)
-                (update :content #(txt/transform-nodes invalid-node? fix-node %)))))
+                (update :content #(types.text/transform-nodes invalid-node? fix-node %)))))
 
           (update-container [container]
             (d/update-when container :objects d/update-vals update-object))]
@@ -730,7 +729,7 @@
             (let [shape (update-object shape)]
               (if (cfh/text-shape? shape)
                 (-> shape
-                    (update :content (partial txt/transform-nodes identity update-fill))
+                    (update :content (partial types.text/transform-nodes identity update-fill))
                     (d/update-when :position-data #(mapv update-object %)))
                 shape)))
 
@@ -856,7 +855,7 @@
 
           (update-object [object]
             (if (cfh/text-shape? object)
-              (update object :content #(txt/transform-nodes txt/is-content-node? update-text-node %))
+              (update object :content #(types.text/transform-nodes types.text/is-content-node? update-text-node %))
               object))
 
           (update-container [container]
@@ -1105,7 +1104,7 @@
                 ;; The text shape also can has fills on the text
                 ;; fragments so we need to fix fills there
                 (cond-> (cfh/text-shape? object)
-                  (update :content (partial txt/transform-nodes txt/is-content-node? fix-fills)))))
+                  (update :content (partial types.text/transform-nodes types.text/is-content-node? fix-fills)))))
 
           (update-container [container]
             (d/update-when container :objects d/update-vals update-object))]
@@ -1423,7 +1422,7 @@
 
           (update-object [object]
             (if (cfh/text-shape? object)
-              (update object :content (partial txt/transform-nodes txt/is-content-node? fix-fills))
+              (update object :content (partial types.text/transform-nodes types.text/is-content-node? fix-fills))
               object))
 
           (update-container [container]
@@ -1457,7 +1456,7 @@
 
           ;; Fixes shapes with nested :fills in the :fills attribute
           ;; introduced in a migration `0006-fix-old-texts-fills` when
-          ;; txt/transform-nodes with identity pred was broken
+          ;; types.text/transform-nodes with identity pred was broken
           (remove-nested-fills [[fill :as fills]]
             (if (and (= 1 (count fills))
                      (contains? fill :fills))
@@ -1483,8 +1482,8 @@
 
           (fix-text-content [content]
             (->> content
-                 (txt/transform-nodes txt/is-content-node? fix-object)
-                 (txt/transform-nodes txt/is-paragraph-set-node? #(dissoc % :fills))))
+                 (types.text/transform-nodes types.text/is-content-node? fix-object)
+                 (types.text/transform-nodes types.text/is-paragraph-set-node? #(dissoc % :fills))))
 
           (update-shape [object]
             (-> object
@@ -1539,7 +1538,7 @@
                     ref-shape       (ctf/find-ref-shape file page libs object
                                                         {:include-deleted? true :with-context? true})
                     partial-touched (when ref-shape
-                                      (cttx/get-diff-type (:content object) (:content ref-shape)))]
+                                      (types.text/get-diff-type (:content object) (:content ref-shape)))]
                 (if (seq partial-touched)
                   (update object :touched (fn [touched]
                                             (reduce #(ctk/set-touched-group %1 %2)

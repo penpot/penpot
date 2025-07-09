@@ -10,7 +10,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.application :as dwta]
    [cljs.test :as t :include-macros true]

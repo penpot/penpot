@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
@@ -67,7 +67,7 @@
 
         style-defaults
         (styles/get-style-defaults
-         (merge txt/default-attrs default-font))
+         (merge txt/default-text-attrs txt/default-root-attrs default-font))
 
         options
         #js {:styleDefaults style-defaults
