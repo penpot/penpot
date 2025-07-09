@@ -11,6 +11,7 @@
    [app.common.buffer :as buf]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.math :as mth]
    [app.common.transit :as t]))
 
@@ -34,6 +35,13 @@
 
 (def ^:private xf:take-fills
   (take MAX-FILLS))
+
+(defprotocol IHeapWritable
+  (-write-to [_ buffer offset] "write the content to the specified buffer")
+  (-get-byte-size [_] "get byte size"))
+
+(defprotocol IBinaryFills
+  (-get-image-ids [_] "get referenced image ids"))
 
 (defn- hex->rgb
   "Encode an hex string as rgb (int32)"
@@ -64,16 +72,16 @@
         n (unsigned-bit-shift-right n 24)]
     (mth/precision (/ (float n) 0xff) 2)))
 
-(defn- write-solid-fill
-  [offset buffer color alpha]
+(defn write-solid-fill
+  [offset buffer opacity color]
   (buf/write-byte buffer (+ offset 0) 0x00)
   (buf/write-int  buffer (+ offset 4)
                   (-> (hex->rgb color)
-                      (rgb->rgba alpha)))
+                      (rgb->rgba opacity)))
   (+ offset FILL-BYTE-SIZE))
 
-(defn- write-gradient-fill
-  [offset buffer gradient opacity]
+(defn write-gradient-fill
+  [offset buffer opacity gradient]
   (let [start-x (:start-x gradient)
         start-y (:start-y gradient)
         end-x   (:end-x gradient)
@@ -108,10 +116,10 @@
                  (+ offset' GRADIENT-STOP-SIZE)))
         (+ offset FILL-BYTE-SIZE)))))
 
-(defn- write-image-fill
+(defn write-image-fill
   [offset buffer opacity image]
-  (let [image-id (get image :id)
-        image-width (get image :width)
+  (let [image-id     (get image :id)
+        image-width  (get image :width)
         image-height (get image :height)
         keep-ratio   (get image :keep-aspect-ratio false)]
     (buf/write-byte  buffer (+ offset  0) 0x03)
@@ -282,7 +290,20 @@
 
    :cljs
    #_:clj-kondo/ignore
-   (deftype Fills [size dbuffer mbuffer cache ^:mutable __hash]
+   (deftype Fills [size dbuffer mbuffer image-ids cache ^:mutable __hash]
+
+     IHeapWritable
+     (-get-byte-size [_]
+       (- (.-byteLength dbuffer) 4))
+
+     (-write-to [_ heap offset]
+       (let [buffer' (.-buffer ^js/DataView dbuffer)]
+         (.set heap (js/Uint32Array. buffer' 4) offset)))
+
+     IBinaryFills
+     (-get-image-ids [_]
+       image-ids)
+
      cljs.core/ISequential
      cljs.core/IEquiv
      (-equiv [this other]
@@ -368,8 +389,9 @@
 
     (buf/write-byte dbuffer 0 total)
 
-    (loop [index 0]
-      (when (< index total)
+    (loop [index     0
+           image-ids #{}]
+      (if (< index total)
         (let [fill     (nth fills index)
               doffset  (+ 4 (* index FILL-BYTE-SIZE))
               moffset  (* index METADATA-BYTE-SIZE)
@@ -377,23 +399,26 @@
 
           (if-let [color (get fill :fill-color)]
             (do
-              (write-solid-fill doffset dbuffer color opacity)
+              (write-solid-fill doffset dbuffer opacity color)
               (write-metadata moffset mbuffer fill)
-              (recur (inc index)))
+              (recur (inc index) image-ids))
             (if-let [gradient (get fill :fill-color-gradient)]
               (do
-                (write-gradient-fill doffset dbuffer gradient opacity)
+                (write-gradient-fill doffset dbuffer opacity gradient)
                 (write-metadata moffset mbuffer fill)
-                (recur (inc index)))
+                (recur (inc index) image-ids))
               (if-let [image (get fill :fill-image)]
                 (do
                   (write-image-fill doffset dbuffer opacity image)
                   (write-metadata moffset mbuffer fill)
-                  (recur (inc index)))
-                (recur (inc index))))))))
+                  (recur (inc index)
+                         (conj image-ids (get image :id))))
+                (ex/raise :type :internal
+                          :code :invalid-fill
+                          :hint "found invalid fill on encoding fills to binary format")))))
 
-    #?(:cljs (Fills. total dbuffer mbuffer (weak-map/create) nil)
-       :clj  (Fills. total dbuffer mbuffer nil))))
+        #?(:cljs (Fills. total dbuffer mbuffer image-ids (weak-map/create) nil)
+           :clj  (Fills. total dbuffer mbuffer nil))))))
 
 (defn fills?
   [o]

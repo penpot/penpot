@@ -6,6 +6,7 @@
 
 (ns app.common.types.fills
   (:require
+   [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.types.color :as types.color]
    [app.common.types.fills.impl :as impl]
@@ -51,10 +52,6 @@
   (sm/check-fn schema:fill))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HELPERS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTRUCTORS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -66,3 +63,48 @@
 (defn fills?
   [o]
   (impl/fills? o))
+
+(defn coerce
+  [o]
+  (cond
+    (nil? o)
+    (impl/from-plain [])
+
+    (impl/fills? o)
+    o
+
+    (vector? o)
+    (impl/from-plain o)
+
+    :else
+    (ex/raise :type :internal
+              :code :invalid-type
+              :hint (str "cannot coerce " (pr-str o) "to fills"))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn assoc-fill
+  [fills position fill]
+  (if (nil? fills)
+    (impl/from-plain [fill])
+    (-> (coerce fills)
+        (assoc position fill))))
+
+(defn get-image-ids
+  [fills]
+  (if (vector? fills)
+    (into #{}
+          (comp (keep :fill-image)
+                (map :id))
+          fills)
+    (impl/-get-image-ids fills)))
+
+(defn get-byte-size
+  [fills]
+  (impl/-get-byte-size fills))
+
+(defn write-to
+  [fills buffer offset]
+  (impl/-write-to fills buffer offset))
