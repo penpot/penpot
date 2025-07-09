@@ -83,19 +83,11 @@
     :else
     (ex/raise :type :internal
               :code :invalid-type
-              :hint (str "cannot coerce " (pr-str o) "to fills"))))
+              :hint (str "cannot coerce " (pr-str o) " to fills"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HELPERS
+;; TYPE HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; FIXME: duplicated of `assoc`
-(defn assoc-fill
-  [fills position fill]
-  (if (nil? fills)
-    (impl/from-plain [fill])
-    (-> (coerce fills)
-        (c/assoc position fill))))
 
 (defn get-image-ids
   [fills]
@@ -136,7 +128,7 @@
         fills (apply f fills args)]
     (if (contains? flags/*current* :frontend-binary-fills)
       (impl/from-plain fills)
-      fills)))
+      (vec fills))))
 
 (defn create
   [& elements]

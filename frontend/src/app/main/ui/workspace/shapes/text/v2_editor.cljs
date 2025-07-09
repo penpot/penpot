@@ -41,7 +41,7 @@
 (defn- get-fonts
   [content]
   (let [extract-fn (juxt :font-id :font-variant-id)
-        default    (extract-fn txt/default-text-attrs)]
+        default    (extract-fn txt/default-typography)]
     (->> (tree-seq map? :children content)
          (into #{default} (keep extract-fn)))))
 
@@ -67,7 +67,7 @@
 
         style-defaults
         (styles/get-style-defaults
-         (merge txt/default-text-attrs txt/default-root-attrs default-font))
+         (merge (txt/get-default-text-attrs) txt/default-root-attrs default-font))
 
         options
         #js {:styleDefaults style-defaults

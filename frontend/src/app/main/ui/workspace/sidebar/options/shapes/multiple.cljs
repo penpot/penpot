@@ -203,6 +203,9 @@
   [shapes objects attr-group]
   (let [attrs (group->attrs attr-group)
 
+        default-text-attrs
+        (txt/get-default-text-attrs)
+
         merge-attrs
         (fn [v1 v2]
           (cond
@@ -233,7 +236,7 @@
               (let [shape-attrs (select-keys shape attrs)
 
                     content-attrs
-                    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)
+                    (attrs/get-text-attrs-multi shape default-text-attrs attrs)
 
                     new-values
                     (-> values

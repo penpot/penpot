@@ -26,7 +26,9 @@
 (def ^:cosnt bool-group-style-properties bool/group-style-properties)
 (def ^:const bool-style-properties bool/style-properties)
 
-(def ^:const default-bool-fills bool/default-fills)
+(defn get-default-bool-fills
+  []
+  (bool/get-default-fills))
 
 (def schema:content impl/schema:content)
 (def schema:segments impl/schema:segments)

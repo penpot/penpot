@@ -78,6 +78,23 @@
              (filter selectable?)
              selected)))))
 
+(defn split-text-shapes
+  "Split text shapes from non-text shapes"
+  [objects ids]
+  (loop [ids (seq ids)
+         text-ids []
+         shape-ids []]
+    (if-let [id (first ids)]
+      (let [shape (get objects id)]
+        (if (cfh/text-shape? shape)
+          (recur (rest ids)
+                 (conj text-ids id)
+                 shape-ids)
+          (recur (rest ids)
+                 text-ids
+                 (conj shape-ids id))))
+      [text-ids shape-ids])))
+
 ;; DEPRECATED
 (defn lookup-selected-raw
   [state]

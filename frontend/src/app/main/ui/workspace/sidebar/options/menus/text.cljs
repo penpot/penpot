@@ -217,7 +217,7 @@
         (mf/use-fn
          (mf/deps values)
          (fn [ids attrs]
-           (st/emit! (dwt/save-font (-> (merge txt/default-text-attrs values attrs)
+           (st/emit! (dwt/save-font (-> (merge (txt/get-default-text-attrs) values attrs)
                                         (select-keys txt/text-node-attrs)))
                      (dwt/update-all-attrs ids attrs))))
 

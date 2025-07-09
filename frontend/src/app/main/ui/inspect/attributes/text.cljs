@@ -174,7 +174,7 @@
   (let [style-text-blocks (->> (:content shape)
                                (txt/content->text+styles)
                                (remove (fn [[_ text]] (str/empty? (str/trim text))))
-                               (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))]
+                               (mapv (fn [[style text]] (vector (merge (txt/get-default-text-attrs) style) text))))]
 
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
       [:& typography-block {:key idx
