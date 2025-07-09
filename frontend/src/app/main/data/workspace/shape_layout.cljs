@@ -181,6 +181,8 @@
             is-component?   (and single? has-component?)
             has-variant?    (some ctc/is-variant? selected-shapes)
 
+            has-layout?     (and single? (ctl/any-layout? (first selected-shapes)))
+
             new-shape-id (uuid/next)
             undo-id      (js/Symbol)]
 
@@ -188,7 +190,8 @@
           (rx/empty)
           (rx/concat
            (rx/of (dwu/start-undo-transaction undo-id))
-           (if (and is-group? (not is-component?) (not is-mask?))
+           (cond
+             (and is-group? (not is-component?) (not is-mask?))
              ;; Create layout from a group:
              ;;  When creating a layout from a group we remove the group and create the layout with its children
              (let [parent-id    (:parent-id (first selected-shapes))
@@ -206,7 +209,14 @@
                 (ptk/data-event :layout/update {:ids [new-shape-id]})
                 (dwu/commit-undo-transaction undo-id)))
 
+             has-layout?
+             (rx/of
+              (create-layout-from-id (first selected) type)
+              (ptk/data-event :layout/update {:ids selected})
+              (dwu/commit-undo-transaction undo-id))
+
              ;; Create Layout from selection
+             :else
              (rx/of
               (dwsh/create-artboard-from-selection new-shape-id)
               (cl/remove-all-fills [new-shape-id] {:color clr/black :opacity 1})
