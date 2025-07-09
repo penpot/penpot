@@ -130,21 +130,21 @@
 
     (when mtype
       (let [val (case mtype
-                  "image/jpeg" 0x01
-                  "image/png"  0x02
-                  "image/gif"  0x03
-                  "image/webp"  0x04
+                  "image/jpeg"    0x01
+                  "image/png"     0x02
+                  "image/gif"     0x03
+                  "image/webp"    0x04
                   "image/svg+xml" 0x05)]
         (buf/write-short buffer (+ offset 2) val)))
 
     (if (and (some? ref-file)
              (some? ref-id))
       (do
-        (buf/write-byte buffer (+ offset 0) 0x01)
+        (buf/write-bool buffer (+ offset 0) true)
         (buf/write-uuid buffer (+ offset 4) ref-file)
         (buf/write-uuid buffer (+ offset 20) ref-id))
       (do
-        (buf/write-byte buffer (+ offset 0) 0x00)))))
+        (buf/write-bool buffer (+ offset 0) false)))))
 
 (defn- read-stop
   [buffer offset]
