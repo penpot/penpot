@@ -107,7 +107,7 @@ function serializePathAttrs(svgAttrs) {
   }, "");
 }
 
-export function draw_star(x, y, width, height) {
+export function drawStar(x, y, width, height) {
   const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE
   const ptr = allocBytes(len * 28);
   const heap = getHeapU32();
@@ -175,7 +175,7 @@ export function useShape(id) {
   Module._use_shape(...buffer);
 }
 
-export function set_parent(id) {
+export function setParent(id) {
   const buffer = getU32(id);
   Module._set_parent(...buffer);
 }
@@ -315,4 +315,57 @@ export function addTextShape(x, y, fontSize, text) {
 
   // Call the WebAssembly function
   Module._set_shape_text_content();
+}
+
+export function setup(options) {
+  init(options.instance)
+  assignCanvas(options.canvas)
+  Module._set_canvas_background(hexToU32ARGB(options?.backgroundColor ?? "#FABADA", 1));
+  Module._set_view(options?.zoom ?? 1, options?.x ?? 0, options?.y ?? 0);
+  Module._init_shapes_pool(options.shapes + 1);
+  setupInteraction(options.canvas);
+}
+
+function getShapeType(type) {
+  switch (type) {
+    default:
+    case "rect": return 3;
+  }
+}
+
+export function addShape(init) {
+  const uuid = init?.id ?? crypto.randomUUID()
+  useShape(uuid);
+  setParent(init?.parent ?? "00000000-0000-0000-0000-000000000000");
+
+  Module._set_shape_type(getShapeType(init?.type));
+  if (init.selrect) {
+    Module._set_shape_selrect(
+      init.selrect.x,
+      init.selrect.y,
+      init.selrect.x + init.selrect.width,
+      init.selrect.y + init.selrect.height,
+    );
+  }
+
+  if (Array.isArray(init?.fills)) {
+    for (const fill of init.fills) {
+      const argb = hexToU32ARGB(fill.color, fill.opacity);
+      addShapeSolidFill(argb);
+    }
+  }
+
+  if (Array.isArray(init?.strokes)) {
+    for (const stroke of init.strokes) {
+      Module._add_shape_center_stroke(stroke.width, 0, 0, 0);
+      const argb = hexToU32ARGB(stroke.color, stroke.opacity);
+      addShapeSolidStrokeFill(argb);
+    }
+  }
+
+  if (Array.isArray(init?.children)) {
+    setShapeChildren(init.children);
+  }
+
+  return uuid
 }
