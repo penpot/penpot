@@ -6,7 +6,7 @@
 
 (ns app.main.ui.shapes.text
   (:require
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.ui.context :as ctx]
    [app.main.ui.shapes.text.fo-text :as fo]

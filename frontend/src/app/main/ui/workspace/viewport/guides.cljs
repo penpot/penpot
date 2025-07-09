@@ -6,12 +6,12 @@
 
 (ns app.main.ui.workspace.viewport.guides
   (:require
-   [app.common.colors :as colors]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.common.types.color :as colors]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]

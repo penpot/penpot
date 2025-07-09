@@ -6,10 +6,10 @@
 
 (ns app.main.ui.shapes.text.styles
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
-   [app.common.text :as txt]
    [app.common.transit :as transit]
+   [app.common.types.color :as cc]
+   [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.ui.formats :as fmt]
    [app.util.color :as uc]

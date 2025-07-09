@@ -6,7 +6,6 @@
 
 (ns app.render-wasm.api.texts
   (:require
-   [app.common.data.macros :as dm]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.helpers :as h]

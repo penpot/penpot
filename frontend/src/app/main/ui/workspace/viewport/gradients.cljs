@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.gradients
   "Gradients handlers and renders"
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
@@ -15,6 +14,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.points :as gsp]
    [app.common.math :as mth]
+   [app.common.types.color :as cc]
    [app.common.types.fills :as types.fills]
    [app.config :as cfg]
    [app.main.data.workspace.colors :as dc]

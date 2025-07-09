@@ -15,9 +15,9 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
-   [app.common.text :as txt]
    [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
@@ -905,9 +905,9 @@
   (ptk/reify ::v2-update-text-editor-styles
     ptk/UpdateEvent
     (update [_ state]
-      (let [merged-styles (d/merge txt/default-text-attrs
-                                   (get-in state [:workspace-global :default-font])
-                                   new-styles)]
+      (let [merged-styles (merge txt/default-text-attrs
+                                 (get-in state [:workspace-global :default-font])
+                                 new-styles)]
         (update-in state [:workspace-v2-editor-state id] (fnil merge {}) merged-styles)))))
 
 (defn v2-update-text-shape-position-data

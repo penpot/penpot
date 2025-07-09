@@ -6,11 +6,11 @@
 
 (ns app.main.ui.shapes.filters
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.math :as mth]
+   [app.common.types.color :as cc]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))

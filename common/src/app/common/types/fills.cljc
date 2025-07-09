@@ -5,11 +5,15 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.fills
+  (:refer-clojure :exclude [assoc update])
   (:require
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.flags :as flags]
    [app.common.schema :as sm]
    [app.common.types.color :as types.color]
    [app.common.types.fills.impl :as impl]
+   [clojure.core :as c]
    [clojure.set :as set]))
 
 (def ^:const MAX-GRADIENT-STOPS impl/MAX-GRADIENT-STOPS)
@@ -85,12 +89,13 @@
 ;; HELPERS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; FIXME: duplicated of `assoc`
 (defn assoc-fill
   [fills position fill]
   (if (nil? fills)
     (impl/from-plain [fill])
     (-> (coerce fills)
-        (assoc position fill))))
+        (c/assoc position fill))))
 
 (defn get-image-ids
   [fills]
@@ -108,3 +113,52 @@
 (defn write-to
   [fills buffer offset]
   (impl/-write-to fills buffer offset))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TRANSFORMATION & CREATION HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn assoc
+  [fills position fill]
+  (if (contains? flags/*current* :frontend-binary-fills)
+    (if (nil? fills)
+      (impl/from-plain [fill])
+      (-> (coerce fills)
+          (c/assoc position fill)))
+    (if (nil? fills)
+      [fill]
+      (-> (coerce fills)
+          (c/assoc position fill)))))
+
+(defn update
+  [fills f & args]
+  (let [fills (vec fills)
+        fills (apply f fills args)]
+    (if (contains? flags/*current* :frontend-binary-fills)
+      (impl/from-plain fills)
+      fills)))
+
+(defn create
+  [& elements]
+  (let [fills (vec elements)]
+    (if (contains? flags/*current* :frontend-binary-fills)
+      (impl/from-plain fills)
+      fills)))
+
+(defn prepend
+  "Prepend a fill to existing fills"
+  [fills fill]
+  (let [fills (into [fill] fills)]
+    (if (contains? flags/*current* :frontend-binary-fills)
+      (impl/from-plain fills)
+      fills)))
+
+(defn fill->color
+  [fill]
+  (d/without-nils
+   {:color (:fill-color fill)
+    :opacity (:fill-opacity fill)
+    :gradient (:fill-color-gradient fill)
+    :image (:fill-image fill)
+    :ref-id (:fill-color-ref-id fill)
+    :ref-file (:fill-color-ref-file fill)}))

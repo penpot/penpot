@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
