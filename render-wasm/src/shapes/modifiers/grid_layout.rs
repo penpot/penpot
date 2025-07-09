@@ -379,10 +379,9 @@ fn set_fr_value(
                     }
                 }
             }
-
             // We finish when we cannot reduce the tracks more or we've allocated all
             // the space
-            if free_frs == 0 || pending >= 0.0 {
+            if free_frs == 0 || pending >= -0.01 {
                 break;
             }
 
