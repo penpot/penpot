@@ -13,7 +13,7 @@
    [app.common.schema :as sm]
    [app.common.text :as txt]
    [app.common.types.color :as types.color]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :refer [check-shadow]]
    [app.config :as cfg]
@@ -153,7 +153,7 @@
            (d/without-nils)
 
            :always
-           (types.fill/check-fill))
+           (types.fills/check-fill))
 
          transform-attrs
          #(transform % fill)]
@@ -893,7 +893,7 @@
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
                 (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fill/MAX-GRADIENT-STOPS))]
+                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
                     (if (cc/uniform-spread? stops)
                       ;; Add to uniform
@@ -939,7 +939,7 @@
               (fn [state]
                 (let [stops (:stops state)
                       cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fill/MAX-GRADIENT-STOPS))]
+                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
                   (if can-add-stop? (let [new-stop (-> (cc/interpolate-gradient stops offset)
                                                        (split-color-components))
                                           stops (conj stops new-stop)
@@ -963,7 +963,7 @@
                                      (contains? cfg/flags :frontend-binary-fills))
                       stops (mapv split-color-components
                                   (if cap-stops?
-                                    (take types.fill/MAX-GRADIENT-STOPS stops)
+                                    (take types.fills/MAX-GRADIENT-STOPS stops)
                                     stops))]
                   (-> state
                       (assoc :current-color (get stops stop))

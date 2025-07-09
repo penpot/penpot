@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.fill.impl
+(ns app.common.types.fills.impl
   (:require
    #?(:clj [clojure.data.json :as json])
    #?(:cljs [app.common.weak-map :as weak-map])

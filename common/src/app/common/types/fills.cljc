@@ -4,11 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.fill
+(ns app.common.types.fills
   (:require
    [app.common.schema :as sm]
    [app.common.types.color :as types.color]
-   [app.common.types.fill.impl :as impl]
+   [app.common.types.fills.impl :as impl]
    [clojure.set :as set]))
 
 (def ^:const MAX-GRADIENT-STOPS impl/MAX-GRADIENT-STOPS)

@@ -20,7 +20,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segm]
@@ -709,7 +709,7 @@
                     id    (:id shape)
                     value (parser/parse-fills value)]
                 (cond
-                  (not (sm/validate [:vector types.fill/schema:fill] value))
+                  (not (sm/validate [:vector types.fills/schema:fill] value))
                   (u/display-not-valid :fills value)
 
                   (cfh/text-shape? shape)

@@ -8,7 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.color :as ctc]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.config :as cfg]
    [app.main.data.workspace :as udw]
@@ -28,7 +28,7 @@
 
 (def ^:private
   xf:take-max-fills
-  (take types.fill/MAX-FILLS))
+  (take types.fills/MAX-FILLS))
 
 (def ^:private
   xf:enumerate
@@ -101,7 +101,7 @@
         can-add-fills?
         (if binary-fills-enabled?
           (and (not multiple?)
-               (< (count fills) types.fill/MAX-FILLS))
+               (< (count fills) types.fills/MAX-FILLS))
           (not ^boolean multiple?))
 
         label

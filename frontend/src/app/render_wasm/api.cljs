@@ -12,7 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -248,7 +248,7 @@
   [shape-id fills]
   (if (empty? fills)
     (h/call wasm/internal-module "_clear_shape_fills")
-    (let [fills (take types.fill/MAX-FILLS fills)
+    (let [fills (take types.fills/MAX-FILLS fills)
           image-fills (filter :fill-image fills)
           offset (mem/alloc-bytes (* (count fills) sr-fills/FILL-BYTE-SIZE))
           heap (mem/get-heap-u8)

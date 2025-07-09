@@ -21,7 +21,7 @@
    [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.color :as types.color]
-   [app.common.types.fill :refer [schema:fill]]
+   [app.common.types.fills :refer [schema:fill]]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
