@@ -16,7 +16,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
    [app.common.text :as txt]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
@@ -237,7 +237,7 @@
 
 (defn- to-new-fills
   [data]
-  [(d/without-nils (select-keys data types.fill/fill-attrs))])
+  [(d/without-nils (select-keys data types.fills/fill-attrs))])
 
 (defn- shape-current-values
   [shape pred attrs]
@@ -247,7 +247,7 @@
                           (if (txt/is-text-node? node)
                             (let [fills
                                   (cond
-                                    (types.fill/has-valid-fill-attrs? node)
+                                    (types.fills/has-valid-fill-attrs? node)
                                     (to-new-fills node)
 
                                     (some? (:fills node))
@@ -466,7 +466,7 @@
 
 (defn migrate-node
   [node]
-  (let [color-attrs (not-empty (select-keys node types.fill/fill-attrs))]
+  (let [color-attrs (not-empty (select-keys node types.fills/fill-attrs))]
     (cond-> node
       (nil? (:fills node))
       (assoc :fills [])

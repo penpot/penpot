@@ -1,7 +1,7 @@
 (ns app.render-wasm.serializers.fills
   (:require
    [app.common.data.macros :as dm]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.uuid :as uuid]
    [app.render-wasm.serializers.color :as clr]))
 
@@ -41,7 +41,7 @@
         end-x   (:end-x gradient)
         end-y   (:end-y gradient)
         width   (or (:width gradient) 0)
-        stops   (take types.fill/MAX-GRADIENT-STOPS (:stops gradient))
+        stops   (take types.fills/MAX-GRADIENT-STOPS (:stops gradient))
         type    (if (= (:type gradient) :linear) 0x01 0x02)]
     (.setUint8   dview offset        type true)
     (.setFloat32 dview (+ offset 4)  start-x true)

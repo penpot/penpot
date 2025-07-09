@@ -20,7 +20,7 @@
    [app.common.logic.shapes :as cls]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
@@ -144,7 +144,7 @@
   (letfn [(process-map-form [form]
             (let [fills (get form :fills)]
               (if (vector? fills)
-                (assoc form :fills (types.fill/from-plain fills))
+                (assoc form :fills (types.fills/from-plain fills))
                 form)))
 
           (process-form [form]
