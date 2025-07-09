@@ -1130,7 +1130,7 @@ impl RenderState {
             // it.
             if self.get_tiles_of(node_id).is_none() {
                 emscripten::log!(emscripten::Log::Default, "updating tiles for {}", element.id);
-                self.update_tile_for(element);
+                self.update_tiles_for(element);
             }
 
             emscripten::log!(emscripten::Log::Default, "c");
@@ -1218,7 +1218,7 @@ impl RenderState {
             // If the shape is not in the tile set, then we update
             // it.
             if self.tiles.get_tiles_of(node_id).is_none() {
-                self.update_tile_for(element);
+                self.update_tiles_for(element);
             }
 
             if visited_children {
@@ -1396,7 +1396,7 @@ impl RenderState {
         tiles::get_tiles_for_rect(shape.extrect(), tile_size)
     }
 
-    pub fn update_tile_for(&mut self, shape: &Shape) {
+    pub fn update_tiles_for(&mut self, shape: &Shape) {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape);
         let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
             .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
@@ -1438,7 +1438,7 @@ impl RenderState {
                     if let Some(modifier) = modifiers.get(&shape_id) {
                         shape.to_mut().apply_transform(modifier);
                     }
-                    self.update_tile_for(&shape);
+                    self.update_tiles_for(&shape);
                 } else {
                     // We only need to rebuild tiles from the first level.
                     let children = shape.modified_children_ids(structure.get(&shape.id), false);
@@ -1468,7 +1468,7 @@ impl RenderState {
                     if let Some(modifier) = modifiers.get(&shape_id) {
                         shape.to_mut().apply_transform(modifier);
                     }
-                    self.update_tile_for(&shape);
+                    self.update_tiles_for(&shape);
                 }
 
                 let children = shape.modified_children_ids(structure.get(&shape.id), false);
@@ -1485,7 +1485,7 @@ impl RenderState {
             if let Some(shape) = tree.get(uuid) {
                 let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 shape.to_mut().apply_transform(matrix);
-                self.update_tile_for(&shape);
+                self.update_tiles_for(&shape);
             }
         }
     }
