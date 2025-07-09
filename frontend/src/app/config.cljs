@@ -37,12 +37,12 @@
         check-safari-16? (fn [] (and (check-safari?) (str/includes? user-agent "version/16")))
         check-safari-17? (fn [] (and (check-safari?) (str/includes? user-agent "version/17")))]
     (cond
-      (check-edge?)      :edge
-      (check-chrome?)    :chrome
-      (check-firefox?)   :firefox
-      (check-safari-16?) :safari-16
-      (check-safari-17?) :safari-17
-      (check-safari?)    :safari
+      ^boolean (check-edge?)      :edge
+      ^boolean (check-chrome?)    :chrome
+      ^boolean (check-firefox?)   :firefox
+      ^boolean (check-safari-16?) :safari-16
+      ^boolean (check-safari-17?) :safari-17
+      ^boolean (check-safari?)    :safari
       :else              :other)))
 
 (defn- parse-platform
@@ -52,9 +52,9 @@
         check-linux?   (fn [] (str/includes? user-agent "linux"))
         check-macos?   (fn [] (str/includes? user-agent "mac os"))]
     (cond
-      (check-windows?) :windows
-      (check-linux?)   :linux
-      (check-macos?)   :macos
+      ^boolean (check-windows?) :windows
+      ^boolean (check-linux?)   :linux
+      ^boolean (check-macos?)   :macos
       :else            :other)))
 
 (defn- parse-target
