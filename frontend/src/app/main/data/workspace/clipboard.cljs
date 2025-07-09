@@ -42,6 +42,7 @@
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
@@ -950,7 +951,8 @@
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
-      (let [root    (dwtxt/create-root-from-html html)
+      (let [style   (deref refs/workspace-clipboard-style)
+            root    (dwtxt/create-root-from-html html style)
             content (tc/dom->cljs root)]
         (when (types.text/valid-content? content)
           (let [id     (uuid/next)
