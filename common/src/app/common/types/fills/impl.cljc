@@ -112,8 +112,10 @@
   [offset buffer opacity image]
   (let [image-id (get image :id)
         image-width (get image :width)
-        image-height (get image :height)]
+        image-height (get image :height)
+        keep-ratio   (get image :keep-aspect-ratio false)]
     (buf/write-byte  buffer (+ offset  0) 0x03)
+    (buf/write-bool  buffer (+ offset  1) keep-ratio)
     (buf/write-uuid  buffer (+ offset  4) image-id)
     (buf/write-float buffer (+ offset 20) opacity)
     (buf/write-int   buffer (+ offset 24) image-width)
@@ -193,7 +195,8 @@
                                            :type type}})
 
                   3
-                  (let [id     (buf/read-uuid  dbuffer (+ doffset 4))
+                  (let [ratio  (buf/read-bool  dbuffer (+ doffset 1))
+                        id     (buf/read-uuid  dbuffer (+ doffset 4))
                         alpha  (buf/read-float dbuffer (+ doffset 20))
                         width  (buf/read-int   dbuffer (+ doffset 24))
                         height (buf/read-int   dbuffer (+ doffset 28))
@@ -209,6 +212,7 @@
                                   :width width
                                   :height height
                                   :mtype mtype
+                                  :keep-aspect-ratio ratio
                                   ;; FIXME: we are not encodign the name, looks useless
                                   :name "sample"}}))]
 
