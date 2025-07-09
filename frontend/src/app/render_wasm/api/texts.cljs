@@ -7,12 +7,11 @@
 (ns app.render-wasm.api.texts
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.fills.impl :as types.fills.impl]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
-   [app.render-wasm.serializers.color :as sr-clr]
-   [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]))
 
 (defn utf8->buffer [text]
@@ -26,21 +25,18 @@
                   color    (:fill-color fill)
                   gradient (:fill-color-gradient fill)
                   image    (:fill-image fill)]
+
               (cond
                 (some? color)
-                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
+                (types.fills.impl/write-solid-fill offset dview opacity color)
 
                 (some? gradient)
-                (sr-fills/write-gradient-fill! offset dview gradient opacity)
+                (types.fills.impl/write-gradient-fill offset dview opacity gradient)
 
                 (some? image)
-                (sr-fills/write-image-fill! offset dview
-                                            (dm/get-prop image :id)
-                                            opacity
-                                            (dm/get-prop image :width)
-                                            (dm/get-prop image :height)))
+                (types.fills.impl/write-image-fill offset dview opacity image))
 
-              (+ offset sr-fills/FILL-BYTE-SIZE)))
+              (+ offset types.fills.impl/FILL-BYTE-SIZE)))
           current-offset
           fills))
 
@@ -56,7 +52,7 @@
         num-leaves (count leaves)
         paragraph-attr-size 48
         total-fills (total-fills-count leaves)
-        total-fills-size (* sr-fills/FILL-BYTE-SIZE total-fills)
+        total-fills-size (* types.fills.impl/FILL-BYTE-SIZE total-fills)
         leaf-attr-size 56
         metadata-size (+ paragraph-attr-size (* num-leaves leaf-attr-size) total-fills-size)
         text-buffer (utf8->buffer text)

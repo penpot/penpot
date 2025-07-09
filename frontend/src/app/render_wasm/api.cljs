@@ -13,6 +13,7 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.point :as gpt]
    [app.common.types.fills :as types.fills]
+   [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
@@ -28,7 +29,6 @@
    [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
-   [app.render-wasm.serializers.fills :as sr-fills]
    [app.render-wasm.wasm :as wasm]
    [app.util.debug :as dbg]
    [app.util.functions :as fns]
@@ -201,6 +201,9 @@
                      (rx/map :body)
                      (rx/mapcat wapi/read-file-as-array-buffer)
                      (rx/map (fn [image]
+                               ;; FIXME use bigger heap ptr size if it
+                               ;; is possible (if image size modulo
+                               ;; permits it)
                                (let [size    (.-byteLength image)
                                      offset  (mem/alloc-bytes size)
                                      heap    (mem/get-heap-u8)
@@ -248,28 +251,19 @@
   [shape-id fills]
   (if (empty? fills)
     (h/call wasm/internal-module "_clear_shape_fills")
-    (let [fills (take types.fills/MAX-FILLS fills)
-          image-fills (filter :fill-image fills)
-          offset (mem/alloc-bytes (* (count fills) sr-fills/FILL-BYTE-SIZE))
-          heap (mem/get-heap-u8)
-          dview (js/DataView. (.-buffer heap))]
+    (let [fills  (types.fills/coerce fills)
+          offset (mem/alloc-bytes-32 (types.fills/get-byte-size fills))
+          heap   (mem/get-heap-u32)]
 
-      ;; write fill data to heap
-      (loop [fills (seq fills)
-             current-offset offset]
-        (when-not (empty? fills)
-          (let [fill       (first fills)
-                new-offset (sr-fills/write-fill! current-offset dview fill)]
-            (recur (rest fills) new-offset))))
+      ;; write fills to the heap
+      (types.fills/write-to fills heap offset)
 
       ;; send fills to wasm
       (h/call wasm/internal-module "_set_shape_fills")
 
       ;; load images for image fills if not cached
-      (keep (fn [fill]
-              (let [image         (:fill-image fill)
-                    id            (dm/get-prop image :id)
-                    buffer        (uuid/get-u32 id)
+      (keep (fn [id]
+              (let [buffer        (uuid/get-u32 id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached"
                                           (aget buffer 0)
                                           (aget buffer 1)
@@ -277,7 +271,8 @@
                                           (aget buffer 3))]
                 (when (zero? cached-image?)
                   (fetch-image shape-id id))))
-            image-fills))))
+
+            (types.fills/get-image-ids fills)))))
 
 (defn set-shape-strokes
   [shape-id strokes]
@@ -292,7 +287,7 @@
                 style     (-> stroke :stroke-style sr/translate-stroke-style)
                 cap-start (-> stroke :stroke-cap-start sr/translate-stroke-cap)
                 cap-end   (-> stroke :stroke-cap-end sr/translate-stroke-cap)
-                offset    (mem/alloc-bytes sr-fills/FILL-BYTE-SIZE)
+                offset    (mem/alloc-bytes types.fills.impl/FILL-BYTE-SIZE)
                 heap      (mem/get-heap-u8)
                 dview     (js/DataView. (.-buffer heap))]
             (case align
@@ -303,23 +298,21 @@
             (cond
               (some? gradient)
               (do
-                (sr-fills/write-gradient-fill! offset dview gradient opacity)
+                (types.fills.impl/write-gradient-fill offset dview opacity gradient)
                 (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
               (let [image-id      (dm/get-prop image :id)
                     buffer        (uuid/get-u32 image-id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
-                (sr-fills/write-image-fill! offset dview image-id opacity
-                                            (dm/get-prop image :width)
-                                            (dm/get-prop image :height))
+                (types.fills.impl/write-image-fill offset dview opacity image)
                 (h/call wasm/internal-module "_add_shape_stroke_fill")
                 (when (== cached-image? 0)
                   (fetch-image shape-id image-id)))
 
               (some? color)
               (do
-                (sr-fills/write-solid-fill! offset dview (sr-clr/hex->u32argb color opacity))
+                (types.fills.impl/write-solid-fill offset dview opacity color)
                 (h/call wasm/internal-module "_add_shape_stroke_fill")))))
         strokes))
 
