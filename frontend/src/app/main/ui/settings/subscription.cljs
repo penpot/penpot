@@ -11,6 +11,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
+   [app.main.ui.dashboard.subscription :refer [get-subscription-name]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -223,9 +224,7 @@
                                              (or (= (:subscription (:query params)) "subscribed-to-penpot-unlimited")
                                                  (= (:subscription (:query params)) "subscribed-to-penpot-enterprise")))
         subscription                    (:subscription (:props profile))
-        subscription-name               (if subscription
-                                          (:type subscription)
-                                          "professional")
+        subscription-name               (get-subscription-name subscription)
         subscription-is-trial           (= (:status subscription) "trialing")
         teams*                          (mf/use-state nil)
         teams                           (deref teams*)

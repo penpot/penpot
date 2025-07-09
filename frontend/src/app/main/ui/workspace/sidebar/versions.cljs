@@ -17,6 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.dashboard.subscription :refer [get-subscription-name]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.autosaved-milestone :refer [autosaved-milestone*]]
@@ -36,7 +37,7 @@
 
 (defn get-versions-stored-days
   [team]
-  (let [subscription-name (-> team :subscription :type)]
+  (let [subscription-name (get-subscription-name (:subscription team))]
     (cond
       (= subscription-name "unlimited") 30
       (= subscription-name "enterprise") 90
@@ -44,7 +45,7 @@
 
 (defn get-versions-warning-subtext
   [team]
-  (let [subscription-name   (-> team :subscription :type)
+  (let [subscription-name   (get-subscription-name (:subscription team))
         is-owner?           (-> team :permissions :is-owner)
         email-owner         (:email (some #(when (:is-owner %) %) (:members team)))
         support-email       "support@penpot.app"

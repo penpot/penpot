@@ -18,6 +18,12 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
+(defn get-subscription-name
+  [subscription]
+  (if (and subscription (not (some #{"unpaid" "canceled"} [(:status subscription)])))
+    (:type subscription)
+    "professional"))
+
 (mf/defc cta-power-up*
   [{:keys [top-title top-description bottom-description has-dropdown]}]
   (let [show-data* (mf/use-state false)
@@ -46,9 +52,7 @@
 (mf/defc subscription-sidebar*
   [{:keys [profile]}]
   (let [subscription           (:subscription (:props profile))
-        subscription-name      (if subscription
-                                 (:type subscription)
-                                 "professional")
+        subscription-name      (get-subscription-name subscription)
         subscription-is-trial  (= (:status subscription) "trialing")
         subscription-href      (dm/str (u/join cf/public-uri "#/settings/subscriptions"))]
 
@@ -88,7 +92,7 @@
 (mf/defc team*
   [{:keys [is-owner team]}]
   (let [subscription          (:subscription team)
-        subscription-name     (:type subscription)
+        subscription-name     (get-subscription-name subscription)
         subscription-is-trial (= "trialing" (:status subscription))
 
         go-to-manage-subscription
@@ -141,7 +145,7 @@
 (mf/defc members-cta*
   [{:keys [banner-is-expanded team]}]
   (let [subscription          (:subscription team)
-        subscription-name     (:type subscription)
+        subscription-name     (get-subscription-name subscription)
         is-owner              (-> team :permissions :is-owner)
 
         email-owner           (:email (some #(when (:is-owner %) %) (:members team)))
@@ -185,24 +189,25 @@
 
 (defn show-subscription-members-main-banner?
   [team]
-  (let [seats   (-> team :subscription :seats)
-        editors (count (filter :can-edit (:members team)))]
+  (let [subscription-name (get-subscription-name (:subscription team))
+        seats             (-> team :subscription :seats)
+        editors           (count (filter :can-edit (:members team)))]
     (or
-     (and (= (-> team :subscription :type) "professional")
+     (and (= subscription-name "professional")
           (> editors 8))
      (and
-      (= (-> team :subscription :type) "unlimited")
+      (= subscription-name "unlimited")
       (>= editors 8)
       (< seats editors)))))
 
 (defn show-subscription-members-small-banner?
   [team]
-  (let [seats   (-> team :subscription :seats)
+  (let [subscription-name (get-subscription-name (:subscription team))
+        seats   (-> team :subscription :seats)
         editors (count (filterv :can-edit (:members team)))]
     (or
-     (and (= (-> team :subscription :type) "professional")
+     (and (= subscription-name "professional")
           (= editors 8))
-     (and (= (-> team :subscription :type) "unlimited")
+     (and (= subscription-name "unlimited")
           (< editors 8)
           (< seats editors)))))
-

@@ -27,7 +27,7 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon*]]
+   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon* get-subscription-name]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -333,10 +333,10 @@
                :alt (:name team-item)}]
 
         (if (and (contains? cf/flags :subscriptions)
-                 (or (= "unlimited" (:type (:subscription team-item))) (= "enterprise" (:type (:subscription team-item)))))
+                 (#{"unlimited" "enterprise"} (get-subscription-name (:subscription team-item))))
           [:div  {:class (stl/css :team-text-with-icon)}
            [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
-           [:> menu-team-icon* {:subscription-name (:type (:subscription team-item))}]]
+           [:> menu-team-icon* {:subscription-name (get-subscription-name (:subscription team-item))}]]
           [:span {:class (stl/css :team-text)
                   :title (:name team-item)} (:name team-item)])
         (when (= (:id team-item) (:id team))

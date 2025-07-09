@@ -79,6 +79,74 @@ test.describe("Subscriptions: dashboard", () => {
       "Unlimited plan (trial)",
     );
   });
+
+  test("When the subscription status is unpaid, the sidebar dropdown displays the name Professional for the Unlimited subscription", async ({
+    page,
+  }) => {
+    await DashboardPage.mockRPC(
+      page,
+      "get-profile",
+      "subscription/get-profile-unlimited-unpaid-subscription.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
+      "get-team-info",
+      "subscription/get-team-info-subscriptions.json",
+    );
+
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await DashboardPage.mockRPC(
+      page,
+      "get-teams",
+      "subscription/get-teams-unlimited-subscription-owner.json",
+    );
+
+    await dashboardPage.mockRPC(
+      "push-audit-events",
+      "workspace/audit-event-empty.json",
+    );
+    await dashboardPage.goToDashboard();
+
+    await expect(page.getByTestId("subscription-name")).toHaveText(
+      "Professional plan",
+    );
+  });
+
+  test("When the subscription status is canceled, the sidebar dropdown displays the name Professional for the Enterprise subscription", async ({
+    page,
+  }) => {
+    await DashboardPage.mockRPC(
+      page,
+      "get-profile",
+      "subscription/get-profile-enterprise-canceled-subscription.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
+      "get-team-info",
+      "subscription/get-team-info-subscriptions.json",
+    );
+
+    const dashboardPage = new DashboardPage(page);
+    await dashboardPage.setupDashboardFull();
+    await DashboardPage.mockRPC(
+      page,
+      "get-teams",
+      "subscription/get-teams-unlimited-subscription-owner.json",
+    );
+
+    await dashboardPage.mockRPC(
+      "push-audit-events",
+      "workspace/audit-event-empty.json",
+    );
+    await dashboardPage.goToDashboard();
+
+    await expect(page.getByTestId("subscription-name")).toHaveText(
+      "Professional plan",
+    );
+  });
 });
 
 test.describe("Subscriptions: team members and invitations", () => {
