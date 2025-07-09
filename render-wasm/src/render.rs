@@ -70,7 +70,7 @@ impl PendingNodes {
         self.list.pop()
     }
 
-    pub fn prepare(&mut self, tree: &HashMap<Uuid, &mut Shape>) {
+    pub fn prepare(&mut self, tree: &ShapesPool) {
         self.list.clear();
         if self.list.capacity() < tree.len() {
             self.list.reserve(tree.len() - self.list.capacity());
@@ -969,7 +969,7 @@ impl RenderState {
 
     pub fn render_shape_tree_full(
         &mut self,
-        tree: &HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -1008,7 +1008,7 @@ impl RenderState {
 
     pub fn render_shape_tree_full_uncached_shape_tile(
         &mut self,
-        element: &&mut Shape,
+        element: &Shape,
         node_render_state: &NodeRenderState,
         tile: &tiles::Tile,
         modifiers: &HashMap<Uuid, Matrix>,
@@ -1018,7 +1018,7 @@ impl RenderState {
         let NodeRenderState {
             id: _node_id,
             visited_children,
-            clip_bounds,
+            clip_bounds: _clip_bounds,
             visited_mask,
             mask,
         } = *node_render_state;
@@ -1030,14 +1030,13 @@ impl RenderState {
             self.render_shape(
                 element,
                 modifiers.get(&element.id),
-                scale_content.get(&element.id),
-                clip_bounds,
+                scale_content.get(&element.id)
             );
         } else {
             self.apply_drawing_to_render_canvas(Some(element));
         }
         if visited_children {
-            self.render_shape_exit(element, visited_mask);
+            self.render_shape_exit(element, visited_mask, modifiers.get(&element.id), scale_content.get(&element.id));
             return false;
         }
         true
@@ -1045,7 +1044,7 @@ impl RenderState {
 
     pub fn render_shape_tree_full_uncached_shape_tiles(
         &mut self,
-        element: &&mut Shape,
+        element: &Shape,
         node_render_state: &NodeRenderState,
         tiles: &HashSet<tiles::Tile>,
         modifiers: &HashMap<Uuid, Matrix>,
@@ -1073,7 +1072,7 @@ impl RenderState {
 
     pub fn render_shape_tree_full_uncached(
         &mut self,
-        tree: &HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
