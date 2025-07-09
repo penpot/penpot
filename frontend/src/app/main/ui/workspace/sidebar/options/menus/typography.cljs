@@ -426,7 +426,7 @@
       [:& radio-button {:icon i/text-mixed
                         :type "checkbox"
                         :value "capitalize"
-                        :title (tr "inspect.attributes.typography.text-transform.titlecase")
+                        :title (tr "inspect.attributes.typography.text-transform.capitalize")
                         :id "text-transform-capitalize"}]
       [:& radio-button {:icon i/text-lowercase
                         :type "checkbox"

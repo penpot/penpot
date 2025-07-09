@@ -152,7 +152,7 @@
               ;; Execution time translation strings:
               ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
               ;;   (tr "inspect.attributes.typography.text-transform.none")
-              ;;   (tr "inspect.attributes.typography.text-transform.titlecase")
+              ;;   (tr "inspect.attributes.typography.text-transform.capitalize")
               ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
               ;;   (tr "inspect.attributes.typography.text-transform.unset")
         [:div {:class (stl/css :global/attr-value)}
