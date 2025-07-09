@@ -104,6 +104,12 @@
 (def plugins-whitelist    (into #{} (obj/get global "penpotPluginsWhitelist" [])))
 (def templates-uri        (obj/get global "penpotTemplatesUri" "https://penpot.github.io/penpot-files/"))
 
+
+;; We set the current parsed flags under common for make
+;; it available for common code without the need to pass
+;; the flags all arround on parameters.
+(set! app.common.flags/*current* flags)
+
 (defn- normalize-uri
   [uri-str]
   (let [uri (u/uri uri-str)]
