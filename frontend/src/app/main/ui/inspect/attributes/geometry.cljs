@@ -16,7 +16,7 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(def properties
+(def ^:private properties
   [:width
    :height
    :left

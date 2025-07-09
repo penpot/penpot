@@ -23,19 +23,19 @@
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(defn has-text? [shape]
+(defn- has-text? [shape]
   (:content shape))
 
-(def file-typographies-ref
+(def ^:private file-typographies-ref
   (l/derived (l/in [:viewer :file :data :typographies]) st/state))
 
-(defn make-typographies-library-ref [file-id]
+(defn- make-typographies-library-ref [file-id]
   (let [get-library
         (fn [state]
           (get-in state [:viewer-libraries file-id :data :typographies]))]
     #(l/derived get-library st/state)))
 
-(defn copy-style-data
+(defn- copy-style-data
   [style & properties]
   (->> properties
        (map #(dm/str (d/name %) ": " (get style %) ";"))

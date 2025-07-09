@@ -13,9 +13,9 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(def properties [:border])
+(def ^:private properties [:border])
 
-(defn stroke->color [shape]
+(defn- stroke->color [shape]
   {:color (:stroke-color shape)
    :opacity (:stroke-opacity shape)
    :gradient (:stroke-color-gradient shape)
@@ -23,7 +23,7 @@
    :file-id (:stroke-color-ref-file shape)
    :image (:stroke-image shape)})
 
-(defn has-stroke? [shape]
+(defn- has-stroke? [shape]
   (seq (:strokes shape)))
 
 (mf/defc stroke-block
