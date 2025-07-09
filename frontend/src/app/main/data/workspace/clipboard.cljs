@@ -925,7 +925,7 @@
   (let [paragraphs (->> (str/lines text)
                         (map str/trim)
                         (mapv #(hash-map :type "paragraph"
-                                         :children [(merge txt/default-text-attrs {:text %})])))]
+                                         :children [(merge (txt/get-default-text-attrs) {:text %})])))]
     ;; if text is composed only by line breaks paragraphs is an empty list and should be nil
     (when (d/not-empty? paragraphs)
       {:type "root"

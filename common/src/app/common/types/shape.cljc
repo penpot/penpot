@@ -415,12 +415,14 @@
 
 ;; Valid attributes
 
-(def ^:private allowed-shape-attrs #{:page-id :component-id :component-file :component-root :main-instance
-                                     :remote-synced :shape-ref :touched :blocked :collapsed :locked
-                                     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
-                                     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
-                                     :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
-                                     :plugin-data})
+(def ^:private allowed-shape-attrs
+  #{:page-id :component-id :component-file :component-root :main-instance
+    :remote-synced :shape-ref :touched :blocked :collapsed :locked
+    :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
+    :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
+    :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
+    :plugin-data})
+
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
 (def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform :transform-inverse :parent-id :frame-id})
 (def ^:private allowed-bool-attrs #{:shapes :bool-type :content})

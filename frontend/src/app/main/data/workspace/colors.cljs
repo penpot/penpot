@@ -18,7 +18,6 @@
    [app.common.types.text :as txt]
    [app.config :as cfg]
    [app.main.broadcast :as mbc]
-   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
    [app.main.data.workspace.layout :as layout]
@@ -103,11 +102,7 @@
 
 (defn assoc-shape-fill
   [shape position fill]
-  (update shape :fills
-          (fn [fills]
-            (if (nil? fills)
-              [fill]
-              (assoc fills position fill)))))
+  (update shape :fills types.fills/assoc position fill))
 
 (defn transform-fill*
   "A lower-level companion function for `transform-fill`"
@@ -167,17 +162,28 @@
         (assoc-in [attr index] second)
         (assoc-in [attr new-index] first))))
 
+(defn- swap-fills-index
+  [fills index new-index]
+  (let [first  (get fills index)
+        second (get fills new-index)]
+    (-> fills
+        (assoc index second)
+        (assoc new-index first))))
+
 (defn reorder-fills
   [ids index new-index]
   (ptk/reify ::reorder-fills
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects   (dsh/lookup-page-objects state)
+      (let [objects
+            (dsh/lookup-page-objects state)
 
-            is-text?  #(= :text (:type (get objects %)))
-            text-ids  (filter is-text? ids)
-            shape-ids (remove is-text? ids)
-            transform-attrs #(swap-attrs % :fills index new-index)]
+            [text-ids shape-ids]
+            (dsh/split-text-shapes objects ids)
+
+            transform-attrs
+            (fn [object]
+              (update object :fills types.fills/update swap-fills-index index new-index))]
 
         (rx/concat
          (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
@@ -207,7 +213,7 @@
    (ptk/reify ::change-fill-and-clear
      ptk/WatchEvent
      (watch [_ state _]
-       (let [change-fn (fn [shape attrs] (assoc shape :fills [attrs]))
+       (let [change-fn (fn [shape attrs] (assoc shape :fills (types.fills/create attrs)))
              undo-id   (js/Symbol)]
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
@@ -225,8 +231,7 @@
        (watch [_ state _]
          (let [change-fn
                (fn [shape attrs]
-                 (-> shape
-                     (update :fills #(into [attrs] %))))
+                 (update shape :fills types.fills/prepend attrs))
                undo-id
                (js/Symbol)]
            (rx/concat
@@ -247,13 +252,13 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [detach-fn
-             (fn [values index]
-               (update values index dissoc :fill-color-ref-id :fill-color-ref-file))
+             (fn [fills index]
+               (update fills index dissoc :fill-color-ref-id :fill-color-ref-file))
 
              change-fn
              ;; The `node` can be a shape or a text content node
              (fn [node]
-               (update node :fills detach-fn position))
+               (update node :fills types.fills/update detach-fn position))
 
              undo-id
              (js/Symbol)]
@@ -275,17 +280,17 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [remove-fill-by-index
-             (fn [values index]
+             (fn [fills index]
                (into []
                      (comp
                       (map-indexed (fn [i o] (when (not= i index) o)))
                       (filter some?))
-                     values))
+                     fills))
 
              change-fn
              ;; The `node` can be a shape or a text content node
              (fn [node]
-               (update node :fills remove-fill-by-index position))
+               (update node :fills types.fills/update remove-fill-by-index position))
 
              undo-id
              (js/Symbol)]
@@ -303,7 +308,7 @@
    (ptk/reify ::remove-all-fills
      ptk/WatchEvent
      (watch [_ state _]
-       (let [change-fn (fn [node] (assoc node :fills []))
+       (let [change-fn (fn [node] (assoc node :fills (types.fills/create)))
              undo-id   (js/Symbol)]
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
@@ -576,16 +581,26 @@
     :fill-color-ref-file (:ref-file color)
     :fill-color-gradient (:gradient color)}))
 
-(defn change-text-color
+(defn- change-text-color
   [old-color new-color index node]
-  (let [fills (map #(dissoc % :fill-color-ref-id :fill-color-ref-file) (:fills node))
-        parsed-color (-> (color-att->text old-color)
-                         (dissoc :fill-color-ref-id :fill-color-ref-file))
-        parsed-new-color (color-att->text new-color)
-        has-color? (d/index-of fills parsed-color)]
-    (cond-> node
-      (some? has-color?)
-      (assoc-in [:fills index] parsed-new-color))))
+  (update node :fills types.fills/update
+          (fn [fills]
+            (let [fills'
+                  (map #(dissoc % :fill-color-ref-id :fill-color-ref-file) fills)
+
+                  parsed-color
+                  (-> (color-att->text old-color)
+                      (dissoc :fill-color-ref-id :fill-color-ref-file))
+
+                  parsed-new-color
+                  (color-att->text new-color)
+
+                  has-color?
+                  (d/index-of fills' parsed-color)]
+
+              (cond-> fills
+                (some? has-color?)
+                (assoc index parsed-new-color))))))
 
 (def ^:private schema:change-color-operation
   [:map
@@ -1113,39 +1128,6 @@
                 (-> state
                     (assoc :type :image)
                     (dissoc :editing-stop :stops :gradient)))))))
-
-(defn select-color
-  [position add-color]
-  ;; FIXME: revisit
-  (ptk/reify ::select-color
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [selected   (dsh/lookup-selected state)
-            shapes     (dsh/lookup-shapes state selected)
-            shape      (first shapes)
-            fills      (if (cfh/text-shape? shape)
-                         (:fills (dwt/current-text-values
-                                  {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
-                                   :shape shape
-                                   :attrs (conj txt/text-fill-attrs :fills)}))
-                         (:fills shape))
-            fill       (first fills)
-            single?    (and (= 1 (count selected))
-                            (= 1 (count fills)))
-            data       (if single?
-                         (d/without-nils {:color (:fill-color fill)
-                                          :opacity (:fill-opacity fill)
-                                          :gradient (:fill-color-gradient fill)})
-                         {:color "#406280"
-                          :opacity 1})]
-        (rx/of (md/show :colorpicker
-                        {:x (:x position)
-                         :y (:y position)
-                         :on-accept add-color
-                         :data data
-                         :position :right})
-               (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                      :asset-type "color"}))))))
 
 (defn- stroke->color-att
   [stroke file-id libraries]

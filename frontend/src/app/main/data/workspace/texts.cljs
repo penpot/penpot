@@ -196,8 +196,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [text-state   (some->> content ted/import-content)
-            attrs        (d/merge txt/default-text-attrs
-                                  (get-in state [:workspace-global :default-font]))
+            attrs        (merge (txt/get-default-text-attrs)
+                                (get-in state [:workspace-global :default-font]))
             editor       (cond-> (ted/create-editor-state text-state decorator)
                            (and (nil? content) (some? attrs))
                            (ted/update-editor-current-block-data attrs))]
@@ -237,7 +237,9 @@
 
 (defn- to-new-fills
   [data]
-  [(d/without-nils (select-keys data types.fills/fill-attrs))])
+  ;; FIXME: maybe export this as a specific helper ?
+  (types.fills/create
+   (d/without-nils (select-keys data types.fills/fill-attrs))))
 
 (defn- shape-current-values
   [shape pred attrs]
@@ -245,7 +247,10 @@
         nodes (->> (txt/node-seq pred root)
                    (map (fn [node]
                           (if (txt/is-text-node? node)
-                            (let [fills
+                            (let [default-text-attrs
+                                  (txt/get-default-text-attrs)
+
+                                  fills
                                   (cond
                                     (types.fills/has-valid-fill-attrs? node)
                                     (to-new-fills node)
@@ -254,8 +259,9 @@
                                     (:fills node)
 
                                     :else
-                                    (:fills txt/default-text-attrs))]
-                              (-> (merge txt/default-text-attrs node)
+                                    (:fills default-text-attrs))]
+
+                              (-> (merge default-text-attrs node)
                                   (assoc :fills fills)))
                             node))))]
     (attrs/get-attrs-multi nodes attrs)))
@@ -290,7 +296,9 @@
   [{:keys [editor-state attrs]}]
   (let [result (-> (ted/get-editor-current-inline-styles editor-state)
                    (select-keys attrs))
-        result (if (empty? result) txt/default-text-attrs result)]
+        result (if (empty? result)
+                 (txt/get-default-text-attrs)
+                 result)]
     result))
 
 (defn current-text-values
@@ -469,21 +477,21 @@
   (let [color-attrs (not-empty (select-keys node types.fills/fill-attrs))]
     (cond-> node
       (nil? (:fills node))
-      (assoc :fills [])
+      (assoc :fills (types.fills/create))
 
       ;; Migrate old colors and remove the old fromat
       color-attrs
       (-> (dissoc :fill-color :fill-opacity :fill-color-ref-id :fill-color-ref-file :fill-color-gradient)
-          (update :fills conj color-attrs))
+          (update :fills types.fills/update conj color-attrs))
 
       ;; We don't have the fills attribute. It's an old text without color
       ;; so need to be black
       (and (nil? (:fills node)) (empty? color-attrs))
-      (assoc :fills (:fills txt/default-text-attrs))
+      (assoc :fills (txt/get-default-text-fills))
 
       ;; Remove duplicates from the fills
       :always
-      (update :fills (comp vec distinct)))))
+      (update :fills types.fills/update distinct))))
 
 (defn migrate-content
   [content]
@@ -905,7 +913,7 @@
   (ptk/reify ::v2-update-text-editor-styles
     ptk/UpdateEvent
     (update [_ state]
-      (let [merged-styles (merge txt/default-text-attrs
+      (let [merged-styles (merge (txt/get-default-text-attrs)
                                  (get-in state [:workspace-global :default-font])
                                  new-styles)]
         (update-in state [:workspace-v2-editor-state id] (fnil merge {}) merged-styles)))))

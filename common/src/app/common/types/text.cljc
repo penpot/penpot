@@ -8,7 +8,9 @@
    (:require
     [app.common.data :as d]
     [app.common.data.macros :as dm]
+    [app.common.flags :as flags]
     [app.common.types.color :as clr]
+    [app.common.types.fills :as types.fills]
     [clojure.set :as set]
     [clojure.walk :as walk]
     [cuerdas.core :as str]))
@@ -84,10 +86,12 @@
 (def default-root-attrs
   {:vertical-align "top"})
 
+(def default-text-fills
+  [{:fill-color clr/black
+    :fill-opacity 1}])
+
 (def default-text-attrs
-  {:typography-ref-file nil
-   :typography-ref-id nil
-   :font-id "sourcesanspro"
+  {:font-id "sourcesanspro"
    :font-family "sourcesanspro"
    :font-variant-id "regular"
    :font-size "14"
@@ -98,12 +102,22 @@
    :text-transform "none"
    :text-align "left"
    :text-decoration "none"
-   :text-direction "ltr"
-   :fills [{:fill-color clr/black
-            :fill-opacity 1}]})
+   :text-direction "ltr"})
 
-(def default-attrs
-  (merge default-root-attrs default-text-attrs))
+(defn get-default-text-fills
+  "Return calculated default text fills"
+  []
+  (if (contains? flags/*current* :frontend-binary-fills)
+    (types.fills/from-plain default-text-fills)
+    default-text-fills))
+
+(defn get-default-text-attrs
+  "Return calculated default text attrs.
+
+  NOTE: is implemented as function because it needs resolve at runtime
+  the activated flag for properly encode the fills"
+  []
+  (assoc default-text-attrs :fills (get-default-text-fills)))
 
 (def typography-fields
   [:font-id
@@ -117,9 +131,9 @@
    :text-transform])
 
 (def default-typography
-  (merge
-   {:name "Source Sans Pro Regular"}
-   (select-keys default-text-attrs typography-fields)))
+  (-> default-text-attrs
+      (select-keys typography-fields)
+      (assoc :name "Source Sans Pro Regular")))
 
 (defn node-seq
   ([root] (node-seq identity root))

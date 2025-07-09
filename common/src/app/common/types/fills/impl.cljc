@@ -378,7 +378,26 @@
             (when (< i size)
               (cons (read-fill dbuffer mbuffer i)
                     (lazy-seq (next-seq (inc i))))))
-          0)))))
+          0)))
+
+     cljs.core/IPrintWithWriter
+     (-pr-writer [this writer _]
+       (binding [*print-dup* true]
+         (cljs.core/-write writer (str "#penpot/fills \"" (pr-str (vec this))  "\""))))))
+
+#?(:clj
+   (defmethod print-method Fills
+     [o ^java.io.Writer writer]
+     (.write writer "#penpot/fills \"")
+     (print-dup (vec o) writer)
+     (.write writer "\"")))
+
+#?(:clj
+   (defmethod print-dup Fills
+     [o ^java.io.Writer writer]
+     (.write writer "#penpot/fills \"")
+     (print-dup (vec o) writer)
+     (.write writer "\"")))
 
 (defn from-plain
   [fills]

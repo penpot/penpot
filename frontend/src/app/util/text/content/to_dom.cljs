@@ -73,12 +73,12 @@
         ;; it affects to the height calculation the browser does
         font-size (if (some #(not= "" (:text %)) (:children paragraph))
                     "0"
-                    (:font-size styles (:font-size txt/default-text-attrs)))
+                    (:font-size styles (:font-size txt/default-typography)))
 
         line-height (:line-height styles)
         line-height (if (and (some? line-height) (not= "" line-height))
                       line-height
-                      (:line-height txt/default-text-attrs))]
+                      (:line-height txt/default-typography))]
     (-> styles
         (assoc :font-size font-size :line-height line-height))))
 

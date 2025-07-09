@@ -219,19 +219,21 @@
                  secondary-target (toht/get-token file' "color.secondary")
                  rect-1' (cths/get-shape file' :rect-1)
                  rect-2' (cths/get-shape file' :rect-2)]
+
              (t/testing "regular color"
                (t/is (some? (:applied-tokens rect-1')))
                (t/is (= (:fill (:applied-tokens rect-1')) (:name primary-target)))
-               (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
-
+               (t/is (= (-> rect-1' :fills (nth 0) :fill-color) "#ff0000"))
                (t/is (= (:stroke-color (:applied-tokens rect-1')) (:name primary-target)))
                (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))
+
              (t/testing "color with alpha channel"
                (t/is (some? (:applied-tokens rect-2')))
 
                (t/is (= (:fill (:applied-tokens rect-2')) (:name secondary-target)))
-               (t/is (= (get-in rect-2' [:fills 0 :fill-color]) "#ff0000"))
-               (t/is (= (get-in rect-2' [:fills 0 :fill-opacity]) 0.5))
+               (let [fills (get rect-2' :fills)]
+                 (t/is (= (-> fills (nth 0) :fill-color) "#ff0000"))
+                 (t/is (= (-> fills (nth 0) :fill-opacity) 0.5)))
 
                (t/is (= (:stroke-color (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
