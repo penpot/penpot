@@ -141,13 +141,11 @@
   ([index coll attr]
    (reduce #(index-object %1 %2 attr) index coll)))
 
-(defn decode-row
-  [{:keys [data changes features] :as row}]
+(defn- decode-row-features
+  [{:keys [features] :as row}]
   (when row
     (cond-> row
-      features (assoc :features (db/decode-pgarray features #{}))
-      changes  (assoc :changes (blob/decode changes))
-      data     (assoc :data (blob/decode data)))))
+      (db/pgarray? features) (assoc :features (db/decode-pgarray features #{})))))
 
 (def sql:get-minimal-file
   "SELECT f.id,
@@ -161,6 +159,7 @@
   [cfg id & {:as opts}]
   (db/get-with-sql cfg [sql:get-minimal-file id] opts))
 
+;; DEPRECATED
 (defn decode-file
   "A general purpose file decoding function that resolves all external
   pointers, run migrations and return plain vanilla file map"
@@ -168,7 +167,8 @@
   (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)]
     (let [file (->> file
                     (fmigr/resolve-applied-migrations cfg)
-                    (fdata/resolve-file-data cfg))
+                    (fdata/resolve-file-data cfg)
+                    (fdata/decode-file-data cfg))
           libs (delay (get-resolved-file-libraries cfg file))]
 
       (-> file
@@ -179,6 +179,119 @@
           (update :data assoc :id id)
           (cond-> migrate? (fmg/migrate-file libs))))))
 
+(def sql:get-file
+  "SELECT f.id,
+          f.project_id,
+          f.created_at,
+          f.modified_at,
+          f.deleted_at,
+          f.name,
+          f.is_shared,
+          f.has_media_trimmed,
+          f.revn,
+          f.data AS legacy_data,
+          f.ignore_sync_until,
+          f.comment_thread_seqn,
+          f.features,
+          f.version,
+          f.vern,
+          p.team_id,
+          coalesce(fd.backend, 'db') AS backend,
+          fd.metadata AS metadata,
+          fd.data AS data
+     FROM file AS f
+     LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
+    INNER JOIN project AS p ON (p.id = f.project_id)
+   WHERE f.id = ?")
+
+(defn- migrate-file
+  [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
+  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)
+            pmap/*tracked* (pmap/create-tracked)]
+    (let [libs (delay (get-resolved-file-libraries cfg file))
+          ;; For avoid unnecesary overhead of creating multiple
+          ;; pointers and handly internally with objects map in their
+          ;; worst case (when probably all shapes and all pointers
+          ;; will be readed in any case), we just realize/resolve them
+          ;; before applying the migration to the file.
+          file (-> (fdata/realize cfg file)
+                   (fmg/migrate-file libs))]
+
+      (if (or read-only? (db/read-only? conn))
+        file
+        (do ;; When file is migrated, we break the rule of no
+          ;; perform mutations on get operations and update the
+          ;; file with all migrations applied
+          (update-file! cfg file)
+          (fmigr/resolve-applied-migrations cfg file))))))
+
+;; FIXME: filter by project-id
+(defn- get-file*
+  [{:keys [::db/conn] :as cfg} id
+   {:keys [#_project-id
+           migrate?
+           realize?
+           decode?
+           skip-locked?
+           include-deleted?
+           throw-if-not-exists?
+           lock-for-update?]
+    :or {lock-for-update? false
+         migrate? true
+         decode? true
+         include-deleted? false
+         throw-if-not-exists? true
+         realize? false}
+    :as options}]
+
+  (assert (db/connection? conn) "expected cfg with valid connection")
+
+  (let [sql
+        (if lock-for-update?
+          (str sql:get-file " FOR UPDATE of f")
+          sql:get-file)
+
+        sql
+        (if skip-locked?
+          (str sql " SKIP LOCKED")
+          sql)
+
+        file
+        (db/get-with-sql conn [sql id]
+                         {::db/throw-if-not-exists false
+                          ::db/remove-deleted (not include-deleted?)})
+
+        file
+        (-> file
+            (d/update-when :features db/decode-pgarray #{})
+            (d/update-when :metadata fdata/decode-metadata))]
+
+    (if file
+      (let [file
+            (->> file
+                 (fmigr/resolve-applied-migrations cfg)
+                 (fdata/resolve-file-data cfg))
+
+            will-migrate?
+            (and migrate? (fmg/need-migration? file))]
+
+        (if decode?
+          (cond->> (fdata/decode-file-data cfg file)
+            (and realize? (not will-migrate?))
+            (fdata/realize cfg)
+
+            will-migrate?
+            (migrate-file cfg options))
+
+          file))
+
+      (when-not (or skip-locked? (not throw-if-not-exists?))
+        (ex/raise :type :not-found
+                  :code :object-not-found
+                  :hint "database object not found"
+                  :table :file
+                  :file-id id)))))
+
 (defn get-file
   "Get file, resolve all features and apply migrations.
 
@@ -186,10 +299,7 @@
   operations on file, because it removes the ovehead of lazy fetching
   and decoding."
   [cfg file-id & {:as opts}]
-  (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (some->> (db/get* conn :file {:id file-id}
-                                   (assoc opts ::db/remove-deleted false))
-                          (decode-file cfg)))))
+  (db/run! cfg get-file* file-id opts))
 
 (defn clean-file-features
   [file]
@@ -213,12 +323,12 @@
   (let [conn (db/get-connection cfg)
         ids  (db/create-array conn "uuid" ids)]
     (->> (db/exec! conn [sql:get-teams ids])
-         (map decode-row))))
+         (map decode-row-features))))
 
 (defn get-team
   [cfg team-id]
   (-> (db/get cfg :team {:id team-id})
-      (decode-row)))
+      (decode-row-features)))
 
 (defn get-fonts
   [cfg team-id]
@@ -497,21 +607,43 @@
 (defn- file->params
   [file]
   (-> (select-keys file file-attrs)
+      (assoc :data nil)
       (dissoc :team-id)
       (dissoc :migrations)))
+
+(defn file->file-data-params
+  [{:keys [id backend] :as file} & {:as opts}]
+  (let [created-at  (or (:created-at file) (ct/now))
+        modified-at (or (:modified-at file) created-at)
+        backend     (if (and (::overwrite-storage-backend opts) backend)
+                      backend
+                      (cf/get :file-storage-backend))]
+
+    (d/without-nils
+     {:id id
+      :type "main"
+      :file-id id
+      :data (:data file)
+      :metadata (:metadata file)
+      :backend backend
+      :created-at created-at
+      :modified-at modified-at})))
 
 (defn insert-file!
   "Insert a new file into the database table. Expectes a not-encoded file.
   Returns nil."
   [{:keys [::db/conn] :as cfg} file & {:as opts}]
-
   (when (:migrations file)
     (fmigr/upsert-migrations! conn file))
 
   (let [file (encode-file cfg file)]
     (db/insert! conn :file
                 (file->params file)
-                {::db/return-keys false})
+                (assoc opts ::db/return-keys false))
+
+    (->> (file->file-data-params file)
+         (fdata/update! cfg))
+
     nil))
 
 (defn update-file!
@@ -525,21 +657,25 @@
   (let [file
         (encode-file cfg file)
 
-        params
-        (file->params (dissoc file :id))]
+        file-params
+        (file->params (dissoc file :id))
 
-    (db/update! conn :file params
+        file-data-params
+        (file->file-data-params file)]
+
+    (db/update! conn :file file-params
                 {:id id}
                 {::db/return-keys false})
 
+    (fdata/update! cfg file-data-params)
     nil))
 
 (defn save-file!
   "Applies all the final validations and perist the file, binfile
   specific, should not be used outside of binfile domain.
-
   Returns nil"
   [{:keys [::timestamp] :as cfg} file & {:as opts}]
+
   (assert (ct/inst? timestamp) "expected valid timestamp")
 
   (let [file (-> file
@@ -603,7 +739,7 @@
          ;; FIXME: :is-indirect set to false to all rows looks
          ;; completly useless
          (map #(assoc % :is-indirect false))
-         (map decode-row))
+         (map decode-row-features))
         (db/exec! conn [sql:get-file-libraries file-id])))
 
 ;; FIXME: this will use a lot of memory if file uses too many big

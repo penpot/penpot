@@ -24,13 +24,13 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   [app.features.fdata :as feat.fdata]
+   [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.loggers.audit :as audit]
    [app.main :as main]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
@@ -150,15 +150,15 @@
 
 (defn enable-objects-map-feature-on-file!
   [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-objects-map opts))
+  (process-file! file-id fdata/enable-objects-map opts))
 
 (defn enable-pointer-map-feature-on-file!
   [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-pointer-map opts))
+  (process-file! file-id fdata/enable-pointer-map opts))
 
 (defn enable-path-data-feature-on-file!
   [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-path-data opts))
+  (process-file! file-id fdata/enable-path-data opts))
 
 (defn enable-storage-features-on-file!
   [file-id & {:as opts}]
@@ -338,7 +338,10 @@
   collectable file-changes entry."
   [& {:keys [file-id label]}]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id :label label})))
+    (db/tx-run! main/system
+                (fn [cfg]
+                  (let [file (bfc/get-file cfg file-id :realize? true)]
+                    (fsnap/create! cfg file {:label label :created-by "admin"}))))))
 
 (defn restore-file-snapshot!
   [file-id & {:keys [label id]}]
@@ -348,13 +351,13 @@
                 (fn [{:keys [::db/conn] :as system}]
                   (cond
                     (uuid? snapshot-id)
-                    (fsnap/restore-file-snapshot! system file-id snapshot-id)
+                    (fsnap/restore! system file-id snapshot-id)
 
                     (string? label)
                     (->> (h/search-file-snapshots conn #{file-id} label)
                          (map :id)
                          (first)
-                         (fsnap/restore-file-snapshot! system file-id))
+                         (fsnap/restore! system file-id))
 
                     :else
                     (throw (ex-info "snapshot id or label should be provided" {})))))))
@@ -363,9 +366,9 @@
   [file-id & {:as _}]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
-                (fn [{:keys [::db/conn]}]
-                  (->> (fsnap/get-file-snapshots conn file-id)
-                       (print-table [:label :id :revn :created-at]))))))
+                (fn [cfg]
+                  (->> (fsnap/get-visible-snapshots cfg file-id)
+                       (print-table [:label :id :revn :created-at :created-by]))))))
 
 (defn take-team-snapshot!
   [team-id & {:keys [label rollback?] :or {rollback? true}}]
@@ -606,11 +609,10 @@
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
                 (fn [system]
-                  (when-let [file (some-> (db/get* system :file
-                                                   {:id file-id}
-                                                   {::db/remove-deleted false
-                                                    ::sql/columns [:id :name]})
-                                          (files/decode-row))]
+                  (when-let [file (db/get* system :file
+                                           {:id file-id}
+                                           {::db/remove-deleted false
+                                            ::sql/columns [:id :name]})]
                     (audit/insert! system
                                    {::audit/name "restore-file"
                                     ::audit/type "action"

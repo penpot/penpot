@@ -222,9 +222,11 @@
     (throw (IllegalArgumentException.
             "the `include-libraries` and `embed-assets` are mutally excluding options")))
 
-  (let [detach?  (and (not embed-assets) (not include-libraries))]
+  (let [detach? (and (not embed-assets) (not include-libraries))]
     (db/tx-run! cfg (fn [cfg]
-                      (cond-> (bfc/get-file cfg file-id {::sql/for-update true})
+                      (cond-> (bfc/get-file cfg file-id
+                                            {:realize? true
+                                             :lock-for-update? true})
                         detach?
                         (-> (ctf/detach-external-references file-id)
                             (dissoc :libraries))

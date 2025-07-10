@@ -52,6 +52,8 @@
 
    :redis-uri "redis://redis/0"
 
+   :file-storage-backend "db"
+
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
 
@@ -105,7 +107,8 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
-    [:deletion-delay {:optional true} ::ct/duration] ;; REVIEW
+    [:deletion-delay {:optional true} ::ct/duration]
+    [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -210,6 +213,8 @@
     [:prepl-host {:optional true} :string]
     [:prepl-port {:optional true} ::sm/int]
 
+    [:file-storage-backend :string]
+
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]
     [:assets-path {:optional true} :string]
@@ -299,6 +304,11 @@
   []
   (or (c/get config :deletion-delay)
       (ct/duration {:days 7})))
+
+(defn get-file-clean-delay
+  []
+  (or (c/get config :file-clean-delay)
+      (ct/duration {:days 2})))
 
 (defn get
   "A configuration getter. Helps code be more testable."
