@@ -24,13 +24,13 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   [app.features.fdata :as feat.fdata]
+   [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.loggers.audit :as audit]
    [app.main :as main]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
@@ -150,15 +150,15 @@
 
 (defn enable-objects-map-feature-on-file!
   [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-objects-map opts))
+  (process-file! file-id fdata/enable-objects-map opts))
 
 (defn enable-pointer-map-feature-on-file!
   [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-pointer-map opts))
+  (process-file! file-id fdata/enable-pointer-map opts))
 
 (defn enable-path-data-feature-on-file!
   [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-path-data opts))
+  (process-file! file-id fdata/enable-path-data opts))
 
 (defn enable-storage-features-on-file!
   [file-id & {:as opts}]
@@ -338,7 +338,10 @@
   collectable file-changes entry."
   [& {:keys [file-id label]}]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id :label label})))
+    (db/tx-run! main/system
+                (fn [cfg]
+                  (let [file (bfc/get-file cfg file-id :realize? true)]
+                    (fsnap/create! cfg file {:label label :created-by "admin"}))))))
 
 (defn restore-file-snapshot!
   [file-id & {:keys [label id]}]
@@ -348,13 +351,13 @@
                 (fn [{:keys [::db/conn] :as system}]
                   (cond
                     (uuid? snapshot-id)
-                    (fsnap/restore-file-snapshot! system file-id snapshot-id)
+                    (fsnap/restore! system file-id snapshot-id)
 
                     (string? label)
                     (->> (h/search-file-snapshots conn #{file-id} label)
                          (map :id)
                          (first)
-                         (fsnap/restore-file-snapshot! system file-id))
+                         (fsnap/restore! system file-id))
 
                     :else
                     (throw (ex-info "snapshot id or label should be provided" {})))))))
@@ -363,9 +366,9 @@
   [file-id & {:as _}]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
-                (fn [{:keys [::db/conn]}]
-                  (->> (fsnap/get-file-snapshots conn file-id)
-                       (print-table [:label :id :revn :created-at]))))))
+                (fn [cfg]
+                  (->> (fsnap/get-visible-snapshots cfg file-id)
+                       (print-table [:label :id :revn :created-at :created-by]))))))
 
 (defn take-team-snapshot!
   [team-id & {:keys [label rollback?] :or {rollback? true}}]
@@ -547,6 +550,95 @@
                  :rollback rollback?
                  :elapsed elapsed))))))
 
+(defn process!
+  [& {:keys [max-items
+             max-jobs
+             rollback?
+             query
+             proc-fn]
+      :or {max-items Long/MAX_VALUE
+           rollback? true}
+      :as opts}]
+
+  (l/dbg :hint "process:start"
+         :rollback rollback?
+         :max-jobs max-jobs
+         :max-items max-items)
+
+  (let [tpoint    (ct/tpoint)
+        factory   (px/thread-factory :virtual false :prefix "penpot/process/")
+        executor  (px/cached-executor :factory factory)
+        sjobs     (ps/create :permits max-jobs)
+        max-jobs  (or max-jobs (px/get-available-processors))
+        query     (or query
+                      (:query (meta proc-fn))
+                      (throw (ex-info "missing query" {})))
+
+        proc-fn  (if (var? proc-fn)
+                   (deref proc-fn)
+                   proc-fn)
+
+        process-item
+        (fn [idx tpoint row]
+          (let [thread-id (px/get-thread-id)]
+            (try
+              (l/trc :hint "process:item:start"
+                     :tid thread-id
+                     :index idx)
+
+              (-> main/system
+                  (assoc ::db/rollback rollback?)
+                  (db/tx-run! (fn [system]
+                                (binding [h/*system* system
+                                          db/*conn* (db/get-connection system)]
+                                  (proc-fn system row opts)))))
+
+              (catch Throwable cause
+                (l/wrn :hint "unexpected error on processing item (skiping)"
+                       :tid thread-id
+                       :item-id (str (:id row))
+                       :index idx
+                       :cause cause))
+              (finally
+                (when-let [pause (:pause opts)]
+                  (Thread/sleep (int pause)))
+
+                (ps/release! sjobs)
+                (let [elapsed (ct/format-duration (tpoint))]
+                  (l/trc :hint "process:item:end"
+                         :tid thread-id
+                         :item-id (str (:id row))
+                         :index idx
+                         :elapsed elapsed))))))
+
+        process-item*
+        (fn [idx row]
+          (ps/acquire! sjobs)
+          (px/run! executor (partial process-item idx (ct/tpoint) (into {} row)))
+          (inc idx))
+
+        process-items
+        (fn [{:keys [::db/conn] :as system}]
+          (db/exec! conn ["SET statement_timeout = 0"])
+          (db/exec! conn ["SET idle_in_transaction_session_timeout = 0"])
+
+          (->> (db/plan conn [query] {:fetch-size (* max-jobs 3)})
+               (transduce (take max-items)
+                          (completing process-item*)
+                          0)))]
+
+    (try
+      (db/tx-run! main/system process-items)
+
+      (catch Throwable cause
+        (l/dbg :hint "process:error" :cause cause))
+
+      (finally
+        (pu/close! executor)
+        (let [elapsed (ct/format-duration (tpoint))]
+          (l/dbg :hint "process:end"
+                 :rollback rollback?
+                 :elapsed elapsed))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)
@@ -606,11 +698,10 @@
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
                 (fn [system]
-                  (when-let [file (some-> (db/get* system :file
-                                                   {:id file-id}
-                                                   {::db/remove-deleted false
-                                                    ::sql/columns [:id :name]})
-                                          (files/decode-row))]
+                  (when-let [file (db/get* system :file
+                                           {:id file-id}
+                                           {::db/remove-deleted false
+                                            ::sql/columns [:id :name]})]
                     (audit/insert! system
                                    {::audit/name "restore-file"
                                     ::audit/type "action"

@@ -11,6 +11,7 @@
    [app.common.logging :as l]
    [app.common.time :as ct]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.storage :as sto]
    [integrant.core :as ig]))
 
@@ -123,17 +124,19 @@
                0)))
 
 (def ^:private sql:get-files
-  "SELECT id, deleted_at, project_id, data_backend, data_ref_id
-     FROM file
-    WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
-    ORDER BY deleted_at ASC
+  "SELECT f.id,
+          f.deleted_at,
+          f.project_id
+     FROM file AS f
+    WHERE f.deleted_at IS NOT NULL
+      AND f.deleted_at < now() + ?::interval
+    ORDER BY f.deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
 
 (defn- delete-files!
-  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
   (->> (db/plan conn [sql:get-files deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id deleted-at project-id] :as file}]
                  (l/trc :hint "permanently delete"
@@ -142,8 +145,8 @@
                         :project-id (str project-id)
                         :deleted-at (ct/format-inst deleted-at))
 
-                 (when (= "objects-storage" (:data-backend file))
-                   (sto/touch-object! storage (:data-ref-id file)))
+                 ;; Delete associated file data
+                 (fdata/delete! cfg {:file-id id :id id :type "main"})
 
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})
@@ -209,32 +212,6 @@
                  (inc total))
                0)))
 
-(def ^:private sql:get-file-data-fragments
-  "SELECT file_id, id, deleted_at, data_ref_id
-     FROM file_data_fragment
-    WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
-    ORDER BY deleted_at ASC
-    LIMIT ?
-      FOR UPDATE
-     SKIP LOCKED")
-
-(defn- delete-file-data-fragments!
-  [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-file-data-fragments deletion-threshold chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [file-id id deleted-at data-ref-id]}]
-                 (l/trc :hint "permanently delete"
-                        :rel "file-data-fragment"
-                        :id (str id)
-                        :file-id (str file-id)
-                        :deleted-at (ct/format-inst deleted-at))
-
-                 (some->> data-ref-id (sto/touch-object! storage))
-                 (db/delete! conn :file-data-fragment {:file-id file-id :id id})
-
-                 (inc total))
-               0)))
-
 (def ^:private sql:get-file-media-objects
   "SELECT id, file_id, media_id, thumbnail_id, deleted_at
      FROM file_media_object
@@ -264,8 +241,35 @@
                  (inc total))
                0)))
 
+(def ^:private sql:get-file-data-fragments
+  "SELECT file_id, id, deleted_at
+     FROM file_data_fragment
+    WHERE deleted_at IS NOT NULL
+      AND deleted_at < now() + ?::interval
+    ORDER BY deleted_at ASC
+    LIMIT ?
+      FOR UPDATE
+     SKIP LOCKED")
+
+(defn- delete-file-data-fragments!
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
+  (->> (db/plan conn [sql:get-file-data-fragments deletion-threshold chunk-size] {:fetch-size 5})
+       (reduce (fn [total {:keys [file-id id deleted-at]}]
+                 (l/trc :hint "permanently delete"
+                        :rel "file-data-fragment"
+                        :id (str id)
+                        :file-id (str file-id)
+                        :deleted-at (ct/format-inst deleted-at))
+
+                 ;; Delete associated file data
+                 (fdata/delete! cfg {:file-id file-id :id id :type "fragment"})
+                 (db/delete! conn :file-data-fragment {:file-id file-id :id id})
+
+                 (inc total))
+               0)))
+
 (def ^:private sql:get-file-change
-  "SELECT id, file_id, deleted_at, data_backend, data_ref_id
+  "SELECT id, file_id, deleted_at
      FROM file_change
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() + ?::interval
@@ -275,7 +279,7 @@
      SKIP LOCKED")
 
 (defn- delete-file-changes!
-  [{:keys [::db/conn ::deletion-threshold ::chunk-size ::sto/storage] :as cfg}]
+  [{:keys [::db/conn ::deletion-threshold ::chunk-size] :as cfg}]
   (->> (db/plan conn [sql:get-file-change deletion-threshold chunk-size] {:fetch-size 5})
        (reduce (fn [total {:keys [id file-id deleted-at] :as xlog}]
                  (l/trc :hint "permanently delete"
@@ -284,8 +288,8 @@
                         :file-id (str file-id)
                         :deleted-at (ct/format-inst deleted-at))
 
-                 (when (= "objects-storage" (:data-backend xlog))
-                   (sto/touch-object! storage (:data-ref-id xlog)))
+                 ;; Delete associated file data, if it exists
+                 (fdata/delete! cfg {:file-id file-id :id id :type "snapshot"})
 
                  (db/delete! conn :file-change {:id id})
 
@@ -295,10 +299,10 @@
 (def ^:private deletion-proc-vars
   [#'delete-profiles!
    #'delete-file-media-objects!
-   #'delete-file-data-fragments!
    #'delete-file-object-thumbnails!
    #'delete-file-thumbnails!
    #'delete-file-changes!
+   #'delete-file-data-fragments!
    #'delete-files!
    #'delete-projects!
    #'delete-fonts!
