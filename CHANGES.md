@@ -9,14 +9,18 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
+
 - Add visual indicator for new comments in the workspace [Taiga #11328](https://tree.taiga.io/project/penpot/issue/11328)
 - On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
 - Improve dashboard's sidebar [Taiga #10700](https://tree.taiga.io/project/penpot/us/10700)
 - Change "Save color" button to primary button [Taiga #9410](https://tree.taiga.io/project/penpot/issue/9410)
 - Support for exif rotated images [GitHub #6767](https://github.com/penpot/penpot/issues/6767)
 - Display Blend Mode and Layer Opacity properties in the Inspect tab [Taiga #11283](https://tree.taiga.io/project/penpot/issue/11283)
+- Add the ability to show login dialog on profile settings [Github #6871](https://github.com/penpot/penpot/pull/6871)
+
 
 ### :bug: Bugs fixed
+
 - Copying font size does not copy the unit [Taiga #11143](https://tree.taiga.io/project/penpot/issue/11143)
 - Fix text-decoration line-through that displays a wrong property value [Taiga #11145](https://tree.taiga.io/project/penpot/issue/11145)
 - Fix display error message on register form [Taiga #11444](https://tree.taiga.io/project/penpot/issue/11444)
