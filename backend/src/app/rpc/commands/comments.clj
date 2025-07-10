@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.comments
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -163,34 +164,16 @@
 (def xf-decode-row
   (map decode-row))
 
-(def ^:private
-  sql:get-file
-  "SELECT f.id, f.modified_at, f.revn, f.features, f.name,
-          f.project_id, p.team_id, f.data,
-          f.data_ref_id, f.data_backend
-     FROM file as f
-    INNER JOIN project as p on (p.id = f.project_id)
-    WHERE f.id = ?
-      AND (f.deleted_at IS NULL OR f.deleted_at > now())")
-
 (defn- get-file
   "A specialized version of get-file for comments module."
   [cfg file-id page-id]
-  (let [file (db/exec-one! cfg [sql:get-file file-id])]
-    (when-not file
-      (ex/raise :type :not-found
-                :code :object-not-found
-                :hint "file not found"))
-
-    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
-      (let [file (->> file
-                      (files/decode-row)
-                      (feat.fdata/resolve-file-data cfg))
-            data (get file :data)]
-        (-> file
-            (assoc :page-name (dm/get-in data [:pages-index page-id :name]))
-            (assoc :page-id page-id)
-            (dissoc :data))))))
+  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
+    (let [file (bfc/get-file cfg file-id)
+          data (get file :data)]
+      (-> file
+          (assoc :page-name (dm/get-in data [:pages-index page-id :name]))
+          (assoc :page-id page-id)
+          (dissoc :data)))))
 
 ;; FIXME: rename
 (defn- get-comment-thread

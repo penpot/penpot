@@ -298,7 +298,7 @@
 (defn insert!
   "A helper that builds an insert sql statement and executes it. By
   default returns the inserted row with all the field; you can delimit
-  the returned columns with the `::columns` option."
+  the returned columns with the `::sql/columns` option."
   [ds table params & {:as opts}]
   (let [conn (get-connectable ds)
         sql  (sql/insert table params opts)
@@ -406,15 +406,15 @@
                 :hint "database object not found"))
     row))
 
-
 (defn get-with-sql
   [ds sql & {:as opts}]
-  (let [rows (cond->> (exec! ds sql opts)
-               (::remove-deleted opts true)
-               (remove is-row-deleted?)
+  (let [rows
+        (cond->> (exec! ds sql opts)
+          (::remove-deleted opts true)
+          (remove is-row-deleted?)
 
-               :always
-               (not-empty))]
+          :always
+          (not-empty))]
 
     (when (and (not rows) (::throw-if-not-exists opts true))
       (ex/raise :type :not-found
@@ -422,7 +422,6 @@
                 :hint "database object not found"))
 
     (first rows)))
-
 
 (def ^:private default-plan-opts
   (-> default-opts
@@ -578,10 +577,10 @@
   [system f & params]
   (cond
     (connection? system)
-    (run! {::conn system} f)
+    (apply run! {::conn system} f params)
 
     (pool? system)
-    (run! {::pool system} f)
+    (apply run! {::pool system} f params)
 
     (::conn system)
     (apply f system params)

@@ -397,33 +397,6 @@
                            ::yres/headers {"content-type" "text/plain"}
                            ::yres/body    (str/ffmt "PROFILE '%' ACTIVATED" (:email profile))}))))))
 
-
-(defn- reset-file-version
-  [cfg {:keys [params] :as request}]
-  (let [file-id (some-> params :file-id d/parse-uuid)
-        version (some-> params :version d/parse-integer)]
-
-    (when-not (contains? params :force)
-      (ex/raise :type :validation
-                :code :missing-force
-                :hint "missing force checkbox"))
-
-    (when (nil? file-id)
-      (ex/raise :type :validation
-                :code :invalid-file-id
-                :hint "provided invalid file id"))
-
-    (when (nil? version)
-      (ex/raise :type :validation
-                :code :invalid-version
-                :hint "provided invalid version"))
-
-    (db/tx-run! cfg srepl/process-file! file-id #(assoc % :version version))
-
-    {::yres/status  200
-     ::yres/headers {"content-type" "text/plain"}
-     ::yres/body    "OK"}))
-
 (defn- handle-team-features
   [cfg {:keys [params] :as request}]
   (let [team-id    (some-> params :team-id d/parse-uuid)
@@ -576,8 +549,6 @@
       {:handler (partial set-virtual-clock cfg)}]
      ["/resend-email-verification"
       {:handler (partial resend-email-notification cfg)}]
-     ["/reset-file-version"
-      {:handler (partial reset-file-version cfg)}]
      ["/handle-team-features"
       {:handler (partial handle-team-features cfg)}]
      ["/file-export" {:handler (partial export-handler cfg)}]

@@ -144,7 +144,6 @@
             (t/is (not= (:modified-at comment) (:modified-at comment')))
             (t/is (= (:content data) (:content comment'))))))
 
-
       (t/testing "retrieve threads"
         (let [data {::th/type :get-comment-threads
                     ::rpc/profile-id (:id profile-1)

@@ -8,10 +8,10 @@
   (:require
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
-   [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
    [app.http :as http]
@@ -87,10 +87,7 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-
-        (let [result (:result out)]
-          (t/is (= "label1" (:label result)))
-          (t/is (uuid? (:id result)))))
+        (t/is (nil? (:result out))))
 
       (let [[row1 row2 :as rows]
             (th/db-query :file-change
@@ -116,7 +113,7 @@
 
             ;; (th/print-result! out)
             (t/is (nil? (:error out)))
-            (t/is (nil? (:result out)))))
+            (t/is (true? (:result out)))))
 
         (t/testing "delete system created snapshot"
           (let [params {::th/type :delete-file-snapshot
@@ -130,7 +127,15 @@
                   data  (ex-data error)]
               (t/is (th/ex-info? error))
               (t/is (= (:type data) :validation))
-              (t/is (= (:code data) :system-snapshots-cant-be-deleted)))))))))
+              (t/is (= (:code data) :system-snapshots-cant-be-deleted)))))
+
+        ;; this will run pending task triggered by deleting user snapshot
+        (th/run-pending-tasks!)
+
+        ;; this will
+        (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
+          ;; delete 2 snapshots and 2 file data entries
+          (t/is (= 4 (:processed res))))))))
 
 (t/deftest snapshots-locking
   (let [profile-1 (th/create-profile* 1 {:is-active true})
@@ -172,7 +177,7 @@
             out    (th/command! params)]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))
+        (t/is (true? (:result out)))
 
         (let [snapshot (th/db-get :file-change {:id (:id snapshot)})]
           (t/is (= (:id profile-1) (:locked-by snapshot))))))
@@ -199,7 +204,7 @@
             out    (th/command! params)]
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))
+        (t/is (true? (:result out)))
 
         (let [snapshot (th/db-get :file-change {:id (:id snapshot)})]
           (t/is (= nil (:locked-by snapshot))))))
@@ -213,4 +218,4 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))))
+        (t/is (true? (:result out)))))))

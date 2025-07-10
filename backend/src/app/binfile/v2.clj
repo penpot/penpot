@@ -153,7 +153,7 @@
 
 (defn- write-file!
   [cfg file-id]
-  (let [file   (bfc/get-file cfg file-id)
+  (let [file   (bfc/get-file cfg file-id :realize? true)
         thumbs (bfc/get-file-object-thumbnails cfg file-id)
         media  (bfc/get-file-media cfg file)
         rels   (bfc/get-files-rels cfg #{file-id})]
