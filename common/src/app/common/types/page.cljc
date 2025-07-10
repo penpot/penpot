@@ -53,10 +53,10 @@
    [:name :string]
    [:index {:optional true} ::sm/int]
    [:objects schema:objects]
-   [:default-grids {:optional true} ::ctg/default-grids]
+   [:default-grids {:optional true} ctg/schema:default-grids]
    [:flows {:optional true} schema:flows]
    [:guides {:optional true} schema:guides]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]
+   [:plugin-data {:optional true} ctpg/schema:plugin-data]
    [:background {:optional true} ctc/schema:hex-color]
 
    [:comment-thread-positions {:optional true}

@@ -18,38 +18,6 @@ Debug Main Page
     </fieldset>
 
     <fieldset>
-      <legend>Download file data:</legend>
-      <desc>Given an FILE-ID, downloads the file data as file. The file data is encoded using transit.</desc>
-      <form method="get" action="/dbg/file/data">
-        <div class="row">
-          <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
-        </div>
-        <div class="row">
-          <input type="submit" name="download" value="Download" />
-          <input type="submit" name="clone" value="Clone" />
-        </div>
-      </form>
-    </fieldset>
-
-    <fieldset>
-      <legend>Upload File Data:</legend>
-      <desc>Create a new file on your draft projects using the file downloaded from the previous section.</desc>
-      <form method="post" enctype="multipart/form-data" action="/dbg/file/data">
-        <div class="row">
-          <input type="file" name="file" value="" />
-        </div>
-        <div class="row">
-          <label>Import with same id?</label>
-          <input type="checkbox" name="reuseid" />
-        </div>
-
-        <div class="row">
-          <input type="submit" value="Upload" />
-        </div>
-      </form>
-    </fieldset>
-
-    <fieldset>
       <legend>Profile Management</legend>
       <form method="post" action="/dbg/actions/resend-email-verification">
         <div class="row">
@@ -82,13 +50,57 @@ Debug Main Page
   </section>
 
   <section class="widget">
+
+    <fieldset>
+      <legend>Download RAW file data:</legend>
+      <desc>Given an FILE-ID, downloads the file AS-IS (no validation
+        checks, just exports the file data and related objects in raw)
+
+        <br/>
+        <br/>
+        <b>WARNING: this operation does not performs any checks</b>
+      </desc>
+      <form method="get" action="/dbg/actions/file-raw-export-import">
+        <div class="row">
+          <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
+        </div>
+        <div class="row">
+          <input type="submit" name="download" value="Download" />
+          <input type="submit" name="clone" value="Clone" />
+        </div>
+      </form>
+    </fieldset>
+
+    <fieldset>
+      <legend>Upload File Data:</legend>
+      <desc>Create a new file on your draft projects using the file downloaded from the previous section.
+        <br/>
+        <br/>
+        <b>WARNING: this operation does not performs any checks</b>
+      </desc>
+      <form method="post" enctype="multipart/form-data" action="/dbg/actions/file-raw-export-import">
+        <div class="row">
+          <input type="file" name="file" value="" />
+        </div>
+        <div class="row">
+          <label>Import with same id?</label>
+          <input type="checkbox" name="reuseid" />
+        </div>
+
+        <div class="row">
+          <input type="submit" value="Upload" />
+        </div>
+      </form>
+    </fieldset>
+  </section>
+  <section class="widget">
     <fieldset>
       <legend>Export binfile:</legend>
       <desc>Given an FILE-ID, downloads the file and optionally all
       the related libraries in a single custom formatted binary
       file.</desc>
 
-      <form method="get" action="/dbg/file/export">
+      <form method="get" action="/dbg/actions/file-export">
         <div class="row set-of-inputs">
           <input type="text" style="width:300px" name="file-ids" placeholder="file-id" />
           <input type="text" style="width:300px" name="file-ids" placeholder="file-id" />
@@ -116,7 +128,7 @@ Debug Main Page
       <legend>Import binfile:</legend>
       <desc>Import penpot file in binary format.</desc>
 
-      <form method="post" enctype="multipart/form-data" action="/dbg/file/import">
+      <form method="post" enctype="multipart/form-data" action="/dbg/actions/file-import">
         <div class="row">
           <input type="file" name="file" value="" />
         </div>
@@ -130,79 +142,27 @@ Debug Main Page
 
   <section class="widget">
     <fieldset>
-      <legend>Reset file version</legend>
-      <desc>Allows reset file data version to a specific number/</desc>
-
-      <form method="post" action="/dbg/actions/reset-file-version">
-        <div class="row">
-          <input type="text" style="width:300px" name="file-id" placeholder="file-id" />
-        </div>
-        <div class="row">
-          <input type="number" style="width:100px" name="version" placeholder="version" value="32" />
-        </div>
-
-        <div class="row">
-          <label for="force-version">Are you sure?</label>
-          <input id="force-version" type="checkbox" name="force" />
-          <br />
-          <small>
-            This is a just a security double check for prevent non intentional submits.
-          </small>
-        </div>
-
-
-        <div class="row">
-          <input type="submit" value="Submit" />
-        </div>
-      </form>
-    </fieldset>
-  </section>
-
-  <section class="widget">
-    <h2>Feature Flags</h2>
-    <fieldset>
-      <legend>Enable</legend>
+      <legend>Feature Flags for Team</legend>
       <desc>Add a feature flag to a team</desc>
-      <form method="post" action="/dbg/actions/add-team-feature">
+      <form method="post" action="/dbg/actions/handle-team-features">
         <div class="row">
           <input type="text" style="width:300px" name="team-id" placeholder="team-id" />
         </div>
         <div class="row">
-          <input type="text" style="width:100px" name="feature" placeholder="feature" value="" />
+          <select type="text" style="width:100px" name="feature">
+            {% for feature in supported-features %}
+              <option value="{{feature}}">{{feature}}</option>
+            {% endfor %}
+          </select>
         </div>
 
         <div class="row">
-          <label for="check-feature">Skip feature check</label>
-          <input id="check-feature" type="checkbox" name="skip-check" />
-          <br />
-          <small>
-            Do not check if the feature is supported
-          </small>
-        </div>
-
-        <div class="row">
-          <label for="force-version">Are you sure?</label>
-          <input id="force-version" type="checkbox" name="force" />
-          <br />
-          <small>
-            This is a just a security double check for prevent non intentional submits.
-          </small>
-        </div>
-
-        <div class="row">
-          <input type="submit" value="Submit" />
-        </div>
-      </form>
-    </fieldset>
-    <fieldset>
-      <legend>Disable</legend>
-      <desc>Remove a feature flag from a team</desc>
-      <form method="post" action="/dbg/actions/remove-team-feature">
-        <div class="row">
-          <input type="text" style="width:300px" name="team-id" placeholder="team-id" />
-        </div>
-        <div class="row">
-          <input type="text" style="width:100px" name="feature" placeholder="feature" value="" />
+          <select style="width:100px" name="action">
+            <option value="">Action...</option>
+            <option value="show">Show</option>
+            <option value="enable">Enable</option>
+            <option value="disable">Disable</option>
+          </select>
         </div>
 
         <div class="row">

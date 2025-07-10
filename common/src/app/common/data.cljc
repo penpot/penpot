@@ -9,17 +9,16 @@
   data resources."
   (:refer-clojure :exclude [read-string hash-map merge name update-vals
                             parse-double group-by iteration concat mapcat
-                            parse-uuid max min regexp?])
+                            parse-uuid max min regexp? array?])
   #?(:cljs
      (:require-macros [app.common.data]))
 
   (:require
-   #?(:cljs [cljs.core :as c]
-      :clj [clojure.core :as c])
    #?(:cljs [cljs.reader :as r]
       :clj [clojure.edn :as r])
    #?(:cljs [goog.array :as garray])
    [app.common.math :as mth]
+   [clojure.core :as c]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [linked.map :as lkm]
@@ -166,6 +165,15 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Data Structures Access & Manipulation
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn array?
+  [o]
+  #?(:cljs
+     (c/array? o)
+     :clj
+     (if (some? o)
+       (.isArray (class o))
+       false)))
 
 (defn not-empty?
   [coll]

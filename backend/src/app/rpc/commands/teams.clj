@@ -78,9 +78,10 @@
 
 (defn decode-row
   [{:keys [features subscription] :as row}]
-  (cond-> row
-    (some? features) (assoc :features (db/decode-pgarray features #{}))
-    (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription))))
+  (when row
+    (cond-> row
+      (some? features) (assoc :features (db/decode-pgarray features #{}))
+      (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription)))))
 
 ;; FIXME: move
 
@@ -461,11 +462,12 @@
 
 ;; --- COMMAND QUERY: get-team-info
 
-(defn- get-team-info
+(defn get-team-info
   [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
-  (db/get* conn :team
-           {:id id}
-           {::sql/columns [:id :is-default]}))
+  (-> (db/get* conn :team
+               {:id id}
+               {::sql/columns [:id :is-default :features]})
+      (decode-row)))
 
 (sv/defmethod ::get-team-info
   "Retrieve minimal team info by its ID."

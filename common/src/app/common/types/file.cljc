@@ -23,9 +23,9 @@
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.plugins :as ctpg]
+   [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.tokens-lib :as ctl]
+   [app.common.types.tokens-lib :refer [schema:tokens-lib]]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -61,13 +61,13 @@
   [:map-of {:gen/max 5} ::sm/uuid ctc/schema:library-color])
 
 (def schema:components
-  [:map-of {:gen/max 5} ::sm/uuid ::ctn/container])
+  [:map-of {:gen/max 5} ::sm/uuid ctn/schema:container])
 
 (def schema:typographies
-  [:map-of {:gen/max 2} ::sm/uuid ::cty/typography])
+  [:map-of {:gen/max 2} ::sm/uuid cty/schema:typography])
 
 (def schema:pages-index
-  [:map-of {:gen/max 5} ::sm/uuid ::ctp/page])
+  [:map-of {:gen/max 5} ::sm/uuid ctp/schema:page])
 
 (def schema:options
   [:map {:title "FileOptions"}
@@ -82,8 +82,8 @@
    [:colors {:optional true} schema:colors]
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]
-   [:tokens-lib {:optional true} ::ctl/tokens-lib]])
+   [:plugin-data {:optional true} schema:plugin-data]
+   [:tokens-lib {:optional true} schema:tokens-lib]])
 
 (def schema:file
   "A schema for validate a file data structure; data is optional
