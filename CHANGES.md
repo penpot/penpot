@@ -21,6 +21,7 @@
 - Fix text-decoration line-through that displays a wrong property value [Taiga #11145](https://tree.taiga.io/project/penpot/issue/11145)
 - Fix display error message on register form [Taiga #11444](https://tree.taiga.io/project/penpot/issue/11444)
 - Fix toggle focus mode did not restore viewport and selection upon exit [GitHub #6280](https://github.com/penpot/penpot/issues/6820)
+- Fix problem when creating a layout from an existing layout [Taiga #11554](https://tree.taiga.io/project/penpot/issue/11554)
 
 ## 2.8.0
 
