@@ -14,12 +14,12 @@
    [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
 
-(def properties
+(def ^:private properties
   [:opacity
    :blend-mode
    :visibility])
 
-(defn has-visibility-props? [shape]
+(defn- has-visibility-props? [shape]
   (let [shape-type (:type shape)]
     (and
      (not (or (= shape-type :text) (= shape-type :group)))
@@ -44,7 +44,8 @@
 
 (mf/defc visibility-panel*
   [{:keys [objects shapes]}]
-  (let [shapes (mf/with-memo (filter has-visibility-props? shapes))]
+  (let [shapes (mf/with-memo [shapes]
+                 (filter has-visibility-props? shapes))]
 
     (when (seq shapes)
       [:div {:class (stl/css :attributes-block)}

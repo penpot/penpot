@@ -14,9 +14,9 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(def properties [:background :background-color :background-image])
+(def ^:private properties [:background :background-color :background-image])
 
-(defn has-fill? [shape]
+(defn- has-fill? [shape]
   (and
    (not (contains? #{:text :group} (:type shape)))
    (or (:fill-color shape)
