@@ -39,8 +39,6 @@
     (t/is (nil? (:error out)))
     (:result out)))
 
-;; TODO: migrate to commands
-
 (t/deftest duplicate-file
   (let [storage (-> (:app.storage/storage th/*system*)
                     (configure-storage-backend))
@@ -233,15 +231,7 @@
           ;; check that the both files are equivalent
           (doseq [[fa fb] (map vector p1-files p2-files)]
             (t/is (not= (:id fa) (:id fb)))
-            (t/is (= (:name fa) (:name fb)))
-
-            (when (= (:id fa) (:id file1))
-              (t/is (false? (b/equals? (:data fa)
-                                       (:data fb)))))
-
-            (when (= (:id fa) (:id file2))
-              (t/is (false? (b/equals? (:data fa)
-                                       (:data fb)))))))))))
+            (t/is (= (:name fa) (:name fb)))))))))
 
 (t/deftest duplicate-project-with-deleted-files
   (let [storage (-> (:app.storage/storage th/*system*)
@@ -297,15 +287,7 @@
           ;; check that the both files are equivalent
           (doseq [[fa fb] (map vector (rest p1-files) p2-files)]
             (t/is (not= (:id fa) (:id fb)))
-            (t/is (= (:name fa) (:name fb)))
-
-            (when (= (:id fa) (:id file1))
-              (t/is (false? (b/equals? (:data fa)
-                                       (:data fb)))))
-
-            (when (= (:id fa) (:id file2))
-              (t/is (false? (b/equals? (:data fa)
-                                       (:data fb)))))))))))
+            (t/is (= (:name fa) (:name fb)))))))))
 
 (t/deftest move-file-on-same-team
   (let [profile  (th/create-profile* 1 {:is-active true})

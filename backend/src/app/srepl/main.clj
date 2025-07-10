@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.srepl.main
-  "A collection of adhoc fixes scripts."
   #_:clj-kondo/ignore
   (:require
    [app.auth :refer [derive-password]]
@@ -24,19 +23,19 @@
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   [app.features.fdata :as feat.fdata]
+   [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.loggers.audit :as audit]
    [app.main :as main]
    [app.msgbus :as mbus]
    [app.rpc.commands.auth :as auth]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files-snapshot :as fsnap]
    [app.rpc.commands.management :as mgmt]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
-   [app.srepl.fixes :as fixes]
    [app.srepl.helpers :as h]
+   [app.srepl.procs.file-repair :as procs.file-repair]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.worker :as wrk]
@@ -48,6 +47,7 @@
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [promesa.exec :as px]
+   [promesa.exec.csp :as sp]
    [promesa.exec.semaphore :as ps]
    [promesa.util :as pu]))
 
@@ -146,25 +146,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare process-file!)
-
-(defn enable-objects-map-feature-on-file!
-  [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-objects-map opts))
-
-(defn enable-pointer-map-feature-on-file!
-  [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-pointer-map opts))
-
-(defn enable-path-data-feature-on-file!
-  [file-id & {:as opts}]
-  (process-file! file-id feat.fdata/enable-path-data opts))
-
-(defn enable-storage-features-on-file!
-  [file-id & {:as opts}]
-  (enable-objects-map-feature-on-file! file-id opts)
-  (enable-pointer-map-feature-on-file! file-id opts))
 
 (defn enable-team-feature!
   [team-id feature & {:keys [skip-check] :or {skip-check false}}]
@@ -339,7 +320,10 @@
   collectable file-changes entry."
   [& {:keys [file-id label]}]
   (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! main/system fsnap/create-file-snapshot! {:file-id file-id :label label})))
+    (db/tx-run! main/system
+                (fn [cfg]
+                  (let [file (bfc/get-file cfg file-id :realize? true)]
+                    (fsnap/create! cfg file {:label label :created-by "admin"}))))))
 
 (defn restore-file-snapshot!
   [file-id & {:keys [label id]}]
@@ -349,13 +333,13 @@
                 (fn [{:keys [::db/conn] :as system}]
                   (cond
                     (uuid? snapshot-id)
-                    (fsnap/restore-file-snapshot! system file-id snapshot-id)
+                    (fsnap/restore! system file-id snapshot-id)
 
                     (string? label)
                     (->> (h/search-file-snapshots conn #{file-id} label)
                          (map :id)
                          (first)
-                         (fsnap/restore-file-snapshot! system file-id))
+                         (fsnap/restore! system file-id))
 
                     :else
                     (throw (ex-info "snapshot id or label should be provided" {})))))))
@@ -364,9 +348,9 @@
   [file-id & {:as _}]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
-                (fn [{:keys [::db/conn]}]
-                  (->> (fsnap/get-file-snapshots conn file-id)
-                       (print-table [:label :id :revn :created-at]))))))
+                (fn [cfg]
+                  (->> (fsnap/get-visible-snapshots cfg file-id)
+                       (print-table [:label :id :revn :created-at :created-by]))))))
 
 (defn take-team-snapshot!
   [team-id & {:keys [label rollback?] :or {rollback? true}}]
@@ -413,24 +397,19 @@
                         (println (sm/humanize-explain explain))
                         (ex/print-throwable cause))))))))
 
-(defn repair-file!
-  "Repair the list of errors detected by validation."
-  [file-id & {:keys [rollback?] :or {rollback? true} :as opts}]
-  (let [system  (assoc main/system ::db/rollback rollback?)
-        file-id (h/parse-uuid file-id)
-        opts    (assoc opts :with-libraries? true)]
-    (db/tx-run! system h/process-file! file-id fixes/repair-file opts)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESSING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sql:get-files
-  "SELECT id FROM file
-    WHERE deleted_at is NULL
-    ORDER BY created_at DESC")
+(defn repair-file!
+  "Repair the list of errors detected by validation."
+  [file-id & {:keys [rollback?] :or {rollback? true} :as options}]
+  (let [system  (assoc main/system ::db/rollback rollback?)
+        file-id (h/parse-uuid file-id)
+        options (assoc options ::h/with-libraries? true)]
+    (db/tx-run! system h/process-file! file-id procs.file-repair/repair-file options)))
 
-(defn process-file!
+(defn update-file!
   "Apply a function to the file. Optionally save the changes or not.
   The function receives the decoded and migrated file data."
   [file-id update-fn & {:keys [rollback?] :or {rollback? true} :as opts}]
@@ -441,113 +420,116 @@
                             db/*conn* (db/get-connection system)]
                     (h/process-file! system file-id update-fn opts))))))
 
-(defn process-team-files!
-  "Apply a function to each file of the specified team."
-  [team-id update-fn & {:keys [rollback? label] :or {rollback? true} :as opts}]
-  (let [team-id (h/parse-uuid team-id)
-        opts    (dissoc opts :label)]
-    (db/tx-run! (assoc main/system ::db/rollback rollback?)
-                (fn [{:keys [::db/conn] :as system}]
-                  (when (string? label)
-                    (h/take-team-snapshot! system team-id label))
+(defn process!
+  [& {:keys [max-items
+             max-jobs
+             rollback?
+             query
+             proc-fn
+             buffer]
+      :or {max-items Long/MAX_VALUE
+           rollback? true
+           max-jobs 1
+           buffer 128}
+      :as opts}]
 
-                  (binding [h/*system* system
-                            db/*conn* (db/get-connection system)]
-                    (->> (h/get-and-lock-team-files conn team-id)
-                         (reduce (fn [result file-id]
-                                   (if (h/process-file! system file-id update-fn opts)
-                                     (inc result)
-                                     result))
-                                 0)))))))
-
-(defn process-files!
-  "Apply a function to all files in the database"
-  [update-fn & {:keys [max-items
-                       max-jobs
-                       rollback?
-                       query]
-                :or {max-jobs 1
-                     max-items Long/MAX_VALUE
-                     rollback? true
-                     query sql:get-files}
-                :as opts}]
-
-  (l/dbg :hint "process:start"
+  (l/inf :hint "process start"
          :rollback rollback?
          :max-jobs max-jobs
          :max-items max-items)
 
   (let [tpoint    (ct/tpoint)
-        factory   (px/thread-factory :virtual false :prefix "penpot/file-process/")
-        executor  (px/cached-executor :factory factory)
-        sjobs     (ps/create :permits max-jobs)
+        max-jobs  (or max-jobs (px/get-available-processors))
+        query     (or query
+                      (:query (meta proc-fn))
+                      (throw (ex-info "missing query" {})))
+        query     (if (vector? query) query [query])
 
-        process-file
-        (fn [file-id idx tpoint]
-          (let [thread-id (px/get-thread-id)]
-            (try
-              (l/trc :hint "process:file:start"
-                     :tid thread-id
-                     :file-id (str file-id)
-                     :index idx)
-              (let [system (assoc main/system ::db/rollback rollback?)]
-                (db/tx-run! system (fn [system]
-                                     (binding [h/*system* system
-                                               db/*conn* (db/get-connection system)]
-                                       (h/process-file! system file-id update-fn opts)))))
+        proc-fn   (if (var? proc-fn)
+                    (deref proc-fn)
+                    proc-fn)
 
-              (catch Throwable cause
-                (l/wrn :hint "unexpected error on processing file (skiping)"
-                       :tid thread-id
-                       :file-id (str file-id)
-                       :index idx
-                       :cause cause))
-              (finally
-                (when-let [pause (:pause opts)]
-                  (Thread/sleep (int pause)))
+        in-ch     (sp/chan :buf buffer)
 
-                (ps/release! sjobs)
-                (let [elapsed (ct/format-duration (tpoint))]
-                  (l/trc :hint "process:file:end"
-                         :tid thread-id
-                         :file-id (str file-id)
-                         :index idx
-                         :elapsed elapsed))))))
+        worker-fn
+        (fn [worker-id]
+          (l/dbg :hint "worker started"
+                 :id worker-id)
 
-        process-file*
-        (fn [idx file-id]
-          (ps/acquire! sjobs)
-          (px/run! executor (partial process-file file-id idx (ct/tpoint)))
-          (inc idx))
+          (loop []
+            (when-let [[index item] (sp/<! in-ch)]
+              (l/dbg :hint "process item" :worker-id worker-id :index index :item item)
+              (try
+                (-> main/system
+                    (assoc ::db/rollback rollback?)
+                    (db/tx-run! (fn [system]
+                                  (binding [h/*system* system
+                                            db/*conn* (db/get-connection system)]
+                                    (proc-fn system item opts)))))
 
-        process-files
+                (catch Throwable cause
+                  (l/wrn :hint "unexpected error on processing item (skiping)"
+                         :worker-id worker-id
+                         :item item
+                         :cause cause))
+                (finally
+                  (when-let [pause (:pause opts)]
+                    (Thread/sleep (int pause)))))
+
+              (recur)))
+
+          (l/dbg :hint "worker stoped"
+                 :id worker-id))
+
+        enqueue-item
+        (fn [index row]
+          (sp/>! in-ch [index (into {} row)])
+          (inc index))
+
+        process-items
         (fn [{:keys [::db/conn] :as system}]
           (db/exec! conn ["SET statement_timeout = 0"])
           (db/exec! conn ["SET idle_in_transaction_session_timeout = 0"])
 
-          (try
-            (->> (db/plan conn [query])
-                 (transduce (comp
-                             (take max-items)
-                             (map :id))
-                            (completing process-file*)
-                            0))
-            (finally
-              ;; Close and await tasks
-              (pu/close! executor))))]
+          (->> (db/plan conn query {:fetch-size (* max-jobs 3)})
+               (transduce (take max-items)
+                          (completing enqueue-item)
+                          0))
+          (sp/close! in-ch))
+
+        threads
+        (->> (range max-jobs)
+             (map (fn [idx]
+                    (px/fn->thread (partial worker-fn idx)
+                                   :name (str "pentpot/process/" idx))))
+             (doall))]
 
     (try
-      (db/tx-run! main/system process-files)
+      (db/tx-run! main/system process-items)
+
+      ;; Await threads termination
+      (doseq [thread threads]
+        (px/await! thread))
 
       (catch Throwable cause
         (l/dbg :hint "process:error" :cause cause))
 
       (finally
         (let [elapsed (ct/format-duration (tpoint))]
-          (l/dbg :hint "process:end"
+          (l/inf :hint "process end"
                  :rollback rollback?
                  :elapsed elapsed))))))
 
+
+(defn process-file!
+  "A specialized, file specific process! alternative"
+  [& {:keys [id] :as opts}]
+  (let [id (h/parse-uuid id)]
+    (-> opts
+        (assoc :query ["select id from file where id = ?" id])
+        (assoc :max-items 1)
+        (assoc :max-jobs 1)
+        (process!))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)
@@ -579,25 +561,34 @@
   (db/update! conn :file
               {:deleted-at nil
                :has-media-trimmed false}
-              {:id file-id})
-
-  ;; Fragments are not handled here because they
-  ;; use the database cascade operation and they
-  ;; are not marked for deletion with objects-gc
-  ;; task
+              {:id file-id}
+              {::db/return-keys false})
 
   (db/update! conn :file-media-object
               {:deleted-at nil}
-              {:file-id file-id})
+              {:file-id file-id}
+              {::db/return-keys false})
+
+  (db/update! conn :file-change
+              {:deleted-at nil}
+              {:file-id file-id}
+              {::db/return-keys false})
+
+  (db/update! conn :file-data
+              {:deleted-at nil}
+              {:file-id file-id}
+              {::db/return-keys false})
 
   ;; Mark thumbnails to be deleted
   (db/update! conn :file-thumbnail
               {:deleted-at nil}
-              {:file-id file-id})
+              {:file-id file-id}
+              {::db/return-keys false})
 
   (db/update! conn :file-tagged-object-thumbnail
               {:deleted-at nil}
-              {:file-id file-id})
+              {:file-id file-id}
+              {::db/return-keys false})
 
   :restored)
 
@@ -607,11 +598,10 @@
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
                 (fn [system]
-                  (when-let [file (some-> (db/get* system :file
-                                                   {:id file-id}
-                                                   {::db/remove-deleted false
-                                                    ::sql/columns [:id :name]})
-                                          (files/decode-row))]
+                  (when-let [file (db/get* system :file
+                                           {:id file-id}
+                                           {::db/remove-deleted false
+                                            ::sql/columns [:id :name]})]
                     (audit/insert! system
                                    {::audit/name "restore-file"
                                     ::audit/type "action"

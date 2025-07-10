@@ -34,7 +34,7 @@
            (SELECT EXISTS (SELECT 1 FROM team_font_variant WHERE ttf_file_id = ?))) AS has_refs")
 
 (defn- has-team-font-variant-refs?
-  [conn id]
+  [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-team-font-variant-refs id id id id])
       (get :has-refs)))
 
@@ -44,7 +44,7 @@
            (SELECT EXISTS (SELECT 1 FROM file_media_object WHERE thumbnail_id = ?))) AS has_refs")
 
 (defn- has-file-media-object-refs?
-  [conn id]
+  [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-file-media-object-refs id id])
       (get :has-refs)))
 
@@ -53,7 +53,7 @@
            (SELECT EXISTS (SELECT 1 FROM team WHERE photo_id = ?))) AS has_refs")
 
 (defn- has-profile-refs?
-  [conn id]
+  [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-profile-refs id id])
       (get :has-refs)))
 
@@ -62,7 +62,7 @@
   "SELECT EXISTS (SELECT 1 FROM file_tagged_object_thumbnail WHERE media_id = ?) AS has_refs")
 
 (defn- has-file-object-thumbnails-refs?
-  [conn id]
+  [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-file-object-thumbnail-refs id])
       (get :has-refs)))
 
@@ -71,36 +71,23 @@
   "SELECT EXISTS (SELECT 1 FROM file_thumbnail WHERE media_id = ?) AS has_refs")
 
 (defn- has-file-thumbnails-refs?
-  [conn id]
+  [conn {:keys [id]}]
   (-> (db/exec-one! conn [sql:has-file-thumbnail-refs id])
       (get :has-refs)))
 
-(def ^:private
-  sql:has-file-data-refs
-  "SELECT EXISTS (SELECT 1 FROM file WHERE data_ref_id = ?) AS has_refs")
+(def sql:exists-file-data-refs
+  "SELECT EXISTS (
+     SELECT 1 FROM file_data
+      WHERE file_id = ?
+        AND id = ?
+        AND metadata->>'storage-ref-id' = ?::text
+   ) AS has_refs")
 
 (defn- has-file-data-refs?
-  [conn id]
-  (-> (db/exec-one! conn [sql:has-file-data-refs id])
-      (get :has-refs)))
-
-(def ^:private
-  sql:has-file-data-fragment-refs
-  "SELECT EXISTS (SELECT 1 FROM file_data_fragment WHERE data_ref_id = ?) AS has_refs")
-
-(defn- has-file-data-fragment-refs?
-  [conn id]
-  (-> (db/exec-one! conn [sql:has-file-data-fragment-refs id])
-      (get :has-refs)))
-
-(def ^:private
-  sql:has-file-change-refs
-  "SELECT EXISTS (SELECT 1 FROM file_change WHERE data_ref_id = ?) AS has_refs")
-
-(defn- has-file-change-refs?
-  [conn id]
-  (-> (db/exec-one! conn [sql:has-file-change-refs id])
-      (get :has-refs)))
+  [conn sobject]
+  (let [{:keys [file-id id]} (:metadata sobject)]
+    (-> (db/exec-one! conn [sql:exists-file-data-refs file-id id (:id sobject)])
+        (get :has-refs))))
 
 (def ^:private sql:mark-freeze-in-bulk
   "UPDATE storage_object
@@ -143,52 +130,48 @@
       "file-media-object"))
 
 (defn- process-objects!
-  [conn has-refs? ids bucket]
+  [conn has-refs? bucket objects]
   (loop [to-freeze #{}
          to-delete #{}
-         ids       (seq ids)]
-    (if-let [id (first ids)]
-      (if (has-refs? conn id)
+         objects   (seq objects)]
+    (if-let [{:keys [id] :as object} (first objects)]
+      (if (has-refs? conn object)
         (do
-          (l/debug :hint "processing object"
-                   :id (str id)
+          (l/debug :id (str id)
                    :status "freeze"
                    :bucket bucket)
-          (recur (conj to-freeze id) to-delete (rest ids)))
+          (recur (conj to-freeze id) to-delete (rest objects)))
         (do
-          (l/debug :hint "processing object"
-                   :id (str id)
+          (l/debug :id (str id)
                    :status "delete"
                    :bucket bucket)
-          (recur to-freeze (conj to-delete id) (rest ids))))
+          (recur to-freeze (conj to-delete id) (rest objects))))
       (do
         (some->> (seq to-freeze) (mark-freeze-in-bulk! conn))
         (some->> (seq to-delete) (mark-delete-in-bulk! conn))
         [(count to-freeze) (count to-delete)]))))
 
 (defn- process-bucket!
-  [conn bucket ids]
+  [conn bucket objects]
   (case bucket
-    "file-media-object"     (process-objects! conn has-file-media-object-refs? ids bucket)
-    "team-font-variant"     (process-objects! conn has-team-font-variant-refs? ids bucket)
-    "file-object-thumbnail" (process-objects! conn has-file-object-thumbnails-refs? ids bucket)
-    "file-thumbnail"        (process-objects! conn has-file-thumbnails-refs? ids bucket)
-    "profile"               (process-objects! conn has-profile-refs? ids bucket)
-    "file-data"             (process-objects! conn has-file-data-refs? ids bucket)
-    "file-data-fragment"    (process-objects! conn has-file-data-fragment-refs? ids bucket)
-    "file-change"           (process-objects! conn has-file-change-refs? ids bucket)
+    "file-media-object"     (process-objects! conn has-file-media-object-refs? bucket objects)
+    "team-font-variant"     (process-objects! conn has-team-font-variant-refs? bucket objects)
+    "file-object-thumbnail" (process-objects! conn has-file-object-thumbnails-refs? bucket objects)
+    "file-thumbnail"        (process-objects! conn has-file-thumbnails-refs? bucket objects)
+    "profile"               (process-objects! conn has-profile-refs? bucket objects)
+    "file-data"             (process-objects! conn has-file-data-refs? bucket objects)
     (ex/raise :type :internal
               :code :unexpected-unknown-reference
               :hint (dm/fmt "unknown reference '%'" bucket))))
 
 (defn process-chunk!
   [{:keys [::db/conn]} chunk]
-  (reduce-kv (fn [[nfo ndo] bucket ids]
-               (let [[nfo' ndo'] (process-bucket! conn bucket ids)]
+  (reduce-kv (fn [[nfo ndo] bucket objects]
+               (let [[nfo' ndo'] (process-bucket! conn bucket objects)]
                  [(+ nfo nfo')
                   (+ ndo ndo')]))
              [0 0]
-             (d/group-by lookup-bucket :id #{} chunk)))
+             (d/group-by lookup-bucket identity #{} chunk)))
 
 (def ^:private
   sql:get-touched-storage-objects
@@ -214,12 +197,7 @@
       (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
         (recur (long (+ freezed nfo))
                (long (+ deleted ndo))))
-      (do
-        (l/inf :hint "task finished"
-               :to-freeze freezed
-               :to-delete deleted)
-
-        {:freeze freezed :delete deleted}))))
+      {:freeze freezed :delete deleted})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER

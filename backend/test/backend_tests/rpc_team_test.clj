@@ -582,7 +582,7 @@
       (t/is (ct/inst? (:deleted-at (first rows)))))
 
     (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 5 (:processed result))))))
+      (t/is (= 7 (:processed result))))))
 
 (t/deftest create-team-access-request
   (with-mocks [mock {:target 'app.email/send! :return nil}]

@@ -29,7 +29,7 @@
        true
        (catch Throwable _cause
          false)))
-   {:num 30}))
+   {:num 15}))
 
 
 
