@@ -162,7 +162,7 @@
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 4 (:processed result))))
+      (t/is (= 6 (:processed result))))
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof)}
@@ -324,7 +324,7 @@
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 4 (:processed result))))
+      (t/is (= 6 (:processed result))))
 
     (let [row (th/db-get :team
                          {:id (:default-team-id prof1)}
@@ -363,7 +363,7 @@
 
     ;; execute permanent deletion task
     (let [result (th/run-task! :objects-gc {:min-age 0})]
-      (t/is (= 8 (:processed result))))))
+      (t/is (= 10 (:processed result))))))
 
 
 (t/deftest email-blacklist-1

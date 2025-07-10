@@ -4,10 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.srepl.fixes.media-refs
+(ns app.srepl.procs.media-refs
   (:require
    [app.binfile.common :as bfc]
    [app.common.files.helpers :as cfh]
+   [app.common.logging :as l]
    [app.srepl.helpers :as h]))
 
 (defn- collect-media-refs
@@ -37,7 +38,22 @@
   (let [media-refs (collect-media-refs (:data file))]
     (bfc/update-media-references! cfg file media-refs)))
 
-(defn process-file
-  [file _opts]
-  (let [system (h/get-current-system)]
-    (update-all-media-references system file)))
+(def ^:private sql:get-files
+  "SELECT f.id
+     FROM file AS f
+     LEFT JOIN file_migration AS fm ON (fm.file_id = f.id AND fm.name = 'internal/procs/media-refs')
+    WHERE fm.name IS NULL
+    ORDER BY f.project_id")
+
+(defn fix-media-refs
+  {:query sql:get-files}
+  [cfg {:keys [id]} & {:as options}]
+  (l/inf :hint "processing file" :id (str id))
+
+  (h/process-file! cfg id
+                   (fn [file _opts]
+                     (update-all-media-references cfg file))
+                   (assoc options
+                          ::bfc/reset-migrations? true
+                          ::h/validate? false))
+  (h/mark-migrated! cfg id "internal/procs/media-refs"))

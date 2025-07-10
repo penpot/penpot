@@ -8,7 +8,6 @@
   (:require
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
-   [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
@@ -87,10 +86,7 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-
-        (let [result (:result out)]
-          (t/is (= "label1" (:label result)))
-          (t/is (uuid? (:id result)))))
+        (t/is (nil? (:result out))))
 
       (let [[row1 row2 :as rows]
             (th/db-query :file-change
@@ -116,7 +112,7 @@
 
             ;; (th/print-result! out)
             (t/is (nil? (:error out)))
-            (t/is (nil? (:result out)))))
+            (t/is (true? (:result out)))))
 
         (t/testing "delete system created snapshot"
           (let [params {::th/type :delete-file-snapshot
@@ -213,4 +209,4 @@
 
         ;; (th/print-result! out)
         (t/is (nil? (:error out)))
-        (t/is (nil? (:result out)))))))
+        (t/is (true? (:result out)))))))

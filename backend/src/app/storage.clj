@@ -115,13 +115,10 @@
 
 (defn- create-database-object
   [{:keys [::backend ::db/connectable]} {:keys [::content ::expired-at ::touched-at ::touch] :as params}]
-  (let [id     (or (:id params) (uuid/random))
+  (let [id     (or (::id params) (uuid/random))
         mdata  (cond-> (get-metadata params)
                  (satisfies? impl/IContentHash content)
-                 (assoc :hash (impl/get-hash content))
-
-                 :always
-                 (dissoc :id))
+                 (assoc :hash (impl/get-hash content)))
 
         touched-at (if touch
                      (or touched-at (ct/now))

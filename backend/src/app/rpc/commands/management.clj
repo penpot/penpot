@@ -35,7 +35,7 @@
 (defn duplicate-file
   [{:keys [::db/conn ::bfc/timestamp] :as cfg} {:keys [profile-id file-id name reset-shared-flag] :as params}]
   (let [;; We don't touch the original file on duplication
-        file       (bfc/get-file cfg file-id)
+        file       (bfc/get-file cfg file-id :realize? true)
         project-id (:project-id file)
         file       (-> file
                        (update :id bfc/lookup-index)

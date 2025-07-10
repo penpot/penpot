@@ -239,7 +239,6 @@
           'app.rpc.commands.files
           'app.rpc.commands.files-create
           'app.rpc.commands.files-share
-          'app.rpc.commands.files-temp
           'app.rpc.commands.files-update
           'app.rpc.commands.files-snapshot
           'app.rpc.commands.files-thumbnails

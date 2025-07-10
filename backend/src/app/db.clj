@@ -298,7 +298,7 @@
 (defn insert!
   "A helper that builds an insert sql statement and executes it. By
   default returns the inserted row with all the field; you can delimit
-  the returned columns with the `::columns` option."
+  the returned columns with the `::sql/columns` option."
   [ds table params & {:as opts}]
   (let [conn (get-connectable ds)
         sql  (sql/insert table params opts)
@@ -578,10 +578,10 @@
   [system f & params]
   (cond
     (connection? system)
-    (run! {::conn system} f)
+    (apply run! {::conn system} f params)
 
     (pool? system)
-    (run! {::pool system} f)
+    (apply run! {::pool system} f params)
 
     (::conn system)
     (apply f system params)
