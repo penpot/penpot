@@ -156,7 +156,7 @@
 
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
-           ignore-sync-until created-at modified-at deleted-at]
+           metadata backend ignore-sync-until created-at modified-at deleted-at]
     :as params}
 
    & {:keys [create-page with-data page-id]
@@ -187,8 +187,9 @@
           :data data
           :features features
           :migrations migrations
+          :metadata metadata
+          :backend backend
           :ignore-sync-until ignore-sync-until
-          :has-media-trimmed false
           :created-at created-at
           :modified-at modified-at
           :deleted-at deleted-at})]

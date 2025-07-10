@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.files-thumbnails
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.features :as cfeat]
@@ -202,9 +203,9 @@
                                             :profile-id profile-id
                                             :file-id file-id)
 
-                       file (files/get-file cfg file-id
-                                            :preload-pointers? true
-                                            :read-only? true)]
+                       file (bfc/get-file cfg file-id
+                                          :realize? true
+                                          :read-only? true)]
 
                    (-> (cfeat/get-team-enabled-features cf/flags team)
                        (cfeat/check-file-features! (:features file)))
@@ -339,6 +340,7 @@
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))
         tnow  (ct/now)
+
         media (sto/put-object! storage
                                {::sto/content data
                                 ::sto/deduplicate? true

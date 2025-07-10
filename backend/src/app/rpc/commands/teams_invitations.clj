@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.teams-invitations
   (:require
+   [app.binfile.common :as bfc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -21,7 +22,6 @@
    [app.loggers.audit :as audit]
    [app.main :as-alias main]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -499,7 +499,7 @@
   "A specific method for obtain a file with name and page-id used for
   team request access procediment"
   [cfg file-id]
-  (let [file (files/get-file cfg file-id :migrate? false)]
+  (let [file (bfc/get-file cfg file-id :migrate? false)]
     (-> file
         (dissoc :data)
         (dissoc :deleted-at)

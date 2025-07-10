@@ -184,8 +184,8 @@
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg file-id)]
       (let [file (->> file
-                      (files/decode-row)
-                      (feat.fdata/resolve-file-data cfg))
+                      (feat.fdata/resolve-file-data cfg)
+                      (feat.fdata/decode-file-data cfg))
             data (get file :data)]
         (-> file
             (assoc :page-name (dm/get-in data [:pages-index page-id :name]))

@@ -62,10 +62,10 @@
   [data]
   (->> (concat
         (->> data
-             (filterv #(= "user" (:created-by %)))
+             (filter #(= "user" (:created-by %)))
              (map #(assoc % :type :version)))
         (->> data
-             (filterv #(= "system" (:created-by %)))
+             (filter #(= "system" (:created-by %)))
              (group-by #(ct/format-inst (:created-at %) :iso-date))
              (map (fn [[day entries]]
                     {:type :snapshot

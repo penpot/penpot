@@ -8,101 +8,73 @@
   "A maintenance task responsible of moving file data from hot
   storage (the database row) to a cold storage (fs or s3)."
   (:require
-   [app.common.exceptions :as ex]
+   [app.binfile.common :as bfc]
    [app.common.logging :as l]
    [app.db :as db]
-   [app.db.sql :as-alias sql]
+   [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.storage :as sto]
+   [app.util.blob :as blob]
    [integrant.core :as ig]))
 
-(defn- offload-file-data!
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
-  (let [file (db/get conn :file {:id file-id}
-                     {::sql/for-update true})]
-    (when (nil? (:data file))
-      (ex/raise :hint "file already offloaded"
-                :type :internal
-                :code :file-already-offloaded
-                :file-id file-id))
+(defn- offload-file-data
+  [{:keys [::db/conn ::file-id] :as cfg}]
+  (let [file (bfc/get-file cfg file-id :realize? true :lock-for-update? true)]
+    (cond
+      (not= "db" (:backend file))
+      (l/wrn :hint (str "skiping file offload (file offloaded or incompatible with offloading) for " file-id)
+             :file-id (str file-id))
 
-    (let [data (sto/content (:data file))
-          sobj (sto/put-object! storage
-                                {::sto/content data
-                                 ::sto/touch true
-                                 :bucket "file-data"
-                                 :content-type "application/octet-stream"
-                                 :file-id file-id})]
+      (nil? (:data file))
+      (l/err :hint (str "skiping file offload (missing data) for " file-id)
+             :file-id (str file-id))
 
-      (l/trc :hint "offload file data"
-             :file-id (str file-id)
-             :storage-id (str (:id sobj)))
+      :else
+      (do
+        (fdata/update! cfg {:id file-id
+                            :file-id file-id
+                            :type "main"
+                            :backend "storage"
+                            :data (blob/encode (:data file))})
 
-      (db/update! conn :file
-                  {:data-backend "objects-storage"
-                   :data-ref-id (:id sobj)
-                   :data nil}
-                  {:id file-id}
-                  {::db/return-keys false}))))
+        (db/update! conn :file
+                    {:data nil}
+                    {:id file-id}
+                    {::db/return-keys false})
 
-(defn- offload-file-data-fragments!
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
-  (doseq [fragment (db/query conn :file-data-fragment
-                             {:file-id file-id
-                              :deleted-at nil
-                              :data-backend nil}
-                             {::db/for-update true})]
-    (let [data (sto/content (:data fragment))
-          sobj (sto/put-object! storage
-                                {::sto/content data
-                                 ::sto/touch true
-                                 :bucket "file-data-fragment"
-                                 :content-type "application/octet-stream"
-                                 :file-id file-id
-                                 :file-fragment-id (:id fragment)})]
-
-      (l/trc :hint "offload file data fragment"
-             :file-id (str file-id)
-             :file-fragment-id (str (:id fragment))
-             :storage-id (str (:id sobj)))
-
-      (db/update! conn :file-data-fragment
-                  {:data-backend "objects-storage"
-                   :data-ref-id (:id sobj)
-                   :data nil}
-                  {:id (:id fragment)}
-                  {::db/return-keys false}))))
+        (l/trc :hint "offload file data"
+               :file-id (str file-id))))))
 
 (def sql:get-snapshots
-  "SELECT fc.*
-     FROM file_change AS fc
-    WHERE fc.file_id = ?
-      AND fc.label IS NOT NULL
-      AND fc.data IS NOT NULL
-      AND fc.data_backend IS NULL")
+  (str "WITH snapshots AS (" fsnap/sql:snapshots ")"
+       "SELECT s.*
+          FROM snapshots AS s
+         WHERE s.backend = 'db'
+           AND s.file_id = ?
+         ORDER BY s.created_at"))
 
-(defn- offload-file-snapshots!
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
-  (doseq [snapshot (db/exec! conn [sql:get-snapshots file-id])]
-    (let [data (sto/content (:data snapshot))
-          sobj (sto/put-object! storage
-                                {::sto/content data
-                                 ::sto/touch true
-                                 :bucket "file-change"
-                                 :content-type "application/octet-stream"
-                                 :file-id file-id
-                                 :file-change-id (:id snapshot)})]
-
-      (l/trc :hint "offload file change"
+(defn- offload-snapshot-data
+  [{:keys [::db/conn ::file-id] :as cfg} snapshot]
+  (let [{:keys [id data] :as snapshot} (fdata/resolve-file-data cfg snapshot)]
+    (if (nil? (:data snapshot))
+      (l/err :hint (str "skiping snapshot offload (missing data) for " file-id)
              :file-id (str file-id)
-             :file-change-id (str (:id snapshot))
-             :storage-id (str (:id sobj)))
+             :snapshot-id id)
+      (do
+        (fsnap/create! cfg {:id id
+                            :file-id file-id
+                            :type "snapshot"
+                            :backend "storage"
+                            :data data})
 
-      (db/update! conn :file-change
-                  {:data-backend "objects-storage"
-                   :data-ref-id (:id sobj)
-                   :data nil}
-                  {:id (:id snapshot)}
-                  {::db/return-keys false}))))
+        (l/trc :hint "offload snapshot data"
+               :file-id (str file-id)
+               :snapshot-id (str id))
+
+        (db/update! conn :file-change
+                    {:data nil}
+                    {:id id :file-id file-id}
+                    {::db/return-keys false})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
@@ -116,10 +88,12 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (-> cfg
-        (assoc ::db/rollback (:rollback? props))
-        (assoc ::file-id (:file-id props))
-        (db/tx-run! (fn [cfg]
-                      (offload-file-data! cfg)
-                      (offload-file-data-fragments! cfg)
-                      (offload-file-snapshots! cfg))))))
+    (let [file-id (:file-id props)]
+      (-> cfg
+          (assoc ::db/rollback (:rollback? props))
+          (assoc ::file-id (:file-id props))
+          (db/tx-run! (fn [{:keys [::db/conn] :as cfg}]
+                        (offload-file-data cfg)
+
+                        (run! (partial offload-snapshot-data cfg)
+                              (db/plan conn [sql:get-snapshots file-id]))))))))
