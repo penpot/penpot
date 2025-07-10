@@ -67,26 +67,29 @@
 ;; POINTER-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-file-data
-  "Get file data given a file instance."
-  [system file]
-  (if (offloaded? file)
-    (let [storage (sto/resolve system ::db/reuse-conn true)]
-      (->> (sto/get-object storage (:data-ref-id file))
-           (sto/get-object-bytes storage)))
-    (:data file)))
+;; (defn get-file-data
+;;   "Get file data given a file instance."
+;;   [system file]
+;;   (if (offloaded? file)
+;;     (let [storage (sto/resolve system ::db/reuse-conn true)]
+;;       (->> (sto/get-object storage (:data-ref-id file))
+;;            (sto/get-object-bytes storage)))
+;;     (:data file)))
 
 (defn resolve-file-data
-  [system file]
-  (let [data (get-file-data system file)]
-    (assoc file :data data)))
+  [system {:keys [legacy-data data] :as file}]
+  (if (some? legacy-data)
+    (-> file
+        (assoc :data legacy-data)
+        (dissoc :legacy-data))
+    file))
 
 (defn load-pointer
   "A database loader pointer helper"
   [system file-id id]
-  (let [fragment (db/get* system :file-data-fragment
-                          {:id id :file-id file-id}
-                          {::sql/columns [:data :data-backend :data-ref-id :id]})]
+  (let [fragment (db/get* system :file-data
+                          {:id id :file-id file-id :type "fragment"}
+                          {::sql/columns [:content :backend :id]})]
 
     (l/trc :hint "load pointer"
            :file-id (str file-id)
@@ -100,9 +103,8 @@
                 :file-id file-id
                 :fragment-id id))
 
-    (let [data (get-file-data system fragment)]
-      ;; FIXME: conditional thread scheduling for decoding big objects
-      (blob/decode data))))
+    ;; FIXME: conditional thread scheduling for decoding big objects
+    (blob/decode (:content fragment))))
 
 (defn persist-pointers!
   "Persist all currently tracked pointer objects"
@@ -112,10 +114,11 @@
       (when (pmap/modified? item)
         (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
         (let [content (-> item deref blob/encode)]
-          (db/insert! conn :file-data-fragment
+          (db/insert! conn :file-data
                       {:id id
                        :file-id file-id
-                       :data content}))))))
+                       :type "fragment"
+                       :content content}))))))
 
 (defn process-pointers
   "Apply a function to all pointers on the file. Usuly used for

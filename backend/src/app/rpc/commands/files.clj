@@ -249,6 +249,32 @@
           (feat.fmigr/upsert-migrations! conn file)
           (feat.fmigr/resolve-applied-migrations cfg file))))))
 
+(def sql:get-file
+  "SELECT f.id,
+          f.project_id,
+          f.created_at,
+          f.modified_at,
+          f.deleted_at,
+          f.name,
+          f.is_shared,
+          f.has_media_trimmed,
+          f.revn,
+          f.data AS legacy_data,
+          f.ignore_sync_until,
+          f.comment_thread_seqn,
+          f.features,
+          f.version,
+          f.data_ref_id,
+          f.vern,
+          p.team_id,
+          fd.backend AS data_backend,
+          fd.metadata AS data_metadata,
+          fd.content AS data
+     FROM file AS f
+     LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.data_ref_id)
+    INNER JOIN project AS p ON (p.id = f.project_id)
+   WHERE f.id = ?")
+
 (defn get-file
   [{:keys [::db/conn ::wrk/executor] :as cfg} id
    & {:keys [project-id
@@ -264,13 +290,19 @@
 
   (assert (db/connection? conn) "expected cfg with valid connection")
 
-  (let [params (merge {:id id}
-                      (when (some? project-id)
-                        {:project-id project-id}))
-        file   (->> (db/get conn :file params
-                            {::db/check-deleted (not include-deleted?)
-                             ::db/remove-deleted (not include-deleted?)
-                             ::sql/for-update lock-for-update?})
+  (let [
+        ;; params (merge {:id id}
+        ;;               (when (some? project-id)
+        ;;                 {:project-id project-id}))
+
+
+        sql    (if lock-for-update?
+                 (str sql:get-file " FOR UPDATE")
+                 sql:get-file)
+
+        file   (->> (db/get-with-sql conn [sql id]
+                                     {::db/check-deleted (not include-deleted?)
+                                      ::db/remove-deleted (not include-deleted?)})
                     (feat.fmigr/resolve-applied-migrations cfg)
                     (feat.fdata/resolve-file-data cfg))
 
@@ -367,10 +399,9 @@
 
 (defn- get-file-fragment
   [cfg file-id fragment-id]
-  (let [resolve-file-data (partial feat.fdata/resolve-file-data cfg)]
-    (some-> (db/get cfg :file-data-fragment {:file-id file-id :id fragment-id})
-            (resolve-file-data)
-            (update :data blob/decode))))
+  ;; (let [resolve-file-data (partial feat.fdata/resolve-file-data cfg)
+  (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
+          (update :content blob/decode)))
 
 (sv/defmethod ::get-file-fragment
   "Retrieve a file fragment by its ID. Only authenticated users."

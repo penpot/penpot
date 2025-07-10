@@ -142,8 +142,13 @@
                         :project-id (str project-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 (when (= "objects-storage" (:data-backend file))
-                   (sto/touch-object! storage (:data-ref-id file)))
+                 (when-let [ref-id (:data-ref-id file)]
+                   (db/update! conn :file-data
+                               {:deleted-at deleted-at}
+                               {:file-id id
+                                :id ref-id
+                                :type "main"}
+                               {::db/return-keys false}))
 
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})
@@ -209,9 +214,9 @@
                  (inc total))
                0)))
 
-(def ^:private sql:get-file-data-fragments
-  "SELECT file_id, id, deleted_at, data_ref_id
-     FROM file_data_fragment
+(def ^:private sql:get-file-data
+  "SELECT file_id, id, deleted_at, type
+     FROM file_data
     WHERE deleted_at IS NOT NULL
       AND deleted_at < now() + ?::interval
     ORDER BY deleted_at ASC
@@ -219,18 +224,19 @@
       FOR UPDATE
      SKIP LOCKED")
 
-(defn- delete-file-data-fragments!
+(defn- delete-file-data!
   [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
-  (->> (db/plan conn [sql:get-file-data-fragments deletion-threshold chunk-size] {:fetch-size 5})
-       (reduce (fn [total {:keys [file-id id deleted-at data-ref-id]}]
+  (->> (db/plan conn [sql:get-file-data deletion-threshold chunk-size] {:fetch-size 5})
+       (reduce (fn [total {:keys [file-id id deleted-at type]}]
                  (l/trc :hint "permanently delete"
-                        :rel "file-data-fragment"
+                        :rel "file-data"
                         :id (str id)
+                        :type type
                         :file-id (str file-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 (some->> data-ref-id (sto/touch-object! storage))
-                 (db/delete! conn :file-data-fragment {:file-id file-id :id id})
+                 ;; (some->> data-ref-id (sto/touch-object! storage))
+                 (db/delete! conn :file-data {:file-id file-id :id id})
 
                  (inc total))
                0)))
@@ -284,8 +290,13 @@
                         :file-id (str file-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 (when (= "objects-storage" (:data-backend xlog))
-                   (sto/touch-object! storage (:data-ref-id xlog)))
+                 (when-let [ref-id (:data-ref-id xlog)]
+                   (db/update! conn :file-data
+                               {:deleted-at deleted-at}
+                               {:file-id file-id
+                                :id ref-id
+                                :type "snapshot"}
+                               {::db/return-keys false}))
 
                  (db/delete! conn :file-change {:id id})
 
@@ -295,11 +306,11 @@
 (def ^:private deletion-proc-vars
   [#'delete-profiles!
    #'delete-file-media-objects!
-   #'delete-file-data-fragments!
    #'delete-file-object-thumbnails!
    #'delete-file-thumbnails!
    #'delete-file-changes!
    #'delete-files!
+   #'delete-file-data!
    #'delete-projects!
    #'delete-fonts!
    #'delete-teams!])

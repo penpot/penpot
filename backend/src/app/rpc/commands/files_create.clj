@@ -18,6 +18,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
+   [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
@@ -41,9 +42,8 @@
     :or {is-shared false revn 0 create-page true}
     :as params}]
 
-  (dm/assert!
-   "expected a valid connection"
-   (db/connection? conn))
+  (assert (db/connection? conn)
+          "expected a valid connection")
 
   (binding [pmap/*tracked* (pmap/create-tracked)
             cfeat/*current* features]
@@ -57,9 +57,9 @@
                                :modified-at modified-at
                                :deleted-at deleted-at}
                               {:create-page create-page
-                               :page-id page-id})
-          file (-> (bfc/insert-file! cfg file)
-                   (bfc/decode-row))]
+                               :page-id page-id})]
+
+      (bfc/insert-file! cfg file)
 
       (->> (assoc params :file-id (:id file) :role :owner)
            (create-file-role! conn))
@@ -68,7 +68,7 @@
                   {:modified-at (dt/now)}
                   {:id project-id})
 
-      file)))
+      (files/get-file cfg (:id file)))))
 
 (def ^:private schema:create-file
   [:map {:title "create-file"}

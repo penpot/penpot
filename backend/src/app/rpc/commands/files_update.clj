@@ -136,7 +136,7 @@
                     (files/check-edition-permissions! conn profile-id id)
                     (db/xact-lock! conn id)
 
-                    (let [file     (get-file conn id)
+                    (let [file     (get-file cfg id)
                           team     (teams/get-team conn
                                                    :profile-id profile-id
                                                    :team-id (:team-id file))
@@ -222,18 +222,36 @@
 
     ;; We create a new lexycal scope for clearly delimit the result of
     ;; executing this update file operation and all its side effects
-    (let [file (px/invoke! executor
-                           (fn []
-                             ;; Process the file data on separated thread for avoid to do
-                             ;; the CPU intensive operation on vthread.
-                             (binding [cfeat/*current*  features
-                                       cfeat/*previous* (:features file)]
-                               (update-file-data! cfg file
-                                                  process-changes-and-validate
-                                                  changes skip-validate))))]
+    (let [file
+          (px/invoke! executor
+                      (fn []
+                        ;; Process the file data on separated thread
+                        ;; for avoid to do the CPU intensive operation
+                        ;; on vthread.
+                        (binding [cfeat/*current*  features
+                                  cfeat/*previous* (:features file)]
+                          (update-file-data! cfg file
+                                             process-changes-and-validate
+                                             changes skip-validate))))
+
+          deleted-at
+          (if (::snapshot-data file)
+            (dt/plus timestamp (ldel/get-deletion-delay team))
+            (dt/plus timestamp (dt/duration {:hours 1})))]
+
 
       (feat.fmigr/upsert-migrations! conn file)
       (persist-file! cfg file)
+
+      (when-let [snapshot-id (::snapshot-id file)]
+        (db/insert! conn :file-data
+                    {:id snapshot-id
+                     :file-id (:id file)
+                     :content (::snapshot-data file)
+                     :type "snapshot"
+                     :created-at timestamp
+                     :modified-at timestamp
+                     :deleted-at deleted-at}))
 
       ;; Insert change (xlog) with deleted_at in a future data for
       ;; make them automatically eleggible for GC once they expires
@@ -243,24 +261,22 @@
                    :profile-id profile-id
                    :created-at timestamp
                    :updated-at timestamp
-                   :deleted-at (if (::snapshot-data file)
-                                 (dt/plus timestamp (ldel/get-deletion-delay team))
-                                 (dt/plus timestamp (dt/duration {:hours 1})))
+                   :deleted-at deleted-at
                    :file-id (:id file)
+                   :data-ref-id (::snapshot-id file)
                    :revn (:revn file)
                    :version (:version file)
                    :features (:features file)
                    :label (::snapshot-label file)
-                   :data (::snapshot-data file)
                    :changes (blob/encode changes)}
                   {::db/return-keys false})
 
       ;; Send asynchronous notifications
       (send-notifications! cfg params file))
 
-    (when (feat.fdata/offloaded? file)
-      (let [storage (sto/resolve cfg ::db/reuse-conn true)]
-        (some->> (:data-ref-id file) (sto/touch-object! storage))))
+    ;; (when (feat.fdata/offloaded? file)
+    ;;   (let [storage (sto/resolve cfg ::db/reuse-conn true)]
+    ;;     (some->> (:data-ref-id file) (sto/touch-object! storage))))
 
     (let [response {:revn (:revn file)
                     :lagged (get-lagged-changes conn params)}]
@@ -280,22 +296,14 @@
     (persist-file! cfg file)))
 
 (def ^:private sql:get-file
-  "SELECT f.*, p.team_id
-     FROM file AS f
-     JOIN project AS p ON (p.id = f.project_id)
-    WHERE f.id = ?
-      AND (f.deleted_at IS NULL OR
-           f.deleted_at > now())
-      FOR KEY SHARE")
+  (str files/sql:get-file " FOR KEY SHARE OF f"))
 
 (defn get-file
   "Get not-decoded file, only decodes the features set."
-  [conn id]
-  (let [file (db/exec-one! conn [sql:get-file id])]
-    (when-not file
-      (ex/raise :type :not-found
-                :code :object-not-found
-                :hint (format "file with id '%s' does not exists" id)))
+  [cfg id]
+  (let [conn (db/get-connection cfg)
+        file (db/get-with-sql conn [sql:get-file id])
+        file (feat.fdata/resolve-file-data cfg file)]
     (update file :features db/decode-pgarray #{})))
 
 (defn persist-file!
@@ -313,13 +321,29 @@
                 {:id (:project-id file)}
                 {::db/return-keys false})
 
+    (if (:data-ref-id file)
+      (db/update! conn :file-data
+                  {:content (:data file)
+                   :modified-at modified-at}
+                  {:id (:data-ref-id file)
+                   :file-id (:id file)
+                   :type "main"}
+                  {::db/return-keys false})
+      (db/insert! conn :file-data
+                  {:id (:id file)
+                   :file-id (:id file)
+                   :content (:data file)
+                   :type "main"
+                   :created-at modified-at
+                   :modified-at modified-at}
+                  {::db/return-keys false}))
+
     (db/update! conn :file
                 {:revn (:revn file)
-                 :data (:data file)
+                 :data nil
                  :version (:version file)
                  :features (:features file)
-                 :data-backend nil
-                 :data-ref-id nil
+                 :data-ref-id (:id file)
                  :modified-at modified-at
                  :has-media-trimmed false}
                 {:id (:id file)}
@@ -355,8 +379,6 @@
                      (fmg/migrate-file libs))
                  file)
 
-          file (apply update-fn cfg file args)
-
           ;; TODO: reuse operations if file is migrated
           ;; TODO: move encoding to a separated thread
           file (if (take-snapshot? file)
@@ -375,9 +397,12 @@
                           :elapsed (dt/format-duration elapsed))
 
                    (-> file
+                       (assoc ::snapshot-id (uuid/next))
                        (assoc ::snapshot-data snapshot)
                        (assoc ::snapshot-label label)))
-                 file)]
+                 file)
+
+          file (apply update-fn cfg file args)]
 
       (bfc/encode-file cfg file))))
 

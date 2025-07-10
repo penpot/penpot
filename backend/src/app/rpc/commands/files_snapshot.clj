@@ -80,6 +80,9 @@
         created-by
         (name created-by)
 
+        created-at
+        (dt/now)
+
         deleted-at
         (cond
           (= deleted-at :default)
@@ -108,16 +111,27 @@
              :id (str snapshot-id)
              :label label)
 
+    (db/insert! cfg :file-data
+                {:id snapshot-id
+                 :file-id (:id file)
+                 :type "snapshot"
+                 :content data
+                 :deleted-at deleted-at
+                 :created-at created-at
+                 :modified-at created-at})
+
     (db/insert! cfg :file-change
                 {:id snapshot-id
                  :revn (:revn file)
-                 :data data
                  :version (:version file)
                  :features features
                  :profile-id profile-id
                  :file-id (:id file)
+                 :data-ref-id snapshot-id
                  :label label
                  :deleted-at deleted-at
+                 :created-at created-at
+                 :updated-at created-at
                  :created-by created-by}
                 {::db/return-keys false})
 
@@ -152,14 +166,22 @@
 
 (defn restore-file-snapshot!
   [{:keys [::db/conn ::mbus/msgbus] :as cfg} file-id snapshot-id]
-  (let [storage  (sto/resolve cfg {::db/reuse-conn true})
-        file     (files/get-minimal-file conn file-id {::db/for-update true})
-        vern     (rand-int Integer/MAX_VALUE)
-        snapshot (some->> (db/get* conn :file-change
-                                   {:file-id file-id
-                                    :id snapshot-id}
-                                   {::db/for-share true})
-                          (feat.fdata/resolve-file-data cfg))]
+  (let [storage (sto/resolve cfg {::db/reuse-conn true})
+        file    (files/get-minimal-file conn file-id {::db/for-update true})
+        vern    (rand-int Integer/MAX_VALUE)
+
+        snapshot
+        (db/get* conn :file-change
+                 {:file-id file-id
+                  :id snapshot-id}
+                 {::db/for-share true})
+
+        fdata
+        (when-let [ref-id (:data-ref-id snapshot)]
+          (db/get* conn :file-data
+                   {:file-id file-id
+                    :id ref-id}
+                   {::db/for-share true}))]
 
     (when-not snapshot
       (ex/raise :type :not-found
@@ -168,7 +190,7 @@
                 :snapshot-id snapshot-id
                 :file-id file-id))
 
-    (when-not (:data snapshot)
+    (when-not fdata
       (ex/raise :type :validation
                 :code :snapshot-without-data
                 :hint "snapshot has no data"
@@ -180,22 +202,21 @@
            :label (:label snapshot)
            :snapshot-id (str (:id snapshot)))
 
-    ;; If the file was already offloaded, on restring the snapshot
-    ;; we are going to replace the file data, so we need to touch
-    ;; the old referenced storage object and avoid possible leaks
-    (when (feat.fdata/offloaded? file)
-      (sto/touch-object! storage (:data-ref-id file)))
+    ;; ;; If the file was already offloaded, on restring the snapshot
+    ;; ;; we are going to replace the file data, so we need to touch
+    ;; ;; the old referenced storage object and avoid possible leaks
+    ;; (when (feat.fdata/offloaded? file)
+    ;;   (sto/touch-object! storage (:data-ref-id file)))
 
-    (db/update! conn :file
-                {:data (:data snapshot)
-                 :revn (inc (:revn file))
-                 :vern vern
-                 :version (:version snapshot)
-                 :data-backend nil
-                 :data-ref-id nil
-                 :has-media-trimmed false
-                 :features (:features snapshot)}
-                {:id file-id})
+    (bfc/update-file! cfg
+                      {:id (:id file)
+                       :data (:data snapshot)
+                       :revn (inc (:revn file))
+                       :vern vern
+                       :version (:version snapshot)
+                       :has-media-trimmed false
+                       :features (:features snapshot)}
+                      {::bfc/update-migrations false})
 
     ;; clean object thumbnails
     (let [sql (str "update file_tagged_object_thumbnail "
@@ -229,16 +250,15 @@
 
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:restore-file-snapshot}
-  [cfg {:keys [::rpc/profile-id file-id id] :as params}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (files/check-edition-permissions! conn profile-id file-id)
-                (let [file (bfc/get-file cfg file-id)]
-                  (create-file-snapshot! cfg file
-                                         {:profile-id profile-id
-                                          :created-by :system})
-                  (restore-file-snapshot! cfg file-id id)))))
+   ::sm/params schema:restore-file-snapshot
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
+  (files/check-edition-permissions! conn profile-id file-id)
+  (let [file (bfc/get-file cfg file-id)]
+    (create-file-snapshot! cfg file
+                           {:profile-id profile-id
+                            :created-by :system})
+    (restore-file-snapshot! cfg file-id id)))
 
 (def ^:private schema:update-file-snapshot
   [:map {:title "update-file-snapshot"}
@@ -246,12 +266,18 @@
    [:label ::sm/text]])
 
 (defn- update-file-snapshot!
-  [conn snapshot-id label]
+  [conn {:keys [id file-id label]}]
+  (db/update! conn :file-data
+                  {:deleted-at nil}
+                  {:id id :file-id file-id}
+                  {::db/return-keys false})
+
   (-> (db/update! conn :file-change
                   {:label label
                    :created-by "user"
                    :deleted-at nil}
-                  {:id snapshot-id}
+                  {:id id
+                   :file-id file-id}
                   {::db/return-keys true})
       (dissoc :data :features)))
 
@@ -265,39 +291,43 @@
 
 (sv/defmethod ::update-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:update-file-snapshot}
-  [cfg {:keys [::rpc/profile-id id label]}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn]}]
-                (let [snapshot (get-snapshot conn id)]
-                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
-                  (update-file-snapshot! conn id label)))))
+   ::sm/params schema:update-file-snapshot
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id label]}]
+  (let [snapshot (get-snapshot conn id)]
+    (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+    (update-file-snapshot! conn (assoc snapshot :label label))))
 
 (def ^:private schema:remove-file-snapshot
   [:map {:title "remove-file-snapshot"}
    [:id ::sm/uuid]])
 
 (defn- delete-file-snapshot!
-  [conn snapshot-id]
-  (db/update! conn :file-change
-              {:deleted-at (dt/now)}
-              {:id snapshot-id}
-              {::db/return-keys false})
-  nil)
+  [conn {:keys [id file-id]}]
+  (let [deleted-at (dt/now)]
+    (db/update! conn :file-change
+                {:deleted-at deleted-at}
+                {:id id :file-id file-id}
+                {::db/return-keys false})
+    (db/update! conn :file-data
+                {:deleted-at deleted-at}
+                {:id id :file-id file-id}
+                {::db/return-keys false})
+    nil))
 
 (sv/defmethod ::delete-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:remove-file-snapshot}
-  [cfg {:keys [::rpc/profile-id id]}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn]}]
-                (let [snapshot (get-snapshot conn id)]
-                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+   ::sm/params schema:remove-file-snapshot
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
+  (let [snapshot (get-snapshot conn id)]
+    (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
-                  (when (not= (:created-by snapshot) "user")
-                    (ex/raise :type :validation
-                              :code :system-snapshots-cant-be-deleted
-                              :snapshot-id id
-                              :profile-id profile-id))
+    (when (not= (:created-by snapshot) "user")
+      (ex/raise :type :validation
+                :code :system-snapshots-cant-be-deleted
+                :file-id (:file-id snapshot)
+                :snapshot-id id
+                :profile-id profile-id))
 
-                  (delete-file-snapshot! conn id)))))
+    (delete-file-snapshot! conn snapshot)))

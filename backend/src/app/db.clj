@@ -404,6 +404,24 @@
                 :hint "database object not found"))
     row))
 
+
+(defn get-with-sql
+  [ds sql & {:as opts}]
+  (let [rows (cond->> (exec! ds sql opts)
+               (::remove-deleted opts true)
+               (remove is-row-deleted?)
+
+               :always
+               (not-empty))]
+
+    (when (and (not rows) (::check-deleted opts true))
+      (ex/raise :type :not-found
+                :code :object-not-found
+                :hint "database object not found"))
+
+    (first rows)))
+
+
 (def ^:private default-plan-opts
   (-> default-opts
       (assoc :fetch-size 1000)
