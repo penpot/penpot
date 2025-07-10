@@ -41,7 +41,8 @@
     },
     "~:subscription": {
       "~:type": "professional",
-      "~:status": "active"
+      "~:status": "active",
+      "~:seats": null
     },
     "~:name": "Second team",
     "~:modified-at": "~m1701164272671",

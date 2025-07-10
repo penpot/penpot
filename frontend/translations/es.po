@@ -7816,6 +7816,7 @@ msgstr ""
 "Si quieres aumentar este límite, "
 "[mejora tu plan|target:self](%s)"
 
+#, markdown
 msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
 msgstr ""
 "Si quieres aumentar este límite, escríbenos a "

@@ -30,7 +30,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu dropdown-menu-item*]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.dashboard.subscription :refer [main-menu-power-up*]]
+   [app.main.ui.dashboard.subscription :refer [main-menu-power-up* get-subscription-type]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as i]
@@ -825,9 +825,7 @@
             (modal/show :plugin-management {}))))
 
         subscription           (:subscription (:props profile))
-        subscription-name      (if subscription
-                                 (:type subscription)
-                                 "professional")]
+        subscription-type      (get-subscription-type subscription)]
 
     (mf/with-effect []
       (let [disposable (->> st/stream
@@ -913,7 +911,7 @@
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.help-info")]
        [:span {:class (stl/css :open-arrow)} i/arrow]]
 
-      (when (and (contains? cf/flags :subscriptions) (not= "enterprise" subscription-name))
+      (when (and (contains? cf/flags :subscriptions) (not= "enterprise" subscription-type))
         [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])
 
       ;; TODO remove this block when subscriptions is full implemented

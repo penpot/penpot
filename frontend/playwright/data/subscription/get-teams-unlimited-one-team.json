@@ -17,7 +17,8 @@
   },
   "~:subscription": {
       "~:type": "unlimited",
-      "~:status": "trialing"
+      "~:status": "trialing",
+      "~:seats": 2
     },
   "~:name": "Default",
   "~:modified-at": "~m1713533116375",

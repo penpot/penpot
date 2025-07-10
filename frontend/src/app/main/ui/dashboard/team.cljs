@@ -544,18 +544,18 @@
    [:section {:class (stl/css-case
                       :dashboard-container true
                       :dashboard-team-members true
-                      :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
+                      :dashboard-top-cta (show-subscription-members-main-banner? team))}
     (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-main-banner? team profile))
-      [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
+               (show-subscription-members-main-banner? team))
+      [:> members-cta* {:banner-is-expanded true :team team}])
     [:> team-members*
      {:profile profile
       :team team}]
 
     (when (and
            (contains? cfg/flags :subscriptions)
-           (show-subscription-members-small-banner? team profile))
-      [:> members-cta* {:banner-is-expanded false :team team :profile profile}])]])
+           (show-subscription-members-small-banner? team))
+      [:> members-cta* {:banner-is-expanded false :team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
@@ -803,7 +803,7 @@
 
 (mf/defc team-invitations-page*
   {::mf/props :obj}
-  [{:keys [team profile]}]
+  [{:keys [team]}]
 
   (mf/with-effect [team]
     (dom/set-html-title
@@ -820,14 +820,14 @@
                :team team}]
    [:section {:class (stl/css-case
                       :dashboard-team-invitations true
-                      :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
+                      :dashboard-top-cta (show-subscription-members-main-banner? team))}
     (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-main-banner? team profile))
-      [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
+               (show-subscription-members-main-banner? team))
+      [:> members-cta* {:banner-is-expanded true :team team}])
     [:> invitation-section* {:team team}]
     (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-small-banner? team profile))
-      [:> members-cta* {:banner-is-expanded false :team team :profile profile}])]])
+               (show-subscription-members-small-banner? team))
+      [:> members-cta* {:banner-is-expanded false :team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION
