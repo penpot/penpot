@@ -479,7 +479,7 @@
       ;; We don't have the fills attribute. It's an old text without color
       ;; so need to be black
       (and (nil? (:fills node)) (empty? color-attrs))
-      (update :fills conj txt/default-text-attrs)
+      (assoc :fills (:fills txt/default-text-attrs))
 
       ;; Remove duplicates from the fills
       :always

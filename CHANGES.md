@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.8.1 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix unexpected exception on processing old texts [Github #6889](https://github.com/penpot/penpot/pull/6889)
+
+
 ## 2.8.0
 
 ### :rocket: Epics and highlights
