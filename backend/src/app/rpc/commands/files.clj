@@ -39,8 +39,7 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [app.worker :as wrk]
-   [cuerdas.core :as str]
-   [promesa.exec :as px]))
+   [cuerdas.core :as str]))
 
 ;; --- FEATURES
 
@@ -55,12 +54,10 @@
   (dt/duration {:days 7}))
 
 (defn decode-row
-  [{:keys [data changes features] :as row}]
+  [{:keys [features] :as row}]
   (when row
     (cond-> row
-      features (assoc :features (db/decode-pgarray features #{}))
-      changes  (assoc :changes (blob/decode changes))
-      data     (assoc :data (blob/decode data)))))
+      (db/pgarray? features) (assoc :features (db/decode-pgarray features #{})))))
 
 (defn check-version!
   [file]
@@ -249,9 +246,10 @@
           (feat.fmigr/upsert-migrations! conn file)
           (feat.fmigr/resolve-applied-migrations cfg file))))))
 
+;; FIXME: unify with bfc/get-file
 (defn get-file
-  [{:keys [::db/conn ::wrk/executor] :as cfg} id
-   & {:keys [project-id
+  [{:keys [::db/conn] :as cfg} id
+   & {:keys [#_project-id
              migrate?
              include-deleted?
              lock-for-update?
@@ -264,21 +262,20 @@
 
   (assert (db/connection? conn) "expected cfg with valid connection")
 
-  (let [params (merge {:id id}
-                      (when (some? project-id)
-                        {:project-id project-id}))
-        file   (->> (db/get conn :file params
-                            {::db/check-deleted (not include-deleted?)
-                             ::db/remove-deleted (not include-deleted?)
-                             ::sql/for-update lock-for-update?})
-                    (feat.fmigr/resolve-applied-migrations cfg)
-                    (feat.fdata/resolve-file-data cfg))
+  (let [;; params (merge {:id id}
+        ;;               (when (some? project-id)
+        ;;                 {:project-id project-id}))
 
-        ;; NOTE: we perform the file decoding in a separate thread
-        ;; because it has heavy and synchronous operations for
-        ;; decoding file body that are not very friendly with virtual
-        ;; threads.
-        file   (px/invoke! executor #(decode-row file))
+        sql    (if lock-for-update?
+                 (str bfc/sql:get-file " FOR UPDATE")
+                 bfc/sql:get-file)
+
+        file   (->> (db/get-with-sql conn [sql id]
+                                     {::db/check-deleted (not include-deleted?)
+                                      ::db/remove-deleted (not include-deleted?)})
+                    (feat.fmigr/resolve-applied-migrations cfg)
+                    (feat.fdata/resolve-file-data cfg)
+                    (feat.fdata/decode-file-data cfg))
 
         file   (if (and migrate? (fmg/need-migration? file))
                  (migrate-file cfg file options)
@@ -292,7 +289,7 @@
 
 (defn get-minimal-file
   [cfg id & {:as opts}]
-  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :vern :data-ref-id :data-backend])]
+  (let [opts (assoc opts ::sql/columns [:id :modified-at :deleted-at :revn :vern])]
     (db/get cfg :file {:id id} opts)))
 
 (defn- get-minimal-file-with-perms
@@ -357,7 +354,7 @@
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::dt/instant]
-   [:content any?]])
+   [:data any?]])
 
 (def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
@@ -367,10 +364,8 @@
 
 (defn- get-file-fragment
   [cfg file-id fragment-id]
-  (let [resolve-file-data (partial feat.fdata/resolve-file-data cfg)]
-    (some-> (db/get cfg :file-data-fragment {:file-id file-id :id fragment-id})
-            (resolve-file-data)
-            (update :data blob/decode))))
+  (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
+          (update :data blob/decode)))
 
 (sv/defmethod ::get-file-fragment
   "Retrieve a file fragment by its ID. Only authenticated users."

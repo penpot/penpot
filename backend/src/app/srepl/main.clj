@@ -606,11 +606,10 @@
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
                 (fn [system]
-                  (when-let [file (some-> (db/get* system :file
-                                                   {:id file-id}
-                                                   {::db/remove-deleted false
-                                                    ::sql/columns [:id :name]})
-                                          (files/decode-row))]
+                  (when-let [file (db/get* system :file
+                                           {:id file-id}
+                                           {::db/remove-deleted false
+                                            ::sql/columns [:id :name]})]
                     (audit/insert! system
                                    {::audit/name "restore-file"
                                     ::audit/type "action"

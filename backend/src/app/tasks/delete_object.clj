@@ -45,6 +45,11 @@
                 {:deleted-at deleted-at}
                 {:file-id id})
 
+    ;; Mark file data fragment to be deleted
+    (db/update! conn :file-data-fragment
+                {:deleted-at deleted-at}
+                {:file-id id})
+
     ;; Mark file media objects to be deleted
     (db/update! conn :file-media-object
                 {:deleted-at deleted-at}

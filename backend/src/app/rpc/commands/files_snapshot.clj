@@ -8,6 +8,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
+   [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -27,12 +28,19 @@
    [app.util.time :as dt]
    [cuerdas.core :as str]))
 
+(defn decode-row
+  [{:keys [migrations] :as row}]
+  (when row
+    (cond-> row
+      (some? migrations)
+      (assoc :migrations (db/decode-pgarray migrations)))))
+
 (def sql:get-file-snapshots
   "WITH changes AS (
-      SELECT id, label, revn, created_at, created_by, profile_id
-        FROM file_change
-       WHERE file_id = ?
-         AND data IS NOT NULL
+      SELECT c.id, c.label, c.revn, c.created_at, c.created_by, c.profile_id
+        FROM file_change AS c
+       WHERE c.file_id = ?
+         AND c.label IS NOT NULL
          AND (deleted_at IS NULL OR deleted_at > now())
    ), versions AS (
       (SELECT * FROM changes WHERE created_by = 'system' LIMIT 1000)
@@ -74,11 +82,11 @@
   (assert (#{:system :user :admin} created-by)
           "expected valid keyword for created-by")
 
-  (let [conn
-        (db/get-connection cfg)
-
-        created-by
+  (let [created-by
         (name created-by)
+
+        created-at
+        (dt/now)
 
         deleted-at
         (cond
@@ -101,23 +109,36 @@
         (blob/encode (:data file))
 
         features
-        (db/encode-pgarray (:features file) conn "text")]
+        (into-array (:features file))
 
-    (l/debug :hint "creating file snapshot"
-             :file-id (str (:id file))
-             :id (str snapshot-id)
-             :label label)
+        migrations
+        (into-array (:migrations file))]
+
+    (l/dbg :hint "creating file snapshot"
+           :file-id (str (:id file))
+           :id (str snapshot-id)
+           :label label)
+
+    (db/insert! cfg :file-data
+                {:id snapshot-id
+                 :file-id (:id file)
+                 :type "snapshot"
+                 :data data
+                 :created-at created-at
+                 :modified-at created-at})
 
     (db/insert! cfg :file-change
                 {:id snapshot-id
                  :revn (:revn file)
-                 :data data
                  :version (:version file)
                  :features features
+                 :migrations migrations
                  :profile-id profile-id
                  :file-id (:id file)
                  :label label
                  :deleted-at deleted-at
+                 :created-at created-at
+                 :updated-at created-at
                  :created-by created-by}
                 {::db/return-keys false})
 
@@ -150,16 +171,38 @@
                             :profile-id profile-id
                             :created-by :user})))
 
+(def ^:private sql:get-snapshot
+  "SELECT c.id,
+          c.label,
+          c.revn,
+          c.created_at,
+          c.updated_at AS modified_at,
+          c.profile_id,
+          c.revn,
+          c.features,
+          c.migrations,
+          c.version,
+          c.data AS legacy_data,
+          fd.data AS data
+     FROM file_change AS c
+     LEFT JOIN file_data AS fd ON (fd.file_id = c.file_id
+                                   AND fd.id = c.id
+                                   AND fd.type = 'snapshot')
+    WHERE c.file_id = ?
+      AND c.id = ?")
+
 (defn restore-file-snapshot!
   [{:keys [::db/conn ::mbus/msgbus] :as cfg} file-id snapshot-id]
-  (let [storage  (sto/resolve cfg {::db/reuse-conn true})
-        file     (files/get-minimal-file conn file-id {::db/for-update true})
-        vern     (rand-int Integer/MAX_VALUE)
-        snapshot (some->> (db/get* conn :file-change
-                                   {:file-id file-id
-                                    :id snapshot-id}
-                                   {::db/for-share true})
-                          (feat.fdata/resolve-file-data cfg))]
+  (let [file (files/get-minimal-file conn file-id {::db/for-update true})
+        vern (rand-int Integer/MAX_VALUE)
+
+        storage
+        (sto/resolve cfg {::db/reuse-conn true})
+
+        snapshot
+        (some->> (db/get-with-sql conn [sql:get-snapshot file-id snapshot-id])
+                 (feat.fdata/resolve-file-data cfg)
+                 (feat.fdata/decode-file-data cfg))]
 
     (when-not snapshot
       (ex/raise :type :not-found
@@ -175,52 +218,65 @@
                 :label (:label snapshot)
                 :file-id file-id))
 
-    (l/dbg :hint "restoring snapshot"
-           :file-id (str file-id)
-           :label (:label snapshot)
-           :snapshot-id (str (:id snapshot)))
+    (let [;; If the snapshot has applied migrations stored, we reuse
+          ;; them, if not, we take a safest set of migrations as
+          ;; starting point. This is because, at the time of
+          ;; implementing snapshots, migrations were not taken into
+          ;; account so we need to make this backward compatible in
+          ;; some way.
+          migrations
+          (or (:migrations snapshot)
+              (fmg/generate-migrations-from-version 67))
 
-    ;; If the file was already offloaded, on restring the snapshot
-    ;; we are going to replace the file data, so we need to touch
-    ;; the old referenced storage object and avoid possible leaks
-    (when (feat.fdata/offloaded? file)
-      (sto/touch-object! storage (:data-ref-id file)))
+          file
+          (-> file
+              (update :revn inc)
+              (assoc :migrations migrations)
+              (assoc :data (:data snapshot))
+              (assoc :vern vern)
+              (assoc :version (:version snapshot))
+              (assoc :has-media-trimmed false)
+              (assoc :features (:features snapshot)))]
 
-    (db/update! conn :file
-                {:data (:data snapshot)
-                 :revn (inc (:revn file))
-                 :vern vern
-                 :version (:version snapshot)
-                 :data-backend nil
-                 :data-ref-id nil
-                 :has-media-trimmed false
-                 :features (:features snapshot)}
-                {:id file-id})
+      (l/dbg :hint "restoring snapshot"
+             :file-id (str file-id)
+             :label (:label snapshot)
+             :snapshot-id (str (:id snapshot)))
 
-    ;; clean object thumbnails
-    (let [sql (str "update file_tagged_object_thumbnail "
-                   "   set deleted_at = now() "
-                   " where file_id=? returning media_id")
-          res (db/exec! conn [sql file-id])]
-      (doseq [media-id (into #{} (keep :media-id) res)]
-        (sto/touch-object! storage media-id)))
+      ;; ;; If the file was already offloaded, on restring the snapshot
+      ;; ;; we are going to replace the file data, so we need to touch
+      ;; ;; the old referenced storage object and avoid possible leaks
+      ;; (when (feat.fdata/offloaded? file)
+      ;;   (sto/touch-object! storage (:data-ref-id file)))
 
-    ;; clean file thumbnails
-    (let [sql (str "update file_thumbnail "
-                   "   set deleted_at = now() "
-                   " where file_id=? returning media_id")
-          res (db/exec! conn [sql file-id])]
-      (doseq [media-id (into #{} (keep :media-id) res)]
-        (sto/touch-object! storage media-id)))
+      ;; In the same way, on reseting the file data, we need to restore
+      ;; the applied migrations on the moment of taking the snapshot
+      (bfc/update-file! cfg file ::bfc/reset-migrations true)
 
-    ;; Send to the clients a notification to reload the file
-    (mbus/pub! msgbus
-               :topic (:id file)
-               :message {:type :file-restore
-                         :file-id (:id file)
-                         :vern vern})
-    {:id (:id snapshot)
-     :label (:label snapshot)}))
+      ;; clean object thumbnails
+      (let [sql (str "update file_tagged_object_thumbnail "
+                     "   set deleted_at = now() "
+                     " where file_id=? returning media_id")
+            res (db/exec! conn [sql file-id])]
+        (doseq [media-id (into #{} (keep :media-id) res)]
+          (sto/touch-object! storage media-id)))
+
+      ;; clean file thumbnails
+      (let [sql (str "update file_thumbnail "
+                     "   set deleted_at = now() "
+                     " where file_id=? returning media_id")
+            res (db/exec! conn [sql file-id])]
+        (doseq [media-id (into #{} (keep :media-id) res)]
+          (sto/touch-object! storage media-id)))
+
+      ;; Send to the clients a notification to reload the file
+      (mbus/pub! msgbus
+                 :topic (:id file)
+                 :message {:type :file-restore
+                           :file-id (:id file)
+                           :vern vern})
+      {:id (:id snapshot)
+       :label (:label snapshot)})))
 
 (def ^:private schema:restore-file-snapshot
   [:map {:title "restore-file-snapshot"}
@@ -229,16 +285,15 @@
 
 (sv/defmethod ::restore-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:restore-file-snapshot}
-  [cfg {:keys [::rpc/profile-id file-id id] :as params}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn] :as cfg}]
-                (files/check-edition-permissions! conn profile-id file-id)
-                (let [file (bfc/get-file cfg file-id)]
-                  (create-file-snapshot! cfg file
-                                         {:profile-id profile-id
-                                          :created-by :system})
-                  (restore-file-snapshot! cfg file-id id)))))
+   ::sm/params schema:restore-file-snapshot
+   ::db/transaction true}
+  [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id file-id id] :as params}]
+  (files/check-edition-permissions! conn profile-id file-id)
+  (let [file (bfc/get-file cfg file-id)]
+    (create-file-snapshot! cfg file
+                           {:profile-id profile-id
+                            :created-by :system})
+    (restore-file-snapshot! cfg file-id id)))
 
 (def ^:private schema:update-file-snapshot
   [:map {:title "update-file-snapshot"}
@@ -246,14 +301,15 @@
    [:label ::sm/text]])
 
 (defn- update-file-snapshot!
-  [conn snapshot-id label]
+  [conn {:keys [id file-id label]}]
   (-> (db/update! conn :file-change
                   {:label label
                    :created-by "user"
                    :deleted-at nil}
-                  {:id snapshot-id}
+                  {:id id
+                   :file-id file-id}
                   {::db/return-keys true})
-      (dissoc :data :features)))
+      (dissoc :data :features :migrations)))
 
 (defn- get-snapshot
   "Get a minimal snapshot from database and lock for update"
@@ -265,39 +321,39 @@
 
 (sv/defmethod ::update-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:update-file-snapshot}
-  [cfg {:keys [::rpc/profile-id id label]}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn]}]
-                (let [snapshot (get-snapshot conn id)]
-                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
-                  (update-file-snapshot! conn id label)))))
+   ::sm/params schema:update-file-snapshot
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id label]}]
+  (let [snapshot (get-snapshot conn id)]
+    (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+    (update-file-snapshot! conn (assoc snapshot :label label))))
 
 (def ^:private schema:remove-file-snapshot
   [:map {:title "remove-file-snapshot"}
    [:id ::sm/uuid]])
 
 (defn- delete-file-snapshot!
-  [conn snapshot-id]
-  (db/update! conn :file-change
-              {:deleted-at (dt/now)}
-              {:id snapshot-id}
-              {::db/return-keys false})
-  nil)
+  [conn {:keys [id file-id]}]
+  (let [deleted-at (dt/now)]
+    (db/update! conn :file-change
+                {:deleted-at deleted-at}
+                {:id id :file-id file-id}
+                {::db/return-keys false})
+    nil))
 
 (sv/defmethod ::delete-file-snapshot
   {::doc/added "1.20"
-   ::sm/params schema:remove-file-snapshot}
-  [cfg {:keys [::rpc/profile-id id]}]
-  (db/tx-run! cfg
-              (fn [{:keys [::db/conn]}]
-                (let [snapshot (get-snapshot conn id)]
-                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+   ::sm/params schema:remove-file-snapshot
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id id]}]
+  (let [snapshot (get-snapshot conn id)]
+    (files/check-edition-permissions! conn profile-id (:file-id snapshot))
 
-                  (when (not= (:created-by snapshot) "user")
-                    (ex/raise :type :validation
-                              :code :system-snapshots-cant-be-deleted
-                              :snapshot-id id
-                              :profile-id profile-id))
+    (when (not= (:created-by snapshot) "user")
+      (ex/raise :type :validation
+                :code :system-snapshots-cant-be-deleted
+                :file-id (:file-id snapshot)
+                :snapshot-id id
+                :profile-id profile-id))
 
-                  (delete-file-snapshot! conn id)))))
+    (delete-file-snapshot! conn snapshot)))

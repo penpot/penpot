@@ -15,7 +15,7 @@
    [app.common.types.path :as path]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   [app.storage :as sto]
+   ;; [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
    [app.util.pointer-map :as pmap]))
@@ -67,26 +67,21 @@
 ;; POINTER-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn get-file-data
-  "Get file data given a file instance."
-  [system file]
-  (if (offloaded? file)
-    (let [storage (sto/resolve system ::db/reuse-conn true)]
-      (->> (sto/get-object storage (:data-ref-id file))
-           (sto/get-object-bytes storage)))
-    (:data file)))
-
-(defn resolve-file-data
-  [system file]
-  (let [data (get-file-data system file)]
-    (assoc file :data data)))
+;; (defn get-file-data
+;;   "Get file data given a file instance."
+;;   [system file]
+;;   (if (offloaded? file)
+;;     (let [storage (sto/resolve system ::db/reuse-conn true)]
+;;       (->> (sto/get-object storage (:data-ref-id file))
+;;            (sto/get-object-bytes storage)))
+;;     (:data file)))
 
 (defn load-pointer
   "A database loader pointer helper"
   [system file-id id]
-  (let [fragment (db/get* system :file-data-fragment
-                          {:id id :file-id file-id}
-                          {::sql/columns [:data :data-backend :data-ref-id :id]})]
+  (let [fragment (db/get* system :file-data
+                          {:id id :file-id file-id :type "fragment"}
+                          {::sql/columns [:content :backend :id]})]
 
     (l/trc :hint "load pointer"
            :file-id (str file-id)
@@ -100,9 +95,8 @@
                 :file-id file-id
                 :fragment-id id))
 
-    (let [data (get-file-data system fragment)]
-      ;; FIXME: conditional thread scheduling for decoding big objects
-      (blob/decode data))))
+    ;; FIXME: conditional thread scheduling for decoding big objects
+    (blob/decode (:data fragment))))
 
 (defn persist-pointers!
   "Persist all currently tracked pointer objects"
@@ -112,10 +106,11 @@
       (when (pmap/modified? item)
         (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
         (let [content (-> item deref blob/encode)]
-          (db/insert! conn :file-data-fragment
+          (db/insert! conn :file-data
                       {:id id
                        :file-id file-id
-                       :data content}))))))
+                       :type "fragment"
+                       :content content}))))))
 
 (defn process-pointers
   "Apply a function to all pointers on the file. Usuly used for
@@ -192,3 +187,37 @@
         (update :features disj "fdata/path-data")
         (update :migrations disj "0003-convert-path-content")
         (vary-meta update ::fmg/migrated disj "0003-convert-path-content"))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; STORAGE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn resolve-row
+  [{:keys [legacy-data data] :as file}]
+  (if (and (some? legacy-data) (not data))
+    (-> file
+        (assoc :data legacy-data)
+        (dissoc :legacy-data))
+    (dissoc file :legacy-data)))
+
+(defn resolve-file-data
+  [_system file]
+  (resolve-row file))
+
+;; FIXME: rename to resolve-file
+(defn decode-file-data
+  [_system file]
+  (-> file
+      (d/update-when :migrations
+                     (fn [migrations]
+                       (if (db/pgarray? migrations)
+                         (db/decode-pgarray migrations [])
+                         migrations)))
+      (d/update-when :features
+                     (fn [features]
+                       (if (db/pgarray? features)
+                         (db/decode-pgarray features #{})
+                         features)))
+      ;; FIXME: move to separated thread
+      (d/update-when :data blob/decode)))

@@ -29,7 +29,7 @@
 (defn- get-candidates
   [{:keys [::db/conn ::min-age] :as cfg}]
   (let [min-age (db/interval min-age)]
-    (db/cursor conn [sql:get-candidates min-age] {:chunk-size 10})))
+    (db/plan conn [sql:get-candidates min-age] {:fetch-size 10})))
 
 (defn- schedule!
   [{:keys [::min-age] :as cfg}]
@@ -39,7 +39,6 @@
                           (inc total)))
                       0
                       (get-candidates cfg))]
-
     {:processed total}))
 
 (defmethod ig/assert-key ::handler
@@ -48,12 +47,13 @@
 
 (defmethod ig/expand-key ::handler
   [k v]
-  {k (assoc v ::min-age (cf/get-deletion-delay))})
+  {k (assoc v ::min-age (cf/get-file-clean-delay))})
 
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))]
+    (let [min-age (dt/duration (or (:min-age props)
+                                   (::min-age cfg)))]
       (-> cfg
           (assoc ::db/rollback (:rollback? props))
           (assoc ::min-age min-age)

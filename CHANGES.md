@@ -1,30 +1,5 @@
 # CHANGELOG
 
-## 2.9.0 (Unreleased)
-
-### :rocket: Epics and highlights
-
-### :boom: Breaking changes & Deprecations
-
-### :heart: Community contributions (Thank you!)
-
-### :sparkles: New features & Enhancements
-- Add visual indicator for new comments in the workspace [Taiga #11328](https://tree.taiga.io/project/penpot/issue/11328)
-- On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
-- Improve dashboard's sidebar [Taiga #10700](https://tree.taiga.io/project/penpot/us/10700)
-- Change "Save color" button to primary button [Taiga #9410](https://tree.taiga.io/project/penpot/issue/9410)
-- Support for exif rotated images [GitHub #6767](https://github.com/penpot/penpot/issues/6767)
-- Display Blend Mode and Layer Opacity properties in the Inspect tab [Taiga #11283](https://tree.taiga.io/project/penpot/issue/11283)
-- Add the option to import tokens in a .zip file. [Taiga #11378](https://tree.taiga.io/project/penpot/us/11378)
-
-### :bug: Bugs fixed
-- Copying font size does not copy the unit [Taiga #11143](https://tree.taiga.io/project/penpot/issue/11143)
-- Fix text-decoration line-through that displays a wrong property value [Taiga #11145](https://tree.taiga.io/project/penpot/issue/11145)
-- Fix display error message on register form [Taiga #11444](https://tree.taiga.io/project/penpot/issue/11444)
-- Fix toggle focus mode did not restore viewport and selection upon exit [GitHub #6280](https://github.com/penpot/penpot/issues/6820)
-- Fix problem when creating a layout from an existing layout [Taiga #11554](https://tree.taiga.io/project/penpot/issue/11554)
-- Fix title button from Title Case to Capitalize [Taiga #11476](https://tree.taiga.io/project/penpot/issue/11476)
-
 ## 2.8.0
 
 ### :rocket: Epics and highlights
