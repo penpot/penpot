@@ -17,7 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.dashboard.subscription :refer [get-subscription-name]]
+   [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.autosaved-milestone :refer [autosaved-milestone*]]
@@ -37,15 +37,15 @@
 
 (defn get-versions-stored-days
   [team]
-  (let [subscription-name (get-subscription-name (:subscription team))]
+  (let [subscription-type (get-subscription-type (:subscription team))]
     (cond
-      (= subscription-name "unlimited") 30
-      (= subscription-name "enterprise") 90
+      (= subscription-type "unlimited") 30
+      (= subscription-type "enterprise") 90
       :else 7)))
 
 (defn get-versions-warning-subtext
   [team]
-  (let [subscription-name   (get-subscription-name (:subscription team))
+  (let [subscription-type   (get-subscription-type (:subscription team))
         is-owner?           (-> team :permissions :is-owner)
         email-owner         (:email (some #(when (:is-owner %) %) (:members team)))
         support-email       "support@penpot.app"
@@ -53,7 +53,7 @@
 
     (if (contains? cfg/flags :subscriptions)
       (if is-owner?
-        (if (= "enterprise" subscription-name)
+        (if (= "enterprise" subscription-type)
           (tr "subscription.workspace.versions.warning.enterprise.subtext-owner" support-email support-email)
           (tr "subscription.workspace.versions.warning.subtext-owner" go-to-subscription))
         (tr "subscription.workspace.versions.warning.subtext-member" email-owner email-owner))

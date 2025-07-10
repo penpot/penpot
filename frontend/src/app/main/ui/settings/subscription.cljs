@@ -11,7 +11,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.dashboard.subscription :refer [get-subscription-name]]
+   [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -61,16 +61,16 @@
 (mf/defc subscribe-management-dialog
   {::mf/register modal/components
    ::mf/register-as :management-dialog}
-  [{:keys [subscription-name teams subscribe-to-trial]}]
+  [{:keys [subscription-type teams subscribe-to-trial]}]
 
-  (let [formatted-subscription-name (if subscribe-to-trial
-                                      (if (= subscription-name "unlimited")
-                                        (tr "subscription.settings.unlimited-trial")
-                                        (tr "subscription.settings.enterprise-trial"))
-                                      (case subscription-name
-                                        "professional" (tr "subscription.settings.professional")
-                                        "unlimited" (tr "subscription.settings.unlimited")
-                                        "enterprise" (tr "subscription.settings.enterprise")))
+  (let [subscription-name (if subscribe-to-trial
+                            (if (= subscription-type "unlimited")
+                              (tr "subscription.settings.unlimited-trial")
+                              (tr "subscription.settings.enterprise-trial"))
+                            (case subscription-type
+                              "professional" (tr "subscription.settings.professional")
+                              "unlimited" (tr "subscription.settings.unlimited")
+                              "enterprise" (tr "subscription.settings.enterprise")))
         initial                    (mf/with-memo []
                                      {:min-members (or (some->> teams (map :total-editors) (apply max)) 1)})
         form                       (fm/use-form :schema schema:seats-form
@@ -78,9 +78,8 @@
         subscribe-to-unlimited     (mf/use-fn
                                     (fn [form]
                                       (let [data (:clean-data @form)
-                                            current-href (rt/get-current-href)
-                                            returnUrl (js/encodeURIComponent current-href)
-                                            href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" (:min-members data) "&returnUrl=" returnUrl)]
+                                            return-url (-> (rt/get-current-href) (rt/encode-url))
+                                            href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" (:min-members data) "&returnUrl=" return-url)]
                                         (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
                                                                          :type "unlimited"
                                                                          :quantity (:min-members data)})
@@ -90,9 +89,8 @@
                                    (fn []
                                      (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
                                                                       :type "enterprise"}))
-                                     (let [current-href (rt/get-current-href)
-                                           returnUrl (js/encodeURIComponent current-href)
-                                           href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" returnUrl)]
+                                     (let [return-url (-> (rt/get-current-href) (rt/encode-url))
+                                           href (dm/str "payments/subscriptions/create?type=enterprise&returnUrl=" return-url)]
                                        (st/emit! (rt/nav-raw :href href)))))
 
         handle-accept-dialog       (mf/use-fn
@@ -114,7 +112,7 @@
      [:div {:class (stl/css :modal-dialog)}
       [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} i/close]
       [:div {:class (stl/css :modal-title :subscription-title)}
-       (tr "subscription.settings.management.dialog.title" formatted-subscription-name)]
+       (tr "subscription.settings.management.dialog.title" subscription-name)]
 
       [:div {:class (stl/css :modal-content)}
        (if (seq teams)
@@ -128,12 +126,12 @@
           (tr "subscription.settings.management.dialog.no-teams")])
 
        (when (and
-              (or (= subscription-name "professional") (= subscription-name "unlimited"))
+              (or (= subscription-type "professional") (= subscription-type "unlimited"))
               (not subscribe-to-trial))
          [:div {:class (stl/css :modal-text)}
           (tr "subscription.settings.management.dialog.downgrade")])
 
-       (if (and (= subscription-name "unlimited") subscribe-to-trial)
+       (if (and (= subscription-type "unlimited") subscribe-to-trial)
          [:& fm/form {:on-submit subscribe-to-unlimited
                       :class (stl/css :seats-form)
                       :form form}
@@ -217,14 +215,12 @@
   (let [route                           (mf/deref refs/route)
         params                          (:params route)
         params-subscription             (:subscription (:query params))
-        show-trial-subscription-modal   (and (:query params)
-                                             (or (= (:subscription (:query params)) "subscription-to-penpot-unlimited")
-                                                 (= (:subscription (:query params)) "subscription-to-penpot-enterprise")))
-        show-subscription-success-modal (and (:query params)
-                                             (or (= (:subscription (:query params)) "subscribed-to-penpot-unlimited")
-                                                 (= (:subscription (:query params)) "subscribed-to-penpot-enterprise")))
+        show-trial-subscription-modal   (or (= params-subscription "subscription-to-penpot-unlimited")
+                                            (= params-subscription "subscription-to-penpot-enterprise"))
+        show-subscription-success-modal (or (= params-subscription "subscribed-to-penpot-unlimited")
+                                            (= params-subscription "subscribed-to-penpot-enterprise"))
         subscription                    (:subscription (:props profile))
-        subscription-name               (get-subscription-name subscription)
+        subscription-type               (get-subscription-type subscription)
         subscription-is-trial           (= (:status subscription) "trialing")
         teams*                          (mf/use-state nil)
         teams                           (deref teams*)
@@ -246,12 +242,12 @@
                                              (st/emit! (rt/nav-raw :href href)))))
         open-subscription-modal         (mf/use-fn
                                          (mf/deps teams)
-                                         (fn [subscription-name]
+                                         (fn [subscription-type]
                                            (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-modal"
                                                                             ::ev/origin "settings:in-app"}))
                                            (st/emit!
                                             (modal/show :management-dialog
-                                                        {:subscription-name subscription-name
+                                                        {:subscription-type subscription-type
                                                          :teams teams :subscribe-to-trial (not subscription)}))))]
 
     (mf/with-effect []
@@ -268,7 +264,7 @@
          (ptk/event ::ev/event {::ev/name "open-subscription-modal"
                                 ::ev/origin "settings:from-pricing-page"})
          (modal/show :management-dialog
-                     {:subscription-name (if (= params-subscription "subscription-to-penpot-unlimited")
+                     {:subscription-type (if (= params-subscription "subscription-to-penpot-unlimited")
                                            "unlimited"
                                            "enterprise")
                       :teams teams
@@ -297,7 +293,7 @@
 
       [:div {:class (stl/css :your-subscription)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.section-plan")]
-       (case subscription-name
+       (case subscription-type
          "professional"
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :benefits [(tr "subscription.settings.professional.projects-files"),
@@ -358,7 +354,7 @@
 
       [:div {:class (stl/css :other-subscriptions)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.other-plans")]
-       (when (not= subscription-name "professional")
+       (when (not= subscription-type "professional")
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :price-value "$0"
                          :price-period (tr "subscription.settings.price-editor-month")
@@ -370,7 +366,7 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
 
-       (when (not= subscription-name "unlimited")
+       (when (not= subscription-type "unlimited")
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                          :card-title-icon i/character-u
                          :price-value "$7"
@@ -384,7 +380,7 @@
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
 
-       (when (not= subscription-name "enterprise")
+       (when (not= subscription-type "enterprise")
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                          :card-title-icon i/character-e
                          :price-value "$950"
