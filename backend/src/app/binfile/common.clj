@@ -170,6 +170,32 @@
           (update :data assoc :id id)
           (fmg/migrate-file libs)))))
 
+(def sql:get-file
+  "SELECT f.id,
+          f.project_id,
+          f.created_at,
+          f.modified_at,
+          f.deleted_at,
+          f.name,
+          f.is_shared,
+          f.has_media_trimmed,
+          f.revn,
+          f.data AS legacy_data,
+          f.ignore_sync_until,
+          f.comment_thread_seqn,
+          f.features,
+          f.version,
+          f.vern,
+          p.team_id,
+          fd.id AS data_ref_id,
+          fd.backend AS backend,
+          fd.metadata AS metadata,
+          fd.data AS data
+     FROM file AS f
+     LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
+    INNER JOIN project AS p ON (p.id = f.project_id)
+   WHERE f.id = ?")
+
 (defn get-file
   "Get file, resolve all features and apply migrations.
 
@@ -177,6 +203,7 @@
   operations on file, because it removes the ovehead of lazy fetching
   and decoding."
   [cfg file-id & {:as opts}]
+  ;; FIXME
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
                  (some->> (db/get* conn :file {:id file-id}
                                    (assoc opts ::db/remove-deleted false))
@@ -487,7 +514,7 @@
    {:id (:id file)
     :type "main"
     :file-id (:id file)
-    :content (:data file)
+    :data (:data file)
     :created-at (:created-at file)
     :modified-at (:modified-at file)
     :deleted-at (:deleted-at file)}))

@@ -269,7 +269,7 @@
           fd.id AS data_ref_id,
           fd.backend AS backend,
           fd.metadata AS metadata,
-          fd.content AS data
+          fd.data AS data
      FROM file AS f
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
     INNER JOIN project AS p ON (p.id = f.project_id)
@@ -389,7 +389,7 @@
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::dt/instant]
-   [:content any?]])
+   [:data any?]])
 
 (def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
@@ -401,7 +401,7 @@
   [cfg file-id fragment-id]
   ;; (let [resolve-file-data (partial feat.fdata/resolve-file-data cfg)
   (some-> (db/get cfg :file-data {:file-id file-id :id fragment-id :type "fragment"})
-          (update :content blob/decode)))
+          (update :data blob/decode)))
 
 (sv/defmethod ::get-file-fragment
   "Retrieve a file fragment by its ID. Only authenticated users."

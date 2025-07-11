@@ -250,7 +250,7 @@
         (db/insert! conn :file-data
                     {:id change-id
                      :file-id (:id file)
-                     :content (::snapshot-data file)
+                     :data (::snapshot-data file)
                      :type "snapshot"
                      :created-at timestamp
                      :modified-at timestamp
@@ -325,7 +325,7 @@
 
     (if (:data-ref-id file)
       (db/update! conn :file-data
-                  {:content (:data file)
+                  {:data (:data file)
                    :modified-at modified-at}
                   {:id (:id file)
                    :file-id (:id file)
@@ -334,7 +334,7 @@
       (db/insert! conn :file-data
                   {:id (:id file)
                    :file-id (:id file)
-                   :content (:data file)
+                   :data (:data file)
                    :type "main"
                    :created-at modified-at
                    :modified-at modified-at}

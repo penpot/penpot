@@ -240,6 +240,7 @@
                         :file-id (str file-id)
                         :deleted-at (dt/format-instant deleted-at))
 
+                 ;; FIXME: implement backend based deletion process
                  ;; (some->> data-ref-id (sto/touch-object! storage))
                  (db/delete! conn :file-data {:file-id file-id :id id})
 

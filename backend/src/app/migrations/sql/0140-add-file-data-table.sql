@@ -10,7 +10,7 @@ CREATE TABLE file_data (
   backend text NULL,
 
   metadata jsonb NULL,
-  content bytea NULL,
+  data bytea NULL,
 
   PRIMARY KEY (file_id, id)
 
@@ -26,5 +26,5 @@ CREATE TABLE file_data_6 PARTITION OF file_data FOR VALUES WITH (MODULUS 8, REMA
 CREATE TABLE file_data_7 PARTITION OF file_data FOR VALUES WITH (MODULUS 8, REMAINDER 7);
 
 CREATE INDEX IF NOT EXISTS file_data__deleted_at__idx
-    ON file_data_fragment (deleted_at, file_id, id)
+    ON file_data (deleted_at, file_id, id)
  WHERE deleted_at IS NOT NULL;

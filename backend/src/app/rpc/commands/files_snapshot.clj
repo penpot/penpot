@@ -29,10 +29,10 @@
 
 (def sql:get-file-snapshots
   "WITH changes AS (
-      SELECT id, label, revn, created_at, created_by, profile_id
-        FROM file_change
-       WHERE file_id = ?
-         AND data IS NOT NULL
+      SELECT c.id, c.label, c.revn, c.created_at, c.created_by, c.profile_id
+        FROM file_change AS c
+       WHERE c.file_id = ?
+         AND c.label IS NOT NULL
          AND (deleted_at IS NULL OR deleted_at > now())
    ), versions AS (
       (SELECT * FROM changes WHERE created_by = 'system' LIMIT 1000)
@@ -115,7 +115,7 @@
                 {:id snapshot-id
                  :file-id (:id file)
                  :type "snapshot"
-                 :content data
+                 :data data
                  :deleted-at deleted-at
                  :created-at created-at
                  :modified-at created-at})
@@ -177,11 +177,11 @@
 
         fdata
         (or (:data snapshot)
-            (:content (db/get* conn :file-data
-                               {:file-id file-id
-                                :id snapshot-id
-                                :type "snapshot"}
-                               {::db/for-share true})))]
+            (:data (db/get* conn :file-data
+                            {:file-id file-id
+                             :id snapshot-id
+                             :type "snapshot"}
+                            {::db/for-share true})))]
 
     (when-not snapshot
       (ex/raise :type :not-found
