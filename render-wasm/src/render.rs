@@ -504,6 +504,7 @@ impl RenderState {
         modifiers: Option<&Matrix>,
         scale_content: Option<&f32>,
     ) {
+        emscripten::log!(emscripten::Log::Default, "render_shape {}", shape.id);
         let shape = if let Some(scale_content) = scale_content {
             &shape.scale_content(*scale_content)
         } else {
@@ -995,12 +996,14 @@ impl RenderState {
             debug::render(self);
         }
 
-        debug::render_wasm_label(self);
         while let Some(next_tile) = self.pending_tiles.pop() {
             emscripten::log!(emscripten::Log::Default, "next_tile {} {}", next_tile.0, next_tile.1);
             self.update_render_context(&next_tile);
             self.render_current_tile_to_final_canvas(false);
         }
+
+        debug::render_wasm_label(self);
+
         emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:end");
 
         Ok((is_empty, should_stop_rendering))
