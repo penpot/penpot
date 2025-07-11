@@ -105,7 +105,8 @@
     [:auto-file-snapshot-timeout {:optional true} ::dt/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
-    [:deletion-delay {:optional true} ::dt/duration] ;; REVIEW
+    [:deletion-delay {:optional true} ::dt/duration]
+    [:file-clean-delay {:optional true} ::dt/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -299,6 +300,11 @@
   []
   (or (c/get config :deletion-delay)
       (dt/duration {:days 7})))
+
+(defn get-file-clean-delay
+  []
+  (or (c/get config :file-clean-delay)
+      (dt/duration {:days 2})))
 
 (defn get
   "A configuration getter. Helps code be more testable."

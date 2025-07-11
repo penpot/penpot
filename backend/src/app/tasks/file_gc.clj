@@ -293,7 +293,7 @@
         (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
                           (let [cfg        (update cfg ::sto/storage sto/configure conn)
                                 processed? (process-file! cfg file-id)]
-                            (when (and processed? (contains? cf/flags :tiered-file-data-storage))
+                            (when (and processed? (= :tiered (cf/get :file-storage-backend)))
                               (wrk/submit! (-> cfg
                                                (assoc ::wrk/task :offload-file-data)
                                                (assoc ::wrk/params props)

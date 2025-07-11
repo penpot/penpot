@@ -267,8 +267,8 @@
           f.data_ref_id,
           f.vern,
           p.team_id,
-          fd.backend AS data_backend,
-          fd.metadata AS data_metadata,
+          fd.backend AS backend,
+          fd.metadata AS metadata,
           fd.content AS data
      FROM file AS f
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.data_ref_id)
