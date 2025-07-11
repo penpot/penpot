@@ -1815,10 +1815,15 @@
                              :else
                              (get origin-shape attr)))
 
+                ;; If the final attr-value is the actual value, skip
+                skip-operations? (or skip-operations?
+                                     (= attr-val (get dest-shape attr)))
+
+
                 ;; On a text-partial-change, we want to force a position-data reset
                 ;; so it's calculated again
                 [roperations uoperations]
-                (if text-partial-change?
+                (if (and text-partial-change? (not skip-operations?))
                   (add-update-attr-operations :position-data dest-shape roperations uoperations nil)
                   [roperations uoperations])
 
