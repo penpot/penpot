@@ -234,6 +234,9 @@
                                              process-changes-and-validate
                                              changes skip-validate))))
 
+          change-id
+          (uuid/next)
+
           deleted-at
           (if (::snapshot-data file)
             (dt/plus timestamp (ldel/get-deletion-delay team))
@@ -243,9 +246,9 @@
       (feat.fmigr/upsert-migrations! conn file)
       (persist-file! cfg file)
 
-      (when-let [snapshot-id (::snapshot-id file)]
+      (when (::snapshot-data file)
         (db/insert! conn :file-data
-                    {:id snapshot-id
+                    {:id change-id
                      :file-id (:id file)
                      :content (::snapshot-data file)
                      :type "snapshot"
@@ -256,14 +259,13 @@
       ;; Insert change (xlog) with deleted_at in a future data for
       ;; make them automatically eleggible for GC once they expires
       (db/insert! conn :file-change
-                  {:id (uuid/next)
+                  {:id change-id
                    :session-id session-id
                    :profile-id profile-id
                    :created-at timestamp
                    :updated-at timestamp
                    :deleted-at deleted-at
                    :file-id (:id file)
-                   :data-ref-id (::snapshot-id file)
                    :revn (:revn file)
                    :version (:version file)
                    :features (:features file)
@@ -325,7 +327,7 @@
       (db/update! conn :file-data
                   {:content (:data file)
                    :modified-at modified-at}
-                  {:id (:data-ref-id file)
+                  {:id (:id file)
                    :file-id (:id file)
                    :type "main"}
                   {::db/return-keys false})
@@ -343,7 +345,6 @@
                  :data nil
                  :version (:version file)
                  :features (:features file)
-                 :data-ref-id (:id file)
                  :modified-at modified-at
                  :has-media-trimmed false}
                 {:id (:id file)}

@@ -264,14 +264,14 @@
           f.comment_thread_seqn,
           f.features,
           f.version,
-          f.data_ref_id,
           f.vern,
           p.team_id,
+          fd.id AS data_ref_id,
           fd.backend AS backend,
           fd.metadata AS metadata,
           fd.content AS data
      FROM file AS f
-     LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.data_ref_id)
+     LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
     INNER JOIN project AS p ON (p.id = f.project_id)
    WHERE f.id = ?")
 

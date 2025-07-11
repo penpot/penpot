@@ -106,10 +106,10 @@
         features
         (db/encode-pgarray (:features file) conn "text")]
 
-    (l/debug :hint "creating file snapshot"
-             :file-id (str (:id file))
-             :id (str snapshot-id)
-             :label label)
+    (l/dbg :hint "creating file snapshot"
+           :file-id (str (:id file))
+           :id (str snapshot-id)
+           :label label)
 
     (db/insert! cfg :file-data
                 {:id snapshot-id
@@ -127,7 +127,6 @@
                  :features features
                  :profile-id profile-id
                  :file-id (:id file)
-                 :data-ref-id snapshot-id
                  :label label
                  :deleted-at deleted-at
                  :created-at created-at
@@ -177,11 +176,12 @@
                  {::db/for-share true})
 
         fdata
-        (when-let [ref-id (:data-ref-id snapshot)]
-          (db/get* conn :file-data
-                   {:file-id file-id
-                    :id ref-id}
-                   {::db/for-share true}))]
+        (or (:data snapshot)
+            (:content (db/get* conn :file-data
+                               {:file-id file-id
+                                :id snapshot-id
+                                :type "snapshot"}
+                               {::db/for-share true})))]
 
     (when-not snapshot
       (ex/raise :type :not-found

@@ -123,11 +123,13 @@
                0)))
 
 (def ^:private sql:get-files
-  "SELECT id, deleted_at, project_id, data_backend, data_ref_id
-     FROM file
-    WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
-    ORDER BY deleted_at ASC
+  "SELECT f.id,
+          f.deleted_at,
+          f.project_id
+     FROM file AS f
+    WHERE f.deleted_at IS NOT NULL
+      AND f.deleted_at < now() + ?::interval
+    ORDER BY f.deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
@@ -142,13 +144,11 @@
                         :project-id (str project-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 (when-let [ref-id (:data-ref-id file)]
-                   (db/update! conn :file-data
-                               {:deleted-at deleted-at}
-                               {:file-id id
-                                :id ref-id
-                                :type "main"}
-                               {::db/return-keys false}))
+                 ;; Mark a possible file data as deleted
+                 (db/update! conn :file-data
+                             {:deleted-at deleted-at}
+                             {:file-id id :id id :type "main"}
+                             {::db/return-keys false})
 
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})
@@ -215,11 +215,16 @@
                0)))
 
 (def ^:private sql:get-file-data
-  "SELECT file_id, id, deleted_at, type
-     FROM file_data
-    WHERE deleted_at IS NOT NULL
-      AND deleted_at < now() + ?::interval
-    ORDER BY deleted_at ASC
+  "SELECT fd.file_id,
+          fd.id,
+          fd.deleted_at,
+          fd.type,
+          fd.backend,
+          fd.metadata
+     FROM file_data AS fd
+    WHERE fd.deleted_at IS NOT NULL
+      AND fd.deleted_at < now() + ?::interval
+    ORDER BY fd.deleted_at ASC
     LIMIT ?
       FOR UPDATE
      SKIP LOCKED")
@@ -290,13 +295,11 @@
                         :file-id (str file-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 (when-let [ref-id (:data-ref-id xlog)]
-                   (db/update! conn :file-data
-                               {:deleted-at deleted-at}
-                               {:file-id file-id
-                                :id ref-id
-                                :type "snapshot"}
-                               {::db/return-keys false}))
+                 ;; Mark a possible file data as deleted
+                 (db/update! conn :file-data
+                             {:deleted-at deleted-at}
+                             {:file-id file-id :id id :type "snapshot"}
+                             {::db/return-keys false})
 
                  (db/delete! conn :file-change {:id id})
 
