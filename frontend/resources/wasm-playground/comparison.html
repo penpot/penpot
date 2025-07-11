@@ -29,33 +29,33 @@
       const iterations = parseInt(url.searchParams.get('iterations') ?? 1_000, 10);
 
       function prepare(Module, canvas) {
-        init(Module);
-        assignCanvas(canvas);
-        Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
-        Module._set_view(1, 0, 0);
+        setup({
+          instance: Module,
+          canvas
+        })
 
         const children = [];
         for (let shape = 0; shape < shapes; shape++) {
-          const uuid = crypto.randomUUID();
-          children.push(uuid);
 
-          useShape(uuid);
-
-          Module._set_parent(0, 0, 0, 0);
-          Module._set_shape_type(3);
-          const x1 = getRandomInt(0, canvas.width);
-          const y1 = getRandomInt(0, canvas.height);
-          const width = getRandomInt(20, 100);
-          const height = getRandomInt(20, 100);
-          Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
-
-          const color = getRandomColor();
-          const argb = hexToU32ARGB(color, getRandomFloat(0.1, 1.0));
-          addShapeSolidFill(argb)
+          children.push(
+            addShape({
+              parent: "00000000-0000-0000-0000-000000000000",
+              type: "rect",
+              selrect: {
+                x: getRandomInt(0, canvas.width),
+                y: getRandomInt(0, canvas.height),
+                width: getRandomInt(20, 100),
+                height: getRandomInt(20, 100)
+              },
+              fills: [{ type: "solid", color: getRandomColor(), opacity: getRandomFloat(0.1, 1.0) }]
+            })
+          );
         }
 
-        useShape("00000000-0000-0000-0000-000000000000");
-        setShapeChildren(children);
+        addShape({
+          id: "00000000-0000-0000-0000-000000000000",
+          children
+        })
       }
 
       function createElement(tag, attribs, children) {
