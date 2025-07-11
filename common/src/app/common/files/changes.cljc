@@ -21,6 +21,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
+   [app.common.types.library :as ctl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.path :as path]
@@ -927,15 +928,15 @@
 
 (defmethod process-change :add-color
   [data {:keys [color]}]
-  (ctc/add-color data color))
+  (ctl/add-color data color))
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (ctc/set-color data color))
+  (ctl/set-color data color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
-  (ctc/delete-color data id))
+  (ctl/delete-color data id))
 
 ;; DEPRECATED: remove before 2.3
 (defmethod process-change :add-recent-color

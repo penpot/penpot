@@ -10,8 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.record :as crc]
    [app.common.schema :as sm]
-   [app.common.text :as txt]
    [app.common.types.shape :as cts]
+   [app.common.types.text :as txt]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
    [app.main.fonts :as fonts]
@@ -59,6 +59,27 @@
    (dwt/current-paragraph-values {:shape shape :attrs txt/paragraph-attrs})
    (dwt/current-text-values {:shape shape :attrs txt/text-node-attrs})))
 
+(defn- content-range->text+styles
+  "Given a root node of a text content extracts the texts with its associated styles"
+  [node start end]
+  (let [sss (txt/content->text+styles node)]
+    (loop [styles  (seq sss)
+           taking? false
+           acc      0
+           result   []]
+      (if styles
+        (let [[node-style text] (first styles)
+              from      acc
+              to        (+ acc (count text))
+              taking?   (or taking? (and (<= from start) (< start to)))
+              text      (subs text (max 0 (- start acc)) (- end acc))
+              result    (cond-> result
+                          (and taking? (d/not-empty? text))
+                          (conj (assoc node-style :text text)))
+              continue? (or (> from end) (>= end to))]
+          (recur (when continue? (rest styles)) taking? to result))
+        result))))
+
 (defn text-range-proxy?
   [range]
   (obj/type-of? range "TextRange"))
@@ -80,7 +101,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :text) (str/join ""))))}
 
     :fontId
@@ -88,7 +109,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :font-id) u/mixed-value)))
 
      :set
@@ -110,7 +131,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :font-family) u/mixed-value)))
 
      :set
@@ -132,7 +153,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :font-variant-id) u/mixed-value)))
      :set
      (fn [self value]
@@ -153,7 +174,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :font-size) u/mixed-value)))
      :set
      (fn [_ value]
@@ -173,7 +194,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :font-weight) u/mixed-value)))
 
      :set
@@ -200,7 +221,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :font-style) u/mixed-value)))
      :set
      (fn [self value]
@@ -226,7 +247,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :line-height) u/mixed-value)))
      :set
      (fn [_ value]
@@ -246,7 +267,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :letter-spacing) u/mixed-value)))
      :set
      (fn [_ value]
@@ -266,7 +287,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :text-transform) u/mixed-value)))
      :set
      (fn [_ value]
@@ -285,7 +306,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :text-decoration) u/mixed-value)))
      :set
      (fn [_ value]
@@ -304,7 +325,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :direction) u/mixed-value)))
      :set
      (fn [_ value]
@@ -323,7 +344,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :text-align) u/mixed-value)))
      :set
      (fn [_ value]
@@ -342,7 +363,7 @@
      :get
      (fn [self]
        (let [range-data
-             (-> self u/proxy->shape :content (txt/content-range->text+styles start end))]
+             (-> self u/proxy->shape :content (content-range->text+styles start end))]
          (->> range-data (map :fills) u/mixed-value format/format-fills)))
      :set
      (fn [_ value]
@@ -388,14 +409,15 @@
           (let [shape (u/proxy->shape self)
                 editor
                 (-> shape
+                    (get :content)
                     (txt/change-text value)
-                    :content
                     ted/import-content
                     ted/create-editor-state)]
             (st/emit! (dwt/update-editor-state shape editor)))
 
           :else
-          (st/emit! (dwsh/update-shapes [id] #(txt/change-text % value))))))}
+          (st/emit! (dwsh/update-shapes [id]
+                                        #(update % :content txt/change-text value))))))}
 
    {:name "growType"
     :get #(-> % u/proxy->shape :grow-type d/name)

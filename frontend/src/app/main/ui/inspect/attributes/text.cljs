@@ -9,8 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.text :as txt]
-   [app.common.types.color :as types.color]
+   [app.common.types.fills :as types.fills]
+   [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -66,7 +66,7 @@
        (for [[idx fill] (map-indexed vector (:fills style))]
          [:& color-row {:key idx
                         :format @color-format
-                        :color (types.color/fill->color fill)
+                        :color (types.fills/fill->color fill)
                         :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
                         :on-change-format #(reset! color-format %)}]))
 
@@ -173,7 +173,7 @@
   (let [style-text-blocks (->> (:content shape)
                                (txt/content->text+styles)
                                (remove (fn [[_ text]] (str/empty? (str/trim text))))
-                               (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))]
+                               (mapv (fn [[style text]] (vector (merge (txt/get-default-text-attrs) style) text))))]
 
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
       [:& typography-block {:key idx

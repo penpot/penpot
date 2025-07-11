@@ -1,8 +1,8 @@
 (ns frontend-tests.test-helpers-shapes
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.geom.point :as gpt]
+   [app.common.types.color :as clr]
    [app.main.data.workspace.libraries :as dwl]
    [app.test-helpers.events :as the]
    [app.test-helpers.libraries :as thl]

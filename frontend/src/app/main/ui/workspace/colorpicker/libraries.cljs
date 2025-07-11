@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.colorpicker.libraries
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
@@ -109,7 +108,7 @@
                           (map-indexed (fn [index color]
                                          (let [color (if (map? color) color {:color color})]
                                            (vary-meta color assoc ::id (dm/str index)))))
-                          (sort c/sort-colors))
+                          (sort ctc/sort-colors))
                      (->> (dm/get-in libraries [file-id :data :colors])
                           (vals)
                           (filter valid-color?)

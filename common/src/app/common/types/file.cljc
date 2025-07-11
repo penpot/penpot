@@ -16,15 +16,17 @@
    [app.common.geom.shapes.tree-seq :as gsts]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.common.text :as ct]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.library :as ctlb]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.plugins :as ctpg]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
@@ -521,7 +523,7 @@
 
 (defmethod uses-asset? :color
   [_ shape library-id color]
-  (ctc/uses-library-color? shape library-id (:id color)))
+  (cts/uses-library-color? shape library-id (:id color)))
 
 (defmethod uses-asset? :typography
   [_ shape library-id typography]
@@ -533,10 +535,10 @@
 
   Returns a list ((asset ((container shapes) (container shapes)...))...)"
   [file-data library-data asset-type]
-  (let [assets-seq (case asset-type
-                     :component  (ctkl/components-seq library-data)
-                     :color      (ctc/colors-seq library-data)
-                     :typography (ctyl/typographies-seq library-data))
+  (let [assets (case asset-type
+                 :component  (ctkl/components-seq library-data)
+                 :color      (vals (ctlb/get-colors library-data))
+                 :typography (ctyl/typographies-seq library-data))
 
         find-usages-in-container
         (fn [container asset]
@@ -553,7 +555,7 @@
               (let [instances (find-asset-usages file-data asset)]
                 (when (d/not-empty? instances)
                   [[asset instances]])))
-            assets-seq)))
+            assets)))
 
 (defn used-in?
   "Checks if a specific asset is used in a given file (by any shape in its pages or in
@@ -574,7 +576,7 @@
   (letfn [(used-assets-shape [shape]
             (concat
              (ctkl/used-components-changed-since shape library since-date)
-             (ctc/used-colors-changed-since shape library since-date)
+             (ctlb/used-colors-changed-since shape library since-date)
              (ctyl/used-typographies-changed-since shape library since-date)))
 
           (used-assets-container [container]
@@ -693,11 +695,12 @@
 
     (add-component-grid file-data (sort-by #(:name (first %)) used-components))))
 
+;: FIXME: this can be moved to library
 (defn- absorb-colors
   [file-data used-colors]
   (let [absorb-color
         (fn [file-data [color usages]]
-          (let [remap-shape #(ctc/remap-colors % (:id file-data) color)
+          (let [remap-shape #(cts/remap-colors % (:id file-data) color)
 
                 remap-shapes
                 (fn [file-data [container shapes]]
@@ -710,7 +713,7 @@
                                              %
                                              shapes)))]
             (as-> file-data $
-              (ctc/add-color $ color)
+              (ctlb/add-color $ color)
               (reduce remap-shapes $ usages))))]
 
     (reduce absorb-color
@@ -1046,7 +1049,7 @@
   (let [detach-text
         (fn [content]
           (->> content
-               (ct/transform-nodes
+               (txt/transform-nodes
                 #(cond-> %
                    (not= file-id (:fill-color-ref-file %))
                    (dissoc :fill-color-ref-id :fill-color-ref-file)

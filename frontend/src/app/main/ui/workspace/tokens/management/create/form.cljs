@@ -7,10 +7,10 @@
 (ns app.main.ui.workspace.tokens.management.create.form
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.types.color :as c]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]

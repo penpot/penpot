@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.variants
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
@@ -14,6 +13,7 @@
    [app.common.geom.point :as gpt]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
+   [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.shape.layout :as ctsl]

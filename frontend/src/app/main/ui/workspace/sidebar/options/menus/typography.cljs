@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
@@ -228,9 +228,9 @@
   [{:keys [values on-change on-blur show-recent full-size-selector]}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
-        font-id         (or font-id (:font-id txt/default-text-attrs))
-        font-size       (or font-size (:font-size txt/default-text-attrs))
-        font-variant-id (or font-variant-id (:font-variant-id txt/default-text-attrs))
+        font-id         (or font-id (:font-id txt/default-typography))
+        font-size       (or font-size (:font-size txt/default-typography))
+        font-variant-id (or font-variant-id (:font-variant-id txt/default-typography))
 
         fonts           (mf/deref fonts/fontsdb)
         font            (get fonts font-id)

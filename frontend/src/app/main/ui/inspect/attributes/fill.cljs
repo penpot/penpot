@@ -7,7 +7,7 @@
 (ns app.main.ui.inspect.attributes.fill
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.types.color :as types.color]
+   [app.common.types.fills :as types.fills]
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
@@ -31,7 +31,7 @@
         ;; FIXME: this looks broken code, because shape does not
         ;; longer contains :fill-xxxx attributes but it is preserved
         ;; as it was just moved the impl; this need to be fixed
-        color     (types.color/fill->color shape)
+        color     (types.fills/fill->color shape)
         on-change
         (mf/use-fn
          (fn [format]

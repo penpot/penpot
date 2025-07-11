@@ -8,8 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.types.color :as ctc]
-   [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -20,7 +19,7 @@
 
 (defn- prepare-colors
   [shapes file-id libraries]
-  (let [data           (into [] (remove nil? (ctc/extract-all-colors shapes file-id libraries)))
+  (let [data           (into [] (remove nil? (dwc/extract-all-colors shapes file-id libraries)))
         groups         (d/group-by :attrs #(dissoc % :attrs) data)
         all-colors     (distinct (mapv :attrs data))
 
@@ -82,7 +81,7 @@
                  (mf/set-ref-val! prev-colors-ref
                                   (conj prev-colors color))))
 
-             (st/emit! (dc/change-color-in-selected cops new-color old-color)))))
+             (st/emit! (dwc/change-color-in-selected cops new-color old-color)))))
 
         on-open
         (mf/use-fn #(mf/set-ref-val! prev-colors-ref []))
@@ -96,7 +95,7 @@
            (let [groups (mf/ref-val groups-ref)
                  cops   (get groups color)
                  color' (dissoc color :id :file-id)]
-             (st/emit! (dc/change-color-in-selected cops color' color)))))
+             (st/emit! (dwc/change-color-in-selected cops color' color)))))
 
         select-only
         (mf/use-fn

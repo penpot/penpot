@@ -13,7 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
-   [app.common.text :as txt]
+   [app.common.text :as legacy.txt]
    [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
@@ -65,7 +65,7 @@
                (-> ^js (.getData content)
                    (.toJS)
                    (js->clj :keywordize-keys true))
-               (txt/styles-to-attrs styles))]
+               (legacy.txt/styles-to-attrs styles))]
     (sts/generate-text-styles shape data {:show-text? false})))
 
 (def default-decorator

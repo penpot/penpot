@@ -10,11 +10,11 @@
    [app.common.attrs :as attrs]
    [app.common.data :as d]
    [app.common.geom.shapes :as gsh]
-   [app.common.text :as txt]
    [app.common.types.component :as ctk]
    [app.common.types.path :as path]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
@@ -203,6 +203,9 @@
   [shapes objects attr-group]
   (let [attrs (group->attrs attr-group)
 
+        default-text-attrs
+        (txt/get-default-text-attrs)
+
         merge-attrs
         (fn [v1 v2]
           (cond
@@ -233,7 +236,7 @@
               (let [shape-attrs (select-keys shape attrs)
 
                     content-attrs
-                    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)
+                    (attrs/get-text-attrs-multi shape default-text-attrs attrs)
 
                     new-values
                     (-> values

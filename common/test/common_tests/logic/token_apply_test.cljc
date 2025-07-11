@@ -14,8 +14,8 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
    [app.common.test-helpers.tokens :as tht]
-   [app.common.text :as txt]
    [app.common.types.container :as ctn]
+   [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [clojure.test :as t]))

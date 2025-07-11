@@ -7,8 +7,8 @@
 (ns app.common.types.typographies-list
   (:require
    [app.common.data :as d]
-   [app.common.text :as txt]
-   [app.common.time :as dt]))
+   [app.common.time :as dt]
+   [app.common.types.text :as txt]))
 
 (defn typographies-seq
   [file-data]

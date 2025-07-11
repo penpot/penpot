@@ -6,10 +6,10 @@
 
 (ns app.main.ui.workspace.viewport.scroll-bars
   (:require
-   [app.common.colors :as clr]
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.color :as clr]
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.workspace.viewport.viewport-ref :refer [point->viewport]]

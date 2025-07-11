@@ -12,8 +12,9 @@
    [app.common.geom.matrix :as gmt]
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.geom.shapes.points :as gpo]
-   [app.common.text :as txt]
+   [app.common.text :as legacy.txt]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as types.text]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
    [app.util.code-gen.style-css-formats :refer [format-value format-shadow]]
@@ -231,8 +232,8 @@ body {
   (let [selector (cgc/shape->selector shape)]
     (->> shape
          :content
-         (txt/index-content)
-         (txt/node-seq)
+         (legacy.txt/index-content)
+         (types.text/node-seq)
          (map #(node->css shape selector %))
          (str/join "\n"))))
 

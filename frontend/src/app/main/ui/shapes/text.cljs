@@ -6,7 +6,7 @@
 
 (ns app.main.ui.shapes.text
   (:require
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.ui.context :as ctx]
    [app.main.ui.shapes.text.fo-text :as fo]
@@ -17,7 +17,7 @@
 (defn- load-fonts!
   [content]
   (let [extract-fn (juxt :font-id :font-variant-id)
-        default    (extract-fn txt/default-text-attrs)]
+        default    (extract-fn txt/default-typography)]
     (->> (tree-seq map? :children content)
          (into #{default} (keep extract-fn))
          (run! (fn [[font-id variant-id]]

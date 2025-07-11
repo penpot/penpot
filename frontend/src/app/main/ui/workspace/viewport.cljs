@@ -7,11 +7,11 @@
 (ns app.main.ui.workspace.viewport
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.color :as clr]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]

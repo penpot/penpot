@@ -7,10 +7,10 @@
 (ns app.main.ui.workspace.colorpicker.harmony
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as cc]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.math :as mth]
+   [app.common.types.color :as cc]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [app.util.dom :as dom]
    [app.util.object :as obj]

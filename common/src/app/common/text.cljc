@@ -5,185 +5,15 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.text
+  "Legacy editor helpers (draftjs).
+
+  NOTE: this namespace should be not used for new code related to texts"
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.transit :as t]
-   [clojure.walk :as walk]
+   [app.common.types.text :as types.text]
    [cuerdas.core :as str]))
-
-;; -- Attrs
-
-(def text-typography-attrs
-  [:typography-ref-id
-   :typography-ref-file])
-
-(def text-fill-attrs
-  [:fill-color
-   :fill-opacity
-   :fill-color-ref-id
-   :fill-color-ref-file
-   :fill-color-gradient])
-
-(def text-font-attrs
-  [:font-id
-   :font-family
-   :font-variant-id
-   :font-size
-   :font-weight
-   :font-style])
-
-(def text-align-attrs
-  [:text-align])
-
-(def text-direction-attrs
-  [:text-direction])
-
-(def text-spacing-attrs
-  [:line-height
-   :letter-spacing])
-
-(def text-valign-attrs
-  [:vertical-align])
-
-(def text-decoration-attrs
-  [:text-decoration])
-
-(def text-transform-attrs
-  [:text-transform])
-
-(def text-fills
-  [:fills])
-
-(def shape-attrs
-  [:grow-type])
-
-(def root-attrs
-  text-valign-attrs)
-
-(def paragraph-attrs
-  (d/concat-vec
-   text-align-attrs
-   text-direction-attrs))
-
-(def text-node-attrs
-  (d/concat-vec
-   text-typography-attrs
-   text-font-attrs
-   text-spacing-attrs
-   text-decoration-attrs
-   text-transform-attrs
-   text-fills))
-
-(def text-all-attrs (d/concat-set shape-attrs root-attrs paragraph-attrs text-node-attrs))
-
-(def text-style-attrs
-  (d/concat-vec root-attrs paragraph-attrs text-node-attrs))
-
-(def default-root-attrs
-  {:vertical-align "top"})
-
-(def default-text-attrs
-  {:typography-ref-file nil
-   :typography-ref-id nil
-   :font-id "sourcesanspro"
-   :font-family "sourcesanspro"
-   :font-variant-id "regular"
-   :font-size "14"
-   :font-weight "400"
-   :font-style "normal"
-   :line-height "1.2"
-   :letter-spacing "0"
-   :text-transform "none"
-   :text-align "left"
-   :text-decoration "none"
-   :text-direction "ltr"
-   :fills [{:fill-color clr/black
-            :fill-opacity 1}]})
-
-(def default-attrs
-  (merge default-root-attrs default-text-attrs))
-
-(def typography-fields
-  [:font-id
-   :font-family
-   :font-variant-id
-   :font-size
-   :font-weight
-   :font-style
-   :line-height
-   :letter-spacing
-   :text-transform])
-
-(def default-typography
-  (merge
-   {:name "Source Sans Pro Regular"}
-   (select-keys default-text-attrs typography-fields)))
-
-(defn node-seq
-  ([root] (node-seq identity root))
-  ([match? root]
-   (->> (tree-seq map? :children root)
-        (filter match?)
-        (seq))))
-
-(defn is-text-node?
-  [node]
-  (and (nil? (:type node))
-       (string? (:text node))))
-
-(defn is-paragraph-set-node?
-  [node]
-  (= "paragraph-set" (:type node)))
-
-(defn is-paragraph-node?
-  [node]
-  (= "paragraph" (:type node)))
-
-(defn is-root-node?
-  [node]
-  (= "root" (:type node)))
-
-(defn is-node?
-  [node]
-  (or ^boolean (is-text-node? node)
-      ^boolean (is-paragraph-node? node)
-      ^boolean (is-paragraph-set-node? node)
-      ^boolean (is-root-node? node)))
-
-(defn is-content-node?
-  "Only matches content nodes, ignoring the paragraph-set nodes."
-  [node]
-  (or ^boolean (is-text-node? node)
-      ^boolean (is-paragraph-node? node)
-      ^boolean (is-root-node? node)))
-
-(defn transform-nodes
-  ([transform root]
-   (transform-nodes identity transform root))
-  ([pred transform root]
-   (walk/postwalk
-    (fn [item]
-      (if (and (is-node? item) (pred item))
-        (transform item)
-        item))
-    root)))
-
-(defn update-text-content
-  [shape pred-fn update-fn attrs]
-  (let [update-attrs-fn #(update-fn % attrs)
-        transform   #(transform-nodes pred-fn update-attrs-fn %)]
-    (-> shape
-        (update :content transform))))
-
-(defn generate-shape-name
-  [text]
-  (subs text 0 (min 280 (count text))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; DraftJS <-> Penpot Conversion
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn encode-style-value
   [v]
@@ -369,7 +199,7 @@
              :entityRanges []
              :inlineStyleRanges (calc-ranges paragraph)})]
 
-    {:blocks (reduce #(conj %1 (build-block %2)) [] (node-seq #(= (:type %) "paragraph") root))
+    {:blocks (reduce #(conj %1 (build-block %2)) [] (types.text/node-seq #(= (:type %) "paragraph") root))
      :entityMap {}}))
 
 (defn content->text+styles
@@ -377,13 +207,13 @@
   [node]
   (letfn
    [(rec-style-text-map [acc node style]
-      (let [node-style (merge style (select-keys node text-all-attrs))
+      (let [node-style (merge style (select-keys node types.text/text-all-attrs))
             head (or (-> acc first) [{} ""])
             [head-style head-text] head
 
             new-acc
             (cond
-              (not (is-text-node? node))
+              (not (types.text/is-text-node? node))
               (reduce #(rec-style-text-map %1 %2 node-style) acc (:children node))
 
               (not= head-style node-style)
@@ -402,82 +232,6 @@
 
     (-> (rec-style-text-map [] node {})
         reverse)))
-
-(defn content-range->text+styles
-  "Given a root node of a text content extracts the texts with its associated styles"
-  [node start end]
-  (let [sss (content->text+styles node)]
-    (loop [styles  (seq sss)
-           taking? false
-           acc      0
-           result   []]
-      (if styles
-        (let [[node-style text] (first styles)
-              from      acc
-              to        (+ acc (count text))
-              taking?   (or taking? (and (<= from start) (< start to)))
-              text      (subs text (max 0 (- start acc)) (- end acc))
-              result    (cond-> result
-                          (and taking? (d/not-empty? text))
-                          (conj (assoc node-style :text text)))
-              continue? (or (> from end) (>= end to))]
-          (recur (when continue? (rest styles)) taking? to result))
-        result))))
-
-(defn content->text
-  "Given a root node of a text content extracts the texts with its associated styles"
-  [content]
-  (letfn [(add-node [acc node]
-            (cond
-              (is-paragraph-node? node)
-              (conj acc [])
-
-              (is-text-node? node)
-              (let [i (dec (count acc))]
-                (update acc i conj (:text node)))
-
-              :else
-              acc))]
-    (->> (node-seq content)
-         (reduce add-node [])
-         (map #(str/join "" %))
-         (str/join "\n"))))
-
-(defn change-text
-  "Changes the content of the text shape to use the text as argument. Will use the styles of the
-   first paragraph and text that is present in the shape (and override the rest)"
-  [shape text]
-  (let [content (:content shape)
-
-        root-styles (select-keys content root-attrs)
-
-        paragraph-style (merge
-                         default-text-attrs
-                         (select-keys (->> content (node-seq is-paragraph-node?) first) text-all-attrs))
-        text-style (merge
-                    default-text-attrs
-                    (select-keys (->> content (node-seq is-text-node?) first) text-all-attrs))
-
-        paragraph-texts (str/split text "\n")
-
-        paragraphs
-        (->> paragraph-texts
-             (mapv
-              (fn [pt]
-                (merge
-                 paragraph-style
-                 {:type "paragraph"
-                  :children [(merge {:text pt} text-style)]}))))
-
-        new-content
-        (d/patch-object
-         {:type "root"
-          :children
-          [{:type "paragraph-set"
-            :children paragraphs}]}
-         root-styles)]
-
-    (assoc shape :content new-content)))
 
 (defn index-content
   "Adds a property `$id` that identifies the current node inside"

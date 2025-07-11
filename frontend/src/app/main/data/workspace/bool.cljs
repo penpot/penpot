@@ -36,7 +36,7 @@
         head
         (cond-> head
           (and (contains? head :svg-attrs) (empty? (:fills head)))
-          (assoc :fills path/default-bool-fills))
+          (assoc :fills (path/get-default-bool-fills)))
 
         shape
         {:id shape-id
@@ -62,7 +62,7 @@
         head (if (= type :difference) (first shapes) (last shapes))
         head (cond-> head
                (and (contains? head :svg-attrs) (empty? (:fills head)))
-               (assoc :fills path/default-bool-fills))]
+               (assoc :fills (path/get-default-bool-fills)))]
     (-> group
         (assoc :type :bool)
         (assoc :bool-type type)

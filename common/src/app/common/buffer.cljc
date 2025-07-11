@@ -74,6 +74,13 @@
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.put ~target ~offset (unchecked-byte ~value)))))
 
+(defmacro write-bool
+  [target offset value]
+  (if (:ns &env)
+    `(.setInt8 ~target ~offset (if ~value 0x01 0x00) true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.put ~target ~offset (unchecked-byte (if ~value 0x01 0x00))))))
+
 (defmacro write-short
   [target offset value]
   (if (:ns &env)

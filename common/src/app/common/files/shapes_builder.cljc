@@ -7,7 +7,6 @@
 (ns app.common.files.shapes-builder
   "A SVG to Shapes builder."
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -21,6 +20,7 @@
    [app.common.math :as mth]
    [app.common.schema :as sm :refer [max-safe-int min-safe-int]]
    [app.common.svg :as csvg]
+   [app.common.types.color :as clr]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]

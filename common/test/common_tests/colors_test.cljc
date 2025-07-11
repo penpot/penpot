@@ -7,8 +7,8 @@
 (ns common-tests.colors-test
   (:require
    #?(:cljs [goog.color :as gcolors])
-   [app.common.colors :as colors]
    [app.common.data :as d]
+   [app.common.types.color :as colors]
    [clojure.test :as t]))
 
 (t/deftest valid-hex-color

@@ -412,7 +412,7 @@
                          (t/is (= (get c-frame1' :opacity) 0.9))
                          (t/is (= (get-in c-frame1' [:strokes 0 :stroke-width]) 8))
                          (t/is (= (get-in c-frame1' [:strokes 0 :stroke-color]) "#ff0000"))
-                         (t/is (= (get-in c-frame1' [:fills 0 :fill-color]) "#ff0000"))
+                         (t/is (= (-> c-frame1' :fills (nth 0) :fill-color) "#ff0000"))
                          (t/is (mth/close? (get c-frame1' :width) 200))
                          (t/is (mth/close? (get c-frame1' :height) 200))
 

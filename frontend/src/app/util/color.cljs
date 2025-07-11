@@ -8,12 +8,12 @@
   "FIXME: this is legacy namespace, all functions of this ns should be
   relocated under app.common.types on the respective colors related
   namespace. All generic color conversion and other helpers are moved to
-  app.common.colors namespace."
+  app.common.types.color namespace."
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
+   [app.common.types.color :as cc]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]))
 

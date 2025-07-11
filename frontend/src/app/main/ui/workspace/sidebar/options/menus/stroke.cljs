@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.sidebar.options.menus.stroke
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as clr]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
