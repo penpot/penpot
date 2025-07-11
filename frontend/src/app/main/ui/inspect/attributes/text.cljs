@@ -7,10 +7,12 @@
 (ns app.main.ui.inspect.attributes.text
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.text :as txt]
-   [app.common.types.color :as types.color]
+   [app.common.types.color :as ctc]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -18,6 +20,7 @@
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
+   [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -35,11 +38,55 @@
           (get-in state [:viewer-libraries file-id :data :typographies]))]
     #(l/derived get-library st/state)))
 
+(defn alpha->hex [alpha]
+  (-> (mth/round (* 255 alpha))
+      (js/Number)
+      (.toString 16)
+      (.toUpperCase)
+      (.padStart 2 "0")))
+
 (defn- copy-style-data
   [style & properties]
   (->> properties
        (map #(dm/str (d/name %) ": " (get style %) ";"))
        (str/join "\n")))
+
+(defn- format-gradient-css
+  "Converts a gradient object to a CSS string."
+  [gradient]
+  (str "background-image: " (uc/gradient->css gradient) ";"
+       "background-clip: text;"
+       "color: transparent;"))
+
+(defn- format-solid-color
+  "returns a CSS color string based on the provided color and format."
+  [color format]
+  (let [color-value (:color color)
+        opacity (:opacity color 1)
+        has-opacity? (not (= 1 opacity))]
+    (case format
+      :rgba
+      (let [[r g b a] (cc/hex->rgba color-value opacity)]
+        (str "color: rgba(" (cc/format-rgba [r g b a]) ");"))
+
+      :hex
+      (str "color: " color-value
+           (when has-opacity? (alpha->hex opacity)) ";")
+
+      :hsla
+      (let [[h s l a] (cc/hex->hsla color-value opacity)]
+        (str "color: hsla(" (cc/format-hsla [h s l a]) ");"))
+
+      ;; Default fallback
+      (str "color: " color-value ";"))))
+
+(defn- copy-color-data
+  "Converts a fill object to CSS color string in the specified format."
+  [fill format]
+  (let [color (ctc/fill->color fill)]
+    (if-let [gradient (:gradient color)]
+      (format-gradient-css gradient)
+      (format-solid-color color format))))
 
 (mf/defc typography-block
   [{:keys [text style]}]
@@ -57,7 +104,8 @@
         file-library-workspace      (get (mf/deref refs/files) (:typography-ref-file style))
         typography-external-lib (get-in file-library-workspace [:data :typographies (:typography-ref-id style)])
 
-        color-format       (mf/use-state :hex)
+        color-format!       (mf/use-state :hex)
+        color-format* (deref color-format!)
 
         typography (or (get (or typography-library file-typographies-viewer file-typographies-workspace) (:typography-ref-id style)) typography-external-lib)]
 
@@ -65,10 +113,10 @@
      (when (:fills style)
        (for [[idx fill] (map-indexed vector (:fills style))]
          [:& color-row {:key idx
-                        :format @color-format
-                        :color (types.color/fill->color fill)
-                        :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
-                        :on-change-format #(reset! color-format %)}]))
+                        :format color-format*
+                        :color (ctc/fill->color fill)
+                        :copy-data (copy-color-data fill color-format*)
+                        :on-change-format #(reset! color-format! %)}]))
 
      (when (:typography-ref-id style)
        [:div {:class (stl/css :text-row)}

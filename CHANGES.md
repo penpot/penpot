@@ -26,6 +26,8 @@
 - Fix toggle focus mode did not restore viewport and selection upon exit [GitHub #6280](https://github.com/penpot/penpot/issues/6820)
 - Fix problem when creating a layout from an existing layout [Taiga #11554](https://tree.taiga.io/project/penpot/issue/11554)
 - Fix title button from Title Case to Capitalize [Taiga #11476](https://tree.taiga.io/project/penpot/issue/11476)
+- Keep color data when copying from info tab into CSS [Taiga #11144](https://tree.taiga.io/project/penpot/issue/11144)
+- Update HSL values to modern syntax as defined in W3C CSS Color Module Level 4 [Taiga #11144](https://tree.taiga.io/project/penpot/issue/11144)
 
 ## 2.8.0
 
