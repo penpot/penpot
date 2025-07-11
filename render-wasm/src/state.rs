@@ -1,4 +1,4 @@
-use skia_safe::{self as skia, Path, Point};
+use skia_safe::{self as skia, textlayout::FontCollection, Path, Point};
 use std::collections::HashMap;
 
 mod shapes_pool;
@@ -165,6 +165,10 @@ impl State {
     pub fn rebuild_modifier_tiles(&mut self) {
         self.render_state
             .rebuild_modifier_tiles(&self.shapes, &self.modifiers);
+    }
+
+    pub fn font_collection(&self) -> &FontCollection {
+        self.render_state.fonts().font_collection()
     }
 
     pub fn get_grid_coords(&self, pos_x: f32, pos_y: f32) -> Option<(i32, i32)> {
