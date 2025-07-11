@@ -36,6 +36,7 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.specialized-panel :as dwsp]
@@ -700,7 +701,7 @@
             (fn [page-id shape-id]
               (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? ::dw/initialize-page))
+                    (rx/filter (ptk/type? ::dwpg/initialize-page))
                     (rx/take 1)
                     (rx/observe-on :async)
                     (rx/mapcat (fn [_] (select-and-zoom shape-id))))
