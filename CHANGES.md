@@ -15,6 +15,7 @@
 - Change "Save color" button to primary button [Taiga #9410](https://tree.taiga.io/project/penpot/issue/9410)
 - Support for exif rotated images [GitHub #6767](https://github.com/penpot/penpot/issues/6767)
 - Display Blend Mode and Layer Opacity properties in the Inspect tab [Taiga #11283](https://tree.taiga.io/project/penpot/issue/11283)
+- Provide CSS `mix-blend-mode` property in code editor when present on shape [Taiga #11282](https://tree.taiga.io/project/penpot/issue/11282) 
 - Add the option to import tokens in a .zip file. [Taiga #11378](https://tree.taiga.io/project/penpot/us/11378)
 - New typography token type - font size token [Taiga #10938](https://tree.taiga.io/project/penpot/us/10938)
 
