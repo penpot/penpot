@@ -34,7 +34,7 @@
         token-typography-types? (contains? cf/flags :token-typography-types)
         all-types (cond-> dwta/token-properties
                     (not token-units?) (dissoc :number)
-                    (not token-typography-types?) (remove-keys ctt/typography-keys))
+                    (not token-typography-types?) (remove-keys ctt/ff-typography-keys))
         all-types (-> all-types keys seq)]
     (loop [empty  #js []
            filled #js []

@@ -135,6 +135,8 @@
 
 (def typography-keys (set/union font-size-keys letter-spacing-keys))
 
+(def ff-typography-keys (set/difference typography-keys font-size-keys))
+
 (def ^:private schema:number
   (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
                     schema:rotation]))
