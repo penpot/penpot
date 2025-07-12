@@ -8,6 +8,7 @@
 
 .form-wrapper {
   width: $s-384;
+  position: relative;
 }
 
 .button-row {
@@ -63,4 +64,12 @@
 
 .form-modal-title {
   color: var(--color-foreground-primary);
+}
+
+.font-select-wrapper {
+  position: absolute;
+  inset: 0;
+  // This padding from the modal should be shared as a variable
+  // Need to set this or the font-select will cause scroll
+  bottom: $s-32;
 }

@@ -20,7 +20,7 @@
    [:class {:optional true} :string]
    [:id :string]
    [:icon {:optional true}
-    [:and :string [:fn #(contains? icon-list %)]]]
+    [:maybe [:and :string [:fn #(contains? icon-list %)]]]]
    [:has-hint {:optional true} :boolean]
    [:hint-type {:optional true} [:maybe [:enum "hint" "error" "warning"]]]
    [:type {:optional true} :string]

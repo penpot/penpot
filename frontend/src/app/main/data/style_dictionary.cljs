@@ -195,6 +195,7 @@
            value (.-value sd-token)
            has-references? (str/includes? (:value origin-token) "{")
            parsed-token-value (case (:type origin-token)
+                                :font-family {:value (-> (js->clj value) (flatten))}
                                 :color (parse-sd-token-color-value value)
                                 :opacity (parse-sd-token-opacity-value value has-references?)
                                 :stroke-width (parse-sd-token-stroke-width-value value has-references?)

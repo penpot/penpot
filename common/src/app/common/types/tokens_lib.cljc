@@ -1333,13 +1333,25 @@ Will return a value that matches this schema:
   (walk/postwalk
    (fn [node]
      (cond-> node
+       ;; Handle sequential values that are objects with type
        (and (map? node)
             (contains? node "value")
-            (sequential? (get node "value")))
+            (sequential? (get node "value"))
+            (map? (first (get node "value"))))
        (update "value"
                (fn [seq-value]
                  (map #(set/rename-keys % {"type" "$type"}) seq-value)))
 
+       ;; Keep array of font families
+       (and (map? node)
+            (contains? node "type")
+            (= "fontFamilies" (get node "type"))
+            (contains? node "value")
+            (sequential? (get node "value"))
+            (not (map? (first (get node "value")))))
+       identity
+
+       ;; Rename keys for all token nodes
        (and (map? node)
             (and (contains? node "type")
                  (contains? node "value")))
@@ -1371,7 +1383,16 @@ Will return a value that matches this schema:
              (assoc tokens child-path (make-token
                                        :name child-path
                                        :type token-type
-                                       :value (get v "$value")
+                                       :value (cond-> (get v "$value")
+                                                ;; Split string of font-families
+                                                (and (= :font-family token-type)
+                                                     (string? (get v "$value")))
+                                                cto/split-font-family
+
+                                                ;; Keep array of font-families
+                                                (and (= :font-family token-type)
+                                                     (sequential? (get v "$value")))
+                                                identity)
                                        :description (get v "$description")))
              ;; Discard unknown type tokens
              tokens)))))
