@@ -944,6 +944,8 @@
    :gen/gen (sg/uri)
    :decode/string decode-uri
    :decode/json decode-uri
+   :encode/json str
+   :encode/string str
    ::oapi/type "string"
    ::oapi/format "uri"}})
 

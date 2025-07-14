@@ -10,19 +10,20 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
+   [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
-   [app.util.json :as json]
    [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [integrant.core :as ig]
    [next.jdbc :as jdbc]
    [next.jdbc.date-time :as jdbc-dt]
+   [next.jdbc.prepare :as jdbc.prepare]
    [next.jdbc.transaction])
   (:import
    com.zaxxer.hikari.HikariConfig
@@ -33,6 +34,7 @@
    java.io.InputStream
    java.io.OutputStream
    java.sql.Connection
+   java.sql.PreparedStatement
    java.sql.Savepoint
    org.postgresql.PGConnection
    org.postgresql.geometric.PGpoint
@@ -414,7 +416,7 @@
                :always
                (not-empty))]
 
-    (when (and (not rows) (::check-deleted opts true))
+    (when (and (not rows) (::throw-if-not-exists opts true))
       (ex/raise :type :not-found
                 :code :object-not-found
                 :hint "database object not found"))
@@ -617,7 +619,7 @@
           val (.getValue o)]
       (if (or (= typ "json")
               (= typ "jsonb"))
-        (json/decode val)
+        (json/decode val :key-fn keyword)
         val))))
 
 (defn decode-transit-pgobject
@@ -658,7 +660,7 @@
   (when data
     (doto (org.postgresql.util.PGobject.)
       (.setType "jsonb")
-      (.setValue (json/encode-str data)))))
+      (.setValue (json/encode data)))))
 
 ;; --- Locks
 
@@ -704,3 +706,8 @@
   [cause]
   (and (sql-exception? cause)
        (= "40001" (.getSQLState ^java.sql.SQLException cause))))
+
+(extend-protocol jdbc.prepare/SettableParameter
+  clojure.lang.Keyword
+  (set-parameter [^clojure.lang.Keyword v ^PreparedStatement s ^long i]
+    (.setObject s i ^String (d/name v))))

@@ -10,6 +10,7 @@
   (:require
    [app.common.logging :as l]
    [app.db :as db]
+   [app.features.fdata :as fdata]
    [app.storage :as sto]
    [app.util.time :as dt]
    [integrant.core :as ig]))
@@ -144,11 +145,8 @@
                         :project-id (str project-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 ;; Mark a possible file data as deleted
-                 (db/update! conn :file-data
-                             {:deleted-at deleted-at}
-                             {:file-id id :id id :type "main"}
-                             {::db/return-keys false})
+                 ;; Delete associated file data
+                 (fdata/delete! cfg {:file-id id :id id :type "main"})
 
                  ;; And finally, permanently delete the file.
                  (db/delete! conn :file {:id id})
@@ -214,39 +212,6 @@
                  (inc total))
                0)))
 
-;; (def ^:private sql:get-file-data
-;;   "SELECT fd.file_id,
-;;           fd.id,
-;;           fd.deleted_at,
-;;           fd.type,
-;;           fd.backend,
-;;           fd.metadata
-;;      FROM file_data AS fd
-;;     WHERE fd.deleted_at IS NOT NULL
-;;       AND fd.deleted_at < now() + ?::interval
-;;     ORDER BY fd.deleted_at ASC
-;;     LIMIT ?
-;;       FOR UPDATE
-;;      SKIP LOCKED")
-
-;; (defn- delete-file-data!
-;;   [{:keys [::db/conn ::sto/storage ::deletion-threshold ::chunk-size] :as cfg}]
-;;   (->> (db/plan conn [sql:get-file-data deletion-threshold chunk-size] {:fetch-size 5})
-;;        (reduce (fn [total {:keys [file-id id deleted-at type]}]
-;;                  (l/trc :hint "permanently delete"
-;;                         :rel "file-data"
-;;                         :id (str id)
-;;                         :type type
-;;                         :file-id (str file-id)
-;;                         :deleted-at (dt/format-instant deleted-at))
-
-;;                  ;; FIXME: implement backend based deletion process
-;;                  ;; (some->> data-ref-id (sto/touch-object! storage))
-;;                  (db/delete! conn :file-data {:file-id file-id :id id})
-
-;;                  (inc total))
-;;                0)))
-
 (def ^:private sql:get-file-media-objects
   "SELECT id, file_id, media_id, thumbnail_id, deleted_at
      FROM file_media_object
@@ -296,8 +261,9 @@
                         :file-id (str file-id)
                         :deleted-at (dt/format-instant deleted-at))
 
+                 ;; Delete associated file data
+                 (fdata/delete! cfg {:file-id file-id :id id :type "fragment"})
                  (db/delete! conn :file-data-fragment {:file-id file-id :id id})
-                 (db/delete! conn :file-data {:file-id file-id :id id :type "fragment"})
 
                  (inc total))
                0)))
@@ -322,9 +288,8 @@
                         :file-id (str file-id)
                         :deleted-at (dt/format-instant deleted-at))
 
-                 (db/delete! conn :file-data
-                             {:file-id file-id :id id :type "snapshot"}
-                             {::db/return-keys false})
+                 ;; Delete associated file data, if it exists
+                 (fdata/delete! cfg {:file-id file-id :id id :type "snapshot"})
 
                  (db/delete! conn :file-change {:id id})
 
@@ -335,7 +300,6 @@
   [#'delete-profiles!
    #'delete-file-media-objects!
    #'delete-file-object-thumbnails!
-
    #'delete-file-thumbnails!
    #'delete-file-changes!
    #'delete-file-data-fragments!

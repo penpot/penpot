@@ -12,21 +12,18 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
    [app.common.types.path :as path]
+   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   ;; [app.storage :as sto]
+   [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
-   [app.util.pointer-map :as pmap]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; OFFLOAD
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn offloaded?
-  [file]
-  (= "objects-storage" (:data-backend file)))
+   [app.util.pointer-map :as pmap]
+   [app.util.time :as dt]
+   [app.worker :as wrk]
+   [promesa.exec :as px]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OBJECTS-MAP
@@ -63,23 +60,23 @@
                           objects)))))
     fdata))
 
+
+(defn realize-objects
+  "Process a file and remove all instances of objects mao realizing them
+  to a plain data. Used in operation where is more efficient have the
+  whole file loaded in memory or we going to persist it in an
+  alterantive storage."
+  [_cfg file]
+  (update file :data process-objects (partial into {})))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINTER-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; (defn get-file-data
-;;   "Get file data given a file instance."
-;;   [system file]
-;;   (if (offloaded? file)
-;;     (let [storage (sto/resolve system ::db/reuse-conn true)]
-;;       (->> (sto/get-object storage (:data-ref-id file))
-;;            (sto/get-object-bytes storage)))
-;;     (:data file)))
-
 (defn load-pointer
   "A database loader pointer helper"
-  [system file-id id]
-  (let [fragment (db/get* system :file-data
+  [cfg file-id id]
+  (let [fragment (db/get* cfg :file-data
                           {:id id :file-id file-id :type "fragment"}
                           {::sql/columns [:content :backend :id]})]
 
@@ -100,8 +97,8 @@
 
 (defn persist-pointers!
   "Persist all currently tracked pointer objects"
-  [system file-id]
-  (let [conn (db/get-connection system)]
+  [cfg file-id]
+  (let [conn (db/get-connection cfg)]
     (doseq [[id item] @pmap/*tracked*]
       (when (pmap/modified? item)
         (l/trc :hint "persist pointer" :file-id (str file-id) :id (str id))
@@ -123,6 +120,14 @@
     (-> fdata
         (d/update-vals update-fn')
         (update :pages-index d/update-vals update-fn'))))
+
+(defn realize-pointers
+  "Process a file and remove all instances of pointers realizing them to
+  a plain data. Used in operation where is more efficient have the
+  whole file loaded in memory."
+  [cfg {:keys [id] :as file}]
+  (binding [pmap/*load-fn* (partial load-pointer cfg id)]
+    (update file :data process-pointers deref)))
 
 (defn get-used-pointer-ids
   "Given a file, return all pointer ids used in the data."
@@ -190,34 +195,189 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GENERAL PURPOSE HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn realize
+  "A helper that combines realize-pointers and realize-objects"
+  [cfg file]
+  (->> file
+       (realize-pointers cfg)
+       (realize-objects cfg)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STORAGE
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn resolve-row
-  [{:keys [legacy-data data] :as file}]
+
+(defmulti resolve-file-data
+  (fn [_cfg file] (or (get file :backend) "db")))
+
+(defmethod resolve-file-data "db"
+  [_cfg {:keys [legacy-data data] :as file}]
   (if (and (some? legacy-data) (not data))
     (-> file
         (assoc :data legacy-data)
         (dissoc :legacy-data))
     (dissoc file :legacy-data)))
 
-(defn resolve-file-data
-  [_system file]
-  (resolve-row file))
+(defmethod resolve-file-data "storage"
+  [cfg object]
+  (let [storage (sto/resolve cfg ::db/reuse-conn true)
+        ref-id  (-> object :metadata :storage-ref-id)
+        data    (->> (sto/get-object storage ref-id)
+                     (sto/get-object-bytes storage))]
+    (-> object
+        (assoc :data data)
+        (dissoc :legacy-data))))
 
-;; FIXME: rename to resolve-file
 (defn decode-file-data
-  [_system file]
-  (-> file
-      (d/update-when :migrations
-                     (fn [migrations]
-                       (if (db/pgarray? migrations)
-                         (db/decode-pgarray migrations [])
-                         migrations)))
-      (d/update-when :features
-                     (fn [features]
-                       (if (db/pgarray? features)
-                         (db/decode-pgarray features #{})
-                         features)))
-      ;; FIXME: move to separated thread
-      (d/update-when :data blob/decode)))
+  [{:keys [::wrk/executor]} {:keys [data] :as file}]
+  (cond-> file
+    (bytes? data)
+    (assoc :data (px/invoke! executor #(blob/decode data)))))
+
+(def ^:private sql:insert-file-data
+  "INSERT INTO file_data (file_id, id, created_at, modified_at,
+                          type, backend, metadata, data)
+   VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+
+(def ^:private sql:upsert-file-data
+  (str sql:insert-file-data
+       " ON CONFLICT (file_id, id)
+         DO UPDATE SET modified_at=?,
+                       backend=?,
+                       metadata=?,
+                       data=?;"))
+
+(defn- create-in-database
+  [cfg {:keys [id file-id created-at modified-at type backend data metadata]}]
+  (let [metadata    (some-> metadata db/json)
+        created-at  (or created-at (dt/now))
+        modified-at (or modified-at created-at)]
+    (db/exec-one! cfg [sql:insert-file-data
+                       file-id id
+                       created-at
+                       modified-at
+                       type
+                       backend
+                       metadata
+                       data])))
+
+(defn- upsert-in-database
+  [cfg {:keys [id file-id created-at modified-at type backend data metadata]}]
+  (let [metadata    (some-> metadata db/json)
+        created-at  (or created-at (dt/now))
+        modified-at (or modified-at created-at)]
+
+    (db/exec-one! cfg [sql:upsert-file-data
+                       file-id id
+                       created-at
+                       modified-at
+                       type
+                       backend
+                       metadata
+                       data
+                       modified-at
+                       backend
+                       metadata
+                       data])))
+
+(defmulti ^:private handle-persistence
+  (fn [_cfg params] (:backend params)))
+
+(defmethod handle-persistence "db"
+  [_ params]
+  (dissoc params :metadata))
+
+(defmethod handle-persistence "storage"
+  [{:keys [::sto/storage] :as cfg}
+   {:keys [id file-id data] :as params}]
+
+  (let [content  (sto/content data)
+        sobject  (sto/put-object! storage
+                                  {::sto/content content
+                                   ::sto/touch true
+                                   :bucket "file-data"
+                                   :content-type "application/octet-stream"
+                                   :file-id file-id
+                                   :id id})
+        metadata {:storage-ref-id (:id sobject)}]
+    (-> params
+        (assoc :metadata metadata)
+        (assoc :data nil))))
+
+(defn- process-metadata
+  [cfg metadata]
+  (when-let [storage-id (:storage-ref-id metadata)]
+    (let [storage (sto/resolve cfg ::db/reuse-conn true)]
+      (sto/touch-object! storage storage-id))))
+
+(defn- default-backend
+  [backend]
+  (or backend (cf/get :file-storage-backend "db")))
+
+(def ^:private schema:metadata
+  [:map {:title "Metadata"}
+   [:storage-ref-id {:optional true} ::sm/uuid]])
+
+(def decode-metadata-with-schema
+  (sm/decoder schema:metadata sm/json-transformer))
+
+(defn decode-metadata
+  [metadata]
+  (some-> metadata
+          (db/decode-json-pgobject)
+          (decode-metadata-with-schema)))
+
+(def ^:private schema:update-params
+  [:map {:closed true}
+   [:id ::sm/uuid]
+   [:type [:enum "main" "snapshot"]]
+   [:file-id ::sm/uuid]
+   [:backend {:optional true} [:enum "db" "storage"]]
+   [:metadata {:optional true} [:maybe schema:metadata]]
+   [:data {:optional true} bytes?]
+   [:created-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::sm/inst]])
+
+(def ^:private check-update-params
+  (sm/check-fn schema:update-params :hint "invalid params received for update"))
+
+(defn update!
+  [cfg params & {:keys [throw-if-not-exists?]}]
+  (let [params (-> (check-update-params params)
+                   (update :backend default-backend))]
+
+    (some->> (:metadata params) (process-metadata cfg))
+    (let [result (handle-persistence cfg params)
+          result (if throw-if-not-exists?
+                   (create-in-database cfg result)
+                   (upsert-in-database cfg result))]
+      (-> result db/get-update-count pos?))))
+
+(defn create!
+  [cfg params]
+  (update! cfg params :throw-on-conflict? true))
+
+(def ^:private schema:delete-params
+  [:map {:closed true}
+   [:id ::sm/uuid]
+   [:type [:enum "main" "snapshot"]]
+   [:file-id ::sm/uuid]])
+
+(def check-delete-params
+  (sm/check-fn schema:delete-params :hint "invalid params received for delete"))
+
+(defn delete!
+  [cfg params]
+  (when-let [fdata (db/get* cfg :file-data
+                            (check-delete-params params))]
+
+    (some->> (get fdata :metadata)
+             (decode-metadata)
+             (process-metadata cfg))
+
+    (-> (db/delete! cfg :file-data params)
+        (db/get-update-count)
+        (pos?))))

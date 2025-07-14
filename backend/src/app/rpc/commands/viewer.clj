@@ -51,7 +51,7 @@
 
 (defn- get-view-only-bundle
   [{:keys [::db/conn] :as cfg} {:keys [profile-id file-id ::perms] :as params}]
-  (let [file    (files/get-file cfg file-id)
+  (let [file    (bfc/get-file cfg file-id)
 
         project (db/get conn :project
                         {:id (:project-id file)}
@@ -81,7 +81,7 @@
 
         libs    (->> (bfc/get-file-libraries conn file-id)
                      (mapv (fn [{:keys [id] :as lib}]
-                             (merge lib (files/get-file cfg id)))))
+                             (merge lib (bfc/get-file cfg id)))))
 
         links   (->> (db/query conn :share-link {:file-id file-id})
                      (mapv (fn [row]

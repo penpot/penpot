@@ -17,6 +17,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.text :as ct]
+   [app.common.time :as dt]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -91,12 +92,13 @@
   [:map {:title "file"}
    [:id ::sm/uuid]
    [:name :string]
-   [:revn {:optional true} :int]
+   [:revn :int]
    [:vern {:optional true} :int]
-   [:created-at {:optional true} ::sm/inst]
-   [:modified-at {:optional true} ::sm/inst]
+   [:created-at ::sm/inst]
+   [:modified-at ::sm/inst]
    [:deleted-at {:optional true} ::sm/inst]
    [:project-id {:optional true} ::sm/uuid]
+   [:team-id {:optional true} ::sm/inst]
    [:is-shared {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
    [:version :int]
@@ -143,35 +145,52 @@
        (update :options merge {:components-v2 true
                                :base-font-size BASE-FONT-SIZE})))))
 
+;; FIXME: we can't handle the "default" migrations for avoid providing
+;; them all the time the file is created because we can't import file
+;; migrations because of circular import issue; We need to split the
+;; list of migrations and impl of migrations in separate namespaces
+
+;; FIXME: refactor
+
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
-           ignore-sync-until modified-at deleted-at]
-    :or {is-shared false revn 0}}
+           metadata backend ignore-sync-until created-at modified-at deleted-at]
+    :as params}
 
-   & {:keys [create-page page-id]
-      :or {create-page true}}]
+   & {:keys [create-page with-data page-id]
+      :or {create-page true with-data true}}]
 
-  (let [id       (or id (uuid/next))
-        data     (if create-page
-                   (if page-id
-                     (make-file-data id page-id)
-                     (make-file-data id))
-                   (make-file-data id nil))
+  (let [id          (or id (uuid/next))
+        created-at  (or created-at (dt/now))
+        modified-at (or modified-at created-at)
+        features    (d/nilv features #{})
 
-        file     (d/without-nils
-                  {:id id
-                   :project-id project-id
-                   :name name
-                   :revn revn
-                   :vern 0
-                   :is-shared is-shared
-                   :version version
-                   :data data
-                   :features features
-                   :migrations migrations
-                   :ignore-sync-until ignore-sync-until
-                   :modified-at modified-at
-                   :deleted-at deleted-at})]
+        data
+        (when with-data
+          (if create-page
+            (if page-id
+              (make-file-data id page-id)
+              (make-file-data id))
+            (make-file-data id nil)))
+
+        file
+        (d/without-nils
+         {:id id
+          :project-id project-id
+          :name name
+          :revn (d/nilv revn 0)
+          :vern 0
+          :is-shared (d/nilv is-shared false)
+          :version (:version params version)
+          :data data
+          :features features
+          :migrations migrations
+          :metadata metadata
+          :backend backend
+          :ignore-sync-until ignore-sync-until
+          :created-at created-at
+          :modified-at modified-at
+          :deleted-at deleted-at})]
 
     (check-file file)))
 

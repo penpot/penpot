@@ -18,8 +18,9 @@
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
-   [app.features.fdata :as feat.fdata]
+   [app.features.fdata :as fdata]
    [app.features.file-migrations :as feat.fmigr]
+   [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.http.errors :as errors]
    [app.loggers.audit :as audit]
@@ -128,77 +129,78 @@
    ::sm/params schema:update-file
    ::sm/result schema:update-file-result
    ::doc/module :files
-   ::doc/added "1.17"}
-  [{:keys [::mtx/metrics] :as cfg}
+   ::doc/added "1.17"
+   ::db/transaction true}
+  [{:keys [::mtx/metrics ::db/conn] :as cfg}
    {:keys [::rpc/profile-id id changes changes-with-metadata] :as params}]
-  (db/tx-run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                    (files/check-edition-permissions! conn profile-id id)
-                    (db/xact-lock! conn id)
 
-                    (let [file     (get-file cfg id)
-                          team     (teams/get-team conn
-                                                   :profile-id profile-id
-                                                   :team-id (:team-id file))
+  (files/check-edition-permissions! conn profile-id id)
+  (db/xact-lock! conn id)
 
-                          features (-> (cfeat/get-team-enabled-features cf/flags team)
-                                       (cfeat/check-client-features! (:features params))
-                                       (cfeat/check-file-features! (:features file)))
+  (let [file     (get-file cfg id)
+        team     (teams/get-team conn
+                                 :profile-id profile-id
+                                 :team-id (:team-id file))
 
-                          changes  (if changes-with-metadata
-                                     (->> changes-with-metadata (mapcat :changes) vec)
-                                     (vec changes))
+        features (-> (cfeat/get-team-enabled-features cf/flags team)
+                     (cfeat/check-client-features! (:features params))
+                     (cfeat/check-file-features! (:features file)))
 
-                          params   (-> params
-                                       (assoc :profile-id profile-id)
-                                       (assoc :features (set/difference features cfeat/frontend-only-features))
-                                       (assoc :team team)
-                                       (assoc :file file)
-                                       (assoc :changes changes))
+        changes  (if changes-with-metadata
+                   (->> changes-with-metadata (mapcat :changes) vec)
+                   (vec changes))
 
-                          cfg      (assoc cfg ::timestamp (dt/now))
+        params   (-> params
+                     (assoc :profile-id profile-id)
+                     (assoc :features (set/difference features cfeat/frontend-only-features))
+                     (assoc :team team)
+                     (assoc :file file)
+                     (assoc :changes changes))
 
-                          tpoint   (dt/tpoint)]
+        cfg      (assoc cfg ::timestamp (dt/now))
 
-
-                      (when (not= (:vern params)
-                                  (:vern file))
-                        (ex/raise :type :validation
-                                  :code :vern-conflict
-                                  :hint "A different version has been restored for the file."
-                                  :context {:incoming-revn (:revn params)
-                                            :stored-revn (:revn file)}))
-
-                      (when (> (:revn params)
-                               (:revn file))
-                        (ex/raise :type :validation
-                                  :code :revn-conflict
-                                  :hint "The incoming revision number is greater that stored version."
-                                  :context {:incoming-revn (:revn params)
-                                            :stored-revn (:revn file)}))
-
-                      ;; When newly computed features does not match exactly with
-                      ;; the features defined on team row, we update it
-                      (when-let [features (-> features
-                                              (set/difference (:features team))
-                                              (set/difference cfeat/no-team-inheritable-features)
-                                              (not-empty))]
-                        (let [features (->> features
-                                            (set/union (:features team))
-                                            (db/create-array conn "text"))]
-                          (db/update! conn :team
-                                      {:features features}
-                                      {:id (:id team)}
-                                      {::db/return-keys false})))
+        tpoint   (dt/tpoint)]
 
 
-                      (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+    (when (not= (:vern params)
+                (:vern file))
+      (ex/raise :type :validation
+                :code :vern-conflict
+                :hint "A different version has been restored for the file."
+                :context {:incoming-revn (:revn params)
+                          :stored-revn (:revn file)}))
 
-                      (binding [l/*context* (some-> (meta params)
-                                                    (get :app.http/request)
-                                                    (errors/request->context))]
-                        (-> (update-file* cfg params)
-                            (rph/with-defer #(let [elapsed (tpoint)]
-                                               (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))))
+    (when (> (:revn params)
+             (:revn file))
+      (ex/raise :type :validation
+                :code :revn-conflict
+                :hint "The incoming revision number is greater that stored version."
+                :context {:incoming-revn (:revn params)
+                          :stored-revn (:revn file)}))
+
+    ;; When newly computed features does not match exactly with
+    ;; the features defined on team row, we update it
+    (when-let [features (-> features
+                            (set/difference (:features team))
+                            (set/difference cfeat/no-team-inheritable-features)
+                            (not-empty))]
+      (let [features (->> features
+                          (set/union (:features team))
+                          (db/create-array conn "text"))]
+        (db/update! conn :team
+                    {:features features}
+                    {:id (:id team)}
+                    {::db/return-keys false})))
+
+
+    (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
+
+    (binding [l/*context* (some-> (meta params)
+                                  (get :app.http/request)
+                                  (errors/request->context))]
+      (-> (update-file* cfg params)
+          (rph/with-defer #(let [elapsed (tpoint)]
+                             (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))
 
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
@@ -211,14 +213,21 @@
   [{:keys [::db/conn ::wrk/executor ::timestamp] :as cfg}
    {:keys [profile-id file team features changes session-id skip-validate] :as params}]
 
-  (let [file (assoc file :features
-                    (-> features
-                        (set/difference cfeat/frontend-only-features)
-                        (set/union (:features file))))]
+  (binding [pmap/*tracked* (pmap/create-tracked)
+            pmap/*load-fn* (partial fdata/load-pointer cfg (:id file))]
 
-    ;; We create a new lexycal scope for clearly delimit the result of
-    ;; executing this update file operation and all its side effects
-    (let [file
+    (let [file (assoc file :features
+                      (-> features
+                          (set/difference cfeat/frontend-only-features)
+                          (set/union (:features file))))
+
+          ;; We need to preserve the original revn for the response
+          revn
+          (get file :revn)
+
+          ;; We create a new lexical scope for clearly delimit the result of
+          ;; executing this update file operation and all its side effects
+          file
           (px/invoke! executor
                       (fn []
                         ;; Process the file data on separated thread
@@ -230,32 +239,23 @@
                                              process-changes-and-validate
                                              changes skip-validate))))
 
-          change-id
-          (uuid/next)
-
           deleted-at
-          (if (::snapshot-data file)
-            (dt/plus timestamp (ldel/get-deletion-delay team))
-            (dt/plus timestamp (dt/duration {:hours 1})))]
+          (dt/plus timestamp (dt/duration {:hours 1}))]
 
-      ;; FIXME: move upsert inside persist-file!
-      (feat.fmigr/upsert-migrations! conn file)
-      (persist-file! cfg file)
+      (when-let [file (::snapshot file)]
+        (let [deleted-at (dt/plus timestamp (ldel/get-deletion-delay team))
+              label      (str "internal/snapshot/" revn)]
 
-      (when (::snapshot-data file)
-        (db/insert! conn :file-data
-                    {:id change-id
-                     :file-id (:id file)
-                     :data (::snapshot-data file)
-                     :type "snapshot"
-                     :created-at timestamp
-                     :modified-at timestamp
-                     :deleted-at deleted-at}))
+          (fsnap/create! cfg file
+                         {:label label
+                          :deleted-at deleted-at
+                          :profile-id profile-id
+                          :session-id session-id})))
 
       ;; Insert change (xlog) with deleted_at in a future data for
       ;; make them automatically eleggible for GC once they expires
       (db/insert! conn :file-change
-                  {:id change-id
+                  {:id (uuid/next)
                    :session-id session-id
                    :profile-id profile-id
                    :created-at timestamp
@@ -264,27 +264,24 @@
                    :file-id (:id file)
                    :revn (:revn file)
                    :version (:version file)
-                   :features (:features file)
-                   :label (::snapshot-label file)
+                   :features (into-array (:features file))
                    :changes (blob/encode changes)}
                   {::db/return-keys false})
 
+      (persist-file! cfg file)
+
       ;; Send asynchronous notifications
-      (send-notifications! cfg params file))
+      (send-notifications! cfg params file)
 
-    ;; (when (feat.fdata/offloaded? file)
-    ;;   (let [storage (sto/resolve cfg ::db/reuse-conn true)]
-    ;;     (some->> (:data-ref-id file) (sto/touch-object! storage))))
+      (with-meta {:revn revn :lagged (get-lagged-changes conn params)}
+        {::audit/replace-props
+         {:id         (:id file)
+          :name       (:name file)
+          :features   (:features file)
+          :project-id (:project-id file)
+          :team-id    (:team-id file)}}))))
 
-    (let [response {:revn (:revn file)
-                    :lagged (get-lagged-changes conn params)}]
-      (vary-meta response assoc ::audit/replace-props
-                 {:id         (:id file)
-                  :name       (:name file)
-                  :features   (:features file)
-                  :project-id (:project-id file)
-                  :team-id    (:team-id file)}))))
-
+;: FIXME: DEPRECATED
 (defn update-file!
   "A public api that allows apply a transformation to a file with all context setup."
   [{:keys [::db/conn] :as cfg} file-id update-fn & args]
@@ -293,59 +290,42 @@
     (feat.fmigr/upsert-migrations! conn file)
     (persist-file! cfg file)))
 
-(def ^:private sql:get-file
-  (str bfc/sql:get-file " FOR KEY SHARE OF f"))
-
 (defn get-file
   "Get not-decoded file, only decodes the features set."
   [cfg id]
-  (let [conn (db/get-connection cfg)
-        file (db/get-with-sql conn [sql:get-file id])]
-    (->> file
-         (feat.fdata/resolve-file-data cfg)
-         (feat.fmigr/resolve-applied-migrations cfg))))
+  ;; FIXME: lock for share
+  (bfc/get-file cfg id :decode? false :lock-for-update? true))
 
 (defn persist-file!
   "Function responsible of persisting already encoded file. Should be
   used together with `get-file` and `update-file-data!`.
 
   It also updates the project modified-at attr."
-  [{:keys [::db/conn ::timestamp]} file]
+  [{:keys [::db/conn ::timestamp] :as cfg} file]
   (let [;; The timestamp can be nil because this function is also
         ;; intended to be used outside of this module
-        modified-at (or timestamp (dt/now))]
+        modified-at
+        (or timestamp (dt/now))
+
+        file
+        (-> file
+            (dissoc ::snapshot)
+            (assoc :modified-at modified-at)
+            (assoc :has-media-trimmed false))]
 
     (db/update! conn :project
                 {:modified-at modified-at}
                 {:id (:project-id file)}
                 {::db/return-keys false})
 
-    (if (:data-ref-id file)
-      (db/update! conn :file-data
-                  {:data (:data file)
-                   :modified-at modified-at}
-                  {:id (:id file)
-                   :file-id (:id file)
-                   :type "main"}
-                  {::db/return-keys false})
-      (db/insert! conn :file-data
-                  {:id (:id file)
-                   :file-id (:id file)
-                   :data (:data file)
-                   :type "main"
-                   :created-at modified-at
-                   :modified-at modified-at}
-                  {::db/return-keys false}))
+    (bfc/update-file! cfg file)))
 
-    (db/update! conn :file
-                {:revn (:revn file)
-                 :data nil
-                 :version (:version file)
-                 :features (:features file)
-                 :modified-at modified-at
-                 :has-media-trimmed false}
-                {:id (:id file)}
-                {::db/return-keys false})))
+(defn- attach-snapshot
+  "Attach snapshot data to the file. This should be called before the
+  upcoming file operations are applied to the file."
+  [file migrated? cfg]
+  (let [snapshot (if migrated? file (update file :data (partial fdata/realize cfg)))]
+    (assoc file ::snapshot snapshot)))
 
 (defn- update-file-data!
   "Perform a file data transformation in with all update context setup.
@@ -357,53 +337,35 @@
   fdata/pointer-map modified fragments."
 
   [cfg {:keys [id] :as file} update-fn & args]
-  (binding [pmap/*tracked* (pmap/create-tracked)
-            pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-    (let [file (update file :data (fn [data]
-                                    (-> data
-                                        (blob/decode)
-                                        (assoc :id (:id file)))))
-          libs (delay (bfc/get-resolved-file-libraries cfg file))
+  (let [file (update file :data (fn [data]
+                                  (-> data
+                                      (blob/decode)
+                                      (assoc :id id))))
+        libs (delay (bfc/get-resolved-file-libraries cfg file))
 
-          ;; For avoid unnecesary overhead of creating multiple pointers
-          ;; and handly internally with objects map in their worst
-          ;; case (when probably all shapes and all pointers will be
-          ;; readed in any case), we just realize/resolve them before
-          ;; applying the migration to the file
-          file (if (fmg/need-migration? file)
-                 (-> file
-                     (update :data feat.fdata/process-pointers deref)
-                     (update :data feat.fdata/process-objects (partial into {}))
-                     (fmg/migrate-file libs))
-                 file)
+        need-migration?
+        (fmg/need-migration? file)
 
-          ;; TODO: reuse operations if file is migrated
-          ;; TODO: move encoding to a separated thread
-          file (if (take-snapshot? file)
-                 (let [tpoint   (dt/tpoint)
-                       snapshot (-> (:data file)
-                                    (feat.fdata/process-pointers deref)
-                                    (feat.fdata/process-objects (partial into {}))
-                                    (blob/encode))
-                       elapsed (tpoint)
-                       label   (str "internal/snapshot/" (:revn file))]
+        take-snapshot?
+        (take-snapshot? file)
 
-                   (l/trc :hint "take snapshot"
-                          :file-id (str (:id file))
-                          :revn (:revn file)
-                          :label label
-                          :elapsed (dt/format-duration elapsed))
+        ;; For avoid unnecesary overhead of creating multiple
+        ;; pointers and handly internally with objects map in their
+        ;; worst case (when probably all shapes and all pointers
+        ;; will be readed in any case), we just realize/resolve them
+        ;; before applying the migration to the file
+        file
+        (cond-> file
+          need-migration?
+          (->> (fdata/realize cfg))
 
-                   (-> file
-                       (assoc ::snapshot-id (uuid/next))
-                       (assoc ::snapshot-data snapshot)
-                       (assoc ::snapshot-label label)))
-                 file)
+          need-migration?
+          (fmg/migrate-file libs)
 
-          file (apply update-fn cfg file args)]
+          take-snapshot?
+          (attach-snapshot need-migration? cfg))]
 
-      (bfc/encode-file cfg file))))
-
+    (apply update-fn cfg file args)))
 
 (defn- soft-validate-file-schema!
   [file]
@@ -493,6 +455,7 @@
 (defn- get-lagged-changes
   [conn {:keys [id revn] :as params}]
   (->> (db/exec! conn [sql:lagged-changes id revn])
+       (filter :changes)
        (mapv (fn [row]
                (update row :changes blob/decode)))))
 

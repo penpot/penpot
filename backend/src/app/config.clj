@@ -52,6 +52,8 @@
 
    :redis-uri "redis://redis/0"
 
+   :file-storage-backend "db"
+
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
 
@@ -210,6 +212,8 @@
     [:urepl-port {:optional true} ::sm/int]
     [:prepl-host {:optional true} :string]
     [:prepl-port {:optional true} ::sm/int]
+
+    [:file-storage-backend :string]
 
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]

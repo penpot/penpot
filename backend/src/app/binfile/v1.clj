@@ -346,7 +346,7 @@
           thumbnails (->> (bfc/get-file-object-thumbnails cfg file-id)
                           (mapv #(dissoc % :file-id)))
 
-          file       (cond-> (bfc/get-file cfg file-id)
+          file       (cond-> (bfc/get-file cfg file-id :realize? true)
                        detach?
                        (-> (ctf/detach-external-references file-id)
                            (dissoc :libraries))

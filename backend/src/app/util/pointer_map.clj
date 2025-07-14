@@ -61,8 +61,10 @@
 (declare create)
 
 (defn create-tracked
-  []
-  (atom {}))
+  [& {:keys [inherit]}]
+  (if inherit
+    (atom (if *tracked* @*tracked* {}))
+    (atom {})))
 
 (defprotocol IPointerMap
   (get-id [_])

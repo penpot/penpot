@@ -8,6 +8,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
+   [app.common.files.migrations :as fmg]
    [app.common.schema :as sm]
    [app.common.types.file :as ctf]
    [app.config :as cf]
@@ -15,7 +16,6 @@
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.rpc :as-alias rpc]
-   [app.rpc.commands.files :as files]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
    [app.rpc.doc :as-alias doc]
@@ -52,6 +52,7 @@
                                :revn revn
                                :is-shared is-shared
                                :features features
+                               :migrations fmg/available-migrations
                                :ignore-sync-until ignore-sync-until
                                :modified-at modified-at
                                :deleted-at deleted-at}
@@ -67,7 +68,7 @@
                   {:modified-at (dt/now)}
                   {:id project-id})
 
-      (files/get-file cfg (:id file)))))
+      (bfc/get-file cfg (:id file)))))
 
 (def ^:private schema:create-file
   [:map {:title "create-file"}

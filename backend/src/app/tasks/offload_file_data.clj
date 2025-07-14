@@ -11,28 +11,17 @@
    [app.binfile.common :as bfc]
    [app.common.logging :as l]
    [app.db :as db]
-   [app.db.sql :as-alias sql]
+   [app.features.fdata :as fdata]
+   [app.features.file-snapshots :as fsnap]
    [app.storage :as sto]
+   [app.util.blob :as blob]
    [integrant.core :as ig]))
 
-(def ^:private sql:get-file
-  (str bfc/sql:get-file " FOR UPDATE OF f"))
-
-(defn get-file
-  "Get not-decoded file, only decodes the features set."
-  [cfg id]
-  (let [conn (db/get-connection cfg)]
-    (db/get-with-sql conn [sql:get-file id])))
-
 (defn- offload-file-data
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}]
-  (let [file (get-file cfg file-id)]
+  [{:keys [::db/conn ::file-id] :as cfg}]
+  (let [file (bfc/get-file cfg file-id :realize? true :lock-for-update? true)]
     (cond
-      (:legacy-data file)
-      (l/wrn :hint (str "skiping file offload (legacy storage detected) for " file-id)
-             :file-id (str file-id))
-
-      (some? (:backend file))
+      (not= "db" (:backend file))
       (l/wrn :hint (str "skiping file offload (file offloaded or incompatible with offloading) for " file-id)
              :file-id (str file-id))
 
@@ -41,125 +30,51 @@
              :file-id (str file-id))
 
       :else
-      (let [data (sto/content (:data file))
-            sobj (sto/put-object! storage
-                                  {::sto/content data
-                                   ::sto/touch true
-                                   :bucket "file-data"
-                                   :content-type "application/octet-stream"
-                                   :file-id file-id})]
+      (do
+        (fdata/update! cfg {:id file-id
+                            :file-id file-id
+                            :type "main"
+                            :backend "storage"
+                            :data (blob/encode (:data file))})
+
+        (db/update! conn :file
+                    {:data nil}
+                    {:id file-id}
+                    {::db/return-keys false})
 
         (l/trc :hint "offload file data"
-               :file-id (str file-id)
-               :storage-id (str (:id sobj)))
-
-        (db/update! conn :file-data
-                    {:backend "storage"
-                     :metadata (db/tjson {:storage/id (:id sobj)})
-                     :content nil}
-                    {:id file-id :file-id file-id :type "main"}
-                    {::db/return-keys false})))))
-
-
-(def sql:get-fragments
-  "SELECT f.id,
-          f.content AS data
-     FROM file_data AS f
-    WHERE f.file_id = ?
-      AND f.type = 'fragment'
-      AND f.backend IS NULL
-      AND f.deleted_at IS NULL
-    ORDER BY f.created_at ASC
-      FOR UPDATE")
-
-(defn- offload-fragment-data
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}
-   {:keys [id data] :as fragment}]
-
-  (let [data (sto/content data)
-        sobj (sto/put-object! storage
-                              {::sto/content data
-                               ::sto/touch true
-                               :bucket "file-data"
-                               :content-type "application/octet-stream"
-                               :file-id file-id
-                               :file-data-id (:id fragment)})]
-
-    (l/trc :hint "offload fragment data"
-           :file-id (str file-id)
-           :fragment-id (str id)
-           :storage-id (str (:id sobj)))
-
-    (db/update! conn :file-data
-                {:backend "storage"
-                 :metadata (db/tjson {:storage/id (:id sobj)})
-                 :content nil}
-                {:id id :file-id file-id :type "fragment"}
-                {::db/return-keys false})))
+               :file-id (str file-id))))))
 
 (def sql:get-snapshots
-  "SELECT fc.id,
-          fc.project_id,
-          fc.created_at,
-          fc.updated_at,
-          fc.deleted_at,
-          fc.revn,
-          fc.data AS legacy_data,
-          fc.features,
-          fc.version,
-          fd.backend AS backend,
-          fd.metadata AS metadata,
-          fd.content AS data
-     FROM file_change AS fc
-     LEFT JOIN file_data AS fd ON (fd.file_id = fc.file_id
-                                   AND fd.id = fc.id
-                                   AND fd.type = 'snapshot')
-    WHERE fc.file_id = ?
-      AND fc.label IS NOT NULL
-    ORDER BY fc.created_at ASC
-      FOR UPDATE OF fc")
+  (str "WITH snapshots AS (" fsnap/sql:snapshots ")"
+       "SELECT s.*
+          FROM snapshots AS s
+         WHERE s.backend = 'db'
+           AND s.file_id = ?
+         ORDER BY s.created_at"))
 
 (defn- offload-snapshot-data
-  [{:keys [::db/conn ::sto/storage ::file-id] :as cfg}
-   {:keys [id] :as snapshot}]
-
-  (cond
-    (:legacy-data snapshot)
-    (l/wrn :hint (str "skiping snapshot offload (legacy storage detected) for " id)
-           :snapshot-id (str id)
-           :file-id (str file-id))
-
-    (some? (:backend snapshot))
-    (l/err :hint (str "skiping snapshot offload (file offloaded or incompatible with offloading) for " id)
-           :snapshot-id (str id)
-           :file-id (str file-id))
-
-    (nil? (:data snapshot))
-    (l/err :hint (str "skiping snapshot offload (missing data) for " id)
-           :snapshot-id (str id)
-           :file-id (str file-id))
-
-    :else
-    (let [data (sto/content (:data snapshot))
-          sobj (sto/put-object! storage
-                                {::sto/content data
-                                 ::sto/touch true
-                                 :bucket "file-data"
-                                 :content-type "application/octet-stream"
-                                 :file-id file-id
-                                 :file-data-id id})]
-
-      (l/trc :hint "offload snapshot data"
+  [{:keys [::db/conn ::file-id] :as cfg} snapshot]
+  (let [{:keys [id data] :as snapshot} (fdata/resolve-file-data cfg snapshot)]
+    (if (nil? (:data snapshot))
+      (l/err :hint (str "skiping snapshot offload (missing data) for " file-id)
              :file-id (str file-id)
-             :snapshot-id (str id)
-             :storage-id (str (:id sobj)))
+             :snapshot-id id)
+      (do
+        (fsnap/create! cfg {:id id
+                            :file-id file-id
+                            :type "snapshot"
+                            :backend "storage"
+                            :data data})
 
-      (db/update! conn :file-data
-                  {:backend "storage"
-                   :metadata (db/tjson {:storage/id (:id sobj)})
-                   :content nil}
-                  {:id id :file-id file-id :type "snapshot"}
-                  {::db/return-keys false}))))
+        (l/trc :hint "offload snapshot data"
+               :file-id (str file-id)
+               :snapshot-id (str id))
+
+        (db/update! conn :file-change
+                    {:data nil}
+                    {:id id :file-id file-id}
+                    {::db/return-keys false})))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HANDLER
@@ -181,7 +96,4 @@
                         (offload-file-data cfg)
 
                         (run! (partial offload-snapshot-data cfg)
-                              (db/plan conn [sql:get-snapshots file-id]))
-
-                        (run! (partial offload-fragment-data cfg)
-                              (db/plan conn [sql:get-fragments file-id]))))))))
+                              (db/plan conn [sql:get-snapshots file-id]))))))))
