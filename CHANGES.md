@@ -27,6 +27,7 @@
 - Fix problem when creating a layout from an existing layout [Taiga #11554](https://tree.taiga.io/project/penpot/issue/11554)
 - Fix title button from Title Case to Capitalize [Taiga #11476](https://tree.taiga.io/project/penpot/issue/11476)
 - Fix Main component receives focus and is selected when using 'Show Main Component' [Taiga #11402](https://tree.taiga.io/project/penpot/issue/11402)
+- Fix touchpad swipe leading to navigating back/forth [GitHub #4246](https://github.com/penpot/penpot/issues/4246)
 
 ## 2.8.0
 
