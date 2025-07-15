@@ -2919,9 +2919,7 @@ msgstr "Emails, comma separated"
 
 #: src/app/main/ui/dashboard/team.cljs:228
 msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Some emails are from current team members. Their invitations will not be "
-"sent."
+msgstr "Some members are already on the team. We'll invite the rest."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"

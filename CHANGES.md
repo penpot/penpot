@@ -7,6 +7,7 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :heart: Community contributions (Thank you!)
+- Clarify message when inviting existing team members to make it more user-friendly and clear which invitations will be sent. [Taiga #11441](https://tree.taiga.io/project/penpot/issue/11441)
 
 ### :sparkles: New features & Enhancements
 - Add visual indicator for new comments in the workspace [Taiga #11328](https://tree.taiga.io/project/penpot/issue/11328)
@@ -288,7 +289,7 @@ on-premises instances** that want to keep up to date.
 
 ### :boom: Breaking changes & Deprecations
 
-Although this is not a breaking change, we believe it’s important to highlight it in this
+Although this is not a breaking change, we believe it's important to highlight it in this
 section:
 
 This release includes a fix for an internal bug in Penpot that caused incorrect handling
@@ -296,9 +297,9 @@ of media assets (e.g., fill images). The issue has been resolved since version 2
 no new incorrect references will be generated. However, existing files may still contain
 incorrect references.
 
-To address this, we’ve provided a script to correct these references in existing files.
+To address this, we've provided a script to correct these references in existing files.
 
-While having incorrect references generally doesn’t result in visible issues, there are
+While having incorrect references generally doesn't result in visible issues, there are
 rare cases where it can cause problems. For example, if a component library (containing
 images) is deleted, and that library is being used in other files, running the FileGC task
 (responsible for freeing up space and performing logical deletions) could leave those
@@ -628,7 +629,7 @@ time being.
 
 ### :bug: Bugs fixed
 
-- Fix the “search” label in translations [Taiga #8402](https://tree.taiga.io/project/penpot/issue/8402)
+- Fix the "search" label in translations [Taiga #8402](https://tree.taiga.io/project/penpot/issue/8402)
 - Fix pencil loader [Taiga #8348](https://tree.taiga.io/project/penpot/issue/8348)
 - Fix several issues on the OIDC.
 - Fix regression on the `email-verification` flag [Taiga #8398](https://tree.taiga.io/project/penpot/issue/8398)
@@ -2162,7 +2163,6 @@ time being.
 ## 1.7.1-alpha
 
 ### :bug: Bugs fixed
-
 - Fix issue related to the GC and images in path shapes.
 - Fix issue on the shape order on some undo operations.
 - Fix issue on undo page deletion.
