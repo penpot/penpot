@@ -98,9 +98,15 @@
 
 ;; This should never be called from the outside.
 (defn- render
-  [timestamp]
-  (h/call wasm/internal-module "_render" timestamp)
-  (set! wasm/internal-frame-id nil))
+  ([]
+   (render (.now js/performance)))
+
+  ([timestamp]
+   (render timestamp false))
+
+  ([timestamp full]
+   (h/call wasm/internal-module "_render" timestamp full)
+   (set! wasm/internal-frame-id nil)))
 
 (def debounce-render (fns/debounce render 100))
 
