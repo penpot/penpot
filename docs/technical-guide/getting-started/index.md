@@ -28,5 +28,6 @@ Use Docker if you already know the tool, if need full control of the process or 
 and do not want to depend on any external provider, or need to do any special customization.
 </p>
 
-Or you can try <a href="#unofficial-self-host-options">other options</a>,
-offered by Penpot community.
+Or you can try [other options][1], offered by Penpot community.
+
+[1]: /technical-guide/getting-started/unofficial-options/
