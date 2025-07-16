@@ -847,3 +847,25 @@
           (if undo-transation?
             (rx/of (dwu/commit-undo-transaction undo-id))
             (rx/empty))))))))
+
+;; Pure function to determine next grow-type for text layers
+(defn next-grow-type [current-grow-type resize-direction]
+  (cond
+    (= current-grow-type :fixed)
+    :fixed
+
+    (and (= resize-direction :horizontal)
+         (= current-grow-type :auto-width))
+    :auto-height
+
+    (and (= resize-direction :horizontal)
+         (= current-grow-type :auto-height))
+    :auto-height
+
+    (and (= resize-direction :vertical)
+         (or (= current-grow-type :auto-width)
+             (= current-grow-type :auto-height)))
+    :fixed
+
+    :else
+    current-grow-type))
