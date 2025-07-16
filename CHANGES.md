@@ -23,6 +23,7 @@
 - Add the option to import tokens in a .zip file. [Taiga #11378](https://tree.taiga.io/project/penpot/us/11378)
 - New typography token type - font size token [Taiga #10938](https://tree.taiga.io/project/penpot/us/10938)
 - Hide bounding box while editing visual effects [Taiga #11576](https://tree.taiga.io/project/penpot/issue/11576)
+- Improved text layer resizing: Allow double-click on text bounding box to set auto-width/auto-height [Taiga #11577](https://tree.taiga.io/project/penpot/issue/11577)
 
 ### :bug: Bugs fixed
 
