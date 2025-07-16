@@ -148,6 +148,23 @@
                                  (fetch-versions)
                                  (ptk/event ::ev/event {::ev/name "pin-version"})))))))))
 
+(defn lock-version
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (ptk/reify ::lock-version
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :lock-file-snapshot {:id id})
+           (rx/map fetch-versions)))))
+
+(defn unlock-version
+  [id]
+  (assert (uuid? id) "expected valid uuid for `id`")
+  (ptk/reify ::unlock-version
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :unlock-file-snapshot {:id id})
+           (rx/map fetch-versions)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
