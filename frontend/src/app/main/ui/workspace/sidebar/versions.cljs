@@ -76,7 +76,7 @@
        (reverse)))
 
 (mf/defc version-entry
-  [{:keys [entry profile on-restore-version on-delete-version on-rename-version editing?]}]
+  [{:keys [entry profile on-restore-version on-delete-version on-rename-version on-lock-version on-unlock-version editing?]}]
   (let [show-menu? (mf/use-state false)
 
         handle-open-menu
@@ -108,6 +108,20 @@
          (fn []
            (when on-delete-version
              (on-delete-version (:id entry)))))
+
+        handle-lock-version
+        (mf/use-callback
+         (mf/deps entry on-lock-version)
+         (fn []
+           (when on-lock-version
+             (on-lock-version (:id entry)))))
+
+        handle-unlock-version
+        (mf/use-callback
+         (mf/deps entry on-unlock-version)
+         (fn []
+           (when on-unlock-version
+             (on-unlock-version (:id entry)))))
 
         handle-name-input-focus
         (mf/use-fn
@@ -142,6 +156,7 @@
                                      :color (:color profile)}
                           :editing editing?
                           :date (:created-at entry)
+                          :locked (boolean (:locked-by entry))
                           :onOpenMenu handle-open-menu
                           :onFocusInput handle-name-input-focus
                           :onBlurInput handle-name-input-blur
@@ -155,6 +170,13 @@
        [:li {:class (stl/css :menu-option)
              :role "button"
              :on-click handle-restore-version} (tr "labels.restore")]
+       (if (:locked-by entry)
+         [:li {:class (stl/css :menu-option)
+               :role "button"
+               :on-click handle-unlock-version} (tr "workspace.versions.unlock")]
+         [:li {:class (stl/css :menu-option)
+               :role "button"
+               :on-click handle-lock-version} (tr "workspace.versions.lock")])
        [:li {:class (stl/css :menu-option)
              :role "button"
              :on-click handle-delete-version} (tr "labels.delete")]]]]))
@@ -311,6 +333,16 @@
          (fn [id]
            (st/emit! (dwv/pin-version id))))
 
+        handle-lock-version
+        (mf/use-fn
+         (fn [id]
+           (st/emit! (dwv/lock-version id))))
+
+        handle-unlock-version
+        (mf/use-fn
+         (fn [id]
+           (st/emit! (dwv/unlock-version id))))
+
         handle-change-filter
         (mf/use-fn
          (fn [filter]
@@ -370,7 +402,9 @@
                                   :profile (get profiles (:profile-id entry))
                                   :on-rename-version handle-rename-version
                                   :on-restore-version handle-restore-version-pinned
-                                  :on-delete-version handle-delete-version}]
+                                  :on-delete-version handle-delete-version
+                                  :on-lock-version handle-lock-version
+                                  :on-unlock-version handle-unlock-version}]
 
                :snapshot
                [:& snapshot-entry {:key idx-entry
