@@ -596,14 +596,19 @@
   "Insert a new file into the database table. Expectes a not-encoded file.
   Returns nil."
   [{:keys [::db/conn] :as cfg} file & {:as opts}]
-  (feat.fmigr/upsert-migrations! conn file)
+
+  ;; FIXME: workaround
+  (when (:migrations file)
+    (feat.fmigr/upsert-migrations! conn file))
 
   (let [file (encode-file cfg file)]
+
+    (app.common.pprint/pprint (file->params file))
     (db/insert! conn :file
                 (file->params file)
-                (assoc opts ::db/return-keys false))
+                {::db/return-keys false})
 
-    (->> (file->file-data-params file)
+    (->> (file->file-data-params file opts)
          (fdata/update! cfg))
 
     nil))

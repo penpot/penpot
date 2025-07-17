@@ -14,6 +14,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
+   [app.features.fdata :as fdata]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.types.components-list :as ctkl]
@@ -583,8 +584,8 @@
 ;; --- COMMAND QUERY: get-team-recent-files
 
 (def sql:team-recent-files
-  "with recent_files as (
-     select f.id,
+  "WITH recent_files AS (
+     SELECT f.id,
             f.revn,
             f.vern,
             f.project_id,
@@ -592,25 +593,36 @@
             f.modified_at,
             f.name,
             f.is_shared,
+            COALESCE(fd.backend, 'db') AS backend,
+            fd.metadata,
             ft.media_id AS thumbnail_id,
-            row_number() over w as row_num,
+            row_number() OVER w AS row_num,
             p.team_id
-       from file as f
-      inner join project as p on (p.id = f.project_id)
-       left join file_thumbnail as ft on (ft.file_id = f.id
-                                          and ft.revn = f.revn
-                                          and ft.deleted_at is null)
-      where p.team_id = ?
-        and p.deleted_at is null
-        and f.deleted_at is null
-     window w as (partition by f.project_id order by f.modified_at desc)
-      order by f.modified_at desc
+       FROM file AS f
+       LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
+       LEFT JOIN file_thumbnail AS ft ON (ft.file_id = f.id
+                                          AND ft.revn = f.revn
+                                          AND ft.deleted_at IS NULL)
+       JOIN project AS p ON (p.id = f.project_id)
+
+      WHERE p.team_id = ?
+        AND p.deleted_at IS NULL
+        AND f.deleted_at IS NULL
+     WINDOW w AS (PARTITION BY f.project_id ORDER BY f.modified_at DESC)
+      ORDER BY f.modified_at DESC
    )
    select * from recent_files where row_num <= 10;")
 
 (defn get-team-recent-files
-  [conn team-id]
-  (db/exec! conn [sql:team-recent-files team-id]))
+  [cfg team-id]
+  (->> (db/exec! cfg [sql:team-recent-files team-id])
+       (mapv (fn [file]
+               (if (= "local-proxy" (:backend file))
+                 (let [file (d/update-when file :metadata fdata/decode-metadata)]
+                   ;; FIXME: workaroud
+                   (-> (fdata/refresh-fields cfg file)
+                       (dissoc :backend :metadata :thumbnail-id)))
+                 (dissoc file :backend :metadata))))))
 
 (def ^:private schema:get-team-recent-files
   [:map {:title "get-team-recent-files"}
@@ -620,9 +632,8 @@
   {::doc/added "1.17"
    ::sm/params schema:get-team-recent-files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id team-id]}]
-  (dm/with-open [conn (db/open pool)]
-    (teams/check-read-permissions! conn profile-id team-id)
-    (get-team-recent-files conn team-id)))
+  (teams/check-read-permissions! pool profile-id team-id)
+  (get-team-recent-files cfg team-id))
 
 
 ;; --- COMMAND QUERY: get-file-summary

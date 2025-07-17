@@ -231,6 +231,25 @@
         (assoc :data data)
         (dissoc :legacy-data))))
 
+;; FIXME: TODO: migrations
+;; FIXME: TODO: cache
+
+(defmethod resolve-file-data "local-proxy"
+  [cfg object]
+  (let [get-file (requiring-resolve 'app.binfile.common/get-file)
+        ref-id   (-> object :metadata :local-proxy-ref-id)
+        proxied  (get-file cfg ref-id)]
+    (merge object
+           (select-keys proxied [:modified-at
+                                 :deleted-at
+                                 :revn
+                                 :data
+                                 :version
+                                 :migrations
+                                 :features
+                                 :metadata
+                                 :backend]))))
+
 (defn decode-file-data
   [{:keys [::wrk/executor]} {:keys [data] :as file}]
   (cond-> file
@@ -290,6 +309,10 @@
   [_ params]
   (dissoc params :metadata))
 
+(defmethod handle-persistence "local-proxy"
+  [_ params]
+  params)
+
 (defmethod handle-persistence "storage"
   [{:keys [::sto/storage] :as cfg}
    {:keys [id file-id data] :as params}]
@@ -307,6 +330,31 @@
         (assoc :metadata metadata)
         (assoc :data nil))))
 
+;; FIXME: workaround, wrong name, inneficient
+
+(defmulti refresh-fields
+  (fn [_cfg object] (:backend object)))
+
+(defmethod refresh-fields :default
+  [_ object]
+  object)
+
+(defmethod refresh-fields "local-proxy"
+  [cfg object]
+  (let [get-file (requiring-resolve 'app.binfile.common/get-file)
+        ref-id   (-> object :metadata :local-proxy-ref-id)
+        proxied  (get-file cfg ref-id :decode? false)]
+
+    (merge object
+           (select-keys proxied [:modified-at
+                                 :deleted-at
+                                 :revn
+                                 :version
+                                 :migrations
+                                 :features
+                                 :metadata
+                                 :backend]))))
+
 (defn- process-metadata
   [cfg metadata]
   (when-let [storage-id (:storage-ref-id metadata)]
@@ -319,7 +367,8 @@
 
 (def ^:private schema:metadata
   [:map {:title "Metadata"}
-   [:storage-ref-id {:optional true} ::sm/uuid]])
+   [:storage-ref-id {:optional true} ::sm/uuid]
+   [:local-proxy-ref-id {:optional true} ::sm/uuid]])
 
 (def decode-metadata-with-schema
   (sm/decoder schema:metadata sm/json-transformer))
@@ -335,7 +384,7 @@
    [:id ::sm/uuid]
    [:type [:enum "main" "snapshot"]]
    [:file-id ::sm/uuid]
-   [:backend {:optional true} [:enum "db" "storage"]]
+   [:backend {:optional true} [:enum "db" "storage" "local-proxy"]]
    [:metadata {:optional true} [:maybe schema:metadata]]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::sm/inst]
@@ -381,3 +430,5 @@
     (-> (db/delete! cfg :file-data params)
         (db/get-update-count)
         (pos?))))
+
+

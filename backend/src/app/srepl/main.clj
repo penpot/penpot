@@ -11,9 +11,11 @@
    [app.auth :refer [derive-password]]
    [app.binfile.common :as bfc]
    [app.common.data :as d]
+   [app.common.types.file :as ctf]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
+   [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.pprint :as p]
@@ -917,3 +919,25 @@
                                        (assoc :team-id (:id team)))]
                         (db/insert! conn :team-profile-rel params
                                     {::db/return-keys false}))))))))
+
+
+(defn create-proxy-file
+  [& {:keys [team-id project-id proxy-id]}]
+  (let [team-id    (h/parse-uuid team-id)
+        project-id (h/parse-uuid project-id)
+        proxy-id   (h/parse-uuid proxy-id)]
+    (db/tx-run! main/system
+                (fn [cfg]
+                  (let [file (ctf/make-file
+                              {:project-id project-id
+                               :name "Proxy"
+                               ;; :migrations []
+                               :features cfeat/default-features
+                               :metadata {:local-proxy-ref-id proxy-id}
+                               :backend "local-proxy"}
+                              {:with-data false})
+                        ]
+                    ;; (app.common.pprint/pprint file)
+                    (bfc/insert-file! cfg file
+                                      ::bfc/overwrite-storage-backend true))))))
+
