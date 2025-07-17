@@ -164,8 +164,6 @@ fn propagate_transform(
     };
 
     let shapes = &state.shapes;
-    let font_col = state.render_state.fonts.font_collection();
-
     let shape_bounds_before = bounds.find(shape);
     let mut shape_bounds_after = shape_bounds_before.transform(&entry.transform);
 
@@ -173,9 +171,9 @@ fn propagate_transform(
 
     if let Type::Text(content) = &shape.shape_type {
         if content.grow_type() == GrowType::AutoHeight {
-            let mut paragraphs = content.get_skia_paragraphs(font_col);
+            let mut paragraphs = content.get_skia_paragraphs();
             set_paragraphs_width(shape_bounds_after.width(), &mut paragraphs);
-            let height = auto_height(&paragraphs);
+            let height = auto_height(&mut paragraphs, shape_bounds_after.width());
             let resize_transform = math::resize_matrix(
                 &shape_bounds_after,
                 &shape_bounds_after,
