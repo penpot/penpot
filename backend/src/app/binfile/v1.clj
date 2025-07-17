@@ -562,7 +562,7 @@
           (vswap! bfc/*state* update :pending-to-migrate (fnil conj []) [feature file-id']))
 
         (l/dbg :hint "create file" :id (str file-id') ::l/sync? true)
-        (bfc/save-file! system file ::db/return-keys false)
+        (bfc/save-file! system file)
 
         file-id'))))
 

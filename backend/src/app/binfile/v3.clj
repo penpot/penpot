@@ -286,10 +286,13 @@
                  (assoc :options (:options data))
 
                  :always
-                 (dissoc :data)
+                 (dissoc :data))
 
+          _  (app.common.pprint/pprint file)
+          file (cond-> file
                  :always
                  (encode-file))
+
           path (str "files/" file-id ".json")]
       (write-entry! output path file))
 
@@ -707,8 +710,9 @@
      :components components
      :plugin-data plugin-data}))
 
+
 (defn- import-file
-  [{:keys [::bfc/project-id ::file-id ::file-name] :as cfg}]
+  [{:keys [::bfc/project-id ::replace ::file-id ::file-name] :as cfg}]
   (let [file-id'   (bfc/lookup-index file-id)
         file       (read-file cfg)
         media      (read-file-media cfg)
@@ -758,8 +762,10 @@
           file  (bfc/process-file cfg file)
           file  (ctf/check-file file)]
 
+      (prn "RRR" replace file-id)
+
       (bfm/register-pending-migrations! cfg file)
-      (bfc/save-file! cfg file ::db/return-keys false)
+      (bfc/save-file! cfg file ::bfc/replace (= replace file-id))
 
       file-id')))
 
@@ -875,17 +881,23 @@
              :media-id (str media-id)
              ::l/sync? true)
 
-      (db/insert! conn :file-tagged-object-thumbnail params))))
+      (db/insert! conn :file-tagged-object-thumbnail params
+                  {::db/on-conflict-do-nothing? true}))))
 
 (defn- import-files
-  [{:keys [::bfc/timestamp ::bfc/input ::bfc/name] :or {timestamp (dt/now)} :as cfg}]
+  [{:keys [::bfc/timestamp ::bfc/input ::bfc/target-file-id ::bfc/name] :or {timestamp (dt/now)} :as cfg}]
 
   (assert (instance? ZipFile input) "expected zip file")
   (assert (dt/instant? timestamp) "expected valid instant")
 
   (let [manifest (-> (read-manifest input)
                      (validate-manifest))
-        entries  (read-zip-entries input)]
+        entries  (read-zip-entries input)
+
+        ;; If file-id is provided in config, this activates in place
+        ;; import replacing the current file with the imported content
+        ;; instead of creating new file
+        inplace? (some? target-file-id)]
 
     (when-not (= "penpot/export-files" (:type manifest))
       (ex/raise :type :validation
@@ -893,6 +905,11 @@
                 :hint "unexpected type on manifest"
                 :manifest manifest))
 
+    (when (and inplace? (not= 1 (count (:files manifest))))
+      (ex/raise :type :validation
+                :code :invalid-condition
+                :hint "unable to perform inplace update with binfile containing more than 1 file"
+                :manifest manifest))
 
     ;; Check if all files referenced on manifest are present
     (doseq [{file-id :id features :features} (:files manifest)]
@@ -909,16 +926,25 @@
 
     (events/tap :progress {:section :manifest})
 
-    (let [index (bfc/update-index (map :id (:files manifest)))
+    (let [index (if inplace?
+                  {(-> manifest :files first :id)
+                   target-file-id}
+                  (bfc/update-index (map :id (:files manifest))))
+
           state {:media [] :index index}
           cfg   (-> cfg
                     (assoc ::entries entries)
                     (assoc ::manifest manifest)
+                    (assoc ::replace target-file-id)
                     (assoc ::bfc/timestamp timestamp))]
 
       (binding [bfc/*state* (volatile! state)]
         (db/tx-run! cfg (fn [cfg]
                           (bfc/disable-database-timeouts! cfg)
+
+                          (when inplace?
+                            (bfc/get-minimal-file cfg target-file-id ::db/for-update true))
+
                           (let [ids (->> (:files manifest)
                                          (reduce (fn [result {:keys [id] :as file}]
                                                    (let [name' (get file :name)
@@ -930,10 +956,14 @@
                                                                       (assoc ::file-name name')
                                                                       (import-file)))))
                                                  []))]
+
                             (import-file-relations cfg)
                             (import-storage-objects cfg)
                             (import-file-media cfg)
                             (import-file-thumbnails cfg)
+
+                            (when inplace?
+                              (bfc/invalidate-thumbnails cfg target-file-id))
 
                             (bfm/apply-pending-migrations! cfg)
 
