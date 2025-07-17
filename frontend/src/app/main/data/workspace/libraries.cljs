@@ -1143,10 +1143,14 @@
   ([library file-data]
    (assets-need-sync library file-data nil))
   ([library file-data ignore-until]
+   ;; (app.common.pprint/pprint library)
    (when (not= (:id library) (:id file-data))
      (let [sync-date (max (:synced-at library) (or ignore-until 0))]
        (when (> (:modified-at library) sync-date)
-         (ctf/used-assets-changed-since file-data library sync-date))))))
+         (not-empty (ctf/used-assets-changed-since file-data library sync-date)))))))
+
+
+;; FIXME: rename
 
 (defn notify-sync-file
   ;; file-id is the id of the modified library
@@ -1160,8 +1164,10 @@
             ignore-until (get file :ignore-sync-until)
 
             libraries-need-sync
-            (filter #(seq (assets-need-sync % file-data ignore-until))
-                    (vals (get state :files)))
+            (->> (vals (get state :files))
+                 (filter #(= (:current-file-id state) (:library-of %)))
+                 (filter #(assets-need-sync % file-data ignore-until)))
+
             do-more-info
             #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
 

@@ -98,7 +98,7 @@
    [:modified-at ::sm/inst]
    [:deleted-at {:optional true} ::sm/inst]
    [:project-id {:optional true} ::sm/uuid]
-   [:team-id {:optional true} ::sm/inst]
+   [:team-id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
    [:version :int]

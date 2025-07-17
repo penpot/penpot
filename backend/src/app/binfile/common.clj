@@ -16,6 +16,7 @@
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.storage :as sto]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -162,6 +163,22 @@
           (update :data fdata/process-objects (partial into {}))
           (update :data assoc :id id)
           (fmg/migrate-file libs)))))
+
+(def sql:get-minimal-file
+  "SELECT f.id,
+          f.revn,
+          f.modified_at,
+          f.deleted_at,
+          fd.backend AS backend,
+          fd.metadata AS metadata
+     FROM file AS f
+     LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
+    WHERE f.id = ?")
+
+(defn get-minimal-file
+  [cfg id & {:as opts}]
+  (-> (db/get-with-sql cfg [sql:get-minimal-file id] opts)
+      (d/update-when :metadata fdata/decode-metadata)))
 
 (def sql:get-file
   "SELECT f.id,
@@ -524,6 +541,27 @@
     (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
+(defn invalidate-thumbnails
+  [cfg file-id]
+  (let [storage (sto/resolve cfg)
+
+        sql-1
+        (str "update file_tagged_object_thumbnail "
+                 "   set deleted_at = now() "
+                 " where file_id=? returning media_id")
+
+        sql-2
+        (str "update file_thumbnail "
+             "   set deleted_at = now() "
+             " where file_id=? returning media_id")]
+
+    (run! #(sto/touch-object! storage %)
+          (sequence
+           (keep :media-id)
+           (concat
+            (db/exec! cfg [sql-1 file-id])
+            (db/exec! cfg [sql-2 file-id]))))))
+
 (defn process-file
   [cfg {:keys [id] :as file}]
   (let [libs (delay (get-resolved-file-libraries cfg file))]
@@ -644,11 +682,12 @@
   [{:keys [::timestamp] :as cfg} file & {:as opts}]
 
   (assert (dt/instant? timestamp) "expected valid timestamp")
-
   (let [file (-> file
                  (assoc :created-at timestamp)
                  (assoc :modified-at timestamp)
-                 (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5})))
+                 (cond-> (not (::overwrite cfg))
+                   (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5}))))
+                 (update :revn inc)
                  (update :features
                          (fn [features]
                            (-> (::features cfg #{})
@@ -665,7 +704,9 @@
         (when (ex/exception? result)
           (l/error :hint "file schema validation error" :cause result))))
 
-    (insert-file! cfg file opts)))
+    (if (::overwrite cfg)
+      (update-file! cfg file (assoc opts ::reset-migrations true))
+      (insert-file! cfg file opts))))
 
 (def ^:private sql:get-file-libraries
   "WITH RECURSIVE libs AS (

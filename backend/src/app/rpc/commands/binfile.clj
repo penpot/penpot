@@ -149,3 +149,35 @@
       {::audit/props {:file nil
                       :generated-by (:generated-by manifest)
                       :referer (:referer manifest)}})))
+
+
+(def ^:private schema:import-binfile-inplace
+  [:map {:title "import-binfile-inplace"}
+   [:name [:string {:max 250}]]
+   [:project-id ::sm/uuid]
+   [:file-id ::sm/uuid]
+   [:file ::media/upload]])
+
+(sv/defmethod ::import-binfile-inplace
+  "Import a penpot file in a binary format."
+  {::doc/added "2.20"
+   ::webhooks/event? true
+   ::sse/stream? true
+   ::sm/params schema:import-binfile-inplace}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id file-id file] :as params}]
+  (projects/check-edition-permissions! pool profile-id project-id)
+  (let [params   (-> params
+                     (assoc :profile-id profile-id)
+                     (assoc :version 3))
+
+        ;; FIXME: check permissions
+        cfg      (-> cfg
+                     (assoc ::bfc/file-id file-id)
+                     (assoc ::bfc/overwrite true))
+        manifest (bf.v3/get-manifest (:path file))]
+
+    (with-meta
+      (sse/response (partial import-binfile cfg params))
+      {::audit/props {:file nil
+                      :generated-by (:generated-by manifest)
+                      :referer (:referer manifest)}})))

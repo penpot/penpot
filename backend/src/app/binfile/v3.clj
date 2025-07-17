@@ -286,10 +286,12 @@
                  (assoc :options (:options data))
 
                  :always
-                 (dissoc :data)
+                 (dissoc :data))
 
+          file (cond-> file
                  :always
                  (encode-file))
+
           path (str "files/" file-id ".json")]
       (write-entry! output path file))
 
@@ -759,7 +761,7 @@
           file  (ctf/check-file file)]
 
       (bfm/register-pending-migrations! cfg file)
-      (bfc/save-file! cfg file ::db/return-keys false)
+      (bfc/save-file! cfg file)
 
       file-id')))
 
@@ -855,7 +857,8 @@
              :file-id (str (:file-id params))
              ::l/sync? true)
 
-      (db/insert! conn :file-media-object params))))
+      (db/insert! conn :file-media-object params
+                  ::db/on-conflict-do-nothing? (::bfc/overwrite cfg)))))
 
 (defn- import-file-thumbnails
   [{:keys [::db/conn] :as cfg}]
@@ -875,17 +878,22 @@
              :media-id (str media-id)
              ::l/sync? true)
 
-      (db/insert! conn :file-tagged-object-thumbnail params))))
+      (db/insert! conn :file-tagged-object-thumbnail params
+                  {::db/on-conflict-do-nothing? true}))))
 
 (defn- import-files
-  [{:keys [::bfc/timestamp ::bfc/input ::bfc/name] :or {timestamp (dt/now)} :as cfg}]
+  [{:keys [::bfc/timestamp ::bfc/input ::bfc/file-id ::bfc/name ::bfc/overwrite] :or {timestamp (dt/now)} :as cfg}]
 
   (assert (instance? ZipFile input) "expected zip file")
   (assert (dt/instant? timestamp) "expected valid instant")
 
   (let [manifest (-> (read-manifest input)
                      (validate-manifest))
-        entries  (read-zip-entries input)]
+        entries  (read-zip-entries input)
+        cfg      (-> cfg
+                     (assoc ::entries entries)
+                     (assoc ::manifest manifest)
+                     (assoc ::bfc/timestamp timestamp))]
 
     (when-not (= "penpot/export-files" (:type manifest))
       (ex/raise :type :validation
@@ -893,6 +901,11 @@
                 :hint "unexpected type on manifest"
                 :manifest manifest))
 
+    (when (and overwrite (not= 1 (count (:files manifest))))
+      (ex/raise :type :validation
+                :code :invalid-condition
+                :hint "unable to perform inplace update with binfile containing more than 1 file"
+                :manifest manifest))
 
     ;; Check if all files referenced on manifest are present
     (doseq [{file-id :id features :features} (:files manifest)]
@@ -909,35 +922,41 @@
 
     (events/tap :progress {:section :manifest})
 
-    (let [index (bfc/update-index (map :id (:files manifest)))
-          state {:media [] :index index}
-          cfg   (-> cfg
-                    (assoc ::entries entries)
-                    (assoc ::manifest manifest)
-                    (assoc ::bfc/timestamp timestamp))]
+    (binding [bfc/*options* cfg
+              bfc/*state*   (volatile! {:media [] :index {}})]
 
-      (binding [bfc/*state* (volatile! state)]
-        (db/tx-run! cfg (fn [cfg]
-                          (bfc/disable-database-timeouts! cfg)
-                          (let [ids (->> (:files manifest)
-                                         (reduce (fn [result {:keys [id] :as file}]
-                                                   (let [name' (get file :name)
-                                                         name' (if (map? name)
-                                                                 (get name id)
-                                                                 name')]
-                                                     (conj result (-> cfg
-                                                                      (assoc ::file-id id)
-                                                                      (assoc ::file-name name')
-                                                                      (import-file)))))
-                                                 []))]
-                            (import-file-relations cfg)
-                            (import-storage-objects cfg)
-                            (import-file-media cfg)
-                            (import-file-thumbnails cfg)
+      (vswap! bfc/*state* update :index bfc/update-index (map :id (:files manifest)))
 
-                            (bfm/apply-pending-migrations! cfg)
+      (db/tx-run! cfg
+                  (fn [cfg]
+                    (bfc/disable-database-timeouts! cfg)
 
-                            ids)))))))
+                    (when overwrite
+                      (bfc/get-minimal-file cfg file-id ::db/for-update true))
+
+                    (let [ids (->> (:files manifest)
+                                   (reduce (fn [result {:keys [id] :as file}]
+                                             (let [name' (get file :name)
+                                                   name' (if (map? name)
+                                                           (get name id)
+                                                           name')]
+                                               (conj result (-> cfg
+                                                                (assoc ::file-id id)
+                                                                (assoc ::file-name name')
+                                                                (import-file)))))
+                                           []))]
+
+                      (import-file-relations cfg)
+                      (import-storage-objects cfg)
+                      (import-file-media cfg)
+                      (import-file-thumbnails cfg)
+
+                      (when overwrite
+                        (bfc/invalidate-thumbnails cfg file-id))
+
+                      (bfm/apply-pending-migrations! cfg)
+
+                      ids))))))
 
 ;; --- PUBLIC API
 

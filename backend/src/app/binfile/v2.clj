@@ -297,7 +297,7 @@
                         (set/difference (:features file)))]
       (vswap! bfc/*state* update :pending-to-migrate (fnil conj []) [feature (:id file)]))
 
-    (bfc/save-file! cfg file ::db/return-keys false))
+    (bfc/save-file! cfg file))
 
   (doseq [thumbnail (read-seq cfg :file-object-thumbnail file-id)]
     (let [thumbnail (-> thumbnail
