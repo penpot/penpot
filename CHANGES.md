@@ -7,7 +7,8 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :heart: Community contributions (Thank you!)
-- Clarify message when inviting existing team members to make it more user-friendly and clear which invitations will be sent. [Taiga #11441](https://tree.taiga.io/project/penpot/issue/11441)
+- Clarify message when inviting existing team members to make it more user-friendly and clear which invitations will be sent. [Taiga #11441](https://tree.taiga.io/project/penpot/issue/11441) by [@iprithvitharun](https://github.com/iprithvitharun)
+- Update email change confirmation message for clarity and correct grammar. [GitHub #6786](https://github.com/penpot/penpot/issues/6786) by [@iprithvitharun](https://github.com/iprithvitharun)
 
 ### :sparkles: New features & Enhancements
 - Add visual indicator for new comments in the workspace [Taiga #11328](https://tree.taiga.io/project/penpot/issue/11328)
