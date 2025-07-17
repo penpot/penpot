@@ -257,7 +257,7 @@
                  (fdata/resolve-file-data cfg))
 
             will-migrate?
-            (and migrate? (fmg/need-migration? file))]
+            (and migrate? false (fmg/need-migration? file))]
 
         (if decode?
           (cond->> (fdata/decode-file-data cfg file)
@@ -602,8 +602,6 @@
     (feat.fmigr/upsert-migrations! conn file))
 
   (let [file (encode-file cfg file)]
-
-    (app.common.pprint/pprint (file->params file))
     (db/insert! conn :file
                 (file->params file)
                 {::db/return-keys false})

@@ -20,6 +20,7 @@
    [app.common.logging :as l]
    [app.common.pprint :as p]
    [app.common.schema :as sm]
+   [app.common.uri :as uri]
    [app.common.spec :as us]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -935,6 +936,30 @@
                                :features cfeat/default-features
                                :metadata {:local-proxy-ref-id proxy-id}
                                :backend "local-proxy"}
+                              {:with-data false})
+                        ]
+                    ;; (app.common.pprint/pprint file)
+                    (bfc/insert-file! cfg file
+                                      ::bfc/overwrite-storage-backend true))))))
+
+
+(defn create-remote-proxy-file
+  [& {:keys [team-id project-id proxy-id proxy-uri proxy-token]}]
+  (let [team-id    (h/parse-uuid team-id)
+        project-id (h/parse-uuid project-id)
+        proxy-id   (h/parse-uuid proxy-id)
+        proxy-uri  (uri/parse proxy-uri)]
+    (db/tx-run! main/system
+                (fn [cfg]
+                  (let [file (ctf/make-file
+                              {:project-id project-id
+                               :name "Remote Proxy"
+                               ;; :migrations []
+                               :features cfeat/default-features
+                               :metadata {:remote-proxy-ref-id proxy-id
+                                          :remote-proxy-uri proxy-uri
+                                          :remote-proxy-token proxy-token}
+                               :backend "remote-proxy"}
                               {:with-data false})
                         ]
                     ;; (app.common.pprint/pprint file)

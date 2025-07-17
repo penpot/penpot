@@ -11,9 +11,13 @@
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
+   [app.common.uri :as uri]
    [app.common.logging :as l]
+   [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.types.path :as path]
+   [app.common.transit :as t]
+   [app.http.client :as http]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -24,6 +28,11 @@
    [app.util.time :as dt]
    [app.worker :as wrk]
    [promesa.exec :as px]))
+
+(declare encode-metadata-with-schema)
+
+(def migration-safe-backends
+  #{"db" "storage"})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OBJECTS-MAP
@@ -121,6 +130,7 @@
         (d/update-vals update-fn')
         (update :pages-index d/update-vals update-fn'))))
 
+;; FIXME: this does not support proxied files with pointers.
 (defn realize-pointers
   "Process a file and remove all instances of pointers realizing them to
   a plain data. Used in operation where is more efficient have the
@@ -239,16 +249,60 @@
   (let [get-file (requiring-resolve 'app.binfile.common/get-file)
         ref-id   (-> object :metadata :local-proxy-ref-id)
         proxied  (get-file cfg ref-id)]
-    (merge object
-           (select-keys proxied [:modified-at
-                                 :deleted-at
-                                 :revn
-                                 :data
-                                 :version
-                                 :migrations
-                                 :features
-                                 :metadata
-                                 :backend]))))
+
+    (-> object
+        (merge (select-keys proxied [:modified-at
+                                     :deleted-at
+                                     :revn
+                                     :data
+                                     :version
+                                     :migrations
+                                     :features
+                                     :metadata
+                                     :backend]))
+        (update ::proxies conj ref-id))))
+
+(defn get-remote-file
+  [{:keys [::http/client]} metadata file-id]
+  (let [dest-url
+        (-> (:remote-proxy-uri metadata)
+            (assoc :path "/api/rpc/command/get-file")
+            (assoc :query (uri/map->query-string
+                           {:id file-id
+                            :features cfeat/default-features})))
+
+        token
+        (:remote-proxy-token metadata)
+
+        {:keys [body] :as response}
+        (http/req! client
+                   {:method :get
+                    :uri (str dest-url)
+                    :headers {"Authorization" (str "Token " token)}}
+                   {:response-type :string :sync? true})]
+
+    (t/decode-str body)))
+
+(defmethod resolve-file-data "remote-proxy"
+  [cfg object]
+  (let [ref-id   (-> object :metadata :remote-proxy-ref-id)
+        token    (-> object :metadata :remote-proxy-token)
+        base-uri (-> object :metadata :remote-proxy-uri)
+        metadata (-> object :metadata)
+
+        proxied  (get-remote-file cfg metadata ref-id)]
+
+    (-> object
+        (merge (select-keys proxied [:modified-at
+                                     :deleted-at
+                                     :revn
+                                     :data
+                                     :version
+                                     :migrations
+                                     :features
+                                     ]))
+        (update ::proxies conj ref-id))))
+
 
 (defn decode-file-data
   [{:keys [::wrk/executor]} {:keys [data] :as file}]
@@ -271,7 +325,7 @@
 
 (defn- create-in-database
   [cfg {:keys [id file-id created-at modified-at type backend data metadata]}]
-  (let [metadata    (some-> metadata db/json)
+  (let [metadata    (some-> metadata encode-metadata-with-schema db/json)
         created-at  (or created-at (dt/now))
         modified-at (or modified-at created-at)]
     (db/exec-one! cfg [sql:insert-file-data
@@ -285,7 +339,7 @@
 
 (defn- upsert-in-database
   [cfg {:keys [id file-id created-at modified-at type backend data metadata]}]
-  (let [metadata    (some-> metadata db/json)
+  (let [metadata    (some-> metadata encode-metadata-with-schema db/json)
         created-at  (or created-at (dt/now))
         modified-at (or modified-at created-at)]
 
@@ -310,6 +364,10 @@
   (dissoc params :metadata))
 
 (defmethod handle-persistence "local-proxy"
+  [_ params]
+  params)
+
+(defmethod handle-persistence "remote-proxy"
   [_ params]
   params)
 
@@ -368,10 +426,16 @@
 (def ^:private schema:metadata
   [:map {:title "Metadata"}
    [:storage-ref-id {:optional true} ::sm/uuid]
-   [:local-proxy-ref-id {:optional true} ::sm/uuid]])
+   [:local-proxy-ref-id {:optional true} ::sm/uuid]
+   [:remote-proxy-ref-id {:optional true} ::sm/uuid]
+   [:remote-proxy-uri {:optional true} ::sm/uri]
+   [:remote-proxy-token {:optional true} ::sm/text]])
 
 (def decode-metadata-with-schema
   (sm/decoder schema:metadata sm/json-transformer))
+
+(def encode-metadata-with-schema
+  (sm/encoder schema:metadata sm/json-transformer))
 
 (defn decode-metadata
   [metadata]
@@ -384,7 +448,7 @@
    [:id ::sm/uuid]
    [:type [:enum "main" "snapshot"]]
    [:file-id ::sm/uuid]
-   [:backend {:optional true} [:enum "db" "storage" "local-proxy"]]
+   [:backend {:optional true} [:enum "db" "storage" "local-proxy" "remote-proxy"]]
    [:metadata {:optional true} [:maybe schema:metadata]]
    [:data {:optional true} bytes?]
    [:created-at {:optional true} ::sm/inst]

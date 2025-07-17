@@ -15,6 +15,7 @@
    [app.common.logging :as l]
    [app.common.perf :as perf]
    [app.common.pprint :as pp]
+   [app.common.uri :as u]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as smdj]
    [app.common.schema.desc-native :as smdn]
