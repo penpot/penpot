@@ -20,6 +20,7 @@
 - Provide CSS `mix-blend-mode` property in code editor when present on shape [Taiga #11282](https://tree.taiga.io/project/penpot/issue/11282) 
 - Add the option to import tokens in a .zip file. [Taiga #11378](https://tree.taiga.io/project/penpot/us/11378)
 - New typography token type - font size token [Taiga #10938](https://tree.taiga.io/project/penpot/us/10938)
+- Highlight first found font in the font list when searching, and allow Enter to select it. [Taiga #3204](https://tree.taiga.io/project/penpot/issue/3204)
 
 ### :bug: Bugs fixed
 - Copying font size does not copy the unit [Taiga #11143](https://tree.taiga.io/project/penpot/issue/11143)
