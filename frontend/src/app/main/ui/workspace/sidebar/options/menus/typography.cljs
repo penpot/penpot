@@ -112,13 +112,8 @@
         recent-fonts (mf/with-memo [state recent-fonts]
                        (filter-fonts state recent-fonts))
 
-        full-size?   (boolean (and full-size show-recent))
 
-        ;; --- NEW: auto-select first font on search ---
-        _auto-select-first
-        (mf/with-effect [(:term state) fonts]
-          (when (and (seq fonts) (not (str/blank? (:term state))))
-            (reset! selected (first fonts))))
+        full-size?   (boolean (and full-size show-recent))
 
         select-next
         (mf/use-fn
@@ -138,13 +133,13 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps fonts selected)
+         (mf/deps fonts)
          (fn [event]
            (cond
              (kbd/up-arrow? event)   (select-prev event)
              (kbd/down-arrow? event) (select-next event)
              (kbd/esc? event)        (on-close)
-             (kbd/enter? event)      (do (on-select @selected) (on-close))
+             (kbd/enter? event)      (on-close)
              :else                   (dom/focus! (mf/ref-val input)))))
 
         on-filter-change
