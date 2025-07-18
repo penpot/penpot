@@ -17,6 +17,7 @@
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -35,7 +36,12 @@
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [goog.events :as events]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.util.text-svg-position :as tsp]
+   [app.main.data.workspace.texts :as dwt]
+   [app.common.text :as common-text]))
+
+(defonce preview-position-data* (atom {}))
 
 (defn- attr->string [value]
   (if (= value :multiple)
@@ -66,11 +72,9 @@
         on-click (mf/use-fn (mf/deps font) #(on-click font))
         on-mouse-enter (mf/use-fn (mf/deps font on-hover) 
                        (fn []
-                         (js/console.log "Mouse enter on font" (:name font))
                          (when on-hover (on-hover font))))
         on-mouse-leave (mf/use-fn (mf/deps on-leave) 
                        (fn []
-                         (js/console.log "Mouse leave on font")
                          (when on-leave (on-leave))))]
 
     (mf/use-effect
@@ -175,54 +179,61 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [font]
-           (js/console.log "Font hover triggered" font ids)
            (when (and ids (seq ids))
              (let [{:keys [family] :as font-data} font
-                   {:keys [id name weight style]} (fonts/get-default-variant font)]
-               (js/console.log "Setting preview font" {:font-id (:id font)
-                                                       :font-family family
-                                                       :font-variant-id (or id name)
-                                                       :font-weight weight
-                                                       :font-style style})
+                   {:keys [id name weight style]} (fonts/get-default-variant font)
+                   font-family family
+                   font-weight weight
+                   font-style style]
                (st/emit! (dw/set-preview-font ids {:font-id (:id font)
-                                                   :font-family family
+                                                   :font-family font-family
                                                    :font-variant-id (or id name)
-                                                   :font-weight weight
-                                                   :font-style style}))))))
+                                                   :font-weight font-weight
+                                                   :font-style font-style}))
+               (doseq [shape-id ids]
+                 (when-not (get @preview-position-data* shape-id)
+                   (let [shape (get-in @st/state [:workspace-page-objects shape-id])
+                         original-pos (:position-data shape)]
+                     (swap! preview-position-data* assoc shape-id original-pos)))
+                 ;; Espera a que la fuente esté cargada antes de recalcular, y añade un pequeño delay
+                 (-> (fonts/ensure-loaded! (:id font))
+                     (.then (fn [_]
+                              (js/Promise.
+                                (fn [resolve _]
+                                  (js/setTimeout #(resolve true) 50)))))
+                     (.then (fn [_]
+                              (tsp/calc-position-data shape-id)))
+                     (.then (fn [new-pos]
+                              (js/console.log "Preview position-data" shape-id new-pos)
+                              (when (and new-pos (not (empty? new-pos)))
+                                (st/emit! (dwt/update-position-data shape-id new-pos)))))))))))
 
         on-font-leave
         (mf/use-fn
          (mf/deps ids)
          (fn [_]
-           (js/console.log "Font leave triggered" ids)
            (when (and ids (seq ids))
-             (js/console.log "Unsetting preview font")
+             (doseq [shape-id ids]
+               (when-let [original-pos (get @preview-position-data* shape-id)]
+                 (st/emit! (dwt/update-position-data shape-id original-pos))
+                 (swap! preview-position-data* dissoc shape-id)))
              (st/emit! (dw/unset-preview-font ids)))))]
 
-    (mf/with-effect [fonts]
-      (let [key (events/listen js/document "keydown" on-key-down)]
-        #(events/unlistenByKey key)))
+        ;; Removed the effect that was calling on-select automatically
+        ;; (mf/with-effect [@selected]
+        ;;   (on-select @selected))
 
-    (mf/with-effect [@selected]
-      (when-let [inst (mf/ref-val flist)]
-        (when-let [index (:index @selected)]
-          (.scrollToRow ^js inst index))))
+        (mf/with-effect []
+          (st/emit! (dsc/push-shortcuts :typography {}))
+          (fn []
+            (st/emit! (dsc/pop-shortcuts :typography))))
 
-    ;; Removed the effect that was calling on-select automatically
-    ;; (mf/with-effect [@selected]
-    ;;   (on-select @selected))
-
-    (mf/with-effect []
-      (st/emit! (dsc/push-shortcuts :typography {}))
-      (fn []
-        (st/emit! (dsc/pop-shortcuts :typography))))
-
-    (mf/with-effect []
-      (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
-            inst   (mf/ref-val flist)]
-        (tm/schedule
-         #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
-            (.scrollToPosition ^js inst offset)))))
+        (mf/with-effect []
+          (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
+                inst   (mf/ref-val flist)]
+            (tm/schedule
+             #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
+                (.scrollToPosition ^js inst offset)))))
 
     [:div {:class (stl/css :font-selector)}
      [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}

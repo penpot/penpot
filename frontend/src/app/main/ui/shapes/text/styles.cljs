@@ -17,7 +17,7 @@
    [cuerdas.core :as str]
    [app.main.refs :as refs]
    [rumext.v2 :as mf]))
-   
+
 (defn generate-root-styles
   ([props node]
    (generate-root-styles props node false))
@@ -96,7 +96,6 @@
 
           fontsdb         (deref fonts/fontsdb)
 
-          _ (js/console.log "Preview font for" shape-id ":" preview-font)
 
           base            #js {:textDecoration text-decoration
                                :textTransform text-transform
