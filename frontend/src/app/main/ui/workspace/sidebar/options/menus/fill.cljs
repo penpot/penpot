@@ -11,6 +11,7 @@
    [app.common.types.fill :as types.fill]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.config :as cfg]
+   [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -114,6 +115,7 @@
          (mf/deps ids multiple? empty-fills?)
          (fn [_]
            (when can-add-fills?
+             (st/emit! (udw/trigger-bounding-box-cloaking ids))
              (st/emit! (dc/add-fill ids {:color default-color
                                          :opacity 1}))
              (when (or multiple? empty-fills?)
@@ -124,6 +126,7 @@
          (mf/deps ids)
          (fn [color index]
            (let [color (select-keys color ctc/color-attrs)]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids))
              (st/emit! (dc/change-fill ids color index)))))
 
         on-reorder

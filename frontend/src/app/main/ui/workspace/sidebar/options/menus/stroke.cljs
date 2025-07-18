@@ -10,6 +10,7 @@
    [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar]]
@@ -56,6 +57,7 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [index color]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (st/emit! (dc/change-stroke-color ids color index))))
 
 
@@ -63,18 +65,21 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [index]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (st/emit! (dc/remove-stroke ids index))))
 
         handle-remove-all
         (mf/use-fn
          (mf/deps ids)
          (fn [_]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (st/emit! (dc/remove-all-strokes ids))))
 
         on-color-detach
         (mf/use-fn
          (mf/deps ids)
          (fn [index color]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (let [color (-> color
                            (dissoc :ref-id :ref-file))]
              (st/emit! (dc/change-stroke-color ids color index)))))
@@ -84,22 +89,26 @@
          (mf/deps ids)
          (fn [new-index]
            (fn [index]
+             (st/emit! (udw/trigger-bounding-box-cloaking ids))
              (st/emit! (dc/reorder-strokes ids index new-index)))))
 
         on-stroke-style-change
         (mf/use-fn
          (mf/deps ids)
          (fn [index value]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (st/emit! (dc/change-stroke-attrs ids {:stroke-style value} index))))
 
         on-stroke-alignment-change
         (fn [index value]
           (when-not (str/empty? value)
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
             (st/emit! (dc/change-stroke-attrs ids {:stroke-alignment value} index))))
 
         on-stroke-width-change
         (fn [index value]
           (when-not (str/empty? value)
+            (st/emit! (udw/trigger-bounding-box-cloaking ids))
             (st/emit! (dc/change-stroke-attrs ids {:stroke-width value} index))))
 
         open-caps-select
@@ -128,10 +137,12 @@
 
         on-stroke-cap-start-change
         (fn [index value]
+          (st/emit! (udw/trigger-bounding-box-cloaking ids))
           (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-start value} index)))
 
         on-stroke-cap-end-change
         (fn [index value]
+          (st/emit! (udw/trigger-bounding-box-cloaking ids))
           (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-end value} index)))
 
         on-stroke-cap-switch
@@ -140,10 +151,12 @@
                 stroke-cap-end   (get-in values [:strokes index :stroke-cap-end])]
             (when (and (not= stroke-cap-start :multiple)
                        (not= stroke-cap-end :multiple))
+              (st/emit! (udw/trigger-bounding-box-cloaking ids))
               (st/emit! (dc/change-stroke-attrs ids {:stroke-cap-start stroke-cap-end
                                                      :stroke-cap-end stroke-cap-start} index)))))
         on-add-stroke
         (fn [_]
+          (st/emit! (udw/trigger-bounding-box-cloaking ids))
           (st/emit! (dc/add-stroke ids {:stroke-alignment :inner
                                         :stroke-style :solid
                                         :stroke-color clr/black

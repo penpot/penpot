@@ -90,6 +90,7 @@
                (wasm.api/use-shape (:id shape))
                (wasm.api/set-shape-blend-mode value)))
 
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (st/emit! (dw/set-preview-blend-mode ids value))))
 
         handle-blend-mode-leave
@@ -101,33 +102,38 @@
 
         handle-opacity-change
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change ids)
          (fn [value]
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (let [value (/ value 100)]
              (on-change :opacity value))))
 
         handle-set-hidden
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change ids)
          (fn [_]
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (on-change :hidden true)))
 
         handle-set-visible
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change ids)
          (fn [_]
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (on-change :hidden false)))
 
         handle-set-blocked
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change ids)
          (fn [_]
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (on-change :blocked true)))
 
         handle-set-unblocked
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change ids)
          (fn [_]
+           (st/emit! (dw/trigger-bounding-box-cloaking ids))
            (on-change :blocked false)))
 
         options
