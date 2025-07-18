@@ -16,7 +16,8 @@
    [app.main.ui.shapes.fills :as fills]
    [app.main.ui.shapes.gradients :as grad]
    [app.util.object :as obj]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [app.main.refs :as refs]))
 
 (def fill-attrs [:fill-color :fill-color-gradient :fill-opacity])
 
@@ -41,6 +42,8 @@
         shape (cond-> shape (:is-mask? shape) set-white-fill)
 
         {:keys [x y width height position-data]} shape
+
+        preview-font (mf/deref (app.main.refs/workspace-preview-font-by-id (:id shape)))
 
         transform (gsh/transform-str shape)
 
@@ -72,6 +75,14 @@
      [:> :g group-props
       (for [[index data] (d/enumerate position-data)]
         (let [rtl? (= "rtl" (:direction data))
+
+              ;; --- PREVIEW FONT OVERRIDE ---
+              data (if preview-font
+                     (merge data
+                            {:font-family (:font-family preview-font)
+                             :font-weight (:font-weight preview-font)
+                             :font-style  (:font-style preview-font)})
+                     data)
 
               browser-props
               (cond

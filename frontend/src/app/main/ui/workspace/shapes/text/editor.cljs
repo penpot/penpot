@@ -66,7 +66,7 @@
                    (.toJS)
                    (js->clj :keywordize-keys true))
                (txt/styles-to-attrs styles))]
-    (sts/generate-text-styles shape data {:show-text? false})))
+    (sts/generate-text-styles (:id shape) data {:show-text? false})))
 
 (def default-decorator
   (ted/create-decorator "PENPOT_SELECTION" selection-component))

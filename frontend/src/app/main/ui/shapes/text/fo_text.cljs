@@ -22,9 +22,10 @@
         parent (obj/get props "parent")
         shape  (obj/get props "shape")
         text   (:text node)
+        shape-id (:id shape)
         style  (if (= text "")
-                 (sts/generate-text-styles shape parent)
-                 (sts/generate-text-styles shape node))]
+                 (sts/generate-text-styles shape-id parent)
+                 (sts/generate-text-styles shape-id node))]
     [:span.text-node {:style style}
      (if (= text "") "\u00A0" text)]))
 
