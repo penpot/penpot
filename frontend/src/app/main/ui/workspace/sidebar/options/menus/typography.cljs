@@ -16,6 +16,7 @@
    [app.main.data.common :as dcm]
    [app.main.data.fonts :as fts]
    [app.main.data.shortcuts :as dsc]
+   [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
@@ -60,9 +61,17 @@
 
 (mf/defc font-item*
   {::mf/wrap [mf/memo]}
-  [{:keys [font is-current on-click style]}]
+  [{:keys [font is-current on-click style on-hover on-leave]}]
   (let [item-ref (mf/use-ref)
-        on-click (mf/use-fn (mf/deps font) #(on-click font))]
+        on-click (mf/use-fn (mf/deps font) #(on-click font))
+        on-mouse-enter (mf/use-fn (mf/deps font on-hover) 
+                       (fn []
+                         (js/console.log "Mouse enter on font" (:name font))
+                         (when on-hover (on-hover font))))
+        on-mouse-leave (mf/use-fn (mf/deps on-leave) 
+                       (fn []
+                         (js/console.log "Mouse leave on font")
+                         (when on-leave (on-leave))))]
 
     (mf/use-effect
      (mf/deps is-current)
@@ -75,7 +84,9 @@
     [:div {:class (stl/css :font-wrapper)
            :style style
            :ref item-ref
-           :on-click on-click}
+           :on-click on-click
+           :on-mouse-enter on-mouse-enter
+           :on-mouse-leave on-mouse-leave}
      [:div {:class  (stl/css-case :font-item true
                                   :selected is-current)}
       [:span {:class (stl/css :label)} (:name font)]
@@ -95,7 +106,7 @@
     (into [] xform fonts)))
 
 (mf/defc font-selector*
-  [{:keys [on-select on-close current-font show-recent full-size]}]
+  [{:keys [on-select on-close current-font show-recent full-size ids]}]
   (let [selected     (mf/use-state current-font)
         state*       (mf/use-state
                       #(do {:term "" :backends #{}}))
@@ -112,8 +123,13 @@
         recent-fonts (mf/with-memo [state recent-fonts]
                        (filter-fonts state recent-fonts))
 
-
         full-size?   (boolean (and full-size show-recent))
+
+        ;; --- NEW: auto-select first font on search ---
+        _auto-select-first
+        (mf/with-effect [(:term state) fonts]
+          (when (and (seq fonts) (not (str/blank? (:term state))))
+            (reset! selected (first fonts))))
 
         select-next
         (mf/use-fn
@@ -133,13 +149,13 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps fonts)
+         (mf/deps fonts selected)
          (fn [event]
            (cond
              (kbd/up-arrow? event)   (select-prev event)
              (kbd/down-arrow? event) (select-next event)
              (kbd/esc? event)        (on-close)
-             (kbd/enter? event)      (on-close)
+             (kbd/enter? event)      (do (on-select @selected) (on-close))
              :else                   (dom/focus! (mf/ref-val input)))))
 
         on-filter-change
@@ -152,7 +168,36 @@
          (mf/deps on-select on-close)
          (fn [font]
            (on-select font)
-           (on-close)))]
+           (on-close)))
+
+        ;; Preview font handlers
+        on-font-hover
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [font]
+           (js/console.log "Font hover triggered" font ids)
+           (when (and ids (seq ids))
+             (let [{:keys [family] :as font-data} font
+                   {:keys [id name weight style]} (fonts/get-default-variant font)]
+               (js/console.log "Setting preview font" {:font-id (:id font)
+                                                       :font-family family
+                                                       :font-variant-id (or id name)
+                                                       :font-weight weight
+                                                       :font-style style})
+               (st/emit! (dw/set-preview-font ids {:font-id (:id font)
+                                                   :font-family family
+                                                   :font-variant-id (or id name)
+                                                   :font-weight weight
+                                                   :font-style style}))))))
+
+        on-font-leave
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [_]
+           (js/console.log "Font leave triggered" ids)
+           (when (and ids (seq ids))
+             (js/console.log "Unsetting preview font")
+             (st/emit! (dw/unset-preview-font ids)))))]
 
     (mf/with-effect [fonts]
       (let [key (events/listen js/document "keydown" on-key-down)]
@@ -163,8 +208,9 @@
         (when-let [index (:index @selected)]
           (.scrollToRow ^js inst index))))
 
-    (mf/with-effect [@selected]
-      (on-select @selected))
+    ;; Removed the effect that was calling on-select automatically
+    ;; (mf/with-effect [@selected]
+    ;;   (on-select @selected))
 
     (mf/with-effect []
       (st/emit! (dsc/push-shortcuts :typography {}))
@@ -193,6 +239,8 @@
                             :font font
                             :style {}
                             :on-click on-select-and-close
+                            :on-hover on-font-hover
+                            :on-leave on-font-leave
                             :is-current (= (:id font) (:id @selected))}])])]
 
       [:div {:class (stl/css-case :fonts-list true
@@ -201,7 +249,7 @@
         (fn [props]
           (let [width  (unchecked-get props "width")
                 height (unchecked-get props "height")
-                render #(row-renderer fonts @selected on-select-and-close %)]
+                render #(row-renderer fonts @selected on-select-and-close on-font-hover on-font-leave %)]
             (mf/html
              [:> rvt/List #js {:height height
                                :ref flist
@@ -211,7 +259,7 @@
                                :rowRenderer render}])))]]]]))
 
 (defn row-renderer
-  [fonts selected on-select props]
+  [fonts selected on-select on-hover on-leave props]
   (let [index (unchecked-get props "index")
         key   (unchecked-get props "key")
         style (unchecked-get props "style")
@@ -221,11 +269,13 @@
                      :font font
                      :style style
                      :on-click on-select
+                     :on-hover on-hover
+                     :on-leave on-leave
                      :is-current (= (:id font) (:id selected))}])))
 
 (mf/defc font-options
   {::mf/wrap-props false}
-  [{:keys [values on-change on-blur show-recent full-size-selector]}]
+  [{:keys [values on-change on-blur show-recent full-size-selector ids]}]
   (let [{:keys [font-id font-size font-variant-id]} values
 
         font-id         (or font-id (:font-id txt/default-text-attrs))
@@ -297,7 +347,8 @@
          :on-close on-font-selector-close
          :on-select on-font-select
          :full-size full-size-selector
-         :show-recent show-recent}])
+         :show-recent show-recent
+         :ids ids}])
 
      [:div {:class (stl/css :font-option)
             :title (tr "inspect.attributes.typography.font-family")

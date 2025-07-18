@@ -1243,6 +1243,24 @@
     (update [_ state]
       (reduce #(update %1 :workspace-preview-blend dissoc %2) state ids))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Preview fonts
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn set-preview-font
+  [ids font-data]
+  (ptk/reify ::set-preview-font
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce #(assoc-in %1 [:workspace-preview-font %2] font-data) state ids))))
+
+(defn unset-preview-font
+  [ids]
+  (ptk/reify ::unset-preview-font
+    ptk/UpdateEvent
+    (update [_ state]
+      (reduce #(update %1 :workspace-preview-font dissoc %2) state ids))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Components
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1386,3 +1404,9 @@
 (dm/export dwpg/duplicate-page)
 (dm/export dwpg/rename-page)
 (dm/export dwpg/delete-page)
+
+;; Preview
+;; (dm/export set-preview-blend-mode)
+;; (dm/export unset-preview-blend-mode)
+;; (dm/export set-preview-font)
+;; (dm/export unset-preview-font)

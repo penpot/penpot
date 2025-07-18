@@ -14,8 +14,10 @@
    [app.main.ui.formats :as fmt]
    [app.util.color :as uc]
    [app.util.object :as obj]
-   [cuerdas.core :as str]))
-
+   [cuerdas.core :as str]
+   [app.main.refs :as refs]
+   [rumext.v2 :as mf]))
+   
 (defn generate-root-styles
   ([props node]
    (generate-root-styles props node false))
@@ -66,88 +68,104 @@
       (some? text-align)        (obj/set! "textAlign" text-align))))
 
 (defn generate-text-styles
-  ([shape data]
-   (generate-text-styles shape data nil))
-
-  ([{:keys [grow-type] :as shape} data {:keys [show-text?] :or {show-text? true}}]
+  ([shape-id data show-text? grow-type preview-font]
    (let [letter-spacing  (:letter-spacing data 0)
-         text-decoration (:text-decoration data)
-         text-transform  (:text-transform data)
+          text-decoration (:text-decoration data)
+          text-transform  (:text-transform data)
 
-         font-id         (or (:font-id data)
-                             (:font-id txt/default-text-attrs))
+          font-id         (or (:font-id data)
+                              (:font-id txt/default-text-attrs))
 
-         font-variant-id (:font-variant-id data)
+          font-variant-id (:font-variant-id data)
 
-         font-size       (:font-size data)
+          font-size       (:font-size data)
 
-         fill-color      (or (-> data :fills first :fill-color) (:fill-color data))
-         fill-opacity    (or (-> data :fills first :fill-opacity) (:fill-opacity data))
-         fill-gradient   (or (-> data :fills first :fill-color-gradient) (:fill-color-gradient data))
+          fill-color      (or (-> data :fills first :fill-color) (:fill-color data))
+          fill-opacity    (or (-> data :fills first :fill-opacity) (:fill-opacity data))
+          fill-gradient   (or (-> data :fills first :fill-color-gradient) (:fill-color-gradient data))
 
-         [r g b a]       (cc/hex->rgba fill-color fill-opacity)
-         text-color      (when (and (some? fill-color) (some? fill-opacity))
-                           (str/format "rgba(%s, %s, %s, %s)" r g b a))
+          [r g b a]       (cc/hex->rgba fill-color fill-opacity)
+          text-color      (when (and (some? fill-color) (some? fill-opacity))
+                            (str/format "rgba(%s, %s, %s, %s)" r g b a))
 
-         gradient?       (some? fill-gradient)
+          gradient?       (some? fill-gradient)
 
-         text-color      (if gradient?
-                           (uc/color->background {:gradient fill-gradient})
-                           text-color)
+          text-color      (if gradient?
+                            (uc/color->background {:gradient fill-gradient})
+                            text-color)
 
-         fontsdb         (deref fonts/fontsdb)
+          fontsdb         (deref fonts/fontsdb)
 
-         base            #js {:textDecoration text-decoration
-                              :textTransform text-transform
-                              :fontSize font-size
-                              :color (if (and show-text? (not gradient?)) text-color "transparent")
-                              :background (when (and show-text? gradient?) text-color)
-                              :caretColor (if (and (not gradient?) text-color) text-color "black")
-                              :overflowWrap "initial"
-                              :lineBreak "auto"
-                              :whiteSpace "break-spaces"
-                              :textRendering "geometricPrecision"}
-         fills
-         (cond
-           ;; DEPRECATED: still here for backward compatibility with
-           ;; old penpot files that still has a single color.
-           (or (some? (:fill-color data))
-               (some? (:fill-opacity data))
-               (some? (:fill-color-gradient data)))
-           [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient
-                                               :fill-color-ref-id :fill-color-ref-file]))]
+          _ (js/console.log "Preview font for" shape-id ":" preview-font)
 
-           (nil? (:fills data))
-           [{:fill-color "#000000" :fill-opacity 1}]
+          base            #js {:textDecoration text-decoration
+                               :textTransform text-transform
+                               :fontSize font-size
+                               :color (if (and show-text? (not gradient?)) text-color "transparent")
+                               :background (when (and show-text? gradient?) text-color)
+                               :caretColor (if (and (not gradient?) text-color) text-color "black")
+                               :overflowWrap "initial"
+                               :lineBreak "auto"
+                               :whiteSpace "break-spaces"
+                               :textRendering "geometricPrecision"}
+          fills
+          (cond
+            ;; DEPRECATED: still here for backward compatibility with
+            ;; old penpot files that still has a single color.
+            (or (some? (:fill-color data))
+                (some? (:fill-opacity data))
+                (some? (:fill-color-gradient data)))
+            [(d/without-nils (select-keys data [:fill-color :fill-opacity :fill-color-gradient
+                                                :fill-color-ref-id :fill-color-ref-file]))]
 
-           :else
-           (:fills data))
+            (nil? (:fills data))
+            [{:fill-color "#000000" :fill-opacity 1}]
 
-         font (some->> font-id (get fontsdb))
+            :else
+            (:fills data))
 
-         [font-family font-style font-weight]
-         (when (some? font)
-           (let [font-variant (d/seek #(= font-variant-id (:id %)) (:variants font))]
-             [(str/quote (or (:family font) (:font-family data)))
-              (or (:style font-variant) (:font-style data))
-              (or (:weight font-variant) (:font-weight data))]))
+          font (some->> font-id (get fontsdb))
 
-         base (obj/set! base "--font-id" font-id)]
+          [font-family font-style font-weight]
+          (if (some? preview-font)
+            ;; Use preview font data
+            [(str/quote (:font-family preview-font))
+             (:font-style preview-font)
+             (:font-weight preview-font)]
+            ;; Use regular font data
+            (when (some? font)
+              (let [font-variant (d/seek #(= font-variant-id (:id %)) (:variants font))]
+                [(str/quote (or (:family font) (:font-family data)))
+                 (or (:style font-variant) (:font-style data))
+                 (or (:weight font-variant) (:font-weight data))])))
 
-     (cond-> base
-       (some? fills)
-       (obj/set! "--fills" (transit/encode-str fills))
+          base (obj/set! base "--font-id" font-id)]
 
-       (and (string? letter-spacing) (pos? (alength letter-spacing)))
-       (obj/set! "letterSpacing" (str letter-spacing "px"))
+      (cond-> base
+        (some? fills)
+        (obj/set! "--fills" (transit/encode-str fills))
 
-       (and (string? font-size) (pos? (alength font-size)))
-       (obj/set! "fontSize" (str font-size "px"))
+        (and (string? letter-spacing) (pos? (alength letter-spacing)))
+        (obj/set! "letterSpacing" (str letter-spacing "px"))
 
-       (some? font)
-       (-> (obj/set! "fontFamily" font-family)
-           (obj/set! "fontStyle" font-style)
-           (obj/set! "fontWeight" font-weight))
+        (and (string? font-size) (pos? (alength font-size)))
+        (obj/set! "fontSize" (str font-size "px"))
 
-       (= grow-type :auto-width)
-       (obj/set! "whiteSpace" "pre")))))
+        (some? font)
+        (-> (obj/set! "fontFamily" font-family)
+            (obj/set! "fontStyle" font-style)
+            (obj/set! "fontWeight" font-weight))
+
+        (= grow-type :auto-width)
+        (obj/set! "whiteSpace" "pre"))))
+
+  ;; Backward compatibility
+  ([shape data]
+   (let [shape-id (:id shape)
+         preview-font (mf/deref (refs/workspace-preview-font-by-id shape-id))]
+     (generate-text-styles shape-id data true nil preview-font)))
+
+  ([shape data {:keys [show-text?] :or {show-text? true}}]
+   (let [shape-id (:id shape)
+         preview-font (mf/deref (refs/workspace-preview-font-by-id shape-id))]
+     (generate-text-styles shape-id data show-text? nil preview-font))))
