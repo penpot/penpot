@@ -17,6 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.dom.normalize-wheel :as nw]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
@@ -206,6 +207,17 @@
          (fn [_event]
            (swap! collapsed* not)))
 
+        on-wheel
+        (mf/use-fn
+         (mf/deps content-ref)
+         (fn [^js event]
+           (let [event* (nw/normalize-wheel event)
+                 deltaY (.-spinY event*)
+                 deltaX (.-spinX event*)
+                 node (mf/ref-val content-ref)]
+             (when (> (abs deltaY) (abs deltaX))
+               (.scrollBy node #js {:left (* 300 deltaY) :mode "smooth"})))))
+
         on-scroll
         (mf/use-fn
          (fn [e]
@@ -258,6 +270,7 @@
 
      [:div {:class (stl/css :content)
             :on-scroll on-scroll
+            :on-wheel on-wheel
             :ref content-ref}
 
       (for [index (range (count templates))]
