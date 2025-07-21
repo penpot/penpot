@@ -7,7 +7,6 @@
 (ns common-tests.types.text-test
   (:require
 
-   [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.types.text :as cttx]
    [clojure.test :as t :include-macros true]))
