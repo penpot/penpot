@@ -1,3 +1,4 @@
+use crate::skia::textlayout::FontCollection;
 use crate::skia::Image;
 use crate::uuid::Uuid;
 use crate::with_state_mut;
@@ -30,4 +31,8 @@ pub fn get_image(image_id: &Uuid) -> Option<&Image> {
 // FIXME: move to a different place ?
 pub fn get_fallback_fonts() -> &'static HashSet<String> {
     with_state_mut!(state, { state.render_state().fonts().get_fallback() })
+}
+
+pub fn get_font_collection() -> &'static FontCollection {
+    with_state_mut!(state, { state.font_collection() })
 }
