@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
-use skia_safe::{self as skia, textlayout::Paragraph, ImageFilter, RRect};
+use skia_safe::{self as skia, textlayout::ParagraphBuilder, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
 use crate::render::text::{self};
@@ -485,7 +485,7 @@ pub fn render(
     stroke: &Stroke,
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
-    paragraphs: Option<&[Vec<Paragraph>]>,
+    paragraphs: Option<&mut [ParagraphBuilder]>,
     antialias: bool,
 ) {
     let scale = render_state.get_scale();
