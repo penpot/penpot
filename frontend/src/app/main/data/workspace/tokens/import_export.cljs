@@ -47,7 +47,7 @@
     (ntf/show {:content (tr "workspace.tokens.unknown-token-type-message")
                :detail (->> (for [[token-type tokens] type->tokens]
                               (tr "workspace.tokens.unknown-token-type-section" token-type (count tokens)))
-                            (str/join "\n"))
+                            (str/join "<br>"))
                :type :toast
                :level :info})))
 
