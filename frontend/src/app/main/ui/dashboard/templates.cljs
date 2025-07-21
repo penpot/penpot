@@ -199,9 +199,6 @@
         ;; We need space for total plus the libraries&templates link
         content-ref    (mf/use-ref)
 
-        move-left (fn [] (dom/scroll-by! (mf/ref-val content-ref) -300 0))
-        move-right (fn [] (dom/scroll-by! (mf/ref-val content-ref) 300 0))
-
         on-toggle-collapse
         (mf/use-fn
          (fn [_event]
@@ -209,7 +206,6 @@
 
         on-wheel
         (mf/use-fn
-         (mf/deps content-ref)
          (fn [^js event]
            (let [event* (nw/normalize-wheel event)
                  deltaY (.-spinY event*)
@@ -231,16 +227,10 @@
                                :right (> scroll-available client-width)}))))
 
         on-move-left
-        (mf/use-fn #(move-left))
-
-        on-move-left-key-down
-        (mf/use-fn #(move-left))
+        (mf/use-fn #(dom/scroll-by! (mf/ref-val content-ref) -300 0))
 
         on-move-right
-        (mf/use-fn #(move-right))
-
-        on-move-right-key-down
-        (mf/use-fn #(move-right))
+        (mf/use-fn #(dom/scroll-by! (mf/ref-val content-ref) 300 0))
 
         on-import-template
         (mf/use-fn
@@ -248,7 +238,7 @@
          (fn [template _event]
            (import-template! template team-id project-id default-project-id section)))]
 
-    (mf/with-effect [content-ref templates]
+    (mf/with-effect [templates]
       (let [content (mf/ref-val content-ref)]
         (when (and (some? content) (some? templates))
           (dom/scroll-to content #js {:behavior "instant" :left 0 :top 0})
@@ -292,13 +282,13 @@
        [:button {:class (stl/css :move-button :move-left)
                  :tab-index (if ^boolean collapsed "-1" "0")
                  :on-click on-move-left
-                 :on-key-down on-move-left-key-down}
+                 :on-key-down on-move-left}
         arrow-icon])
 
      (when (:right @can-move)
        [:button {:class (stl/css :move-button :move-right)
                  :tab-index (if collapsed "-1" "0")
                  :on-click on-move-right
-                 :aria-label (tr "labels.next")
-                 :on-key-down  on-move-right-key-down}
+                 :on-key-down  on-move-right
+                 :aria-label (tr "labels.next")}
         arrow-icon])]))
