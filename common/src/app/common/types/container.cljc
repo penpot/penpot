@@ -294,15 +294,14 @@
   ([page component library-data position]
    (make-component-instance page component library-data position {}))
   ([page component library-data position
-    {:keys [main-instance? force-id force-frame-id keep-ids?]
-     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
+    {:keys [main-instance? force-id force-frame-id keep-ids? force-parent-id]
+     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false force-parent-id nil}}]
    (let [component-page  (ctpl/get-page library-data (:main-instance-page component))
 
          component-shape (-> (get-shape component-page (:main-instance-id component))
                              (assoc :parent-id nil) ;; On v2 we force parent-id to nil in order to behave like v1
                              (assoc :frame-id uuid/zero)
                              (remove-swap-keep-attrs))
-
 
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
          delta           (gpt/subtract position orig-pos)
@@ -368,7 +367,7 @@
 
          [new-shape new-shapes _]
          (ctst/clone-shape component-shape
-                           frame-id
+                           (or force-parent-id frame-id)
                            (:objects component-page)
                            :update-new-shape update-new-shape
                            :force-id force-id
