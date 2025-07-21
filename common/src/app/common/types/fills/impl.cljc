@@ -23,7 +23,7 @@
 (def ^:const GRADIENT-STOP-SIZE 8)
 (def ^:const GRADIENT-BYTE-SIZE 156)
 (def ^:const SOLID-BYTE-SIZE 4)
-(def ^:const IMAGE-BYTE-SIZE 28)
+(def ^:const IMAGE-BYTE-SIZE 36)
 (def ^:const METADATA-BYTE-SIZE 36)
 (def ^:const FILL-BYTE-SIZE
   (+ 4 (mth/max GRADIENT-BYTE-SIZE
@@ -121,13 +121,13 @@
   (let [image-id     (get image :id)
         image-width  (get image :width)
         image-height (get image :height)
-        keep-ratio   (get image :keep-aspect-ratio false)]
+        keep-aspect-ratio   (get image :keep-aspect-ratio false)]
     (buf/write-byte  buffer (+ offset  0) 0x03)
-    (buf/write-bool  buffer (+ offset  1) keep-ratio)
     (buf/write-uuid  buffer (+ offset  4) image-id)
     (buf/write-float buffer (+ offset 20) opacity)
     (buf/write-int   buffer (+ offset 24) image-width)
     (buf/write-int   buffer (+ offset 28) image-height)
+    (buf/write-bool  buffer (+ offset 32) keep-aspect-ratio)
     (+ offset FILL-BYTE-SIZE)))
 
 (defn- write-metadata
@@ -203,7 +203,7 @@
                                            :type type}})
 
                   3
-                  (let [ratio  (buf/read-bool  dbuffer (+ doffset 1))
+                  (let [ratio  (buf/read-bool  dbuffer (+ doffset 32))
                         id     (buf/read-uuid  dbuffer (+ doffset 4))
                         alpha  (buf/read-float dbuffer (+ doffset 20))
                         width  (buf/read-int   dbuffer (+ doffset 24))
