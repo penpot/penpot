@@ -129,8 +129,7 @@
         (mf/use-fn
          (mf/deps file-id)
          (fn []
-           (modal/show! :libraries-dialog {:file-id file-id})
-           (modal/allow-click-outside!)))
+           (modal/show! :libraries-dialog {:file-id file-id})))
 
         on-open-menu
         (mf/use-fn  #(swap! filters* update :open-menu not))
