@@ -522,9 +522,13 @@
   (let [old-applied-tokens  (d/nilv (:applied-tokens shape) #{})
         changed-token-attrs (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
                                     ctt/all-keys)
+        text-shape?         (= (:type shape) :text)
         changed-groups      (into #{}
-                                  (comp (map ctt/token-attr->shape-attr)
-                                        (map #(get ctk/sync-attrs %))
+                                  (comp (mapcat #(if (and text-shape? (ctt/attrs-in-text-content %))
+                                                   [:content-group :text-content-attribute]
+                                                   [(->> %
+                                                         (ctt/token-attr->shape-attr)
+                                                         (get ctk/sync-attrs))]))
                                         (filter some?))
                                   changed-token-attrs)]
     changed-groups))
