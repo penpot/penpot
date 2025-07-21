@@ -172,32 +172,32 @@
 (mf/defc templates-section*
   {::mf/props :obj}
   [{:keys [default-project-id profile project-id team-id]}]
-  (let [templates      (mf/deref builtin-templates)
-        templates      (mf/with-memo [templates]
-                         (filterv #(and
-                                    (not= (:id %) "welcome")
-                                    (not= (:id %) "tutorial-for-beginners")) templates))
+  (let [templates   (mf/deref builtin-templates)
+        templates   (mf/with-memo [templates]
+                      (filterv #(and
+                                 (not= (:id %) "welcome")
+                                 (not= (:id %) "tutorial-for-beginners")) templates))
 
-        route          (mf/deref refs/route)
-        route-name     (get-in route [:data :name])
-        section        (if (= route-name :dashboard-files)
-                         (if (= project-id default-project-id)
-                           "dashboard-drafts"
-                           "dashboard-project")
-                         (name route-name))
+        route       (mf/deref refs/route)
+        route-name  (get-in route [:data :name])
+        section     (if (= route-name :dashboard-files)
+                      (if (= project-id default-project-id)
+                        "dashboard-drafts"
+                        "dashboard-project")
+                      (name route-name))
 
-        collapsed*     (mf/use-state
-                        #(get storage/global ::collapsed))
-        collapsed      (deref collapsed*)
+        collapsed*  (mf/use-state
+                     #(get storage/global ::collapsed))
+        collapsed   (deref collapsed*)
 
 
 
-        can-move       (mf/use-state {:left false :right true})
+        can-move    (mf/use-state {:left false :right true})
 
-        total          (count templates)
+        total       (count templates)
 
         ;; We need space for total plus the libraries&templates link
-        content-ref    (mf/use-ref)
+        content-ref (mf/use-ref)
 
         on-toggle-collapse
         (mf/use-fn
