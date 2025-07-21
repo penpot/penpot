@@ -15,7 +15,7 @@
    [app.config :as cfg]
    [app.main.features :as features]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
@@ -139,7 +139,7 @@
                                 :dnd-over-top (= (:over dprops) :top)
                                 :dnd-over-bot (= (:over dprops) :bot))}
 
-     [:& reorder-handler {:ref dref}]
+     [:> reorder-handler* {:ref dref}]
 
      [:div {:class (stl/css :offset-input-wrapper)}
       [:span {:class (stl/css :icon-text)} "%"]

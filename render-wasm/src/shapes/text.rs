@@ -5,13 +5,13 @@ use crate::{
 use skia_safe::{
     self as skia,
     paint::Paint,
-    textlayout::{FontCollection, ParagraphBuilder, ParagraphStyle},
+    textlayout::{ParagraphBuilder, ParagraphStyle},
 };
 use std::collections::HashSet;
 
 use super::FontFamily;
 use crate::shapes::{self, merge_fills, set_paint_fill, Stroke, StrokeKind};
-use crate::utils::{get_fallback_fonts, uuid_from_u32};
+use crate::utils::{get_fallback_fonts, get_font_collection, uuid_from_u32};
 use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
 
@@ -40,15 +40,14 @@ pub struct TextContent {
     pub grow_type: GrowType,
 }
 
-pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<skia::textlayout::Paragraph>>) {
-    for group in paragraphs {
-        for paragraph in group {
-            // We first set max so we can get the min_intrinsic_width (this is the min word size)
-            // then after we set either the real with or the min.
-            // This is done this way so the words are not break into lines.
-            paragraph.layout(f32::MAX);
-            paragraph.layout(f32::max(width, paragraph.min_intrinsic_width().ceil()));
-        }
+pub fn set_paragraphs_width(width: f32, paragraphs: &mut [ParagraphBuilder]) {
+    for p in paragraphs {
+        // We first set max so we can get the min_intrinsic_width (this is the min word size)
+        // then after we set either the real with or the min.
+        // This is done this way so the words are not break into lines.
+        let mut paragraph = p.build();
+        paragraph.layout(f32::MAX);
+        paragraph.layout(f32::max(width, paragraph.min_intrinsic_width().ceil()));
     }
 }
 
@@ -94,67 +93,61 @@ impl TextContent {
         self.paragraphs.push(paragraph);
     }
 
-    pub fn to_paragraphs(&self, fonts: &FontCollection) -> Vec<Vec<skia::textlayout::Paragraph>> {
+    pub fn to_paragraphs(&self) -> Vec<ParagraphBuilder> {
+        let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
-        let mut paragraph_group = Vec::new();
-        let paragraphs = self
-            .paragraphs
+        self.paragraphs
             .iter()
             .map(|p| {
                 let paragraph_style = p.paragraph_to_style();
                 let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
                 for leaf in &p.children {
-                    let text_style = leaf.to_style(p, &self.bounds, fallback_fonts); // FIXME
+                    let text_style = leaf.to_style(p, &self.bounds, fallback_fonts);
                     let text = leaf.apply_text_transform();
                     builder.push_style(&text_style);
                     builder.add_text(&text);
                     builder.pop();
                 }
-                builder.build()
+                builder
             })
-            .collect();
-        paragraph_group.push(paragraphs);
-        paragraph_group
+            .collect()
     }
 
-    pub fn to_stroke_paragraphs(
-        &self,
-        stroke: &Stroke,
-        bounds: &Rect,
-        fonts: &FontCollection,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
+    pub fn to_stroke_paragraphs(&self, stroke: &Stroke, bounds: &Rect) -> Vec<ParagraphBuilder> {
         let fallback_fonts = get_fallback_fonts();
-        let mut paragraph_group = Vec::new();
         let stroke_paints = get_text_stroke_paints(stroke, bounds);
+        let fonts = get_font_collection();
 
-        for stroke_paint in stroke_paints {
-            let mut stroke_paragraphs = Vec::new();
-            for paragraph in &self.paragraphs {
-                let paragraph_style = paragraph.paragraph_to_style();
-                let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-                for leaf in &paragraph.children {
-                    let stroke_style =
-                        leaf.to_stroke_style(paragraph, &stroke_paint, fallback_fonts);
-                    let text: String = leaf.apply_text_transform();
-                    builder.push_style(&stroke_style);
-                    builder.add_text(&text);
-                    builder.pop();
-                }
-                let p = builder.build();
-                stroke_paragraphs.push(p);
-            }
-            paragraph_group.push(stroke_paragraphs);
-        }
-        paragraph_group
+        stroke_paints
+            .into_iter()
+            .flat_map(|stroke_paint| {
+                self.paragraphs
+                    .iter()
+                    .map(|paragraph| {
+                        let paragraph_style = paragraph.paragraph_to_style();
+                        let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+                        for leaf in &paragraph.children {
+                            let stroke_style =
+                                leaf.to_stroke_style(paragraph, &stroke_paint, fallback_fonts);
+                            let text: String = leaf.apply_text_transform();
+                            builder.push_style(&stroke_style);
+                            builder.add_text(&text);
+                            builder.pop();
+                        }
+                        builder
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .collect()
     }
 
     pub fn collect_paragraphs(
         &self,
-        mut paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
+        mut paragraphs: Vec<ParagraphBuilder>,
+    ) -> Vec<ParagraphBuilder> {
         if self.grow_type() == GrowType::AutoWidth {
             set_paragraphs_width(f32::MAX, &mut paragraphs);
-            let max_width = auto_width(&paragraphs).ceil();
+            let max_width = auto_width(&mut paragraphs).ceil();
             set_paragraphs_width(max_width, &mut paragraphs);
         } else {
             set_paragraphs_width(self.width(), &mut paragraphs);
@@ -162,20 +155,16 @@ impl TextContent {
         paragraphs
     }
 
-    pub fn get_skia_paragraphs(
-        &self,
-        fonts: &FontCollection,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        self.collect_paragraphs(self.to_paragraphs(fonts))
+    pub fn get_skia_paragraphs(&self) -> Vec<ParagraphBuilder> {
+        self.collect_paragraphs(self.to_paragraphs())
     }
 
     pub fn get_skia_stroke_paragraphs(
         &self,
         stroke: &Stroke,
         bounds: &Rect,
-        fonts: &FontCollection,
-    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
-        self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds, fonts))
+    ) -> Vec<ParagraphBuilder> {
+        self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds))
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -286,6 +275,26 @@ impl Paragraph {
             1 => skia::textlayout::TextDirection::RTL,
             _ => skia::textlayout::TextDirection::LTR,
         });
+
+        // Force minimum line height for empty lines using strut style
+        if !self.children.is_empty() {
+            let reference_child = self
+                .children
+                .iter()
+                .find(|child| !child.text.trim().is_empty())
+                .unwrap_or(&self.children[0]);
+
+            let mut strut_style = skia::textlayout::StrutStyle::default();
+            strut_style.set_font_size(reference_child.font_size);
+            strut_style.set_height(self.line_height);
+            strut_style.set_height_override(true);
+            strut_style.set_half_leading(false);
+            strut_style.set_leading(0.0);
+            strut_style.set_strut_enabled(true);
+            strut_style.set_force_strut_height(true);
+            style.set_strut_style(strut_style);
+        }
+
         style
     }
 
@@ -344,19 +353,14 @@ impl TextLeaf {
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
 
-        let bounding_box = Rect::from_xywh(
-            content_bounds.x(),
-            content_bounds.y(),
-            self.font_size * self.text.len() as f32,
-            self.font_size,
-        );
-
-        let paint = merge_fills(&self.fills, bounding_box);
+        let paint = merge_fills(&self.fills, *content_bounds);
         style.set_foreground_paint(&paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(paragraph.letter_spacing);
         style.set_height(paragraph.line_height);
         style.set_height_override(true);
+        style.set_half_leading(false);
+
         style.set_decoration_type(match self.text_decoration {
             0 => skia::textlayout::TextDecoration::NO_DECORATION,
             1 => skia::textlayout::TextDecoration::UNDERLINE,
@@ -365,8 +369,8 @@ impl TextLeaf {
             _ => skia::textlayout::TextDecoration::NO_DECORATION,
         });
 
-        // FIXME fix decoration styles
-        style.set_decoration_color(paint.color());
+        // Trick to avoid showing the text decoration
+        style.set_decoration_thickness_multiplier(0.0);
 
         let mut font_families = vec![
             self.serialized_font_family(),
@@ -633,24 +637,28 @@ impl From<&Vec<u8>> for RawTextData {
     }
 }
 
-pub fn auto_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
-    paragraphs.iter().flatten().fold(0.0, |auto_width, p| {
-        f32::max(p.max_intrinsic_width(), auto_width)
+pub fn auto_width(paragraphs: &mut [ParagraphBuilder]) -> f32 {
+    paragraphs.iter_mut().fold(0.0, |auto_width, p| {
+        let mut paragraph = p.build();
+        paragraph.layout(f32::MAX);
+        f32::max(paragraph.max_intrinsic_width(), auto_width)
     })
 }
 
-pub fn max_width(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
-    paragraphs
-        .iter()
-        .flatten()
-        .fold(0.0, |max_width, p| f32::max(p.max_width(), max_width))
+pub fn max_width(paragraphs: &mut [ParagraphBuilder]) -> f32 {
+    paragraphs.iter_mut().fold(0.0, |max_width, p| {
+        let mut paragraph = p.build();
+        paragraph.layout(f32::MAX);
+        f32::max(paragraph.max_width(), max_width)
+    })
 }
 
-pub fn auto_height(paragraphs: &[Vec<skia::textlayout::Paragraph>]) -> f32 {
-    paragraphs
-        .iter()
-        .flatten()
-        .fold(0.0, |auto_height, p| auto_height + p.height())
+pub fn auto_height(paragraphs: &mut [ParagraphBuilder], width: f32) -> f32 {
+    paragraphs.iter_mut().fold(0.0, |auto_height, p| {
+        let mut paragraph = p.build();
+        paragraph.layout(width);
+        auto_height + paragraph.height()
+    })
 }
 
 fn get_text_stroke_paints(stroke: &Stroke, bounds: &Rect) -> Vec<Paint> {
@@ -659,13 +667,8 @@ fn get_text_stroke_paints(stroke: &Stroke, bounds: &Rect) -> Vec<Paint> {
     match stroke.kind {
         StrokeKind::Inner => {
             let mut paint = skia::Paint::default();
-            paint.set_blend_mode(skia::BlendMode::DstOver);
-            paint.set_anti_alias(true);
-            paints.push(paint);
-
-            let mut paint = skia::Paint::default();
             paint.set_style(skia::PaintStyle::Stroke);
-            paint.set_blend_mode(skia::BlendMode::SrcATop);
+            paint.set_blend_mode(skia::BlendMode::SrcIn);
             paint.set_anti_alias(true);
             paint.set_stroke_width(stroke.width * 2.0);
 

@@ -17,7 +17,7 @@
   overflow: hidden;
 }
 
-.sets-section-wrapper {
+.token-management-section-wrapper {
   position: relative;
   display: flex;
   flex: 1;
@@ -25,6 +25,8 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-gutter: stable;
+  position: relative;
+  padding-block-end: var(--sp-l);
 }
 
 .tokens-section-wrapper {
@@ -34,53 +36,6 @@
   scrollbar-gutter: stable;
 }
 
-.sets-sidebar {
-  position: relative;
-  padding-block-end: var(--sp-l);
-}
-
-.themes-header,
-.sets-header-container {
-  @include use-typography("headline-small");
-  padding: var(--sp-s);
-  color: var(--title-foreground-color);
-  word-break: break-word;
-}
-
-.sets-header-container {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--sp-xs);
-  margin-block-start: var(--sp-s);
-}
-
-.sets-header {
-  flex: 1;
-}
-
-.sets-header-status {
-  @include use-typography("body-small");
-  text-transform: none;
-  color: var(--color-foreground-secondary);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-xs);
-}
-
-.sets-header-status-text {
-  font-style: italic;
-}
-
-.themes-wrapper {
-  padding: var(--sp-m) 0 0 var(--sp-m);
-}
-
-.empty-theme-wrapper {
-  padding: var(--sp-m);
-  color: var(--color-foreground-secondary);
-}
-
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -88,16 +43,6 @@
   margin-left: var(--sp-m);
   padding-top: var(--sp-m);
   color: var(--layer-row-foreground-color);
-}
-
-.empty-state-message {
-  color: var(--color-foreground-secondary);
-}
-
-.token-pills-wrapper {
-  display: flex;
-  gap: var(--sp-xs);
-  flex-wrap: wrap;
 }
 
 .section-text-icon {
@@ -167,30 +112,6 @@
   justify-content: space-between;
   align-items: center;
   flex: 1;
-}
-
-.theme-select-wrapper {
-  display: grid;
-  grid-template-columns: 1fr 0.28fr;
-  gap: $s-6;
-}
-
-.themes-button {
-  @extend .button-secondary;
-  width: auto;
-}
-
-.create-theme-button {
-  @include use-typography("body-small");
-  background-color: transparent;
-  border: none;
-  appearance: none;
-  color: var(--color-accent-primary);
-  cursor: pointer;
-}
-
-.edit-theme-button {
-  justify-content: center;
 }
 
 .resize-area-horiz {

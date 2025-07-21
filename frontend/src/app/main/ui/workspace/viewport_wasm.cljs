@@ -14,7 +14,6 @@
    [app.common.geom.shapes :as gsh]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.features :as features]
@@ -311,7 +310,7 @@
                             (ted/get-editor-current-content)
                             (ted/export-content))]
             (wasm.api/use-shape edition)
-            (wasm.api/set-shape-text-content content)
+            (wasm.api/set-shape-text-content edition content)
             (let [dimension (wasm.api/text-dimensions)]
               (st/emit! (dwt/resize-text-editor edition dimension))
               (wasm.api/clear-drawing-cache)
@@ -330,6 +329,12 @@
         (wasm.api/initialize base-objects zoom vbox background)
         (reset! initialized? true)))
 
+    (mf/with-effect [focus]
+      (when (and @canvas-init? @initialized?)
+        (if (empty? focus)
+          (wasm.api/clear-focus-mode)
+          (wasm.api/set-focus-mode focus))))
+
     (mf/with-effect [vbox zoom]
       (when (and @canvas-init? initialized?)
         (wasm.api/set-view-box zoom vbox)))
@@ -337,6 +342,12 @@
     (mf/with-effect [background]
       (when (and @canvas-init? initialized?)
         (wasm.api/set-canvas-background background)))
+
+    (mf/with-effect [@canvas-init? hover-grid? @hover-top-frame-id]
+      (when @canvas-init?
+        (if hover-grid?
+          (wasm.api/show-grid @hover-top-frame-id)
+          (wasm.api/clear-grid))))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -380,6 +391,7 @@
                                          :viewport-ref viewport-ref}])]
 
      [:canvas {:id "render"
+               :data-testid "canvas-wasm-shapes"
                :ref canvas-ref
                :class (stl/css :render-shapes)
                :key (dm/str "render" page-id)
@@ -659,25 +671,14 @@
            :zoom zoom}])
 
        [:g.grid-layout-editor {:clipPath "url(#clip-handlers)"}
-        (when (or show-grid-editor? hover-grid?)
+        (when show-grid-editor?
           [:& grid-layout/editor
            {:zoom zoom
             :objects objects-modified
             :shape (or (get base-objects edition)
                        (get base-objects @hover-top-frame-id))
-            :view-only (not show-grid-editor?)}])
+            :view-only (not show-grid-editor?)}])]
 
-        (for [frame (ctt/get-frames objects)]
-          (when (and (ctl/grid-layout? frame)
-                     (empty? (:shapes frame))
-                     (not= edition (:id frame))
-                     (not= @hover-top-frame-id (:id frame)))
-            [:& grid-layout/editor
-             {:zoom zoom
-              :key (dm/str (:id frame))
-              :objects objects-modified
-              :shape frame
-              :view-only true}]))]
        [:g.scrollbar-wrapper {:clipPath "url(#clip-handlers)"}
         [:& scroll-bars/viewport-scrollbars
          {:objects base-objects

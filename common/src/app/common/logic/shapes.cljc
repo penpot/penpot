@@ -99,7 +99,14 @@
                                (pcb/with-library-data file))
                            ids
                            options))
-  ([changes ids {:keys [ignore-touched component-swap]}]
+  ([changes ids {:keys [ignore-touched
+                        allow-altering-copies
+                        ;; We will delete the shapes and its descendants.
+                        ;; ignore-children-fn is used to ignore some descendants
+                        ;; on the deletion process. It should receive a shape and
+                        ;; return a boolean
+                        ignore-children-fn]
+                 :or {ignore-children-fn (constantly false)}}]
    (let [objects (pcb/get-objects changes)
          data    (pcb/get-library-data changes)
          page-id (pcb/get-page-id changes)
@@ -112,11 +119,12 @@
           ;; Look for shapes that are inside a component copy, but are
           ;; not the root. In this case, they must not be deleted,
           ;; but hidden (to be able to recover them more easily).
-          ;; Unless we are doing a component swap, in which case we want
+          ;; If we want to specifically allow altering the copies, this is
+          ;; a special case, like a component swap, in which case we want
           ;; to delete the old shape
            (let [shape           (get objects shape-id)]
              (and (ctn/has-any-copy-parent? objects shape)
-                  (not component-swap))))
+                  (not allow-altering-copies))))
 
          [ids-to-delete ids-to-hide]
          (loop [ids-seq       (seq ids)
@@ -177,10 +185,15 @@
                  (d/ordered-set)
                  (concat ids-to-delete ids-to-hide))
 
-         all-children
-         (->> ids-to-delete ;; Children of deleted shapes must be also deleted.
+         ;; Descendants of deleted shapes must be also deleted,
+         ;; except the ignored ones by the function ignore-children-fn
+         descendants-to-delete
+         (->> ids-to-delete
               (reduce (fn [res id]
-                        (into res (cfh/get-children-ids objects id)))
+                        (into res (cfh/get-children-ids
+                                   objects
+                                   id
+                                   {:ignore-children-fn ignore-children-fn})))
                       [])
               (reverse)
               (into (d/ordered-set)))
@@ -200,9 +213,10 @@
 
          empty-parents
         ;; Any parent whose children are all deleted, must be deleted too.
-        ;; Unless we are during a component swap: in this case we are replacing a shape by
+        ;; If we want to specifically allow altering the copies, this is a special case,
+        ;; for example during a component swap. in this case we are replacing a shape by
         ;; other one, so must not delete empty parents.
-         (if-not component-swap
+         (if-not allow-altering-copies
            (into (d/ordered-set) (find-all-empty-parents #{}))
            #{})
 
@@ -214,7 +228,7 @@
                        (conj components (:component-id shape))
                        components)))
                  []
-                 (into ids-to-delete all-children))
+                 (into ids-to-delete descendants-to-delete))
 
 
          ids-set (set ids-to-delete)
@@ -241,7 +255,7 @@
 
          changes (-> changes
                      (generate-update-shape-flags ids-to-hide objects {:hidden true})
-                     (pcb/remove-objects all-children {:ignore-touched true})
+                     (pcb/remove-objects descendants-to-delete {:ignore-touched true})
                      (pcb/remove-objects ids-to-delete {:ignore-touched ignore-touched})
                      (pcb/remove-objects empty-parents)
                      (pcb/resize-parents all-parents)

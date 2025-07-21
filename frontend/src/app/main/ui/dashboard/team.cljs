@@ -25,7 +25,7 @@
    [app.main.ui.dashboard.subscription :refer [team*
                                                members-cta*
                                                show-subscription-members-main-banner?
-                                               show-subscription-invitations-main-banner?]]
+                                               show-subscription-members-small-banner?]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.icons :as i]
@@ -544,18 +544,17 @@
    [:section {:class (stl/css-case
                       :dashboard-container true
                       :dashboard-team-members true
-                      :dashboard-top-cta (show-subscription-members-main-banner? team profile))}
+                      :dashboard-top-cta (show-subscription-members-main-banner? team))}
     (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-main-banner? team profile))
-      [:> members-cta* {:banner-is-expanded true :team team :profile profile}])
+               (show-subscription-members-main-banner? team))
+      [:> members-cta* {:banner-is-expanded true :team team}])
     [:> team-members*
      {:profile profile
       :team team}]
+
     (when (and
            (contains? cfg/flags :subscriptions)
-           (or
-            (and (= (:type (:subscription team)) "professional") (< (count (:members team)) 8))
-            (= (:status (:subscription team)) "trialing")))
+           (show-subscription-members-small-banner? team))
       [:> members-cta* {:banner-is-expanded false :team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -821,15 +820,13 @@
                :team team}]
    [:section {:class (stl/css-case
                       :dashboard-team-invitations true
-                      :dashboard-top-cta (show-subscription-invitations-main-banner? team))}
+                      :dashboard-top-cta (show-subscription-members-main-banner? team))}
     (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-invitations-main-banner? team))
+               (show-subscription-members-main-banner? team))
       [:> members-cta* {:banner-is-expanded true :team team}])
     [:> invitation-section* {:team team}]
     (when (and (contains? cfg/flags :subscriptions)
-               (or
-                (and (= (:type (:subscription team)) "professional") (< (count (:members team)) 8))
-                (= (:status (:subscription team)) "trialing")))
+               (show-subscription-members-small-banner? team))
       [:> members-cta* {:banner-is-expanded false :team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

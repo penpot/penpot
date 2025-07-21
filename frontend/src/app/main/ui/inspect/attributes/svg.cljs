@@ -14,7 +14,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn map->css [attr]
+(defn- map->css [attr]
   (->> attr
        (map (fn [[attr-key attr-value]] (str (d/name attr-key) ":" attr-value)))
        (str/join "; ")))

@@ -152,12 +152,22 @@
       (dm/get-prop shape :type))))
 
 (defn get-children-ids
-  [objects id]
-  (letfn [(get-children-ids-rec [id processed]
-            (when (not (contains? processed id))
-              (when-let [shapes (-> (get objects id) :shapes (some-> vec))]
-                (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
-    (get-children-ids-rec id #{})))
+  "Returns the ids of all the descendants of the shape identified
+  by the id. Optionally, you can pass an ignore function to indicate
+  when to ignore a descendant (and all its descendants)"
+  ([objects id]
+   (get-children-ids objects id {}))
+  ([objects id {:keys [ignore-children-fn]
+                ;;ignore-children-fn should receive a shape and return a boolean
+                :or {ignore-children-fn (constantly false)}}]
+   (letfn [(get-children-ids-rec [id processed]
+             (when-not (contains? processed id)
+               (when-let [shapes (as-> (get objects id) $
+                                   (:shapes $)
+                                   (remove ignore-children-fn $)
+                                   (some-> $ vec))]
+                 (into shapes (mapcat #(get-children-ids-rec % (conj processed id))) shapes))))]
+     (get-children-ids-rec id #{}))))
 
 (defn get-children-ids-with-self
   [objects id]

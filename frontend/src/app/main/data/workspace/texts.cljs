@@ -57,7 +57,7 @@
 
   ([{:keys [id points selrect] :as shape} content]
    (wasm.api/use-shape id)
-   (wasm.api/set-shape-text content)
+   (wasm.api/set-shape-text id content)
    (let [dimension (wasm.api/text-dimensions)
          resize-v
          (gpt/point

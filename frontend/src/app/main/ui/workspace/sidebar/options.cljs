@@ -134,6 +134,7 @@
          :file-id file-id
          :libraries libraries}])]))
 
+;; FIXME: need optimizations
 (mf/defc options-content*
   {::mf/memo true
    ::mf/private true}
@@ -155,59 +156,47 @@
               (st/emit! :interrupt (dwc/set-workspace-read-only true))
               (st/emit! :interrupt (dwc/set-workspace-read-only false)))))
 
-        design-content
-        (mf/html [:> design-menu*
-                  {:selected selected
-                   :objects objects
-                   :page-id page-id
-                   :file-id file-id
-                   :selected-shapes selected-shapes
-                   :shapes-with-children shapes-with-children}])
-
-        inspect-content
-        (mf/html [:div {:class (stl/css :element-options :inspect-options)}
-                  [:& hrs/right-sidebar {:page-id           page-id
-                                         :objects           objects
-                                         :file-id           file-id
-                                         :frame             shape-parent-frame
-                                         :shapes            selected-shapes
-                                         :on-change-section on-change-section
-                                         :on-expand         on-expand
-                                         :from              :workspace}]])
-
-        interactions-content
-        (mf/html [:div {:class (stl/css :element-options :interaction-options)}
-                  [:& interactions-menu {:shape (first shapes)}]])
-
-
         tabs
-        (if (:can-edit permissions)
-          #js [#js {:label (tr "workspace.options.design")
-                    :id "design"
-                    :content design-content}
-
-               #js {:label (tr "workspace.options.prototype")
-                    :id "prototype"
-                    :content interactions-content}
-
-               #js {:label (tr "workspace.options.inspect")
-                    :id "inspect"
-                    :content inspect-content}]
-          #js [#js {:label (tr "workspace.options.inspect")
-                    :id "inspect"
-                    :content inspect-content}])]
+        (mf/with-memo []
+          [{:label (tr "workspace.options.design")
+            :id "design"}
+           {:label (tr "workspace.options.prototype")
+            :id "prototype"}
+           {:label (tr "workspace.options.inspect")
+            :id "inspect"}])]
 
     [:div {:class (stl/css :tool-window)}
      (if (:can-edit permissions)
        [:> tab-switcher* {:tabs tabs
-                          :default-selected "info"
-                          :on-change-tab on-change-tab
+                          :on-change on-change-tab
                           :selected (name options-mode)
-                          :class (stl/css :options-tab-switcher)}]
+                          :class (stl/css :options-tab-switcher)}
+        (case options-mode
+          :prototype
+          [:div {:class (stl/css :element-options :interaction-options)}
+           [:& interactions-menu {:shape (first shapes)}]]
 
-       [:div {:class (stl/css-case :element-options true
-                                   :inspect-options true
-                                   :read-only true)}
+          :inspect
+          [:div {:class (stl/css :element-options :inspect-options)}
+           [:& hrs/right-sidebar {:page-id           page-id
+                                  :objects           objects
+                                  :file-id           file-id
+                                  :frame             shape-parent-frame
+                                  :shapes            selected-shapes
+                                  :on-change-section on-change-section
+                                  :on-expand         on-expand
+                                  :from              :workspace}]]
+
+          :design
+          [:> design-menu* {:selected selected
+                            :objects objects
+                            :page-id page-id
+                            :file-id file-id
+                            :selected-shapes selected-shapes
+                            :shapes-with-children shapes-with-children}])]
+
+       ;; FIXME: Reuse tab???
+       [:div {:class (stl/css :element-options :inspect-options :read-only)}
         [:& hrs/right-sidebar {:page-id           page-id
                                :objects           objects
                                :file-id           file-id

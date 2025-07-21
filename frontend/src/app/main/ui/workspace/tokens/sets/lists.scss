@@ -1,0 +1,164 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../ds/typography.scss" as *;
+@import "refactor/common-refactor.scss";
+
+.sets-list {
+  width: 100%;
+  margin-bottom: 0;
+  overflow-y: auto;
+}
+
+.empty-sets-wrapper {
+  padding: $s-12;
+  padding-inline-start: $s-24;
+  color: var(--color-foreground-secondary);
+}
+
+.create-set-button {
+  @include use-typography("body-small");
+  background-color: transparent;
+  border: none;
+  appearance: none;
+  color: var(--color-accent-primary);
+  cursor: pointer;
+}
+
+.set-item-container {
+  @include bodySmallTypography;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: $s-32;
+  cursor: pointer;
+  color: var(--layer-row-foreground-color);
+  padding-left: calc($s-24 * var(--tree-depth, 0) + $s-8);
+  border: $s-2 solid transparent;
+  gap: $s-2;
+
+  &.dnd-over-bot {
+    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over-top {
+    border-top: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+  &.dnd-over {
+    border: $s-2 solid var(--layer-row-foreground-color-hover);
+  }
+}
+
+.set-item-group {
+  cursor: unset;
+  padding-left: calc($s-24 * var(--tree-depth, 0));
+  gap: 0;
+}
+
+.set-item-group-collapse-button {
+  cursor: pointer;
+  width: auto;
+  height: $s-28;
+}
+
+.set-name {
+  @include textEllipsis;
+  flex-grow: 1;
+  padding-left: $s-2;
+}
+
+.icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: $s-20;
+  height: $s-20;
+  padding-right: $s-4;
+}
+
+.root-icon {
+  margin-left: $s-8;
+}
+
+.checkbox-style {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: $s-16;
+  height: $s-16;
+  margin-inline: $s-6;
+  background-color: var(--input-checkbox-background-color-rest);
+  border: $s-1 solid var(--input-checkbox-border-color-rest);
+  border-radius: $s-4;
+  padding: 0;
+}
+
+.checkbox-checked-style {
+  background-color: var(--input-border-color-active);
+  color: var(--color-background-secondary);
+}
+
+.checkbox-disabled {
+  border: $s-1 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+}
+
+.checkbox-disabled-checked {
+  background-color: var(--color-accent-primary-muted);
+  color: var(--color-background-quaternary);
+}
+
+.check-icon {
+  color: currentColor;
+}
+
+.set-item-container:hover {
+  background-color: var(--layer-row-background-color-hover);
+  color: var(--layer-row-foreground-color-hover);
+  box-shadow: -100px 0 0 0 var(--layer-row-background-color-hover);
+}
+
+.empty-state-message-sets {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: $s-12;
+  color: var(--color-foreground-secondary);
+}
+.selected-set {
+  background-color: var(--layer-row-background-color-selected);
+  color: var(--layer-row-foreground-color-selected);
+  box-shadow: -100px 0 0 0 var(--layer-row-background-color-selected);
+}
+
+.collapsabled-icon {
+  @include buttonStyle;
+  @include flexCenter;
+  height: $s-24;
+  border-radius: $br-8;
+  &:hover {
+    color: var(--title-foreground-color-hover);
+  }
+}
+
+.editing-node {
+  @include textEllipsis;
+  @include bodySmallTypography;
+  @include removeInputStyle;
+
+  border: $s-1 solid var(--input-border-color-focus);
+  border-radius: $br-8;
+  color: var(--layer-row-foreground-color-focus);
+  flex-grow: 1;
+  height: $s-28;
+  margin: 0;
+  padding-left: $s-6;
+
+  &::placeholder {
+    color: var(--layer-row-foreground-color-placeholder);
+  }
+}

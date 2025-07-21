@@ -38,7 +38,7 @@
 (mf/defc right-sidebar
   [{:keys [frame page objects file selected shapes page-id file-id share-id from on-change-section on-expand]
     :or {from :viewer}}]
-  (let [section        (mf/use-state :info #_:code)
+  (let [section        (mf/use-state #(do :info))
         objects        (or objects (:objects page))
         shapes         (or shapes
                            (resolve-shapes objects selected))
@@ -81,31 +81,13 @@
          (fn []
            (dom/open-new-window "https://help.penpot.app/user-guide/inspect/")))
 
-        info-content
-        (mf/html [:& attributes {:page-id page-id
-                                 :objects objects
-                                 :file-id file-id
-                                 :frame frame
-                                 :shapes shapes
-                                 :from from
-                                 :libraries libraries
-                                 :share-id share-id}])
-
-        code-content
-        (mf/html [:& code {:frame frame
-                           :shapes shapes
-                           :on-expand handle-expand
-                           :from from}])
-
         tabs
-        #js [#js {:label (tr "inspect.tabs.info")
-                  :id "info"
-                  :content info-content}
-
-             #js {:label (tr "inspect.tabs.code")
-                  :data-testid "code"
-                  :id "code"
-                  :content code-content}]]
+        (mf/with-memo []
+          [{:label (tr "inspect.tabs.info")
+            :id "info"}
+           {:label (tr "inspect.tabs.code")
+            :data-testid "code"
+            :id "code"}])]
 
     (mf/use-effect
      (mf/deps shapes handle-change-tab)
@@ -148,9 +130,25 @@
         [:div {:class (stl/css :inspect-content)}
 
          [:> tab-switcher* {:tabs tabs
-                            :default-selected "info"
-                            :on-change-tab handle-change-tab
-                            :class (stl/css :viewer-tab-switcher)}]]]
+                            :selected (name @section)
+                            :on-change handle-change-tab
+                            :class (stl/css :viewer-tab-switcher)}
+          (case @section
+            :info
+            [:& attributes {:page-id page-id
+                            :objects objects
+                            :file-id file-id
+                            :frame frame
+                            :shapes shapes
+                            :from from
+                            :libraries libraries
+                            :share-id share-id}]
+
+            :code
+            [:& code {:frame frame
+                      :shapes shapes
+                      :on-expand handle-expand
+                      :from from}])]]]
        [:div {:class (stl/css :empty)}
         [:div {:class (stl/css :code-info)}
          [:span {:class (stl/css :placeholder-icon)}

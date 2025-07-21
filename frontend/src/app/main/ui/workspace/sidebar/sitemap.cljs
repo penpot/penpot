@@ -193,8 +193,8 @@
 
 ;; --- Pages List
 
-(mf/defc pages-list
-  {::mf/wrap-props false}
+(mf/defc pages-list*
+  {::mf/private true}
   [{:keys [file]}]
   (let [pages           (:pages file)
         deletable?      (> (count pages) 1)
@@ -213,9 +213,8 @@
 
 ;; --- Sitemap Toolbox
 
-(mf/defc sitemap
-  {::mf/wrap-props false}
-  [{:keys [size show-pages? toggle-pages]}]
+(mf/defc sitemap*
+  [{:keys [height collapsed on-toggle-collapsed]}]
   (let [file           (mf/deref ref:file-with-pages)
         file-id        (get file :id)
         project-id     (get file :project-id)
@@ -230,11 +229,11 @@
         permissions    (mf/use-ctx ctx/permissions)]
 
     [:div {:class (stl/css :sitemap)
-           :style #js {"--height" (str size "px")}}
+           :style {:--height (dm/str height "px")}}
 
      [:& title-bar {:collapsable   true
-                    :collapsed     (not show-pages?)
-                    :on-collapsed  toggle-pages
+                    :collapsed     collapsed
+                    :on-collapsed  on-toggle-collapsed
                     :all-clickable true
                     :title         (tr "workspace.sidebar.sitemap")
                     :class         (stl/css :title-spacing-sitemap)}
@@ -250,5 +249,7 @@
                           :on-click on-create
                           :icon "add"}])]
 
-     [:div {:class (stl/css :tool-window-content)}
-      [:& pages-list {:file file :key (:id file)}]]]))
+     (when-not ^boolean collapsed
+       [:div {:class (stl/css :tool-window-content)}
+        [:> pages-list* {:file file :key (dm/str (:id file))}]])]))
+

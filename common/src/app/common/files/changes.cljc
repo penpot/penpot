@@ -241,7 +241,7 @@
       [:shapes ::sm/any]
       [:index {:optional true} [:maybe :int]]
       [:after-shape {:optional true} ::sm/any]
-      [:component-swap {:optional true} :boolean]]]
+      [:allow-altering-copies {:optional true} :boolean]]]
 
     [:reorder-children
      [:map {:title "ReorderChildrenChange"}
@@ -418,7 +418,7 @@
       [:type [:= :set-token-set]]
       [:set-name :string]
       [:group? :boolean]
-      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
+      [:token-set [:maybe [:fn ctob/token-set?]]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}
@@ -761,7 +761,7 @@
       (d/update-in-when data [:components component-id :objects] reg-objects))))
 
 (defmethod process-change :mov-objects
-  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape component-swap syncing]}]
+  [data {:keys [parent-id shapes index page-id component-id ignore-touched after-shape allow-altering-copies syncing]}]
   (letfn [(calculate-invalid-targets [objects shape-id]
             (let [reduce-fn #(into %1 (calculate-invalid-targets objects %2))]
               (->> (get-in objects [shape-id :shapes])
@@ -776,7 +776,7 @@
               (and shape
                    (not (invalid-targets parent-id))
                    (not (cfh/components-nesting-loop? objects shape-id parent-id))
-                   (or component-swap ;; On a component swap it's allowed to change the structure of a copy
+                   (or allow-altering-copies ;; In some cases (like a component swap) it's allowed to change the structure of a copy
                        syncing ;; If we are syncing the changes of a main component, it's allowed to change the structure of a copy
                        (and
                         (not (ctk/in-component-copy? (get objects (:parent-id shape)))) ;; We don't want to change the structure of component copies
@@ -1027,11 +1027,10 @@
                   (ctob/delete-set lib' set-name))
 
                 (not (ctob/get-set lib' set-name))
-                (ctob/add-set lib' (ctob/make-token-set token-set))
+                (ctob/add-set lib' token-set)
 
                 :else
-                (ctob/update-set lib' set-name (fn [prev-token-set]
-                                                 (ctob/make-token-set (merge prev-token-set token-set)))))))))
+                (ctob/update-set lib' set-name (fn [_] token-set)))))))
 
 (defmethod process-change :set-token-theme
   [data {:keys [group theme-name theme]}]

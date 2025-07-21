@@ -12,12 +12,13 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.reorder-handler :refer [reorder-handler]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -80,31 +81,56 @@
         (mf/use-fn (mf/deps index) #(on-remove index))
 
         on-update-offset-x
-        (mf/use-fn (mf/deps index) #(on-update index :offset-x %))
+        (mf/use-fn
+         (mf/deps index)
+         (fn [value]
+           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (on-update index :offset-x value)))
 
         on-update-offset-y
-        (mf/use-fn (mf/deps index) #(on-update index :offset-y %))
+        (mf/use-fn
+         (mf/deps index)
+         (fn [value]
+           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (on-update index :offset-y value)))
 
         on-update-spread
-        (mf/use-fn (mf/deps index) #(on-update index :spread %))
+        (mf/use-fn
+         (mf/deps index)
+         (fn [value]
+           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (on-update index :spread value)))
 
         on-update-blur
-        (mf/use-fn (mf/deps index) #(on-update index :blur %))
+        (mf/use-fn
+         (mf/deps index)
+         (fn [value]
+           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (on-update index :blur value)))
 
         on-update-color
         (mf/use-fn
          (mf/deps index on-update)
          (fn [color]
+           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
            (on-update index :color color)))
 
         on-detach-color
         (mf/use-fn (mf/deps index) #(on-detach-color index))
 
         on-style-change
-        (mf/use-fn (mf/deps index) #(on-update index :style (keyword %)))
+        (mf/use-fn
+         (mf/deps index)
+         (fn [value]
+           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (on-update index :style (keyword value))))
 
         on-toggle-visibility
-        (mf/use-fn (mf/deps index) #(on-toggle-visibility index))
+        (mf/use-fn
+         (mf/deps index)
+         (fn []
+           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (on-toggle-visibility index)))
 
         on-toggle-open
         (mf/use-fn
@@ -127,7 +153,7 @@
                                 :dnd-over-top (= (:over dprops) :top)
                                 :dnd-over-bot (= (:over dprops) :bot))}
      (when (some? on-reorder)
-       [:& reorder-handler {:ref dref}])
+       [:> reorder-handler* {:ref dref}])
 
      [:*
       [:div {:class (stl/css :basic-options)}
@@ -242,18 +268,21 @@
         (mf/use-fn
          (fn []
            (let [ids (mf/ref-val ids-ref)]
+             (st/emit! (dw/trigger-bounding-box-cloaking ids))
              (st/emit! (dwsh/update-shapes ids #(dissoc % :shadow))))))
 
         handle-reorder
         (mf/use-fn
          (fn [new-index index]
            (let [ids (mf/ref-val ids-ref)]
+             (st/emit! (dw/trigger-bounding-box-cloaking ids))
              (st/emit! (dc/reorder-shadows ids index new-index)))))
 
         on-add-shadow
         (mf/use-fn
          (fn []
            (let [ids (mf/ref-val ids-ref)]
+             (st/emit! (dw/trigger-bounding-box-cloaking ids))
              (st/emit! (dc/add-shadow ids (create-shadow))))))
 
         on-detach-color
@@ -261,18 +290,22 @@
          (fn [index]
            (let [ids (mf/ref-val ids-ref)
                  f   #(update-in % [:shadow index :color] dissoc :id :file-id :ref-id :ref-file)]
+             (st/emit! (dw/trigger-bounding-box-cloaking ids))
              (st/emit! (dwsh/update-shapes ids f)))))
 
         on-toggle-visibility
         (mf/use-fn
          (fn [index]
            (let [ids (mf/ref-val ids-ref)]
+             (st/emit! (dw/trigger-bounding-box-cloaking ids))
              (st/emit! (dwsh/update-shapes ids #(update-in % [:shadow index :hidden] not))))))
 
         on-remove
         (mf/use-fn
+         (mf/deps ids)
          (fn [index]
            (let [ids (mf/ref-val ids-ref)]
+             (st/emit! (dw/trigger-bounding-box-cloaking ids))
              (st/emit! (dwsh/update-shapes ids #(update % :shadow remove-shadow-by-index index))))))
 
         on-update

@@ -28,7 +28,7 @@ export default {
       },
       {
         label: "Menu",
-        id: "opeion-menu",
+        id: "option-menu",
       },
     ],
     defaultSelected: "option-code",

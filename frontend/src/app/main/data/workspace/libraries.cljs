@@ -36,6 +36,7 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.specialized-panel :as dwsp]
@@ -700,7 +701,7 @@
             (fn [page-id shape-id]
               (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? ::dw/initialize-page))
+                    (rx/filter (ptk/type? ::dwpg/initialize-page))
                     (rx/take 1)
                     (rx/observe-on :async)
                     (rx/mapcat (fn [_] (select-and-zoom shape-id))))
@@ -975,10 +976,11 @@
             [new-shape all-parents changes]
             (-> (pcb/empty-changes it (:id page))
                 (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))
+                (cll/generate-component-swap objects shape ldata page libraries id-new-component
+                                             index target-cell keep-props-values keep-touched?))
 
             changes (if keep-touched?
-                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries)
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
                       changes)]
 
         (rx/of

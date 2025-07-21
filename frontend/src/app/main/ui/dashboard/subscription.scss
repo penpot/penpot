@@ -49,7 +49,7 @@
   padding-block-start: var(--sp-m);
 }
 .cta-bottom-section .content {
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   @include buttonStyle;
   color: var(--color-foreground-secondary);
   display: inline-block;
@@ -62,16 +62,16 @@
 }
 
 .cta-title {
-  @include t.use-typography("title-small");
+  @include t.use-typography("body-small");
   margin-block-end: var(--sp-xs);
 }
 
 .cta-text {
-  @include t.use-typography("body-small");
+  @include t.use-typography("title-small");
 }
 
 .cta-bottom-section .content a {
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   color: var(--color-accent-tertiary);
   margin-inline-start: var(--sp-xs);
 }
@@ -96,15 +96,16 @@
 }
 
 .team-text {
-  @include t.use-typography("body-large");
+  @include t.use-typography("title-medium");
   color: var(--color-foreground-primary);
 }
 
 .manage-subscription-link {
   @include buttonStyle;
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   color: var(--color-accent-tertiary);
   display: flex;
+  margin-block-start: -8px;
   padding: 0;
 }
 
@@ -112,8 +113,16 @@
   @extend .button-icon;
   background: var(--color-background-primary);
   stroke: var(--color-foreground-secondary);
-  border-radius: var(--sp-xs);
-  border: $b-1 solid var(--color-foreground-secondary);
+  border-radius: 6px;
+  border: 1.75px solid var(--color-foreground-secondary);
+  stroke-width: 2.25px;
+  width: var(--sp-xl);
+  height: var(--sp-xl);
+
+  svg {
+    block-size: var(--sp-m);
+    inline-size: var(--sp-m);
+  }
 }
 
 .menu-item {
@@ -136,6 +145,10 @@
   margin-block-start: var(--sp-s);
   margin-inline-start: $s-68;
   max-width: $s-200;
+
+  .cta-title {
+    line-height: 1.2;
+  }
 }
 
 .members-cta-full-width {
@@ -145,8 +158,10 @@
 .cta-message {
   @include t.use-typography("body-small");
   color: var(--color-foreground-secondary);
+  line-height: 1;
 
   a {
     color: var(--color-accent-primary);
+    overflow-wrap: break-word;
   }
 }

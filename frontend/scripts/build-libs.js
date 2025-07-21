@@ -32,6 +32,9 @@ const config = {
   entryPoints: ["target/index.js"],
   bundle: true,
   format: "iife",
+  banner: {
+    js: '"use strict";',
+  },
   outfile: "resources/public/js/libs.js",
   plugins: [fixReactVirtualized, rebuildNotify],
 };

@@ -96,7 +96,7 @@
   (log/dbg :hint "repairing shape :invalid-parent" :id (:id shape) :name (:name shape) :page-id page-id)
   (-> (pcb/empty-changes nil page-id)
       (pcb/with-file-data file-data)
-      (pcb/change-parent (:parent-id args) [shape] nil {:component-swap true})))
+      (pcb/change-parent (:parent-id args) [shape] nil {:allow-altering-copies true})))
 
 (defmethod repair-error :frame-not-found
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -387,7 +387,7 @@
     (-> (pcb/empty-changes nil page-id)
         (pcb/with-file-data file-data)
         (pcb/update-shapes [(:id shape)] repair-shape)
-        (pcb/change-parent uuid/zero [shape] nil {:component-swap true}))))
+        (pcb/change-parent uuid/zero [shape] nil {:allow-altering-copies true}))))
 
 (defmethod repair-error :root-copy-not-allowed
   [_ {:keys [shape page-id] :as error} file-data _]
@@ -598,11 +598,6 @@
   file)
 
 (defmethod repair-error :variant-bad-name
-  [_ error file _]
-  (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
-  file)
-
-(defmethod repair-error :variant-no-properties
   [_ error file _]
   (log/error :hint "Variant error code, we don't want to auto repair it for now" :code (:code error))
   file)

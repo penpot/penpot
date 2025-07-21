@@ -38,7 +38,7 @@ function build-devenv {
     fi
 
     # docker build -t $DEVENV_IMGNAME:latest .
-    docker buildx build --platform linux/amd64 --push -t $DEVENV_IMGNAME:latest .;
+    docker buildx build --platform linux/amd64,linux/arm64 --push -t $DEVENV_IMGNAME:latest .;
     docker pull $DEVENV_IMGNAME:latest;
 
     popd;
