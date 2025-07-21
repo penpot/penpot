@@ -12,6 +12,7 @@ pub fn render(
         .surfaces
         .canvas(surface_id.unwrap_or(SurfaceId::Fills));
 
+    let mut offset_y = 0.0;
     let container_height = shape.selrect().height();
 
     for builder in paragraphs {
@@ -19,14 +20,18 @@ pub fn render(
         skia_paragraph.layout(shape.bounds().width());
         let paragraph_height: f32 = skia_paragraph.height();
 
-        let offset_y = match shape.vertical_align() {
+        let paragraph_offset_y = match shape.vertical_align() {
             VerticalAlign::Center => (container_height - paragraph_height) / 2.0,
             VerticalAlign::Bottom => container_height - paragraph_height,
             _ => 0.0,
         };
 
+        offset_y += paragraph_offset_y;
+
         let xy = (shape.selrect().x(), shape.selrect().y() + offset_y);
         skia_paragraph.paint(canvas, xy);
+
+        offset_y += paragraph_height;
 
         for line_metrics in skia_paragraph.get_line_metrics().iter() {
             let style_metrics: Vec<_> = line_metrics
@@ -37,6 +42,11 @@ pub fn render(
             let mut current_x_offset = 0.0;
             let total_line_width = line_metrics.width as f32;
             let total_chars = line_metrics.end_index - line_metrics.start_index;
+
+            // No text decoration for empty lines
+            if total_chars == 0 || style_metrics.is_empty() {
+                continue;
+            }
 
             for (i, (index, style_metric)) in style_metrics.iter().enumerate() {
                 let text_style = style_metric.text_style;

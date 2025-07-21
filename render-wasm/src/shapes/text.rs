@@ -275,6 +275,26 @@ impl Paragraph {
             1 => skia::textlayout::TextDirection::RTL,
             _ => skia::textlayout::TextDirection::LTR,
         });
+
+        // Force minimum line height for empty lines using strut style
+        if !self.children.is_empty() {
+            let reference_child = self
+                .children
+                .iter()
+                .find(|child| !child.text.trim().is_empty())
+                .unwrap_or(&self.children[0]);
+
+            let mut strut_style = skia::textlayout::StrutStyle::default();
+            strut_style.set_font_size(reference_child.font_size);
+            strut_style.set_height(self.line_height);
+            strut_style.set_height_override(true);
+            strut_style.set_half_leading(false);
+            strut_style.set_leading(0.0);
+            strut_style.set_strut_enabled(true);
+            strut_style.set_force_strut_height(true);
+            style.set_strut_style(strut_style);
+        }
+
         style
     }
 
@@ -339,6 +359,7 @@ impl TextLeaf {
         style.set_letter_spacing(paragraph.letter_spacing);
         style.set_height(paragraph.line_height);
         style.set_height_override(true);
+        style.set_half_leading(false);
 
         style.set_decoration_type(match self.text_decoration {
             0 => skia::textlayout::TextDecoration::NO_DECORATION,
