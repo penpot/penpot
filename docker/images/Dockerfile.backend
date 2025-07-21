@@ -6,36 +6,15 @@ ENV LANG='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     DEBIAN_FRONTEND=noninteractive \
     NODE_VERSION=v22.16.0 \
-    IMAGEMAGICK_VERSION=7.1.1-47 \
     TZ=Etc/UTC
 
 RUN set -ex; \
     apt-get -qq update; \
     apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
-        curl \
-        ca-certificates \
-        binutils \
-        build-essential autoconf libtool pkg-config \
-        libltdl-dev \
-        libpng-dev libjpeg-dev libtiff-dev libwebp-dev libopenexr-dev libfftw3-dev \
-        libzip-dev \
-        liblcms2-dev liblzma-dev libzstd-dev \
-        libheif-dev librsvg2-dev \
+        curl ca-certificates binutils \
     ; \
     rm -rf /var/lib/apt/lists/*
-
-RUN set -eux; \
-    curl -LfsSo /tmp/magick.tar.gz https://github.com/ImageMagick/ImageMagick/archive/refs/tags/${IMAGEMAGICK_VERSION}.tar.gz; \
-    mkdir -p /tmp/magick; \
-    cd /tmp/magick; \
-    tar -xf /tmp/magick.tar.gz --strip-components=1; \
-    ./configure  --prefix=/opt/imagick; \
-    make -j 2; \
-    make install; \
-    rm -rf /opt/imagick/lib/libMagick++*; \
-    rm -rf /opt/imagick/include; \
-    rm -rf /opt/imagick/share;
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -144,7 +123,7 @@ RUN set -ex; \
 
 COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node
-COPY --from=build /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.1-47 /opt/imagick /opt/imagick
 COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
 
 USER penpot:penpot
