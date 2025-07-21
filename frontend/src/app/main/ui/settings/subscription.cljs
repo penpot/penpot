@@ -3,6 +3,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.profile :as du]
@@ -96,7 +97,7 @@
         handle-accept-dialog       (mf/use-fn
                                     (fn []
                                       (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                                                       ::ev/origin "profile"
+                                                                       ::ev/origin "settings"
                                                                        :section "subscription-management-modal"}))
                                       (let [current-href (rt/get-current-href)
                                             returnUrl (js/encodeURIComponent current-href)
@@ -212,43 +213,69 @@
 
 (mf/defc subscription-page*
   [{:keys [profile]}]
-  (let [route                           (mf/deref refs/route)
-        params                          (:params route)
-        params-subscription             (:subscription (:query params))
-        show-trial-subscription-modal   (or (= params-subscription "subscription-to-penpot-unlimited")
-                                            (= params-subscription "subscription-to-penpot-enterprise"))
-        show-subscription-success-modal (or (= params-subscription "subscribed-to-penpot-unlimited")
-                                            (= params-subscription "subscribed-to-penpot-enterprise"))
-        subscription                    (:subscription (:props profile))
-        subscription-type               (get-subscription-type subscription)
-        subscription-is-trial           (= (:status subscription) "trialing")
-        teams*                          (mf/use-state nil)
-        teams                           (deref teams*)
-        locale                          (mf/deref i18n/locale)
-        penpot-member                   (dt/format-date-locale-short (:created-at profile) {:locale locale})
-        subscription-member             (dt/format-date-locale-short (:start-date subscription) {:locale locale})
-        go-to-pricing-page              (mf/use-fn
-                                         (fn []
-                                           (st/emit! (ptk/event ::ev/event {::ev/name "explore-pricing-click" ::ev/origin "settings" :section "subscription"}))
-                                           (dom/open-new-window "https://penpot.app/pricing")))
-        go-to-payments                  (mf/use-fn
-                                         (fn []
-                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-management"
-                                                                            ::ev/origin "profile"
-                                                                            :section "subscription"}))
-                                           (let [current-href (rt/get-current-href)
-                                                 returnUrl (js/encodeURIComponent current-href)
-                                                 href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
-                                             (st/emit! (rt/nav-raw :href href)))))
-        open-subscription-modal         (mf/use-fn
-                                         (mf/deps teams)
-                                         (fn [subscription-type]
-                                           (st/emit! (ptk/event ::ev/event {::ev/name "open-subscription-modal"
-                                                                            ::ev/origin "settings:in-app"}))
-                                           (st/emit!
-                                            (modal/show :management-dialog
-                                                        {:subscription-type subscription-type
-                                                         :teams teams :subscribe-to-trial (not subscription)}))))]
+  (let [route          (mf/deref refs/route)
+        authenticated? (da/is-authenticated? profile)
+
+        teams*         (mf/use-state nil)
+        teams          (deref teams*)
+
+        locale         (mf/deref i18n/locale)
+
+        params-subscription
+        (-> route :params :query :subscription)
+
+        show-trial-subscription-modal?
+        (or (= params-subscription "subscription-to-penpot-unlimited")
+            (= params-subscription "subscription-to-penpot-enterprise"))
+
+        show-subscription-success-modal?
+        (or (= params-subscription "subscribed-to-penpot-unlimited")
+            (= params-subscription "subscribed-to-penpot-enterprise"))
+
+        subscription
+        (-> profile :props :subscription)
+
+        subscription-type
+        (get-subscription-type subscription)
+
+        subscription-is-trial?
+        (= (:status subscription) "trialing")
+
+        member-since
+        (dt/format-date-locale-short (:created-at profile) {:locale locale})
+
+        subscribed-since
+        (dt/format-date-locale-short (:start-date subscription) {:locale locale})
+
+        go-to-pricing-page
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "explore-pricing-click"
+                                ::ev/origin "settings"
+                                :section "subscription"}))
+           (dom/open-new-window "https://penpot.app/pricing")))
+
+        go-to-payments
+        (mf/use-fn
+         (fn []
+           (st/emit! (ev/event {::ev/name "open-subscription-management"
+                                ::ev/origin "settings"
+                                :section "subscription"}))
+           (let [current-href (rt/get-current-href)
+                 returnUrl (js/encodeURIComponent current-href)
+                 href (dm/str "payments/subscriptions/show?returnUrl=" returnUrl)]
+             (st/emit! (rt/nav-raw :href href)))))
+
+        open-subscription-modal
+        (mf/use-fn
+         (mf/deps teams)
+         (fn [subscription-type]
+           (st/emit! (ev/event {::ev/name "open-subscription-modal"
+                                ::ev/origin "settings:in-app"}))
+           (st/emit!
+            (modal/show :management-dialog
+                        {:subscription-type subscription-type
+                         :teams teams :subscribe-to-trial (not subscription)}))))]
 
     (mf/with-effect []
       (->> (rp/cmd! :get-owned-teams)
@@ -258,33 +285,35 @@
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
 
-    (mf/with-effect [show-trial-subscription-modal subscription]
-      (when show-trial-subscription-modal
-        (st/emit!
-         (ptk/event ::ev/event {::ev/name "open-subscription-modal"
-                                ::ev/origin "settings:from-pricing-page"})
-         (modal/show :management-dialog
-                     {:subscription-type (if (= params-subscription "subscription-to-penpot-unlimited")
-                                           "unlimited"
-                                           "enterprise")
-                      :teams teams
-                      :subscribe-to-trial (not subscription)})
-         (rt/nav :settings-subscription {} {::rt/replace true}))))
+    (mf/with-effect [authenticated? show-subscription-success-modal? show-trial-subscription-modal? subscription]
+      (when ^boolean authenticated?
+        (cond
+          ^boolean show-trial-subscription-modal?
 
-    (mf/with-effect [show-subscription-success-modal subscription]
-      (when show-subscription-success-modal
-        (st/emit!
-         (modal/show :subscription-success
-                     {:subscription-name (if (= params-subscription "subscribed-to-penpot-unlimited")
-                                           (tr "subscription.settings.unlimited-trial")
-                                           (tr "subscription.settings.enterprise-trial"))})
-         (du/update-profile-props {:subscription
-                                   (-> subscription
-                                       (assoc :type (if (= params-subscription "subscribed-to-penpot-unlimited")
-                                                      "unlimited"
-                                                      "enterprise"))
-                                       (assoc :status "trialing"))})
-         (rt/nav :settings-subscription {} {::rt/replace true}))))
+          (st/emit!
+           (ptk/event ::ev/event {::ev/name "open-subscription-modal"
+                                  ::ev/origin "settings:from-pricing-page"})
+           (modal/show :management-dialog
+                       {:subscription-type (if (= params-subscription "subscription-to-penpot-unlimited")
+                                             "unlimited"
+                                             "enterprise")
+                        :teams teams
+                        :subscribe-to-trial (not subscription)})
+           (rt/nav :settings-subscription {} {::rt/replace true}))
+
+          ^boolean show-subscription-success-modal?
+          (st/emit!
+           (modal/show :subscription-success
+                       {:subscription-name (if (= params-subscription "subscribed-to-penpot-unlimited")
+                                             (tr "subscription.settings.unlimited-trial")
+                                             (tr "subscription.settings.enterprise-trial"))})
+           (du/update-profile-props {:subscription
+                                     (-> subscription
+                                         (assoc :type (if (= params-subscription "subscribed-to-penpot-unlimited")
+                                                        "unlimited"
+                                                        "enterprise"))
+                                         (assoc :status "trialing"))})
+           (rt/nav :settings-subscription {} {::rt/replace true})))))
 
     [:section {:class (stl/css :dashboard-section)}
      [:div {:class (stl/css :dashboard-content)}
@@ -301,7 +330,7 @@
                                     (tr "subscription.settings.professional.storage")]}]
 
          "unlimited"
-         (if subscription-is-trial
+         (if subscription-is-trial?
            [:> plan-card* {:card-title (tr "subscription.settings.unlimited-trial")
                            :card-title-icon i/character-u
                            :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
@@ -325,7 +354,7 @@
                            :editors (-> profile :props :subscription :quantity)}])
 
          "enterprise"
-         (if subscription-is-trial
+         (if subscription-is-trial?
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise-trial")
                            :card-title-icon i/character-e
                            :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
@@ -344,13 +373,16 @@
                            :cta-link go-to-payments}]))
 
        [:div {:class (stl/css :membership-container)}
-        (when subscription-member [:div {:class (stl/css :membership)}
-                                   [:span {:class (stl/css :subscription-member)} i/crown]
-                                   [:span {:class (stl/css :membership-date)} (tr "subscription.settings.support-us-since" subscription-member)]])
+        (when subscribed-since
+          [:div {:class (stl/css :membership)}
+           [:span {:class (stl/css :subscription-member)} i/crown]
+           [:span {:class (stl/css :membership-date)}
+            (tr "subscription.settings.support-us-since" subscribed-since)]])
 
         [:div {:class (stl/css :membership)}
          [:span {:class (stl/css :penpot-member)} i/user]
-         [:span {:class (stl/css :membership-date)} (tr "subscription.settings.member-since" penpot-member)]]]]
+         [:span {:class (stl/css :membership-date)}
+          (tr "subscription.settings.member-since" member-since)]]]]
 
       [:div {:class (stl/css :other-subscriptions)}
        [:h3 {:class (stl/css :plan-section-title)} (tr "subscription.settings.other-plans")]
