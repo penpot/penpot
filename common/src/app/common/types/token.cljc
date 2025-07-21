@@ -29,20 +29,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
-  {:boolean       "boolean"
-   :border-radius "borderRadius"
-   :color         "color"
-   :dimensions    "dimension"
-   :font-size     "fontSizes"
+  {:boolean        "boolean"
+   :border-radius  "borderRadius"
+   :color          "color"
+   :dimensions     "dimension"
+   :font-size      "fontSizes"
    :letter-spacing "letterSpacing"
-   :number        "number"
-   :opacity       "opacity"
-   :other         "other"
-   :rotation      "rotation"
-   :sizing        "sizing"
-   :spacing       "spacing"
-   :string        "string"
-   :stroke-width  "strokeWidth"})
+   :number         "number"
+   :opacity        "opacity"
+   :other          "other"
+   :rotation       "rotation"
+   :sizing         "sizing"
+   :spacing        "spacing"
+   :string         "string"
+   :stroke-width   "strokeWidth"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
@@ -262,6 +262,13 @@
   "Checks if `token-type` supports given shape `attributes`."
   [attributes token-type]
   (seq (appliable-attrs attributes token-type)))
+
+;; Token attrs that are set inside content blocks of text shapes, instead
+;; at the shape level.
+(def attrs-in-text-content
+  (set/union
+   typography-keys
+   #{:fill}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS IN SHAPES

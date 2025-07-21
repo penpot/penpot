@@ -46,6 +46,7 @@
 - Fix copying a shadow color from info tab [Taiga #11211](https://tree.taiga.io/project/penpot/issue/11211)
 - Fix remove color button in the gradient editor [Taiga #11623](https://tree.taiga.io/project/penpot/issue/11623)
 - Fix "Copy as SVG" generates different code from the Inspect panel [Taiga #11519](https://tree.taiga.io/project/penpot/issue/11519)
+- Fix overriden tokens in text copies are not preserved [Taiga #11486](https://tree.taiga.io/project/penpot/issue/11486)
 
 ## 2.8.1 (Unreleased)
 
