@@ -128,7 +128,7 @@
 
 .accept-color {
   @include uppercaseTitleTipography;
-  @extend .button-secondary;
+  @extend .button-primary;
   width: 100%;
   height: $s-32;
   margin-top: $s-8;

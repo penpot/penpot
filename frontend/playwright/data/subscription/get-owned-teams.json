@@ -1,0 +1,14 @@
+[
+    {
+        "~:id": "~uf88e52d7-2b77-81fd-8006-23413fafe56c",
+        "~:name": "The Alpaca team",
+        "~:total-editors": 3,
+        "~:total-members": 3
+    },
+    {
+        "~:id": "~u81be1d05-a07b-81d5-8006-3e728bea76fb",
+        "~:name": "The Quokka team",
+        "~:total-editors": 1,
+        "~:total-members": 1
+    }
+]

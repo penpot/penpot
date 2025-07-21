@@ -14,16 +14,12 @@
    [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn has-shadow? [shape]
+(defn- has-shadow? [shape]
   (:shadow shape))
 
-(defn shape-copy-data [shape]
-  (str/join ", " (map css/shadow->css (:shadow shape))))
-
-(defn shadow-copy-data [shadow]
+(defn- shadow-copy-data [shadow]
   (css/shadow->css shadow))
 
 (mf/defc shadow-block [{:keys [shadow]}]

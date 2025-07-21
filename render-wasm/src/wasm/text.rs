@@ -2,11 +2,11 @@ use crate::mem;
 use crate::shapes::{auto_height, auto_width, max_width, GrowType, RawTextData, Type};
 
 use crate::STATE;
-use crate::{with_current_shape, with_state};
+use crate::{with_current_shape, with_current_shape_mut};
 
 #[no_mangle]
 pub extern "C" fn clear_shape_text() {
-    with_current_shape!(state, |shape: &mut Shape| {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.clear_text();
     });
 }
@@ -14,7 +14,7 @@ pub extern "C" fn clear_shape_text() {
 #[no_mangle]
 pub extern "C" fn set_shape_text_content() {
     let bytes = mem::bytes();
-    with_current_shape!(state, |shape: &mut Shape| {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
         let raw_text_data = RawTextData::from(&bytes);
         shape
             .add_paragraph(raw_text_data.paragraph)
@@ -26,7 +26,7 @@ pub extern "C" fn set_shape_text_content() {
 
 #[no_mangle]
 pub extern "C" fn set_shape_grow_type(grow_type: u8) {
-    with_current_shape!(state, |shape: &mut Shape| {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
             text_content.set_grow_type(GrowType::from(grow_type));
         }
@@ -35,24 +35,27 @@ pub extern "C" fn set_shape_grow_type(grow_type: u8) {
 
 #[no_mangle]
 pub extern "C" fn get_text_dimensions() -> *mut u8 {
-    let font_col;
-    with_state!(state, {
-        font_col = state.render_state.fonts.font_collection();
-    });
-
     let mut width = 0.01;
     let mut height = 0.01;
     let mut m_width = 0.01;
-    with_current_shape!(state, |shape: &mut Shape| {
+
+    with_current_shape!(state, |shape: &Shape| {
         width = shape.selrect.width();
         height = shape.selrect.height();
 
         if let Type::Text(content) = &shape.shape_type {
-            let paragraphs = content.get_skia_paragraphs(font_col);
-            height = auto_height(&paragraphs).ceil();
-            m_width = max_width(&paragraphs);
-            if content.grow_type() == GrowType::AutoWidth {
-                width = auto_width(&paragraphs).ceil();
+            let mut paragraphs = content.get_skia_paragraphs();
+            m_width = max_width(&mut paragraphs);
+
+            match content.grow_type() {
+                GrowType::AutoHeight => {
+                    height = auto_height(&mut paragraphs, width).ceil();
+                }
+                GrowType::AutoWidth => {
+                    width = auto_width(&mut paragraphs).ceil();
+                    height = auto_height(&mut paragraphs, width).ceil();
+                }
+                GrowType::Fixed => {}
             }
         }
     });

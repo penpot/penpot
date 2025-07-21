@@ -26,8 +26,6 @@ RUN set -ex; \
         build-essential autoconf libtool pkg-config
 
 
-COPY files/apt.sources /etc/apt/sources.list.d/ubuntu.sources
-
 ################################################################################
 ## IMAGE MAGICK
 ################################################################################

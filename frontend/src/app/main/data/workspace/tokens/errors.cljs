@@ -14,6 +14,10 @@
    {:error/code :error.import/json-parse-error
     :error/fn #(tr "workspace.tokens.error-parse")}
 
+   :error.import/no-token-files-found
+   {:error/code :error.import/no-token-files-found
+    :error/fn #(tr "workspace.tokens.no-token-files-found")}
+
    :error.import/invalid-json-data
    {:error/code :error.import/invalid-json-data
     :error/fn #(tr "workspace.tokens.invalid-json")}

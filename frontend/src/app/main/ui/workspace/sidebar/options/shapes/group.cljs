@@ -14,7 +14,7 @@
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraints-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
@@ -95,7 +95,7 @@
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? fill-ids)
-       [:& fill-menu {:type type :ids fill-ids :values fill-values}])
+       [:> fill/fill-menu* {:type type :ids fill-ids :values fill-values}])
 
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])

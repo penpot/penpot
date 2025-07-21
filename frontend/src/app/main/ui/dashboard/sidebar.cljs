@@ -27,7 +27,7 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon*]]
+   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon* get-subscription-type]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -333,10 +333,10 @@
                :alt (:name team-item)}]
 
         (if (and (contains? cf/flags :subscriptions)
-                 (or (= "unlimited" (:type (:subscription team-item))) (= "enterprise" (:type (:subscription team-item)))))
+                 (#{"unlimited" "enterprise"} (get-subscription-type (:subscription team-item))))
           [:div  {:class (stl/css :team-text-with-icon)}
            [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
-           [:> menu-team-icon* {:subscription-name (:type (:subscription team-item))}]]
+           [:> menu-team-icon* {:subscription-type (get-subscription-type (:subscription team-item))}]]
           [:span {:class (stl/css :team-text)
                   :title (:name team-item)} (:name team-item)])
         (when (= (:id team-item) (:id team))
@@ -654,7 +654,7 @@
         (fn []
           (reset! show-teams-ddwn? false))
         subscription          (:subscription team)
-        subscription-name     (:type subscription)]
+        subscription-type     (get-subscription-type subscription)]
 
     [:div {:class (stl/css :sidebar-team-switch)}
      [:div {:class (stl/css :switch-content)}
@@ -669,18 +669,18 @@
 
          (and (contains? cf/flags :subscriptions)
               (not (:is-default team))
-              (or (= "unlimited" subscription-name) (= "enterprise" subscription-name)))
+              (or (= "unlimited" subscription-type) (= "enterprise" subscription-type)))
          [:div {:class (stl/css :team-name)}
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
                  :alt (:name team)}]
           [:div  {:class (stl/css :team-text-with-icon)}
            [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]
-           [:> menu-team-icon* {:subscription-name subscription-name}]]]
+           [:> menu-team-icon* {:subscription-type subscription-type}]]]
 
 
          (and (not (:is-default team))
-              (or (not= "unlimited" subscription-name) (not= "enterprise" subscription-name)))
+              (or (not= "unlimited" subscription-type) (not= "enterprise" subscription-type)))
          [:div {:class (stl/css :team-name)}
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
@@ -834,9 +834,20 @@
          [:& link {:action go-drafts
                    :class (stl/css :sidebar-link)
                    :keyboard-action go-drafts-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]
+          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
+      [:div {:class (stl/css :sidebar-content-section)}
+       [:div {:class (stl/css :sidebar-section-title)}
+        (tr "labels.sources")]
+       [:ul {:class (stl/css :sidebar-nav)}
+        [:li {:class (stl/css-case :sidebar-nav-item true
+                                   :current fonts?)}
+         [:& link {:action go-fonts
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-fonts-with-key
+                   :data-testid "fonts"}
+          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
         [:li {:class (stl/css-case :current libs?
                                    :sidebar-nav-item true)}
          [:& link {:action go-libs
@@ -846,19 +857,10 @@
           [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
 
-      [:div {:class (stl/css :sidebar-content-section)}
-       [:ul {:class (stl/css :sidebar-nav)}
-        [:li {:class (stl/css-case :sidebar-nav-item true
-                                   :current fonts?)}
-         [:& link {:action go-fonts
-                   :class (stl/css :sidebar-link)
-                   :keyboard-action go-fonts-with-key
-                   :data-testid "fonts"}
-          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]]]
-
-
       [:div {:class (stl/css :sidebar-content-section)
              :data-testid "pinned-projects"}
+       [:div {:class (stl/css :sidebar-section-title)}
+        (tr "labels.pinned-projects")]
        (if (seq pinned-projects)
          [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
           (for [item pinned-projects]

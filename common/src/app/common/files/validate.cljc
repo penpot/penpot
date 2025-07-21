@@ -68,7 +68,6 @@
     :variant-bad-name
     :variant-bad-variant-name
     :variant-component-bad-name
-    :variant-no-properties
     :variant-component-bad-id})
 
 (def ^:private schema:error
@@ -589,11 +588,7 @@
     (when-not (ctk/is-variant? main-component)
       (report-error :not-a-variant
                     (str/ffmt "Shape % should be a variant" (:id main-component))
-                    main-component file component-page))
-    (when (< (count (:variant-properties component)) 1)
-      (report-error :variant-no-properties
-                    (str/ffmt "Component variant % should have properties" (:id main-component))
-                    main-component file nil))))
+                    main-component file component-page))))
 
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."

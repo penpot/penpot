@@ -242,6 +242,13 @@
       (cfh/make-container component-page :page))
     (cfh/make-container component :component)))
 
+(defn get-component-container-from-head
+  [instance-head libraries & {:keys [include-deleted?] :or {include-deleted? true}}]
+  (let [library-data   (-> (get-component-library libraries instance-head)
+                           :data)
+        component (ctkl/get-component library-data (:component-id instance-head) include-deleted?)]
+    (get-component-container library-data component)))
+
 (defn get-component-root
   "Retrieve the root shape of the component."
   [file-data component]
@@ -389,6 +396,47 @@
     (when (some? slot-inst)
       (or (= slot-main slot-inst)
           (= (:id shape-main) slot-inst)))))
+
+(defn- find-next-related-swap-shape-id
+  "Go up from the chain of references shapes that will eventually lead to the shape
+   with swap-slot-id as id. Returns the next shape on the chain"
+  [parent swap-slot-id libraries]
+  (let [container         (get-component-container-from-head parent libraries)
+        objects           (:objects container)
+
+        children          (cfh/get-children objects (:id parent))
+        original-shape-id (->> children
+                               (filter #(= swap-slot-id (:id %)))
+                               first
+                               :id)]
+    (if original-shape-id
+      ;; Return the children which id is the swap-slot-id
+      original-shape-id
+      ;; No children with swap-slot-id as id, go up
+      (let [referenced-shape (find-ref-shape nil container libraries parent)
+            ;; Recursive call that will get the id of the next shape on
+            ;; the chain that ends on a shape with swap-slot-id as id
+            next-shape-id    (when referenced-shape
+                               (find-next-related-swap-shape-id referenced-shape swap-slot-id libraries))]
+        ;; Return the children which shape-ref points to the next-shape-id
+        (->> children
+             (filter #(= next-shape-id (:shape-ref %)))
+             first
+             :id)))))
+
+(defn find-ref-id-for-swapped
+  "When a shape has been swapped, find the original ref-id that the shape had
+   before the swap"
+  [shape container libraries]
+  (let [swap-slot   (ctk/get-swap-slot shape)
+        objects     (:objects container)
+
+        parent      (get objects (:parent-id shape))
+        parent-head (ctn/get-head-shape objects parent)
+        parent-ref  (find-ref-shape nil container libraries parent-head)]
+
+    (when (and swap-slot parent-ref)
+      (find-next-related-swap-shape-id parent-ref swap-slot libraries))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"

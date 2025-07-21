@@ -77,6 +77,7 @@ body {
    :filter
    :opacity
    :overflow
+   :blend-mode
 
    ;; Flex/grid related properties
    :display
@@ -173,8 +174,12 @@ body {
 (defn format-css-property
   [[property value] options]
   (when (some? value)
-    (let [formatted-value (format-css-value property value options)]
-      (dm/fmt "%: %;" (d/name property) formatted-value))))
+    (let [formatted-value (format-css-value property value options)
+          ;; If the property is blend-mode, we should use a different property name.
+          property-name (if (= property :blend-mode)
+                          (dm/str "mix-" (d/name property))
+                          (d/name property))]
+      (dm/fmt "%: %;" property-name formatted-value))))
 
 (defn format-css-properties
   "Format a list of [property value] into a list of css properties in the format 'property: value;'"

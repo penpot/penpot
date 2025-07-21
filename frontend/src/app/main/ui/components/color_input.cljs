@@ -8,32 +8,27 @@
   (:require
    [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [goog.events :as events]
    [rumext.v2 :as mf]))
 
-(defn clean-color
-  [value]
-  (-> value
+(defn- get-clean-color
+  [node]
+  (-> (dom/get-value node)
       (cc/expand-hex)
       (cc/parse)
       (cc/prepend-hash)))
 
 (mf/defc color-input*
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
-  [props external-ref]
-  (let [value            (obj/get props "value")
-        on-change        (obj/get props "onChange")
-        on-blur          (obj/get props "onBlur")
-        on-focus         (obj/get props "onFocus")
-        select-on-focus? (d/nilv (unchecked-get props "selectOnFocus") true)
-        class            (d/nilv (unchecked-get props "className") "color-input")
-        aria-label       (d/nilv (unchecked-get props "aria-label") (tr "inspect.attributes.color"))
+  {::mf/forward-ref true}
+  [{:keys [value on-change on-blur on-focus select-on-focus class aria-label] :rest props} external-ref]
+  (let [select-on-focus? (d/nilv select-on-focus true)
+        class            (d/nilv class "color-input")
+        aria-label       (or aria-label (tr "inspect.attributes.color"))
 
         ;; We need a ref pointing to the input dom element, but the user
         ;; of this component may provide one (that is forwarded here).
@@ -42,25 +37,22 @@
         ref              (or external-ref local-ref)
 
         ;; We need to store the handle-blur ref so we can call it on unmount
-        handle-blur-ref  (mf/use-ref nil)
         dirty-ref        (mf/use-ref false)
 
         parse-value
         (mf/use-fn
-         (mf/deps ref)
          (fn []
            (let [input-node (mf/ref-val ref)]
              (try
-               (let [new-value (clean-color (dom/get-value input-node))]
+               (let [value (get-clean-color input-node)]
                  (dom/set-validity! input-node "")
-                 new-value)
+                 value)
                (catch :default _e
                  (dom/set-validity! input-node (tr "errors.invalid-color"))
                  nil)))))
 
         update-input
         (mf/use-fn
-         (mf/deps ref)
          (fn [new-value]
            (let [input-node (mf/ref-val ref)]
              (dom/set-value! input-node (cc/remove-hash new-value)))))
@@ -71,8 +63,7 @@
          (fn [new-value]
            (mf/set-ref-val! dirty-ref false)
            (when (and new-value (not= (cc/remove-hash new-value) value))
-             (when on-change
-               (on-change new-value))
+             (when on-change (on-change new-value))
              (update-input new-value))))
 
         handle-key-down
@@ -80,38 +71,27 @@
          (mf/deps apply-value update-input)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
-           (let [enter? (kbd/enter? event)
-                 esc?   (kbd/esc? event)
-                 input-node (mf/ref-val ref)]
-             (when enter?
-               (dom/prevent-default event)
-               (let [new-value (parse-value)]
-                 (apply-value new-value)
-                 (dom/blur! input-node)))
-             (when esc?
-               (dom/prevent-default event)
-               (update-input value)
-               (dom/blur! input-node)))))
+           (let [input-node (mf/ref-val ref)]
+             (cond
+               (kbd/enter? event)
+               (let [value (parse-value)]
+                 (update-input value)
+                 (dom/prevent-default event)
+                 (dom/blur! input-node))
 
-        handle-blur
-        (mf/use-fn
-         (mf/deps parse-value apply-value update-input)
-         (fn [_]
-           (let [new-value (parse-value)]
-             (when on-blur
-               (on-blur))
-             (if new-value
-               (apply-value new-value)
-               (update-input value)))))
+               (kbd/esc? event)
+               (do
+                 (update-input value)
+                 (dom/prevent-default event)
+                 (dom/blur! input-node))))))
 
         on-click
         (mf/use-fn
          (fn [event]
-           (let [target (dom/get-target event)]
-             (when (some? ref)
-               (let [current (mf/ref-val ref)]
-                 (when (and (some? current) (not (.contains current target)))
-                   (dom/blur! current)))))))
+           (let [target (dom/get-target event)
+                 current (mf/ref-val ref)]
+             (when (and (some? current) (not (.contains current target)))
+               (dom/blur! current)))))
 
         on-mouse-up
         (mf/use-fn
@@ -122,57 +102,53 @@
         (mf/use-fn
          (fn [event]
            (let [target (dom/get-target event)]
-             (when on-focus
-               (on-focus event))
+             (when on-focus (on-focus))
 
              (when select-on-focus?
                (-> event (dom/get-target) (.select))
-                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
-               (.addEventListener target "mouseup" on-mouse-up #js {"once" true})))))
+               ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
+               (.addEventListener target "mouseup" on-mouse-up #js {:once true})))))
 
-        props (-> (obj/clone props)
-                  (obj/unset! "selectOnFocus")
-                  (obj/set! "value" mf/undefined)
-                  (obj/set! "onChange" mf/undefined)
-                  (obj/set! "className" class)
-                  (obj/set! "type" "text")
-                  (obj/set! "ref" ref)
-                  (obj/set! "aria-label" aria-label)
-                  ;; (obj/set! "list" list-id)
-                  (obj/set! "defaultValue" value)
-                  (obj/set! "onKeyDown" handle-key-down)
-                  (obj/set! "onBlur" handle-blur)
-                  (obj/set! "onFocus" handle-focus))]
+        handle-blur
+        (mf/use-fn
+         (mf/deps parse-value apply-value update-input)
+         (fn [_]
+           (let [new-value (parse-value)]
+             (if new-value
+               (apply-value new-value)
+               (update-input value))
+             (when on-blur
+               (on-blur)))))
 
-    (mf/use-effect
-     (mf/deps value)
-     (fn []
-       (when-let [node (mf/ref-val ref)]
-         (dom/set-value! node value))))
+        handle-blur
+        (hooks/use-ref-callback handle-blur)
 
-    (mf/use-effect
-     (mf/deps handle-blur)
-     (fn []
-       (mf/set-ref-val! handle-blur-ref {:fn handle-blur})))
+        props
+        (mf/spread-props props
+                         {:class class
+                          :type "text"
+                          :ref ref
+                          :aria-label aria-label
+                          :default-value value
+                          :on-key-down handle-key-down
+                          :on-blur handle-blur
+                          :on-focus handle-focus})]
 
-    (mf/use-layout-effect
-     (fn []
-       #(when (mf/ref-val dirty-ref)
-          (let [handle-blur (:fn (mf/ref-val handle-blur-ref))]
-            (handle-blur)))))
+    (mf/with-effect [value]
+      (when-let [node (mf/ref-val ref)]
+        (dom/set-value! node value)))
 
-    (mf/use-layout-effect
-     (fn []
-       (let [keys [(events/listen globals/window "pointerdown" on-click)
-                   (events/listen globals/window "click" on-click)]]
-         #(doseq [key keys]
-            (events/unlistenByKey key)))))
+    (mf/with-layout-effect []
+      ;; UNMOUNT: we use layout-effect because we still need the dom
+      ;; node to be present on the refs, for properly execute the
+      ;; on-blur event handler
+      #(when (mf/ref-val dirty-ref) (handle-blur)))
 
-    [:*
-     [:> :input props]
-     ;; FIXME: this causes some weird interactions because of using apply-value
-     ;; [:datalist {:id list-id}
-     ;;  (for [color-name cc/color-names]
-     ;;    [:option color-name])]
-     ]))
+    (mf/with-layout-effect []
+      (let [key1 (events/listen globals/window "pointerdown" on-click)
+            key2 (events/listen globals/window "click" on-click)]
+        #(do
+           (events/unlistenByKey key1)
+           (events/unlistenByKey key2))))
 
+    [:> :input props]))

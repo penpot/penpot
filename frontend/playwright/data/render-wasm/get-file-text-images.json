@@ -1,0 +1,2761 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u6bd7c17d-4f59-815e-8006-5c1f6882469a",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "New File 7",
+    "~:revn": 66,
+    "~:modified-at": "~m1750422866332",
+    "~:vern": 0,
+    "~:id": "~u6bd7c17d-4f59-815e-8006-5e96453952b0",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content",
+            "0004-clean-shadow-and-colors",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0007-clear-invalid-strokes-and-fills-v2",
+            "0008-fix-library-colors-opacity",
+            "0009-add-partial-text-touched-flags"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    "~:created-at": "~m1750422040808",
+    "~:data": {
+        "~:pages": [
+            "~u6bd7c17d-4f59-815e-8006-5e96453952b1"
+        ],
+        "~:pages-index": {
+            "~u6bd7c17d-4f59-815e-8006-5e96453952b1": {
+                "~:objects": {
+                    "~u00000000-0000-0000-0000-000000000000": {
+                        "~#shape": {
+                            "~:y": 0,
+                            "~:hide-fill-on-export": false,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "Root Frame",
+                            "~:width": 0.01,
+                            "~:type": "~:frame",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 0,
+                                        "~:y": 0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.01
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0,
+                                        "~:y": 0.01
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 0,
+                            "~:proportion": 1,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 0,
+                                    "~:y": 0,
+                                    "~:width": 0.01,
+                                    "~:height": 0.01,
+                                    "~:x1": 0,
+                                    "~:y1": 0,
+                                    "~:x2": 0.01,
+                                    "~:y2": 0.01
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#FFFFFF",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": 0.01,
+                            "~:flip-y": null,
+                            "~:shapes": [
+                                "~u4b4f5ff7-44ac-808a-8006-5e979761b8f6",
+                                "~uef609b51-0d34-80f3-8006-5e99460c12bb",
+                                "~u4b4f5ff7-44ac-808a-8006-5e980c195547",
+                                "~uef609b51-0d34-80f3-8006-5e9934d0368b",
+                                "~u4b4f5ff7-44ac-808a-8006-5e968ea9bb4b",
+                                "~u4b4f5ff7-44ac-808a-8006-5e974ec5dede",
+                                "~u4b4f5ff7-44ac-808a-8006-5e9771af0c6e",
+                                "~u4b4f5ff7-44ac-808a-8006-5e9775677e20",
+                                "~u4b4f5ff7-44ac-808a-8006-5e977f9e30ea",
+                                "~u4b4f5ff7-44ac-808a-8006-5e98597c0d17",
+                                "~uef609b51-0d34-80f3-8006-5e995b054836",
+                                "~uef609b51-0d34-80f3-8006-5e9929d3fa47",
+                                "~uef609b51-0d34-80f3-8006-5e9880f79b0b",
+                                "~uef609b51-0d34-80f3-8006-5e98ba9c0e14",
+                                "~uef609b51-0d34-80f3-8006-5e98cb62758b"
+                            ]
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e977f9e30ea": {
+                        "~#shape": {
+                            "~:y": 318.9999734620724,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qropsg36kw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-opacity": 1,
+                                                                "~:fill-image": {
+                                                                    "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                                    "~:width": 443,
+                                                                    "~:height": 441,
+                                                                    "~:mtype": "image/png",
+                                                                    "~:name": "pattern.png",
+                                                                    "~:keep-aspect-ratio": true
+                                                                }
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "hello world"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "dctsmh90vx",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-opacity": 1,
+                                                        "~:fill-image": {
+                                                            "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                            "~:width": 443,
+                                                            "~:height": 441,
+                                                            "~:mtype": "image/png",
+                                                            "~:name": "pattern.png",
+                                                            "~:keep-aspect-ratio": true
+                                                        }
+                                                    }
+                                                ],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 170.00000804662704,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 361.99997143551445
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 361.99997143551445
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e977f9e30ea",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 3,
+                                    "~:stroke-color": "#f513de",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 188.99999672174454,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 188.99999672174454,
+                                    "~:y": 318.9999734620724,
+                                    "~:width": 170.00000804662704,
+                                    "~:height": 42.99999797344208,
+                                    "~:x1": 188.99999672174454,
+                                    "~:y1": 318.9999734620724,
+                                    "~:x2": 359.0000047683716,
+                                    "~:y2": 361.99997143551445
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999797344208,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e968ea9bb4b": {
+                        "~#shape": {
+                            "~:y": 262.9999810914669,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qropsg36kw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#15d12e",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "hello world"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "dctsmh90vx",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#15d12e",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 170.00000804662704,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 262.9999810914669
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 262.9999810914669
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 305.999979064909
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 305.999979064909
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e968ea9bb4b",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 3,
+                                    "~:stroke-opacity": 1,
+                                    "~:stroke-image": {
+                                        "~:id": "~u6bd7c17d-4f59-815e-8006-5e97441071cc",
+                                        "~:width": 443,
+                                        "~:height": 441,
+                                        "~:mtype": "image/png",
+                                        "~:name": "pattern.png",
+                                        "~:keep-aspect-ratio": true
+                                    }
+                                }
+                            ],
+                            "~:x": 188.99999672174454,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 188.99999672174454,
+                                    "~:y": 262.9999810914669,
+                                    "~:width": 170.00000804662704,
+                                    "~:height": 42.99999797344208,
+                                    "~:x1": 188.99999672174454,
+                                    "~:y1": 262.9999810914669,
+                                    "~:x2": 359.0000047683716,
+                                    "~:y2": 305.999979064909
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999797344208,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uef609b51-0d34-80f3-8006-5e99460c12bb": {
+                        "~#shape": {
+                            "~:y": 550.7500897584513,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 0.8191520396891823,
+                                    "~:b": 0.5735764429202543,
+                                    "~:c": -0.5735764429202543,
+                                    "~:d": 0.8191520396891825,
+                                    "~:e": 3.979039320256561e-13,
+                                    "~:f": 4.547473508864641e-13
+                                }
+                            },
+                            "~:rotation": 35,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "48novmbeyv",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "萎ポくろ"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "1adbszhly27",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 151.12151347433988,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 211.91854190645938,
+                                        "~:y": 511.2984505926968
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 335.7100379098812,
+                                        "~:y": 597.9781907400339
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 311.0462523788645,
+                                        "~:y": 633.2017262836614
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 187.25475637544255,
+                                        "~:y": 546.5219861363242
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 0.8191520396891827,
+                                    "~:b": -0.5735764429202546,
+                                    "~:c": 0.5735764429202546,
+                                    "~:d": 0.8191520396891825,
+                                    "~:e": -5.867761854680291e-13,
+                                    "~:f": -1.442788980666409e-13
+                                }
+                            },
+                            "~:id": "~uef609b51-0d34-80f3-8006-5e99460c12bb",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#13a9f5",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 185.92164040549193,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 185.92164040549193,
+                                    "~:y": 550.7500897584513,
+                                    "~:width": 151.12151347433988,
+                                    "~:height": 42.99999735945553,
+                                    "~:x1": 185.92164040549193,
+                                    "~:y1": 550.7500897584513,
+                                    "~:x2": 337.04315387983183,
+                                    "~:y2": 593.7500871179068
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999735945553,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e980c195547": {
+                        "~#shape": {
+                            "~:y": 423.0000117740001,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "48novmbeyv",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "萎ポくろ"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "center",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "1adbszhly27",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 90.99999851290627,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 183.0000022321518,
+                                        "~:y": 423.0000117740001
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 274.00000074505806,
+                                        "~:y": 423.0000117740001
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 274.00000074505806,
+                                        "~:y": 509.00000772088424
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 183.0000022321518,
+                                        "~:y": 509.00000772088424
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e980c195547",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#13a9f5",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 183.0000022321518,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 183.0000022321518,
+                                    "~:y": 423.0000117740001,
+                                    "~:width": 90.99999851290627,
+                                    "~:height": 85.99999594688416,
+                                    "~:x1": 183.0000022321518,
+                                    "~:y1": 423.0000117740001,
+                                    "~:x2": 274.00000074505806,
+                                    "~:y2": 509.00000772088424
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 85.99999594688416,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e9771af0c6e": {
+                        "~#shape": {
+                            "~:y": 318.9999734620724,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qropsg36kw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-opacity": 1,
+                                                                "~:fill-image": {
+                                                                    "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                                    "~:width": 443,
+                                                                    "~:height": 441,
+                                                                    "~:mtype": "image/png",
+                                                                    "~:name": "pattern.png",
+                                                                    "~:keep-aspect-ratio": true
+                                                                }
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "hello world"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "dctsmh90vx",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-opacity": 1,
+                                                        "~:fill-image": {
+                                                            "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                            "~:width": 443,
+                                                            "~:height": 441,
+                                                            "~:mtype": "image/png",
+                                                            "~:name": "pattern.png",
+                                                            "~:keep-aspect-ratio": true
+                                                        }
+                                                    }
+                                                ],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 170.00000804662704,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 361.99997143551445
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 361.99997143551445
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e9771af0c6e",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 3,
+                                    "~:stroke-color": "#f513de",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 188.99999672174454,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 188.99999672174454,
+                                    "~:y": 318.9999734620724,
+                                    "~:width": 170.00000804662704,
+                                    "~:height": 42.99999797344208,
+                                    "~:x1": 188.99999672174454,
+                                    "~:y1": 318.9999734620724,
+                                    "~:x2": 359.0000047683716,
+                                    "~:y2": 361.99997143551445
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999797344208,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e9775677e20": {
+                        "~#shape": {
+                            "~:y": 318.9999734620724,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qropsg36kw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-opacity": 1,
+                                                                "~:fill-image": {
+                                                                    "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                                    "~:width": 443,
+                                                                    "~:height": 441,
+                                                                    "~:mtype": "image/png",
+                                                                    "~:name": "pattern.png",
+                                                                    "~:keep-aspect-ratio": true
+                                                                }
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "hello world"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "dctsmh90vx",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-opacity": 1,
+                                                        "~:fill-image": {
+                                                            "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                            "~:width": 443,
+                                                            "~:height": 441,
+                                                            "~:mtype": "image/png",
+                                                            "~:name": "pattern.png",
+                                                            "~:keep-aspect-ratio": true
+                                                        }
+                                                    }
+                                                ],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 170.00000804662704,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 361.99997143551445
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 361.99997143551445
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e9775677e20",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 3,
+                                    "~:stroke-color": "#f513de",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 188.99999672174454,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 188.99999672174454,
+                                    "~:y": 318.9999734620724,
+                                    "~:width": 170.00000804662704,
+                                    "~:height": 42.99999797344208,
+                                    "~:x1": 188.99999672174454,
+                                    "~:y1": 318.9999734620724,
+                                    "~:x2": 359.0000047683716,
+                                    "~:y2": 361.99997143551445
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999797344208,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uef609b51-0d34-80f3-8006-5e995b054836": {
+                        "~#shape": {
+                            "~:y": 553.4624040823653,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 0.8191520419506291,
+                                    "~:b": 0.5735764396905747,
+                                    "~:c": -0.5735764396905756,
+                                    "~:d": 0.8191520419506286,
+                                    "~:e": 1.0800249583553523e-12,
+                                    "~:f": 1.3642420526593924e-12
+                                }
+                            },
+                            "~:rotation": 35,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "26bzlb8q9d5",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "xz2qooo55r",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "🔥"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "bcqsnxgrmw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "👩🏿\u200d🚀"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "vaxp7xayt3",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "👺"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "1con6sm4643",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "🚀"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "10k4ei57t29",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qopgplegd0",
+                                                        "~:font-size": "0",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "2cmxi1d1shv",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 180.00002134842015,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 282.3845213766798,
+                                        "~:y": 506.00002254111644
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 429.831906415395,
+                                        "~:y": 609.2437939303707
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 403.4473830964035,
+                                        "~:y": 646.9247979902748
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 255.99999805768823,
+                                        "~:y": 543.6810266010206
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 0.8191520419506279,
+                                    "~:b": -0.5735764396905741,
+                                    "~:c": 0.573576439690575,
+                                    "~:d": 0.8191520419506283,
+                                    "~:e": -1.667201749434965e-12,
+                                    "~:f": -4.980447927604343e-13
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~uef609b51-0d34-80f3-8006-5e995b054836",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 252.9159415623315,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 252.9159415623315,
+                                    "~:y": 553.4624040823653,
+                                    "~:width": 180.00002134842015,
+                                    "~:height": 46.000012366660485,
+                                    "~:x1": 252.9159415623315,
+                                    "~:y1": 553.4624040823653,
+                                    "~:x2": 432.91596291075166,
+                                    "~:y2": 599.4624164490258
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 46.000012366660485,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uef609b51-0d34-80f3-8006-5e98ba9c0e14": {
+                        "~#shape": {
+                            "~:y": 321.99998189293103,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "23iz9tepv1l",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "t8mkaljm92",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "❤️ I "
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "59c3kg7hq8",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "line-through",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "love"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "2ezx1yspc8b",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": " unicode ❤️"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "center",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "2bd6up3z17w",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "normal",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "line-through",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": ""
+                            },
+                            "~:name": "❤️ I hate emoji ❤️",
+                            "~:width": 208.99999821277834,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 377.99998569086324,
+                                        "~:y": 321.99998189293103
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 586.9999839036416,
+                                        "~:y": 321.99998189293103
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 586.9999839036416,
+                                        "~:y": 351.9999805349818
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 377.99998569086324,
+                                        "~:y": 351.9999805349818
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~uef609b51-0d34-80f3-8006-5e98ba9c0e14",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:center",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#ff0000",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 377.99998569086324,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 377.99998569086324,
+                                    "~:y": 321.99998189293103,
+                                    "~:width": 208.99999821277834,
+                                    "~:height": 29.99999864205074,
+                                    "~:x1": 377.99998569086324,
+                                    "~:y1": 321.99998189293103,
+                                    "~:x2": 586.9999839036416,
+                                    "~:y2": 351.9999805349818
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 29.99999864205074,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uef609b51-0d34-80f3-8006-5e9934d0368b": {
+                        "~#shape": {
+                            "~:y": 423.00001160904685,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "48novmbeyv",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "萎ポくろ"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "center",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "1adbszhly27",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 90.99999851290625,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 266.9999941259201,
+                                        "~:y": 423.00001160904685
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 357.99999263882637,
+                                        "~:y": 423.00001160904685
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 357.99999263882637,
+                                        "~:y": 509.000007555931
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 266.9999941259201,
+                                        "~:y": 509.000007555931
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~uef609b51-0d34-80f3-8006-5e9934d0368b",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#13a9f5",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 266.9999941259201,
+                            "~:shadow": [
+                                {
+                                    "~:color": {
+                                        "~:color": "#000000",
+                                        "~:opacity": 0.2
+                                    },
+                                    "~:spread": 0,
+                                    "~:offset-y": 4,
+                                    "~:style": "~:drop-shadow",
+                                    "~:blur": 4,
+                                    "~:hidden": false,
+                                    "~:id": "~uef609b51-0d34-80f3-8006-5e99383d5786",
+                                    "~:offset-x": 4
+                                }
+                            ],
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 266.9999941259201,
+                                    "~:y": 423.00001160904685,
+                                    "~:width": 90.99999851290625,
+                                    "~:height": 85.99999594688416,
+                                    "~:x1": 266.9999941259201,
+                                    "~:y1": 423.00001160904685,
+                                    "~:x2": 357.99999263882637,
+                                    "~:y2": 509.000007555931
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 85.99999594688416,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uef609b51-0d34-80f3-8006-5e98cb62758b": {
+                        "~#shape": {
+                            "~:y": 373.0000183528921,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "23iz9tepv1l",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "t8mkaljm92",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "❤️ I "
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "59c3kg7hq8",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "line-through",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "love"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "2ezx1yspc8b",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": " unicode ❤️"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "center",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "2bd6up3z17w",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "normal",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "line-through",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": ""
+                            },
+                            "~:name": "❤️ I hate emoji ❤️",
+                            "~:width": 148.00002662937948,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 350.0000044405443,
+                                        "~:y": 373.0000183528921
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 498.0000310699237,
+                                        "~:y": 373.0000183528921
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 498.0000310699237,
+                                        "~:y": 439.9999976771411
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 350.0000044405443,
+                                        "~:y": 439.9999976771411
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~uef609b51-0d34-80f3-8006-5e98cb62758b",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:center",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#ff0000",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 350.00000444054433,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 350.00000444054433,
+                                    "~:y": 373.0000183528921,
+                                    "~:width": 148.00002662937948,
+                                    "~:height": 66.99997932424901,
+                                    "~:x1": 350.00000444054433,
+                                    "~:y1": 373.0000183528921,
+                                    "~:x2": 498.0000310699238,
+                                    "~:y2": 439.9999976771411
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 66.99997932424901,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uef609b51-0d34-80f3-8006-5e9880f79b0b": {
+                        "~#shape": {
+                            "~:y": 270.00000668846326,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "23iz9tepv1l",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "t8mkaljm92",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "❤️ I love unicode ❤️"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "center",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "2bd6up3z17w",
+                                                "~:font-size": "24",
+                                                "~:font-weight": "normal",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": ""
+                            },
+                            "~:name": "❤️ I hate emoji ❤️",
+                            "~:width": 208.99999821277834,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 377.99998569086324,
+                                        "~:y": 270.00000668846326
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 586.9999839036416,
+                                        "~:y": 270.00000668846326
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 586.9999839036416,
+                                        "~:y": 300.000005330514
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 377.99998569086324,
+                                        "~:y": 300.000005330514
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~uef609b51-0d34-80f3-8006-5e9880f79b0b",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:center",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#ff0000",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 377.99998569086324,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 377.99998569086324,
+                                    "~:y": 270.00000668846326,
+                                    "~:width": 208.99999821277834,
+                                    "~:height": 29.99999864205074,
+                                    "~:x1": 377.99998569086324,
+                                    "~:y1": 270.00000668846326,
+                                    "~:x2": 586.9999839036416,
+                                    "~:y2": 300.000005330514
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 29.99999864205074,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e98597c0d17": {
+                        "~#shape": {
+                            "~:y": 455.0000055686013,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "26bzlb8q9d5",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "xz2qooo55r",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "🔥"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "bcqsnxgrmw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "👩🏿\u200d🚀"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "vaxp7xayt3",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "👺"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "1con6sm4643",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "🚀"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "10k4ei57t29",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qopgplegd0",
+                                                        "~:font-size": "0",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "2cmxi1d1shv",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 180.0000180039333,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 400.9999895156452,
+                                        "~:y": 455.0000055686013
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 581.0000075195785,
+                                        "~:y": 455.0000055686013
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 581.0000075195785,
+                                        "~:y": 501.0000170805595
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 400.9999895156452,
+                                        "~:y": 501.0000170805595
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e98597c0d17",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 400.9999895156452,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 400.9999895156452,
+                                    "~:y": 455.0000055686013,
+                                    "~:width": 180.0000180039333,
+                                    "~:height": 46.00001151195818,
+                                    "~:x1": 400.9999895156452,
+                                    "~:y1": 455.0000055686013,
+                                    "~:x2": 581.0000075195785,
+                                    "~:y2": 501.0000170805595
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 46.00001151195818,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e974ec5dede": {
+                        "~#shape": {
+                            "~:y": 318.9999734620724,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qropsg36kw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-opacity": 1,
+                                                                "~:fill-image": {
+                                                                    "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                                    "~:width": 443,
+                                                                    "~:height": 441,
+                                                                    "~:mtype": "image/png",
+                                                                    "~:name": "pattern.png",
+                                                                    "~:keep-aspect-ratio": true
+                                                                }
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "hello world"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "dctsmh90vx",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-opacity": 1,
+                                                        "~:fill-image": {
+                                                            "~:id": "~u6bd7c17d-4f59-815e-8006-5e9765e0fabd",
+                                                            "~:width": 443,
+                                                            "~:height": 441,
+                                                            "~:mtype": "image/png",
+                                                            "~:name": "pattern.png",
+                                                            "~:keep-aspect-ratio": true
+                                                        }
+                                                    }
+                                                ],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 170.00000804662704,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 318.9999734620724
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 359.0000047683716,
+                                        "~:y": 361.99997143551445
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999672174454,
+                                        "~:y": 361.99997143551445
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e974ec5dede",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 3,
+                                    "~:stroke-color": "#f513de",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 188.99999672174454,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 188.99999672174454,
+                                    "~:y": 318.9999734620724,
+                                    "~:width": 170.00000804662704,
+                                    "~:height": 42.99999797344208,
+                                    "~:x1": 188.99999672174454,
+                                    "~:y1": 318.9999734620724,
+                                    "~:x2": 359.0000047683716,
+                                    "~:y2": 361.99997143551445
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999797344208,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u4b4f5ff7-44ac-808a-8006-5e979761b8f6": {
+                        "~#shape": {
+                            "~:y": 371.0000077943487,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "sgffdxj3ur",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "48novmbeyv",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "萎ポくろ"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "1adbszhly27",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 151.12151563216787,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999416516704,
+                                        "~:y": 371.0000077943487
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 340.1215097973349,
+                                        "~:y": 371.0000077943487
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 340.1215097973349,
+                                        "~:y": 414.00000576779075
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 188.99999416516704,
+                                        "~:y": 414.00000576779075
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u4b4f5ff7-44ac-808a-8006-5e979761b8f6",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 1,
+                                    "~:stroke-color": "#13a9f5",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 188.99999416516704,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 188.99999416516704,
+                                    "~:y": 371.0000077943487,
+                                    "~:width": 151.12151563216787,
+                                    "~:height": 42.99999797344208,
+                                    "~:x1": 188.99999416516704,
+                                    "~:y1": 371.0000077943487,
+                                    "~:x2": 340.1215097973349,
+                                    "~:y2": 414.00000576779075
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999797344208,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uef609b51-0d34-80f3-8006-5e9929d3fa47": {
+                        "~#shape": {
+                            "~:y": 519.0000103369729,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "26bzlb8q9d5",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "xz2qooo55r",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "🔥"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "bcqsnxgrmw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "👩🏿\u200d🚀"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "vaxp7xayt3",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "👺"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "1con6sm4643",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "🚀"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "10k4ei57t29",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "qopgplegd0",
+                                                        "~:font-size": "0",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "2cmxi1d1shv",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 180.0000180039333,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 400.9999895156452,
+                                        "~:y": 519.0000103369729
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 581.0000075195785,
+                                        "~:y": 519.0000103369729
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 581.0000075195785,
+                                        "~:y": 565.000021848931
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 400.9999895156452,
+                                        "~:y": 565.000021848931
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~uef609b51-0d34-80f3-8006-5e9929d3fa47",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 400.9999895156452,
+                            "~:shadow": [
+                                {
+                                    "~:color": {
+                                        "~:color": "#000000",
+                                        "~:opacity": 0.2
+                                    },
+                                    "~:spread": 0,
+                                    "~:offset-y": 4,
+                                    "~:style": "~:drop-shadow",
+                                    "~:blur": 4,
+                                    "~:hidden": false,
+                                    "~:id": "~uef609b51-0d34-80f3-8006-5e992e5ed7a5",
+                                    "~:offset-x": 4
+                                }
+                            ],
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 400.9999895156452,
+                                    "~:y": 519.0000103369729,
+                                    "~:width": 180.0000180039333,
+                                    "~:height": 46.00001151195818,
+                                    "~:x1": 400.9999895156452,
+                                    "~:y1": 519.0000103369729,
+                                    "~:x2": 581.0000075195785,
+                                    "~:y2": 565.000021848931
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 46.00001151195818,
+                            "~:flip-y": null
+                        }
+                    }
+                },
+                "~:id": "~u6bd7c17d-4f59-815e-8006-5e96453952b1",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u6bd7c17d-4f59-815e-8006-5e96453952b0",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}
