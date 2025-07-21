@@ -27,7 +27,7 @@ export function assignCanvas(canvas) {
   context.getExtension("WEBGL_debug_renderer_info");
 
   Module._init(canvas.width, canvas.height);
-  Module._set_render_options(0, 1);
+  Module._set_render_options(1, 1);
 }
 
 export function hexToU32ARGB(hex, opacity = 1) {

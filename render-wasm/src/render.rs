@@ -12,7 +12,7 @@ mod surfaces;
 mod text;
 mod ui;
 
-use skia_safe::{self as skia, Matrix, Rect};
+use skia_safe::{self as skia, Color, Matrix, Rect};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
@@ -516,6 +516,7 @@ impl RenderState {
             | SurfaceId::DropShadows as u32
             | SurfaceId::InnerShadows as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
+            emscripten::log!(emscripten::Log::Default, "render_shape::save");
             s.canvas().save();
         });
 
@@ -536,8 +537,10 @@ impl RenderState {
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
                 if let Some(modifiers) = modifiers {
+                    emscripten::log!(emscripten::Log::Default, "render_shape::concat (modifiers)");
                     self.surfaces.canvas(SurfaceId::Fills).concat(modifiers);
                 }
+                emscripten::log!(emscripten::Log::Default, "render_shape::concat");
                 self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas(SurfaceId::Fills))
@@ -562,6 +565,7 @@ impl RenderState {
                     | SurfaceId::DropShadows as u32
                     | SurfaceId::InnerShadows as u32;
                 self.surfaces.apply_mut(surface_ids, |s| {
+                    emscripten::log!(emscripten::Log::Default, "render_shape::concat");
                     s.canvas().concat(&matrix);
                 });
 
@@ -621,6 +625,7 @@ impl RenderState {
                     | SurfaceId::DropShadows as u32
                     | SurfaceId::InnerShadows as u32;
                 self.surfaces.apply_mut(surface_ids, |s| {
+                    emscripten::log!(emscripten::Log::Default, "render_shape::concat");
                     s.canvas().concat(&matrix);
                 });
 
@@ -661,6 +666,7 @@ impl RenderState {
             | SurfaceId::DropShadows as u32
             | SurfaceId::InnerShadows as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
+            emscripten::log!(emscripten::Log::Default, "render_shape::restore");
             s.canvas().restore();
         });
     }
@@ -992,16 +998,36 @@ impl RenderState {
             self.render_is_full = false;
         }
 
-        if self.options.is_debug_visible() {
-            debug::render(self);
-        }
-
+        emscripten::log!(emscripten::Log::Default, "dumping tiles");
         while let Some(next_tile) = self.pending_tiles.pop() {
             emscripten::log!(emscripten::Log::Default, "next_tile {} {}", next_tile.0, next_tile.1);
-            self.update_render_context(&next_tile);
+            if self.surfaces.has_cached_tile_surface(next_tile) {
+                emscripten::log!(emscripten::Log::Default, "cached");
+                performance::begin_measure!("render_shape_tree::cached");
+                let tile_rect = self.get_current_tile_bounds();
+                self.surfaces.draw_cached_tile_surface(
+                    next_tile,
+                    tile_rect,
+                    self.background_color,
+                );
+                performance::end_measure!("render_shape_tree::cached");
+
+                if self.options.is_debug_visible() {
+                    debug::render_workspace_current_tile(
+                        self,
+                        "Cached".to_string(),
+                        next_tile,
+                        tile_rect,
+                    );
+                }
+            }
+            // self.update_render_context(&next_tile);
             self.render_current_tile_to_final_canvas(false);
         }
 
+        if self.options.is_debug_visible() {
+            debug::render(self);
+        }
         debug::render_wasm_label(self);
 
         emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:end");
@@ -1103,6 +1129,16 @@ impl RenderState {
                 "Error: Element with root_id {node_render_state.id} not found in the tree."
                     .to_string(),
             )?;
+
+            /*
+            let mut paint = skia::Paint::default();
+            paint.set_color(Color::from_argb(255, 255, 0, 255));
+            paint.set_style(skia::PaintStyle::Fill);
+            paint.set_anti_alias(false);
+            paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+            self.surfaces.draw_rect_to(SurfaceId::Current, element, &paint);
+ */
 
             emscripten::log!(emscripten::Log::Default, "a {} {}", element.id, node_render_state.is_root());
             if !node_render_state.is_root() {
