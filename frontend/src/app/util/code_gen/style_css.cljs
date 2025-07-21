@@ -172,6 +172,7 @@ body {
      (format-value property value options))))
 
 (defn format-css-property
+  "Format a single CSS property in the format 'property: value;'."
   [[property value] options]
   (when (some? value)
     (let [formatted-value (format-css-value property value options)
