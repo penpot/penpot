@@ -593,8 +593,7 @@
         close-dialog
         (mf/use-fn
          (fn [_]
-           (modal/hide!)
-           (modal/disallow-click-outside!)))
+           (modal/hide!)))
 
         selected-tab*
         (mf/use-state #(d/nilv starting-tab "libraries"))
