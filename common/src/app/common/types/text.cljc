@@ -127,7 +127,8 @@
    entries"
   [a b]
   (cond
-    (not= (type a) (type b))
+    (and (not= (type a) (type b))
+         (not (and (map? a) (map? b)))) ;; Sometimes they are both maps but of different subtypes
     false
 
     (map? a)
