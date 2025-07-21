@@ -126,8 +126,8 @@ test("Renders a file with texts with images", async ({ page }) => {
   await workspace.setupEmptyFile();
   await workspace.mockFileMediaAsset(
     [
-      "6bd7c17d-4f59-815e-8006-5e9765e0fabd",
-      "6bd7c17d-4f59-815e-8006-5e97441071cc"
+      "4f89252d-ebbc-813e-8006-8699e4170e17",
+      "4f89252d-ebbc-813e-8006-8699e4170e18"
     ],
     "render-wasm/assets/pattern.png",
   );
