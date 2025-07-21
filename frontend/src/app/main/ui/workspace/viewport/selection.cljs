@@ -16,6 +16,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.shape :as cts]
    [app.main.data.workspace :as dw]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -277,7 +278,7 @@
 ;; The side handler is always rendered horizontally and then rotated
 (mf/defc resize-side-handler
   {::mf/wrap-props false}
-  [{:keys [x y length align angle zoom position rotation transform on-resize color show-handler scale-text]}]
+  [{:keys [x y length align angle zoom position rotation transform on-resize color show-handler scale-text shape-id shape-type]}]
   (let [height        (/ resize-side-height zoom)
         offset-y      (if (= align :outside) (- height) (- (/ height 2)))
         target-y      (+ y offset-y)
@@ -289,7 +290,18 @@
                           (cur/get-dynamic "resize-ew" rotation))
                         (if ^boolean scale-text
                           (cur/get-dynamic "scale-ns" rotation)
-                          (cur/get-dynamic "resize-ns" rotation)))]
+                          (cur/get-dynamic "resize-ns" rotation)))
+
+        on-double-click
+        (mf/use-fn
+         (mf/deps shape-id position shape-type)
+         (fn [_event]
+           (when (= shape-type :text)
+             (cond
+               (= position :right)
+               (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-width)))
+               (= position :bottom)
+               (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-height)))))))]
 
     [:g.resize-handler
      (when ^boolean show-handler
@@ -311,6 +323,7 @@
              :data-position (name position)
              :transform transform-str
              :on-pointer-down on-resize
+             :on-double-click on-double-click
              :style {:fill (if (dbg/enabled? :handlers) "yellow" "none")
                      :stroke-width 0}}]]))
 
@@ -399,7 +412,9 @@
                               :on-resize on-resize
                               :transform transform
                               :rotation rotation
-                              :color color}
+                              :color color
+                              :shape-id (dm/get-prop shape :id)
+                              :shape-type (dm/get-prop shape :type)}
                          props)]
            (case type
              :rotation [:> rotation-handler props]
@@ -482,16 +497,36 @@
   {::mf/private true}
   [{:keys [shape zoom color disabled]}]
   (let [shape-id (dm/get-prop shape :id)
+        grow-type (dm/get-prop shape :grow-type)
+        shape-type (dm/get-prop shape :type)
 
         on-resize
         (mf/use-fn
-         (mf/deps shape-id shape)
+         (mf/deps shape-id shape grow-type shape-type)
          (fn [event]
            (when (dom/left-mouse? event)
              (dom/stop-propagation event)
              (let [target   (dom/get-current-target event)
                    position (-> (dom/get-data target "position")
                                 (keyword))]
+               (cond
+                 ;; If text and in auto-width and the resize is horizontal, switch to auto-height and mark direction
+                 (and (= shape-type :text)
+                      (= grow-type :auto-width)
+                      (or (= position :right) (= position :left)))
+                 (st/emit! (dwsh/update-shapes [shape-id] #(-> % (assoc :grow-type :auto-height) (assoc :last-resize-direction :horizontal))))
+                 ;; If text and in auto-height and the resize is horizontal, mark direction but do not change grow-type
+                 (and (= shape-type :text)
+                      (= grow-type :auto-height)
+                      (or (= position :right) (= position :left)))
+                 (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :last-resize-direction :horizontal)))
+                 ;; If text and in auto-height and the resize is vertical, mark direction
+                 (and (= shape-type :text)
+                      (= grow-type :auto-height)
+                      (or (= position :top) (= position :bottom)))
+                 (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :last-resize-direction :vertical)))
+                 :else
+                 nil)
                (st/emit! (dw/start-resize position #{shape-id} shape))))))
 
         on-rotate
