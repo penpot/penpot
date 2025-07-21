@@ -291,13 +291,18 @@
                         (if ^boolean scale-text
                           (cur/get-dynamic "scale-ns" rotation)
                           (cur/get-dynamic "resize-ns" rotation)))
-        on-double-click (fn [_]
-                          (when (= shape-type :text)
-                            (cond
-                              (= position :right)
-                              (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-width)))
-                              (= position :bottom)
-                              (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-height))))))]
+
+        on-double-click
+        (mf/use-fn
+         (mf/deps shape-id position shape-type)
+         (fn [_event]
+           (when (= shape-type :text)
+             (cond
+               (= position :right)
+               (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-width)))
+               (= position :bottom)
+               (st/emit! (dwsh/update-shapes [shape-id] #(assoc % :grow-type :auto-height)))))))]
+
     [:g.resize-handler
      (when ^boolean show-handler
        [:circle {:r (/ resize-point-radius zoom)
