@@ -749,4 +749,3 @@
         start (if (= idx 0) (first stops) (get stops (dec idx)))
         end   (if (nil? idx) (last stops) (get stops idx))]
     (interpolate-color start end offset)))
-

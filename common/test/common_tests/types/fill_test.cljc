@@ -6,15 +6,10 @@
 
 (ns common-tests.types.fill-test
   (:require
-   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.math :as mth]
-   [app.common.pprint :as pp]
-   [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
-   [app.common.transit :as trans]
    [app.common.types.fills :as types.fills]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
