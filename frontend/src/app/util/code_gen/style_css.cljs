@@ -220,7 +220,7 @@ body {
           (:paragraph "paragraph")
           (sts/generate-paragraph-styles shape node)
 
-          (sts/generate-text-styles shape node))]
+          (sts/generate-text-styles (:id shape) node))]
     (dm/fmt
      ".% {\n%\n}"
      (dm/str shape-selector " ." (:$id node))

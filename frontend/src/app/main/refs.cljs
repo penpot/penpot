@@ -634,6 +634,12 @@
 (defn workspace-preview-blend-by-id [id]
   (l/derived (l/key id) workspace-preview-blend =))
 
+(def workspace-preview-font
+  (l/derived :workspace-preview-font st/state))
+
+(defn workspace-preview-font-by-id [id]
+  (l/derived (l/key id) workspace-preview-font =))
+
 (def specialized-panel
   (l/derived :specialized-panel st/state))
 

@@ -13,6 +13,12 @@
    [app.util.object :as obj]
    [rumext.v2 :as mf]))
 
+(defn generate-styles
+  [shape parent node]
+  (let [shape-id (:id shape)]
+    {:parent (sts/generate-text-styles shape-id parent)
+     :node   (sts/generate-text-styles shape-id node)}))
+
 (mf/defc render-text
   {::mf/wrap-props false}
   [props]
