@@ -302,10 +302,12 @@ impl RenderState {
         self.surfaces.reset(self.background_color);
     }
 
+    #[allow(dead_code)]
     pub fn get_canvas_at(&mut self, surface_id: SurfaceId) -> &skia::Canvas {
         self.surfaces.canvas(surface_id)
     }
 
+    #[allow(dead_code)]
     pub fn restore_canvas(&mut self, surface_id: SurfaceId) {
         self.surfaces.canvas(surface_id).restore();
     }
@@ -462,13 +464,22 @@ impl RenderState {
                 let text_content = text_content.new_bounds(shape.selrect());
                 let mut paragraphs = text_content.get_skia_paragraphs();
 
-                shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
-                text::render(self, &shape, &mut paragraphs, None);
+                if !shape.has_strokes() {
+                    shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
+                }
+
+                text::render(self, &shape, &mut paragraphs, None, None);
 
                 if shape.has_inner_strokes() {
                     // Inner strokes paints need the text fill to apply correctly their blend modes
                     // (e.g., SrcATop, DstOver)
-                    text::render(self, &shape, &mut paragraphs, Some(SurfaceId::Strokes));
+                    text::render(
+                        self,
+                        &shape,
+                        &mut paragraphs,
+                        Some(SurfaceId::Strokes),
+                        None,
+                    );
                 }
 
                 for stroke in shape.strokes().rev() {
@@ -488,6 +499,7 @@ impl RenderState {
                         None,
                         Some(&mut stroke_paragraphs),
                         antialias,
+                        None,
                     );
                     shadows::render_text_inner_shadows(
                         self,
@@ -531,7 +543,7 @@ impl RenderState {
 
                 for stroke in shape.strokes().rev() {
                     shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
-                    strokes::render(self, &shape, stroke, None, None, None, antialias);
+                    strokes::render(self, &shape, stroke, None, None, None, antialias, None);
                     shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 
