@@ -8,7 +8,6 @@
   (:require
    #?(:cljs [goog.color :as gcolors])
    [app.common.colors :as colors]
-   [app.common.data :as d]
    [clojure.test :as t]))
 
 (t/deftest valid-hex-color
@@ -52,8 +51,8 @@
   (t/is (= [1 2 3] (colors/hex->rgb "#010203"))))
 
 (t/deftest format-hsla
-  (t/is (= "210, 50%, 0.78%, 1" (colors/format-hsla [210.0 0.5 0.00784313725490196 1])))
-  (t/is (= "220, 5%, 30%, 0.8" (colors/format-hsla [220.0 0.05 0.3 0.8]))))
+  (t/is (= "210 50% 0.78% / 1" (colors/format-hsla [210.0 0.5 0.00784313725490196 1])))
+  (t/is (= "220 5% 30% / 0.8" (colors/format-hsla [220.0 0.05 0.3 0.8]))))
 
 (t/deftest format-rgba
   (t/is (= "210, 199, 12, 0.08" (colors/format-rgba [210 199 12 0.08])))
