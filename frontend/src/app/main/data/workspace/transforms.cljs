@@ -218,16 +218,23 @@
                                   (gpt/add resize-origin displacement)
                                   resize-origin)
 
+                  ;; Determine resize direction for grow-type logic
+                  resize-direction (cond
+                                     (or (= handler :left) (= handler :right)) :horizontal
+                                     (or (= handler :top) (= handler :bottom)) :vertical
+                                     :else nil)
+
+                  ;; Calculate new grow-type for text layers
+                  new-grow-type (when (cfh/text-shape? shape)
+                                  (dwm/next-grow-type (dm/get-prop shape :grow-type) resize-direction))
+
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
                   change-width?
                   (not (mth/close? (dm/get-prop scalev :x) 1))
 
                   change-height?
-                  (not (mth/close? (dm/get-prop scalev :y) 1))
-
-                  auto-width-text?  (and (cfh/text-shape? shape) (= :auto-width (dm/get-prop shape :grow-type)))
-                  auto-height-text? (and (cfh/text-shape? shape) (= :auto-height (dm/get-prop shape :grow-type)))]
+                  (not (mth/close? (dm/get-prop scalev :y) 1))]
 
               (cond-> (ctm/empty)
                 (some? displacement)
@@ -242,11 +249,9 @@
                 ^boolean change-height?
                 (ctm/change-property :layout-item-v-sizing :fix)
 
-                (and auto-width-text? (or change-width? change-height?))
-                (ctm/change-property :grow-type :fixed)
-
-                (and auto-height-text? change-height?)
-                (ctm/change-property :grow-type :fixed)
+                ;; Set grow-type if it should change
+                (and new-grow-type (not= new-grow-type (dm/get-prop shape :grow-type)))
+                (ctm/change-property :grow-type new-grow-type)
 
                 ^boolean scale-text
                 (ctm/scale-content (dm/get-prop scalev :x)))))

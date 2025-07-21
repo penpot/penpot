@@ -24,6 +24,7 @@
 - New typography token type - font size token [Taiga #10938](https://tree.taiga.io/project/penpot/us/10938)
 - Hide bounding box while editing visual effects [Taiga #11576](https://tree.taiga.io/project/penpot/issue/11576)
 - Improved text layer resizing: Allow double-click on text bounding box to set auto-width/auto-height [Taiga #11577](https://tree.taiga.io/project/penpot/issue/11577)
+- Improve text layer auto-resize: auto-width switches to auto-height on horizontal resize, and only switches to fixed on vertical resize [Taiga #11578](https://tree.taiga.io/project/penpot/issue/11578)
 
 ### :bug: Bugs fixed
 
