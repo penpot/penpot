@@ -41,6 +41,12 @@
 - Fix main component receives focus and is selected when using 'Show Main Component' [Taiga #11402](https://tree.taiga.io/project/penpot/issue/11402)
 - Fix duplicating pages with mainInstance shapes nested inside groups [Taiga #10774](https://tree.taiga.io/project/penpot/issue/10774)
 
+## 2.8.1 (Unreleased)
+
+### :bug: Bugs fixed
+
+- Fix unexpected exception on processing old texts [Github #6889](https://github.com/penpot/penpot/pull/6889)
+
 ## 2.8.0
 
 ### :rocket: Epics and highlights

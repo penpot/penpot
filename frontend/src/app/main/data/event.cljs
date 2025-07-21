@@ -245,4 +245,4 @@
 
 (defn event
   [props]
-  (ptk/data-event ::events props))
+  (ptk/data-event ::event props))
