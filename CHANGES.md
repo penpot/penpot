@@ -7,21 +7,24 @@
 ### :boom: Breaking changes & Deprecations
 
 ### :heart: Community contributions (Thank you!)
+
 - Clarify message when inviting existing team members to make it more user-friendly and clear which invitations will be sent. [Taiga #11441](https://tree.taiga.io/project/penpot/issue/11441) by [@iprithvitharun](https://github.com/iprithvitharun)
 - Update email change confirmation message for clarity and correct grammar. [GitHub #6786](https://github.com/penpot/penpot/issues/6786) by [@iprithvitharun](https://github.com/iprithvitharun)
 
 ### :sparkles: New features & Enhancements
+
 - Add visual indicator for new comments in the workspace [Taiga #11328](https://tree.taiga.io/project/penpot/issue/11328)
 - On components overrides, separate the content of the text from the rest of properties [Taiga #7434](https://tree.taiga.io/project/penpot/us/7434)
 - Improve dashboard's sidebar [Taiga #10700](https://tree.taiga.io/project/penpot/us/10700)
 - Change "Save color" button to primary button [Taiga #9410](https://tree.taiga.io/project/penpot/issue/9410)
 - Support for exif rotated images [GitHub #6767](https://github.com/penpot/penpot/issues/6767)
 - Display Blend Mode and Layer Opacity properties in the Inspect tab [Taiga #11283](https://tree.taiga.io/project/penpot/issue/11283)
-- Provide CSS `mix-blend-mode` property in code editor when present on shape [Taiga #11282](https://tree.taiga.io/project/penpot/issue/11282) 
+- Provide CSS `mix-blend-mode` property in code editor when present on shape [Taiga #11282](https://tree.taiga.io/project/penpot/issue/11282)
 - Add the option to import tokens in a .zip file. [Taiga #11378](https://tree.taiga.io/project/penpot/us/11378)
 - New typography token type - font size token [Taiga #10938](https://tree.taiga.io/project/penpot/us/10938)
 
 ### :bug: Bugs fixed
+
 - Copying font size does not copy the unit [Taiga #11143](https://tree.taiga.io/project/penpot/issue/11143)
 - Fix text-decoration line-through that displays a wrong property value [Taiga #11145](https://tree.taiga.io/project/penpot/issue/11145)
 - Fix display error message on register form [Taiga #11444](https://tree.taiga.io/project/penpot/issue/11444)
@@ -30,6 +33,8 @@
 - Fix title button from Title Case to Capitalize [Taiga #11476](https://tree.taiga.io/project/penpot/issue/11476)
 - Fix Main component receives focus and is selected when using 'Show Main Component' [Taiga #11402](https://tree.taiga.io/project/penpot/issue/11402)
 - Fix touchpad swipe leading to navigating back/forth [GitHub #4246](https://github.com/penpot/penpot/issues/4246)
+- Keep color data when copying from info tab into CSS [Taiga #11144](https://tree.taiga.io/project/penpot/issue/11144)
+- Update HSL values to modern syntax as defined in W3C CSS Color Module Level 4 [Taiga #11144](https://tree.taiga.io/project/penpot/issue/11144)
 
 ## 2.8.0
 
