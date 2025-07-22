@@ -1782,8 +1782,7 @@
                 ;; :geometry-group and :content-group so, if the position-data
                 ;; changes but the geometry is touched we need to reset the position-data
                 ;; so it's calculated again
-                reset-pos-data? (and (cfh/text-shape? origin-shape)
-                                     (= attr :position-data)
+                reset-pos-data? (and (= attr :position-data)
                                      (not= (:position-data origin-shape) (:position-data dest-shape))
                                      (touched :geometry-group))
 
