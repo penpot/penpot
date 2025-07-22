@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [clojure.data :as data]
    [clojure.set :as set]
+   [cuerdas.core :as str]
    [malli.util :as mu]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,20 +30,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
-  {:boolean       "boolean"
-   :border-radius "borderRadius"
-   :color         "color"
-   :dimensions    "dimension"
-   :font-size     "fontSizes"
+  {:boolean        "boolean"
+   :border-radius  "borderRadius"
+   :color          "color"
+   :dimensions     "dimension"
+   :font-family    "fontFamilies"
+   :font-size      "fontSizes"
    :letter-spacing "letterSpacing"
-   :number        "number"
-   :opacity       "opacity"
-   :other         "other"
-   :rotation      "rotation"
-   :sizing        "sizing"
-   :spacing       "spacing"
-   :string        "string"
-   :stroke-width  "strokeWidth"})
+   :text-case      "textCase"
+   :number         "number"
+   :opacity        "opacity"
+   :other          "other"
+   :rotation       "rotation"
+   :sizing         "sizing"
+   :spacing        "spacing"
+   :string         "string"
+   :stroke-width   "strokeWidth"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
@@ -133,7 +136,22 @@
 
 (def letter-spacing-keys (schema-keys schema:letter-spacing))
 
-(def typography-keys (set/union font-size-keys letter-spacing-keys))
+(def ^:private schema:font-family
+  [:map
+   [:font-family {:optional true} token-name-ref]])
+
+(def font-family-keys (schema-keys schema:font-family))
+
+(def ^:private schema:text-case
+  [:map
+   [:text-case {:optional true} token-name-ref]])
+
+(def text-case-keys (schema-keys schema:text-case))
+
+(def typography-keys (set/union font-size-keys
+                                letter-spacing-keys
+                                font-family-keys
+                                text-case-keys))
 
 ;; TODO: Created to extract the font-size feature from the typography feature flag.
 ;; Delete this once the typography feature flag is removed.
@@ -169,6 +187,8 @@
    schema:number
    schema:font-size
    schema:letter-spacing
+   schema:font-family
+   schema:text-case
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -198,6 +218,8 @@
 
      (font-size-keys shape-attr) #{shape-attr}
      (letter-spacing-keys shape-attr) #{shape-attr}
+     (font-family-keys shape-attr) #{shape-attr}
+     (text-case-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
@@ -291,3 +313,23 @@
 
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TYPOGRAPHY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn split-font-family
+  "Splits font family `value` string from into vector of font families.
+
+  Doesn't handle possible edge-case of font-families with `,` in their font family name."
+  [font-value]
+  (let [families (str/split font-value ",")
+        xform (comp
+               (map str/trim)
+               (remove str/empty?))]
+    (into [] xform families)))
+
+(defn join-font-family
+  "Joins font family `value` into a string to be edited with a single input."
+  [font-families]
+  (str/join ", " font-families))
