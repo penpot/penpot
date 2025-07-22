@@ -49,7 +49,7 @@ pub struct Surfaces {
     // for drawing tiles.
     tiles: TileTextureCache,
     sampling_options: skia::SamplingOptions,
-    margins: skia::ISize,
+    // margins eliminado
 }
 
 #[allow(dead_code)]
@@ -58,29 +58,18 @@ impl Surfaces {
         gpu_state: &mut GpuState,
         (width, height): (i32, i32),
         sampling_options: skia::SamplingOptions,
-        tile_dims: skia::ISize,
+        _tile_dims: skia::ISize,
     ) -> Self {
-        let extra_tile_dims = skia::ISize::new(
-            tile_dims.width * TILE_SIZE_MULTIPLIER,
-            tile_dims.height * TILE_SIZE_MULTIPLIER,
-        );
-        let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
-
+        // margins eliminado
         let target = gpu_state.create_target_surface(width, height);
         let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
-        let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
-        let drop_shadows =
-            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
-        let inner_shadows =
-            gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
-        let shape_fills =
-            gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
-        let shape_strokes =
-            gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims);
-
+        let current = gpu_state.create_surface_with_dimensions("current".to_string(), width, height);
+        let drop_shadows = gpu_state.create_surface_with_dimensions("drop_shadows".to_string(), width, height);
+        let inner_shadows = gpu_state.create_surface_with_dimensions("inner_shadows".to_string(), width, height);
+        let shape_fills = gpu_state.create_surface_with_dimensions("shape_fills".to_string(), width, height);
+        let shape_strokes = gpu_state.create_surface_with_dimensions("shape_strokes".to_string(), width, height);
         let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height);
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
-
         let tiles = TileTextureCache::new();
         Surfaces {
             target,
@@ -94,7 +83,6 @@ impl Surfaces {
             debug,
             tiles,
             sampling_options,
-            margins,
         }
     }
 
@@ -177,8 +165,8 @@ impl Surfaces {
 
     pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
         let translation = (
-            -render_area.left() + self.margins.width as f32 / scale,
-            -render_area.top() + self.margins.height as f32 / scale,
+            -render_area.left(),
+            -render_area.top(),
         );
         self.apply_mut(
             SurfaceId::Fills as u32
@@ -213,6 +201,12 @@ impl Surfaces {
         self.target = target;
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
         self.ui = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.current = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.shape_fills = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.shape_strokes = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.drop_shadows = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.inner_shadows = self.target.new_surface_with_dimensions(dim).unwrap();
+        // margins eliminado
         // The rest are tile size surfaces
     }
 
@@ -281,13 +275,13 @@ impl Surfaces {
         tile: &Tile,
         tile_rect: &skia::Rect,
     ) {
-        let rect = IRect::from_xywh(
-            self.margins.width,
-            self.margins.height,
-            self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
-            self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
+        // Tomar snapshot siempre de (0,0,TILE_SIZE,TILE_SIZE)
+        let rect = skia::IRect::from_xywh(
+            0,
+            0,
+            TILE_SIZE as i32,
+            TILE_SIZE as i32,
         );
-
         if let Some(snapshot) = self.current.image_snapshot_with_bounds(rect) {
             self.tiles.add(tile_viewbox, tile, snapshot.clone());
             self.cache.canvas().draw_image_rect(

@@ -736,9 +736,9 @@ impl RenderState {
                 .save_layer(&mask_rec);
         }
 
-        if let Some(image_filter) = element.image_filter(self.get_scale()) {
-            paint.set_image_filter(image_filter);
-        }
+        // if let Some(image_filter) = element.image_filter(self.get_scale()) {
+        //     paint.set_image_filter(image_filter);
+        // }
 
         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
         self.surfaces
@@ -829,6 +829,13 @@ impl RenderState {
             }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
+        if let Some(image_filter) = element.image_filter(self.get_scale()) {
+            let mut paint = skia::Paint::default();
+            paint.set_image_filter(image_filter);
+            let snapshot = self.surfaces.snapshot(SurfaceId::Current);
+            self.surfaces.canvas(SurfaceId::Current).clear(skia::Color::TRANSPARENT);
+            self.surfaces.canvas(SurfaceId::Current).draw_image(&snapshot, (0.0, 0.0), Some(&paint));
+        }
         self.focus_mode.exit(&element.id);
     }
 
