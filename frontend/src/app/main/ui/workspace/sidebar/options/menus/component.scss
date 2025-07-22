@@ -779,3 +779,27 @@
   padding: 0;
   text-align: start;
 }
+
+.variant-icon {
+  @include flexCenter;
+  height: $s-24;
+  width: $s-24;
+  background-color: var(--color-background-tertiary);
+  border-radius: $br-8;
+  order: 3;
+
+  svg {
+    height: $s-12;
+    width: $s-12;
+    background-color: transparent;
+    margin: 0;
+
+    stroke: var(--color-accent-secondary);
+  }
+}
+
+.variant-mark-cell {
+  position: absolute;
+  right: $s-2;
+  top: $s-2;
+}
