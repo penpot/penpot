@@ -53,6 +53,7 @@
     :else value))
 
 (defn format-color
+  "Format a color value to a CSS compatible string based on the given format."
   [value options]
   (let [format (get options :format :hex)]
     (cond
