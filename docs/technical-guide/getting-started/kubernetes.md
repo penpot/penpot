@@ -97,6 +97,11 @@ file itself, which you can use as a basis for creating your own settings.
 You can also consult the list of parameters on the
 <a href="https://artifacthub.io/packages/helm/penpot/penpot#parameters" target="_blank">ArtifactHub page of the project</a>.
 
+### Using OpenShift?
+If you are deploying Penpot on OpenShift, we recommend following the specific guidelines provided in our Penpot-helm documentation:
+<a href="https://artifacthub.io/packages/helm/penpot/penpot#-openshift-requirements" target="_blank">`Installing the chart with OpenShift requirements`</a>
+
+Make sure to review the section **OpenShift Requirements** for important security and compatibility considerations.
 
 ## Upgrade Penpot
 
