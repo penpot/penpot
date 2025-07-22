@@ -8,6 +8,7 @@
   "Backend specific code for file migrations. Implemented as permanent feature of files."
   (:require
    [app.common.data :as d]
+   [app.common.exceptions :as ex]
    [app.common.files.migrations :as fmg :refer [xf:map-name]]
    [app.db :as db]
    [app.db.sql :as-alias sql]))
@@ -26,12 +27,19 @@
 (defn upsert-migrations!
   "Persist or update file migrations. Return the updated/inserted number
   of rows"
-  [conn {:keys [id] :as file}]
-  (let [migrations (or (-> file meta ::fmg/migrated)
-                       (-> file :migrations not-empty)
-                       fmg/available-migrations)
+  [cfg {:keys [id] :as file}]
+  (let [conn       (db/get-connection cfg)
+        migrations (or (-> file meta ::fmg/migrated)
+                       (-> file :migrations))
         columns    [:file-id :name]
-        rows       (mapv (fn [name] [id name]) migrations)]
+        rows       (->> migrations
+                        (mapv (fn [name] [id name]))
+                        (not-empty))]
+
+    (when-not rows
+      (ex/raise :type :internal
+                :code :missing-migrations
+                :hint "no migrations available on file"))
 
     (-> (db/insert-many! conn :file-migration columns rows
                          {::db/return-keys false
@@ -40,6 +48,6 @@
 
 (defn reset-migrations!
   "Replace file migrations"
-  [conn {:keys [id] :as file}]
-  (db/delete! conn :file-migration {:file-id id})
-  (upsert-migrations! conn file))
+  [cfg {:keys [id] :as file}]
+  (db/delete! cfg :file-migration {:file-id id})
+  (upsert-migrations! cfg file))

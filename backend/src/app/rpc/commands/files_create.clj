@@ -29,6 +29,7 @@
   [conn {:keys [file-id profile-id role]}]
   (let [params {:file-id file-id
                 :profile-id profile-id}]
+
     (->> (perms/assign-role-flags params role)
          (db/insert! conn :file-profile-rel))))
 
@@ -51,12 +52,12 @@
                                :is-shared is-shared
                                :features features
                                :ignore-sync-until ignore-sync-until
-                               :modified-at modified-at
+                               :created-at modified-at
                                :deleted-at deleted-at}
                               {:create-page create-page
-                               :page-id page-id})
-          file (-> (bfc/insert-file! cfg file)
-                   (bfc/decode-row))]
+                               :page-id page-id})]
+
+      (bfc/insert-file! cfg file)
 
       (->> (assoc params :file-id (:id file) :role :owner)
            (create-file-role! conn))

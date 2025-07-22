@@ -102,6 +102,7 @@
    [:project-id {:optional true} ::sm/uuid]
    [:team-id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} ::sm/boolean]
+   [:has-media-trimmed {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
    [:version :int]
    [:features ::cfeat/features]
@@ -188,6 +189,7 @@
           :features features
           :migrations migrations
           :ignore-sync-until ignore-sync-until
+          :has-media-trimmed false
           :created-at created-at
           :modified-at modified-at
           :deleted-at deleted-at})]
