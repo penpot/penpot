@@ -1,0 +1,382 @@
+use super::Matrix;
+use crate::shapes::{BoolType, Path, Segment, Shape, StructureEntry, Type};
+use crate::state::ShapesPool;
+use crate::uuid::Uuid;
+use bezier_rs::{Bezier, BezierHandles, TValue};
+use glam::DVec2;
+use skia_safe as skia;
+use std::cmp::Ordering;
+use std::collections::{BTreeMap, HashMap};
+
+const INTERSECT_THRESHOLD: f32 = 0.5;
+
+fn to_point(v: DVec2) -> skia::Point {
+    skia::Point::new(v.x as f32, v.y as f32)
+}
+
+pub fn path_to_beziers(path: &Path) -> Vec<Bezier> {
+    let mut start: Option<(f64, f64)> = None;
+    let mut prev: Option<(f64, f64)> = None;
+
+    path.segments()
+        .iter()
+        .filter_map(|s| match s {
+            Segment::MoveTo((x, y)) => {
+                let x = f64::from(*x);
+                let y = f64::from(*y);
+                prev = Some((x, y));
+                start = Some((x, y));
+                None
+            }
+            Segment::LineTo((x2, y2)) => {
+                let (x1, y1) = prev?;
+                let x2 = f64::from(*x2);
+                let y2 = f64::from(*y2);
+                let s = Bezier::from_linear_coordinates(x1, y1, x2, y2);
+                prev = Some((x2, y2));
+                Some(s)
+            }
+            Segment::CurveTo(((c1x, c1y), (c2x, c2y), (x2, y2))) => {
+                let (x1, y1) = prev?;
+                let x2 = f64::from(*x2);
+                let y2 = f64::from(*y2);
+                let c1x = f64::from(*c1x);
+                let c1y = f64::from(*c1y);
+                let c2x = f64::from(*c2x);
+                let c2y = f64::from(*c2y);
+                let s = Bezier::from_cubic_coordinates(x1, y1, c1x, c1y, c2x, c2y, x2, y2);
+                prev = Some((x2, y2));
+                Some(s)
+            }
+            Segment::Close => {
+                let (x1, y1) = prev?;
+                let (x2, y2) = start?;
+                let s = Bezier::from_linear_coordinates(x1, y1, x2, y2);
+                prev = Some((x2, y2));
+                Some(s)
+            }
+        })
+        .collect()
+}
+
+pub fn split_intersections(segment: Bezier, intersections: &[f64]) -> Vec<Bezier> {
+    if intersections.is_empty() {
+        return vec![segment];
+    }
+
+    let mut result = Vec::new();
+    let mut intersections = intersections.to_owned();
+    intersections.sort_by(|a, b| a.partial_cmp(b).unwrap_or(Ordering::Equal));
+
+    let mut prev = 0.0;
+    let mut cur_segment = segment;
+
+    for t_i in &intersections {
+        let rti = (t_i - prev) / (1.0 - prev);
+        let [s, rest] = cur_segment.split(TValue::Parametric(rti));
+        prev = *t_i;
+        cur_segment = rest;
+        result.push(s);
+    }
+
+    result.push(cur_segment);
+    result
+}
+
+pub fn split_segments(path_a: &Path, path_b: &Path) -> (Vec<Bezier>, Vec<Bezier>) {
+    let path_a = path_to_beziers(path_a);
+    let path_b = path_to_beziers(path_b);
+
+    let mut intersects_a = Vec::<Vec<f64>>::with_capacity(path_a.len());
+    intersects_a.resize_with(path_a.len(), Default::default);
+
+    let mut intersects_b = Vec::<Vec<f64>>::with_capacity(path_b.len());
+    intersects_b.resize_with(path_b.len(), Default::default);
+
+    for i in 0..path_a.len() {
+        for j in 0..path_b.len() {
+            let segment_a = path_a[i];
+            let segment_b = path_b[j];
+
+            let intersections_a = segment_a.intersections(&segment_b, None, None);
+
+            intersects_b[j].extend(intersections_a.iter().map(|t_a| {
+                let p = segment_a.evaluate(TValue::Parametric(*t_a));
+                segment_b.project(p, None)
+            }));
+
+            intersects_a[i].extend(intersections_a);
+        }
+    }
+
+    let mut result_a = Vec::new();
+    for i in 0..path_a.len() {
+        let cur_segment = path_a[i];
+        result_a.extend(split_intersections(cur_segment, &intersects_a[i]));
+    }
+
+    let mut result_b = Vec::new();
+    for i in 0..path_b.len() {
+        let cur_segment = path_b[i];
+        result_b.extend(split_intersections(cur_segment, &intersects_b[i]));
+    }
+    (result_a, result_b)
+}
+
+pub fn union(
+    path_a: &Path,
+    segments_a: Vec<Bezier>,
+    path_b: &Path,
+    segments_b: Vec<Bezier>,
+) -> Vec<Bezier> {
+    let mut result = Vec::new();
+
+    result.extend(
+        segments_a
+            .iter()
+            .filter(|s| !path_b.contains(to_point(s.evaluate(TValue::Parametric(0.5))))),
+    );
+
+    result.extend(
+        segments_b
+            .iter()
+            .filter(|s| !path_a.contains(to_point(s.evaluate(TValue::Parametric(0.5))))),
+    );
+
+    result
+}
+
+pub fn intersection(
+    path_a: &Path,
+    segments_a: Vec<Bezier>,
+    path_b: &Path,
+    segments_b: Vec<Bezier>,
+) -> Vec<Bezier> {
+    let mut result = Vec::new();
+
+    result.extend(
+        segments_a
+            .iter()
+            .filter(|s| path_b.contains(to_point(s.evaluate(TValue::Parametric(0.5))))),
+    );
+
+    result.extend(
+        segments_b
+            .iter()
+            .filter(|s| path_a.contains(to_point(s.evaluate(TValue::Parametric(0.5))))),
+    );
+
+    result
+}
+
+pub fn difference(
+    path_a: &Path,
+    segments_a: Vec<Bezier>,
+    path_b: &Path,
+    segments_b: Vec<Bezier>,
+) -> Vec<Bezier> {
+    let mut result = Vec::new();
+
+    result.extend(
+        segments_a
+            .iter()
+            .filter(|s| !path_b.contains(to_point(s.evaluate(TValue::Parametric(0.5))))),
+    );
+
+    result.extend(
+        segments_b
+            .iter()
+            .filter(|s| path_a.contains(to_point(s.evaluate(TValue::Parametric(0.5)))))
+            .map(|s| s.reverse()),
+    );
+
+    result
+}
+
+pub fn exclusion(segments_a: Vec<Bezier>, segments_b: Vec<Bezier>) -> Vec<Bezier> {
+    let mut result = Vec::new();
+    result.extend(segments_a.iter());
+    result.extend(segments_b.iter().map(|s| s.reverse()));
+    result
+}
+
+#[derive(Debug, Clone)]
+struct BezierStart(DVec2);
+
+impl PartialEq for BezierStart {
+    fn eq(&self, other: &Self) -> bool {
+        let x1 = self.0.x as f32;
+        let y1 = self.0.y as f32;
+        let x2 = other.0.x as f32;
+        let y2 = other.0.y as f32;
+        (x1 - x2).abs() <= INTERSECT_THRESHOLD && (y1 - y2).abs() <= INTERSECT_THRESHOLD
+    }
+}
+
+impl Eq for BezierStart {}
+
+impl PartialOrd for BezierStart {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for BezierStart {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let x1 = self.0.x as f32;
+        let y1 = self.0.y as f32;
+        let x2 = other.0.x as f32;
+        let y2 = other.0.y as f32;
+
+        if (x1 - x2).abs() <= INTERSECT_THRESHOLD {
+            if (y1 - y2).abs() <= INTERSECT_THRESHOLD {
+                Ordering::Equal
+            } else if y1 > y2 {
+                Ordering::Greater
+            } else {
+                Ordering::Less
+            }
+        } else if x1 > x2 {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        }
+    }
+}
+
+type BM<'a> = BTreeMap<BezierStart, Vec<&'a Bezier>>;
+
+fn init_bm(beziers: &[Bezier]) -> BM {
+    let mut bm = BM::default();
+    for bezier in beziers.iter() {
+        if let Some(v) = bm.get_mut(&BezierStart(bezier.start)) {
+            v.push(bezier);
+        } else {
+            bm.insert(BezierStart(bezier.start), vec![&bezier]);
+        }
+    }
+    bm
+}
+
+fn find_next(tree: &mut BM, p: DVec2) -> Option<Bezier> {
+    let key = BezierStart(p);
+    let val = tree.get_mut(&key)?;
+    let first = val.pop()?;
+
+    if val.is_empty() {
+        tree.remove(&key);
+    }
+    Some(*first)
+}
+
+fn pop_first(tree: &mut BM) -> Option<Bezier> {
+    let key = tree.keys().take(1).next()?.clone();
+    let val = tree.get_mut(&key)?;
+    let first = val.pop()?;
+
+    if val.is_empty() {
+        tree.remove(&key);
+    }
+    Some(*first)
+}
+
+fn push_bezier(result: &mut Vec<Segment>, bezier: &Bezier) {
+    match bezier.handles {
+        BezierHandles::Linear => {
+            result.push(Segment::LineTo((bezier.end.x as f32, bezier.end.y as f32)));
+        }
+        BezierHandles::Quadratic { handle } => {
+            result.push(Segment::CurveTo((
+                (handle.x as f32, handle.y as f32),
+                (handle.x as f32, handle.y as f32),
+                (bezier.end.x as f32, bezier.end.y as f32),
+            )));
+        }
+        BezierHandles::Cubic {
+            handle_start,
+            handle_end,
+        } => {
+            result.push(Segment::CurveTo((
+                (handle_start.x as f32, handle_start.y as f32),
+                (handle_end.x as f32, handle_end.y as f32),
+                (bezier.end.x as f32, bezier.end.y as f32),
+            )));
+        }
+    }
+}
+
+pub fn beziers_to_segments(beziers: &[Bezier]) -> Vec<Segment> {
+    let mut result = Vec::new();
+
+    let mut bm = init_bm(beziers);
+
+    while let Some(bezier) = pop_first(&mut bm) {
+        result.push(Segment::MoveTo((
+            bezier.start.x as f32,
+            bezier.start.y as f32,
+        )));
+        push_bezier(&mut result, &bezier);
+        let mut next_p = bezier.end;
+
+        loop {
+            let Some(next) = find_next(&mut bm, next_p) else {
+                break;
+            };
+            next_p = next.end;
+            push_bezier(&mut result, &next);
+        }
+    }
+    result
+}
+
+pub fn update_bool_to_path(
+    shape: &Shape,
+    shapes: &ShapesPool,
+    modifiers: &HashMap<Uuid, Matrix>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
+) -> Shape {
+    let mut shape = shape.clone();
+    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+
+    let Some(shape_a) = shapes.get(&children_ids[1]) else {
+        return shape;
+    };
+    let Some(shape_b) = shapes.get(&children_ids[0]) else {
+        return shape;
+    };
+
+    let shape_a = &mut shape_a.clone();
+    let shape_b = &mut shape_b.clone();
+
+    if let Some(shape_modifiers) = modifiers.get(&shape_a.id) {
+        shape_a.apply_transform(shape_modifiers);
+    }
+
+    if let Some(shape_modifiers) = modifiers.get(&shape_b.id) {
+        shape_b.apply_transform(shape_modifiers);
+    }
+
+    let Type::Path(path_a) = &shape_a.shape_type else {
+        return shape;
+    };
+    let Type::Path(path_b) = &shape_b.shape_type else {
+        return shape;
+    };
+
+    let (segments_a, segments_b) = split_segments(path_a, path_b);
+
+    let Type::Bool(bool_data) = &mut shape.shape_type else {
+        return shape;
+    };
+
+    let beziers = match bool_data.bool_type {
+        BoolType::Union => union(path_a, segments_a, path_b, segments_b),
+        BoolType::Difference => difference(path_a, segments_a, path_b, segments_b),
+        BoolType::Intersection => intersection(path_a, segments_a, path_b, segments_b),
+        BoolType::Exclusion => exclusion(segments_a, segments_b),
+    };
+
+    bool_data.path = Path::new(beziers_to_segments(&beziers));
+
+    shape
+}

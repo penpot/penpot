@@ -18,7 +18,9 @@ path = "src/main.rs"
 
 [dependencies]
 base64 = "0.22.1"
+bezier-rs = "0.4.0"
 gl = "0.14.0"
+glam = "0.24.2"
 indexmap = "2.7.1"
 skia-safe = { version = "0.86.0", default-features = false, features = [
   "gl",

@@ -1,5 +1,7 @@
 use skia_safe::{self as skia, Matrix};
 
+use crate::math;
+
 type Point = (f32, f32);
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -50,8 +52,11 @@ impl Path {
                     None
                 }
             };
+
             if let (Some(start), Some(destination)) = (start, destination) {
-                if destination == start {
+                if math::is_close_to(destination.0, start.0)
+                    && math::is_close_to(destination.1, start.1)
+                {
                     skia_path.close();
                     open = false;
                 }
@@ -69,11 +74,46 @@ impl Path {
         self.skia_path.snapshot()
     }
 
+    pub fn contains(&self, p: skia::Point) -> bool {
+        self.skia_path.contains(p)
+    }
+
     pub fn is_open(&self) -> bool {
         self.open
     }
 
     pub fn transform(&mut self, mtx: &Matrix) {
+        self.segments.iter_mut().for_each(|s| match s {
+            Segment::MoveTo(p) => {
+                let np = mtx.map_point(skia::Point::new(p.0, p.1));
+                p.0 = np.x;
+                p.1 = np.y;
+            }
+            Segment::LineTo(p) => {
+                let np = mtx.map_point(skia::Point::new(p.0, p.1));
+                p.0 = np.x;
+                p.1 = np.y;
+            }
+            Segment::CurveTo((c1, c2, p)) => {
+                let nc1 = mtx.map_point(skia::Point::new(c1.0, c1.1));
+                c1.0 = nc1.x;
+                c1.1 = nc1.y;
+
+                let nc2 = mtx.map_point(skia::Point::new(c2.0, c2.1));
+                c2.0 = nc2.x;
+                c2.1 = nc2.y;
+
+                let np = mtx.map_point(skia::Point::new(p.0, p.1));
+                p.0 = np.x;
+                p.1 = np.y;
+            }
+            _ => {}
+        });
+
         self.skia_path.transform(mtx);
+    }
+
+    pub fn segments(&self) -> &Vec<Segment> {
+        &self.segments
     }
 }
