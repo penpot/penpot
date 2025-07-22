@@ -83,21 +83,12 @@
    compare them, and returns a set with the type of differences.
    The possibilities are
      :text-content-text
-     :text-content-attribute,
-     :text-content-structure
-     :text-content-structure-same-attrs."
+     :text-content-attribute
+     :text-content-structure"
   [a b]
-  (let [diff-type (compare-text-content a b
-                                        {:text-cb      (fn [acc] (conj acc :text-content-text))
-                                         :attribute-cb (fn [acc _] (conj acc :text-content-attribute))})]
-    (if-not (contains? diff-type :text-content-structure)
-      diff-type
-      (let [;; get attrs of the first paragraph of the first paragraph-set
-            attrs (get-first-paragraph-text-attrs a)]
-        (if (and (equal-attrs? a attrs)
-                 (equal-attrs? b attrs))
-          #{:text-content-structure :text-content-structure-same-attrs}
-          diff-type)))))
+  (compare-text-content a b
+                        {:text-cb      (fn [acc] (conj acc :text-content-text))
+                         :attribute-cb (fn [acc _] (conj acc :text-content-attribute))}))
 
 (defn get-diff-attrs
   "Given two content text structures, conformed by maps and vectors,
