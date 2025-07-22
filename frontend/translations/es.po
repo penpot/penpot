@@ -4347,9 +4347,9 @@ msgstr "Seguridad avanzada, registros de actividad, asistencia dedicada y mucho 
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgid "subscription.dashboard.power-up.professional.bottom"
 msgstr ""
-"Consigue editores y almacenamiento adicionales, copias de seguridad de "
+"Consigue editores y almacenamiento adicionales, recuperación de "
 "archivos y mucho más con el Plan Unlimited[Mejóralo|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
@@ -4388,10 +4388,10 @@ msgstr "Plan Unlimited"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgid "subscription.dashboard.power-up.unlimited.bottom"
 msgstr ""
-"Obtenga seguridad avanzada, registros de actividad, asistencia dedicada y "
-"mucho más. Echa un ojo al[Plan Enterprise|target:self](%s)"
+"Consigue editores adicionales, más almacenamiento y copias de seguridad, seguridad avanzada y mucho más. "
+"[Echa un ojo al Plan Enterprise|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4442,16 +4442,16 @@ msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (prueba)"
 
 #: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Registros de actividad"
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr "Almacenamiento ilimitado y versiones de autoguardado de 90 días y recuperación de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
 msgid "subscription.settings.enterprise.security"
 msgstr "Seguridad avanzada"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Apoyo específico"
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Factura mensual limitada"
 
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
@@ -4516,8 +4516,8 @@ msgid "subscription.settings.professional.projects-files"
 msgstr "Proyectos, archivos y borradores ilimitados"
 
 #: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días"
+msgid "subscription.settings.professional.storage-autosave"
+msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días y recuperación de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
@@ -4560,11 +4560,6 @@ msgstr "Nos has estado apoyando con este plan desde: %s"
 msgid "subscription.settings.try-it-free"
 msgstr "Pruébalo gratis durante 14 días"
 
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "Pruébalo gratis durante 14 días"
-
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
 msgstr "Unlimited"
@@ -4578,10 +4573,10 @@ msgid "subscription.settings.unlimited.bill"
 msgstr "Factura mensual limitada"
 
 #: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
+msgid "subscription.settings.unlimited.storage-autosave"
 msgstr ""
-"25 GB de almacenamiento y 30 días de autoguardado de versiones y copias de "
-"seguridad de archivos"
+"25 GB de almacenamiento y 30 días de autoguardado de versiones y recuperación "
+"de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
