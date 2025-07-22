@@ -300,9 +300,9 @@
                                      {}
                                      (true? keep-touched?))
 
-        changes (if keep-touched?
-                  (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries (:data file))
-                  changes)
+        [changes _] (if keep-touched?
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries (:data file))
+                      [changes nil])
 
 
         file' (thf/apply-changes file changes)]
