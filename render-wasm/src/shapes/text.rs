@@ -1,5 +1,5 @@
 use crate::{
-    math::Rect,
+    math::{Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
 };
 use skia_safe::{
@@ -180,6 +180,16 @@ impl TextContent {
         let mut paragraphs = self.to_paragraphs();
         let height = auto_height(&mut paragraphs, self.width());
         (self.width(), height)
+    }
+
+    pub fn transform(&mut self, transform: &Matrix) {
+        let left = self.bounds.left();
+        let right = self.bounds.right();
+        let top = self.bounds.top();
+        let bottom = self.bounds.bottom();
+        let p1 = transform.map_point(skia::Point::new(left, top));
+        let p2 = transform.map_point(skia::Point::new(right, bottom));
+        self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
     }
 }
 

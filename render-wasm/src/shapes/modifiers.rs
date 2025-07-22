@@ -6,7 +6,9 @@ pub mod grid_layout;
 
 use common::GetBounds;
 
+use crate::math::bools;
 use crate::math::{self as math, identitish, Bounds, Matrix, Point};
+
 use crate::shapes::{
     auto_height, set_paragraphs_width, ConstraintH, ConstraintV, Frame, Group, GrowType, Layout,
     Modifier, Shape, StructureEntry, TransformEntry, Type,
@@ -28,7 +30,7 @@ fn propagate_children(
 ) -> VecDeque<Modifier> {
     let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
 
-    if children_ids.is_empty() || identitish(transform) {
+    if children_ids.is_empty() || identitish(&transform) {
         return VecDeque::new();
     }
 
@@ -107,6 +109,31 @@ fn calculate_group_bounds(
     }
 
     shape_bounds.with_points(result)
+}
+
+fn calculate_bool_bounds(
+    shape: &Shape,
+    shapes: &ShapesPool,
+    bounds: &HashMap<Uuid, Bounds>,
+    modifiers: &HashMap<Uuid, Matrix>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
+) -> Option<Bounds> {
+    let shape_bounds = bounds.find(shape);
+    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+
+    let Type::Bool(bool_data) = &shape.shape_type else {
+        return Some(shape_bounds);
+    };
+
+    let path = bools::bool_from_shapes(
+        bool_data.bool_type,
+        &children_ids,
+        shapes,
+        modifiers,
+        structure,
+    );
+
+    Some(path.bounds())
 }
 
 fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
@@ -227,6 +254,7 @@ fn propagate_reflow(
     bounds: &mut HashMap<Uuid, Bounds>,
     layout_reflows: &mut Vec<Uuid>,
     reflown: &mut HashSet<Uuid>,
+    modifiers: &HashMap<Uuid, Matrix>,
 ) {
     let Some(shape) = state.shapes.get(id) else {
         return;
@@ -278,11 +306,8 @@ fn propagate_reflow(
             }
         }
         Type::Bool(_) => {
-            // TODO: How to calculate from rust the new box? we need to calculate the
-            // new path... impossible right now. I'm going to use for the moment the group
-            // calculation
             if let Some(shape_bounds) =
-                calculate_group_bounds(shape, shapes, bounds, &state.structure)
+                calculate_bool_bounds(shape, shapes, bounds, modifiers, &state.structure)
             {
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
@@ -391,6 +416,7 @@ pub fn propagate_modifiers(
                     &mut bounds,
                     &mut layout_reflows,
                     &mut reflown,
+                    &modifiers,
                 ),
             }
         }

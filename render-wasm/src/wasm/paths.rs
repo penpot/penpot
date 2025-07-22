@@ -1,5 +1,12 @@
-use crate::shapes::{Path, Segment};
-use crate::{mem, with_current_shape_mut, STATE};
+#![allow(unused_mut, unused_variables)]
+use indexmap::IndexSet;
+use mem::SerializableResult;
+use uuid::Uuid;
+
+use crate::math::bools;
+use crate::shapes::{BoolType, Path, Segment, ToPath};
+use crate::uuid;
+use crate::{mem, with_current_shape, with_current_shape_mut, with_state, STATE};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
 
@@ -11,6 +18,19 @@ enum RawSegmentData {
     LineTo(RawLineCommand) = 0x02,
     CurveTo(RawCurveCommand) = 0x03,
     Close = 0x04,
+}
+
+impl RawSegmentData {
+    pub fn from_segment(segment: Segment) -> Self {
+        match segment {
+            Segment::MoveTo(to) => RawSegmentData::MoveTo(RawMoveCommand::new(to)),
+            Segment::LineTo(to) => RawSegmentData::LineTo(RawLineCommand::new(to)),
+            Segment::CurveTo((c1, c2, to)) => {
+                RawSegmentData::CurveTo(RawCurveCommand::new(c1, c2, to))
+            }
+            Segment::Close => RawSegmentData::Close,
+        }
+    }
 }
 
 impl From<[u8; size_of::<RawSegmentData>()]> for RawSegmentData {
@@ -30,12 +50,43 @@ impl TryFrom<&[u8]> for RawSegmentData {
     }
 }
 
+impl SerializableResult for RawSegmentData {
+    type BytesType = [u8; RAW_SEGMENT_DATA_SIZE];
+
+    fn from_bytes(bytes: Self::BytesType) -> Self {
+        unsafe { std::mem::transmute(bytes) }
+    }
+
+    fn as_bytes(&self) -> Self::BytesType {
+        let ptr = self as *const RawSegmentData as *const u8;
+        let bytes: &[u8] = unsafe { std::slice::from_raw_parts(ptr, RAW_SEGMENT_DATA_SIZE) };
+        let mut result = [0; RAW_SEGMENT_DATA_SIZE];
+        result.copy_from_slice(bytes);
+        result
+    }
+
+    // The generic trait doesn't know the size of the array. This is why the
+    // clone needs to be here even if it could be generic.
+    fn clone_to_slice(&self, slice: &mut [u8]) {
+        slice.clone_from_slice(&self.as_bytes());
+    }
+}
+
 #[repr(C, align(4))]
 #[derive(Debug, PartialEq, Clone, Copy)]
 struct RawMoveCommand {
     _padding: [u32; 4],
     x: f32,
     y: f32,
+}
+impl RawMoveCommand {
+    pub fn new((x, y): (f32, f32)) -> Self {
+        Self {
+            _padding: [0u32; 4],
+            x,
+            y,
+        }
+    }
 }
 
 #[repr(C, align(4))]
@@ -44,6 +95,16 @@ struct RawLineCommand {
     _padding: [u32; 4],
     x: f32,
     y: f32,
+}
+
+impl RawLineCommand {
+    pub fn new((x, y): (f32, f32)) -> Self {
+        Self {
+            _padding: [0u32; 4],
+            x,
+            y,
+        }
+    }
 }
 
 #[repr(C, align(4))]
@@ -55,6 +116,19 @@ struct RawCurveCommand {
     c2_y: f32,
     x: f32,
     y: f32,
+}
+
+impl RawCurveCommand {
+    pub fn new((c1_x, c1_y): (f32, f32), (c2_x, c2_y): (f32, f32), (x, y): (f32, f32)) -> Self {
+        Self {
+            c1_x,
+            c1_y,
+            c2_x,
+            c2_y,
+            x,
+            y,
+        }
+    }
 }
 
 impl From<RawSegmentData> for Segment {
@@ -90,6 +164,53 @@ pub extern "C" fn set_shape_path_content() {
 
         shape.set_path_segments(segments);
     });
+}
+
+#[no_mangle]
+pub extern "C" fn current_to_path() -> *mut u8 {
+    let mut result = Vec::<RawSegmentData>::default();
+    with_current_shape!(state, |shape: &Shape| {
+        let path = shape.to_path(&state.shapes, &state.modifiers, &state.structure);
+        result = path
+            .segments()
+            .iter()
+            .copied()
+            .map(RawSegmentData::from_segment)
+            .collect();
+    });
+
+    mem::write_vec(result)
+}
+
+#[no_mangle]
+pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
+    let bytes = mem::bytes_or_empty();
+
+    let entries: IndexSet<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    mem::free_bytes();
+
+    let bool_type = BoolType::from(raw_bool_type);
+    let result;
+    with_state!(state, {
+        let path = bools::bool_from_shapes(
+            bool_type,
+            &entries,
+            &state.shapes,
+            &state.modifiers,
+            &state.structure,
+        );
+        result = path
+            .segments()
+            .iter()
+            .copied()
+            .map(RawSegmentData::from_segment)
+            .collect();
+    });
+    mem::write_vec(result)
 }
 
 // Extracts a string from the bytes slice until the next null byte (0) and returns the result as a `String`.
