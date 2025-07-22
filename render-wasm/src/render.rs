@@ -13,6 +13,8 @@ mod text;
 mod ui;
 
 use skia_safe::{self as skia, Matrix, Rect};
+use skia_safe::runtime_effect::ChildPtr;
+
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
@@ -178,6 +180,7 @@ pub(crate) struct RenderState {
     pub nested_fills: Vec<Vec<Fill>>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
+    pub blur_gauss_x_shader: skia_safe::RuntimeEffect,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -220,6 +223,30 @@ impl RenderState {
         let viewbox = Viewbox::new(width as f32, height as f32);
         let tiles = tiles::TileHashMap::new();
 
+        let sksl_gauss_x = r#"
+            uniform shader src;
+            uniform float radius;
+            uniform float zoom;
+            half4 main(float2 coord) {
+                half4 color = half4(0.0);
+                float totalWeight = 0.0;
+                const int MAX_RADIUS = 100;
+                int r = int(clamp(radius, 0.0, float(MAX_RADIUS)));
+                float sigma = float(r) / 2.0;
+                for (int x = -MAX_RADIUS; x <= MAX_RADIUS; ++x) {
+                    if (x >= -r && x <= r) {
+                        float dist = float(x);
+                        float weight = exp(-0.5 * (dist * dist) / (sigma * sigma));
+                        color += src.eval(coord + float2(dist * zoom, 0.0)) * weight;
+                        totalWeight += weight;
+                    }
+                }
+                return color / totalWeight;
+            }
+        "#;
+        let blur_gauss_x_shader = skia_safe::RuntimeEffect::make_for_shader(sksl_gauss_x, None)
+            .expect("Failed to compile blur gauss x shader");
+
         RenderState {
             gpu_state: gpu_state.clone(),
             options: RenderOptions::default(),
@@ -246,6 +273,7 @@ impl RenderState {
             nested_fills: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
+            blur_gauss_x_shader,
         }
     }
 
@@ -724,9 +752,9 @@ impl RenderState {
                 .save_layer(&mask_rec);
         }
 
-        if let Some(image_filter) = element.image_filter(self.get_scale()) {
-            paint.set_image_filter(image_filter);
-        }
+        // if let Some(image_filter) = element.image_filter(self.get_scale()) {
+        //     paint.set_image_filter(image_filter);
+        // }
 
         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
         self.surfaces
@@ -817,6 +845,44 @@ impl RenderState {
             }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
+
+        // --- BLUR SHADER (SkSL) ---
+        if !element.blur.hidden && element.blur.blur_type == crate::shapes::BlurType::Layer {
+            let max_radius = 100.0;
+            let radius = (element.blur.value * self.get_scale()).min(max_radius);
+            let zoom = self.get_scale();
+            let mut uniforms_vec = Vec::new();
+            uniforms_vec.extend_from_slice(&radius.to_ne_bytes());
+            uniforms_vec.extend_from_slice(&zoom.to_ne_bytes());
+            let uniforms = skia_safe::Data::new_copy(&uniforms_vec);
+
+            // Just horizontal for testing purposes.
+            let snapshot = self.surfaces.snapshot(SurfaceId::Current);
+            let input_shader = snapshot.to_shader(
+                Some((skia_safe::TileMode::Clamp, skia_safe::TileMode::Clamp)),
+                skia_safe::SamplingOptions::default(),
+                None,
+            );
+            if let Some(input_shader) = input_shader {
+                let child_ptr = ChildPtr::from(input_shader);
+                let shader = self.blur_gauss_x_shader.make_shader(
+                    &uniforms,
+                    &[child_ptr],
+                    None,
+                );
+                if let Some(shader) = shader {
+                    let mut paint = skia::Paint::default();
+                    paint.set_shader(shader);
+                    self.surfaces.canvas(SurfaceId::Current).clear(skia::Color::TRANSPARENT);
+                    let width = snapshot.width();
+                    let height = snapshot.height();
+                    self.surfaces.canvas(SurfaceId::Current).draw_rect(
+                        skia::Rect::from_xywh(0.0, 0.0, width as f32, height as f32),
+                        &paint,
+                    );
+                }
+            }
+        }
         self.focus_mode.exit(&element.id);
     }
 
