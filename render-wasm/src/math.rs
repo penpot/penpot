@@ -1,5 +1,7 @@
 use skia_safe as skia;
 
+pub mod bools;
+
 pub type Rect = skia::Rect;
 pub type Matrix = skia::Matrix;
 pub type Vector = skia::Vector;
