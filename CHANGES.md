@@ -55,6 +55,7 @@
 - Fix main component receives focus and is selected when using 'Show Main Component' [Taiga #11402](https://tree.taiga.io/project/penpot/issue/11402)
 - Fix duplicating pages with mainInstance shapes nested inside groups [Taiga #10774](https://tree.taiga.io/project/penpot/issue/10774)
 - Fix ESC key not closing Add/Manage Libraries modal [Taiga #11523](https://tree.taiga.io/project/penpot/issue/11523)
+- Fix copying a shadow color from info tab [Taiga #11211](https://tree.taiga.io/project/penpot/issue/11211)
 
 ## 2.8.1 (Unreleased)
 
