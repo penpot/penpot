@@ -60,7 +60,7 @@ impl TileViewbox {
     }
 }
 
-pub const TILE_SIZE: f32 = 512.;
+pub const TILE_SIZE: f32 = 128.;
 
 pub fn get_tile_dimensions() -> skia::ISize {
     (TILE_SIZE as i32, TILE_SIZE as i32).into()
