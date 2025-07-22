@@ -7,6 +7,7 @@ export DEVENV_PNAME="penpotdev";
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
+export IMAGEMAGICK_VERSION=7.1.1-47
 
 # Safe directory to avoid ownership errors with Git
 git config --global --add safe.directory /home/penpot/penpot || true
@@ -16,16 +17,23 @@ export JAVA_OPTS=${JAVA_OPTS:-"-Xmx1000m -Xms50m"};
 
 set -e
 
+ARCH=$(uname -m)
+
+if [[ "$ARCH" == "x86_64" || "$ARCH" == "i386" || "$ARCH" == "i686" ]]; then
+    ARCH="amd64"
+elif [[ "$ARCH" == "aarch64" || "$ARCH" == "arm64" ]]; then
+    ARCH="arm64"
+else
+    echo "Unknown architecture $ARCH"
+    exit -1
+fi
+
+
 function print-current-version {
     echo -n "$(git describe --tags --match "*.*.*")";
 }
 
-function build-devenv {
-    set +e;
-    echo "Building development image $DEVENV_IMGNAME:latest..."
-
-    pushd docker/devenv;
-
+function setup-buildx {
     docker run --privileged --rm tonistiigi/binfmt --install all
     docker buildx inspect penpot > /dev/null 2>&1;
 
@@ -36,19 +44,28 @@ function build-devenv {
         docker buildx use penpot;
         docker buildx inspect --bootstrap  > /dev/null 2>&1;
     fi
-
-    # docker build -t $DEVENV_IMGNAME:latest .
-    docker buildx build --platform linux/amd64 --push -t $DEVENV_IMGNAME:latest .;
-    docker pull $DEVENV_IMGNAME:latest;
-
-    popd;
 }
 
-function build-devenv-local {
-    echo "Building local only development image $DEVENV_IMGNAME:latest..."
+function build-devenv {
+    set +e;
 
     pushd docker/devenv;
-    docker build -t $DEVENV_IMGNAME:latest .;
+
+    if [ "$1" = "--local" ]; then
+        echo "Build local only $DEVENV_IMGNAME:latest image";
+        docker build -t $DEVENV_IMGNAME:latest .;
+    else
+        echo "Build and push $DEVENV_IMGNAME:latest image";
+        setup-buildx;
+
+        docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --output type=registry \
+          -t $DEVENV_IMGNAME:latest .;
+
+        docker pull $DEVENV_IMGNAME:latest;
+    fi
+
     popd;
 }
 
@@ -122,6 +139,32 @@ function run-devenv-isolated-shell {
            -e JAVA_OPTS="$JAVA_OPTS" \
            -w /home/penpot/penpot/$1 \
            $DEVENV_IMGNAME:latest sudo -EH -u penpot bash
+}
+
+function build-imagemagick-docker-image {
+    set +e;
+    echo "Building image penpotapp/imagemagick:$IMAGEMAGICK_VERSION"
+
+    pushd docker/imagemagick;
+
+    output_option="type=registry";
+    platform="linux/amd64,linux/arm64";
+
+    if [ "$1" = "--local" ]; then
+        output_option="type=docker";
+        platform="linux/$ARCH"
+    fi
+
+    setup-buildx;
+
+    docker buildx build \
+      --build-arg IMAGEMAGICK_VERSION=$IMAGEMAGICK_VERSION \
+      --platform $platform \
+      --output $output_option \
+      -t penpotapp/imagemagick:latest \
+      -t penpotapp/imagemagick:$IMAGEMAGICK_VERSION .;
+
+    popd;
 }
 
 function build {
@@ -219,21 +262,21 @@ function build-docs-bundle {
     echo ">> bundle docs end";
 }
 
-function build-frontend-docker-images {
+function build-frontend-docker-image {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
     pushd ./docker/images;
     docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
     popd;
 }
 
-function build-backend-docker-images {
+function build-backend-docker-image {
     rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
     pushd ./docker/images;
     docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
     popd;
 }
 
-function build-exporter-docker-images {
+function build-exporter-docker-image {
     rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
     pushd ./docker/images;
     docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
@@ -246,7 +289,7 @@ function usage {
     echo "Options:"
     echo "- pull-devenv                      Pulls docker development oriented image"
     echo "- build-devenv                     Build docker development oriented image"
-    echo "- build-devenv-local               Build a local docker development oriented image"
+    echo "- build-devenv --local             Build a local docker development oriented image"
     echo "- create-devenv                    Create the development oriented docker compose service."
     echo "- start-devenv                     Start the development oriented docker compose service."
     echo "- stop-devenv                      Stops the development oriented docker compose service."
@@ -263,9 +306,9 @@ function usage {
     echo "- build-docs-bundle                Build docs bundle."
     echo ""
     echo "- build-docker-images              Build all docker images (frontend, backend and exporter)."
-    echo "- build-frontend-docker-images     Build frontend docker images."
-    echo "- build-backend-docker-images      Build backend docker images."
-    echo "- build-exporter-docker-images     Build exporter docker images."
+    echo "- build-frontend-docker-image      Build frontend docker images."
+    echo "- build-backend-docker-image       Build backend docker images."
+    echo "- build-exporter-docker-image      Build exporter docker images."
     echo ""
     echo "- version                          Show penpot's version."
 }
@@ -281,11 +324,8 @@ case $1 in
         ;;
 
     build-devenv)
-        build-devenv ${@:2}
-        ;;
-
-    build-devenv-local)
-        build-devenv-local ${@:2}
+        shift;
+        build-devenv $@;
         ;;
 
     create-devenv)
@@ -339,22 +379,27 @@ case $1 in
         build-docs-bundle;
         ;;
 
+    build-imagemagick-docker-image)
+        shift;
+        build-imagemagick-docker-image $@;
+        ;;
+
     build-docker-images)
-        build-frontend-docker-images
-        build-backend-docker-images
-        build-exporter-docker-images
+        build-frontend-docker-image
+        build-backend-docker-image
+        build-exporter-docker-image
         ;;
 
-    build-frontend-docker-images)
-        build-frontend-docker-images
+    build-frontend-docker-image)
+        build-frontend-docker-image
         ;;
 
-    build-backend-docker-images)
-        build-backend-docker-images
+    build-backend-docker-image)
+        build-backend-docker-image
         ;;
 
-    build-exporter-docker-images)
-        build-exporter-docker-images
+    build-exporter-docker-image)
+        build-exporter-docker-image
         ;;
 
     *)
