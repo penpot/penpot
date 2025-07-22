@@ -61,7 +61,7 @@
       [:> cta-power-up*
        {:top-title (tr "subscription.dashboard.power-up.your-subscription")
         :top-description (tr "subscription.dashboard.power-up.professional.top-title")
-        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-description", subscription-href)
+        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom", subscription-href)
         :has-dropdown true}]
 
       "unlimited"
@@ -75,7 +75,7 @@
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.unlimited-plan")
-          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom-description", subscription-href)
+          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom", subscription-href)
           :has-dropdown true}])
 
       "enterprise"

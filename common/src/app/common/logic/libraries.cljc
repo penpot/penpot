@@ -1665,27 +1665,62 @@
                                         :shapes all-parents})]))))
 
 
-(defn- text-partial-change-value
-  [touched-content untouched-content touched]
-  (cond
-    (touched :text-content-structure-same-attrs)
-    (if (touched :text-content-attribute)
-      ;; Both structure and attrs has been touched, keep the
+(defn- text-change-value
+  [touched-content   ;; The :content of the copy text before updating
+   untouched-content ;; The :content of the main component
+   touched]
+
+  (let [main-comps-diff (cttx/get-diff-type touched-content untouched-content)
+        diff-structure? (contains? main-comps-diff :text-content-structure)
+
+        touched-attrs       (cttx/get-first-paragraph-text-attrs touched-content)
+        ;; Have touched content an uniform style?
+        thed-unif-style?    (cttx/equal-attrs? touched-content touched-attrs)
+
+        untouched-attrs     (cttx/get-first-paragraph-text-attrs untouched-content)
+        ;; Have untouched content an uniform style?
+        untched-unif-style? (cttx/equal-attrs? untouched-content untouched-attrs)]
+    (cond
+      ;; Both text and attrs has been touched, keep the
       ;; touched-content
+      (and (touched :text-content-text) (touched :text-content-attribute))
       touched-content
-      ;; Keep the touched-content structure and texts, update
-      ;; its attrs to make them like the untouched-content
-      (cttx/copy-attrs-keys touched-content (cttx/get-first-paragraph-text-attrs untouched-content)))
 
-    (touched :text-content-text)
-    ;; Keep the texts touched in touched-content, so copy the
-    ;; texts from touched-content into untouched-content
-    (cttx/copy-text-keys touched-content untouched-content)
+      (touched :text-content-structure)
+      ;; Special case for adding or removing paragraphs:
+      ;; If the structure has been touched, but the attrs don't,
+      ;; and both have uniform attributes, we keep the touched-content structure and
+      ;; texts, updating its attrs to make them like the untouched-content
+      (if (and (not (touched :text-content-attribute)) thed-unif-style? untched-unif-style?)
+        (cttx/copy-attrs-keys touched-content untouched-attrs)
+        ;; In other case, we keep the touched content
+        touched-content)
 
-    (touched :text-content-attribute)
-    ;; Keep the attrs touched in touched-content, so copy the
-    ;; texts from untouched-content into touched-content
-    (cttx/copy-text-keys untouched-content touched-content)))
+      (touched :text-content-text)
+      ;; Keep the texts touched in touched-content, so copy the
+      ;; texts from touched-content into untouched-content
+      (cttx/copy-text-keys touched-content untouched-content)
+
+      (touched :text-content-attribute)
+      ;; The untouched content has a different structure, but the touched content had't
+      ;; touched the structure
+      (if diff-structure?
+        ;; If both have uniform attributes, we keep the untouched-content structure and
+        ;; texts, updating its attrs to make them like the touched-content
+        (if (and thed-unif-style? untched-unif-style?)
+          (cttx/copy-attrs-keys untouched-content touched-attrs)
+          ;; In other case, we keep the touched content
+          touched-content)
+
+        ;; Keep the attrs touched in touched-content, so copy the
+        ;; texts from untouched-content into touched-content
+        (cttx/copy-text-keys untouched-content touched-content))
+
+
+      ;; Nothing is touched
+      :else
+      untouched-content)))
+
 
 (defn- add-update-attr-operations
   [attr dest-shape roperations uoperations attr-val]
@@ -1699,34 +1734,6 @@
                     :ignore-touched true}]
     [(conj roperations roperation)
      (conj uoperations uoperation)]))
-
-(defn- is-text-partial-change?
-  "Check if the attr update is a text partial change"
-  [untouched-shape touched-shape]
-  (let [touched             (get touched-shape :touched #{})
-        partial-text-keys   [:text-content-attribute :text-content-text]
-        active-keys         (filter touched partial-text-keys)
-        untouched-content   (:content untouched-shape)
-        untouched-attrs     (cttx/get-first-paragraph-text-attrs untouched-content)
-        eq-untouched-attrs? (cttx/equal-attrs? untouched-content untouched-attrs)]
-    (and
-     (or
-     ;; One and only one of the keys is pressent
-      (= 1 (count active-keys))
-      (and
-       (not (touched :text-content-attribute))
-       (touched :text-content-structure-same-attrs)))
-
-     (or
-      ;; Both has the same structure
-      (cttx/equal-structure? untouched-content (:content touched-shape))
-
-      ;; The origin and destiny have different structures, but each have the same attrs
-      ;; for all the items on its content tree
-      (and
-       eq-untouched-attrs?
-       (touched :text-content-structure-same-attrs))))))
-
 
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
@@ -1784,13 +1791,13 @@
                 ;; and attrs (bold, font, etc) are in the same attr :content.
                 ;; If only one of them is touched, we want to adress this case and
                 ;; only update the untouched one
-                text-partial-change?
-                (when (and
-                       omit-touched?
-                       (cfh/text-shape? origin-shape)
-                       (= :content attr)
-                       (touched attr-group))
-                  (is-text-partial-change? origin-shape dest-shape))
+                text-content-change?
+                (and
+                 omit-touched?
+                 (cfh/text-shape? origin-shape)
+                 (= :content attr)
+                 (touched attr-group))
+
 
                 skip-operations?
                 (or (= (get origin-shape attr) (get dest-shape attr))
@@ -1799,7 +1806,7 @@
                          ;; When it is a text-partial-change, we should generate operations
                          ;; even when omit-touched? is true, but updating only the text or
                          ;; the attributes, omiting the other part
-                         (not text-partial-change?)))
+                         (not text-content-change?)))
 
                 attr-val (when-not skip-operations?
                            (cond
@@ -1808,10 +1815,10 @@
                              reset-pos-data?
                              nil
 
-                             text-partial-change?
-                             (text-partial-change-value (:content dest-shape)
-                                                        (:content origin-shape)
-                                                        touched)
+                             text-content-change?
+                             (text-change-value (:content dest-shape)
+                                                (:content origin-shape)
+                                                touched)
 
                              :else
                              (get origin-shape attr)))
@@ -1824,7 +1831,7 @@
                 ;; On a text-partial-change, we want to force a position-data reset
                 ;; so it's calculated again
                 [roperations uoperations]
-                (if (and text-partial-change? (not skip-operations?))
+                (if (and text-content-change? (not skip-operations?))
                   (add-update-attr-operations :position-data dest-shape roperations uoperations nil)
                   [roperations uoperations])
 
