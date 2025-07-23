@@ -15,6 +15,7 @@
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.spec :as us]
+   [app.common.time :as ct]
    [app.common.transit :as tr]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -33,7 +34,6 @@
    [app.rpc.helpers :as rph]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [app.worker.runner]
    [clojure.java.io :as io]
@@ -263,7 +263,7 @@
   (dm/with-open [conn (db/open system)]
     (db/insert! conn :profile-complaint-report
                 {:profile-id id
-                 :created-at (or created-at (dt/now))
+                 :created-at (or created-at (ct/now))
                  :type (name type)
                  :content (db/tjson {})})))
 
@@ -273,7 +273,7 @@
     (db/insert! conn :global-complaint-report
                 {:email email
                  :type (name type)
-                 :created-at (or created-at (dt/now))
+                 :created-at (or created-at (ct/now))
                  :content (db/tjson {})})))
 
 (defn create-team-role*
@@ -305,7 +305,7 @@
   ([system {:keys [file-id changes session-id profile-id revn]
             :or {session-id (uuid/next) revn 0}}]
    (-> system
-       (assoc ::files.update/timestamp (dt/now))
+       (assoc ::files.update/timestamp (ct/now))
        (db/tx-run! (fn [{:keys [::db/conn] :as system}]
                      (let [file (files.update/get-file conn file-id)]
                        (#'files.update/update-file* system
@@ -379,7 +379,7 @@
     ;; (app.common.pprint/pprint (:app.rpc/methods *system*))
     (try-on! (method-fn (-> data
                             (dissoc ::type)
-                            (assoc :app.rpc/request-at (dt/now)))))))
+                            (assoc :app.rpc/request-at (ct/now)))))))
 
 (defn run-task!
   ([name]
@@ -525,7 +525,7 @@
 
 (defn sleep
   [ms-or-duration]
-  (Thread/sleep (inst-ms (dt/duration ms-or-duration))))
+  (Thread/sleep (inst-ms (ct/duration ms-or-duration))))
 
 (defn config-get-mock
   [data]

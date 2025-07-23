@@ -10,10 +10,10 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.config :as cfg]
    [app.redis :as rds]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [integrant.core :as ig]
    [promesa.core :as p]
@@ -56,7 +56,7 @@
   [k v]
   {k (-> (d/without-nils v)
          (assoc ::buffer-size 128)
-         (assoc ::timeout (dt/duration {:seconds 30})))})
+         (assoc ::timeout (ct/duration {:seconds 30})))})
 
 (def ^:private schema:params
   [:map ::rds/redis ::wrk/executor])

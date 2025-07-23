@@ -14,6 +14,7 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
+   [app.common.time :as ct]
    [app.common.types.plugins :as ctpg]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -136,7 +137,7 @@
    [:name ::sm/text]
    [:path {:optional true} :string]
    [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
-   [:modified-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::ct/inst]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:library-color

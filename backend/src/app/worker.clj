@@ -10,11 +10,11 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.metrics :as mtx]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [integrant.core :as ig]))
 
@@ -31,7 +31,7 @@
   [f metrics tname]
   (let [labels (into-array String [tname])]
     (fn [params]
-      (let [tp (dt/tpoint)]
+      (let [tp (ct/tpoint)]
         (try
           (f params)
           (finally
@@ -95,7 +95,7 @@
    [::task [:or ::sm/text :keyword]]
    [::label {:optional true} ::sm/text]
    [::delay {:optional true}
-    [:or ::sm/int ::dt/duration]]
+    [:or ::sm/int ::ct/duration]]
    [::queue {:optional true} [:or ::sm/text :keyword]]
    [::priority {:optional true} ::sm/int]
    [::max-retries {:optional true} ::sm/int]
@@ -111,7 +111,7 @@
 
   (check-options! options)
 
-  (let [duration  (dt/duration delay)
+  (let [duration  (ct/duration delay)
         interval  (db/interval duration)
         props     (db/tjson params)
         id        (uuid/next)
@@ -129,7 +129,7 @@
            :queue queue
            :label label
            :dedupe (boolean dedupe)
-           :delay (dt/format-duration duration)
+           :delay (ct/format-duration duration)
            :replace (or deleted 0))
 
     (db/exec-one! conn [sql:insert-new-task id task props queue

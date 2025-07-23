@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [app.db :as db]
@@ -19,7 +20,6 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.permissions :as perms]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [cuerdas.core :as str]))
 
 (defn get-webhooks-permissions
@@ -54,7 +54,7 @@
                     (http/req! cfg
                                {:method :head
                                 :uri (str (:uri params))
-                                :timeout (dt/duration "3s")}
+                                :timeout (ct/duration "3s")}
                                {:sync? true}))]
       (if (ex/exception? response)
         (if-let [hint (webhooks/interpret-exception response)]

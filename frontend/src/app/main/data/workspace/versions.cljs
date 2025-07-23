@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as dwp]
@@ -16,7 +17,6 @@
    [app.main.data.workspace.thumbnails :as th]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -59,7 +59,7 @@
   (ptk/reify ::create-version
     ptk/WatchEvent
     (watch [_ state _]
-      (let [label   (dt/format (dt/now) :date-full)
+      (let [label   (ct/format-inst (ct/now) :localized-date)
             file-id (:current-file-id state)]
 
         ;; Force persist before creating snapshot, otherwise we could loss changes
@@ -140,7 +140,7 @@
       (let [version (->> (dm/get-in state [:workspace-versions :data])
                          (d/seek #(= (:id %) id)))
             params  {:id id
-                     :label (dt/format (:created-at version) :date-full)}]
+                     :label (ct/format-inst (:created-at version) :localized-date)}]
 
         (->> (rp/cmd! :update-file-snapshot params)
              (rx/mapcat (fn [_]

@@ -7,7 +7,6 @@
 (ns app.common.transit
   (:require
    #?(:clj  [datoteka.fs :as fs])
-   #?(:cljs ["luxon" :as lxn])
    [app.common.data :as d]
    [app.common.uri :as uri]
    [cognitect.transit :as t]
@@ -130,20 +129,18 @@
   :wfn vec
   :rfn #(into lks/empty-linked-set %)}
 
- {:id "duration"
-  :class #?(:clj Duration :cljs lxn/Duration)
-  :rfn (fn [v]
-         #?(:clj  (Duration/ofMillis v)
-            :cljs (.fromMillis ^js lxn/Duration v)))
-  :wfn inst-ms}
+ #?(:clj
+    {:id "duration"
+     :class Duration
+     :rfn (fn [v] (Duration/ofMillis v))
+     :wfn inst-ms})
 
  {:id "m"
-  :class #?(:clj Instant :cljs lxn/DateTime)
+  :class #?(:clj Instant :cljs js/Date)
   :rfn (fn [v]
-         #?(:clj  (-> (Long/parseLong v)
-                      (Instant/ofEpochMilli))
-            :cljs (let [ms (js/parseInt v 10)]
-                    (.fromMillis ^js lxn/DateTime ms))))
+         #?(:clj (-> (Long/parseLong v)
+                     (Instant/ofEpochMilli))
+            :cljs (new js/Date (js/parseInt v 10))))
   :wfn (comp str inst-ms)}
 
  {:id "penpot/pointer"
@@ -204,12 +201,30 @@
       (with-open [input (ByteArrayInputStream. ^bytes data)]
         (t/read (reader input opts))))))
 
+#?(:cljs
+   (defn- is-date-like?
+     [obj]
+     (and ^boolean (some? obj)
+          ^boolean (fn? (.-getTime obj))
+          ^boolean (some? (.getTime obj)))))
+
+#_:clj-kondo/ignore
+(def ^:private date-write-handler
+  (t/write-handler (constantly "m")
+                   (comp str inst-ms)))
+
 (defn encode-str
   ([data] (encode-str data nil))
   ([data opts]
    #?(:cljs
       (let [type   (:type opts :json)
-            params {:handlers @write-handler-map}
+            params {:handlers @write-handler-map
+                    ;; NOTE: this is necessary because the plugin
+                    ;; secure context alters the js/Date constructor
+                    :handlerForForeign (fn [x _]
+                                         (if (is-date-like? x)
+                                           date-write-handler
+                                           nil))}
             params (if (:with-meta opts)
                      (assoc params :transform t/write-meta)
                      params)

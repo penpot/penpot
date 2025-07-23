@@ -8,8 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.time :as ct]
    [app.main.refs :as refs]
-   [app.util.time :as dt]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -63,7 +63,7 @@
         sessions (->> (vals sessions)
                       (filter :point)
                       (filter #(= page-id (:page-id %)))
-                      (filter #(>= 5000 (- (inst-ms (dt/now))
+                      (filter #(>= 5000 (- (inst-ms (ct/now))
                                            (inst-ms (:updated-at %))))))]
     (mf/with-effect nil
       (let [sem (ts/schedule 1000 #(swap! counter inc))]

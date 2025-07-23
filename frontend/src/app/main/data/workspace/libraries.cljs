@@ -17,6 +17,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
+   [app.common.time :as ct]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -52,7 +53,6 @@
    [app.main.store :as st]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -1054,7 +1054,7 @@
      (update [_ state]
        (if (and (not= library-id (:current-file-id state))
                 (nil? asset-id))
-         (d/assoc-in-when state [:files library-id :synced-at] (dt/now))
+         (d/assoc-in-when state [:files library-id :synced-at] (ct/now))
          state))
 
      ptk/WatchEvent
@@ -1139,14 +1139,14 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [file-id (:current-file-id state)]
-        (assoc-in state [:files file-id :ignore-sync-until] (dt/now))))
+        (assoc-in state [:files file-id :ignore-sync-until] (ct/now))))
 
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
         (->> (rp/cmd! :ignore-file-library-sync-status
                       {:file-id file-id
-                       :date (dt/now)})
+                       :date (ct/now)})
              (rx/ignore))))))
 
 (defn assets-need-sync
@@ -1216,7 +1216,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/update-component id #(assoc % :modified-at (dt/now))))]
+                        (pcb/update-component id #(assoc % :modified-at (ct/now))))]
         (rx/of (dch/commit-changes {:origin it
                                     :redo-changes (:redo-changes changes)
                                     :undo-changes []

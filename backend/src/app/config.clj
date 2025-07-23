@@ -12,10 +12,10 @@
    [app.common.exceptions :as ex]
    [app.common.flags :as flags]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.common.version :as v]
    [app.util.overrides]
-   [app.util.time :as dt]
    [clojure.core :as c]
    [clojure.java.io :as io]
    [cuerdas.core :as str]
@@ -59,10 +59,10 @@
    :smtp-default-reply-to "Penpot <no-reply@example.com>"
    :smtp-default-from "Penpot <no-reply@example.com>"
 
-   :profile-complaint-max-age (dt/duration {:days 7})
+   :profile-complaint-max-age (ct/duration {:days 7})
    :profile-complaint-threshold 2
 
-   :profile-bounce-max-age (dt/duration {:days 7})
+   :profile-bounce-max-age (ct/duration {:days 7})
    :profile-bounce-threshold 10
 
    :telemetry-uri "https://telemetry.penpot.app/"
@@ -102,10 +102,10 @@
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
 
     [:auto-file-snapshot-every {:optional true} ::sm/int]
-    [:auto-file-snapshot-timeout {:optional true} ::dt/duration]
+    [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
-    [:deletion-delay {:optional true} ::dt/duration] ;; REVIEW
+    [:deletion-delay {:optional true} ::ct/duration] ;; REVIEW
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -148,10 +148,10 @@
 
     [:auth-data-cookie-domain {:optional true} :string]
     [:auth-token-cookie-name {:optional true} :string]
-    [:auth-token-cookie-max-age {:optional true} ::dt/duration]
+    [:auth-token-cookie-max-age {:optional true} ::ct/duration]
 
     [:registration-domain-whitelist {:optional true} [::sm/set :string]]
-    [:email-verify-threshold {:optional true} ::dt/duration]
+    [:email-verify-threshold {:optional true} ::ct/duration]
 
     [:github-client-id {:optional true} :string]
     [:github-client-secret {:optional true} :string]
@@ -186,9 +186,9 @@
     [:ldap-starttls {:optional true} ::sm/boolean]
     [:ldap-user-query {:optional true} :string]
 
-    [:profile-bounce-max-age {:optional true} ::dt/duration]
+    [:profile-bounce-max-age {:optional true} ::ct/duration]
     [:profile-bounce-threshold {:optional true} ::sm/int]
-    [:profile-complaint-max-age {:optional true} ::dt/duration]
+    [:profile-complaint-max-age {:optional true} ::ct/duration]
     [:profile-complaint-threshold {:optional true} ::sm/int]
 
     [:redis-uri {:optional true} ::sm/uri]
@@ -298,7 +298,7 @@
 (defn get-deletion-delay
   []
   (or (c/get config :deletion-delay)
-      (dt/duration {:days 7})))
+      (ct/duration {:days 7})))
 
 (defn get
   "A configuration getter. Helps code be more testable."

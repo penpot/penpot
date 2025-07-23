@@ -669,9 +669,9 @@
   (ptk/reify ::commit-update-text-modifier
     ptk/WatchEvent
     (watch [_ state _]
-      (let [ids (::update-text-modifier-debounce-ids state)]
-        (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
-          (rx/of (dwm/update-modifiers modif-tree false true)))))))
+      (let [ids        (::update-text-modifier-debounce-ids state)
+            modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
+        (rx/of (dwm/update-modifiers modif-tree false true))))))
 
 (defn update-text-modifier
   [id props]
@@ -965,17 +965,15 @@
               modifiers    (get-in state [:workspace-text-modifier id])
               new-shape?   (nil? (:content shape))]
           (rx/of
-           (dwsh/update-shapes
-            [id]
-            (fn [shape]
-              (let [{:keys [width height position-data]} modifiers]
-                (let [new-shape (-> shape
-                                    (assoc :content content)
-                                    (cond-> position-data
-                                      (assoc :position-data position-data))
-                                    (cond-> (and update-name? (some? name))
-                                      (assoc :name name))
-                                    (cond-> (or (some? width) (some? height))
-                                      (gsh/transform-shape (ctm/change-size shape width height))))]
-                  new-shape)))
-            {:undo-group (when new-shape? id)})))))))
+           (dwsh/update-shapes [id]
+                               (fn [shape]
+                                 (let [{:keys [width height position-data]} modifiers]
+                                   (-> shape
+                                       (assoc :content content)
+                                       (cond-> position-data
+                                         (assoc :position-data position-data))
+                                       (cond-> (and update-name? (some? name))
+                                         (assoc :name name))
+                                       (cond-> (or (some? width) (some? height))
+                                         (gsh/transform-shape (ctm/change-size shape width height))))))
+                               {:undo-group (when new-shape? id)})))))))

@@ -16,6 +16,7 @@
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
+   [app.common.time :as ct]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.shape-tree :as ctt]
@@ -23,7 +24,6 @@
    [app.db :as db]
    [app.features.fdata :as feat.fdata]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [integrant.core :as ig]))
 
@@ -282,7 +282,7 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (or (:min-age props)
+    (let [min-age (ct/duration (or (:min-age props)
                                    (cf/get-deletion-delay)))
           file-id (get props :file-id)
           cfg     (-> cfg

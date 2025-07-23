@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
@@ -18,7 +19,6 @@
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [integrant.core :as ig]
    [yetti.request :as yreq]))
@@ -35,10 +35,10 @@
 (def default-auth-data-cookie-name "auth-data")
 
 ;; Default value for cookie max-age
-(def default-cookie-max-age (dt/duration {:days 7}))
+(def default-cookie-max-age (ct/duration {:days 7}))
 
 ;; Default age for automatic session renewal
-(def default-renewal-max-age (dt/duration {:hours 6}))
+(def default-renewal-max-age (ct/duration {:hours 6}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROTOCOLS
@@ -66,7 +66,7 @@
   [:map {:title "session-params"}
    [:user-agent ::sm/text]
    [:profile-id ::sm/uuid]
-   [:created-at ::sm/inst]])
+   [:created-at ::ct/inst]])
 
 (def ^:private valid-params?
   (sm/validator schema:params))
@@ -95,7 +95,7 @@
         params))
 
     (update! [_ params]
-      (let [updated-at (dt/now)]
+      (let [updated-at (ct/now)]
         (db/update! pool :http-session
                     {:updated-at updated-at}
                     {:id (:id params)})
@@ -118,7 +118,7 @@
           params))
 
       (update! [_ params]
-        (let [updated-at (dt/now)]
+        (let [updated-at (ct/now)]
           (swap! cache update (:id params) assoc :updated-at updated-at)
           (assoc params :updated-at updated-at)))
 
@@ -158,7 +158,7 @@
     (let [uagent  (yreq/get-header request "user-agent")
           params  {:profile-id profile-id
                    :user-agent uagent
-                   :created-at (dt/now)}
+                   :created-at (ct/now)}
           token   (gen-token props params)
           session (write! manager token params)]
       (l/trace :hint "create" :profile-id (str profile-id))
@@ -203,8 +203,8 @@
 
 (defn- renew-session?
   [{:keys [updated-at] :as session}]
-  (and (dt/instant? updated-at)
-       (let [elapsed (dt/diff updated-at (dt/now))]
+  (and (ct/inst? updated-at)
+       (let [elapsed (ct/diff updated-at (ct/now))]
          (neg? (compare default-renewal-max-age elapsed)))))
 
 (defn- wrap-soft-auth
@@ -256,14 +256,14 @@
 (defn- assign-auth-token-cookie
   [response {token :id updated-at :updated-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
-        created-at (or updated-at (dt/now))
-        renewal    (dt/plus created-at default-renewal-max-age)
-        expires    (dt/plus created-at max-age)
+        created-at (or updated-at (ct/now))
+        renewal    (ct/plus created-at default-renewal-max-age)
+        expires    (ct/plus created-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
         strict?    (contains? cf/flags :strict-session-cookies)
         cors?      (contains? cf/flags :cors)
         name       (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
-        comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
+        comment    (str "Renewal at: " (ct/format-inst renewal :rfc1123))
         cookie     {:path "/"
                     :http-only true
                     :expires expires
@@ -279,11 +279,11 @@
         domain     (cf/get :auth-data-cookie-domain)
         cname      default-auth-data-cookie-name
 
-        created-at (or updated-at (dt/now))
-        renewal    (dt/plus created-at default-renewal-max-age)
-        expires    (dt/plus created-at max-age)
+        created-at (or updated-at (ct/now))
+        renewal    (ct/plus created-at default-renewal-max-age)
+        expires    (ct/plus created-at max-age)
 
-        comment    (str "Renewal at: " (dt/format-instant renewal :rfc1123))
+        comment    (str "Renewal at: " (ct/format-inst renewal :rfc1123))
         secure?    (contains? cf/flags :secure-session-cookies)
         strict?    (contains? cf/flags :strict-session-cookies)
         cors?      (contains? cf/flags :cors)
@@ -323,7 +323,7 @@
 (defmethod ig/assert-key ::tasks/gc
   [_ params]
   (assert (db/pool? (::db/pool params)) "expected valid database pool")
-  (assert (dt/duration? (::tasks/max-age params))))
+  (assert (ct/duration? (::tasks/max-age params))))
 
 (defmethod ig/expand-key ::tasks/gc
   [k v]

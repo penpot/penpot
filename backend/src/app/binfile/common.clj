@@ -16,6 +16,7 @@
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -28,7 +29,6 @@
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -540,14 +540,13 @@
 
   Returns nil"
   [{:keys [::timestamp] :as cfg} file & {:as opts}]
+  (assert (ct/inst? timestamp) "expected valid timestamp")
 
-  (assert (dt/instant? timestamp) "expected valid timestamp")
   (let [file (-> file
                  (assoc :created-at timestamp)
                  (assoc :modified-at timestamp)
                  (cond-> (not (::overwrite cfg))
-                   (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5}))))
-                 (update :revn inc)
+                   (assoc :ignore-sync-until (ct/plus timestamp (ct/duration {:seconds 5}))))
                  (update :features
                          (fn [features]
                            (-> (::features cfg #{})

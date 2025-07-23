@@ -12,7 +12,7 @@
    #?(:clj [clojure.datafy :refer [datafy]])
    [app.common.data :as d]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.time :as dt]
+   [app.common.time :as ct]
    [app.common.transit :as tr]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
@@ -20,14 +20,14 @@
 
 (defn setup-virtual-time
   [next]
-  (let [current (volatile! (inst-ms (dt/now)))]
-    (with-redefs [dt/now #(dt/parse-instant (vswap! current inc))]
+  (let [current (volatile! (inst-ms (ct/now)))]
+    (with-redefs [ct/now #(ct/inst (vswap! current inc))]
       (next))))
 
 (t/use-fixtures :once setup-virtual-time)
 
 (t/deftest make-token
-  (let [now       (dt/now)
+  (let [now       (ct/now)
         token1    (ctob/make-token :id (thi/new-id! :token1)
                                    :name "test-token-1"
                                    :type :boolean
@@ -71,7 +71,7 @@
     (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo}} + {bar}")))))
 
 (t/deftest make-token-set
-  (let [now        (dt/now)
+  (let [now        (ct/now)
         token-set1 (ctob/make-token-set :name "test-token-set-1")
         token-set2 (ctob/make-token-set :name "test-token-set-2"
                                         :description "test description"
@@ -196,7 +196,7 @@
     (t/is (= (get-in expected ["baz" "boo" :name]) "baz.boo"))))
 
 (t/deftest make-token-theme
-  (let [now          (dt/now)
+  (let [now          (ct/now)
         token-theme1 (ctob/make-token-theme :name "test-token-theme-1")
         token-theme2 (ctob/make-token-theme :name "test-token-theme-2"
                                             :group "group-1"
@@ -266,7 +266,7 @@
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (ctob/get-name token-set') "test-token-set"))
     (t/is (= (ctob/get-description token-set') "some description"))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest rename-token-set
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -282,7 +282,7 @@
 
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (ctob/get-name token-set') "updated-name"))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest rename-token-set-group
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -403,7 +403,7 @@
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (count (ctob/get-tokens-map token-set')) 1))
     (t/is (= (:name token') "test-token"))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest update-token
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -445,8 +445,8 @@
     (t/is (= (:name token') "test-token-1"))
     (t/is (= (:description token') "some description"))
     (t/is (= (:value token') false))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
-    (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
+    (t/is (ct/is-after? (:modified-at token') (:modified-at token)))))
 
 (t/deftest rename-token
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -479,8 +479,8 @@
     (t/is (= (:name token') "updated-name"))
     (t/is (= (:description token') ""))
     (t/is (= (:value token') true))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
-    (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
+    (t/is (ct/is-after? (:modified-at token') (:modified-at token)))))
 
 (t/deftest delete-token
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -502,7 +502,7 @@
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (count (ctob/get-tokens-map token-set')) 0))
     (t/is (nil? token'))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest get-ordered-sets
   (let [tokens-lib (-> (ctob/make-tokens-lib)
@@ -788,7 +788,7 @@
     (t/is (= (ctob/theme-count tokens-lib') 2))
     (t/is (= (:name token-theme') "test-token-theme"))
     (t/is (= (:description token-theme') "some description"))
-    (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
+    (t/is (ct/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
 (t/deftest rename-token-theme
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -805,7 +805,7 @@
 
     (t/is (= (ctob/theme-count tokens-lib') 2))
     (t/is (= (:name token-theme') "updated-name"))
-    (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
+    (t/is (ct/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
 (t/deftest delete-token-theme
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -834,7 +834,7 @@
         token-theme  (ctob/get-theme tokens-lib "" "test-token-theme")
         token-theme' (ctob/get-theme tokens-lib' "" "test-token-theme")]
 
-    (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
+    (t/is (ct/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
 (t/deftest transit-serialization
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -952,8 +952,8 @@
     (t/is (= (:name token') "group1.test-token-2"))
     (t/is (= (:description token') "some description"))
     (t/is (= (:value token') false))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
-    (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
+    (t/is (ct/is-after? (:modified-at token') (:modified-at token)))))
 
 (t/deftest update-token-in-sets-rename
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -989,8 +989,8 @@
     (t/is (= (:name token') "group1.updated-name"))
     (t/is (= (:description token') ""))
     (t/is (= (:value token') true))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (:ctob/get-modified-at token-set)))
-    (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (:ctob/get-modified-at token-set)))
+    (t/is (ct/is-after? (:modified-at token') (:modified-at token)))))
 
 (t/deftest move-token-of-group
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -1027,8 +1027,8 @@
     (t/is (= (:name token') "group2.updated-name"))
     (t/is (= (:description token') ""))
     (t/is (= (:value token') true))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
-    (t/is (dt/is-after? (:modified-at token') (:modified-at token)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))
+    (t/is (ct/is-after? (:modified-at token') (:modified-at token)))))
 
 (t/deftest delete-token-in-group
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -1053,7 +1053,7 @@
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (count (ctob/get-tokens-map token-set')) 1))
     (t/is (nil? token'))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest update-token-set-in-groups
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -1079,7 +1079,7 @@
     (t/is (= (d/index-of (keys group1') "S-token-set-2") 0))
     (t/is (= (ctob/get-name token-set') "group1/token-set-2"))
     (t/is (= (ctob/get-description token-set') "some description"))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest rename-token-set-in-groups
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -1105,7 +1105,7 @@
     (t/is (= (d/index-of (keys group1') "S-updated-name") 0))
     (t/is (= (ctob/get-name token-set') "group1/updated-name"))
     (t/is (= (ctob/get-description token-set') ""))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest move-token-set-of-group
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -1133,7 +1133,7 @@
     (t/is (nil? (get group1' "S-updated-name")))
     (t/is (= (ctob/get-name token-set') "group2/updated-name"))
     (t/is (= (ctob/get-description token-set') ""))
-    (t/is (dt/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
+    (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
 (t/deftest delete-token-set-in-group
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
@@ -1174,7 +1174,7 @@
     (t/is (= (:name token-theme') "token-theme-2"))
     (t/is (= (:group token-theme') "group1"))
     (t/is (= (:description token-theme') "some description"))
-    (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
+    (t/is (ct/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
 (t/deftest get-token-theme-groups
   (let [token-lib (-> (ctob/make-tokens-lib)
@@ -1211,7 +1211,7 @@
     (t/is (= (:name token-theme') "updated-name"))
     (t/is (= (:group token-theme') "group1"))
     (t/is (= (:description token-theme') ""))
-    (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
+    (t/is (ct/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
 (t/deftest move-token-theme-of-group
   (let [tokens-lib   (-> (ctob/make-tokens-lib)
@@ -1241,7 +1241,7 @@
     (t/is (= (:name token-theme') "updated-name"))
     (t/is (= (:group token-theme') "group2"))
     (t/is (= (:description token-theme') ""))
-    (t/is (dt/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
+    (t/is (ct/is-after? (:modified-at token-theme') (:modified-at token-theme)))))
 
 (t/deftest delete-token-theme-in-group
   (let [tokens-lib   (-> (ctob/make-tokens-lib)
@@ -1357,7 +1357,7 @@
 
 #?(:clj
    (t/deftest export-dtcg-json
-     (let [now (dt/now)
+     (let [now (ct/now)
            tokens-lib (-> (ctob/make-tokens-lib)
                           (ctob/add-set (ctob/make-token-set :name "core"
                                                              :tokens {"colors.red.600"
@@ -1408,7 +1408,7 @@
 
 #?(:clj
    (t/deftest export-parse-dtcg-json
-     (with-redefs [dt/now    (constantly #inst "2024-10-16T12:01:20.257840055-00:00")
+     (with-redefs [ct/now    (constantly #inst "2024-10-16T12:01:20.257840055-00:00")
                    uuid/next (constantly uuid/zero)]
        (let [tokens-lib (-> (ctob/make-tokens-lib)
                             (ctob/add-set (ctob/make-token-set :name "core"
@@ -1477,7 +1477,7 @@
 
 #?(:clj
    (t/deftest export-dtcg-json-with-active-theme-and-set
-     (let [now (dt/now)
+     (let [now (ct/now)
            tokens-lib (-> (ctob/make-tokens-lib)
                           (ctob/add-set (ctob/make-token-set :name "core"
                                                              :tokens {"colors.red.600"
@@ -1530,7 +1530,7 @@
 
 #?(:clj
    (t/deftest export-dtcg-multi-file
-     (let [now (dt/now)
+     (let [now (ct/now)
            tokens-lib (-> (ctob/make-tokens-lib)
                           (ctob/add-set (ctob/make-token-set :name "some/set"
                                                              :tokens {"colors.red.600"
