@@ -1080,7 +1080,11 @@
               (fn [state]
                 (-> state
                     (assoc :type :color)
-                    (dissoc :editing-stop :stops :gradient)))))))
+                    (dissoc :editing-stop :stops :gradient)))))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (update-colorpicker-color {} false)))))
 
 (defn activate-colorpicker-gradient
   [type]
