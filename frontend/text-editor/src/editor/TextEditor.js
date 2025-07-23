@@ -16,6 +16,7 @@ import {
   mapContentFragmentFromHTML,
   mapContentFragmentFromString,
 } from "./content/dom/Content.js";
+import { resetInertElement } from "./content/dom/Style.js";
 import { createRoot, createEmptyRoot } from "./content/dom/Root.js";
 import { createParagraph } from "./content/dom/Paragraph.js";
 import { createEmptyInline, createInline } from "./content/dom/Inline.js";
@@ -264,7 +265,7 @@ export class TextEditor extends EventTarget {
   #onCopy = (e) => {
     this.dispatchEvent(
       new CustomEvent("clipboardchange", {
-        detail: this.#selectionController.currentStyle,
+        detail: this.currentStyle,
       }),
     );
 
@@ -520,6 +521,7 @@ export function createRootFromHTML(html, style) {
   const fragment = mapContentFragmentFromHTML(html, style);
   const root = createRoot([], style);
   root.replaceChildren(fragment);
+  resetInertElement();
   return root;
 }
 

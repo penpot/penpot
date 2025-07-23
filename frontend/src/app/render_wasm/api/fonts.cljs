@@ -224,8 +224,8 @@
 
 (defn add-emoji-font
   [fonts]
-  (conj fonts {:font-id "gfont-noto-color-emoji"
-               :font-variant-id "regular"
+  (conj fonts {:font-id " gfont-noto-color-emoji "
+               :font-variant-id " regular "
                :style 0
                :weight 400
                :is-emoji true}))

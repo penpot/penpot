@@ -75,6 +75,8 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
     if (!fontSize) console.warn("font-size", fontSize);
     const fontFamily = inline.style.getPropertyValue("font-family");
     if (!fontFamily) console.warn("font-family", fontFamily);
+    const fontWeight = inline.style.getPropertyValue("font-weight");
+    if (!fontWeight) console.warn("font-weight", fontWeight);
     currentParagraph.appendChild(inline);
 
     currentNode = nodeIterator.nextNode();
