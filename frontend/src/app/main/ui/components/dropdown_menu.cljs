@@ -12,6 +12,7 @@
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
+   [app.common.uuid :as uuid]
    [goog.events :as events]
    [goog.object :as gobj]
    [rumext.v2 :as mf])
@@ -98,16 +99,21 @@
 (mf/defc dropdown-menu
   {::mf/props :obj}
   [props]
+
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
 
-  (let [ids (obj/get props "ids")
-        ids (or ids
-                (->> (obj/get props "children")
-                     (keep (fn [o]
-                             (let [props (obj/get o "props")]
-                               (obj/get props "id"))))))]
-    (when (gobj/get props "show")
+  (let [dropdown-id (or (gobj/get props "dropdown-id") (uuid/next))
+        show        (gobj/get props "show")
+        on-close    (gobj/get props "on-close")
+        ids         (obj/get props "ids")
+        ids         (or ids
+                        (->> (obj/get props "children")
+                             (keep (fn [o]
+                                     (let [props (obj/get o "props")]
+                                       (obj/get props "id"))))))]
+
+    (when show
       (mf/element
        dropdown-menu'
        (mf/spread-props props {:ids ids})))))
