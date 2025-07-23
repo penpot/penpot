@@ -43,7 +43,7 @@
 
 (mf/defc token-group*
   {::mf/private true}
-  [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
+  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens is-open]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
         editing-ref  (mf/deref refs/workspace-editor-state)
@@ -116,6 +116,7 @@
              {:key (:name token)
               :token token
               :selected-shapes selected-shapes
+              :is-selected-inside-layout is-selected-inside-layout
               :active-theme-tokens active-theme-tokens
               :on-click on-token-pill-click
               :on-context-menu on-context-menu}])]])]]))
