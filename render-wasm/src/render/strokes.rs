@@ -479,14 +479,16 @@ fn draw_image_stroke_in_container(
     canvas.restore();
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn render(
     render_state: &mut RenderState,
     shape: &Shape,
     stroke: &Stroke,
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
-    paragraphs: Option<&mut [ParagraphBuilder]>,
+    paragraphs: Option<&mut Vec<Vec<ParagraphBuilder>>>,
     antialias: bool,
+    paint: Option<&skia::Paint>,
 ) {
     let scale = render_state.get_scale();
     let canvas = render_state
@@ -527,6 +529,7 @@ pub fn render(
                     shape,
                     paragraphs.expect("Text shapes should have paragraphs"),
                     Some(SurfaceId::Strokes),
+                    paint,
                 );
             }
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {

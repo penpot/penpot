@@ -40,14 +40,13 @@ pub struct TextContent {
     pub grow_type: GrowType,
 }
 
-pub fn set_paragraphs_width(width: f32, paragraphs: &mut [ParagraphBuilder]) {
-    for p in paragraphs {
-        // We first set max so we can get the min_intrinsic_width (this is the min word size)
-        // then after we set either the real with or the min.
-        // This is done this way so the words are not break into lines.
-        let mut paragraph = p.build();
-        paragraph.layout(f32::MAX);
-        paragraph.layout(f32::max(width, paragraph.min_intrinsic_width().ceil()));
+pub fn set_paragraphs_width(width: f32, paragraphs: &mut Vec<Vec<ParagraphBuilder>>) {
+    for group in paragraphs {
+        for p in group {
+            let mut paragraph = p.build();
+            paragraph.layout(f32::MAX);
+            paragraph.layout(f32::max(width, paragraph.min_intrinsic_width().ceil()));
+        }
     }
 }
 
@@ -93,58 +92,60 @@ impl TextContent {
         self.paragraphs.push(paragraph);
     }
 
-    pub fn to_paragraphs(&self) -> Vec<ParagraphBuilder> {
+    pub fn to_paragraphs(&self) -> Vec<Vec<ParagraphBuilder>> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
-        self.paragraphs
-            .iter()
-            .map(|p| {
-                let paragraph_style = p.paragraph_to_style();
-                let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-                for leaf in &p.children {
-                    let text_style = leaf.to_style(p, &self.bounds, fallback_fonts);
-                    let text = leaf.apply_text_transform();
-                    builder.push_style(&text_style);
-                    builder.add_text(&text);
-                    builder.pop();
-                }
-                builder
-            })
-            .collect()
+        let mut paragraph_group = Vec::new();
+
+        for paragraph in &self.paragraphs {
+            let paragraph_style = paragraph.paragraph_to_style();
+            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            for leaf in &paragraph.children {
+                let text_style = leaf.to_style(paragraph, &self.bounds, fallback_fonts);
+                let text = leaf.apply_text_transform();
+                builder.push_style(&text_style);
+                builder.add_text(&text);
+            }
+            paragraph_group.push(vec![builder]);
+        }
+
+        paragraph_group
     }
 
-    pub fn to_stroke_paragraphs(&self, stroke: &Stroke, bounds: &Rect) -> Vec<ParagraphBuilder> {
+    pub fn to_stroke_paragraphs(
+        &self,
+        stroke: &Stroke,
+        bounds: &Rect,
+    ) -> Vec<Vec<ParagraphBuilder>> {
         let fallback_fonts = get_fallback_fonts();
         let stroke_paints = get_text_stroke_paints(stroke, bounds);
         let fonts = get_font_collection();
+        let mut paragraph_group = Vec::new();
 
-        stroke_paints
-            .into_iter()
-            .flat_map(|stroke_paint| {
-                self.paragraphs
-                    .iter()
-                    .map(|paragraph| {
-                        let paragraph_style = paragraph.paragraph_to_style();
-                        let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-                        for leaf in &paragraph.children {
-                            let stroke_style =
-                                leaf.to_stroke_style(paragraph, &stroke_paint, fallback_fonts);
-                            let text: String = leaf.apply_text_transform();
-                            builder.push_style(&stroke_style);
-                            builder.add_text(&text);
-                            builder.pop();
-                        }
-                        builder
-                    })
-                    .collect::<Vec<_>>()
-            })
-            .collect()
+        for paragraph in &self.paragraphs {
+            let mut stroke_paragraphs = Vec::new();
+            for stroke_paint in &stroke_paints {
+                let paragraph_style = paragraph.paragraph_to_style();
+                let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+                for leaf in &paragraph.children {
+                    let stroke_style =
+                        leaf.to_stroke_style(paragraph, stroke_paint, fallback_fonts);
+                    let text: String = leaf.apply_text_transform();
+                    builder.push_style(&stroke_style);
+                    builder.add_text(&text);
+                }
+                stroke_paragraphs.push(builder);
+            }
+            paragraph_group.push(stroke_paragraphs);
+        }
+
+        paragraph_group
     }
 
     pub fn collect_paragraphs(
         &self,
-        mut paragraphs: Vec<ParagraphBuilder>,
-    ) -> Vec<ParagraphBuilder> {
+        mut paragraphs: Vec<Vec<ParagraphBuilder>>,
+    ) -> Vec<Vec<ParagraphBuilder>> {
         if self.grow_type() == GrowType::AutoWidth {
             set_paragraphs_width(f32::MAX, &mut paragraphs);
             let max_width = auto_width(&mut paragraphs).ceil();
@@ -155,7 +156,7 @@ impl TextContent {
         paragraphs
     }
 
-    pub fn get_skia_paragraphs(&self) -> Vec<ParagraphBuilder> {
+    pub fn get_skia_paragraphs(&self) -> Vec<Vec<ParagraphBuilder>> {
         self.collect_paragraphs(self.to_paragraphs())
     }
 
@@ -163,7 +164,7 @@ impl TextContent {
         &self,
         stroke: &Stroke,
         bounds: &Rect,
-    ) -> Vec<ParagraphBuilder> {
+    ) -> Vec<Vec<ParagraphBuilder>> {
         self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds))
     }
 
@@ -637,27 +638,33 @@ impl From<&Vec<u8>> for RawTextData {
     }
 }
 
-pub fn auto_width(paragraphs: &mut [ParagraphBuilder]) -> f32 {
+pub fn auto_width(paragraphs: &mut [Vec<ParagraphBuilder>]) -> f32 {
     paragraphs.iter_mut().fold(0.0, |auto_width, p| {
-        let mut paragraph = p.build();
-        paragraph.layout(f32::MAX);
-        f32::max(paragraph.max_intrinsic_width(), auto_width)
+        p.iter_mut().fold(auto_width, |auto_width, paragraph| {
+            let mut paragraph = paragraph.build();
+            paragraph.layout(f32::MAX);
+            f32::max(paragraph.max_intrinsic_width(), auto_width)
+        })
     })
 }
 
-pub fn max_width(paragraphs: &mut [ParagraphBuilder]) -> f32 {
+pub fn max_width(paragraphs: &mut [Vec<ParagraphBuilder>]) -> f32 {
     paragraphs.iter_mut().fold(0.0, |max_width, p| {
-        let mut paragraph = p.build();
-        paragraph.layout(f32::MAX);
-        f32::max(paragraph.max_width(), max_width)
+        p.iter_mut().fold(max_width, |max_width, paragraph| {
+            let mut paragraph = paragraph.build();
+            paragraph.layout(f32::MAX);
+            f32::max(paragraph.max_width(), max_width)
+        })
     })
 }
 
-pub fn auto_height(paragraphs: &mut [ParagraphBuilder], width: f32) -> f32 {
+pub fn auto_height(paragraphs: &mut [Vec<ParagraphBuilder>], width: f32) -> f32 {
     paragraphs.iter_mut().fold(0.0, |auto_height, p| {
-        let mut paragraph = p.build();
-        paragraph.layout(width);
-        auto_height + paragraph.height()
+        p.iter_mut().fold(auto_height, |auto_height, paragraph| {
+            let mut paragraph = paragraph.build();
+            paragraph.layout(width);
+            auto_height + paragraph.height()
+        })
     })
 }
 
