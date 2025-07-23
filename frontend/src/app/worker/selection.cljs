@@ -212,7 +212,7 @@
               ;; If the shape has no fills the overlap depends on the stroke
               :rect (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
               :circle (and (overlaps-outer-shape? shape) (not (overlaps-inner-shape? shape)))
-              :path (overlaps-path? shape)
+              (:bool :path) (overlaps-path? shape)
               (gsh/overlaps? shape rect))
             (gsh/overlaps? shape rect)))
 
