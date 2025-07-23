@@ -85,7 +85,7 @@
 
            ;; Token option
            (= type :token)
-           [:> token-option* {:selected (= name selected)
+           [:> token-option* {:selected (= id selected)
                               :key (or id (uuid/next))
                               :id id
                               :name name
@@ -136,9 +136,9 @@
               (= type :empty)
               [:li {:key id :class (stl/css :option-empty)} label]
             
-                       ;; Token option
+              ;; Token option
               (= type :token)
-              [:> token-option* {:selected (= name selected)
+              [:> token-option* {:selected (= id selected)
                                  :key (or id (uuid/next))
                                  :id id
                                  :name name
@@ -147,7 +147,7 @@
                                  :focused (= id focused)
                                  :on-click on-click}]
             
-                       ;; Normal option
+              ;; Normal option
               :else
               [:> option* {:selected (= id selected)
                            :key id
