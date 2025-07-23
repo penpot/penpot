@@ -38,8 +38,7 @@
    [rumext.v2 :as mf]))
 
 (def measure-attrs
-  [:applied-tokens
-   :proportion-lock
+  [:proportion-lock
    :width :height
    :x :y
    :ox :oy
@@ -95,7 +94,7 @@
 (mf/defc measures-menu*
   {::mf/props :obj
    ::mf/wrap [mf/memo]}
-  [{:keys [ids ids-with-children values type all-types shape]}]
+  [{:keys [ids ids-with-children values applied-tokens type all-types shape]}]
   (let [options
         (mf/with-memo [type all-types]
           (if (= type :multiple)
@@ -417,7 +416,7 @@
                                  :on-detach on-detach-y
                                  :icon "character-y"
                                  :tokens tokens
-                                 :applied-token (:y (:applied-tokens values))
+                                 :applied-token (:y applied-tokens)
                                  :class (stl/css :numeric-input)
                                  :value (:y values)}]
           #_[:div {:class (stl/css-case :y-position true

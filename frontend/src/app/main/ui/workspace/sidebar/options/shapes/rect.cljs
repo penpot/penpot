@@ -57,6 +57,7 @@
      [:> measures-menu* {:ids ids
                          :type type
                          :values measure-values
+                         :applied-tokens (get shape :applied-tokens)
                          :shape shape}]
 
      [:& layout-container-menu

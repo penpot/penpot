@@ -67,6 +67,30 @@
   }
 }
 
+.no-set-pill {
+  --pill-bg-color: none;
+  --pill-fg-color: var(--color-foreground-secondary);
+  --pill-border-color: var(--color-token-border);
+  position: relative;
+  &:hover {
+    --pill-bg-color: none;
+    --pill-fg-color: var(--color-foreground-secondary);
+    --pill-border-color: var(--color-token-border);
+  }
+}
+
+.pill-dot {
+  width: 6px;
+  height: 6px;
+  outline: 2px solid var(--color-background-primary);
+  border-radius: 50%;
+  background-color: var(--color-foreground-error);
+  margin-left: var(--sp-xs);
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
 .icon {
   color: var(--color-foreground-secondary);
 }

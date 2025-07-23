@@ -26,6 +26,7 @@ export default {
     maxLength: 10,
     hasError: false,
     placeholder: "Select a month",
+    emptyToEnd: true,
     options: [
       { id: "January", label: "January" },
       { id: "February", label: "February" },
@@ -63,6 +64,7 @@ export const Default = {
     },
   },
 };
+
 
 export const WithIcons = {
   args: {
