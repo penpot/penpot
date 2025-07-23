@@ -681,6 +681,51 @@
                (t/is (= (:r1 (:applied-tokens rect-without-token')) (:name target-token)))
                (t/is (= (:r1 (:applied-tokens rect-with-other-token-2')) (:name target-token)))))))))))
 
+(t/deftest test-toggle-spacing-token
+  (t/testing "applies spacing token only to layouts and layout children"
+    (t/async
+      done
+      (let [spacing-token {:name "spacing.md"
+                           :value "16"
+                           :type :spacing}
+            file (-> (setup-file-with-tokens)
+                     (ctho/add-frame-with-child :frame-layout :rect-in-layout
+                                                {:frame-params {:layout :grid}})
+                     (ctho/add-rect :rect-regular)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token spacing-token))))
+            store (ths/setup-store file)
+            frame-layout (cths/get-shape file :frame-layout)
+            rect-in-layout (cths/get-shape file :rect-in-layout)
+            rect-regular (cths/get-shape file :rect-regular)
+            events [(dwta/toggle-token {:token (toht/get-token file "spacing.md")
+                                        :shapes [frame-layout rect-in-layout rect-regular]})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 frame-layout' (cths/get-shape file' :frame-layout)
+                 rect-in-layout' (cths/get-shape file' :rect-in-layout)
+                 rect-regular' (cths/get-shape file' :rect-regular)]
+
+             (t/testing "frame with layout gets all spacing attributes"
+               (t/is (= "spacing.md" (:column-gap (:applied-tokens frame-layout'))))
+               (t/is (= "spacing.md" (:row-gap (:applied-tokens frame-layout'))))
+               (t/is (= 16 (get-in frame-layout' [:layout-gap :column-gap])))
+               (t/is (= 16 (get-in frame-layout' [:layout-gap :row-gap]))))
+
+             (t/testing "shape inside layout frame gets only margin attributes"
+               (t/is (= "spacing.md" (:m1 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m2 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m3 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m4 (:applied-tokens rect-in-layout'))))
+               (t/is (nil? (:column-gap (:applied-tokens rect-in-layout'))))
+               (t/is (nil? (:row-gap (:applied-tokens rect-in-layout'))))
+               (t/is (= {:m1 16, :m2 16, :m3 16, :m4 16} (get rect-in-layout' :layout-item-margin))))
+
+             (t/testing "regular shape doesn't get spacing attributes"
+               (t/is (nil? (:applied-tokens rect-regular')))))))))))
+
 (t/deftest test-detach-styles-color
   (t/testing "applying a color token to a shape with color styles should detach the styles"
     (t/async
