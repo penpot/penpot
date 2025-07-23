@@ -12,7 +12,7 @@ export PENPOT_FLAGS="\
        enable-login-with-gitlab \
        enable-backend-worker \
        enable-backend-asserts \
-       enable-feature-fdata-pointer-map \
+       disable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
        enable-audit-log \
        enable-transit-readable-response \
@@ -28,11 +28,11 @@ export PENPOT_FLAGS="\
        enable-auto-file-snapshot \
        enable-webhooks \
        enable-access-tokens \
-       enable-tiered-file-data-storage \
+       disable-tiered-file-data-storage \
        enable-file-validation \
        enable-file-schema-validation \
        enable-subscriptions \
-       enable-subscriptions-old";
+       disable-subscriptions-old";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"
