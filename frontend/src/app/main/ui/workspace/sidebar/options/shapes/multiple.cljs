@@ -341,7 +341,7 @@
 
         all-flex-layout-container? (->> shapes (every? ctl/flex-layout?))
 
-        [measure-ids    measure-values measure-tokens]    (get-attrs shapes objects :measure)
+        [measure-ids    measure-values measure-tokens]  (get-attrs shapes objects :measure)
 
         [layer-ids            layer-values
          text-ids             text-values

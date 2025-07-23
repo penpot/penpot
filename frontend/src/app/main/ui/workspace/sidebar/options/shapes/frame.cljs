@@ -30,6 +30,7 @@
   [{:keys [shape file-id shapes-with-children libraries] :as props}]
   (let [shape-id   (dm/get-prop shape :id)
         shape-type (dm/get-prop shape :type)
+        applied-tokens (:applied-tokens shape)
 
         ids        (mf/with-memo [shape-id]
                      [shape-id])
@@ -80,6 +81,7 @@
                      :type shape-type
                      :values layer-values}]
      [:> measures-menu* {:ids ids
+                         :applied-tokens applied-tokens
                          :values measure-values
                          :type shape-type
                          :shape shape}]

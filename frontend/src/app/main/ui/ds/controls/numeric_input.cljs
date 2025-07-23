@@ -260,6 +260,11 @@
                           tokens)
         options         (mf/with-memo [tokens]
                           (generate-dropdown-options tokens))
+
+        value (if (= :multiple applied-token)
+                :multiple
+                value)
+
         ;; Defautl props
         nillable        (d/nilv nillable false)
         disabled        (d/nilv disabled false)
@@ -310,9 +315,9 @@
         filter-structured-options (mf/with-memo [options filter-id]
                                     (let [partial (extract-partial-brace-text filter-id)]
                                       (if (seq partial)
-                                      (filter-structured-options options partial)
-                                      options)))
-        
+                                        (filter-structured-options options partial)
+                                        options)))
+
         ;; Refs
         wrapper-ref          (mf/use-ref nil)
         nodes-ref            (mf/use-ref nil)
@@ -570,24 +575,22 @@
                (dom/focus! (mf/ref-val ref))
                (on-detach token-token)))))
 
-
-        ;; Change this name for something more descriptive (on-token-key-down)
         on-token-key-down
         (mf/use-fn
          (mf/deps detach-token)
          (fn [event]
-           (let [esc?    (kbd/esc? event)
-                 delete? (kbd/delete? event)
+           (let [esc?       (kbd/esc? event)
+                 delete?    (kbd/delete? event)
                  backspace? (kbd/backspace? event)
-                 enter? (kbd/enter? event)
-                 up?     (kbd/up-arrow? event)
-                 down?   (kbd/down-arrow? event)
-                 options (mf/ref-val options-ref)
-                 len     (count options)
-                 index   (d/index-of-pred options #(= focused-id (get % :id)))
-                 index   (d/nilv index -1)
+                 enter?     (kbd/enter? event)
+                 up?        (kbd/up-arrow? event)
+                 down?      (kbd/down-arrow? event)
+                 options    (mf/ref-val options-ref)
+                 len        (count options)
+                 index      (d/index-of-pred options #(= focused-id (get % :id)))
+                 index      (d/nilv index -1)
                  detach-btn (mf/ref-val token-detach-btn-ref)
-                 target (dom/get-target event)]
+                 target     (dom/get-target event)]
 
              (when-not disabled
                (cond
