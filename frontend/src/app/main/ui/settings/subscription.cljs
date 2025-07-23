@@ -6,7 +6,6 @@
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
-   [app.main.data.profile :as du]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -319,12 +318,6 @@
                                              (if (= success-modal-is-trial? "true")
                                                (tr "subscription.settings.enterprise-trial")
                                                (tr "subscription.settings.enterprise")))})
-           (du/update-profile-props {:subscription
-                                     (-> subscription
-                                         (assoc :type (if (= params-subscription "subscribed-to-penpot-unlimited")
-                                                        "unlimited"
-                                                        "enterprise"))
-                                         (assoc :status "trialing"))})
            (rt/nav :settings-subscription {} {::rt/replace true})))))
 
     [:section {:class (stl/css :dashboard-section)}
