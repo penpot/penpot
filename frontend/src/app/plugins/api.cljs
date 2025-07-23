@@ -410,7 +410,7 @@
           :else
           (let [objects (u/locate-objects)
                 shapes (into [] (map u/proxy->shape) shapes)]
-            (cg/generate-markup-code objects type shapes)))))
+            (cg/generate-formatted-markup-code objects type shapes)))))
 
     :generateStyle
     (fn [shapes options]
