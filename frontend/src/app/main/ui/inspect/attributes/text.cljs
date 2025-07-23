@@ -9,9 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.text :as txt]
    [app.common.types.fills :as types.fills]
    [app.common.types.text :as types.text]
-   [app.common.text :as txt]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
