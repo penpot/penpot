@@ -518,15 +518,31 @@
 ;; --- SHAPE UPDATE
 
 (defn- get-token-groups
+  "Get the sync attrs groups that are affected by changes in applied tokens.
+
+   If any token has been applied or unapplied in the shape, calculate the corresponding
+   attributes and get the groups. If some of the attributes are to be applied in the
+   content nodes of a text shape, also return the content groups (only for attributes,
+   so the text is not touched)."
   [shape new-applied-tokens]
-  (let [old-applied-tokens  (d/nilv (:applied-tokens shape) #{})
-        changed-token-attrs (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
-                                    ctt/all-keys)
-        changed-groups      (into #{}
-                                  (comp (map ctt/token-attr->shape-attr)
-                                        (map #(get ctk/sync-attrs %))
-                                        (filter some?))
-                                  changed-token-attrs)]
+  (let [old-applied-tokens     (d/nilv (:applied-tokens shape) #{})
+        changed-token-attrs    (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
+                                       ctt/all-keys)
+        text-shape?            (= (:type shape) :text)
+        attrs-in-text-content? (some #(ctt/attrs-in-text-content %)
+                                     changed-token-attrs)
+
+        changed-groups         (into #{}
+                                     (comp (map ctt/token-attr->shape-attr)
+                                           (map #(get ctk/sync-attrs %))
+                                           (filter some?))
+                                     changed-token-attrs)
+
+        changed-groups      (if (and text-shape?
+                                     (d/not-empty? changed-groups)
+                                     attrs-in-text-content?)
+                              (conj changed-groups :content-group :text-content-attribute)
+                              changed-groups)]
     changed-groups))
 
 (defn set-shape-attr

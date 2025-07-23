@@ -273,6 +273,13 @@
   [attributes token-type]
   (seq (appliable-attrs attributes token-type)))
 
+;; Token attrs that are set inside content blocks of text shapes, instead
+;; at the shape level.
+(def attrs-in-text-content
+  (set/union
+   typography-keys
+   #{:fill}))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS IN SHAPES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
