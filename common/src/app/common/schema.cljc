@@ -14,7 +14,6 @@
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
    [app.common.schema.registry :as sr]
-   [app.common.time :as tm]
    [app.common.uri :as u]
    [app.common.uuid :as uuid]
    [clojure.core :as c]
@@ -850,38 +849,38 @@
                 {:title "contains any"
                  :description "contains predicate"}}))})
 
-(register!
- {:type ::inst
-  :pred inst?
-  :type-properties
-  {:title "inst"
-   :description "Satisfies Inst protocol"
-   :error/message "should be an instant"
-   :gen/gen (->> (sg/small-int :min 0 :max 100000)
-                 (sg/fmap (fn [v] (tm/parse-instant v))))
+;; (register!
+;;  {:type ::inst
+;;   :pred tm/instant?
+;;   :type-properties
+;;   {:title "inst"
+;;    :description "Satisfies Inst protocol"
+;;    :error/message "should be an instant"
+;;    :gen/gen (->> (sg/small-int :min 0 :max 100000)
+;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
 
-   :decode/string tm/parse-instant
-   :encode/string tm/format-instant
-   :decode/json tm/parse-instant
-   :encode/json tm/format-instant
-   ::oapi/type "string"
-   ::oapi/format "iso"}})
+;;    :decode/string tm/parse-inst
+;;    :encode/string tm/format-inst
+;;    :decode/json tm/parse-inst
+;;    :encode/json tm/format-inst
+;;    ::oapi/type "string"
+;;    ::oapi/format "iso"}})
 
-(register!
- {:type ::timestamp
-  :pred inst?
-  :type-properties
-  {:title "inst"
-   :description "Satisfies Inst protocol"
-   :error/message "should be an instant"
-   :gen/gen (->> (sg/small-int)
-                 (sg/fmap (fn [v] (tm/parse-instant v))))
-   :decode/string tm/parse-instant
-   :encode/string inst-ms
-   :decode/json tm/parse-instant
-   :encode/json inst-ms
-   ::oapi/type "string"
-   ::oapi/format "number"}})
+;; (register!
+;;  {:type ::timestamp
+;;   :pred tm/instant?
+;;   :type-properties
+;;   {:title "inst"
+;;    :description "Satisfies Inst protocol, the same as ::inst but encodes to epoch"
+;;    :error/message "should be an instant"
+;;    :gen/gen (->> (sg/small-int)
+;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
+;;    :decode/string tm/parse-inst
+;;    :encode/string inst-ms
+;;    :decode/json tm/parse-inst
+;;    :encode/json inst-ms
+;;    ::oapi/type "string"
+;;    ::oapi/format "number"}})
 
 (register!
  {:type ::fn

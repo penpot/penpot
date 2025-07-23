@@ -15,10 +15,10 @@
   (:require
    [app.common.data :as d]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.db :as db]
    [app.storage :as sto]
    [app.storage.impl :as impl]
-   [app.util.time :as dt]
    [integrant.core :as ig]))
 
 (def ^:private sql:lock-sobjects
@@ -106,18 +106,18 @@
 
 (defmethod ig/expand-key ::handler
   [k v]
-  {k (assoc v ::min-age (dt/duration {:hours 2}))})
+  {k (assoc v ::min-age (ct/duration {:hours 2}))})
 
 (defmethod ig/init-key ::handler
   [_ {:keys [::min-age] :as cfg}]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (or (:min-age props) min-age))]
+    (let [min-age (ct/duration (or (:min-age props) min-age))]
       (db/tx-run! cfg (fn [cfg]
                         (let [cfg   (assoc cfg ::min-age min-age)
                               total (clean-deleted! cfg)]
 
                           (l/inf :hint "task finished"
-                                 :min-age (dt/format-duration min-age)
+                                 :min-age (ct/format-duration min-age)
                                  :total total)
 
                           {:deleted total}))))))

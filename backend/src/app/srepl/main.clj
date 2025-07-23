@@ -19,6 +19,7 @@
    [app.common.pprint :as p]
    [app.common.schema :as sm]
    [app.common.spec :as us]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -38,7 +39,6 @@
    [app.srepl.helpers :as h]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.java.io :as io]
    [clojure.pprint :refer [print-table]]
@@ -476,7 +476,7 @@
          :max-jobs max-jobs
          :max-items max-items)
 
-  (let [tpoint    (dt/tpoint)
+  (let [tpoint    (ct/tpoint)
         factory   (px/thread-factory :virtual false :prefix "penpot/file-process/")
         executor  (px/cached-executor :factory factory)
         sjobs     (ps/create :permits max-jobs)
@@ -506,7 +506,7 @@
                   (Thread/sleep (int pause)))
 
                 (ps/release! sjobs)
-                (let [elapsed (dt/format-duration (tpoint))]
+                (let [elapsed (ct/format-duration (tpoint))]
                   (l/trc :hint "process:file:end"
                          :tid thread-id
                          :file-id (str file-id)
@@ -516,7 +516,7 @@
         process-file*
         (fn [idx file-id]
           (ps/acquire! sjobs)
-          (px/run! executor (partial process-file file-id idx (dt/tpoint)))
+          (px/run! executor (partial process-file file-id idx (ct/tpoint)))
           (inc idx))
 
         process-files
@@ -542,7 +542,7 @@
         (l/dbg :hint "process:error" :cause cause))
 
       (finally
-        (let [elapsed (dt/format-duration (tpoint))]
+        (let [elapsed (ct/format-duration (tpoint))]
           (l/dbg :hint "process:end"
                  :rollback rollback?
                  :elapsed elapsed))))))
@@ -556,7 +556,7 @@
   "Mark a project for deletion"
   [file-id]
   (let [file-id (h/parse-uuid file-id)
-        tnow    (dt/now)]
+        tnow    (ct/now)]
 
     (audit/insert! main/system
                    {::audit/name "delete-file"
@@ -618,7 +618,7 @@
                                     ::audit/props file
                                     ::audit/context {:triggered-by "srepl"
                                                      :cause "explicit call to restore-file!"}
-                                    ::audit/tracked-at (dt/now)})
+                                    ::audit/tracked-at (ct/now)})
 
                     (restore-file* system file-id))))))
 
@@ -626,7 +626,7 @@
   "Mark a project for deletion"
   [project-id]
   (let [project-id (h/parse-uuid project-id)
-        tnow       (dt/now)]
+        tnow       (ct/now)]
 
     (audit/insert! main/system
                    {::audit/name "delete-project"
@@ -673,7 +673,7 @@
                                     ::audit/props project
                                     ::audit/context {:triggered-by "srepl"
                                                      :cause "explicit call to restore-team!"}
-                                    ::audit/tracked-at (dt/now)})
+                                    ::audit/tracked-at (ct/now)})
 
                     (restore-project* system project-id))))))
 
@@ -681,7 +681,7 @@
   "Mark a team for deletion"
   [team-id]
   (let [team-id (h/parse-uuid team-id)
-        tnow    (dt/now)]
+        tnow    (ct/now)]
 
     (audit/insert! main/system
                    {::audit/name "delete-team"
@@ -733,7 +733,7 @@
                                     ::audit/props team
                                     ::audit/context {:triggered-by "srepl"
                                                      :cause "explicit call to restore-team!"}
-                                    ::audit/tracked-at (dt/now)})
+                                    ::audit/tracked-at (ct/now)})
 
                     (restore-team* system team-id))))))
 
@@ -741,7 +741,7 @@
   "Mark a profile for deletion."
   [profile-id]
   (let [profile-id (h/parse-uuid profile-id)
-        tnow       (dt/now)]
+        tnow       (ct/now)]
 
     (audit/insert! main/system
                    {::audit/name "delete-profile"
@@ -775,7 +775,7 @@
                                     ::audit/props (audit/profile->props profile)
                                     ::audit/context {:triggered-by "srepl"
                                                      :cause "explicit call to restore-profile!"}
-                                    ::audit/tracked-at (dt/now)})
+                                    ::audit/tracked-at (ct/now)})
 
                     (db/update! system :profile
                                 {:deleted-at nil}
@@ -821,7 +821,7 @@
                 {:deleted deleted :total total})))]
 
     (let [path       (fs/path path)
-          deleted-at (dt/minus (dt/now) (cf/get-deletion-delay))]
+          deleted-at (ct/minus (ct/now) (cf/get-deletion-delay))]
 
       (when-not (fs/exists? path)
         (throw (ex-info "path does not exists" {:path path})))
@@ -905,7 +905,7 @@
     (db/tx-run! main/system
                 (fn [{:keys [::db/conn] :as cfg}]
                   (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
-                  (let [team (-> (assoc cfg ::bfc/timestamp (dt/now))
+                  (let [team (-> (assoc cfg ::bfc/timestamp (ct/now))
                                  (mgmt/duplicate-team :team-id team-id :name name))
                         rels (db/query conn :team-profile-rel {:team-id team-id})]
 

@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.db :as db]
@@ -22,7 +23,6 @@
    [app.rpc.quotes :as quotes]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [clojure.set :as set]))
 
 (defn create-file-role!
@@ -63,7 +63,7 @@
            (create-file-role! conn))
 
       (db/update! conn :project
-                  {:modified-at (dt/now)}
+                  {:modified-at (ct/now)}
                   {:id project-id})
 
       file)))

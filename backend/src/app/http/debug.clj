@@ -15,6 +15,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.pprint :as pp]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -31,7 +32,6 @@
    [app.storage.tmp :as tmp]
    [app.util.blob :as blob]
    [app.util.template :as tmpl]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [datoteka.io :as io]
    [emoji.core :as emj]
@@ -137,7 +137,7 @@
         file       (some-> params :file :path io/read* t/decode)]
 
     (if (and file project-id)
-      (let [fname     (str "Imported: " (:name file) "(" (dt/now) ")")
+      (let [fname     (str "Imported: " (:name file) "(" (ct/now) ")")
             reuse-id? (contains? params :reuseid)
             file-id   (or (and reuse-id? (ex/ignoring (-> params :file :filename parse-uuid)))
                           (uuid/next))]
@@ -222,7 +222,7 @@
             (-> (io/resource "app/templates/error-report.v3.tmpl")
                 (tmpl/render (-> content
                                  (assoc :id id)
-                                 (assoc :created-at (dt/format-instant created-at :rfc1123))))))]
+                                 (assoc :created-at (ct/format-inst created-at :rfc1123))))))]
 
     (if-let [report (get-report request)]
       (let [result (case (:version report)
@@ -246,7 +246,7 @@
 (defn error-list-handler
   [{:keys [::db/pool]} _request]
   (let [items (->> (db/exec! pool [sql:error-reports])
-                   (map #(update % :created-at dt/format-instant :rfc1123)))]
+                   (map #(update % :created-at ct/format-inst :rfc1123)))]
     {::yres/status 200
      ::yres/body (-> (io/resource "app/templates/error-list.tmpl")
                      (tmpl/render {:items items}))

@@ -342,32 +342,32 @@
   (ptk/reify ::remove-layout-track
     ptk/WatchEvent
     (watch [_ state _]
-      (let [undo-id (js/Symbol)]
-        (let [objects (dsh/lookup-page-objects state)
+      (let [objects (dsh/lookup-page-objects state)
+            undo-id (js/Symbol)
 
-              shapes-to-delete
-              (when with-shapes?
-                (->> ids
-                     (mapcat
-                      (fn [id]
-                        (let [shape (get objects id)]
-                          (if (= type :column)
-                            (ctl/shapes-by-column shape index)
-                            (ctl/shapes-by-row shape index)))))
-                     (into #{})))]
-          (rx/of (dwu/start-undo-transaction undo-id)
-                 (if shapes-to-delete
-                   (dwsh/delete-shapes shapes-to-delete)
-                   (rx/empty))
-                 (dwsh/update-shapes
-                  ids
-                  (fn [shape objects]
-                    (case type
-                      :row    (ctl/remove-grid-row shape index objects)
-                      :column (ctl/remove-grid-column shape index objects)))
-                  {:with-objects? true})
-                 (ptk/data-event :layout/update {:ids ids})
-                 (dwu/commit-undo-transaction undo-id)))))))
+            shapes-to-delete
+            (when with-shapes?
+              (->> ids
+                   (mapcat
+                    (fn [id]
+                      (let [shape (get objects id)]
+                        (if (= type :column)
+                          (ctl/shapes-by-column shape index)
+                          (ctl/shapes-by-row shape index)))))
+                   (into #{})))]
+        (rx/of (dwu/start-undo-transaction undo-id)
+               (if shapes-to-delete
+                 (dwsh/delete-shapes shapes-to-delete)
+                 (rx/empty))
+               (dwsh/update-shapes
+                ids
+                (fn [shape objects]
+                  (case type
+                    :row    (ctl/remove-grid-row shape index objects)
+                    :column (ctl/remove-grid-column shape index objects)))
+                {:with-objects? true})
+               (ptk/data-event :layout/update {:ids ids})
+               (dwu/commit-undo-transaction undo-id))))))
 
 (defn duplicate-layout-track
   [ids type index]

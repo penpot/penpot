@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -26,7 +27,6 @@
    [app.rpc.quotes :as quotes]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [promesa.exec :as px]))
 
@@ -124,7 +124,7 @@
                     content (-> (sto/content resource)
                                 (sto/wrap-with-hash hash))]
                 {::sto/content content
-                 ::sto/touched-at (dt/now)
+                 ::sto/touched-at (ct/now)
                  ::sto/deduplicate? true
                  :content-type mtype
                  :bucket "team-font-variant"})))
@@ -217,7 +217,7 @@
                         {::sql/for-update true})
 
         delay (ldel/get-deletion-delay team)
-        tnow  (dt/in-future delay)]
+        tnow  (ct/in-future delay)]
 
     (teams/check-edition-permissions! (:permissions team))
 
@@ -261,7 +261,7 @@
 
     (teams/check-edition-permissions! (:permissions team))
     (db/update! conn :team-font-variant
-                {:deleted-at (dt/in-future delay)}
+                {:deleted-at (ct/in-future delay)}
                 {:id (:id variant)}
                 {::db/return-keys false})
 

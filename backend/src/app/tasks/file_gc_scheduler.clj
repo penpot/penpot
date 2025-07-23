@@ -8,9 +8,9 @@
   "A maintenance task that is responsible of properly scheduling the
   file-gc task for all files that matches the eligibility threshold."
   (:require
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [integrant.core :as ig]))
 
@@ -53,7 +53,7 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [min-age (dt/duration (or (:min-age props) (::min-age cfg)))]
+    (let [min-age (ct/duration (or (:min-age props) (::min-age cfg)))]
       (-> cfg
           (assoc ::db/rollback (:rollback? props))
           (assoc ::min-age min-age)

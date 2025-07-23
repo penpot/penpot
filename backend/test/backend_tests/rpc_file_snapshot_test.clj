@@ -17,7 +17,6 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]))

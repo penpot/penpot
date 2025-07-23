@@ -8,7 +8,7 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
+   [app.common.time :as ct]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.typography :as t]
@@ -17,7 +17,6 @@
    [app.main.ui.ds.utilities.date :refer [valid-date?]]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
-   [app.util.time :as dt]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:milestone
@@ -41,15 +40,20 @@
   {::mf/schema schema:milestone}
   [{:keys [class active editing user label date
            onOpenMenu onFocusInput onBlurInput onKeyDownInput] :rest props}]
-  (let [class (d/append-class class (stl/css-case :milestone true :is-selected active))
-        props (mf/spread-props props {:class class :data-testid "milestone"})
-        date (cond-> date (not (dt/datetime? date)) dt/datetime)
-        time   (dt/timeago date)]
-    [:> "div" props
+  (let [class' (stl/css-case :milestone true
+                             :is-selected active)
+        props  (mf/spread-props props {:class [class class']
+                                       :data-testid "milestone"})
+        date   (if (ct/inst? date)
+                 date
+                 (ct/inst date))]
+
+    [:> :div props
      [:> avatar* {:name (obj/get user "name")
                   :url (obj/get user "avatar")
                   :color (obj/get user "color")
-                  :variant "S" :class (stl/css :avatar)}]
+                  :variant "S"
+                  :class (stl/css :avatar)}]
 
      (if editing
        [:> input*
@@ -60,11 +64,15 @@
          :on-focus onFocusInput
          :on-blur onBlurInput
          :on-key-down onKeyDownInput}]
-       [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label])
+       [:> text*  {:as "span"
+                   :typography t/body-small
+                   :class (stl/css :name)}
+        label])
 
      [:*
-      [:time {:dateTime (dt/format date :iso)
-              :class (stl/css :date)} time]
+      [:time {:date-time (ct/format-inst date :iso)
+              :class (stl/css :date)}
+       (ct/timeago date)]
 
       [:div {:class (stl/css :milestone-buttons)}
        [:> icon-button* {:class (stl/css :menu-button)

@@ -14,11 +14,11 @@
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.schema.openapi :as-alias oapi]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as-alias db]
    [app.storage :as-alias sto]
    [app.storage.tmp :as tmp]
-   [app.util.time :as dt]
    [buddy.core.bytes :as bb]
    [buddy.core.codecs :as bc]
    [clojure.java.shell :as sh]
@@ -243,7 +243,7 @@
           (ex/raise :type :validation
                     :code :invalid-svg-file
                     :hint "uploaded svg does not provides dimensions"))
-        (merge input info {:ts (dt/now)}))
+        (merge input info {:ts (ct/now)}))
 
       (let [instance (Info. (str path))
             mtype'   (.getProperty instance "Mime type")]
@@ -263,7 +263,7 @@
           (assoc input
                  :width  width
                  :height height
-                 :ts (dt/now)))))))
+                 :ts (ct/now)))))))
 
 (defmethod process-error org.im4java.core.InfoException
   [error]

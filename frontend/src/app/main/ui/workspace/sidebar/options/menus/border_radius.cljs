@@ -48,10 +48,9 @@
         (mf/use-fn
          (mf/deps ids change-radius)
          (fn [value]
-           (let []
-             (st/emit!
-              (change-radius (fn [shape]
-                               (ctsr/set-radius-to-all-corners shape value)))))))
+           (st/emit!
+            (change-radius (fn [shape]
+                             (ctsr/set-radius-to-all-corners shape value))))))
 
         on-radius-4-change
         (mf/use-fn

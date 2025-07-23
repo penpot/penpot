@@ -10,11 +10,11 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.logging :as log]
+   [app.common.time :as ct]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
    [app.main.worker :as mw]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -118,7 +118,7 @@
         source    (d/nilv source :local)
         local?    (= source :local)
         commit    {:id commit-id
-                   :created-at (dt/now)
+                   :created-at (ct/now)
                    :source source
                    :origin (ptk/type origin)
                    :features features

@@ -13,6 +13,7 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -28,7 +29,6 @@
    [app.setup.templates :as tmpl]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [promesa.exec :as px]))
 
@@ -104,7 +104,7 @@
                     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
 
                     (binding [bfc/*state* (volatile! {:index {file-id (uuid/next)}})]
-                      (duplicate-file (assoc cfg ::bfc/timestamp (dt/now))
+                      (duplicate-file (assoc cfg ::bfc/timestamp (ct/now))
                                       (-> params
                                           (assoc :profile-id profile-id)
                                           (assoc :reset-shared-flag true)))))))
@@ -164,7 +164,7 @@
   (db/tx-run! cfg (fn [cfg]
                     ;; Defer all constraints
                     (db/exec-one! cfg ["SET CONSTRAINTS ALL DEFERRED"])
-                    (-> (assoc cfg ::bfc/timestamp (dt/now))
+                    (-> (assoc cfg ::bfc/timestamp (ct/now))
                         (duplicate-project (assoc params :profile-id profile-id))))))
 
 (defn duplicate-team
@@ -320,7 +320,7 @@
       ;; trully different modification date to each file.
       (px/sleep 10)
       (db/update! conn :project
-                  {:modified-at (dt/now)}
+                  {:modified-at (ct/now)}
                   {:id project-id}))
 
     nil))
@@ -425,7 +425,7 @@
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn] :as cfg}]
                   (db/update! conn :project
-                              {:modified-at (dt/now)}
+                              {:modified-at (ct/now)}
                               {:id project-id}
                               {::db/return-keys false})
 

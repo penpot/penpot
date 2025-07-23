@@ -12,10 +12,10 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.metrics :as mtx]
    [app.redis.script :as-alias rscript]
    [app.util.cache :as cache]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.core :as c]
    [clojure.java.io :as io]
@@ -114,7 +114,7 @@
   (let [cpus    (px/get-available-processors)
         threads (max 1 (int (* cpus 0.2)))]
     {k (-> (d/without-nils v)
-           (assoc ::timeout (dt/duration "10s"))
+           (assoc ::timeout (ct/duration "10s"))
            (assoc ::io-threads (max 3 threads))
            (assoc ::worker-threads (max 3 threads)))}))
 
@@ -125,7 +125,7 @@
    [::uri ::sm/uri]
    [::worker-threads ::sm/int]
    [::io-threads ::sm/int]
-   [::timeout ::dt/duration]])
+   [::timeout ::ct/duration]])
 
 (defmethod ig/assert-key ::redis
   [_ params]
@@ -331,7 +331,7 @@
                   (p/rejected cause))))
 
             (eval-script [sha]
-              (let [tpoint (dt/tpoint)]
+              (let [tpoint (ct/tpoint)]
                 (->> (.evalsha ^RedisScriptingAsyncCommands cmd
                                ^String sha
                                ^ScriptOutputType ScriptOutputType/MULTI
@@ -346,7 +346,7 @@
                                           :name (name sname)
                                           :sha sha
                                           :params (str/join "," (::rscript/vals script))
-                                          :elapsed (dt/format-duration elapsed))
+                                          :elapsed (ct/format-duration elapsed))
                                  result)))
                      (p/merr on-error))))
 

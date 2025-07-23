@@ -45,9 +45,15 @@
   :potok/reify-type
   {:level :error}
 
+  :missing-protocol-method
+  {:level :off}
+
   :unresolved-namespace
   {:level :warning
    :exclude [data_readers]}
+
+  :unused-value
+  {:level :off}
 
   :single-key-in
   {:level :warning}
@@ -62,6 +68,9 @@
   {:level :off}
 
   :redundant-nested-call
+  {:level :off}
+
+  :redundant-str-call
   {:level :off}
 
   :earmuffed-var-not-dynamic

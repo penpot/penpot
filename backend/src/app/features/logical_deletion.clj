@@ -7,8 +7,8 @@
 (ns app.features.logical-deletion
   "A code related to handle logical deletion mechanism"
   (:require
-   [app.config :as cf]
-   [app.util.time :as dt]))
+   [app.common.time :as ct]
+   [app.config :as cf]))
 
 (def ^:private canceled-status
   #{"canceled" "unpaid"})
@@ -20,10 +20,10 @@
   (if-let [{:keys [type status]} (get team :subscription)]
     (cond
       (and (= "unlimited" type) (not (contains? canceled-status status)))
-      (dt/duration {:days 30})
+      (ct/duration {:days 30})
 
       (and (= "enterprise" type) (not (contains? canceled-status status)))
-      (dt/duration {:days 90})
+      (ct/duration {:days 90})
 
       :else
       (cf/get-deletion-delay))

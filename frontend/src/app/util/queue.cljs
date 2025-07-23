@@ -9,8 +9,8 @@
   (:require
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.time :as ct]
    [app.util.object :as obj]
-   [app.util.time :as t]
    [beicon.v2.core :as rx]))
 
 (l/set-level! :info)
@@ -65,7 +65,7 @@
         item           (.shift ^js items)]
 
     (when (some? item)
-      (let [tp  (t/tpoint-ms)
+      (let [tp  (ct/tpoint-ms)
             f   (unchecked-get item "f")
             res (unchecked-get item "result")]
         (rx/subscribe (f)

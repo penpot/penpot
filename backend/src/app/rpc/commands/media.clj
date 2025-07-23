@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.media :as cm]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -23,7 +24,6 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [cuerdas.core :as str]
    [datoteka.io :as io]
@@ -67,7 +67,7 @@
                        mobj  (create-file-media-object cfg params)]
 
                    (db/update! conn :file
-                               {:modified-at (dt/now)
+                               {:modified-at (ct/now)
                                 :has-media-trimmed false}
                                {:id file-id}
                                {::db/return-keys false})
@@ -192,7 +192,7 @@
         mobj (create-file-media-object-from-url cfg (assoc params :profile-id profile-id))]
 
     (db/update! pool :file
-                {:modified-at (dt/now)
+                {:modified-at (ct/now)
                  :has-media-trimmed false}
                 {:id file-id}
                 {::db/return-keys false})

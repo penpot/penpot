@@ -37,9 +37,9 @@
 
   (:require
    [app.common.fressian :as fres]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
-   [app.util.time :as dt]
    [clojure.core :as c]
    [clojure.data.json :as json])
   (:import
@@ -104,7 +104,7 @@
 
   (clone [this]
     (when-not loaded? (load! this))
-    (let [mdata (assoc mdata :created-at (dt/now))
+    (let [mdata (assoc mdata :created-at (ct/now))
           id    (uuid/next)
           pmap  (PointerMap. id
                              mdata
@@ -179,7 +179,7 @@
     (let [odata' (assoc odata key val)]
       (if (identical? odata odata')
         this
-        (let [mdata (assoc mdata :created-at (dt/now))
+        (let [mdata (assoc mdata :created-at (ct/now))
               id    (if modified? id (uuid/next))
               pmap  (PointerMap. id
                                  mdata
@@ -197,7 +197,7 @@
     (let [odata' (dissoc odata key)]
       (if (identical? odata odata')
         this
-        (let [mdata (assoc mdata :created-at (dt/now))
+        (let [mdata (assoc mdata :created-at (ct/now))
               id    (if modified? id (uuid/next))
               pmap  (PointerMap. id
                                  mdata
@@ -220,7 +220,7 @@
 (defn create
   ([]
    (let [id    (uuid/next)
-         mdata (assoc *metadata* :created-at (dt/now))
+         mdata (assoc *metadata* :created-at (ct/now))
          pmap  (PointerMap. id mdata {} true true)]
      (some-> *tracked* (swap! assoc id pmap))
      pmap))
@@ -239,7 +239,7 @@
     (do
       (some-> *tracked* (swap! assoc (get-id data) data))
       data)
-    (let [mdata (assoc (meta data) :created-at (dt/now))
+    (let [mdata (assoc (meta data) :created-at (ct/now))
           id    (uuid/next)
           pmap  (PointerMap. id
                              mdata

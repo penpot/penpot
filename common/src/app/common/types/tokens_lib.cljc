@@ -13,7 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
-   [app.common.time :as dt]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
@@ -98,7 +98,7 @@
    [:type [::sm/one-of cto/token-types]]
    [:value ::sm/any]
    [:description {:optional true} :string]
-   [:modified-at {:optional true} ::sm/inst]])
+   [:modified-at {:optional true} ::ct/inst]])
 
 (declare make-token)
 
@@ -118,7 +118,7 @@
   [& {:as attrs}]
   (-> attrs
       (update :id #(or % (uuid/next)))
-      (update :modified-at #(or % (dt/now)))
+      (update :modified-at #(or % (ct/now)))
       (update :description d/nilv "")
       (check-token-attrs)
       (map->Token)))
@@ -208,14 +208,14 @@
     (TokenSet. id
                new-name
                description
-               (dt/now)
+               (ct/now)
                tokens))
 
   (set-description [_ new-description]
     (TokenSet. id
                name
                (d/nilv new-description "")
-               (dt/now)
+               (ct/now)
                tokens))
 
   ITokenSet
@@ -231,17 +231,17 @@
       (TokenSet. id
                  name
                  description
-                 (dt/now)
+                 (ct/now)
                  (assoc tokens (:name token) token))))
 
   (update-token [this id f]
     (if-let [token (token-by-id this id)]
       (let [token' (-> (make-token (f token))
-                       (assoc :modified-at (dt/now)))]
+                       (assoc :modified-at (ct/now)))]
         (TokenSet. id
                    name
                    description
-                   (dt/now)
+                   (ct/now)
                    (if (= (:name token) (:name token'))
                      (assoc tokens (:name token') token')
                      (-> tokens
@@ -254,7 +254,7 @@
       (TokenSet. id
                  name
                  description
-                 (dt/now)
+                 (ct/now)
                  (dissoc tokens (:name token)))))
 
   (get-token [this id]
@@ -279,7 +279,7 @@
    [:id ::sm/uuid]
    [:name :string]
    [:description {:optional true} :string]
-   [:modified-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::ct/inst]
    [:tokens {:optional true
              :gen/gen (->> (sg/map-of (sg/generator ::sm/text)
                                       (sg/generator schema:token))
@@ -316,7 +316,7 @@
   [& {:as attrs}]
   (let [attrs (-> attrs
                   (update :id #(or % (uuid/next)))
-                  (update :modified-at #(or % (dt/now)))
+                  (update :modified-at #(or % (ct/now)))
                   (update :tokens #(into (d/ordered-map) %))
                   (update :description d/nilv "")
                   (check-token-set-attrs))]
@@ -552,7 +552,7 @@
                  description
                  is-source
                  external-id
-                 (dt/now)
+                 (ct/now)
                  set-names))
 
   (enable-set [this set-name]
@@ -580,7 +580,7 @@
                    description
                    is-source
                    external-id
-                   (dt/now)
+                   (ct/now)
                    (conj (disj sets prev-set-name) set-name))
       this))
 
@@ -606,7 +606,7 @@
    [:description {:optional true} :string]
    [:is-source {:optional true} :boolean]
    [:external-id {:optional true} :string]
-   [:modified-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::ct/inst]
    [:sets {:optional true} [:set {:gen/max 5} :string]]])
 
 (def schema:token-theme
@@ -640,7 +640,7 @@
         (update :description d/nilv "")
         (update :is-source d/nilv false)
         (update :external-id #(or % (str new-id)))
-        (update :modified-at #(or % (dt/now)))
+        (update :modified-at #(or % (ct/now)))
         (update :sets set)
         (check-token-theme-attrs)
         (map->TokenTheme))))
@@ -1070,7 +1070,7 @@ Will return a value that matches this schema:
     (let [theme (dm/get-in themes [group name])]
       (if theme
         (let [theme' (-> (make-token-theme (f theme))
-                         (assoc :modified-at (dt/now)))
+                         (assoc :modified-at (ct/now)))
               group' (:group theme')
               name'  (:name theme')
               same-group? (= group group')
@@ -1490,7 +1490,7 @@ Will return a value that matches this schema:
                      :is-source (get theme "is-source")
                      :external-id (get theme "id")
                      :modified-at (some-> (get theme "modified-at")
-                                          (dt/parse-instant))
+                                          (ct/inst))
                      :sets (into #{}
                                  (comp (map key)
                                        xf-normalize-set-name

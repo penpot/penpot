@@ -13,6 +13,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
@@ -28,7 +29,6 @@
    [app.tokens :as tokens]
    [app.util.inet :as inet]
    [app.util.json :as json]
-   [app.util.time :as dt]
    [buddy.sign.jwk :as jwk]
    [buddy.sign.jwt :as jwt]
    [clojure.set :as set]
@@ -514,7 +514,7 @@
   [cfg info request]
   (let [info   (assoc info
                       :iss :prepared-register
-                      :exp (dt/in-future {:hours 48}))
+                      :exp (ct/in-future {:hours 48}))
 
         params {:token (tokens/generate (::setup/props cfg) info)
                 :provider (:provider (:path-params request))
@@ -571,7 +571,7 @@
             token   (or (:invitation-token info)
                         (tokens/generate (::setup/props cfg)
                                          {:iss :auth
-                                          :exp (dt/in-future "15m")
+                                          :exp (ct/in-future "15m")
                                           :profile-id (:id profile)}))
             props   (audit/profile->props profile)
             context (d/without-nils {:external-session-id (:external-session-id info)})]
@@ -619,7 +619,7 @@
                 :invitation-token (:invitation-token params)
                 :external-session-id esid
                 :props props
-                :exp (dt/in-future "4h")}
+                :exp (ct/in-future "4h")}
         state  (tokens/generate (::setup/props cfg)
                                 (d/without-nils params))
         uri    (build-auth-uri cfg state)]

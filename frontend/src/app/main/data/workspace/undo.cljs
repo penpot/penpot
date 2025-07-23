@@ -40,11 +40,11 @@
    [app.common.files.changes :as cpc]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -169,7 +169,7 @@
           (nil? current-tx)  (assoc-in [:workspace-undo :transaction] empty-tx)
           (nil? pending-tx)  (assoc-in [:workspace-undo :transactions-pending] #{id})
           (some? pending-tx) (update-in [:workspace-undo :transactions-pending] conj id)
-          :always            (update-in [:workspace-undo :transactions-pending-ts] assoc id (dt/now)))))
+          :always            (update-in [:workspace-undo :transactions-pending-ts] assoc id (ct/now)))))
 
     ptk/WatchEvent
     (watch [_ _ _]
@@ -216,7 +216,7 @@
     (watch [_ state _]
       (log/info :hint "check-open-transactions" :timeout timeout)
       (let [pending-ts (-> (dm/get-in state [:workspace-undo :transactions-pending-ts])
-                           (update-vals #(inst-ms (dt/diff (dt/now) %))))]
+                           (update-vals #(ct/diff-ms % (ct/now))))]
         (->> pending-ts
              (filter (fn [[_ ts]] (>= ts timeout)))
              (rx/from)

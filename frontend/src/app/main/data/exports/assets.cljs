@@ -6,6 +6,7 @@
 
 (ns app.main.data.exports.assets
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
@@ -15,7 +16,6 @@
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.util.dom :as dom]
-   [app.util.time :as dt]
    [app.util.websocket :as ws]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -123,7 +123,7 @@
                             :widget-visible true
                             :detail-visible true
                             :exports exports
-                            :last-update (dt/now)
+                            :last-update (ct/now)
                             :cmd cmd}))))
 
 (defn- update-export-status
@@ -131,18 +131,17 @@
   (ptk/reify ::update-export-status
     ptk/UpdateEvent
     (update [_ state]
-      (let [time-diff (dt/diff (dt/now)
-                               (get-in state [:export :last-update]))
-            healthy? (< time-diff (dt/duration {:seconds 6}))]
+      (let [time-diff (ct/diff-ms (get-in state [:export :last-update]) (ct/now))
+            healthy?  (< time-diff 6000)]
         (cond-> state
           (= status "running")
-          (update :export assoc :progress done :last-update (dt/now) :healthy? healthy?)
+          (update :export assoc :progress done :last-update (ct/now) :healthy? healthy?)
 
           (= status "error")
-          (update :export assoc :in-progress false :error (:cause data) :last-update (dt/now) :healthy? healthy?)
+          (update :export assoc :in-progress false :error (:cause data) :last-update (ct/now) :healthy? healthy?)
 
           (= status "ended")
-          (update :export assoc :in-progress false :last-update (dt/now) :healthy? healthy?))))
+          (update :export assoc :in-progress false :last-update (ct/now) :healthy? healthy?))))
 
     ptk/WatchEvent
     (watch [_ _ _]

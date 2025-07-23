@@ -12,6 +12,7 @@
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
+   [app.common.time :as-alias ct]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
@@ -39,7 +40,7 @@
      [::sm/one-of valid-container-types]]
     [:name :string]
     [:path {:optional true} [:maybe :string]]
-    [:modified-at {:optional true} ::sm/inst]
+    [:modified-at {:optional true} ::ct/inst]
     [:objects {:optional true}
      [:map-of {:gen/max 10} ::sm/uuid :map]]
     [:plugin-data {:optional true} schema:plugin-data]]))

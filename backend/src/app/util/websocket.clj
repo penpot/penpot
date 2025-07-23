@@ -9,10 +9,10 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.util.inet :as inet]
-   [app.util.time :as dt]
    [promesa.exec :as px]
    [promesa.exec.csp :as sp]
    [promesa.util :as pu]
@@ -93,7 +93,7 @@
                        (assoc ::id id)
                        (assoc ::state state)
                        (assoc ::beats beats)
-                       (assoc ::created-at (dt/now))
+                       (assoc ::created-at (ct/now))
                        (assoc ::input-ch input-ch)
                        (assoc ::heartbeat-ch hbeat-ch)
                        (assoc ::output-ch output-ch)
@@ -107,7 +107,7 @@
        (let [options (-> options
                          (assoc ::channel channel)
                          (on-connect))
-             timeout (dt/duration idle-timeout)]
+             timeout (ct/duration idle-timeout)]
 
          (yws/set-idle-timeout! channel timeout)
          (px/submit! :vthread (partial start-io-loop! options))))
@@ -128,7 +128,7 @@
      (fn on-message [_channel message]
        (when (string? message)
          (sp/offer! input-ch message)
-         (swap! state assoc ::last-activity-at (dt/now))))
+         (swap! state assoc ::last-activity-at (ct/now))))
 
      :on-pong
      (fn on-pong [_channel data]

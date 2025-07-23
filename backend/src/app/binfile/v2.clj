@@ -13,6 +13,7 @@
    [app.common.data :as d]
    [app.common.features :as cfeat]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -23,7 +24,6 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.events :as events]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -344,7 +344,7 @@
 (defn export-team!
   [cfg team-id]
   (let [id  (uuid/next)
-        tp  (dt/tpoint)
+        tp  (ct/tpoint)
         cfg (create-database cfg)]
 
     (l/inf :hint "start"
@@ -378,15 +378,15 @@
           (l/inf :hint "end"
                  :operation "export"
                  :id (str id)
-                 :elapsed (dt/format-duration elapsed)))))))
+                 :elapsed (ct/format-duration elapsed)))))))
 
 (defn import-team!
   [cfg path]
   (let [id  (uuid/next)
-        tp  (dt/tpoint)
+        tp  (ct/tpoint)
 
         cfg (-> (create-database cfg path)
-                (assoc ::bfc/timestamp (dt/now)))]
+                (assoc ::bfc/timestamp (ct/now)))]
 
     (l/inf :hint "start"
            :operation "import"
@@ -434,4 +434,4 @@
           (l/inf :hint "end"
                  :operation "import"
                  :id (str id)
-                 :elapsed (dt/format-duration elapsed)))))))
+                 :elapsed (ct/format-duration elapsed)))))))

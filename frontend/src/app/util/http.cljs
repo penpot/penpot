@@ -8,12 +8,12 @@
   "A http client with rx streams interface."
   (:require
    [app.common.data :as d]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cfg]
    [app.util.cache :as c]
    [app.util.globals :as globals]
-   [app.util.time :as dt]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -198,7 +198,7 @@
               (rx/map :body)
               (rx/mapcat wapi/read-file-as-data-url)
               (rx/map #(hash-map uri %))
-              (c/with-cache {:key uri :max-age (dt/duration {:hours 4})}))]
+              (c/with-cache {:key uri :max-age (* 1000 60 60 4)}))]
 
      ;; We need to check `throw-err?` after the cache is resolved otherwise we cannot cache request
      ;; with different values of throw-err. By default we throw always the exception and then we just
@@ -215,4 +215,4 @@
          :uri url
          :response-type :text})
        (rx/map :body)
-       (c/with-cache {:key url :max-age (dt/duration {:hours 4})})))
+       (c/with-cache {:key url :max-age (ct/duration {:hours 4})})))
