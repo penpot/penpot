@@ -7,7 +7,7 @@
 (ns app.common.types.shape.text
   (:require
    [app.common.schema :as sm]
-   [app.common.types.fill :refer [schema:fill]]
+   [app.common.types.fills :refer [schema:fill]]
    [app.common.types.shape :as-alias shape]
    [app.common.types.shape.text.position-data :as-alias position-data]))
 

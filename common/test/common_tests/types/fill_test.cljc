@@ -6,16 +6,11 @@
 
 (ns common-tests.types.fill-test
   (:require
-   #?(:clj [app.common.fressian :as fres])
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
    [app.common.math :as mth]
-   [app.common.pprint :as pp]
-   [app.common.pprint :as pp]
    [app.common.schema.generators :as sg]
    [app.common.schema.test :as smt]
-   [app.common.transit :as trans]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
 
@@ -85,8 +80,8 @@
    :fill-opacity 0.7})
 
 (t/deftest build-from-plain-1
-  (let [fills (types.fill/from-plain [sample-fill-1])]
-    (t/is (types.fill/fills? fills))
+  (let [fills (types.fills/from-plain [sample-fill-1])]
+    (t/is (types.fills/fills? fills))
     (t/is (= 1 (count fills)))
     (t/is (equivalent-fill? (first fills) sample-fill-1))))
 
@@ -99,8 +94,8 @@
                 :keep-aspect-ratio false}})
 
 (t/deftest build-from-plain-2
-  (let [fills (types.fill/from-plain [sample-fill-2])]
-    (t/is (types.fill/fills? fills))
+  (let [fills (types.fills/from-plain [sample-fill-2])]
+    (t/is (types.fills/fills? fills))
     (t/is (= 1 (count fills)))
     (t/is (equivalent-fill? (first fills) sample-fill-2))))
 
@@ -117,8 +112,8 @@
     :stops [{:color "#631aa8", :offset 0.5}]}})
 
 (t/deftest build-from-plain-3
-  (let [fills (types.fill/from-plain [sample-fill-3])]
-    (t/is (types.fill/fills? fills))
+  (let [fills (types.fills/from-plain [sample-fill-3])]
+    (t/is (types.fills/fills? fills))
     (t/is (= 1 (count fills)))
     (t/is (equivalent-fill? (first fills) sample-fill-3))))
 
@@ -136,8 +131,8 @@
    :fill-color-ref-id #uuid "2eef07f1-e38a-8062-8006-3aa264d5b785"})
 
 (t/deftest build-from-plain-4
-  (let [fills (types.fill/from-plain [sample-fill-4])]
-    (t/is (types.fill/fills? fills))
+  (let [fills (types.fills/from-plain [sample-fill-4])]
+    (t/is (types.fills/fills? fills))
     (t/is (= 1 (count fills)))
     (t/is (equivalent-fill? (first fills) sample-fill-4))))
 
@@ -154,8 +149,8 @@
     :stops [{:color "#bba1aa", :opacity 0.37, :offset 0.84}]}})
 
 (t/deftest build-from-plain-5
-  (let [fills (types.fill/from-plain [sample-fill-5])]
-    (t/is (types.fill/fills? fills))
+  (let [fills (types.fills/from-plain [sample-fill-5])]
+    (t/is (types.fills/fills? fills))
     (t/is (= 1 (count fills)))
     (t/is (equivalent-fill? (first fills) sample-fill-5))))
 
@@ -170,14 +165,14 @@
     :stops [{:color "#e15610", :offset 0.4} {:color "#005a9e", :opacity 0.62, :offset 0.81}]}})
 
 (t/deftest build-from-plain-6
-  (let [fills (types.fill/from-plain [sample-fill-6])]
-    (t/is (types.fill/fills? fills))
+  (let [fills (types.fills/from-plain [sample-fill-6])]
+    (t/is (types.fills/fills? fills))
     (t/is (= 1 (count fills)))
     (t/is (equivalent-fill? (first fills) sample-fill-6))))
 
 (t/deftest fills-datatype-roundtrip
   (smt/check!
-   (smt/for [fill (->> (sg/generator types.fill/schema:fill)
+   (smt/for [fill (->> (sg/generator types.fills/schema:fill)
                        (sg/fmap d/without-nils)
                        (sg/fmap (fn [fill]
                                   (cond-> fill
@@ -187,27 +182,27 @@
                                              (contains? fill :fill-color-ref-file)))
                                     (-> (assoc :fill-color-ref-file (uuid/next))
                                         (assoc :fill-color-ref-id (uuid/next)))))))]
-     (let [bfills (types.fill/from-plain [fill])]
+     (let [bfills (types.fills/from-plain [fill])]
        (and (= (count bfills) 1)
             (equivalent-fill? (first bfills) fill))))
    {:num 2000}))
 
 (t/deftest equality-operation
-  (let [fills1 (types.fill/from-plain [sample-fill-6])
-        fills2 (types.fill/from-plain [sample-fill-6])]
+  (let [fills1 (types.fills/from-plain [sample-fill-6])
+        fills2 (types.fills/from-plain [sample-fill-6])]
     (t/is (= fills1 fills2))))
 
 (t/deftest reduce-impl
-  (let [fills1 (types.fill/from-plain [sample-fill-6])
+  (let [fills1 (types.fills/from-plain [sample-fill-6])
         fills2 (reduce (fn [result fill]
                          (conj result fill))
                        []
                        fills1)
-        fills3 (types.fill/from-plain fills2)]
+        fills3 (types.fills/from-plain fills2)]
     (t/is (= fills1 fills3))))
 
 (t/deftest indexed-access
-  (let [fills1 (types.fill/from-plain [sample-fill-6])
+  (let [fills1 (types.fills/from-plain [sample-fill-6])
         fill0  (nth fills1 0)
         fill1  (nth fills1 1)]
     (t/is (nil? fill1))
