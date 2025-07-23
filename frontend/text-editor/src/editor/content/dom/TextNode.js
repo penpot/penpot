@@ -9,6 +9,7 @@
 import { isInline } from "./Inline.js";
 import { isLineBreak } from "./LineBreak.js";
 import { isParagraph } from "./Paragraph.js";
+import { isEditor } from "./Editor.js";
 import { isRoot } from "./Root.js";
 
 /**
@@ -60,5 +61,6 @@ export function getClosestTextNode(node) {
   if (isInline(node)) return node.firstChild;
   if (isParagraph(node)) return node.firstChild.firstChild;
   if (isRoot(node)) return node.firstChild.firstChild.firstChild;
+  if (isEditor(node)) return node.firstChild.firstChild.firstChild.firstChild;
   throw new Error("Cannot find a text node");
 }
