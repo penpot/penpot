@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>WASM + WebGL2 Canvas - Large Blur Playground</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import initWasmModule from '/js/render_wasm.js';
+    import {
+      init, addShapeSolidFill, assignCanvas, hexToU32ARGB, useShape, set_parent, setShapeChildren, 
+      setupInteraction
+    } from './js/lib.js';
+
+    const canvas = document.getElementById("canvas");
+    canvas.width =  window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    initWasmModule().then(Module => {
+      init(Module);
+      assignCanvas(canvas);
+      Module._set_canvas_background(hexToU32ARGB("#000000", 1));
+      Module._set_view(1, 0, 0);
+      Module._init_shapes_pool(5);
+      setupInteraction(canvas);
+
+      // Create a single rect with a very large blur
+      const rectUuid = crypto.randomUUID();
+      const frameUuid = crypto.randomUUID();
+
+      // Rect
+      useShape(rectUuid);
+      Module._set_parent(0, 0, 0, 0);
+      Module._set_shape_type(3); // Rect
+      Module._set_shape_blur(1, false, 100); // enabled, sigma=100, radius=400
+      Module._set_shape_selrect(1000, 700, 1200, 900);
+      addShapeSolidFill(hexToU32ARGB("#3498db", 1));
+
+      // Set the root shape
+      useShape("00000000-0000-0000-0000-000000000000");
+      setShapeChildren([rectUuid]);
+
+      performance.mark('render:begin');
+      Module._render(Date.now());
+      performance.mark('render:end');
+      const { duration } = performance.measure('render', 'render:begin', 'render:end');
+      // alert(`render time: ${duration.toFixed(2)}ms`);
+    });
+  </script>
+</body>
+</html> 
