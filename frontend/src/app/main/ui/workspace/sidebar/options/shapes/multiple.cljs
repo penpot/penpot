@@ -212,9 +212,22 @@
             (= attr-group :shadow) (attrs/get-attrs-multi [v1 v2] attrs shadow-eq shadow-sel)
             (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
             :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
+        
+        merge-token-values
+        (fn [acc ks m]
+          (reduce
+           (fn [accum k]
+             (let [new-val (get m k)
+                   existing (get accum k ::not-found)]
+               (cond
+                 (= existing ::not-found) (assoc accum k new-val)
+                 (= existing new-val)     accum
+                 :else                    (assoc accum k :multiple))))
+           acc
+           ks))
 
         extract-attrs
-        (fn [[ids values] {:keys [id type] :as shape}]
+        (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
           (let [read-mode      (get-in type->read-mode [type attr-group])
                 editable-attrs (filter (get editable-attrs (:type shape)) attrs)]
             (case read-mode
@@ -228,9 +241,11 @@
                                   (into {} (map #(vector % nil)) editable-attrs)
                                   (cond
                                     (= attr-group :measure) (select-measure-keys shape)
-                                    :else (select-keys shape editable-attrs)))]
+                                    :else (select-keys shape editable-attrs)))
+                    new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
                 [(conj ids id)
-                 (merge-attrs values shape-values)])
+                 (merge-attrs values shape-values)
+                 new-token-acc])
 
               :text
               (let [shape-attrs (select-keys shape attrs)
@@ -252,7 +267,9 @@
 
               [])))]
 
-    (reduce extract-attrs [[] []] shapes)))
+    
+    (-> (reduce extract-attrs [[] {} {}] shapes)
+        (d/tap-r prn))))
 
 (def get-attrs (memoize get-attrs*))
 
@@ -327,7 +344,7 @@
 
         all-flex-layout-container? (->> shapes (every? ctl/flex-layout?))
 
-        [measure-ids    measure-values]    (get-attrs shapes objects :measure)
+        [measure-ids    measure-values measure-tokens]    (get-attrs shapes objects :measure)
 
         [layer-ids            layer-values
          text-ids             text-values
@@ -363,7 +380,7 @@
        [:& layer-menu {:type type :ids layer-ids :values layer-values}])
 
      (when-not (empty? measure-ids)
-       [:> measures-menu* {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
+       [:> measures-menu* {:type type :all-types all-types :ids measure-ids :values measure-values :applied-tokens measure-tokens :shape shapes}])
 
      (when-not (empty? components)
        [:& component-menu {:shapes components}])

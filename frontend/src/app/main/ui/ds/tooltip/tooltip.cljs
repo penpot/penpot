@@ -248,7 +248,7 @@
                           :on-focus on-show
                           :on-blur on-hide
                           :on-key-down handle-key-down
-                          :class (stl/css :tooltip-trigger)
+                          :class [class (stl/css :tooltip-trigger)]
                           :aria-describedby id})
         content
         (if (fn? content)
@@ -257,7 +257,7 @@
 
     [:> :div props
      children
-     [:div {:class [class (stl/css :tooltip)]
+     [:div {:class (stl/css :tooltip)
             :id id
             :popover "auto"
             :role "tooltip"}

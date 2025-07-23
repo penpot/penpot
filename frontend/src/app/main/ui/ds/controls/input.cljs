@@ -13,19 +13,15 @@
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon-list]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:input
   [:map
    [:id {:optional true} :string]
-   [:label {:optional true} :string]
    [:class {:optional true} :string]
+   [:label {:optional true} :string]
    [:is-optional {:optional true} :boolean]
-   [:placeholder {:optional true} :string]
-   [:icon {:optional true}
-    [:and :string [:fn #(contains? icon-list %)]]]
    [:type {:optional true} :string]
    [:max-length {:optional true} :int]
    [:variant {:optional true} [:maybe [:enum "seamless" "dense" "comfortable"]]]
