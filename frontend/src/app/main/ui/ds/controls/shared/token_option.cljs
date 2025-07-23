@@ -25,50 +25,35 @@
    [:name {:optional true} :string]])
 
 (mf/defc token-option*
-  [{:keys [id name on-click selected ref focused resolved group separator] :rest props}]
+  [{:keys [id name on-click selected ref focused resolved] :rest props}]
   (let [internal-id (mf/use-id)
         id          (or id internal-id)]
- (cond
-   group
-   [:li {:class (stl/css :group-option)}
+ [:li {:value id
+       :class (stl/css-case :option true
+                            :option-with-pill true
+                            :option-selected-token selected
+                            :option-current focused)
+       :aria-selected selected
+       :ref ref
+       :role "option"
+       :id id
+       :on-click on-click
+       :data-id id
+       :data-testid "dropdown-option"}
+ 
+  (if selected
     [:> icon*
-     {:icon-id i/arrow-down
-      :size "m"
+     {:icon-id i/tick
+      :size "s"
       :class (stl/css :option-check)
       :aria-hidden (when name true)}]
-    (d/name name)]
-
-   separator
-   [:li [:hr {:class (stl/css :option-separator)}]]
-
-   :else
-   [:li {:value id
-         :class (stl/css-case :option true
-                              :option-with-pill true
-                              :option-selected-token selected
-                              :option-current focused)
-         :aria-selected selected
-         :ref ref
-         :role "option"
-         :id id
-         :on-click on-click
-         :data-id id
-         :data-testid "dropdown-option"}
-
-    (if selected
-      [:> icon*
-       {:icon-id i/tick
-        :size "s"
-        :class (stl/css :option-check)
-        :aria-hidden (when name true)}]
-      [:span {:class (stl/css :icon-placeholder)}])
-    [:> tooltip* {:content name
-                  :id (dm/str id "-name")
-                  :class (stl/css :option-text)}
-     ;;  Add ellipsis
-      [:span {:aria-labelledby (dm/str id "-name")}
-       name]
-     ]
-    (when resolved
-      [:> :span {:class (stl/css :option-pill)}
-       resolved])])))
+    [:span {:class (stl/css :icon-placeholder)}])
+  [:> tooltip* {:content name
+                :id (dm/str id "-name")
+                :class (stl/css :option-text)}
+      ;;  Add ellipsis
+   [:span {:aria-labelledby (dm/str id "-name")}
+    name]]
+  (when resolved
+    [:> :span {:class (stl/css :option-pill)}
+     resolved])]))

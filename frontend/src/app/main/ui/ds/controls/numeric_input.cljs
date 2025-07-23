@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.math :as mth]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
    [app.main.constants :refer [max-input-length]]
@@ -54,9 +53,9 @@
    returns nil if invalid or empty."
   [raw-value last-value min-value max-value nillable]
   (let [new-value (-> raw-value
-                      (dm/str)
+                      (str)
                       (str/strip-suffix ".")
-                      (smt/expr-eval last-value))]
+                      (smt/expr-eval (d/parse-double last-value)))]
     (cond
       (and nillable (nil? raw-value))
       nil
@@ -71,6 +70,7 @@
             (d/min max-value)))
 
       :else nil)))
+
 (defn get-option-by-name
   [options name]
   (d/seek #(= name (get % :name)) options))
@@ -107,7 +107,7 @@
   (let [set-active? (some? id)
         content (if set-active?
                   label
-                  "there is no active token set")
+                  (tr "workspace.token.no-active-token-option"))
         default-id (mf/use-id)
         id (or id default-id)
         focus-wrapper
@@ -147,9 +147,8 @@
        [:> icon-button* {:variant "action"
                          :class (stl/css :invisible-button)
                          :icon "broken-link"
-                           ;; TODO: add translation
                          :ref token-detach-btn-ref
-                         :aria-label "Detach token"
+                         :aria-label (tr "workspace.token.detach-token")
                          :on-click detach-token}])]))
 
 ;; TODO: Review schema props
@@ -178,6 +177,7 @@
 (defn- token->dropdown-option
   [token]
   {:id (str (get token :id))
+   :type :token
    :resolved-value (get token :resolved-value)
    :name (get token :name)})
 
@@ -186,13 +186,13 @@
   (->> tokens
        (map (fn [[type items]]
               (cons {:group true
+                     :type  :group
                      :name  (name type)
                      :id    (str (uuid/next))}
                     (map token->dropdown-option items))))
-       (interpose [{:separator true}])
+       (interpose [{:separator true
+                    :type :separator}])
        (apply concat)
-       ;; (vec)
-       ;; FIXME: revist this
        (not-empty)))
 
 (defn mapcat-indexed [f coll]
@@ -228,30 +228,21 @@
              (mapcat-indexed
               (fn [i [group tokens]]
                 (let [separator (when (and more-than-one? (pos? i))
-                                  [{:separator true}])]
+                                  [{:separator true
+                                    :type :separator
+                                    :id (str (uuid/next))}])]
                   (concat separator group tokens))))
              (not-empty))]
 
     ;; Si no hay resultado, devolver mensaje especial
     (or result
-        [{:empty true
-          :message "No se encontraron tokens que coincidan"}])))
-;; Filtrado
+        [{:type :empty
+          :label (tr "workspace.token.no-tokens")
+          :id (str (uuid/next))}])))
 
 (defn extract-partial-brace-text [s]
   (when-let [start (str/last-index-of s "{")]
     (subs s (inc start))))
-
-(defn filter-options [partial-text options]
-  (let [lower (str/lower partial-text)]
-    (filterv #(str/includes? (str/lower (:name %)) lower) options)))
-
-(defn update-filtered-options [user-text options]
-  (if (and (str/includes? user-text "{")
-           (not (str/includes? user-text "}")))
-    (let [partial (extract-partial-brace-text user-text)]
-      (filter-options partial options))
-    []))
 
 (mf/defc numeric-input*
   {::mf/forward-ref true
@@ -316,22 +307,12 @@
         ;; Last value is used to store the last valid value
         last-value* (mf/use-ref nil)
 
-        dropdown-options
-        (mf/with-memo [options filter-id]
-          (let [filter-id (str/trim (or filter-id ""))]
-            (if (seq filter-id)
-              (if (empty? (update-filtered-options filter-id options))
-                [{:group true
-                  :name "no hay resultados"
-                  :id (str (uuid/next))}]
-                (update-filtered-options filter-id options))
-              options)))
-
         filter-structured-options (mf/with-memo [options filter-id]
-                                    (if (seq filter-id)
-                                      (filter-structured-options options filter-id)
-                                      options))
-        _ (prn "filter-structured-options" filter-structured-options)
+                                    (let [partial (extract-partial-brace-text filter-id)]
+                                      (if (seq partial)
+                                      (filter-structured-options options partial)
+                                      options)))
+        
         ;; Refs
         wrapper-ref          (mf/use-ref nil)
         nodes-ref            (mf/use-ref nil)
@@ -369,7 +350,7 @@
         (mf/use-fn
          (mf/deps on-change update-input value nillable)
          (fn [raw-value]
-           (if-let [parsed (parse-value (str raw-value) (mf/ref-val last-value*) min max nillable)]
+           (if-let [parsed (parse-value raw-value (mf/ref-val last-value*) min max nillable)]
              (when-not (= parsed (mf/ref-val last-value*))
                (mf/set-ref-val! last-value* parsed)
                (reset! is-token* nil)
@@ -399,7 +380,7 @@
 
         apply-token
         (fn [value name]
-          (let [parsed (parse-value (str value) (mf/ref-val last-value*) min max nillable)
+          (let [parsed (parse-value value (mf/ref-val last-value*) min max nillable)
                 token-token (get-token-op tokens name)]
             (when-not (= parsed (mf/ref-val last-value*))
               (mf/set-ref-val! last-value* parsed)
@@ -665,8 +646,7 @@
                                               (mf/html [:> icon-button* {:variant "action"
                                                                          :icon "tokens"
                                                                          :class (stl/css :invisible-button)
-                                                                         ;; TODO: add translation
-                                                                         :aria-label "Open dropdown"
+                                                                         :aria-label (tr "workspace.token.tokens-dropdown")
                                                                          :ref open-dropdown-ref
                                                                          :on-click open-dropdown}])))
                                 :max-length max-length})
@@ -733,10 +713,9 @@
      (when is-open
        [:> options-dropdown* {:on-click on-option-click
                               :id listbox-id
-                              :options dropdown-options
+                              :options filter-structured-options
                               :selected selected-id
                               :focused focused-id
-                              :token-option true
                               :style {:width "247px"} ;; revisar
                               :empty-to-end empty-to-end
                               :ref set-option-ref}])]))

@@ -8,9 +8,11 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.uuid :as uuid]
    [app.main.ui.ds.controls.shared.option :refer [option* schema:option]]
    [app.main.ui.ds.controls.shared.token-option :refer [token-option* schema:token-option]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -38,7 +40,7 @@
 
 (mf/defc options-dropdown*
   ;; {::mf/schema schema:options-dropdown}
-  [{:keys [ref on-click options selected focused empty-to-end token-option] :rest props}]
+  [{:keys [ref on-click options selected focused empty-to-end] :rest props}]
   (let [props
         (mf/spread-props props
                          {:class (stl/css :option-list)
@@ -63,20 +65,37 @@
              aria-label (get option :aria-label)
              icon       (get option :icon)
              name       (get option :name)
-             group      (get option :group)
-             resolved-value (get option :resolved-value)
-             separator (get option :separator)]
-         (if token-option
-           [:> token-option* {:selected (= id selected)
+             type       (get option :type)
+             resolved-value (get option :resolved-value)]
+         (cond
+           (= type :group)
+              [:li {:class (stl/css :group-option)}
+            [:> icon*
+             {:icon-id i/arrow-down
+              :size "m"
+              :class (stl/css :option-check)
+              :aria-hidden (when name true)}]
+            (d/name name)]
+
+           (= type :separator)
+           [:hr {:key id :class (stl/css :option-separator)}]
+
+           (= type :empty)
+           [:li {:key id :class (stl/css :option-empty)} label]
+
+           ;; Token option
+           (= type :token)
+           [:> token-option* {:selected (= name selected)
                               :key (or id (uuid/next))
                               :id id
                               :name name
                               :resolved resolved-value
                               :ref ref
-                              :group group
-                              :separator separator
                               :focused (= id focused)
                               :on-click on-click}]
+
+           ;; Normal option
+           :else
            [:> option* {:selected (= id selected)
                         :key id
                         :id id
@@ -99,20 +118,37 @@
                 name       (get option :name)
                 aria-label (get option :aria-label)
                 icon       (get option :icon)
-                group      (get option :group)
+                type       (get option :type)
                 resolved-value (get option :resolved-value)]
-            (if token-option
+            (cond
+              (= type :group)
+              [:li {:class (stl/css :group-option)}
+               [:> icon*
+                {:icon-id i/arrow-down
+                 :size "m"
+                 :class (stl/css :option-check)
+                 :aria-hidden (when name true)}]
+               (d/name name)]
+            
+              (= type :separator)
+              [:hr {:key id :class (stl/css :option-separator)}]
+            
+              (= type :empty)
+              [:li {:key id :class (stl/css :option-empty)} label]
+            
+                       ;; Token option
+              (= type :token)
               [:> token-option* {:selected (= name selected)
-                                 :key id
+                                 :key (or id (uuid/next))
                                  :id id
-                                 :label label
                                  :name name
-                                 :group group
                                  :resolved resolved-value
-                                 :aria-label aria-label
                                  :ref ref
                                  :focused (= id focused)
                                  :on-click on-click}]
+            
+                       ;; Normal option
+              :else
               [:> option* {:selected (= id selected)
                            :key id
                            :id id
@@ -121,5 +157,5 @@
                            :aria-label aria-label
                            :ref ref
                            :focused (= id focused)
-                           :dimmed true
+                           :dimmed false
                            :on-click on-click}])))])]))

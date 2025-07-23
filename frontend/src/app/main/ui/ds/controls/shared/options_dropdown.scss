@@ -6,6 +6,7 @@
 
 @use "../../_borders.scss" as *;
 @use "../../_sizes.scss" as *;
+@use "../../typography.scss" as *;
 
 .option-list {
   --options-dropdown-icon-fg-color: var(--color-foreground-secondary);
@@ -26,6 +27,22 @@
   overflow-y: auto;
   overflow-x: hidden;
   z-index: var(--z-index-dropdown);
+}
+
+.option-separator {
+  border: $b-1 solid var(--options-dropdown-border-color);
+  margin-top: var(--sp-xs);
+  margin-bottom: var(--sp-xs);
+}
+
+.group-option {
+    @include use-typography("body-small");
+  display:flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-foreground-secondary);
+  padding-inline: 8px;
+  height: 32px;
 }
 
 .option-separator {
