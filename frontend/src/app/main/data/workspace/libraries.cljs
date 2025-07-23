@@ -1095,15 +1095,24 @@
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes changes)))
             (when-not (empty? updated-frames)
-              (rx/merge
-               (rx/of (ptk/data-event :layout/update {:ids (map :id updated-frames) :undo-group undo-group}))
-               (->> (rx/from updated-frames)
-                    (rx/mapcat
-                     (fn [shape]
-                       (rx/of
-                        (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                        (when-not (= (:frame-id shape) uuid/zero)
-                          (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame"))))))))
+              (let [frames-by-page (->> updated-frames
+                                        (group-by :page-id))]
+                (rx/merge
+                 ;; Emit one layout/update event for eatch page
+                 (rx/from
+                  (map (fn [[page-id frames]]
+                         (ptk/data-event :layout/update
+                                         {:page-id page-id
+                                          :ids (map :id frames)
+                                          :undo-group undo-group}))
+                       frames-by-page))
+                 (->> (rx/from updated-frames)
+                      (rx/mapcat
+                       (fn [shape]
+                         (rx/of
+                          (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+                          (when-not (= (:frame-id shape) uuid/zero)
+                            (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))
 
             (when (not= file-id library-id)
               ;; When we have just updated the library file, give some time for the
@@ -1219,10 +1228,18 @@
     (-deref [_] [component-id file-id])
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (touch-component component-id)
-       (launch-component-sync component-id file-id undo-group)))))
+    (watch [_ state _]
+      (let [file-data (dsh/lookup-file-data state file-id)
+            container-ids-map (ctf/find-component-instances file-data component-id)]
+        (rx/concat
+         (rx/of
+          (touch-component component-id)
+          (launch-component-sync component-id file-id undo-group))
+         ;; Emit layout/update for each container (page/component) with component instances
+         (rx/from
+          (map (fn [[container-id ids]]
+                 (ptk/data-event :layout/update {:page-id container-id :ids ids}))
+               (seq container-ids-map))))))))
 
 (defn watch-component-changes
   "Watch the state for changes that affect to any main instance. If a change is detected will throw
