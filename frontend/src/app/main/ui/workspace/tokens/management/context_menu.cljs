@@ -456,17 +456,20 @@
   (let [objects  (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
 
+        token-name (:token-name mdata)
+        token (mf/deref (refs/workspace-token-in-selected-set token-name))
+        token-type (:type token)
+        selected-token-set-name (mf/deref refs/selected-token-set-name)
+
         selected-shapes
         (mf/with-memo [selected objects]
           (into [] (keep (d/getf objects)) selected))
 
         is-selected-inside-layout
-        (mf/with-memo [selected-shapes objects]
-          (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes))
+        (mf/with-memo [token-type selected-shapes objects]
+          (when (= :spacing token-type)
+            (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes)))]
 
-        token-name (:token-name mdata)
-        token (mf/deref (refs/workspace-token-in-selected-set token-name))
-        selected-token-set-name (mf/deref refs/selected-token-set-name)]
     [:ul {:class (stl/css :context-list)}
      [:& menu-tree {:submenu-offset width
                     :token token
