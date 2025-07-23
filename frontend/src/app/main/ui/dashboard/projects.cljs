@@ -114,8 +114,10 @@
         dstate     (mf/deref refs/dashboard-local)
         edit-id    (:project-for-edit dstate)
 
-        local      (mf/use-state {:menu-open false
-                                  :menu-pos nil
+        show-menu? (boolean (and (:menu-open dstate)
+                                 (= (:menu-id dstate) "dropdown-project-menu")))
+
+        local      (mf/use-state {:menu-pos nil
                                   :edition (= (:id project) edit-id)})
 
         [rowref limit]
@@ -147,12 +149,14 @@
                                   x              (:left points)]
                               (gpt/point x y))
                             client-position)]
+             (st/emit! (dd/show-dropdown "dropdown-project-menu"))
              (swap! local assoc
-                    :menu-open true
                     :menu-pos position))))
 
         on-menu-close
-        (mf/use-fn #(swap! local assoc :menu-open false))
+        (mf/use-fn
+         (fn [_]
+           (st/emit! (dd/hide-dropdown))))
 
         on-edit-open
         (mf/use-fn #(swap! local assoc :edition true))
@@ -267,7 +271,7 @@
         (when ^boolean can-edit
           [:> project-menu*
            {:project project
-            :show (:menu-open @local)
+            :show show-menu?
             :left (+ 24 (:x (:menu-pos @local)))
             :top (:y (:menu-pos @local))
             :on-edit on-edit-open

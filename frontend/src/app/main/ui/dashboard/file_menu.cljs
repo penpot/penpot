@@ -55,12 +55,13 @@
           projects))
 
 (mf/defc file-menu*
-  [{:keys [files on-edit on-menu-close top left navigate origin parent-id can-edit]}]
+  [{:keys [files on-edit on-menu-close top left navigate origin parent-id can-edit show]}]
 
   (assert (seq files) "missing `files` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (assert (boolean? navigate) "missing `navigate` prop")
+  (assert (boolean? show) "missing `show` prop")
 
   (let [is-lib-page?     (= :libraries origin)
         is-search-page?  (= :search origin)

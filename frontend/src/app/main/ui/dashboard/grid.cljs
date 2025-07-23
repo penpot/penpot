@@ -249,7 +249,7 @@
 
         menu-open?
         (and (get state :menu-open)
-             (= file-id (:file-id state)))
+             (= file-id (:menu-id state)))
 
         selected?
         (contains? selected-files file-id)
@@ -264,7 +264,7 @@
         (= origin :libraries)
 
         on-menu-close
-        (mf/use-fn #(st/emit! (dd/hide-file-menu)))
+        (mf/use-fn #(st/emit! (dd/hide-dropdown)))
 
         on-select
         (mf/use-fn
@@ -290,7 +290,7 @@
         (mf/use-fn
          (mf/deps selected? selected-num)
          (fn [event]
-           (st/emit! (dd/hide-file-menu))
+           (st/emit! (dd/hide-dropdown))
            (when can-edit
              (let [offset     (dom/get-offset-position (dom/event->native-event event))
                    item-el    (mf/ref-val node-ref)
@@ -336,8 +336,7 @@
                          x              (:left points)]
                      (gpt/point x y))
                    client-position)]
-
-             (st/emit! (dd/show-file-menu-with-position file-id position)))))
+             (st/emit! (dd/show-dropdown file-id position)))))
 
         on-context-menu
         (mf/use-fn
@@ -410,7 +409,7 @@
 
       [:div {:class (stl/css :info-wrapper)}
        [:div {:class (stl/css :item-info)}
-        (if (and (= file-id (:file-id state)) (:edition state))
+        (if (and (= file-id (:menu-id state)) (:edition state))
           [:& inline-edition {:content (:name file)
                               :on-end edit
                               :max-length 250}]
@@ -441,7 +440,8 @@
                             :on-edit on-edit
                             :on-menu-close on-menu-close
                             :origin origin
-                            :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
+                            :parent-id (dm/str file-id "-action-menu")
+                            :show (and selected? menu-open?)}]])]]]]]))
 
 (mf/defc grid*
   {::mf/props :obj}
@@ -464,7 +464,7 @@
         (use-import-file project-id on-finish-import)
 
         on-scroll
-        (mf/use-fn #(st/emit! (dd/hide-file-menu)))
+        (mf/use-fn #(st/emit! (dd/hide-dropdown)))
 
         on-drag-enter
         (mf/use-fn

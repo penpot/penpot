@@ -84,7 +84,7 @@
                                           ::ev/origin "dashboard"})))))
 
     [:div {:class (stl/css :dashboard-comments-section)}
-     [:& dropdown {:show show? :on-close on-hide-comments}
+     [:& dropdown {:show show? :on-close on-hide-comments :dropdown-id "dashboard-comments"}
       [:div {:class (stl/css :dropdown :comments-section :comment-threads-section)}
        [:div {:class (stl/css :header)}
         [:h3 {:class (stl/css :header-title)} (tr "dashboard.notifications")]

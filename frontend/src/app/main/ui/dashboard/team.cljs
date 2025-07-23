@@ -304,7 +304,7 @@
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} (tr role)]])
 
-     [:& dropdown {:show @show? :on-close on-hide}
+     [:& dropdown {:show @show? :on-close on-hide :dropdown-id (str "member-role-" (:id member))}
       [:ul {:class (stl/css :roles-dropdown)
             :role "listbox"}
        [:li {:on-click on-set-viewer
@@ -341,7 +341,7 @@
                  :on-click on-show}
         menu-icon]
 
-       [:& dropdown {:show @show? :on-close on-hide}
+       [:& dropdown {:show @show? :on-close on-hide :dropdown-id (str "member-actions-" (:id member))}
         [:ul {:class (stl/css :actions-dropdown)}
          (when is-you?
            [:li {:on-click on-leave
@@ -592,7 +592,7 @@
        [:div {:class (stl/css :rol-selector)}
         [:span {:class (stl/css :rol-label)} label]])
 
-     [:& dropdown {:show @show? :on-close on-hide}
+     [:& dropdown {:show @show? :on-close on-hide :dropdown-id "invitation-role-selector"}
       [:ul {:class (stl/css :roles-dropdown)}
        [:li {:data-role "admin"
              :class (stl/css :rol-dropdown-item)
@@ -692,7 +692,7 @@
                :on-click on-show}
       menu-icon]
 
-     [:& dropdown {:show @show? :on-close on-hide}
+     [:& dropdown {:show @show? :on-close on-hide :dropdown-id "invitation-actions"}
       [:ul {:class (stl/css :actions-dropdown :invitations-dropdown)}
        [:li {:on-click on-copy
              :class (stl/css :action-dropdown-item)}
@@ -982,7 +982,7 @@
        [:button {:class (stl/css :menu-btn)
                  :on-click on-show}
         menu-icon]
-       [:& dropdown {:show @show? :on-close on-hide}
+       [:& dropdown {:show @show? :on-close on-hide :dropdown-id "webhook-actions"}
         [:ul {:class (stl/css :webhook-actions-dropdown)}
          [:li {:on-click on-edit
                :class (stl/css :webhook-dropdown-item)} (tr "labels.edit")]

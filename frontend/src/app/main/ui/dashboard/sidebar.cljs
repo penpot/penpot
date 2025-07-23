@@ -592,8 +592,16 @@
         teams-without-default (into {} (filter (fn [[_ v]] (= false (:is-default v))) teams))
         team-ids              (map #(str "teams-selector-" %) (keys teams-without-default))
         ids                   (concat ["teams-selector-default-team"] team-ids ["teams-selector-create-team"])
-        show-team-opts-ddwn?  (mf/use-state false)
-        show-teams-ddwn?      (mf/use-state false)
+        state                 (mf/deref refs/dashboard-local)
+
+        show-team-opts-ddwn?
+        (boolean (and (get state :menu-open)
+                      (= "dropdown-team-opts-menu" (:menu-id state))))
+
+        show-teams-ddwn?
+        (boolean (and (get state :menu-open)
+                      (= "dropdown-teams-menu" (:menu-id state))))
+
         can-rename?           (or (get-in team [:permissions :is-owner]) (get-in team [:permissions :is-admin]))
         options-ids           ["teams-options-members"
                                "teams-options-invitations"
@@ -613,46 +621,45 @@
         handle-show-team-click
         (fn [event]
           (dom/stop-propagation event)
-          (swap! show-teams-ddwn? not)
-          (reset! show-team-opts-ddwn? false))
+          (st/emit! (dd/show-dropdown "dropdown-teams-menu")))
 
         handle-show-team-keydown
         (fn [event]
           (when (or (kbd/space? event) (kbd/enter? event))
             (dom/prevent-default event)
-            (reset! show-teams-ddwn? true)
-            (reset! show-team-opts-ddwn? false)
-            (ts/schedule-on-idle
-             (fn []
-               (let [first-element (dom/get-element (first ids))]
-                 (when first-element
-                   (dom/focus! first-element)))))))
+            (st/emit! (dd/show-dropdown "dropdown-teams-menu")))
+          (ts/schedule-on-idle
+           (fn []
+             (let [first-element (dom/get-element (first ids))]
+               (when first-element
+                 (dom/focus! first-element))))))
 
-        close-team-opts-ddwn
-        (mf/use-fn
-         #(reset! show-team-opts-ddwn? false))
+        handle-close-team
+        (fn [event]
+          (dom/stop-propagation event)
+          (st/emit! (dd/hide-dropdown)))
 
         handle-show-opts-click
         (fn [event]
           (dom/stop-propagation event)
-          (swap! show-team-opts-ddwn? not)
-          (reset! show-teams-ddwn? false))
+          (st/emit! (dd/show-dropdown "dropdown-team-opts-menu")))
 
         handle-show-opts-keydown
         (fn [event]
           (when (or (kbd/space? event) (kbd/enter? event))
             (dom/prevent-default event)
-            (reset! show-team-opts-ddwn? true)
-            (reset! show-teams-ddwn? false)
+            (st/emit! (dd/show-dropdown "dropdown-team-opts-menu"))
             (ts/schedule-on-idle
              (fn []
                (let [first-element (dom/get-element (first options-ids))]
                  (when first-element
                    (dom/focus! first-element)))))))
 
-        handle-close-team
-        (fn []
-          (reset! show-teams-ddwn? false))
+        close-team-opts-ddwn
+        (fn [event]
+          (dom/stop-propagation event)
+          (st/emit! (dd/hide-dropdown)))
+
         subscription          (:subscription team)
         subscription-type     (get-subscription-type subscription)]
 
@@ -699,18 +706,20 @@
 
      ;; Teams Dropdown
 
-     [:& dropdown-menu {:show @show-teams-ddwn?
+     [:& dropdown-menu {:show show-teams-ddwn?
                         :on-close handle-close-team
                         :ids ids
+                        :dropdown-id "sidebar-teams-dropdown"
                         :list-class (stl/css :dropdown :teams-dropdown)}
       [:& teams-selector-dropdown-items {:ids ids
                                          :team team
                                          :profile profile
                                          :teams teams}]]
 
-     [:& dropdown-menu {:show @show-team-opts-ddwn?
+     [:& dropdown-menu {:show show-team-opts-ddwn?
                         :on-close close-team-opts-ddwn
                         :ids options-ids
+                        :dropdown-id "sidebar-team-options-dropdown"
                         :list-class (stl/css :dropdown :options-dropdown)}
       [:& team-options-dropdown {:team team
                                  :profile profile}]]]))
@@ -878,18 +887,23 @@
 (mf/defc profile-section*
   {::mf/props :obj}
   [{:keys [profile team]}]
-  (let [show*  (mf/use-state false)
-        show   (deref show*)
+  (let [;; show*  (mf/use-state false)
+        ;; show   (deref show*)
+        state    (mf/deref refs/dashboard-local)
+
+        show?
+        (boolean (and (get state :menu-open)
+                      (= "profile-section" (:menu-id state))))
+
         photo  (cf/resolve-profile-photo-url profile)
 
         on-click
-        (mf/use-fn
-         (fn [section event]
-           (dom/stop-propagation event)
-           (reset! show* false)
-           (if (keyword? section)
-             (st/emit! (rt/nav section))
-             (st/emit! section))))
+        (fn [section event]
+          (dom/stop-propagation event)
+          (st/emit! (dd/hide-dropdown))
+          (if (keyword? section)
+            (st/emit! (rt/nav section))
+            (st/emit! section)))
 
         show-release-notes
         (mf/use-fn
@@ -917,18 +931,18 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! show* not)))
+           (when-not show?
+             (st/emit! (dd/show-dropdown "profile-section")))))
 
         handle-key-down
-        (mf/use-fn
-         (fn [event]
-           (when (kbd/enter? event)
-             (reset! show* true))))
+        (fn [event]
+          (when (kbd/enter? event)
+            (st/emit! (dd/show-dropdown "profile-section"))))
 
         on-close
         (fn [event]
           (dom/stop-propagation event)
-          (reset! show* false))
+          (st/emit! (dd/hide-dropdown)))
 
         handle-key-down-profile
         (mf/use-fn
@@ -1021,9 +1035,10 @@
        [:span {:class (stl/css :profile-fullname)} (:fullname profile)]]
 
       [:& dropdown-menu {:on-close on-close
-                         :show show
+                         :show show?
+                         :dropdown-id "profile-section"
                          :list-class (stl/css :profile-dropdown)}
-       [:li {:tab-index (if show "0" "-1")
+       [:li {:tab-index (if show? "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :on-click handle-set-profile
              :on-key-down handle-key-down-profile
@@ -1033,28 +1048,28 @@
        [:li {:class (stl/css :profile-separator)}]
 
        [:li {:class (stl/css :profile-dropdown-item)
-             :tab-index (if show "0" "-1")
+             :tab-index (if show? "0" "-1")
              :data-url "https://help.penpot.app"
              :on-click handle-click-url
              :on-key-down handle-keydown-url
              :data-testid "help-center-profile-opt"}
         (tr "labels.help-center")]
 
-       [:li {:tab-index (if show "0" "-1")
+       [:li {:tab-index (if show? "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :data-url "https://community.penpot.app"
              :on-click handle-click-url
              :on-key-down handle-keydown-url}
         (tr "labels.community")]
 
-       [:li {:tab-index (if show "0" "-1")
+       [:li {:tab-index (if show? "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :data-url "https://www.youtube.com/c/Penpot"
              :on-click handle-click-url
              :on-key-down handle-keydown-url}
         (tr "labels.tutorials")]
 
-       [:li {:tab-index (if show "0" "-1")
+       [:li {:tab-index (if show? "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :on-click show-release-notes
              :on-key-down handle-show-release-notes}
@@ -1063,21 +1078,21 @@
        [:li {:class (stl/css :profile-separator)}]
 
        [:li {:class     (stl/css :profile-dropdown-item)
-             :tab-index (if show "0" "-1")
+             :tab-index (if show? "0" "-1")
              :data-url "https://penpot.app/libraries-templates"
              :on-click handle-click-url
              :on-key-down handle-keydown-url
              :data-testid "libraries-templates-profile-opt"}
         (tr "labels.libraries-and-templates")]
 
-       [:li {:tab-index (if show "0" "-1")
+       [:li {:tab-index (if show? "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :data-url "https://github.com/penpot/penpot"
              :on-click handle-click-url
              :on-key-down handle-keydown-url}
         (tr "labels.github-repo")]
 
-       [:li {:tab-index (if show "0" "-1")
+       [:li {:tab-index (if show? "0" "-1")
              :class (stl/css :profile-dropdown-item)
              :data-url "https://penpot.app/terms"
              :on-click handle-click-url
@@ -1088,14 +1103,14 @@
 
        (when (contains? cf/flags :user-feedback)
          [:li {:class (stl/css :profile-dropdown-item)
-               :tab-index (if show "0" "-1")
+               :tab-index (if show? "0" "-1")
                :on-click handle-feedback-click
                :on-key-down handle-feedback-keydown
                :data-testid "feedback-profile-opt"}
           (tr "labels.give-feedback")])
 
        [:li {:class (stl/css :profile-dropdown-item :item-with-icon)
-             :tab-index (if show "0" "-1")
+             :tab-index (if show? "0" "-1")
              :on-click handle-logout-click
              :on-key-down handle-logout-keydown
              :data-testid "logout-profile-opt"}

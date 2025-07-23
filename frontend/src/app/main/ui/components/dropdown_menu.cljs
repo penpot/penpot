@@ -98,16 +98,19 @@
 (mf/defc dropdown-menu
   {::mf/props :obj}
   [props]
+
   (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
   (assert (boolean? (gobj/get props "show")) "missing `show` prop")
 
-  (let [ids (obj/get props "ids")
-        ids (or ids
-                (->> (obj/get props "children")
-                     (keep (fn [o]
-                             (let [props (obj/get o "props")]
-                               (obj/get props "id"))))))]
-    (when (gobj/get props "show")
+  (let [show        (gobj/get props "show")
+        ids         (obj/get props "ids")
+        ids         (or ids
+                        (->> (obj/get props "children")
+                             (keep (fn [o]
+                                     (let [props (obj/get o "props")]
+                                       (obj/get props "id"))))))]
+
+    (when show
       (mf/element
        dropdown-menu'
        (mf/spread-props props {:ids ids})))))
