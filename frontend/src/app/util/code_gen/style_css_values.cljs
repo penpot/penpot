@@ -197,6 +197,11 @@
   (when-not (cgc/svg-markup? shape)
     (get-stroke-data (first (:strokes shape)))))
 
+(defmethod get-value :border-width
+  [_ shape _ _]
+  (when-not (cgc/svg-markup? shape)
+    (get-stroke-data (first (:strokes shape)))))
+
 (defmethod get-value :box-shadow
   [_ shape _ _]
   (when-not (cgc/svg-markup? shape)

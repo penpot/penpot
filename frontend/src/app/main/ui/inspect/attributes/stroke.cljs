@@ -9,7 +9,6 @@
   (:require
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
-   [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -53,7 +52,7 @@
           [:> copy-button* {:data (css/get-css-property objects shape property)}
            [:div {:class (stl/css :button-children)} property-value]]]])
        )
-     [:& color-row
+     [:& cmm/color-row
       {:color color
        :format format
        :on-change-format on-change
