@@ -169,6 +169,7 @@ body {
 
   ([property value options]
    (when (some? value)
+     (prn "format-css-value" property value options)
      (format-value property value options))))
 
 (defn format-css-property
@@ -296,6 +297,7 @@ body {
        (format-css-property options))))
 
 (defn get-css-value
+  "Get the CSS value for a given property of a shape."
   ([objects shape property]
    (get-css-value objects shape property nil))
 
