@@ -45,6 +45,7 @@
 - Fix ESC key not closing Add/Manage Libraries modal [Taiga #11523](https://tree.taiga.io/project/penpot/issue/11523)
 - Fix copying a shadow color from info tab [Taiga #11211](https://tree.taiga.io/project/penpot/issue/11211)
 - Fix remove color button in the gradient editor [Taiga #11623](https://tree.taiga.io/project/penpot/issue/11623)
+- Fix the context menu always closes after any action [Taiga #11624](https://tree.taiga.io/project/penpot/issue/11624)
 
 ## 2.8.1 (Unreleased)
 
