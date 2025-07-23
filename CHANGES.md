@@ -40,6 +40,7 @@
 - Improve text layer auto-resize: auto-width switches to auto-height on horizontal resize, and only switches to fixed on vertical resize [Taiga #11578](https://tree.taiga.io/project/penpot/issue/11578)
 - Highlight first font in font selector search. Apply only on Enter or click. [Taiga #11579](https://tree.taiga.io/project/penpot/issue/11579)
 - Add the ability to show login dialog on profile settings [Github #6871](https://github.com/penpot/penpot/pull/6871)
+- Improve the application of tokens with object specific tokens [Taiga #10209](https://tree.taiga.io/project/penpot/us/10209)
 
 ### :bug: Bugs fixed
 
@@ -56,6 +57,9 @@
 - Fix duplicating pages with mainInstance shapes nested inside groups [Taiga #10774](https://tree.taiga.io/project/penpot/issue/10774)
 - Fix ESC key not closing Add/Manage Libraries modal [Taiga #11523](https://tree.taiga.io/project/penpot/issue/11523)
 - Fix copying a shadow color from info tab [Taiga #11211](https://tree.taiga.io/project/penpot/issue/11211)
+- Fix remove color button in the gradient editor [Taiga #11623](https://tree.taiga.io/project/penpot/issue/11623)
+- Fix "Copy as SVG" generates different code from the Inspect panel [Taiga #11519](https://tree.taiga.io/project/penpot/issue/11519)
+- Fix overriden tokens in text copies are not preserved [Taiga #11486](https://tree.taiga.io/project/penpot/issue/11486)
 
 ## 2.8.1 (Unreleased)
 

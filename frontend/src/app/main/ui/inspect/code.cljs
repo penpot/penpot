@@ -149,8 +149,7 @@
         (mf/use-memo
          (mf/deps markup-type shapes images-data)
          (fn []
-           (-> (cg/generate-markup-code objects markup-type shapes)
-               (cb/format-code markup-type))))
+           (cg/generate-formatted-markup-code objects markup-type shapes)))
 
         on-markup-copied
         (mf/use-fn

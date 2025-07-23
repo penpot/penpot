@@ -41,6 +41,7 @@
 /backend/resources/public/assets
 /backend/resources/public/media
 /backend/target/
+/backend/experiments
 /bundle*
 /cd.md
 /clj-profiler/
@@ -51,9 +52,6 @@
 /exporter/target
 /frontend/.storybook/preview-body.html
 /frontend/.storybook/preview-head.html
-/frontend/cypress/fixtures/validuser.json
-/frontend/cypress/videos/*/
-/frontend/cypress/videos/*/
 /frontend/dist/
 /frontend/npm-debug.log
 /frontend/out/
@@ -70,6 +68,8 @@
 /vendor/svgclean/bundle*.js
 /web
 /library/target/
+/library/*.zip
+/external
 
 clj-profiler/
 node_modules

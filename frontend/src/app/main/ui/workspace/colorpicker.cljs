@@ -276,10 +276,9 @@
         handle-gradient-remove-stop
         (mf/use-fn
          (mf/deps state)
-         (fn [stop]
+         (fn [index]
            (when (> (count (:stops state)) 2)
-             (when-let [index (d/index-of-pred (:stops state) #(= % stop))]
-               (st/emit! (dc/remove-gradient-stop index))))))
+             (st/emit! (dc/remove-gradient-stop index)))))
 
         handle-stop-edit-start
         (mf/use-fn
