@@ -346,8 +346,8 @@
                  (gsh/translate-to-frame % (get objects parent-frame-id)))
 
             shapes          (mapv maybe-translate selected)
-            svg             (svg/generate-markup objects shapes)]
-        (wapi/write-to-clipboard svg)))))
+            svg-formatted   (svg/generate-formatted-markup objects shapes)]
+        (wapi/write-to-clipboard svg-formatted)))))
 
 (defn copy-selected-css
   []
