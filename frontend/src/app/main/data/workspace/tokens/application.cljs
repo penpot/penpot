@@ -31,88 +31,6 @@
 
 (declare token-properties)
 
-;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
-
-(defn apply-token
-  "Apply `attributes` that match `token` for `shape-ids`.
-
-  Optionally remove attributes from `attributes-to-remove`,
-  this is useful for applying a single attribute from an attributes set
-  while removing other applied tokens from this set."
-  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape]}]
-  (ptk/reify ::apply-token
-    ptk/WatchEvent
-    (watch [_ state _]
-      ;; We do not allow to apply tokens while text editor is open.
-      (when (empty? (get state :workspace-editor-state))
-        (when-let [tokens (some-> (dsh/lookup-file-data state)
-                                  (get :tokens-lib)
-                                  (ctob/get-tokens-in-active-sets))]
-          (->> (sd/resolve-tokens tokens)
-               (rx/mapcat
-                (fn [resolved-tokens]
-                  (let [undo-id (js/Symbol)
-                        objects (dsh/lookup-page-objects state)
-
-                        shape-ids (or (->> (select-keys objects shape-ids)
-                                           (filter (fn [[_ shape]]
-                                                     (ctt/any-appliable-attr? attributes (:type shape))))
-                                           (keys))
-                                      [])
-
-                        resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                        tokenized-attributes (cft/attributes-map attributes token)]
-                    (rx/of
-                     (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
-                     (dwu/start-undo-transaction undo-id)
-                     (dwsh/update-shapes shape-ids (fn [shape]
-                                                     (cond-> shape
-                                                       attributes-to-remove
-                                                       (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
-                                                       :always
-                                                       (update :applied-tokens merge tokenized-attributes))))
-                     (when on-update-shape
-                       (on-update-shape resolved-value shape-ids attributes))
-                     (dwu/commit-undo-transaction undo-id)))))))))))
-
-(defn unapply-token
-  "Removes `attributes` that match `token` for `shape-ids`.
-
-  Doesn't update shape attributes."
-  [{:keys [attributes token shape-ids] :as _props}]
-  (ptk/reify ::unapply-token
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/of
-       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token %))]
-         (dwsh/update-shapes
-          shape-ids
-          (fn [shape]
-            (update shape :applied-tokens remove-token))))))))
-
-(defn toggle-token
-  [{:keys [token shapes]}]
-  (ptk/reify ::on-toggle-token
-    ptk/WatchEvent
-    (watch [_ _ _]
-      (let [{:keys [attributes all-attributes on-update-shape]}
-            (get token-properties (:type token))
-
-            unapply-tokens?
-            (cft/shapes-token-applied? token shapes (or all-attributes attributes))
-
-            shape-ids (map :id shapes)]
-        (if unapply-tokens?
-          (rx/of
-           (unapply-token {:attributes (or all-attributes attributes)
-                           :token token
-                           :shape-ids shape-ids}))
-          (rx/of
-           (apply-token {:attributes attributes
-                         :token token
-                         :shape-ids shape-ids
-                         :on-update-shape on-update-shape})))))))
-
 ;; Events to update the value of attributes with applied tokens ---------------------------------------------------------
 
 ;; (note that dwsh/update-shapes function returns an event)
@@ -379,6 +297,123 @@
                            #(txt/update-text-content % update-node? update-fn nil)
                            {:ignore-touched true
                             :page-id page-id})))))
+
+;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
+
+(defn apply-token
+  "Apply `attributes` that match `token` for `shape-ids`.
+
+  Optionally remove attributes from `attributes-to-remove`,
+  this is useful for applying a single attribute from an attributes set
+  while removing other applied tokens from this set."
+  [{:keys [attributes attributes-to-remove token shape-ids on-update-shape]}]
+  (ptk/reify ::apply-token
+    ptk/WatchEvent
+    (watch [_ state _]
+      ;; We do not allow to apply tokens while text editor is open.
+      (when (empty? (get state :workspace-editor-state))
+        (when-let [tokens (some-> (dsh/lookup-file-data state)
+                                  (get :tokens-lib)
+                                  (ctob/get-tokens-in-active-sets))]
+          (->> (sd/resolve-tokens tokens)
+               (rx/mapcat
+                (fn [resolved-tokens]
+                  (let [undo-id (js/Symbol)
+                        objects (dsh/lookup-page-objects state)
+                        selected-shapes (select-keys objects shape-ids)
+
+                        shape-ids (or (->> selected-shapes
+                                           (filter (fn [[_ shape]]
+                                                     (or
+                                                      (and (ctsl/any-layout-immediate-child? objects shape)
+                                                           (some ctt/spacing-margin-keys attributes))
+                                                      (ctt/any-appliable-attr? attributes (:type shape)))))
+                                           (keys))
+                                      [])
+
+                        resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
+                        tokenized-attributes (cft/attributes-map attributes token)]
+                    (rx/of
+                     (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
+                     (dwu/start-undo-transaction undo-id)
+                     (dwsh/update-shapes shape-ids (fn [shape]
+                                                     (cond-> shape
+                                                       attributes-to-remove
+                                                       (update :applied-tokens #(apply (partial dissoc %) attributes-to-remove))
+                                                       :always
+                                                       (update :applied-tokens merge tokenized-attributes))))
+                     (when on-update-shape
+                       (on-update-shape resolved-value shape-ids attributes))
+                     (dwu/commit-undo-transaction undo-id)))))))))))
+
+(defn apply-spacing-token
+  "Handles edge-case for spacing token when applying token via toggle button.
+  Splits out `shape-ids` into seperate default actions:
+  - Layouts take the `default` update function
+  - Shapes inside layout will only take margin"
+  [{:keys [token shapes]}]
+  (ptk/reify ::apply-spacing-token
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [objects (dsh/lookup-page-objects state)
+
+            {:keys [attributes on-update-shape]}
+            (get token-properties (:type token))
+
+            {:keys [other frame-children]}
+            (group-by #(if (ctsl/any-layout-immediate-child? objects %) :frame-children :other) shapes)]
+
+        (rx/of
+         (apply-token {:attributes attributes
+                       :token token
+                       :shape-ids (map :id other)
+                       :on-update-shape on-update-shape})
+         (apply-token {:attributes ctt/spacing-margin-keys
+                       :token token
+                       :shape-ids (map :id frame-children)
+                       :on-update-shape update-layout-item-margin}))))))
+
+(defn unapply-token
+  "Removes `attributes` that match `token` for `shape-ids`.
+
+  Doesn't update shape attributes."
+  [{:keys [attributes token shape-ids] :as _props}]
+  (ptk/reify ::unapply-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of
+       (let [remove-token #(when % (cft/remove-attributes-for-token attributes token %))]
+         (dwsh/update-shapes
+          shape-ids
+          (fn [shape]
+            (update shape :applied-tokens remove-token))))))))
+
+(defn toggle-token
+  [{:keys [token shapes]}]
+  (ptk/reify ::on-toggle-token
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [{:keys [attributes all-attributes on-update-shape]}
+            (get token-properties (:type token))
+
+            unapply-tokens?
+            (cft/shapes-token-applied? token shapes (or all-attributes attributes))
+
+            shape-ids (map :id shapes)]
+        (if unapply-tokens?
+          (rx/of
+           (unapply-token {:attributes (or all-attributes attributes)
+                           :token token
+                           :shape-ids shape-ids}))
+          (rx/of
+           (case (:type token)
+             :spacing
+             (apply-spacing-token {:token token
+                                   :shapes shapes})
+             (apply-token {:attributes attributes
+                           :token token
+                           :shape-ids shape-ids
+                           :on-update-shape on-update-shape}))))))))
 
 ;; Map token types to different properties used along the cokde ---------------------------------------------
 
