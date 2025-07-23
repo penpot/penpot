@@ -1095,15 +1095,24 @@
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes changes)))
             (when-not (empty? updated-frames)
-              (rx/merge
-               (rx/of (ptk/data-event :layout/update {:ids (map :id updated-frames) :undo-group undo-group}))
-               (->> (rx/from updated-frames)
-                    (rx/mapcat
-                     (fn [shape]
-                       (rx/of
-                        (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                        (when-not (= (:frame-id shape) uuid/zero)
-                          (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame"))))))))
+              (let [frames-by-page (->> updated-frames
+                                        (group-by :page-id))]
+                (rx/merge
+                 ;; Emit one layout/update event for each page
+                 (rx/from
+                  (map (fn [[page-id frames]]
+                         (ptk/data-event :layout/update
+                                         {:page-id page-id
+                                          :ids (map :id frames)
+                                          :undo-group undo-group}))
+                       frames-by-page))
+                 (->> (rx/from updated-frames)
+                      (rx/mapcat
+                       (fn [shape]
+                         (rx/of
+                          (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+                          (when-not (= (:frame-id shape) uuid/zero)
+                            (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))
 
             (when (not= file-id library-id)
               ;; When we have just updated the library file, give some time for the

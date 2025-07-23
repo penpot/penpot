@@ -131,11 +131,12 @@
              ;; they are process together. It will get a better performance.
              (rx/buffer-time 100)
              (rx/filter #(d/not-empty? %))
-             (rx/map
+             (rx/mapcat
               (fn [data]
-                (let [page-id (->> data (keep :page-id) first)
-                      ids (reduce #(into %1 (:ids %2)) #{} data)]
-                  (update-layout-positions {:page-id page-id :ids ids}))))
+                (->> (group-by :page-id data)
+                     (map (fn [[page-id items]]
+                            (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
+                              (update-layout-positions {:page-id page-id :ids ids})))))))
              (rx/take-until stopper))))))
 
 (defn finalize-shape-layout
