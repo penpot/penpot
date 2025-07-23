@@ -4,13 +4,14 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.common.types.fill.impl
+(ns app.common.types.fills.impl
   (:require
    #?(:clj [clojure.data.json :as json])
    #?(:cljs [app.common.weak-map :as weak-map])
    [app.common.buffer :as buf]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.exceptions :as ex]
    [app.common.math :as mth]
    [app.common.transit :as t]))
 
@@ -22,7 +23,7 @@
 (def ^:const GRADIENT-STOP-SIZE 8)
 (def ^:const GRADIENT-BYTE-SIZE 156)
 (def ^:const SOLID-BYTE-SIZE 4)
-(def ^:const IMAGE-BYTE-SIZE 28)
+(def ^:const IMAGE-BYTE-SIZE 36)
 (def ^:const METADATA-BYTE-SIZE 36)
 (def ^:const FILL-BYTE-SIZE
   (+ 4 (mth/max GRADIENT-BYTE-SIZE
@@ -34,6 +35,13 @@
 
 (def ^:private xf:take-fills
   (take MAX-FILLS))
+
+(defprotocol IHeapWritable
+  (-write-to [_ buffer offset] "write the content to the specified buffer")
+  (-get-byte-size [_] "get byte size"))
+
+(defprotocol IBinaryFills
+  (-get-image-ids [_] "get referenced image ids"))
 
 (defn- hex->rgb
   "Encode an hex string as rgb (int32)"
@@ -64,16 +72,16 @@
         n (unsigned-bit-shift-right n 24)]
     (mth/precision (/ (float n) 0xff) 2)))
 
-(defn- write-solid-fill
-  [offset buffer color alpha]
+(defn write-solid-fill
+  [offset buffer opacity color]
   (buf/write-byte buffer (+ offset 0) 0x00)
   (buf/write-int  buffer (+ offset 4)
                   (-> (hex->rgb color)
-                      (rgb->rgba alpha)))
+                      (rgb->rgba opacity)))
   (+ offset FILL-BYTE-SIZE))
 
-(defn- write-gradient-fill
-  [offset buffer gradient opacity]
+(defn write-gradient-fill
+  [offset buffer opacity gradient]
   (let [start-x (:start-x gradient)
         start-y (:start-y gradient)
         end-x   (:end-x gradient)
@@ -108,16 +116,18 @@
                  (+ offset' GRADIENT-STOP-SIZE)))
         (+ offset FILL-BYTE-SIZE)))))
 
-(defn- write-image-fill
+(defn write-image-fill
   [offset buffer opacity image]
-  (let [image-id (get image :id)
-        image-width (get image :width)
-        image-height (get image :height)]
+  (let [image-id     (get image :id)
+        image-width  (get image :width)
+        image-height (get image :height)
+        keep-aspect-ratio   (get image :keep-aspect-ratio false)]
     (buf/write-byte  buffer (+ offset  0) 0x03)
     (buf/write-uuid  buffer (+ offset  4) image-id)
     (buf/write-float buffer (+ offset 20) opacity)
     (buf/write-int   buffer (+ offset 24) image-width)
     (buf/write-int   buffer (+ offset 28) image-height)
+    (buf/write-bool  buffer (+ offset 32) keep-aspect-ratio)
     (+ offset FILL-BYTE-SIZE)))
 
 (defn- write-metadata
@@ -128,21 +138,21 @@
 
     (when mtype
       (let [val (case mtype
-                  "image/jpeg" 0x01
-                  "image/png"  0x02
-                  "image/gif"  0x03
-                  "image/webp"  0x04
+                  "image/jpeg"    0x01
+                  "image/png"     0x02
+                  "image/gif"     0x03
+                  "image/webp"    0x04
                   "image/svg+xml" 0x05)]
         (buf/write-short buffer (+ offset 2) val)))
 
     (if (and (some? ref-file)
              (some? ref-id))
       (do
-        (buf/write-byte buffer (+ offset 0) 0x01)
+        (buf/write-bool buffer (+ offset 0) true)
         (buf/write-uuid buffer (+ offset 4) ref-file)
         (buf/write-uuid buffer (+ offset 20) ref-id))
       (do
-        (buf/write-byte buffer (+ offset 0) 0x00)))))
+        (buf/write-bool buffer (+ offset 0) false)))))
 
 (defn- read-stop
   [buffer offset]
@@ -193,7 +203,8 @@
                                            :type type}})
 
                   3
-                  (let [id     (buf/read-uuid  dbuffer (+ doffset 4))
+                  (let [ratio  (buf/read-bool  dbuffer (+ doffset 32))
+                        id     (buf/read-uuid  dbuffer (+ doffset 4))
                         alpha  (buf/read-float dbuffer (+ doffset 20))
                         width  (buf/read-int   dbuffer (+ doffset 24))
                         height (buf/read-int   dbuffer (+ doffset 28))
@@ -209,6 +220,7 @@
                                   :width width
                                   :height height
                                   :mtype mtype
+                                  :keep-aspect-ratio ratio
                                   ;; FIXME: we are not encodign the name, looks useless
                                   :name "sample"}}))]
 
@@ -278,7 +290,20 @@
 
    :cljs
    #_:clj-kondo/ignore
-   (deftype Fills [size dbuffer mbuffer cache ^:mutable __hash]
+   (deftype Fills [size dbuffer mbuffer image-ids cache ^:mutable __hash]
+
+     IHeapWritable
+     (-get-byte-size [_]
+       (- (.-byteLength dbuffer) 4))
+
+     (-write-to [_ heap offset]
+       (let [buffer' (.-buffer ^js/DataView dbuffer)]
+         (.set heap (js/Uint32Array. buffer' 4) offset)))
+
+     IBinaryFills
+     (-get-image-ids [_]
+       image-ids)
+
      cljs.core/ISequential
      cljs.core/IEquiv
      (-equiv [this other]
@@ -353,7 +378,26 @@
             (when (< i size)
               (cons (read-fill dbuffer mbuffer i)
                     (lazy-seq (next-seq (inc i))))))
-          0)))))
+          0)))
+
+     cljs.core/IPrintWithWriter
+     (-pr-writer [this writer _]
+       (binding [*print-dup* true]
+         (cljs.core/-write writer (str "#penpot/fills \"" (pr-str (vec this))  "\""))))))
+
+#?(:clj
+   (defmethod print-method Fills
+     [o ^java.io.Writer writer]
+     (.write writer "#penpot/fills \"")
+     (print-dup (vec o) writer)
+     (.write writer "\"")))
+
+#?(:clj
+   (defmethod print-dup Fills
+     [o ^java.io.Writer writer]
+     (.write writer "#penpot/fills \"")
+     (print-dup (vec o) writer)
+     (.write writer "\"")))
 
 (defn from-plain
   [fills]
@@ -364,8 +408,9 @@
 
     (buf/write-byte dbuffer 0 total)
 
-    (loop [index 0]
-      (when (< index total)
+    (loop [index     0
+           image-ids #{}]
+      (if (< index total)
         (let [fill     (nth fills index)
               doffset  (+ 4 (* index FILL-BYTE-SIZE))
               moffset  (* index METADATA-BYTE-SIZE)
@@ -373,23 +418,26 @@
 
           (if-let [color (get fill :fill-color)]
             (do
-              (write-solid-fill doffset dbuffer color opacity)
+              (write-solid-fill doffset dbuffer opacity color)
               (write-metadata moffset mbuffer fill)
-              (recur (inc index)))
+              (recur (inc index) image-ids))
             (if-let [gradient (get fill :fill-color-gradient)]
               (do
-                (write-gradient-fill doffset dbuffer gradient opacity)
+                (write-gradient-fill doffset dbuffer opacity gradient)
                 (write-metadata moffset mbuffer fill)
-                (recur (inc index)))
+                (recur (inc index) image-ids))
               (if-let [image (get fill :fill-image)]
                 (do
                   (write-image-fill doffset dbuffer opacity image)
                   (write-metadata moffset mbuffer fill)
-                  (recur (inc index)))
-                (recur (inc index))))))))
+                  (recur (inc index)
+                         (conj image-ids (get image :id))))
+                (ex/raise :type :internal
+                          :code :invalid-fill
+                          :hint "found invalid fill on encoding fills to binary format")))))
 
-    #?(:cljs (Fills. total dbuffer mbuffer (weak-map/create) nil)
-       :clj  (Fills. total dbuffer mbuffer nil))))
+        #?(:cljs (Fills. total dbuffer mbuffer image-ids (weak-map/create) nil)
+           :clj  (Fills. total dbuffer mbuffer nil))))))
 
 (defn fills?
   [o]

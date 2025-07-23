@@ -6,13 +6,13 @@
 
 (ns app.main.ui.shapes.attrs
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.json :as json]
    [app.common.svg :as csvg]
+   [app.common.types.color :as clr]
    [app.common.types.shape :refer [stroke-caps-line stroke-caps-marker]]
    [app.common.types.shape.radius :as ctsr]
    [app.util.object :as obj]

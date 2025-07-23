@@ -8,9 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cft]
-   [app.common.text :as txt]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.text :as txt]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.common.types.typography :as cty]

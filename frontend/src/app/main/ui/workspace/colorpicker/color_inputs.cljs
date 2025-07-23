@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.colorpicker.color-inputs
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.math :as mth]
+   [app.common.types.color :as cc]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 

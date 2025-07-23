@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.color :as ctc]
+   [app.common.types.library :as ctl]
    [app.main.data.event :as ev]
    [app.main.data.workspace.colors :as mdc]
    [app.main.refs :as refs]
@@ -170,7 +171,8 @@
                                  ;; how it was saved first time
                                  (if (and ref-id ref-file)
                                    (let [fdata (dm/get-in libraries [ref-file :data])]
-                                     (or (some-> (ctc/get-color fdata ref-id)
+                                     ;; FIXME: get a direct helper for obtain plain color
+                                     (or (some-> (ctl/get-color fdata ref-id)
                                                  (ctc/library-color->color ref-file))
                                          (dissoc color :ref-id :ref-file)))
                                    color)))
