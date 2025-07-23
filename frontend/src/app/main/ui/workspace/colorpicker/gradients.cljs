@@ -80,10 +80,10 @@
 
         handle-remove-stop
         (mf/use-callback
-         (mf/deps on-remove-stop stop)
+         (mf/deps on-remove-stop index)
          (fn []
            (when on-remove-stop
-             (on-remove-stop stop))))
+             (on-remove-stop index))))
 
         handle-focus-stop-offset
         (mf/use-fn
