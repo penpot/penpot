@@ -10,7 +10,7 @@ import { getFills } from "./Color.js";
 
 const DEFAULT_FONT_SIZE = "16px";
 const DEFAULT_LINE_HEIGHT = "1.2";
-
+const DEFAULT_FONT_WEIGHT = "400";
 /**
  * Merges two style declarations. `source` -> `target`.
  *
@@ -55,7 +55,7 @@ let inertElement = null;
  * Resets the style declaration of the inert
  * element.
  */
-function resetInertElement() {
+export function resetInertElement() {
   if (!inertElement) throw new Error("Invalid inert element");
   resetStyleDeclaration(inertElement.style);
   return inertElement;
@@ -94,11 +94,21 @@ function getStyleDefaultsDeclaration() {
  * @returns {CSSStyleDeclaration}
  */
 export function getComputedStyle(element) {
+  if (typeof window !== "undefined" && window.getComputedStyle) {
+    const inertElement = getInertElement();
+    const computedStyle = window.getComputedStyle(element);
+    inertElement.style = computedStyle;
+
+    return inertElement.style;
+  }
+  return getComputedStylePolyfill(element);
+}
+
+export function getComputedStylePolyfill(element) {
   const inertElement = getInertElement();
+
   let currentElement = element;
   while (currentElement) {
-    // This is better but it doesn't work in JSDOM.
-    // for (const styleName of currentElement.style) {
     for (let index = 0; index < currentElement.style.length; index++) {
       const styleName = currentElement.style.item(index);
       const currentValue = inertElement.style.getPropertyValue(styleName);
@@ -157,6 +167,11 @@ export function normalizeStyles(
   const fontSize = styleDeclaration.getPropertyValue("font-size");
   if (!fontSize || fontSize === "0px") {
     styleDeclaration.setProperty("font-size", DEFAULT_FONT_SIZE);
+  }
+
+  const fontWeight = styleDeclaration.getPropertyValue("font-weight");
+  if (!fontWeight || fontWeight === "0") {
+    styleDeclaration.setProperty("font-weight", DEFAULT_FONT_WEIGHT);
   }
 
   const lineHeight = styleDeclaration.getPropertyValue("line-height");
