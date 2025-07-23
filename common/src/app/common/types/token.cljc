@@ -92,18 +92,31 @@
 
 (def opacity-keys (schema-keys schema:opacity))
 
-(def ^:private schema:spacing
+(def ^:private schema:spacing-gap
   [:map
    [:row-gap {:optional true} token-name-ref]
-   [:column-gap {:optional true} token-name-ref]
+   [:column-gap {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing-padding
+  [:map
    [:p1 {:optional true} token-name-ref]
    [:p2 {:optional true} token-name-ref]
    [:p3 {:optional true} token-name-ref]
-   [:p4 {:optional true} token-name-ref]
+   [:p4 {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing-margin
+  [:map
    [:m1 {:optional true} token-name-ref]
    [:m2 {:optional true} token-name-ref]
    [:m3 {:optional true} token-name-ref]
    [:m4 {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing
+  (reduce mu/union [schema:spacing-gap
+                    schema:spacing-padding
+                    schema:spacing-margin]))
+
+(def spacing-margin-keys (schema-keys schema:spacing-margin))
 
 (def spacing-keys (schema-keys schema:spacing))
 

@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
@@ -34,11 +35,13 @@
   (some #(contains? m %) ks))
 
 (defn clean-separators
-  "Cleans up `:separator` inside of `items`
-  Will clean consecutive items like `[:separator :separator {}]`
-  And will return nil for lists consisting only of `:separator` items."
+  "Cleans up `:separator` inside of `items` with these rules:
+    - Clean consecutive items like `[:separator :separator {}]`
+    - Returns nil for lists consisting only of `:separator` items.
+    - Removes `:separator` at the beginning of the `items`"
   [items]
-  (let [items' (dedupe items)]
+  (let [items' (->> (dedupe items)
+                    (drop-while #(= % :separator)))]
     (when-not (every? #(= % :separator) items')
       items')))
 
@@ -190,7 +193,7 @@
 
 
 
-(defn spacing-attribute-actions [{:keys [token selected-shapes allowed-shape-attributes] :as context-data}]
+(defn spacing-attribute-actions [{:keys [token selected-shapes allowed-shape-attributes is-selected-inside-layout] :as context-data}]
   (let [padding-attr-labels {:p1 "Padding top"
                              :p2 "Padding right"
                              :p3 "Padding bottom"
@@ -209,7 +212,9 @@
                             :m2 "Margin right"
                             :m3 "Margin bottom"
                             :m4 "Margin left"}
-        margin-items (when (key-in-map? allowed-shape-attributes margin-attr-labels)
+        margin-items (when (or
+                            is-selected-inside-layout
+                            (key-in-map? allowed-shape-attributes margin-attr-labels))
                        (layout-spacing-items {:token token
                                               :selected-shapes selected-shapes
                                               :all-attr-labels margin-attr-labels
@@ -224,11 +229,13 @@
                                             :hint (tr "workspace.tokens.gaps")
                                             :on-update-shape dwta/update-layout-spacing}
                                            context-data)]
-    (concat gap-items
-            (when padding-items [:separator])
-            padding-items
-            (when margin-items [:separator])
-            margin-items)))
+    (->> (concat
+          gap-items
+          [:separator]
+          padding-items
+          [:separator]
+          margin-items)
+         (clean-separators))))
 
 (defn sizing-attribute-actions [context-data]
   (->>
@@ -446,9 +453,17 @@
 
 (mf/defc token-context-menu-tree
   [{:keys [width errors] :as mdata}]
-  (let [objects (mf/deref refs/workspace-page-objects)
+  (let [objects  (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
-        selected-shapes (into [] (keep (d/getf objects)) selected)
+
+        selected-shapes
+        (mf/with-memo [selected objects]
+          (into [] (keep (d/getf objects)) selected))
+
+        is-selected-inside-layout
+        (mf/with-memo [selected-shapes objects]
+          (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes))
+
         token-name (:token-name mdata)
         token (mf/deref (refs/workspace-token-in-selected-set token-name))
         selected-token-set-name (mf/deref refs/selected-token-set-name)]
@@ -457,7 +472,8 @@
                     :token token
                     :errors errors
                     :selected-token-set-name selected-token-set-name
-                    :selected-shapes selected-shapes}]]))
+                    :selected-shapes selected-shapes
+                    :is-selected-inside-layout is-selected-inside-layout}]]))
 
 (mf/defc token-context-menu
   []
