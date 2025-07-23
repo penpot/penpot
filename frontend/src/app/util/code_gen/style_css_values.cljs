@@ -191,6 +191,16 @@
     (every? some? [r1 r2 r3 r4])
     [r1 r2 r3 r4]))
 
+(defmethod get-value :border-style
+  [_ stroke _ _]
+  (when-not (cgc/svg-markup? stroke)
+    (get-stroke-data stroke)))
+
+(defmethod get-value :border-width
+  [_ stroke _ _]
+  (when-not (cgc/svg-markup? stroke)
+    (get-stroke-data stroke)))
+
 (defmethod get-value :box-shadow
   [_ shape _ _]
   (when-not (cgc/svg-markup? shape)

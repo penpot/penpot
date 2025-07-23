@@ -11,6 +11,7 @@
 ### :sparkles: New features & Enhancements
 
 ### :bug: Bugs fixed
+- Display strokes information in inspect tab [Taiga #11154](https://tree.taiga.io/project/penpot/issue/11154)
 
 
 ## 2.9.0 (Unreleased)
