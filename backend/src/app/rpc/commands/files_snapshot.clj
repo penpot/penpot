@@ -10,6 +10,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -24,7 +25,6 @@
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [cuerdas.core :as str]))
 
 (def sql:get-file-snapshots
@@ -60,8 +60,8 @@
 
 (defn- generate-snapshot-label
   []
-  (let [ts (-> (dt/now)
-               (dt/format-instant)
+  (let [ts (-> (ct/now)
+               (ct/format-inst)
                (str/replace #"[T:\.]" "-")
                (str/rtrim "Z"))]
     (str "snapshot-" ts)))
@@ -83,9 +83,9 @@
         deleted-at
         (cond
           (= deleted-at :default)
-          (dt/plus (dt/now) (cf/get-deletion-delay))
+          (ct/plus (ct/now) (cf/get-deletion-delay))
 
-          (dt/instant? deleted-at)
+          (ct/inst? deleted-at)
           deleted-at
 
           :else
@@ -280,7 +280,7 @@
 (defn- delete-file-snapshot!
   [conn snapshot-id]
   (db/update! conn :file-change
-              {:deleted-at (dt/now)}
+              {:deleted-at (ct/now)}
               {:id snapshot-id}
               {::db/return-keys false})
   nil)

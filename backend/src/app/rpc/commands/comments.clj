@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as uri]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -29,7 +30,6 @@
    [app.rpc.retry :as rtry]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
@@ -222,7 +222,7 @@
 
 (defn upsert-comment-thread-status!
   ([conn profile-id thread-id]
-   (upsert-comment-thread-status! conn profile-id thread-id (dt/in-future "1s")))
+   (upsert-comment-thread-status! conn profile-id thread-id (ct/in-future "1s")))
   ([conn profile-id thread-id mod-at]
    (db/exec-one! conn [sql:upsert-comment-thread-status thread-id profile-id mod-at mod-at])))
 

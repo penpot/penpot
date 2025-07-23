@@ -8,10 +8,10 @@
   "A generic task for object deletion cascade handling"
   (:require
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.db :as db]
    [app.rpc.commands.files :as files]
    [app.rpc.commands.profile :as profile]
-   [app.util.time :as dt]
    [integrant.core :as ig]))
 
 (def ^:dynamic *team-deletion* false)
@@ -23,7 +23,7 @@
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
   (when-let [file (db/get* conn :file {:id id} {::db/remove-deleted false})]
     (l/trc :hint "marking for deletion" :rel "file" :id (str id)
-           :deleted-at (dt/format-instant deleted-at))
+           :deleted-at (ct/format-inst deleted-at))
 
     (db/update! conn :file
                 {:deleted-at deleted-at}
@@ -62,7 +62,7 @@
 (defmethod delete-object :project
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
   (l/trc :hint "marking for deletion" :rel "project" :id (str id)
-         :deleted-at (dt/format-instant deleted-at))
+         :deleted-at (ct/format-inst deleted-at))
 
   (db/update! conn :project
               {:deleted-at deleted-at}
@@ -79,7 +79,7 @@
 (defmethod delete-object :team
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
   (l/trc :hint "marking for deletion" :rel "team" :id (str id)
-         :deleted-at (dt/format-instant deleted-at))
+         :deleted-at (ct/format-inst deleted-at))
   (db/update! conn :team
               {:deleted-at deleted-at}
               {:id id}
@@ -101,7 +101,7 @@
 (defmethod delete-object :profile
   [{:keys [::db/conn] :as cfg} {:keys [id deleted-at]}]
   (l/trc :hint "marking for deletion" :rel "profile" :id (str id)
-         :deleted-at (dt/format-instant deleted-at))
+         :deleted-at (ct/format-inst deleted-at))
 
   (db/update! conn :profile
               {:deleted-at deleted-at}

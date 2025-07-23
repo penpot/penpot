@@ -7,10 +7,10 @@
 (ns app.util.storage
   (:require
    [app.common.exceptions :as ex]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.util.functions :as fns]
    [app.util.globals :as g]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.util :as ou]))
 
@@ -162,7 +162,7 @@
 (defonce before-unload
   (letfn [(on-before-unload [_]
             (binding [*sync* true]
-              (swap! global assoc ::last-refresh (dt/now))
-              (swap! user assoc ::last-refresh (dt/now))))]
+              (swap! global assoc ::last-refresh (ct/now))
+              (swap! user assoc ::last-refresh (ct/now))))]
     (.addEventListener g/window "beforeunload" on-before-unload)
     on-before-unload))

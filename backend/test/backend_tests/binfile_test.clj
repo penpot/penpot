@@ -20,7 +20,6 @@
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]

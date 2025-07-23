@@ -16,7 +16,6 @@
    [app.rpc.commands.auth :as cauth]
    [app.storage :as sto]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.java.io :as io]
    [clojure.test :as t]

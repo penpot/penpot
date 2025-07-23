@@ -12,11 +12,11 @@
    [app.common.data :as d]
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as cfv]
+   [app.common.time :as ct]
    [app.db :as db]
    [app.main :as main]
    [app.rpc.commands.files :as files]
-   [app.rpc.commands.files-snapshot :as fsnap]
-   [app.util.time :as dt]))
+   [app.rpc.commands.files-snapshot :as fsnap]))
 
 (def ^:dynamic *system* nil)
 
@@ -165,7 +165,7 @@
       (when (string? label)
         (fsnap/create-file-snapshot! system file
                                      {:label label
-                                      :deleted-at (dt/in-future {:days 30})
+                                      :deleted-at (ct/in-future {:days 30})
                                       :created-by :admin}))
 
       (let [file' (update file' :revn inc)]

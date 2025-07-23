@@ -1,3 +1,3 @@
-{app/instant app.util.time/instant
- app/cron app.util.time/cron
- app/duration app.util.time/duration}
+{penpot/inst app.common.time/inst
+ penpot/cron app.util.cron/cron
+ penpot/duration app.common.time/duration}

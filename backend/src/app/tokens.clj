@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
+   [app.common.time :as ct]
    [app.common.transit :as t]
-   [app.util.time :as dt]
    [buddy.sign.jwe :as jwe]))
 
 (defn generate
@@ -22,7 +22,7 @@
    (bytes? tokens-key))
 
   (let [payload (-> claims
-                    (assoc :iat (dt/now))
+                    (assoc :iat (ct/now))
                     (d/without-nils)
                     (t/encode))]
     (jwe/encrypt payload tokens-key {:alg :a256kw :enc :a256gcm})))
@@ -35,8 +35,8 @@
 (defn verify
   [sprops {:keys [token] :as params}]
   (let [claims (decode sprops token)]
-    (when (and (dt/instant? (:exp claims))
-               (dt/is-before? (:exp claims) (dt/now)))
+    (when (and (ct/inst? (:exp claims))
+               (ct/is-before? (:exp claims) (ct/now)))
       (ex/raise :type :validation
                 :code :invalid-token
                 :reason :token-expired

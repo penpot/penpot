@@ -15,6 +15,7 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -27,7 +28,6 @@
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -510,12 +510,12 @@
   specific, should not be used outside of binfile domain"
   [{:keys [::timestamp] :as cfg} file & {:as opts}]
 
-  (assert (dt/instant? timestamp) "expected valid timestamp")
+  (assert (ct/inst? timestamp) "expected valid timestamp")
 
   (let [file (-> file
                  (assoc :created-at timestamp)
                  (assoc :modified-at timestamp)
-                 (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5})))
+                 (assoc :ignore-sync-until (ct/plus timestamp (ct/duration {:seconds 5})))
                  (update :features
                          (fn [features]
                            (-> (::features cfg #{})

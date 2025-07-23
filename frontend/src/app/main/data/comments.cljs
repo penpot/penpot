@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
@@ -35,8 +36,8 @@
    [:seqn :int]
    [:content :string]
    [:participants ::sm/set-of-uuid]
-   [:created-at ::sm/inst]
-   [:modified-at ::sm/inst]
+   [:created-at ::ct/inst]
+   [:modified-at ::ct/inst]
    [:position ::gpt/point]
    [:count-unread-comments {:optional true} :int]
    [:count-comments {:optional true} :int]])
@@ -49,8 +50,8 @@
    [:owner-id ::sm/uuid]
    [:owner-fullname {:optional true} ::sm/text]
    [:owner-email {:optional true} ::sm/email]
-   [:created-at ::sm/inst]
-   [:modified-at ::sm/inst]
+   [:created-at ::ct/inst]
+   [:modified-at ::ct/inst]
    [:content :string]])
 
 (def check-comment-thread!

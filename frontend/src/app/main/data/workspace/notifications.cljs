@@ -10,6 +10,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dc]
@@ -27,7 +28,6 @@
    [app.util.mouse :as mse]
    [app.util.object :as obj]
    [app.util.rxops :as rxs]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
@@ -194,7 +194,7 @@
             (-> session
                 (assoc :id session-id)
                 (assoc :profile-id profile-id)
-                (assoc :updated-at (dt/now))
+                (assoc :updated-at (ct/now))
                 (assoc :version version)
                 (update :color update-color presence)
                 (assoc :text-color "#000000")))
@@ -224,7 +224,7 @@
                           :vbox vbox
                           :vport vport
                           :point position
-                          :updated-at (dt/now)
+                          :updated-at (ct/now)
                           :page-id page-id))))))
 
 (def ^:private
@@ -301,7 +301,7 @@
    [:file-id ::sm/uuid]
    [:session-id ::sm/uuid]
    [:revn :int]
-   [:modified-at ::sm/inst]
+   [:modified-at ::ct/inst]
    [:changes ::cpc/changes]])
 
 (def ^:private check-library-change-params!

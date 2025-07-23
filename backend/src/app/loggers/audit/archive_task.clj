@@ -9,6 +9,7 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -16,7 +17,6 @@
    [app.http.client :as http]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [integrant.core :as ig]
    [lambdaisland.uri :as u]
    [promesa.exec :as px]))
@@ -55,7 +55,7 @@
   [{:keys [::uri] :as cfg} events]
   (let [token   (tokens/generate (::setup/props cfg)
                                  {:iss "authentication"
-                                  :iat (dt/now)
+                                  :iat (ct/now)
                                   :uid uuid/zero})
         body    (t/encode {:events events})
         headers {"content-type" "application/transit+json"

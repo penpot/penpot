@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-comment-test
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.http :as http]
@@ -14,7 +15,6 @@
    [app.rpc.commands.comments :as comments]
    [app.rpc.cond :as cond]
    [app.rpc.quotes :as-alias quotes]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]
@@ -78,7 +78,7 @@
 
           (let [{:keys [result] :as out} (th/command! data)]
             (t/is (th/success? out))
-            (t/is (dt/instant? (:modified-at result))))
+            (t/is (ct/inst? (:modified-at result))))
 
           (let [status' (th/db-get :comment-thread-status
                                    {:thread-id (:id thread)

@@ -10,9 +10,9 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [cuerdas.core :as str]))
 
@@ -95,7 +95,7 @@
                             "- Total: ~(::total params) (INCR ~(::incr params 1))\n")]
       (wrk/submit! {::db/conn conn
                     ::wrk/task :sendmail
-                    ::wrk/delay (dt/duration "30s")
+                    ::wrk/delay (ct/duration "30s")
                     ::wrk/max-retries 4
                     ::wrk/priority 200
                     ::wrk/dedupe true

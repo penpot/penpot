@@ -17,6 +17,7 @@
    [app.common.fressian :as fres]
    [app.common.logging :as l]
    [app.common.spec :as us]
+   [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -30,7 +31,6 @@
    [app.storage.tmp :as tmp]
    [app.tasks.file-gc]
    [app.util.events :as events]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.java.io :as jio]
    [clojure.set :as set]
@@ -434,7 +434,7 @@
 (defn read-import!
   "Do the importation of the specified resource in penpot custom binary
   format."
-  [{:keys [::bfc/input ::bfc/timestamp] :or {timestamp (dt/now)} :as options}]
+  [{:keys [::bfc/input ::bfc/timestamp] :or {timestamp (ct/now)} :as options}]
 
   (dm/assert!
    "expected input stream"
@@ -442,7 +442,7 @@
 
   (dm/assert!
    "expected valid instant"
-   (dt/instant? timestamp))
+   (ct/inst? timestamp))
 
   (let [version (read-header! input)]
     (read-import (assoc options ::version version ::bfc/timestamp timestamp))))
@@ -682,7 +682,7 @@
    (io/coercible? output))
 
   (let [id (uuid/next)
-        tp (dt/tpoint)
+        tp (ct/tpoint)
         ab (volatile! false)
         cs (volatile! nil)]
     (try
@@ -720,7 +720,7 @@
    (satisfies? jio/IOFactory input))
 
   (let [id (uuid/next)
-        tp (dt/tpoint)
+        tp (ct/tpoint)
         cs (volatile! nil)]
 
     (l/info :hint "import: started" :id (str id))
@@ -742,6 +742,6 @@
       (finally
         (l/info :hint "import: terminated"
                 :id (str id)
-                :elapsed (dt/format-duration (tp))
+                :elapsed (ct/format-duration (tp))
                 :error? (some? @cs))))))
 

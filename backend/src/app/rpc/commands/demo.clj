@@ -8,6 +8,7 @@
   "A demo specific mutations."
   (:require
    [app.common.exceptions :as ex]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
    [app.loggers.audit :as audit]
@@ -16,7 +17,6 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [buddy.core.codecs :as bc]
    [buddy.core.nonce :as bn]))
 
@@ -45,15 +45,13 @@
         params   {:email email
                   :fullname fullname
                   :is-active true
-                  :deleted-at (dt/in-future (cf/get-deletion-delay))
+                  :deleted-at (ct/in-future (cf/get-deletion-delay))
                   :password (profile/derive-password cfg password)
-                  :props {}}]
-
-
-    (let [profile (db/tx-run! cfg (fn [{:keys [::db/conn]}]
-                                    (->> (auth/create-profile! conn params)
-                                         (auth/create-profile-rels! conn))))]
-      (with-meta {:email email
-                  :password password}
-        {::audit/profile-id (:id profile)}))))
+                  :props {}}
+        profile  (db/tx-run! cfg (fn [{:keys [::db/conn]}]
+                                   (->> (auth/create-profile! conn params)
+                                        (auth/create-profile-rels! conn))))]
+    (with-meta {:email email
+                :password password}
+      {::audit/profile-id (:id profile)})))
 

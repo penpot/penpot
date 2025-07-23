@@ -8,6 +8,7 @@
   (:require
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.team :as types.team]
    [app.config :as cf]
    [app.db :as db]
@@ -23,8 +24,7 @@
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
    [app.tokens.spec.team-invitation :as-alias spec.team-invitation]
-   [app.util.services :as sv]
-   [app.util.time :as dt]))
+   [app.util.services :as sv]))
 
 (defmulti process-token (fn [_ _ claims] (:iss claims)))
 
@@ -126,7 +126,7 @@
 (def schema:team-invitation-claims
   [:map {:title "TeamInvitationClaims"}
    [:iss :keyword]
-   [:exp ::dt/instant]
+   [:exp ::ct/inst]
    [:profile-id ::sm/uuid]
    [:role ::types.team/role]
    [:team-id ::sm/uuid]
