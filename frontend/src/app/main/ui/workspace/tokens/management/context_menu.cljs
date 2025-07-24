@@ -467,7 +467,7 @@
 
         is-selected-inside-layout
         (mf/with-memo [token-type selected-shapes objects]
-          (when (= :spacing token-type)
+          (when (contains? #{:spacing :dimensions} token-type)
             (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes)))]
 
     [:ul {:class (stl/css :context-list)}
