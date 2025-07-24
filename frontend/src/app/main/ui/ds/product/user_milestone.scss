@@ -47,6 +47,12 @@
   color: var(--color-foreground-primary);
 }
 
+.milestone .lock-icon {
+  margin-left: 4px;
+  transform: scale(0.8);
+  color: var(--color-foreground-secondary);
+}
+
 .date {
   @include t.use-typography("body-small");
   grid-area: content;
