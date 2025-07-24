@@ -10,6 +10,8 @@
 
 ### :sparkles: New features & Enhancements
 
+- Continuous display of distances between elements when moving a layer with the keyboard [Taiga #1780](https://tree.taiga.io/project/penpot/issue/1780)
+
 ### :bug: Bugs fixed
 
 - Fix problem with booleans selection [Taiga #11627](https://tree.taiga.io/project/penpot/issue/11627)
