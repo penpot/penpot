@@ -8,6 +8,7 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.exceptions :as ex]
+   [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -15,6 +16,7 @@
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.fdata :as feat.fdata]
+   [app.features.file-migrations :refer [reset-migrations!]]
    [app.main :as-alias main]
    [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
@@ -26,6 +28,13 @@
    [app.util.services :as sv]
    [app.util.time :as dt]
    [cuerdas.core :as str]))
+
+(defn decode-row
+  [{:keys [migrations] :as row}]
+  (when row
+    (cond-> row
+      (some? migrations)
+      (assoc :migrations (db/decode-pgarray migrations)))))
 
 (def sql:get-file-snapshots
   "WITH changes AS (
@@ -74,10 +83,7 @@
   (assert (#{:system :user :admin} created-by)
           "expected valid keyword for created-by")
 
-  (let [conn
-        (db/get-connection cfg)
-
-        created-by
+  (let [created-by
         (name created-by)
 
         deleted-at
@@ -101,12 +107,15 @@
         (blob/encode (:data file))
 
         features
-        (db/encode-pgarray (:features file) conn "text")]
+        (into-array (:features file))
 
-    (l/debug :hint "creating file snapshot"
-             :file-id (str (:id file))
-             :id (str snapshot-id)
-             :label label)
+        migrations
+        (into-array (:migrations file))]
+
+    (l/dbg :hint "creating file snapshot"
+           :file-id (str (:id file))
+           :id (str snapshot-id)
+           :label label)
 
     (db/insert! cfg :file-change
                 {:id snapshot-id
@@ -114,6 +123,7 @@
                  :data data
                  :version (:version file)
                  :features features
+                 :migrations migrations
                  :profile-id profile-id
                  :file-id (:id file)
                  :label label
@@ -159,7 +169,17 @@
                                    {:file-id file-id
                                     :id snapshot-id}
                                    {::db/for-share true})
-                          (feat.fdata/resolve-file-data cfg))]
+                          (feat.fdata/resolve-file-data cfg)
+                          (decode-row))
+
+        ;; If snapshot has tracked applied migrations, we reuse them,
+        ;; if not we take a safest set of migrations as starting
+        ;; point. This is because, at the time of implementing
+        ;; snapshots, migrations were not taken into account so we
+        ;; need to make this backward compatible in some way.
+        file     (assoc file :migrations
+                        (or (:migrations snapshot)
+                            (fmg/generate-migrations-from-version 67)))]
 
     (when-not snapshot
       (ex/raise :type :not-found
@@ -180,11 +200,15 @@
            :label (:label snapshot)
            :snapshot-id (str (:id snapshot)))
 
-    ;; If the file was already offloaded, on restring the snapshot
-    ;; we are going to replace the file data, so we need to touch
-    ;; the old referenced storage object and avoid possible leaks
+    ;; If the file was already offloaded, on restoring the snapshot we
+    ;; are going to replace the file data, so we need to touch the old
+    ;; referenced storage object and avoid possible leaks
     (when (feat.fdata/offloaded? file)
       (sto/touch-object! storage (:data-ref-id file)))
+
+    ;; In the same way, on reseting the file data, we need to restore
+    ;; the applied migrations on the moment of taking the snapshot
+    (reset-migrations! conn file)
 
     (db/update! conn :file
                 {:data (:data snapshot)
@@ -253,7 +277,7 @@
                    :deleted-at nil}
                   {:id snapshot-id}
                   {::db/return-keys true})
-      (dissoc :data :features)))
+      (dissoc :data :features :migrations)))
 
 (defn- get-snapshot
   "Get a minimal snapshot from database and lock for update"
