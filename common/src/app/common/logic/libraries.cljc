@@ -2347,9 +2347,10 @@
                                         position
                                         page
                                         libraries
-                                        nil
+                                        (:id shape)
                                         (:parent-id shape)
                                         (:frame-id shape)
+                                        {(:id shape) (:id shape)} ;; keep the id of the original shape
                                         {:force-frame? true})
 
         new-shape (cond-> new-shape

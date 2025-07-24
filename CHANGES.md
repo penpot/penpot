@@ -13,6 +13,7 @@
 ### :bug: Bugs fixed
 
 - Fix problem with booleans selection [Taiga #11627](https://tree.taiga.io/project/penpot/issue/11627)
+- Fix bad swap slot after two swaps [Taiga #11659](https://tree.taiga.io/project/penpot/issue/11659)
 
 ## 2.9.0 (Unreleased)
 
