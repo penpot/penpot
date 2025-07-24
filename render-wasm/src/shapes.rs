@@ -22,6 +22,7 @@ mod strokes;
 mod svgraw;
 mod text;
 mod transform;
+mod shape_to_path;
 
 pub use blurs::*;
 pub use bools::*;
@@ -39,6 +40,7 @@ pub use strokes::*;
 pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
+pub use shape_to_path::*;
 
 use crate::math;
 use crate::math::{Bounds, Matrix, Point};
@@ -918,6 +920,14 @@ impl Shape {
                 path.transform(transform);
             }
         }
+    }
+
+    pub fn transformed(&self, transform: Option<&Matrix>) -> Self {
+        let mut shape = self.clone();
+        if let Some(transform) = transform {
+            shape.apply_transform(transform);
+        }
+        shape
     }
 
     pub fn is_absolute(&self) -> bool {

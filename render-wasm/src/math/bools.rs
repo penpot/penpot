@@ -1,5 +1,5 @@
 use super::Matrix;
-use crate::shapes::{BoolType, Path, Segment, Shape, StructureEntry, Type};
+use crate::shapes::{BoolType, Path, Segment, Shape, StructureEntry, Type, ToPath};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 use bezier_rs::{Bezier, BezierHandles, TValue};
@@ -336,47 +336,42 @@ pub fn update_bool_to_path(
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Shape {
     let mut shape = shape.clone();
+
     let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
-
-    let Some(shape_a) = shapes.get(&children_ids[1]) else {
-        return shape;
-    };
-    let Some(shape_b) = shapes.get(&children_ids[0]) else {
-        return shape;
-    };
-
-    let shape_a = &mut shape_a.clone();
-    let shape_b = &mut shape_b.clone();
-
-    if let Some(shape_modifiers) = modifiers.get(&shape_a.id) {
-        shape_a.apply_transform(shape_modifiers);
-    }
-
-    if let Some(shape_modifiers) = modifiers.get(&shape_b.id) {
-        shape_b.apply_transform(shape_modifiers);
-    }
-
-    let Type::Path(path_a) = &shape_a.shape_type else {
-        return shape;
-    };
-    let Type::Path(path_b) = &shape_b.shape_type else {
-        return shape;
-    };
-
-    let (segments_a, segments_b) = split_segments(path_a, path_b);
 
     let Type::Bool(bool_data) = &mut shape.shape_type else {
         return shape;
     };
 
-    let beziers = match bool_data.bool_type {
-        BoolType::Union => union(path_a, segments_a, path_b, segments_b),
-        BoolType::Difference => difference(path_a, segments_a, path_b, segments_b),
-        BoolType::Intersection => intersection(path_a, segments_a, path_b, segments_b),
-        BoolType::Exclusion => exclusion(segments_a, segments_b),
+    if children_ids.is_empty() {
+        return shape;
+    }
+
+    let Some(child) = shapes.get(&children_ids[children_ids.len() - 1]) else {
+        return shape;
     };
 
-    bool_data.path = Path::new(beziers_to_segments(&beziers));
+    let mut current_path = child.to_path(shapes, modifiers, structure);
 
+    for idx in (0 .. children_ids.len() - 1).rev() {
+        let Some(other) = shapes.get(&children_ids[idx]) else {
+            continue;
+        };
+        let other_path = other.to_path(shapes, modifiers, structure);
+
+        let (segs_a, segs_b) = split_segments(&current_path, &other_path);
+
+        let beziers = match bool_data.bool_type {
+            BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
+            BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
+            BoolType::Intersection => intersection(&current_path, segs_a, &other_path, segs_b),
+            BoolType::Exclusion => exclusion(segs_a, segs_b),
+        };
+
+        current_path = Path::new(beziers_to_segments(&beziers));
+    }
+
+    bool_data.path = current_path;
     shape
 }
+
