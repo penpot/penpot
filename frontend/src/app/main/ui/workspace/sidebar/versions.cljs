@@ -76,7 +76,7 @@
        (reverse)))
 
 (mf/defc version-entry
-  [{:keys [entry profile on-restore-version on-delete-version on-rename-version on-lock-version on-unlock-version editing?]}]
+  [{:keys [entry profile current-profile on-restore-version on-delete-version on-rename-version on-lock-version on-unlock-version editing?]}]
   (let [show-menu? (mf/use-state false)
 
         handle-open-menu
@@ -163,23 +163,37 @@
                           :onKeyDownInput handle-name-input-key-down}]
 
      [:& dropdown {:show @show-menu? :on-close handle-close-menu}
-      [:ul {:class (stl/css :version-options-dropdown)}
-       [:li {:class (stl/css :menu-option)
-             :role "button"
-             :on-click handle-rename-version} (tr "labels.rename")]
-       [:li {:class (stl/css :menu-option)
-             :role "button"
-             :on-click handle-restore-version} (tr "labels.restore")]
-       (if (:locked-by entry)
+      (let [current-user-id   (:id current-profile)
+            version-creator-id (:profile-id entry)
+            locked-by-id      (:locked-by entry)
+            is-version-creator? (= current-user-id version-creator-id)
+            is-locked?         (some? locked-by-id)
+            is-locked-by-me?   (= current-user-id locked-by-id)
+            can-rename?        (and is-version-creator? (or (not is-locked?) is-locked-by-me?))
+            can-lock?          (and is-version-creator? (not is-locked?))
+            can-unlock?        (and is-version-creator? is-locked-by-me?)
+            can-delete?        (and is-version-creator? (or (not is-locked?) is-locked-by-me?))]
+        [:ul {:class (stl/css :version-options-dropdown)}
+         (when can-rename?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-rename-version} (tr "labels.rename")])
          [:li {:class (stl/css :menu-option)
                :role "button"
-               :on-click handle-unlock-version} (tr "labels.unlock")]
-         [:li {:class (stl/css :menu-option)
-               :role "button"
-               :on-click handle-lock-version} (tr "labels.lock")])
-       [:li {:class (stl/css :menu-option)
-             :role "button"
-             :on-click handle-delete-version} (tr "labels.delete")]]]]))
+               :on-click handle-restore-version} (tr "labels.restore")]
+         (cond
+           can-unlock?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-unlock-version} (tr "labels.unlock")]
+           can-lock?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-lock-version} (tr "labels.lock")])
+         (when can-delete?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-delete-version} (tr "labels.delete")])])]]))
 
 (mf/defc snapshot-entry
   [{:keys [index is-expanded entry on-toggle-expand on-pin-snapshot on-restore-snapshot]}]
@@ -400,6 +414,7 @@
                                   :entry entry
                                   :editing? (= (:id entry) editing)
                                   :profile (get profiles (:profile-id entry))
+                                  :current-profile profile
                                   :on-rename-version handle-rename-version
                                   :on-restore-version handle-restore-version-pinned
                                   :on-delete-version handle-delete-version
