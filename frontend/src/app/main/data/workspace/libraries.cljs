@@ -980,9 +980,11 @@
                 (cll/generate-component-swap objects shape ldata page libraries id-new-component
                                              index target-cell keep-props-values keep-touched?))
 
-            changes (if keep-touched?
-                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-                      changes)]
+            [changes parents-of-swapped]
+            (if keep-touched?
+              (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
+              [changes []])
+            all-parents (into all-parents parents-of-swapped)]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)
