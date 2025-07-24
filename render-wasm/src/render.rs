@@ -415,6 +415,11 @@ impl RenderState {
         self.surfaces.canvas(surface_id).restore();
     }
 
+    pub fn apply_full_render_to_final_canvas(&mut self) {
+        emscripten::log!(emscripten::Log::Default, "apply_full_render_to_final_canvas");
+        self.surfaces.draw_into(SurfaceId::Full, SurfaceId::Target, None);
+    }
+
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
         let tile_rect = self.get_current_aligned_tile_bounds();
         self.surfaces.cache_current_tile_texture(
@@ -437,6 +442,58 @@ impl RenderState {
                 rect,
             );
         }
+    }
+
+    pub fn apply_drawing_to_full_render_canvas(&mut self, shape: Option<&Shape>) {
+        performance::begin_measure!("apply_drawing_to_full_render_canvas");
+
+        self.surfaces.draw_into(
+            SurfaceId::DropShadows,
+            SurfaceId::Full,
+            Some(&skia::Paint::default()),
+        );
+
+        self.surfaces.draw_into(
+            SurfaceId::Fills,
+            SurfaceId::Full,
+            Some(&skia::Paint::default()),
+        );
+
+        let mut render_overlay_below_strokes = false;
+        if let Some(shape) = shape {
+            render_overlay_below_strokes = shape.has_fills();
+        }
+
+        if render_overlay_below_strokes {
+            self.surfaces.draw_into(
+                SurfaceId::InnerShadows,
+                SurfaceId::Full,
+                Some(&skia::Paint::default()),
+            );
+        }
+
+        self.surfaces.draw_into(
+            SurfaceId::Strokes,
+            SurfaceId::Full,
+            Some(&skia::Paint::default()),
+        );
+
+        if !render_overlay_below_strokes {
+            self.surfaces.draw_into(
+                SurfaceId::InnerShadows,
+                SurfaceId::Full,
+                Some(&skia::Paint::default()),
+            );
+        }
+        let surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::DropShadows as u32
+            | SurfaceId::InnerShadows as u32;
+
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas().clear(skia::Color::TRANSPARENT);
+        });
+        performance::end_measure!("apply_drawing_to_full_render_canvas");
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
@@ -488,6 +545,8 @@ impl RenderState {
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
         });
+
+        performance::end_measure!("apply_drawing_to_render_canvas");
     }
 
     pub fn clear_focus_mode(&mut self) {
@@ -983,144 +1042,15 @@ impl RenderState {
         timestamp: i32,
     ) -> Result<(bool, bool), String> {
         emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:begin");
-        let result = self.render_shape_tree_full_uncached(
-            tree,
-            modifiers,
-            structure,
-            scale_content,
-            timestamp,
-        );
-
-        let (is_empty, should_stop_rendering) = result?;
-        emscripten::log!(emscripten::Log::Default, "is_empty {} should_stop_rendering {}", is_empty, should_stop_rendering);
-        if should_stop_rendering {
-            self.render_in_progress = false;
-            self.render_is_full = false;
-        }
-
-        emscripten::log!(emscripten::Log::Default, "dumping tiles");
-        while let Some(next_tile) = self.pending_tiles.pop() {
-            emscripten::log!(emscripten::Log::Default, "next_tile {} {}", next_tile.0, next_tile.1);
-            if self.surfaces.has_cached_tile_surface(next_tile) {
-                emscripten::log!(emscripten::Log::Default, "cached");
-                performance::begin_measure!("render_shape_tree::cached");
-                let tile_rect = self.get_current_tile_bounds();
-                self.surfaces.draw_cached_tile_surface(
-                    next_tile,
-                    tile_rect,
-                    self.background_color,
-                );
-                performance::end_measure!("render_shape_tree::cached");
-
-                if self.options.is_debug_visible() {
-                    debug::render_workspace_current_tile(
-                        self,
-                        "Cached".to_string(),
-                        next_tile,
-                        tile_rect,
-                    );
-                }
-            }
-            // self.update_render_context(&next_tile);
-            self.render_current_tile_to_final_canvas(false);
-        }
-
-        if self.options.is_debug_visible() {
-            debug::render(self);
-        }
-        debug::render_wasm_label(self);
-
-        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:end");
-
-        Ok((is_empty, should_stop_rendering))
-    }
-
-    pub fn render_shape_tree_full_uncached_shape_tile(
-        &mut self,
-        element: &Shape,
-        node_render_state: &NodeRenderState,
-        tile: &tiles::Tile,
-        modifiers: &HashMap<Uuid, Matrix>,
-        _structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        scale_content: &HashMap<Uuid, f32>,
-    ) -> bool {
-        let NodeRenderState {
-            id: _node_id,
-            visited_children,
-            clip_bounds: _clip_bounds,
-            visited_mask,
-            mask,
-        } = *node_render_state;
-
-        self.update_render_context(tile);
-
-        self.render_shape_enter(element, mask);
-        if !node_render_state.is_root() {
-            self.render_shape(
-                element,
-                modifiers.get(&element.id),
-                scale_content.get(&element.id)
-            );
-        } else {
-            self.apply_drawing_to_render_canvas(Some(element));
-        }
-        if visited_children {
-            self.render_shape_exit(element, visited_mask, modifiers.get(&element.id), scale_content.get(&element.id));
-            return false;
-        }
-        true
-    }
-
-    pub fn render_shape_tree_full_uncached_shape_tiles(
-        &mut self,
-        element: &Shape,
-        node_render_state: &NodeRenderState,
-        tiles: &HashSet<tiles::Tile>,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        scale_content: &HashMap<Uuid, f32>,
-    ) {
-        // We need to iterate over every tile of the element.
-        for tile in tiles.iter() {
-            emscripten::log!(emscripten::Log::Default,
-                "render_shape_tree_full_uncached::for::start {} {}",
-                tile.0, tile.1
-            );
-            self.render_shape_tree_full_uncached_shape_tile(
-                element,
-                node_render_state,
-                tile,
-                modifiers,
-                structure,
-                scale_content,
-            );
-
-            emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached::for::end");
-        }
-    }
-
-    pub fn render_shape_tree_full_uncached(
-        &mut self,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-        scale_content: &HashMap<Uuid, f32>,
-        timestamp: i32,
-    ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
-        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached::while::start");
+        let scale = self.get_scale();
         while let Some(node_render_state) = self.pending_nodes.next() {
-            emscripten::log!(emscripten::Log::Default,
-                "render_shape_tree_full_uncached::while::pop {} {}",
-                self.pending_nodes.len(),
-                self.pending_nodes.is_empty()
-            );
             let NodeRenderState {
                 id: node_id,
                 visited_children,
-                clip_bounds: _clip_bounds,
-                visited_mask: _visited_mask,
+                clip_bounds: _,
+                visited_mask,
                 mask,
             } = node_render_state;
 
@@ -1130,32 +1060,46 @@ impl RenderState {
                     .to_string(),
             )?;
 
-            /*
-            let mut paint = skia::Paint::default();
-            paint.set_color(Color::from_argb(255, 255, 0, 255));
-            paint.set_style(skia::PaintStyle::Fill);
-            paint.set_anti_alias(false);
-            paint.set_blend_mode(skia::BlendMode::SrcOver);
+            // If the shape is not in the tile set, then we update
+            // it.
+            if self.tiles.get_tiles_of(node_id).is_none() {
+                self.update_tiles_for(element);
+            }
 
-            self.surfaces.draw_rect_to(SurfaceId::Current, element, &paint);
- */
+            if visited_children {
+                self.render_shape_exit(
+                    element,
+                    visited_mask,
+                    modifiers.get(&node_id),
+                    scale_content.get(&element.id),
+                );
+                continue;
+            }
 
-            emscripten::log!(emscripten::Log::Default, "a {} {}", element.id, node_render_state.is_root());
             if !node_render_state.is_root() {
+                // No necesitamos esto porque en el primer render es imposible
+                // que se estén transformando elementos.
+                /*
                 let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
                 if let Some(modifier) = modifiers.get(&node_id) {
                     transformed_element.to_mut().apply_transform(modifier);
                 }
 
-                // let is_visible = transformed_element.extrect().intersects(self.render_area)
-                //     && !transformed_element.hidden
-                //     && !transformed_element.visually_insignificant(self.get_scale_mut());
-
-                let is_visible = true;
+                let is_visible = transformed_element.extrect().intersects(self.render_area)
+                    && !transformed_element.hidden
+                    && !transformed_element.visually_insignificant(scale);
 
                 if self.options.is_debug_visible() {
                     debug::render_debug_shape(self, &transformed_element, is_visible);
+                }
+                */
+
+                let is_visible = !element.hidden
+                                    && !element.visually_insignificant(scale);
+
+                if self.options.is_debug_visible() {
+                    debug::render_debug_shape(self, element, is_visible);
                 }
 
                 if !is_visible {
@@ -1163,38 +1107,27 @@ impl RenderState {
                 }
             }
 
-            emscripten::log!(emscripten::Log::Default, "b");
-            // If the shape is not in the tile set, then we update
-            // it.
-            if self.get_tiles_of(node_id).is_none() {
-                emscripten::log!(emscripten::Log::Default, "updating tiles for {}", element.id);
-                self.update_tiles_for(element);
-            }
-
-            emscripten::log!(emscripten::Log::Default, "c");
-            if !element.is_root() {
-                emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached_shape_tiles");
-                let mut tiles_opt = self.get_tiles_of(element.id);
-                let tiles = tiles_opt.as_mut().unwrap().clone();
-                self.render_shape_tree_full_uncached_shape_tiles(
+            self.render_shape_enter(element, mask);
+            if !node_render_state.is_root() && self.focus_mode.is_active() {
+                self.render_shape(
                     element,
-                    &node_render_state,
-                    &tiles,
-                    modifiers,
-                    structure,
-                    scale_content,
+                    modifiers.get(&element.id),
+                    scale_content.get(&element.id),
                 );
-
+            } else if visited_children {
+                // NOTA: Esto no debería usarse porque esta función utiliza el CURRENT.
+                self.apply_drawing_to_full_render_canvas(Some(element));
             }
 
-            emscripten::log!(emscripten::Log::Default, "d {}", element.is_recursive());
-            if !visited_children && element.is_recursive() {
-                self.pending_nodes.add_children_safeguard(element, mask);
+            // Set the node as visited_children before processing children
+            self.pending_nodes.add_children_safeguard(element, mask);
 
+            if element.is_recursive() {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
 
-                let mut children_ids = element.modified_children_ids(structure.get(&element.id), false);
+                let mut children_ids =
+                    element.modified_children_ids(structure.get(&element.id), false);
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
@@ -1205,26 +1138,22 @@ impl RenderState {
                     });
                 }
 
-                emscripten::log!(emscripten::Log::Default, "children_ids {}", children_ids.len());
                 for child_id in children_ids.iter() {
-                    emscripten::log!(emscripten::Log::Default, "children id {}", child_id);
                     self.pending_nodes.add_child(child_id, children_clip_bounds);
                 }
             }
 
-            emscripten::log!(emscripten::Log::Default, "e");
             // We try to avoid doing too many calls to get_time
             if self.should_stop_rendering(iteration, timestamp) {
-                emscripten::log!(emscripten::Log::Default, "should_stop_rendering {} {}", self.pending_nodes.is_empty(), self.pending_nodes.len() == 0);
-                return Ok((is_empty, self.pending_nodes.is_empty()));
-            }
-            if iteration == 100 {
-                return Ok((false, true));
+                return Ok((is_empty, true));
             }
             iteration += 1;
         }
-        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full_uncached::while::end");
-        Ok((is_empty, self.pending_nodes.is_empty()))
+
+        emscripten::log!(emscripten::Log::Default, "render_shape_tree_full:end");
+        self.render_in_progress = false;
+        self.apply_full_render_to_final_canvas();
+        Ok((false, true))
     }
 
     pub fn render_shape_tree_partial_uncached(
