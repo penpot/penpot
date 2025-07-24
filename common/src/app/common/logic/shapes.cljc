@@ -21,9 +21,12 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
+(def text-typography-attrs (set ctt/text-typography-attrs))
+
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
-   of the attribute now has been given directly, and does not come from the token."
+   of the attribute now has been given directly, and does not come from the token.
+  When applying a typography asset style we also unapply any typographic tokens."
   [changes objects changed-sub-attr]
   (let [new-objects     (pcb/get-objects changes)
         mod-obj-changes (->> (:redo-changes changes)
@@ -32,7 +35,11 @@
         text-changed-attrs
         (fn [shape]
           (let [new-shape (get new-objects (:id shape))
-                attrs (ctt/get-diff-attrs (:content shape) (:content new-shape))]
+                attrs (ctt/get-diff-attrs (:content shape) (:content new-shape))
+                ;; Unapply token when applying typography asset style
+                attrs (if (set/intersection text-typography-attrs attrs)
+                        (into attrs cto/typography-keys)
+                        attrs)]
             (apply set/union (map cto/shape-attr->token-attrs attrs))))
 
         check-attr (fn [shape changes attr]
