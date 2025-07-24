@@ -213,42 +213,42 @@
                           :fn #(emit-when-no-readonly (dw/vertical-order-selected :bottom))}
 
    :move-fast-up         {:tooltip (ds/shift ds/up-arrow)
-                          :command "shift+up"
+                          :command ["shift+up" "shift+alt+up" "alt+shift+up"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :up true))}
 
    :move-fast-down       {:tooltip (ds/shift ds/down-arrow)
-                          :command "shift+down"
+                          :command ["shift+down" "shift+alt+down" "alt+shift+down"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down true))}
 
    :move-fast-right      {:tooltip (ds/shift ds/right-arrow)
-                          :command "shift+right"
+                          :command ["shift+right" "shift+alt+right" "alt+shift+right"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :right true))}
 
    :move-fast-left       {:tooltip (ds/shift ds/left-arrow)
-                          :command "shift+left"
+                          :command ["shift+left" "shift+alt+left" "alt+shift+left"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :left true))}
 
    :move-unit-up         {:tooltip ds/up-arrow
-                          :command "up"
+                          :command ["up" "alt+up"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :up false))}
 
    :move-unit-down       {:tooltip ds/down-arrow
-                          :command "down"
+                          :command ["down" "alt+down"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down false))}
 
    :move-unit-left       {:tooltip ds/right-arrow
-                          :command "right"
+                          :command ["right" "alt+right"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :right false))}
 
    :move-unit-right      {:tooltip ds/left-arrow
-                          :command "left"
+                          :command ["left" "alt+left"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :left false))}
 
