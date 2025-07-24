@@ -48,6 +48,8 @@
 - Fix "Copy as SVG" generates different code from the Inspect panel [Taiga #11519](https://tree.taiga.io/project/penpot/issue/11519)
 - Fix overriden tokens in text copies are not preserved [Taiga #11486](https://tree.taiga.io/project/penpot/issue/11486)
 - Fix problem when changing between flex/grid layout [Taiga #11625](https://tree.taiga.io/project/penpot/issue/11625)
+- Fix opacity on stroke gradients [Taiga #11646](https://tree.taiga.io/project/penpot/issue/11646)
+- Fix change from gradient to solid color [Taiga #11648](https://tree.taiga.io/project/penpot/issue/11648)
 
 ## 2.8.1 (Unreleased)
 
