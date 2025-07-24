@@ -18,9 +18,11 @@ pub mod modifiers;
 mod paths;
 mod rects;
 mod shadows;
+mod shape_to_path;
 mod strokes;
 mod svgraw;
 mod text;
+pub mod text_paths;
 mod transform;
 
 pub use blurs::*;
@@ -35,6 +37,7 @@ pub use modifiers::*;
 pub use paths::*;
 pub use rects::*;
 pub use shadows::*;
+pub use shape_to_path::*;
 pub use strokes::*;
 pub use svgraw::*;
 pub use text::*;
@@ -928,6 +931,17 @@ impl Shape {
                 path.transform(transform);
             }
         }
+        if let Type::Text(text) = &mut self.shape_type {
+            text.transform(transform);
+        }
+    }
+
+    pub fn transformed(&self, transform: Option<&Matrix>) -> Self {
+        let mut shape = self.clone();
+        if let Some(transform) = transform {
+            shape.apply_transform(transform);
+        }
+        shape
     }
 
     pub fn is_absolute(&self) -> bool {
