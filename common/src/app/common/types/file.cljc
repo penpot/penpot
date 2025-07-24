@@ -764,6 +764,20 @@
                             (absorb-typographies used-typographies))]
     file-data))
 
+(defn find-component-instances
+  "Returns a map of page/component id to the ids of the instances of the given component in each container (page or deleted component) of the file."
+  [file-data component-id]
+  (let [file-id (:id file-data)]
+    (reduce (fn [acc container]
+              (let [inst-ids (->> (ctn/shapes-seq container)
+                                  (filter #(ctk/instance-of? % file-id component-id))
+                                  (map :id)
+                                  (into []))]
+                (if (seq inst-ids)
+                  (assoc acc (:id container) inst-ids)
+                  acc)))
+            {} (object-containers-seq file-data))))
+
 ;; Debug helpers
 
 (declare dump-shape-component-info)
