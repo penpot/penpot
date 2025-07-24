@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.uuid :as uuid]
+   [app.main.data.workspace :as udw]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
@@ -49,20 +50,23 @@
 
         handle-add
         (mf/use-fn
-         (mf/deps change!)
+         (mf/deps change! ids)
          (fn []
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (change! #(assoc % :blur (create-blur)))))
 
         handle-delete
         (mf/use-fn
-         (mf/deps change!)
+         (mf/deps change! ids)
          (fn []
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (change! #(dissoc % :blur))))
 
         handle-change
         (mf/use-fn
-         (mf/deps change!)
+         (mf/deps change! ids)
          (fn [value]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (change! #(cond-> %
                        (not (contains? % :blur))
                        (assoc :blur (create-blur))
@@ -72,8 +76,9 @@
 
         handle-toggle-visibility
         (mf/use-fn
-         (mf/deps change!)
+         (mf/deps change! ids)
          (fn []
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
            (change! #(update-in % [:blur :hidden] not))))]
 
     [:div {:class (stl/css :element-set)}

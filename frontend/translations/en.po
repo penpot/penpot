@@ -4328,10 +4328,10 @@ msgstr "Advanced security, activity logs, dedicated support and more."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgid "subscription.dashboard.power-up.professional.bottom"
 msgstr ""
-"Get extra editors and storage, file backup and more with the Unlimited "
-"plan[Power up|target:self](%s)"
+"Get extra editors and storage, file recovery and more with the Unlimited "
+"plan. [Power up|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4365,10 +4365,10 @@ msgstr "Enterprise plan (trial)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgid "subscription.dashboard.power-up.unlimited.bottom"
 msgstr ""
-"Get advanced security, activity logs, dedicated support and more. Take a "
-"look to the[Enterprise plan.|target:self](%s)"
+"Get extra editors, more storage and backup, advanced security and more. "
+"[Take a look to the Enterprise plan.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4422,16 +4422,16 @@ msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (trial)"
 
 #: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Activity logs"
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr "Unlimited storage and 90-day autosave versions and file recovery"
 
 #: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
 msgid "subscription.settings.enterprise.security"
 msgstr "Advanced security"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Dedicated support"
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Capped monthly bill"
 
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
@@ -4500,8 +4500,8 @@ msgid "subscription.settings.professional.projects-files"
 msgstr "Unlimited projects, files and drafts"
 
 #: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10GB of storage and 7-day autosave versions"
+msgid "subscription.settings.professional.storage-autosave"
+msgstr "10GB of storage and 7-day autosave versions and file recovery"
 
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
@@ -4545,11 +4545,6 @@ msgstr "You've been supporting us with this plan since: %s"
 msgid "subscription.settings.try-it-free"
 msgstr "Try it free for 14 days"
 
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "Try it free for 14 days"
-
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
 msgstr "Unlimited"
@@ -4563,8 +4558,8 @@ msgid "subscription.settings.unlimited.bill"
 msgstr "Capped monthly bill"
 
 #: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr "25GB of storage and 30-day autosave versions and file backup"
+msgid "subscription.settings.unlimited.storage-autosave"
+msgstr "25GB of storage and 30-day autosave versions and file recovery"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -7541,9 +7536,21 @@ msgstr "Could not resolve reference token with the name: %s"
 msgid "workspace.tokens.token-value"
 msgstr "Value"
 
+#: src/app/main/ui/workspace/tokens/form.cljs:560
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Font family"
+
 #: src/app/main/ui/workspace/tokens/form.cljs:559
 msgid "workspace.tokens.token-value-enter"
 msgstr "Enter a value or alias with {alias}"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:689
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Font family or list of fonts separated by comma (,)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:688
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Select font family"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:336
 msgid "workspace.tokens.tokens-section-title"

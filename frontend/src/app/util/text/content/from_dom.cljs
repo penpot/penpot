@@ -7,7 +7,7 @@
 (ns app.util.text.content.from-dom
   (:require
    [app.common.data :as d]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.util.text.content.styles :as styles]))
 
 (defn is-text-node

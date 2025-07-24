@@ -10,7 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as txt]
-   [app.common.types.color :as types.color]
+   [app.common.types.fills :as types.fills]
+   [app.common.types.text :as types.text]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -57,7 +58,8 @@
         file-library-workspace      (get (mf/deref refs/files) (:typography-ref-file style))
         typography-external-lib (get-in file-library-workspace [:data :typographies (:typography-ref-id style)])
 
-        color-format       (mf/use-state :hex)
+        color-format!       (mf/use-state :hex)
+        color-format* (deref color-format!)
 
         typography (or (get (or typography-library file-typographies-viewer file-typographies-workspace) (:typography-ref-id style)) typography-external-lib)]
 
@@ -65,10 +67,10 @@
      (when (:fills style)
        (for [[idx fill] (map-indexed vector (:fills style))]
          [:& color-row {:key idx
-                        :format @color-format
-                        :color (types.color/fill->color fill)
+                        :format @color-format*
+                        :color (types.fills/fill->color fill)
                         :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
-                        :on-change-format #(reset! color-format %)}]))
+                        :on-change-format #(reset! color-format* %)}]))
 
      (when (:typography-ref-id style)
        [:div {:class (stl/css :text-row)}
@@ -173,7 +175,7 @@
   (let [style-text-blocks (->> (:content shape)
                                (txt/content->text+styles)
                                (remove (fn [[_ text]] (str/empty? (str/trim text))))
-                               (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))]
+                               (mapv (fn [[style text]] (vector (merge (types.text/get-default-text-attrs) style) text))))]
 
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
       [:& typography-block {:key idx

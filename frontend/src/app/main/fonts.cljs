@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -77,6 +77,15 @@
      (= (select-keys font (keys data))
         data))
    (vals @fontsdb)))
+
+(defn find-font-family
+  "Case insensitive lookup of font-family."
+  [family]
+  (let [family' (str/lower family)]
+    (d/seek
+     (fn [{:keys [family]}]
+       (= family' (str/lower family)))
+     (vals @fontsdb))))
 
 (defn resolve-variants
   [id]
@@ -295,7 +304,7 @@
           (let [current-font
                 (if (some? font-id)
                   (select-keys node [:font-id :font-variant-id])
-                  (select-keys txt/default-text-attrs [:font-id :font-variant-id]))]
+                  (select-keys txt/default-typography [:font-id :font-variant-id]))]
             (conj result current-font)))
         #{})))
 

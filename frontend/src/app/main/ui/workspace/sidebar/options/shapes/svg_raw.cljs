@@ -6,8 +6,8 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.common.types.color :as cc]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.main.ui.hooks :as hooks]

@@ -12,9 +12,9 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
-   [app.common.text :as txt]
    [app.common.types.color :as ctc]
    [app.common.types.shape :as cts]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as ch]
    [app.main.data.common :as dcm]
@@ -174,7 +174,7 @@
               file-id (:current-file-id @st/state)
               shared-libs (:files @st/state)]
 
-          (->> (ctc/extract-all-colors shapes file-id shared-libs)
+          (->> (dwc/extract-all-colors shapes file-id shared-libs)
                (group-by :attrs)
                (format/format-array format/format-color-result)))))
 
@@ -202,7 +202,7 @@
                      (mapcat #(cfh/get-children-with-self objects %)))
 
                 shapes-by-color
-                (->> (ctc/extract-all-colors shapes file-id shared-libs)
+                (->> (dwc/extract-all-colors shapes file-id shared-libs)
                      (group-by :attrs))]
 
             (when-let [operations (get shapes-by-color old-color)]
@@ -410,7 +410,7 @@
           :else
           (let [objects (u/locate-objects)
                 shapes (into [] (map u/proxy->shape) shapes)]
-            (cg/generate-markup-code objects type shapes)))))
+            (cg/generate-formatted-markup-code objects type shapes)))))
 
     :generateStyle
     (fn [shapes options]

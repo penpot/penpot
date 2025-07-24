@@ -356,7 +356,7 @@
                   (first children)
                   (last children))
           fills (if (and (contains? head :svg-attrs) (empty? (:fills head)))
-                  types.path/default-bool-fills
+                  (types.path/get-default-bool-fills)
                   (get head :fills))]
       (-> bool-shape
           (assoc :fills fills)

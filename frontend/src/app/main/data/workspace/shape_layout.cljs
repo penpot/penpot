@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.shape-layout
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
@@ -16,6 +15,7 @@
    [app.common.geom.shapes.flex-layout :as flex]
    [app.common.geom.shapes.grid-layout :as grid]
    [app.common.logic.libraries :as cll]
+   [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.modifiers :as ctm]
    [app.common.types.shape.layout :as ctl]

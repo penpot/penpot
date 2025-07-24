@@ -174,12 +174,15 @@
             add-component-copy
             (fn [objs id shape]
               (let [component (ctkl/get-component fdata (:component-id shape))
+                    parent-id (when (not= (:parent-id shape) uuid/zero) (:parent-id shape))
                     [new-shape new-shapes]
                     (ctn/make-component-instance page
                                                  component
                                                  fdata
                                                  (gpt/point (:x shape) (:y shape))
-                                                 {:keep-ids? true :force-frame-id (:frame-id shape)})
+                                                 {:keep-ids? true
+                                                  :force-frame-id (:frame-id shape)
+                                                  :force-parent-id parent-id})
                     children (into {} (map (fn [shape] [(:id shape) shape]) new-shapes))
                     objs (assoc objs id new-shape)]
                 (merge objs children)))
@@ -201,10 +204,8 @@
                         (assoc :id id)
                         (assoc :objects
                                objects))
-
             changes (-> (pcb/empty-changes it)
                         (pcb/add-page id page))]
-
         (rx/of (dch/commit-changes changes))))))
 
 (s/def ::rename-page

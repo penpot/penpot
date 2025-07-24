@@ -17,19 +17,18 @@
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
    [app.common.spec :as us]
-   [app.common.text :as txt]
-   [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
+   [app.common.types.library :as ctl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
-   [app.common.types.shape.layout :as ctl]
-   [app.common.types.text :as cttx]
+   [app.common.types.shape.layout :as ctsl]
+   [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.typography :as cty]
    [app.common.types.variant :as ctv]
@@ -215,8 +214,8 @@
           [(:frame-id new-main-instance-shape)]
           (fn [shape objects]
             (cond-> shape
-              (ctl/grid-layout? shape)
-              (ctl/assign-cells objects)))
+              (ctsl/grid-layout? shape)
+              (ctsl/assign-cells objects)))
           {:with-objects? true}))]))
 
 
@@ -277,7 +276,7 @@
          (->> ids-map vals (some #(= % (:parent-id first-shape))))
 
          changes
-         (if (and (ctl/grid-layout? objects (:parent-id first-shape)) (not duplicated-parent?))
+         (if (and (ctsl/grid-layout? objects (:parent-id first-shape)) (not duplicated-parent?))
            (let [target-cell (-> position meta :cell)
 
                  [row column]
@@ -288,10 +287,10 @@
                   [(:parent-id first-shape)]
                   (fn [shape objects]
                     (-> shape
-                        (ctl/assign-cells objects)
+                        (ctsl/assign-cells objects)
                         (cond-> (and (some? row) (some? column))
-                          (-> (ctl/push-into-cell [(:id first-shape)] row column)
-                              (ctl/assign-cells objects)))))
+                          (-> (ctsl/push-into-cell [(:id first-shape)] row column)
+                              (ctsl/assign-cells objects)))))
                   {:with-objects? true})
                  (pcb/reorder-grid-children [(:parent-id first-shape)])))
            changes)
@@ -576,8 +575,8 @@
 (defmethod uses-assets? :colors
   [_ color-id shape library-id]
   (if (nil? color-id)
-    (ctc/uses-library-colors? shape library-id)
-    (ctc/uses-library-color? shape library-id color-id)))
+    (cts/uses-library-colors? shape library-id)
+    (cts/uses-library-color? shape library-id color-id)))
 
 (defmethod uses-assets? :typographies
   [_ typography-id shape library-id]
@@ -605,7 +604,7 @@
   (let [library-colors (get-in libraries [library-id :data :colors])]
     (pcb/update-shapes changes
                        [(:id shape)]
-                       #(ctc/sync-shape-colors % library-id library-colors))))
+                       #(ctl/sync-colors % library-id library-colors))))
 
 (defmethod generate-sync-shape :typographies
   [_ changes library-id container shape libraries _]
@@ -854,7 +853,7 @@
                           container
                           omit-touched?)
 
-            (ctl/flex-layout? shape-main)
+            (ctsl/flex-layout? shape-main)
             (update-flex-child-copy-attrs shape-main
                                           shape-inst
                                           library
@@ -973,7 +972,7 @@
 
           changes
           (cond-> changes
-            (ctl/grid-layout? shape-inst)
+            (ctsl/grid-layout? shape-inst)
             (update-grid-copy-attrs
              (:id shape-inst)
              shape-main
@@ -1063,14 +1062,14 @@
                                         component-container
                                         {:copy-touched? true}))
 
-                    (ctl/flex-layout? shape-main)
+                    (ctsl/flex-layout? shape-main)
                     (update-flex-child-main-attrs shape-main
                                                   shape-inst
                                                   component-container
                                                   container
                                                   omit-touched?)
 
-                    (ctl/grid-layout? shape-main)
+                    (ctsl/grid-layout? shape-main)
                     (update-grid-main-attrs shape-main
                                             shape-inst
                                             component-container
@@ -1665,27 +1664,61 @@
                                         :shapes all-parents})]))))
 
 
-(defn- text-partial-change-value
-  [touched-content untouched-content touched]
-  (cond
-    (touched :text-content-structure-same-attrs)
-    (if (touched :text-content-attribute)
-      ;; Both structure and attrs has been touched, keep the
+(defn- text-change-value
+  [touched-content   ;; The :content of the copy text before updating
+   untouched-content ;; The :content of the main component
+   touched]
+
+  (let [main-comps-diff (txt/get-diff-type touched-content untouched-content)
+        diff-structure? (contains? main-comps-diff :text-content-structure)
+
+        touched-attrs       (txt/get-first-paragraph-text-attrs touched-content)
+        ;; Have touched content an uniform style?
+        thed-unif-style?    (txt/equal-attrs? touched-content touched-attrs)
+
+        untouched-attrs     (txt/get-first-paragraph-text-attrs untouched-content)
+        ;; Have untouched content an uniform style?
+        untched-unif-style? (txt/equal-attrs? untouched-content untouched-attrs)]
+    (cond
+      ;; Both text and attrs has been touched, keep the
       ;; touched-content
+      (and (touched :text-content-text) (touched :text-content-attribute))
       touched-content
-      ;; Keep the touched-content structure and texts, update
-      ;; its attrs to make them like the untouched-content
-      (cttx/copy-attrs-keys touched-content (cttx/get-first-paragraph-text-attrs untouched-content)))
 
-    (touched :text-content-text)
-    ;; Keep the texts touched in touched-content, so copy the
-    ;; texts from touched-content into untouched-content
-    (cttx/copy-text-keys touched-content untouched-content)
+      (touched :text-content-structure)
+      ;; Special case for adding or removing paragraphs:
+      ;; If the structure has been touched, but the attrs don't,
+      ;; and both have uniform attributes, we keep the touched-content structure and
+      ;; texts, updating its attrs to make them like the untouched-content
+      (if (and (not (touched :text-content-attribute)) thed-unif-style? untched-unif-style?)
+        (txt/copy-attrs-keys touched-content untouched-attrs)
+        ;; In other case, we keep the touched content
+        touched-content)
 
-    (touched :text-content-attribute)
-    ;; Keep the attrs touched in touched-content, so copy the
-    ;; texts from untouched-content into touched-content
-    (cttx/copy-text-keys untouched-content touched-content)))
+      (touched :text-content-text)
+      ;; Keep the texts touched in touched-content, so copy the
+      ;; texts from touched-content into untouched-content
+      (txt/copy-text-keys touched-content untouched-content)
+
+      (touched :text-content-attribute)
+      ;; The untouched content has a different structure, but the touched content had't
+      ;; touched the structure
+      (if diff-structure?
+        ;; If both have uniform attributes, we keep the untouched-content structure and
+        ;; texts, updating its attrs to make them like the touched-content
+        (if (and thed-unif-style? untched-unif-style?)
+          (txt/copy-attrs-keys untouched-content touched-attrs)
+          ;; In other case, we keep the touched content
+          touched-content)
+
+        ;; Keep the attrs touched in touched-content, so copy the
+        ;; texts from untouched-content into touched-content
+        (txt/copy-text-keys untouched-content touched-content))
+
+
+      ;; Nothing is touched
+      :else
+      untouched-content)))
 
 (defn- add-update-attr-operations
   [attr dest-shape roperations uoperations attr-val]
@@ -1699,34 +1732,6 @@
                     :ignore-touched true}]
     [(conj roperations roperation)
      (conj uoperations uoperation)]))
-
-(defn- is-text-partial-change?
-  "Check if the attr update is a text partial change"
-  [untouched-shape touched-shape]
-  (let [touched             (get touched-shape :touched #{})
-        partial-text-keys   [:text-content-attribute :text-content-text]
-        active-keys         (filter touched partial-text-keys)
-        untouched-content   (:content untouched-shape)
-        untouched-attrs     (cttx/get-first-paragraph-text-attrs untouched-content)
-        eq-untouched-attrs? (cttx/equal-attrs? untouched-content untouched-attrs)]
-    (and
-     (or
-     ;; One and only one of the keys is pressent
-      (= 1 (count active-keys))
-      (and
-       (not (touched :text-content-attribute))
-       (touched :text-content-structure-same-attrs)))
-
-     (or
-      ;; Both has the same structure
-      (cttx/equal-structure? untouched-content (:content touched-shape))
-
-      ;; The origin and destiny have different structures, but each have the same attrs
-      ;; for all the items on its content tree
-      (and
-       eq-untouched-attrs?
-       (touched :text-content-structure-same-attrs))))))
-
 
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
@@ -1784,13 +1789,13 @@
                 ;; and attrs (bold, font, etc) are in the same attr :content.
                 ;; If only one of them is touched, we want to adress this case and
                 ;; only update the untouched one
-                text-partial-change?
-                (when (and
-                       omit-touched?
-                       (cfh/text-shape? origin-shape)
-                       (= :content attr)
-                       (touched attr-group))
-                  (is-text-partial-change? origin-shape dest-shape))
+                text-content-change?
+                (and
+                 omit-touched?
+                 (cfh/text-shape? origin-shape)
+                 (= :content attr)
+                 (touched attr-group))
+
 
                 skip-operations?
                 (or (= (get origin-shape attr) (get dest-shape attr))
@@ -1799,7 +1804,7 @@
                          ;; When it is a text-partial-change, we should generate operations
                          ;; even when omit-touched? is true, but updating only the text or
                          ;; the attributes, omiting the other part
-                         (not text-partial-change?)))
+                         (not text-content-change?)))
 
                 attr-val (when-not skip-operations?
                            (cond
@@ -1808,10 +1813,10 @@
                              reset-pos-data?
                              nil
 
-                             text-partial-change?
-                             (text-partial-change-value (:content dest-shape)
-                                                        (:content origin-shape)
-                                                        touched)
+                             text-content-change?
+                             (text-change-value (:content dest-shape)
+                                                (:content origin-shape)
+                                                touched)
 
                              :else
                              (get origin-shape attr)))
@@ -1824,7 +1829,7 @@
                 ;; On a text-partial-change, we want to force a position-data reset
                 ;; so it's calculated again
                 [roperations uoperations]
-                (if (and text-partial-change? (not skip-operations?))
+                (if (and text-content-change? (not skip-operations?))
                   (add-update-attr-operations :position-data dest-shape roperations uoperations nil)
                   [roperations uoperations])
 
@@ -1845,20 +1850,20 @@
   (let [;; We need the differences between the contents on the main
         ;; components. current-content is the content of a clean copy,
         ;; so for all effects its the same as the content on its main
-        main-comps-diff      (cttx/get-diff-type ref-content current-content)
+        main-comps-diff      (txt/get-diff-type ref-content current-content)
         can-keep-text?       (not (contains? main-comps-diff :text-content-text))
         can-keep-attr?       (not (contains? main-comps-diff :text-content-attribute))
         main-diff-structure? (contains? main-comps-diff :text-content-structure)
 
-        current-attrs        (cttx/get-first-paragraph-text-attrs current-content)
+        current-attrs        (txt/get-first-paragraph-text-attrs current-content)
         ;; Have current content an uniform style?
-        curr-unif-style?     (cttx/equal-attrs? current-content current-attrs)
-        prev-attrs           (cttx/get-first-paragraph-text-attrs prev-content)
+        curr-unif-style?     (txt/equal-attrs? current-content current-attrs)
+        prev-attrs           (txt/get-first-paragraph-text-attrs prev-content)
         ;; Have prev content an uniform style?
-        prev-unif-style?     (cttx/equal-attrs? prev-content prev-attrs)
-        ref-attrs            (cttx/get-first-paragraph-text-attrs ref-content)
+        prev-unif-style?     (txt/equal-attrs? prev-content prev-attrs)
+        ref-attrs            (txt/get-first-paragraph-text-attrs ref-content)
         ;; Have ref content an uniform style?
-        ref-unif-style?      (cttx/equal-attrs? ref-content ref-attrs)]
+        ref-unif-style?      (txt/equal-attrs? ref-content ref-attrs)]
     (cond
       ;; When the main components have a difference in structure
       ;; (different number of paragraph or text entries)
@@ -1872,7 +1877,7 @@
                ref-unif-style?
                prev-unif-style?
                (= ref-attrs current-attrs))
-        (cttx/copy-attrs-keys current-content prev-attrs)
+        (txt/copy-attrs-keys current-content prev-attrs)
         ;; In any other case of structure change, we discard all
         ;; the overrides and keep the content of the current-shape
         current-content)
@@ -1896,8 +1901,8 @@
            curr-unif-style?
            prev-unif-style?)
       (if can-keep-text?
-        (cttx/copy-attrs-keys prev-content current-attrs)
-        (cttx/copy-attrs-keys current-content prev-attrs))
+        (txt/copy-attrs-keys prev-content current-attrs)
+        (txt/copy-attrs-keys current-content prev-attrs))
 
       ;; In any other case of structure change, we discard all
       ;; the overrides and keep the content of the current-shape
@@ -1909,14 +1914,14 @@
       ;; previous-shape over the attrs of current-shape
       (and
        (touched :text-content-text) can-keep-text?)
-      (cttx/copy-text-keys prev-content current-content)
+      (txt/copy-text-keys prev-content current-content)
 
       ;; When there is a change on :text-content-attribute,
       ;; and we can keep it, we copy the texts from current-shape
       ;; over the attrs of previous-shape
       (and
        (touched :text-content-attribute) can-keep-attr?)
-      (cttx/copy-text-keys current-content prev-content)
+      (txt/copy-text-keys current-content prev-content)
 
       ;; In any other case, we discard all the overrides
       ;; and keep the content of the current-shape
@@ -2152,11 +2157,11 @@
                           (update cell :shapes #(filterv child? %)))))))
                ;; Take cells from main and remap the shapes to assign it to the copy
                copy-cells (-> shape-copy :layout-grid-cells (remove-orphan-cells shape-copy))
-               main-cells (-> shape-main (ctl/remap-grid-cells ids-map) :layout-grid-cells)]
+               main-cells (-> shape-main (ctsl/remap-grid-cells ids-map) :layout-grid-cells)]
            (-> shape-copy
                (assoc :layout-grid-cells
-                      (ctl/merge-cells main-cells copy-cells omit-touched?))
-               (ctl/assign-cells objects))))
+                      (ctsl/merge-cells main-cells copy-cells omit-touched?))
+               (ctsl/assign-cells objects))))
        {:ignore-touched true :with-objects? true})))
 
 (defn- update-grid-main-attrs
@@ -2180,7 +2185,7 @@
              [(:id shape-main)]
              (fn [shape-main]
                ;; Take cells from copy and remap the shapes to assign it to the copy
-               (let [new-cells (-> (ctl/remap-grid-cells shape-copy ids-map) :layout-grid-cells)]
+               (let [new-cells (-> (ctsl/remap-grid-cells shape-copy ids-map) :layout-grid-cells)]
                  (assoc shape-main :layout-grid-cells new-cells)))
              {:ignore-touched true}))]
     (pcb/concat-changes changes new-changes)))
@@ -2293,8 +2298,8 @@
         parent-id (:parent-id shape)
 
         insert-before?
-        (and (ctl/flex-layout? objects parent-id)
-             (not (ctl/reverse? objects parent-id)))
+        (and (ctsl/flex-layout? objects parent-id)
+             (not (ctsl/reverse? objects parent-id)))
 
         objects
         (-> objects
@@ -2310,7 +2315,7 @@
                     (pcb/with-objects objects)
                     (pcb/resize-parents new-objects-ids)
                     ;; Fix the order of the children inside the parent
-                    (cond-> (ctl/any-layout? objects parent-id)
+                    (cond-> (ctsl/any-layout? objects parent-id)
                       (pcb/reorder-children parent-id (get-in objects [parent-id :shapes]))))]
     (assoc changes :file-id library-id)))
 
@@ -2647,8 +2652,8 @@
                (gsh/move delta)
                (d/update-when :interactions #(ctsi/remap-interactions % ids-map objects))
 
-               (cond-> (ctl/grid-layout? obj)
-                 (ctl/remap-grid-cells ids-map))
+               (cond-> (ctsl/grid-layout? obj)
+                 (ctsl/remap-grid-cells ids-map))
 
                (cond-> (ctk/is-variant-container? parent)
                  (assoc :variant-id parent-id))
@@ -2664,8 +2669,8 @@
            ;; We want the first added object to touch it's parent, but not subsequent children
            changes (-> (pcb/add-object changes new-obj {:ignore-touched (and duplicating-component? child?)})
                        (pcb/amend-last-change #(assoc % :old-id (:id obj)))
-                       (cond-> (ctl/grid-layout? objects (:parent-id obj))
-                         (-> (pcb/update-shapes [(:parent-id obj)] ctl/assign-cells {:with-objects? true})
+                       (cond-> (ctsl/grid-layout? objects (:parent-id obj))
+                         (-> (pcb/update-shapes [(:parent-id obj)] ctsl/assign-cells {:with-objects? true})
                              (pcb/reorder-grid-children [(:parent-id obj)]))))
 
            changes (cond-> changes

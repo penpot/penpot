@@ -19,7 +19,6 @@
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logic.libraries :as cll]
    [app.common.schema :as sm]
-   [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
@@ -28,6 +27,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.text :as types.text]
+   [app.common.types.text :as txt]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -346,8 +346,8 @@
                  (gsh/translate-to-frame % (get objects parent-frame-id)))
 
             shapes          (mapv maybe-translate selected)
-            svg             (svg/generate-markup objects shapes)]
-        (wapi/write-to-clipboard svg)))))
+            svg-formatted   (svg/generate-formatted-markup objects shapes)]
+        (wapi/write-to-clipboard svg-formatted)))))
 
 (defn copy-selected-css
   []
@@ -925,7 +925,7 @@
   (let [paragraphs (->> (str/lines text)
                         (map str/trim)
                         (mapv #(hash-map :type "paragraph"
-                                         :children [(merge txt/default-text-attrs {:text %})])))]
+                                         :children [(merge (txt/get-default-text-attrs) {:text %})])))]
     ;; if text is composed only by line breaks paragraphs is an empty list and should be nil
     (when (d/not-empty? paragraphs)
       {:type "root"

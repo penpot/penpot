@@ -27,6 +27,7 @@
     :border-radius "corner-radius"
     :color "drop"
     :boolean "boolean-difference"
+    :font-family "text-font-family"
     :font-size "text-font-size"
     :letter-spacing "text-letterspacing"
     :opacity "percentage"
@@ -42,7 +43,7 @@
 
 (mf/defc token-group*
   {::mf/private true}
-  [{:keys [type tokens selected-shapes active-theme-tokens is-open]}]
+  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens is-open]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
         editing-ref  (mf/deref refs/workspace-editor-state)
@@ -63,7 +64,7 @@
                       {:type :token
                        :position (dom/get-client-position event)
                        :errors (:errors token)
-                       :token-name (:name token)}))))
+                       :token-id (:id token)}))))
 
         on-toggle-open-click
         (mf/use-fn
@@ -115,6 +116,7 @@
              {:key (:name token)
               :token token
               :selected-shapes selected-shapes
+              :is-selected-inside-layout is-selected-inside-layout
               :active-theme-tokens active-theme-tokens
               :on-click on-token-pill-click
               :on-context-menu on-context-menu}])]])]]))

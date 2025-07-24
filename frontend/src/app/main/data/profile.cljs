@@ -20,7 +20,6 @@
    [app.plugins.register :as plugins.register]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
-   [app.util.theme :as theme]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -159,9 +158,6 @@
       (update-in state [:profile :theme]
                  (fn [current]
                    (let [current (cond
-                                   (= current "system")
-                                   (theme/get-system-theme)
-
                                    ;; NOTE: this is a workaround for
                                    ;; the old data on the database
                                    ;; where whe have `default` value
@@ -172,7 +168,8 @@
                                    current)]
                      (case current
                        "dark"   "light"
-                       "light"  "dark"
+                       "light"  "system"
+                       "system" "dark"
                        ; Failsafe for missing data
                        "dark")))))
 

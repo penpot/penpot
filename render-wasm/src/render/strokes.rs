@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
-use skia_safe::{self as skia, textlayout::Paragraph, ImageFilter, RRect};
+use skia_safe::{self as skia, textlayout::ParagraphBuilder, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
 use crate::render::text::{self};
@@ -479,14 +479,16 @@ fn draw_image_stroke_in_container(
     canvas.restore();
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn render(
     render_state: &mut RenderState,
     shape: &Shape,
     stroke: &Stroke,
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
-    paragraphs: Option<&[Vec<Paragraph>]>,
+    paragraphs: Option<&mut Vec<Vec<ParagraphBuilder>>>,
     antialias: bool,
+    paint: Option<&skia::Paint>,
 ) {
     let scale = render_state.get_scale();
     let canvas = render_state
@@ -527,6 +529,7 @@ pub fn render(
                     shape,
                     paragraphs.expect("Text shapes should have paragraphs"),
                     Some(SurfaceId::Strokes),
+                    paint,
                 );
             }
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {

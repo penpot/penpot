@@ -6,10 +6,10 @@
 
 (ns app.main.ui.shapes.text.fo-text
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.color :as cc]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.object :as obj]
    [cuerdas.core :as str]

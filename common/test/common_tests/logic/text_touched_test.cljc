@@ -103,7 +103,7 @@
 
         file'       (thf/apply-changes file changes)
         copy-child' (ths/get-shape file' :copy-child)]
-    (t/is (= #{:content-group :text-content-structure :text-content-structure-same-attrs} (:touched copy-child')))))
+    (t/is (= #{:content-group :text-content-structure} (:touched copy-child')))))
 
 (t/deftest test-text-copy-changed-structure-diff-attrs
   (let [;; ==== Setup

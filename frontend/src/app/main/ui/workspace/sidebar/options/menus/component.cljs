@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
    [app.common.types.component :as ctk]
+   [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]
    [app.main.data.helpers :as dsh]
@@ -456,7 +457,7 @@
 
 (mf/defc component-swap-item
   {::mf/props :obj}
-  [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs]}]
+  [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs num-variants]}]
   (let [on-select
         (mf/use-fn
          (mf/deps shapes file-id item)
@@ -483,7 +484,10 @@
          :container container}])
      [:span  {:class (stl/css-case :component-name true
                                    :selected (= (:id item) component-id))}
-      (if is-search (:full-name item) (:name item))]]))
+      (if is-search (:full-name item) (:name item))]
+     (when (ctk/is-variant? item)
+       [:span {:class (stl/css-case :variant-mark-cell listing-thumbs :variant-icon true)
+               :title (tr "workspace.assets.components.num-variants" num-variants)} i/variant])]))
 
 (mf/defc component-group-item
   {::mf/props :obj}
@@ -565,14 +569,23 @@
                               (:file-id filters)
                               current-file-id)
 
-        current-library-name  (if (= current-library-id current-file-id)
-                                (str/upper (tr "workspace.assets.local-library"))
-                                (dm/get-in libraries [current-library-id :name]))
+        current-lib-name    (if (= current-library-id current-file-id)
+                              (str/upper (tr "workspace.assets.local-library"))
+                              (dm/get-in libraries [current-library-id :name]))
+
+        current-lib-data    (get-in libraries [current-library-id :data])
+
 
         components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
                                  (remove #(true? (:deleted %)))
+                                 (remove #(cfv/is-secondary-variant? % current-lib-data))
                                  (map #(assoc % :full-name (cfh/merge-path-item-with-dot (:path %) (:name %)))))
+
+        count-variants      (fn [component]
+                              (->> (ctkl/components-seq current-lib-data)
+                                   (filterv #(= (:variant-id component) (:variant-id %)))
+                                   count))
 
         get-subgroups       (fn [path]
                               (let [split-path (cfh/split-path path)]
@@ -666,7 +679,7 @@
 
       [:div  {:class (stl/css :swap-wrapper)}
        [:div {:class (stl/css :library-name-wrapper)}
-        [:div {:class (stl/css :library-name)} current-library-name]
+        [:div {:class (stl/css :library-name)} current-lib-name]
 
         [:div {:class (stl/css :listing-options-wrapper)}
          [:& radio-buttons {:class (stl/css :listing-options)
@@ -717,7 +730,8 @@
                                        :container container
                                        :component-id component-id
                                        :is-search is-search?
-                                       :listing-thumbs (:listing-thumbs? filters)}])
+                                       :listing-thumbs (:listing-thumbs? filters)
+                                       :num-variants (count-variants item)}])
 
             [:& component-group-item {:item item
                                       :key (:name item)

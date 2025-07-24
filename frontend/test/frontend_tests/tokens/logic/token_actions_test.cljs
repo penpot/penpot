@@ -10,7 +10,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.application :as dwta]
    [cljs.test :as t :include-macros true]
@@ -219,19 +219,21 @@
                  secondary-target (toht/get-token file' "color.secondary")
                  rect-1' (cths/get-shape file' :rect-1)
                  rect-2' (cths/get-shape file' :rect-2)]
+
              (t/testing "regular color"
                (t/is (some? (:applied-tokens rect-1')))
                (t/is (= (:fill (:applied-tokens rect-1')) (:name primary-target)))
-               (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
-
+               (t/is (= (-> rect-1' :fills (nth 0) :fill-color) "#ff0000"))
                (t/is (= (:stroke-color (:applied-tokens rect-1')) (:name primary-target)))
                (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))
+
              (t/testing "color with alpha channel"
                (t/is (some? (:applied-tokens rect-2')))
 
                (t/is (= (:fill (:applied-tokens rect-2')) (:name secondary-target)))
-               (t/is (= (get-in rect-2' [:fills 0 :fill-color]) "#ff0000"))
-               (t/is (= (get-in rect-2' [:fills 0 :fill-opacity]) 0.5))
+               (let [fills (get rect-2' :fills)]
+                 (t/is (= (-> fills (nth 0) :fill-color) "#ff0000"))
+                 (t/is (= (-> fills (nth 0) :fill-opacity) 0.5)))
 
                (t/is (= (:stroke-color (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
@@ -556,6 +558,40 @@
              (t/is (= (:letter-spacing (:applied-tokens text-1')) (:name token-target')))
              (t/is (= (:letter-spacing style-text-blocks) "2")))))))))
 
+(t/deftest test-apply-font-family
+  (t/testing "applies font-family token and updates the text font-family"
+    (t/async
+      done
+      (let [font-family-token {:name "primary-font"
+                               :value "Arial"
+                               :type :font-family}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token font-family-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-family}
+                                       :token (toht/get-token file "primary-font")
+                                       :on-update-shape dwta/update-font-family})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "primary-font")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-family (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs))))))))))
+
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
     (t/async
@@ -644,6 +680,51 @@
                (t/is (= (:r1 (:applied-tokens rect-with-other-token-1')) (:name target-token)))
                (t/is (= (:r1 (:applied-tokens rect-without-token')) (:name target-token)))
                (t/is (= (:r1 (:applied-tokens rect-with-other-token-2')) (:name target-token)))))))))))
+
+(t/deftest test-toggle-spacing-token
+  (t/testing "applies spacing token only to layouts and layout children"
+    (t/async
+      done
+      (let [spacing-token {:name "spacing.md"
+                           :value "16"
+                           :type :spacing}
+            file (-> (setup-file-with-tokens)
+                     (ctho/add-frame-with-child :frame-layout :rect-in-layout
+                                                {:frame-params {:layout :grid}})
+                     (ctho/add-rect :rect-regular)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token spacing-token))))
+            store (ths/setup-store file)
+            frame-layout (cths/get-shape file :frame-layout)
+            rect-in-layout (cths/get-shape file :rect-in-layout)
+            rect-regular (cths/get-shape file :rect-regular)
+            events [(dwta/toggle-token {:token (toht/get-token file "spacing.md")
+                                        :shapes [frame-layout rect-in-layout rect-regular]})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 frame-layout' (cths/get-shape file' :frame-layout)
+                 rect-in-layout' (cths/get-shape file' :rect-in-layout)
+                 rect-regular' (cths/get-shape file' :rect-regular)]
+
+             (t/testing "frame with layout gets all spacing attributes"
+               (t/is (= "spacing.md" (:column-gap (:applied-tokens frame-layout'))))
+               (t/is (= "spacing.md" (:row-gap (:applied-tokens frame-layout'))))
+               (t/is (= 16 (get-in frame-layout' [:layout-gap :column-gap])))
+               (t/is (= 16 (get-in frame-layout' [:layout-gap :row-gap]))))
+
+             (t/testing "shape inside layout frame gets only margin attributes"
+               (t/is (= "spacing.md" (:m1 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m2 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m3 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m4 (:applied-tokens rect-in-layout'))))
+               (t/is (nil? (:column-gap (:applied-tokens rect-in-layout'))))
+               (t/is (nil? (:row-gap (:applied-tokens rect-in-layout'))))
+               (t/is (= {:m1 16, :m2 16, :m3 16, :m4 16} (get rect-in-layout' :layout-item-margin))))
+
+             (t/testing "regular shape doesn't get spacing attributes"
+               (t/is (nil? (:applied-tokens rect-regular')))))))))))
 
 (t/deftest test-detach-styles-color
   (t/testing "applying a color token to a shape with color styles should detach the styles"
