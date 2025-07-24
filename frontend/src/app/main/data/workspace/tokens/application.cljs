@@ -250,53 +250,37 @@
             (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                        :page-id page-id}))))))))
 
+(defn generate-text-shape-update
+  [txt-attrs shape-ids page-id]
+  (let [update-node? (fn [node]
+                       (or (txt/is-text-node? node)
+                           (txt/is-paragraph-node? node)))
+        update-fn (fn [node _]
+                    (-> node
+                        (d/txt-merge txt-attrs)
+                        (cty/remove-typography-from-node)))]
+    (dwsh/update-shapes shape-ids
+                        #(txt/update-text-content % update-node? update-fn nil)
+                        {:ignore-touched true
+                         :page-id page-id})))
+
 (defn update-line-height
   ([value shape-ids attributes] (update-line-height value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [update-node? (fn [node]
-                        (or (txt/is-text-node? node)
-                            (txt/is-paragraph-node? node)))
-         update-fn (fn [node _]
-                     (-> node
-                         (d/txt-merge {:line-height value})
-                         (cty/remove-typography-from-node)))]
-     (when (number? value)
-       (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? update-fn nil)
-                           {:ignore-touched true
-                            :page-id page-id})))))
+   (when (number? value)
+     (generate-text-shape-update {:line-height value} shape-ids page-id))))
 
 (defn update-letter-spacing
   ([value shape-ids attributes] (update-letter-spacing value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [update-node? (fn [node]
-                        (or (txt/is-text-node? node)
-                            (txt/is-paragraph-node? node)))
-         update-fn (fn [node _]
-                     (-> node
-                         (d/txt-merge {:letter-spacing (str value)})
-                         (cty/remove-typography-from-node)))]
-     (when (number? value)
-       (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? update-fn nil)
-                           {:ignore-touched true
-                            :page-id page-id})))))
+   (when (number? value)
+     (generate-text-shape-update {:letter-spacing (str value)} shape-ids page-id))))
 
 (defn update-font-size
   ([value shape-ids attributes] (update-font-size value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [update-node? (fn [node]
-                        (or (txt/is-text-node? node)
-                            (txt/is-paragraph-node? node)))
-         update-fn (fn [node _]
-                     (-> node
-                         (d/txt-merge {:font-size (str value)})
-                         (cty/remove-typography-from-node)))]
-     (when (number? value)
-       (dwsh/update-shapes shape-ids
-                           #(txt/update-text-content % update-node? update-fn nil)
-                           {:ignore-touched true
-                            :page-id page-id})))))
+   (when (number? value)
+     (generate-text-shape-update {:font-size (str value)} shape-ids page-id))))
 
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
