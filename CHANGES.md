@@ -12,6 +12,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix problem with booleans selection [Taiga #11627](https://tree.taiga.io/project/penpot/issue/11627)
 
 ## 2.9.0 (Unreleased)
 
