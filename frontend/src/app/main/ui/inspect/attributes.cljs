@@ -27,13 +27,12 @@
    [rumext.v2 :as mf]))
 
 (def type->options
-  {:multiple [:fill :stroke :image :text :shadow :blur :layout-element]
+  {:multiple [:fill :stroke :text :shadow :blur :layout-element]
    :frame    [:visibility :geometry :fill :stroke :shadow :blur :layout :layout-element]
    :group    [:visibility :geometry :svg :layout-element]
    :rect     [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
    :circle   [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
    :path     [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :image    [:visibility :image :geometry :fill :stroke :shadow :blur :svg :layout-element]
    :text     [:visibility :geometry :text :shadow :blur :stroke :layout-element]
    :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
 
