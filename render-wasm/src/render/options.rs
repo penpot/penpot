@@ -1,12 +1,12 @@
 use crate::options;
 
 #[derive(Debug, Copy, Clone, PartialEq, Default)]
-pub struct RenderOptions {
+pub struct RenderStateOptions {
     pub flags: u32,
     pub dpr: Option<f32>,
 }
 
-impl RenderOptions {
+impl RenderStateOptions {
     pub fn is_debug_visible(&self) -> bool {
         self.flags & options::DEBUG_VISIBLE == options::DEBUG_VISIBLE
     }
