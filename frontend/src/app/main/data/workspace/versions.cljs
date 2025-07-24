@@ -155,7 +155,10 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :lock-file-snapshot {:id id})
-           (rx/map fetch-versions)))))
+           (rx/map fetch-versions)
+           (rx/catch (fn [error]
+                       (js/console.error "Failed to lock version:" error)
+                       (rx/of (fetch-versions))))))))
 
 (defn unlock-version
   [id]
@@ -164,7 +167,10 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :unlock-file-snapshot {:id id})
-           (rx/map fetch-versions)))))
+           (rx/map fetch-versions)
+           (rx/catch (fn [error]
+                       (js/console.error "Failed to unlock version:" error)
+                       (rx/of (fetch-versions))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PLUGINS SPECIFIC EVENTS
