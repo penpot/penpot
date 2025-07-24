@@ -11,7 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
@@ -39,8 +39,8 @@
      {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
      {:id "regular" :name "regular" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
      {:id "italic" :name "italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
-     {:id "bold" :name "bold" :weight "bold" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
-     {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
+     {:id "bold" :name "bold" :weight "700" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
+     {:id "bolditalic" :name "bold (italic)" :weight "700" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
      {:id "black" :name "black" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
      {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic" :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
 
@@ -77,6 +77,15 @@
      (= (select-keys font (keys data))
         data))
    (vals @fontsdb)))
+
+(defn find-font-family
+  "Case insensitive lookup of font-family."
+  [family]
+  (let [family' (str/lower family)]
+    (d/seek
+     (fn [{:keys [family]}]
+       (= family' (str/lower family)))
+     (vals @fontsdb))))
 
 (defn resolve-variants
   [id]
@@ -295,7 +304,7 @@
           (let [current-font
                 (if (some? font-id)
                   (select-keys node [:font-id :font-variant-id])
-                  (select-keys txt/default-text-attrs [:font-id :font-variant-id]))]
+                  (select-keys txt/default-typography [:font-id :font-variant-id]))]
             (conj result current-font)))
         #{})))
 

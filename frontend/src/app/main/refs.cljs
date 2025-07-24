@@ -402,6 +402,9 @@
   [frame-id]
   (l/derived #(get % frame-id) workspace-frame-modifiers =))
 
+(def workspace-clipboard-style
+  (l/derived :clipboard-style workspace-global))
+
 (defn select-bool-children [id]
   (l/derived #(dsh/select-bool-children % id) st/state =))
 
@@ -505,9 +508,9 @@
   (l/derived #(or (some-> % ctob/get-tokens-in-active-sets) {}) tokens-lib))
 
 (def workspace-token-in-selected-set
-  (fn [token-name]
+  (fn [token-id]
     (l/derived
-     #(dwts/get-token-in-selected-set % token-name)
+     #(dwts/get-token-in-selected-set % token-id)
      st/state)))
 
 (def workspace-all-tokens-in-selected-set

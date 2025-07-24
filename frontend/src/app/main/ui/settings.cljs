@@ -42,7 +42,7 @@
 
     (mf/with-effect [profile]
       (when (nil? profile)
-        (st/emit! (rt/nav :auth-login))))
+        (st/emit! (rt/assign-exception {:type :authentication}))))
 
     [:*
      [:> modal-container*]

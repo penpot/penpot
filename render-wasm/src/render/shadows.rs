@@ -2,7 +2,8 @@ use super::{RenderState, SurfaceId};
 use crate::render::strokes;
 use crate::render::text::{self};
 use crate::shapes::{Shadow, Shape, Stroke, Type};
-use skia_safe::{canvas::SaveLayerRec, textlayout::Paragraph, Paint, Path};
+use skia_safe::textlayout::ParagraphBuilder;
+use skia_safe::{Paint, Path};
 
 // Fill Shadows
 pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
@@ -58,6 +59,7 @@ pub fn render_stroke_drop_shadows(
                 filter.as_ref(),
                 None,
                 antialias,
+                None,
             )
         }
     }
@@ -80,6 +82,7 @@ pub fn render_stroke_inner_shadows(
                 filter.as_ref(),
                 None,
                 antialias,
+                None,
             )
         }
     }
@@ -88,7 +91,7 @@ pub fn render_stroke_inner_shadows(
 pub fn render_text_drop_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
 ) {
     for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
@@ -123,29 +126,24 @@ pub fn render_text_drop_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
 ) {
     let paint = shadow.get_drop_shadow_paint(antialias);
-    let mask_paint = paint.clone();
-    let mask = SaveLayerRec::default().paint(&mask_paint);
-    let canvas = render_state.get_canvas_at(SurfaceId::DropShadows);
-    canvas.save_layer(&mask);
 
     text::render(
         render_state,
         shape,
         paragraphs,
         Some(SurfaceId::DropShadows),
+        Some(&paint),
     );
-
-    render_state.restore_canvas(SurfaceId::DropShadows);
 }
 
 pub fn render_text_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
 ) {
     for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
@@ -157,24 +155,18 @@ pub fn render_text_inner_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,
-    paragraphs: &[Vec<Paragraph>],
+    paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
 ) {
     let paint = shadow.get_inner_shadow_paint(antialias);
-    let mask_paint = paint.clone();
-    let mask = SaveLayerRec::default().paint(&mask_paint);
-    let canvas = render_state.get_canvas_at(SurfaceId::InnerShadows);
-
-    canvas.save_layer(&mask);
 
     text::render(
         render_state,
         shape,
         paragraphs,
         Some(SurfaceId::InnerShadows),
+        Some(&paint),
     );
-
-    render_state.restore_canvas(SurfaceId::InnerShadows);
 }
 
 // Render text paths (unused)

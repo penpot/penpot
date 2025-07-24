@@ -22,7 +22,8 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.shape.layout :as ctl]
+   [app.common.types.library :as ctl]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -195,7 +196,7 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [data   (dsh/lookup-file-data state)
-                color  (-> (ctc/get-color data id)
+                color  (-> (ctl/get-color data id)
                            (assoc :name new-name)
                            (d/without-nils)
                            (ctc/check-library-color))]
@@ -962,8 +963,8 @@
             orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
 
             ;; If the target parent is a grid layout we need to pass the target cell
-            target-cell (when (ctl/grid-layout? parent)
-                          (ctl/get-cell-by-shape-id parent (:id shape)))
+            target-cell (when (ctsl/grid-layout? parent)
+                          (ctsl/get-cell-by-shape-id parent (:id shape)))
 
             index (find-shape-index objects (:parent-id shape) (:id shape))
 
@@ -979,9 +980,11 @@
                 (cll/generate-component-swap objects shape ldata page libraries id-new-component
                                              index target-cell keep-props-values keep-touched?))
 
-            changes (if keep-touched?
-                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-                      changes)]
+            [changes parents-of-swapped]
+            (if keep-touched?
+              (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
+              [changes []])
+            all-parents (into all-parents parents-of-swapped)]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)

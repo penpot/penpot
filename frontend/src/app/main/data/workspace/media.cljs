@@ -16,6 +16,7 @@
    [app.common.media :as media]
    [app.common.schema :as sm]
    [app.common.types.container :as ctn]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -63,18 +64,22 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [name width height id mtype]} image
+
+            fills (types.fills/create
+                   {:fill-opacity 1
+                    :fill-image {:width width
+                                 :height height
+                                 :mtype mtype
+                                 :id id
+                                 :keep-aspect-ratio true}})
+
             shape {:name name
                    :width width
                    :height height
                    :x (mth/round (- x (/ width 2)))
                    :y (mth/round (- y (/ height 2)))
-                   :fills [{:fill-opacity 1
-                            :fill-image {:name name
-                                         :width width
-                                         :height height
-                                         :mtype mtype
-                                         :id id
-                                         :keep-aspect-ratio true}}]}]
+                   :fills fills}]
+
         (rx/of (dwsh/create-and-add-shape :rect x y shape))))))
 
 (defn svg-uploaded
@@ -299,7 +304,7 @@
                   :name (:name root-svg-shape)
                   :frame-id uuid/zero
                   :parent-id uuid/zero
-                  :fills []})
+                  :fills (types.fills/create)})
 
                 root-svg-shape
                 (-> root-svg-shape
@@ -335,19 +340,21 @@
                       :frame-id uuid/zero
                       :parent-id uuid/zero})
 
+        img-fills   (types.fills/create
+                     {:fill-opacity 1
+                      :fill-image {:id id
+                                   :width width
+                                   :height height
+                                   :mtype mtype
+                                   :keep-aspect-ratio true}})
+
         img-shape   (cts/setup-shape
                      {:type :rect
                       :x (:x pos)
                       :y (:y pos)
                       :width width
                       :height height
-                      :fills [{:fill-opacity 1
-                               :fill-image {:name name
-                                            :id id
-                                            :width width
-                                            :height height
-                                            :mtype mtype
-                                            :keep-aspect-ratio true}}]
+                      :fills img-fills
                       :name name
                       :frame-id (:id frame-shape)
                       :parent-id (:id frame-shape)})]

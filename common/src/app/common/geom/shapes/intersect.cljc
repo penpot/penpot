@@ -315,7 +315,8 @@
                    (update :height + (* 2 swidth)))]
     (or (not shape)
         (cond
-          (cfh/path-shape? shape)
+          (or (cfh/path-shape? shape)
+              (cfh/bool-shape? shape))
           (and (overlaps-rect-points? rect (:points shape))
                (overlaps-path? shape rect true))
 

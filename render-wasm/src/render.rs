@@ -302,10 +302,12 @@ impl RenderState {
         self.surfaces.reset(self.background_color);
     }
 
+    #[allow(dead_code)]
     pub fn get_canvas_at(&mut self, surface_id: SurfaceId) -> &skia::Canvas {
         self.surfaces.canvas(surface_id)
     }
 
+    #[allow(dead_code)]
     pub fn restore_canvas(&mut self, surface_id: SurfaceId) {
         self.surfaces.canvas(surface_id).restore();
     }
@@ -460,37 +462,54 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
+                let mut paragraphs = text_content.get_skia_paragraphs();
 
-                shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
-                text::render(self, &shape, &paragraphs, None);
+                if !shape.has_strokes() {
+                    shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
+                }
+
+                text::render(self, &shape, &mut paragraphs, None, None);
 
                 if shape.has_inner_strokes() {
                     // Inner strokes paints need the text fill to apply correctly their blend modes
                     // (e.g., SrcATop, DstOver)
-                    text::render(self, &shape, &paragraphs, Some(SurfaceId::Strokes));
+                    text::render(
+                        self,
+                        &shape,
+                        &mut paragraphs,
+                        Some(SurfaceId::Strokes),
+                        None,
+                    );
                 }
 
                 for stroke in shape.strokes().rev() {
-                    let stroke_paragraphs = text_content.get_skia_stroke_paragraphs(
-                        stroke,
-                        &shape.selrect(),
-                        self.fonts.font_collection(),
+                    let mut stroke_paragraphs =
+                        text_content.get_skia_stroke_paragraphs(stroke, &shape.selrect());
+                    shadows::render_text_drop_shadows(
+                        self,
+                        &shape,
+                        &mut stroke_paragraphs,
+                        antialias,
                     );
-                    shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
                     strokes::render(
                         self,
                         &shape,
                         stroke,
                         None,
                         None,
-                        Some(&stroke_paragraphs),
+                        Some(&mut stroke_paragraphs),
+                        antialias,
+                        None,
+                    );
+                    shadows::render_text_inner_shadows(
+                        self,
+                        &shape,
+                        &mut stroke_paragraphs,
                         antialias,
                     );
-                    shadows::render_text_inner_shadows(self, &shape, &stroke_paragraphs, antialias);
                 }
 
-                shadows::render_text_inner_shadows(self, &shape, &paragraphs, antialias);
+                shadows::render_text_inner_shadows(self, &shape, &mut paragraphs, antialias);
             }
             _ => {
                 let surface_ids = SurfaceId::Strokes as u32
@@ -524,7 +543,7 @@ impl RenderState {
 
                 for stroke in shape.strokes().rev() {
                     shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
-                    strokes::render(self, &shape, stroke, None, None, None, antialias);
+                    strokes::render(self, &shape, stroke, None, None, None, antialias, None);
                     shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 

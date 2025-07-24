@@ -17,8 +17,8 @@
    [app.common.geom.shapes.effects :as gse]
    [app.common.geom.shapes.strokes :as gss]
    [app.common.math :as mth]
-   [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]
    [clojure.core :as c]))
 
 ;; --- Modifiers

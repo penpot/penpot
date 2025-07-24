@@ -21,6 +21,7 @@
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [clojure.set :as set]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -106,7 +107,9 @@
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
   [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
-  (let [{:keys [name value type resolved-value]} token
+  (let [{:keys [name type resolved-value]} token
+        value (cond->> (:value token)
+                (= :font-family type) ctt/join-font-family)
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
         {:keys [title] :as token-props} (dwta/get-token-properties theme-token)
@@ -164,17 +167,20 @@
     (cft/shapes-applied-all? ids-by-attributes shape-ids attributes)))
 
 (defn attributes-match-selection?
-  [selected-shapes attrs]
-  (some (fn [shape]
-          (ctt/any-appliable-attr? attrs (:type shape)))
-        selected-shapes))
+  [selected-shapes attrs & {:keys [selected-inside-layout?]}]
+  (or
+   ;; Edge-case for allowing margin attribute on shapes inside layout parent
+   (and selected-inside-layout? (set/subset? ctt/spacing-margin-keys attrs))
+   (some (fn [shape]
+           (ctt/any-appliable-attr? attrs (:type shape)))
+         selected-shapes)))
 
 (def token-types-with-status-icon
   #{:color :border-radius :rotation :sizing :dimensions :opacity :spacing :stroke-width})
 
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}
-  [{:keys [on-click token on-context-menu selected-shapes active-theme-tokens]}]
+  [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
   (let [{:keys [name value errors type]} token
 
         has-selected?  (pos? (count selected-shapes))
@@ -201,7 +207,7 @@
                    has-selected?
                    (not applied?)
                    (not half-applied?)
-                   (not (attributes-match-selection? selected-shapes attributes)))
+                   (not (attributes-match-selection? selected-shapes attributes {:selected-inside-layout? is-selected-inside-layout})))
 
         ;; FIXME: move to context or props
         can-edit? (:can-edit (deref refs/permissions))

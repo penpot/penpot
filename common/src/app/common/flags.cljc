@@ -10,6 +10,8 @@
    [clojure.set :as set]
    [cuerdas.core :as str]))
 
+(def ^:dynamic *current* #{})
+
 (def login
   "Flags related to login features"
   #{;; Allows registration with login / password

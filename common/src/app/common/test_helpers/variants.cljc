@@ -9,8 +9,8 @@
    [app.common.test-helpers.components :as thc]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
-   [app.common.text :as txt]
-   [app.common.types.shape :as cts]))
+   [app.common.types.shape :as cts]
+   [app.common.types.text :as txt]))
 
 (defn add-variant
   [file variant-label component1-label root1-label component2-label root2-label
@@ -60,11 +60,11 @@
   [file variant-label component1-label root1-label component2-label root2-label child1-label child2-label text1 text2
    & {:keys [text1-params text2-params]}]
   (let [text1 (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                  (txt/change-text text1)
+                  (update :content txt/change-text text1)
                   (assoc :position-data nil
                          :parent-label root1-label))
         text2 (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                  (txt/change-text text2)
+                  (update :content txt/change-text text2)
                   (assoc :position-data nil
                          :parent-label root2-label))
 

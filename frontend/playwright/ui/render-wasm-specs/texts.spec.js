@@ -121,14 +121,13 @@ test("Renders a file with styled texts", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-
 test("Renders a file with texts with images", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockFileMediaAsset(
     [
-      "6bd7c17d-4f59-815e-8006-5e9765e0fabd",
-      "6bd7c17d-4f59-815e-8006-5e97441071cc"
+      "4f89252d-ebbc-813e-8006-8699e4170e17",
+      "4f89252d-ebbc-813e-8006-8699e4170e18"
     ],
     "render-wasm/assets/pattern.png",
   );
@@ -140,6 +139,28 @@ test("Renders a file with texts with images", async ({ page }) => {
   await workspace.goToWorkspace({
     id: "6bd7c17d-4f59-815e-8006-5e96453952b0",
     pageId: "6bd7c17d-4f59-815e-8006-5e96453952b1",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with text decoration", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockFileMediaAsset(
+    [
+      "d6c33e7b-7b64-80f3-8006-78509a3a2d21",
+    ],
+    "render-wasm/assets/pattern.png",
+  );
+  await mockGetEmojiFont(workspace);
+  await mockGetJapaneseFont(workspace);
+
+  await workspace.mockGetFile("render-wasm/get-file-text-decoration.json");
+
+  await workspace.goToWorkspace({
+    id: "d6c33e7b-7b64-80f3-8006-785098582f1d",
+    pageId: "d6c33e7b-7b64-80f3-8006-785098582f1e",
   });
   await workspace.waitForFirstRender();
   await expect(workspace.canvas).toHaveScreenshot();

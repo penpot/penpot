@@ -12,7 +12,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
@@ -41,7 +41,7 @@
 (defn- get-fonts
   [content]
   (let [extract-fn (juxt :font-id :font-variant-id)
-        default    (extract-fn txt/default-text-attrs)]
+        default    (extract-fn txt/default-typography)]
     (->> (tree-seq map? :children content)
          (into #{default} (keep extract-fn)))))
 
@@ -67,7 +67,7 @@
 
         style-defaults
         (styles/get-style-defaults
-         (merge txt/default-attrs default-font))
+         (merge (txt/get-default-text-attrs) txt/default-root-attrs default-font))
 
         options
         #js {:styleDefaults style-defaults
@@ -116,7 +116,12 @@
         on-change
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))
+
+        on-clipboard-change
+        (fn [event]
+          (let [style (.-detail event)]
+            (st/emit! (dw/set-clipboard-style style))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
     (.addEventListener ^js instance "blur" on-blur)
@@ -124,6 +129,7 @@
     (.addEventListener ^js instance "needslayout" on-needs-layout)
     (.addEventListener ^js instance "stylechange" on-style-change)
     (.addEventListener ^js instance "change" on-change)
+    (.addEventListener ^js instance "clipboardchange" on-clipboard-change)
 
     (st/emit! (dwt/update-editor instance))
     (when (some? content)
@@ -138,6 +144,7 @@
       (.removeEventListener ^js instance "needslayout" on-needs-layout)
       (.removeEventListener ^js instance "stylechange" on-style-change)
       (.removeEventListener ^js instance "change" on-change)
+      (.removeEventListener ^js instance "clipboardchange" on-clipboard-change)
       (dwt/dispose! instance)
       (st/emit! (dwt/update-editor nil)))))
 

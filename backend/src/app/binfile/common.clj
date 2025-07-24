@@ -155,7 +155,7 @@
 (defn decode-file
   "A general purpose file decoding function that resolves all external
   pointers, run migrations and return plain vanilla file map"
-  [cfg {:keys [id] :as file}]
+  [cfg {:keys [id] :as file} & {:keys [migrate?] :or {migrate? true}}]
   (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
     (let [file (->> file
                     (feat.fmigr/resolve-applied-migrations cfg)
@@ -168,7 +168,7 @@
           (update :data feat.fdata/process-pointers deref)
           (update :data feat.fdata/process-objects (partial into {}))
           (update :data assoc :id id)
-          (fmg/migrate-file libs)))))
+          (cond-> migrate? (fmg/migrate-file libs))))))
 
 (defn get-file
   "Get file, resolve all features and apply migrations.
