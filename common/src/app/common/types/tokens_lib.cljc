@@ -167,6 +167,11 @@
   (get-tokens [_] "return an ordered sequence of all tokens in the set")
   (get-tokens-map [_] "return a map of tokens in the set, indexed by token-name"))
 
+;; TODO: this structure is temporary. It's needed to be able to migrate TokensLib
+;; from 1.2 to 1.3 when TokenSet datatype was changed to a deftype. This should
+;; be removed after migrations are consolidated.
+(defrecord TokenSetLegacy [id name description modified-at tokens])
+
 (deftype TokenSet [id name description modified-at tokens]
   #?@(:clj  [clojure.lang.IDeref
              (deref [_] {:id id
@@ -254,6 +259,10 @@
 (defn token-set?
   [o]
   (instance? TokenSet o))
+
+(defn token-set-legacy?
+  [o]
+  (instance? TokenSetLegacy o))
 
 (def schema:token-set-attrs
   [:map {:title "TokenSet"}
@@ -1738,10 +1747,11 @@ Will return a value that matches this schema:
 
            migrate-sets-node
            (fn recurse [node]
-             (if (token-set? node)
-               (assoc node
-                      :id (uuid/next)
-                      :tokens (d/update-vals (:tokens node) migrate-token))
+             (if (token-set-legacy? node)
+               (make-token-set
+                (assoc node
+                       :id (uuid/next)
+                       :tokens (d/update-vals (:tokens node) migrate-token)))
                (d/update-vals node recurse)))
 
            sets
@@ -1766,6 +1776,26 @@ Will return a value that matches this schema:
 
            themes
            (d/update-vals themes migrate-theme-group)]
+
+       (->TokensLib sets themes active-themes))))
+
+#?(:clj
+   (defn- read-tokens-lib-v1-3
+     "Reads the tokens lib data structure and removes the TokenSetLegacy data type,
+      needed for a temporary migration step."
+     [r]
+     (let [sets          (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)
+
+           migrate-sets-node
+           (fn recurse [node]
+             (if (token-set-legacy? node)
+               (make-token-set node)
+               (d/update-vals node recurse)))
+
+           sets
+           (d/update-vals sets migrate-sets-node)]
 
        (->TokensLib sets themes active-themes))))
 
@@ -1797,6 +1827,11 @@ Will return a value that matches this schema:
               (make-token obj)))}
 
     {:name "penpot/token-set/v1"
+     :rfn (fn [r]
+            (let [obj (fres/read-object! r)]
+              (map->TokenSetLegacy obj)))}
+
+    {:name "penpot/token-set/v2"
      :class TokenSet
      :wfn (fn [n w o]
             (fres/write-tag! w n 1)
@@ -1824,8 +1859,11 @@ Will return a value that matches this schema:
     {:name "penpot/tokens-lib/v1.2"
      :rfn read-tokens-lib-v1-2}
 
-    ;; CURRENT TOKENS LIB READER & WRITTER
     {:name "penpot/tokens-lib/v1.3"
+     :rfn read-tokens-lib-v1-3}
+
+    ;; CURRENT TOKENS LIB READER & WRITTER
+    {:name "penpot/tokens-lib/v1.4"
      :class TokensLib
      :wfn write-tokens-lib
      :rfn read-tokens-lib}))

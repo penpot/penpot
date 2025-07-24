@@ -310,7 +310,7 @@
                      :id    "align-self-end"}]])
 
 (mf/defc layout-item-menu
-  {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent?}
+  {::mf/memo #{:ids :values :type :is-layout-child? :is-grid-parent :is-flex-parent? :is-grid-layout? :is-flex-layout?}
    ::mf/props :obj}
   [{:keys [ids values
            ^boolean is-layout-child?
