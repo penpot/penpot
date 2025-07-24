@@ -1552,6 +1552,25 @@
 
     (update data :pages-index d/update-vals update-page)))
 
+(defmethod migrate-data "0010-fix-swap-slots-pointing-non-existent-shapes"
+  [data _]
+  (letfn [(fix-shape [page shape]
+            (let [shape-swap-slot (ctk/get-swap-slot shape)]
+              (if shape-swap-slot
+                (let [libs   (when (:libs data)
+                               (deref (:libs data)))
+                      ref-id (ctf/find-ref-id-for-swapped shape page libs)]
+                  (if (nil? ref-id)
+                    (ctk/remove-swap-slot shape)
+                    shape))
+                shape)))
+
+          (update-page [page]
+            (d/update-when page :objects d/update-vals (partial fix-shape page)))]
+    (-> data
+        (update :pages-index d/update-vals update-page))))
+
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1617,4 +1636,5 @@
          "0007-clear-invalid-strokes-and-fills-v2"
          "0008-fix-library-colors-v4"
          "0009-clean-library-colors"
-         "0009-add-partial-text-touched-flags"]))
+         "0009-add-partial-text-touched-flags"
+         "0010-fix-swap-slots-pointing-non-existent-shapes"]))
