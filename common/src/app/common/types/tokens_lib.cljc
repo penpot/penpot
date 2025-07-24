@@ -1767,7 +1767,14 @@ Will return a value that matches this schema:
            themes        (fres/read-object! r)
            active-themes (fres/read-object! r)
 
-           sets (d/update-vals sets make-token-set)]
+           migrate-sets-node
+           (fn recurse [node]
+             (if (token-set-legacy? node)
+               (make-token-set node)
+               (d/update-vals node recurse)))
+
+           sets
+           (d/update-vals sets migrate-sets-node)]
 
        (->TokensLib sets themes active-themes))))
 
