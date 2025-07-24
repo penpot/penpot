@@ -115,6 +115,7 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
     with_state_mut!(state, {
         let color = skia::Color::new(raw_color);
         state.set_background_color(color);
+        state.rebuild_tiles();
     });
 }
 

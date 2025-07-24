@@ -138,3 +138,26 @@ test("Renders shapes with exif rotated images fills and strokes", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Updates canvas background", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text.json");
+
+  await workspace.goToWorkspace({
+    id: "3b0d758a-8c9d-8013-8006-52c8337e5c72",
+    pageId: "3b0d758a-8c9d-8013-8006-52c8337e5c73",
+  });
+  await workspace.waitForFirstRender({ hideUI: false });
+
+  const canvasBackgroundInput = workspace.page.getByRole("textbox", { name: 'Color' });
+  await canvasBackgroundInput.fill("FABADA");
+  await workspace.page.keyboard.press("Enter");
+
+  // can't hide UI cause this will trigger a re-render
+  // await workspace.hideUI();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
