@@ -179,7 +179,9 @@
 
              :type "button"
              :value (if subscribe-to-trial (tr "subscription.settings.start-trial") (tr "labels.continue"))
-             :on-click (if subscribe-to-trial subscribe-to-enterprise handle-accept-dialog)}]]])]]]))
+             :on-click (if (or subscribe-to-trial
+                               (contains? #{"unpaid" "canceled"} (:status current-subscription)))
+                         subscribe-to-enterprise handle-accept-dialog)}]]])]]]))
 
 (mf/defc subscription-success-dialog
   {::mf/register modal/components
@@ -413,7 +415,7 @@
                                     (tr "subscription.settings.unlimited.bill"),
                                     (tr "subscription.settings.unlimited.storage-autosave")]
                          :cta-text (if subscription (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
-                         :cta-link #(open-subscription-modal "unlimited" subscription-type)
+                         :cta-link #(open-subscription-modal "unlimited" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
 
@@ -427,6 +429,6 @@
                                     (tr "subscription.settings.enterprise.capped-bill"),
                                     (tr "subscription.settings.enterprise.unlimited-storage")]
                          :cta-text (if subscription (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
-                         :cta-link #(open-subscription-modal "enterprise")
+                         :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])]]]))
