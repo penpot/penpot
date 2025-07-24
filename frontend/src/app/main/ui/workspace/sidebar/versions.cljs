@@ -173,10 +173,10 @@
        (if (:locked-by entry)
          [:li {:class (stl/css :menu-option)
                :role "button"
-               :on-click handle-unlock-version} (tr "workspace.versions.unlock")]
+               :on-click handle-unlock-version} (tr "labels.unlock")]
          [:li {:class (stl/css :menu-option)
                :role "button"
-               :on-click handle-lock-version} (tr "workspace.versions.lock")])
+               :on-click handle-lock-version} (tr "labels.lock")])
        [:li {:class (stl/css :menu-option)
              :role "button"
              :on-click handle-delete-version} (tr "labels.delete")]]]]))
