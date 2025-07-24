@@ -1,3 +1,4 @@
 {penpot/inst app.common.time/inst
  penpot/cron app.util.cron/cron
- penpot/duration app.common.time/duration}
+ penpot/duration app.common.time/duration
+ penpot/point app.common.geom.point/decode-point}
