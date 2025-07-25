@@ -42,6 +42,11 @@
   justify-self: flex-end;
 }
 
+.name-wrapper {
+  display: flex;
+  align-items: baseline;
+}
+
 .name {
   grid-area: name;
   color: var(--color-foreground-primary);
@@ -51,6 +56,7 @@
   margin-left: 8px;
   transform: scale(0.8);
   color: var(--color-foreground-secondary);
+  align-self: baseline;
 }
 
 .date {
