@@ -487,6 +487,26 @@
            :hover-shape @measure-hover
            :zoom zoom}])
 
+       ;; Show distances during movement with ALT
+       (when (and (= transform :move) @alt? (seq selected-shapes))
+         [:& msr/measurement
+          {:bounds vbox
+           :selected-shapes selected-shapes
+           :frame selected-frame
+           :hover-shape @hover
+           :zoom zoom}])
+
+    ;; Reactive subscription to duplication relation (safe)
+       (let [state-var (mf/use-var (resolve 'app.main.store/state))
+             duplicated-info (get-in @(deref state-var) [:workspace-local :duplicated])]
+         (when (and (= transform :move) @alt? duplicated-info)
+           [:g.duplicated-distance
+            [:& msr/distance-display
+             {:from (get duplicated-info :selrect-original)
+              :to (get duplicated-info :selrect-duplicated)
+              :zoom zoom
+              :bounds vbox}]]))
+
        (when show-padding?
          [:& mfc/padding-control
           {:frame first-shape
