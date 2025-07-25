@@ -451,6 +451,16 @@
      (-pr-writer [this writer _]
        (cljs.core/-write writer (str "#penpot/path-data \"" (.toString this) "\"")))))
 
+#?(:clj
+   (defmethod print-method PathData
+     [o w]
+     (print-dup o w)))
+
+#?(:clj
+   (defmethod print-dup PathData
+     [^PathData o ^java.io.Writer writer]
+     (.write writer (str "#penpot/path-data \"" (.toString o) "\""))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
