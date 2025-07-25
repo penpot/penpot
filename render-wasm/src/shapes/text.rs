@@ -175,6 +175,12 @@ impl TextContent {
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
         self.grow_type = grow_type;
     }
+
+    pub fn visual_bounds(&self) -> (f32, f32) {
+        let mut paragraphs = self.to_paragraphs();
+        let height = auto_height(&mut paragraphs, self.width());
+        (self.width(), height)
+    }
 }
 
 impl Default for TextContent {
