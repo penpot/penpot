@@ -45,14 +45,14 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 
         if let Type::Text(content) = &shape.shape_type {
             let mut paragraphs = content.get_skia_paragraphs();
-            m_width = max_width(&mut paragraphs);
+            m_width = max_width(&mut paragraphs, width);
 
             match content.grow_type() {
                 GrowType::AutoHeight => {
                     height = auto_height(&mut paragraphs, width).ceil();
                 }
                 GrowType::AutoWidth => {
-                    width = auto_width(&mut paragraphs).ceil();
+                    width = auto_width(&mut paragraphs, width).ceil();
                     height = auto_height(&mut paragraphs, width).ceil();
                 }
                 GrowType::Fixed => {}
