@@ -705,6 +705,7 @@ impl Shape {
             };
             max_stroke = max_stroke.max(width);
         }
+
         let mut rect = if let Some(path) = self.get_skia_path() {
             path.compute_tight_bounds()
                 .with_outset((max_stroke, max_stroke))
@@ -719,6 +720,12 @@ impl Shape {
             bounds_rect.join(stroke_rect);
             bounds_rect
         };
+
+        if let Type::Text(ref text_content) = self.shape_type {
+            let (width, height) = text_content.visual_bounds();
+            rect.right = rect.left + width;
+            rect.bottom = rect.top + height;
+        }
 
         for shadow in self.shadows.iter() {
             let (x, y) = shadow.offset;
