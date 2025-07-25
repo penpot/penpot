@@ -39,8 +39,8 @@
      {:id "300italic" :name "300 (italic)"  :weight "300" :style "italic" :suffix "lightitalic" :ttf-url "sourcesanspro-lightitalic.ttf"}
      {:id "regular" :name "regular" :weight "400" :style "normal" :ttf-url "sourcesanspro-regular.ttf"}
      {:id "italic" :name "italic" :weight "400" :style "italic" :ttf-url "sourcesanspro-italic.ttf"}
-     {:id "bold" :name "bold" :weight "bold" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
-     {:id "bolditalic" :name "bold (italic)" :weight "bold" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
+     {:id "bold" :name "bold" :weight "700" :style "normal" :ttf-url "sourcesanspro-bold.ttf"}
+     {:id "bolditalic" :name "bold (italic)" :weight "700" :style "italic" :ttf-url "sourcesanspro-bolditalic.ttf"}
      {:id "black" :name "black" :weight "900" :style "normal" :ttf-url "sourcesanspro-black.ttf"}
      {:id "blackitalic" :name "black (italic)" :weight "900" :style "italic" :ttf-url "sourcesanspro-blackitalic.ttf"}]}])
 

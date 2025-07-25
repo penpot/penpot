@@ -39,7 +39,11 @@ import {
   insertInto,
   removeSlice,
 } from "../content/Text.js";
-import { getTextNodeLength, getClosestTextNode, isTextNode } from "../content/dom/TextNode.js";
+import {
+  getTextNodeLength,
+  getClosestTextNode,
+  isTextNode,
+} from "../content/dom/TextNode.js";
 import TextNodeIterator from "../content/dom/TextNodeIterator.js";
 import TextEditor from "../TextEditor.js";
 import CommandMutations from "../commands/CommandMutations.js";
@@ -240,7 +244,7 @@ export class SelectionController extends EventTarget {
       for (const [name, value] of Object.entries(this.#styleDefaults)) {
         this.#currentStyle.setProperty(
           name,
-          value + (name === "font-size" ? "px" : "")
+          value + (name === "font-size" ? "px" : ""),
         );
       }
     }
@@ -356,10 +360,11 @@ export class SelectionController extends EventTarget {
       this.dispatchEvent(
         new CustomEvent("stylechange", {
           detail: this.#currentStyle,
-        })
+        }),
       );
     } else {
-      const firstInline = this.#textEditor.root?.firstElementChild?.firstElementChild;
+      const firstInline =
+        this.#textEditor.root?.firstElementChild?.firstElementChild;
       if (firstInline) {
         this.#updateCurrentStyle(firstInline);
         this.dispatchEvent(
@@ -452,13 +457,16 @@ export class SelectionController extends EventTarget {
 
     if (this.#savedSelection.anchorNode && this.#savedSelection.focusNode) {
       if (this.#savedSelection.anchorNode === this.#savedSelection.focusNode) {
-        this.#selection.setPosition(this.#savedSelection.focusNode, this.#savedSelection.focusOffset);
+        this.#selection.setPosition(
+          this.#savedSelection.focusNode,
+          this.#savedSelection.focusOffset,
+        );
       } else {
         this.#selection.setBaseAndExtent(
           this.#savedSelection.anchorNode,
           this.#savedSelection.anchorOffset,
           this.#savedSelection.focusNode,
-          this.#savedSelection.focusOffset
+          this.#savedSelection.focusOffset,
         );
       }
     }
@@ -491,7 +499,7 @@ export class SelectionController extends EventTarget {
    */
   selectAll() {
     if (this.#textEditor.isEmpty) {
-      return this
+      return this;
     }
     this.#selection.selectAllChildren(this.#textEditor.root);
     return this;
@@ -516,16 +524,12 @@ export class SelectionController extends EventTarget {
    * @param {number} offset
    */
   collapse(node, offset) {
-    const nodeOffset = (node.nodeType === Node.TEXT_NODE && offset >= node.nodeValue.length)
-      ? node.nodeValue.length
-      : offset
+    const nodeOffset =
+      node.nodeType === Node.TEXT_NODE && offset >= node.nodeValue.length
+        ? node.nodeValue.length
+        : offset;
 
-    return this.setSelection(
-      node,
-      nodeOffset,
-      node,
-      nodeOffset
-    );
+    return this.setSelection(node, nodeOffset, node, nodeOffset);
   }
 
   /**
@@ -536,12 +540,17 @@ export class SelectionController extends EventTarget {
    * @param {Node} [focusNode=anchorNode]
    * @param {number} [focusOffset=anchorOffset]
    */
-  setSelection(anchorNode, anchorOffset, focusNode = anchorNode, focusOffset = anchorOffset) {
+  setSelection(
+    anchorNode,
+    anchorOffset,
+    focusNode = anchorNode,
+    focusOffset = anchorOffset,
+  ) {
     if (!anchorNode.isConnected) {
-      throw new Error('Invalid anchorNode')
+      throw new Error("Invalid anchorNode");
     }
     if (!focusNode.isConnected) {
-      throw new Error('Invalid focusNode')
+      throw new Error("Invalid focusNode");
     }
     if (this.#savedSelection) {
       this.#savedSelection.isCollapsed =
@@ -578,7 +587,7 @@ export class SelectionController extends EventTarget {
           anchorNode,
           anchorOffset,
           focusNode,
-          focusOffset
+          focusOffset,
         );
       }
     }
@@ -711,8 +720,7 @@ export class SelectionController extends EventTarget {
     if (this.#savedSelection) {
       return this.#savedSelection.focusNode;
     }
-    if (!this.#focusNode)
-      console.trace("focusNode", this.#focusNode);
+    if (!this.#focusNode) console.trace("focusNode", this.#focusNode);
     return this.#focusNode;
   }
 
@@ -963,7 +971,7 @@ export class SelectionController extends EventTarget {
    * @type {boolean}
    */
   get isRootFocus() {
-    return isRoot(this.focusNode)
+    return isRoot(this.focusNode);
   }
 
   /**
@@ -1044,27 +1052,25 @@ export class SelectionController extends EventTarget {
    * @param {DocumentFragment} fragment
    */
   insertPaste(fragment) {
-    if (fragment.children.length === 1
-     && fragment.firstElementChild?.dataset?.inline === "force"
+    if (
+      fragment.children.length === 1 &&
+      fragment.firstElementChild?.dataset?.inline === "force"
     ) {
-      const collapseNode = fragment.lastElementChild.firstChild
+      const collapseNode = fragment.lastElementChild.firstChild;
       if (this.isInlineStart) {
-        this.focusInline.before(...fragment.firstElementChild.children)
+        this.focusInline.before(...fragment.firstElementChild.children);
       } else if (this.isInlineEnd) {
         this.focusInline.after(...fragment.firstElementChild.children);
       } else {
-        const newInline = splitInline(
-          this.focusInline,
-          this.focusOffset
-        )
-        this.focusInline.after(...fragment.firstElementChild.children, newInline)
+        const newInline = splitInline(this.focusInline, this.focusOffset);
+        this.focusInline.after(
+          ...fragment.firstElementChild.children,
+          newInline,
+        );
       }
-      return this.collapse(
-        collapseNode,
-        collapseNode.nodeValue.length
-      );
+      return this.collapse(collapseNode, collapseNode.nodeValue.length);
     }
-    const collapseNode = fragment.lastElementChild.lastElementChild.firstChild
+    const collapseNode = fragment.lastElementChild.lastElementChild.firstChild;
     if (this.isParagraphStart) {
       const a = fragment.lastElementChild;
       const b = this.focusParagraph;
@@ -1079,7 +1085,7 @@ export class SelectionController extends EventTarget {
       const newParagraph = splitParagraph(
         this.focusParagraph,
         this.focusInline,
-        this.focusOffset
+        this.focusOffset,
       );
       this.focusParagraph.after(fragment, newParagraph);
     }
@@ -1115,7 +1121,7 @@ export class SelectionController extends EventTarget {
 
     const removedData = removeForward(
       this.focusNode.nodeValue,
-      this.focusOffset
+      this.focusOffset,
     );
 
     if (this.focusNode.nodeValue !== removedData) {
@@ -1155,7 +1161,7 @@ export class SelectionController extends EventTarget {
     // Remove the character from the string.
     const removedData = removeBackward(
       this.focusNode.nodeValue,
-      this.focusOffset
+      this.focusOffset,
     );
 
     if (this.focusNode.nodeValue !== removedData) {
@@ -1187,7 +1193,10 @@ export class SelectionController extends EventTarget {
       inline.childNodes.length === 0
     ) {
       inline.remove();
-      return this.collapse(previousTextNode, getTextNodeLength(previousTextNode));
+      return this.collapse(
+        previousTextNode,
+        getTextNodeLength(previousTextNode),
+      );
     }
 
     return this.collapse(this.focusNode, this.focusOffset - 1);
@@ -1202,7 +1211,7 @@ export class SelectionController extends EventTarget {
     this.focusNode.nodeValue = insertInto(
       this.focusNode.nodeValue,
       this.focusOffset,
-      newText
+      newText,
     );
     this.#mutations.update(this.focusInline);
     return this.collapse(this.focusNode, this.focusOffset + newText.length);
@@ -1219,14 +1228,14 @@ export class SelectionController extends EventTarget {
       this.focusNode.nodeValue = insertInto(
         this.focusNode.nodeValue,
         this.focusOffset,
-        newText
+        newText,
       );
     } else if (this.isLineBreakFocus) {
       const textNode = new Text(newText);
       this.focusNode.replaceWith(textNode);
       this.collapse(textNode, newText.length);
     } else {
-      throw new Error('Unknown node type');
+      throw new Error("Unknown node type");
     }
   }
 
@@ -1243,22 +1252,18 @@ export class SelectionController extends EventTarget {
         this.focusNode.nodeValue,
         startOffset,
         endOffset,
-        newText
+        newText,
       );
     } else if (this.isLineBreakFocus) {
       this.focusNode.replaceWith(new Text(newText));
     } else if (this.isRootFocus) {
       const newTextNode = new Text(newText);
       const newInline = createInline(newTextNode, this.#currentStyle);
-      const newParagraph = createParagraph([
-        newInline
-      ], this.#currentStyle)
-      this.focusNode.replaceChildren(
-        newParagraph
-      );
+      const newParagraph = createParagraph([newInline], this.#currentStyle);
+      this.focusNode.replaceChildren(newParagraph);
       return this.collapse(newTextNode, newText.length + 1);
     } else {
-      throw new Error('Unknown node type');
+      throw new Error("Unknown node type");
     }
     this.#mutations.update(this.focusInline);
     return this.collapse(this.focusNode, startOffset + newText.length);
@@ -1282,7 +1287,7 @@ export class SelectionController extends EventTarget {
     ) {
       const newTextNode = new Text(newText);
       currentParagraph.replaceChildren(
-        createInline(newTextNode, this.anchorInline.style)
+        createInline(newTextNode, this.anchorInline.style),
       );
       return this.collapse(newTextNode, newTextNode.nodeValue.length);
     }
@@ -1363,7 +1368,7 @@ export class SelectionController extends EventTarget {
     const newParagraph = splitParagraph(
       this.focusParagraph,
       this.focusInline,
-      this.#focusOffset
+      this.#focusOffset,
     );
     this.focusParagraph.after(newParagraph);
     this.#mutations.update(currentParagraph);
@@ -1396,7 +1401,7 @@ export class SelectionController extends EventTarget {
     const newParagraph = splitParagraph(
       currentParagraph,
       currentInline,
-      this.focusOffset
+      this.focusOffset,
     );
     currentParagraph.after(newParagraph);
 
@@ -1542,7 +1547,7 @@ export class SelectionController extends EventTarget {
       const newNodeValue = removeSlice(
         startNode.nodeValue,
         startOffset,
-        endOffset
+        endOffset,
       );
       if (newNodeValue === "") {
         const lineBreak = createLineBreak();
@@ -1588,9 +1593,10 @@ export class SelectionController extends EventTarget {
           currentNode.nodeValue = currentNode.nodeValue.slice(0, startOffset);
         }
       } else if (currentNode === endNode) {
-        if (isLineBreak(endNode)
-         || (isTextNode(endNode)
-          && endOffset === endNode.nodeValue.length)) {
+        if (
+          isLineBreak(endNode) ||
+          (isTextNode(endNode) && endOffset === endNode.nodeValue.length)
+        ) {
           // We should remove this node completely.
           shouldRemoveNodeCompletely = true;
         } else {
@@ -1623,7 +1629,6 @@ export class SelectionController extends EventTarget {
       if (currentNode === endNode) {
         break;
       }
-
     } while (this.#textNodeIterator.currentNode);
 
     if (startParagraph !== endParagraph) {
@@ -1635,22 +1640,31 @@ export class SelectionController extends EventTarget {
       }
     }
 
-    if (startInline.childNodes.length === 0
-     && endInline.childNodes.length > 0) {
+    if (
+      startInline.childNodes.length === 0 &&
+      endInline.childNodes.length > 0
+    ) {
       startInline.remove();
       return this.collapse(endNode, 0);
-    } else if (startInline.childNodes.length > 0
-     && endInline.childNodes.length === 0) {
+    } else if (
+      startInline.childNodes.length > 0 &&
+      endInline.childNodes.length === 0
+    ) {
       endInline.remove();
       return this.collapse(startNode, startOffset);
-    } else if (startInline.childNodes.length === 0
-     && endInline.childNodes.length === 0) {
+    } else if (
+      startInline.childNodes.length === 0 &&
+      endInline.childNodes.length === 0
+    ) {
       const previousInline = startInline.previousElementSibling;
       const nextInline = endInline.nextElementSibling;
       startInline.remove();
       endInline.remove();
       if (previousInline) {
-        return this.collapse(previousInline.firstChild, previousInline.firstChild.nodeValue.length);
+        return this.collapse(
+          previousInline.firstChild,
+          previousInline.firstChild.nodeValue.length,
+        );
       }
       if (nextInline) {
         return this.collapse(nextInline.firstChild, 0);
@@ -1790,7 +1804,7 @@ export class SelectionController extends EventTarget {
       this.startOffset,
       this.endContainer,
       this.endOffset,
-      newStyles
+      newStyles,
     );
   }
 
