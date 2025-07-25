@@ -5,6 +5,7 @@
 ### :bug: Bugs fixed
 
 - Fix unexpected exception on processing old texts [Github #6889](https://github.com/penpot/penpot/pull/6889)
+- Fix error on inspect tab when selecting multiple shapes [Taiga #11655](https://tree.taiga.io/project/penpot/issue/11655)
 
 
 ## 2.8.0
