@@ -298,6 +298,13 @@
    (when (number? value)
      (generate-text-shape-update {:font-size (str value)} shape-ids page-id))))
 
+(defn update-text-case
+  ([value shape-ids attributes] (update-text-case value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (when (string? value)
+     (generate-text-shape-update {:text-transform value} shape-ids page-id))))
+
+
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
 (defn apply-token
@@ -463,6 +470,14 @@
     :modal {:key :tokens/font-family
             :fields [{:label "Font Family"
                       :key :font-family}]}}
+
+   :text-case
+   {:title "Text Case"
+    :attributes ctt/text-case-keys
+    :on-update-shape update-text-case
+    :modal {:key :tokens/text-case
+            :fields [{:label "Text Case"
+                      :key :text-case}]}}
 
    :stroke-width
    {:title "Stroke Width"

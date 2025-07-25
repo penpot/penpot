@@ -30,6 +30,7 @@
     :font-family "text-font-family"
     :font-size "text-font-size"
     :letter-spacing "text-letterspacing"
+    :text-case "text-mixed"
     :opacity "percentage"
     :number "number"
     :rotation "rotation"

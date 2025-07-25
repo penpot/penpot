@@ -36,6 +36,7 @@
    #{:font-size} dwta/update-font-size
    #{:letter-spacing} dwta/update-letter-spacing
    #{:font-family} dwta/update-font-family
+   #{:text-case} dwta/update-text-case
    #{:x :y} dwta/update-shape-position
    #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
    #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
