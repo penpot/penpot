@@ -148,7 +148,7 @@ impl TextContent {
     ) -> Vec<Vec<ParagraphBuilder>> {
         if self.grow_type() == GrowType::AutoWidth {
             set_paragraphs_width(f32::MAX, &mut paragraphs);
-            let max_width = auto_width(&mut paragraphs).ceil();
+            let max_width = auto_width(&mut paragraphs, self.width()).ceil();
             set_paragraphs_width(max_width, &mut paragraphs);
         } else {
             set_paragraphs_width(self.width(), &mut paragraphs);
@@ -174,6 +174,12 @@ impl TextContent {
 
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
         self.grow_type = grow_type;
+    }
+
+    pub fn visual_bounds(&self) -> (f32, f32) {
+        let mut paragraphs = self.to_paragraphs();
+        let height = auto_height(&mut paragraphs, self.width());
+        (self.width(), height)
     }
 }
 
@@ -638,24 +644,43 @@ impl From<&Vec<u8>> for RawTextData {
     }
 }
 
-pub fn auto_width(paragraphs: &mut [Vec<ParagraphBuilder>]) -> f32 {
-    paragraphs.iter_mut().fold(0.0, |auto_width, p| {
-        p.iter_mut().fold(auto_width, |auto_width, paragraph| {
-            let mut paragraph = paragraph.build();
-            paragraph.layout(f32::MAX);
-            f32::max(paragraph.max_intrinsic_width(), auto_width)
+pub fn get_built_paragraphs(
+    paragraphs: &mut [Vec<ParagraphBuilder>],
+    width: f32,
+) -> Vec<Vec<skia_safe::textlayout::Paragraph>> {
+    paragraphs
+        .iter_mut()
+        .map(|builders| {
+            builders
+                .iter_mut()
+                .map(|builder_handle| {
+                    let mut paragraph = builder_handle.build();
+                    paragraph.layout(width);
+                    paragraph
+                })
+                .collect()
         })
-    })
+        .collect()
 }
 
-pub fn max_width(paragraphs: &mut [Vec<ParagraphBuilder>]) -> f32 {
-    paragraphs.iter_mut().fold(0.0, |max_width, p| {
-        p.iter_mut().fold(max_width, |max_width, paragraph| {
-            let mut paragraph = paragraph.build();
-            paragraph.layout(f32::MAX);
-            f32::max(paragraph.max_width(), max_width)
+pub fn auto_width(paragraphs: &mut [Vec<ParagraphBuilder>], width: f32) -> f32 {
+    let built_paragraphs = get_built_paragraphs(paragraphs, width);
+
+    built_paragraphs
+        .iter()
+        .flatten()
+        .fold(0.0, |auto_width, p| {
+            f32::max(p.max_intrinsic_width(), auto_width)
         })
-    })
+}
+
+pub fn max_width(paragraphs: &mut [Vec<ParagraphBuilder>], width: f32) -> f32 {
+    let built_paragraphs = get_built_paragraphs(paragraphs, width);
+
+    built_paragraphs
+        .iter()
+        .flatten()
+        .fold(0.0, |max_width, p| f32::max(p.max_width(), max_width))
 }
 
 pub fn auto_height(paragraphs: &mut [Vec<ParagraphBuilder>], width: f32) -> f32 {
