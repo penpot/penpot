@@ -170,7 +170,7 @@
             is-locked?         (some? locked-by-id)
             is-locked-by-me?   (= current-user-id locked-by-id)
             can-rename?        (or (not is-locked?) (and is-locked? is-locked-by-me?))
-            can-lock?          (not is-locked?)
+            can-lock?          (and is-version-creator? (not is-locked?))
             can-unlock?        (and is-version-creator? is-locked-by-me?)
             can-delete?        (or (not is-locked?) (and is-locked? is-locked-by-me?))]
         [:ul {:class (stl/css :version-options-dropdown)}
