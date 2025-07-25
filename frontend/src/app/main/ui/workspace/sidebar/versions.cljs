@@ -169,10 +169,10 @@
             is-version-creator? (= current-user-id version-creator-id)
             is-locked?         (some? locked-by-id)
             is-locked-by-me?   (= current-user-id locked-by-id)
-            can-rename?        (and is-version-creator? (or (not is-locked?) is-locked-by-me?))
-            can-lock?          (and is-version-creator? (not is-locked?))
+            can-rename?        (or (not is-locked?) (and is-locked? is-locked-by-me?))
+            can-lock?          (not is-locked?)
             can-unlock?        (and is-version-creator? is-locked-by-me?)
-            can-delete?        (and is-version-creator? (or (not is-locked?) is-locked-by-me?))]
+            can-delete?        (or (not is-locked?) (and is-locked? is-locked-by-me?))]
         [:ul {:class (stl/css :version-options-dropdown)}
          (when can-rename?
            [:li {:class (stl/css :menu-option)
