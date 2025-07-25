@@ -28,13 +28,13 @@
 
 (def type->options
   {:multiple [:fill :stroke :image :text :shadow :blur :layout-element]
-   :frame    [:visibility :geometry :fill :stroke :shadow :blur :layout :layout-element]
-   :group    [:visibility :geometry :svg :layout-element]
-   :rect     [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :circle   [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :path     [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :image    [:visibility :image :geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :text     [:visibility :geometry :text :shadow :blur :stroke :layout-element]
+   :frame    [:geometry :fill :stroke :shadow :blur :layout :layout-element]
+   :group    [:geometry :svg :layout-element]
+   :rect     [:geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :circle   [:geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :path     [:geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :image    [:image :geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :text     [:geometry :text :shadow :blur :stroke :layout-element]
    :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
 
 (mf/defc attributes
