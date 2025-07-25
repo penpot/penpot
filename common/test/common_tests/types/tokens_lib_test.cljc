@@ -1408,7 +1408,7 @@
 
 #?(:clj
    (t/deftest export-parse-dtcg-json
-     (with-redefs [ct/now    (constantly #inst "2024-10-16T12:01:20.257840055-00:00")
+     (with-redefs [ct/now    (constantly (ct/inst "2024-10-16T12:01:20.257840055-00:00"))
                    uuid/next (constantly uuid/zero)]
        (let [tokens-lib (-> (ctob/make-tokens-lib)
                             (ctob/add-set (ctob/make-token-set :name "core"
