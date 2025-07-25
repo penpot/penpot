@@ -268,6 +268,7 @@
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
         font-size (partial generic-attribute-actions #{:font-size} "Font Size")
         line-height #(generic-attribute-actions #{:line-height} "Line Height" (assoc % :on-update-shape dwta/update-line-height))
+        text-case (partial generic-attribute-actions #{:text-case} "Text Case")
         border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
                                                                            :r2 "Top Right"
                                                                            :r4 "Bottom Left"
@@ -291,6 +292,7 @@
                   (when (seq line-height) line-height))))
      :stroke-width stroke-width
      :font-size font-size
+     :text-case text-case
      :dimensions (fn [context-data]
                    (-> (concat
                         (when (seq (sizing-attribute-actions context-data)) [{:title "Sizing" :submenu :sizing}])
