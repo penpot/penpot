@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.uuid :as uuid]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown-content*]]
    [app.main.ui.icons :as i]

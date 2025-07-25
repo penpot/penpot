@@ -180,6 +180,39 @@
           state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Handle dropdowns
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defn hide-dropdown
+  ([]
+   (ptk/reify ::hide-dropdown
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :dashboard-local assoc 
+               :menu-open false
+               :menu-id nil))))
+
+  ;; FIXME
+  ([dropdown-id]
+   (ptk/reify ::hide-dropdown
+     ptk/UpdateEvent
+     (update [_ state]
+       (update state :dashboard-local assoc 
+               :menu-open false
+               :menu-id nil)))))
+
+(defn show-dropdown
+  [dropdown-id]
+  (ptk/reify ::show-dropdown
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              (fn [dl]
+                (-> dl
+                    (assoc :menu-open true
+                           :menu-id dropdown-id)
+                    (dissoc :menu-pos :file-id)))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Show grid menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -188,10 +221,14 @@
   (ptk/reify ::show-file-menu-with-position
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-local assoc
-              :menu-open true
-              :menu-pos pos
-              :file-id file-id))))
+      (println "[show-file-menu-with-position] before:" (:dashboard-local state))
+      (let [new-state (update state :dashboard-local assoc
+                              :menu-open true
+                              :menu-pos pos
+                              :menu-id file-id
+                              :file-id file-id)]
+        (println "[show-file-menu-with-position] after:" (:dashboard-local new-state))
+        new-state))))
 
 (defn show-file-menu
   []
@@ -206,8 +243,9 @@
   (ptk/reify ::hide-file-menu
     ptk/UpdateEvent
     (update [_ state]
-      (update state :dashboard-local
-              assoc :menu-open false))))
+      (update state :dashboard-local assoc
+              :menu-open false
+              :menu-id nil))))
 
 (defn start-edit-file-name
   [file-id]

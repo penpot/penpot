@@ -11,6 +11,7 @@
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
    [app.util.timers :as tm]
+   [app.common.uuid :as uuid]
    [goog.events :as events]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
@@ -54,12 +55,13 @@
 
 (mf/defc dropdown
   {::mf/props :obj}
-  [{:keys [on-close show children container]}]
+  [{:keys [on-close show children container dropdown-id]}]
   (assert (fn? on-close) "missing `on-close` prop")
   (assert (boolean? show) "missing `show` prop")
 
-  (when ^boolean show
-    [:> dropdown-content*
-     {:on-close on-close
-      :container container
-      :children children}]))
+  (let [dropdown-id (or dropdown-id (uuid/next))]
+    (when ^boolean show
+      [:> dropdown-content*
+       {:on-close on-close
+        :container container
+        :children children}])))

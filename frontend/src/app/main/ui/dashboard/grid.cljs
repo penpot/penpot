@@ -443,7 +443,8 @@
                             :on-edit on-edit
                             :on-menu-close on-menu-close
                             :origin origin
-                            :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
+                            :parent-id (dm/str file-id "-action-menu")
+                            :show (and selected? menu-open?)}]])]]]]]))
 
 (mf/defc grid*
   {::mf/props :obj}
