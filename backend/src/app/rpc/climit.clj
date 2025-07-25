@@ -11,11 +11,11 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.metrics :as mtx]
    [app.rpc :as-alias rpc]
    [app.util.cache :as cache]
    [app.util.services :as-alias sv]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.edn :as edn]
    [clojure.set :as set]
@@ -154,7 +154,7 @@
            :id limit-id
            :label limit-label
            :queue queue
-           :elapsed (some-> elapsed dt/format-duration)
+           :elapsed (some-> elapsed ct/format-duration)
            :params @limit-params)))
 
 (def ^:private idseq (AtomicLong. 0))
@@ -171,7 +171,7 @@
         mlabels     (into-array String [(id->str limit-id)])
         limit-id    (id->str limit-id limit-key)
         limiter     (cache/get cache limit-id (partial create-limiter config))
-        tpoint      (dt/tpoint)
+        tpoint      (ct/tpoint)
         req-id      (.incrementAndGet ^AtomicLong idseq)]
     (try
       (let [stats (pbh/get-stats limiter)]

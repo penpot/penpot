@@ -7,6 +7,7 @@
 (ns app.rpc.commands.access-token
   (:require
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.main :as-alias main]
@@ -15,8 +16,7 @@
    [app.rpc.quotes :as quotes]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [app.util.services :as sv]
-   [app.util.time :as dt]))
+   [app.util.services :as sv]))
 
 (defn- decode-row
   [row]
@@ -24,13 +24,13 @@
 
 (defn create-access-token
   [{:keys [::db/conn ::setup/props]} profile-id name expiration]
-  (let [created-at (dt/now)
+  (let [created-at (ct/now)
         token-id   (uuid/next)
         token      (tokens/generate props {:iss "access-token"
                                            :tid token-id
                                            :iat created-at})
 
-        expires-at (some-> expiration dt/in-future)
+        expires-at (some-> expiration ct/in-future)
         token      (db/insert! conn :access-token
                                {:id token-id
                                 :name name
@@ -49,7 +49,7 @@
 (def ^:private schema:create-access-token
   [:map {:title "create-access-token"}
    [:name [:string {:max 250 :min 1}]]
-   [:expiration {:optional true} ::dt/duration]])
+   [:expiration {:optional true} ::ct/duration]])
 
 (sv/defmethod ::create-access-token
   {::doc/added "1.18"

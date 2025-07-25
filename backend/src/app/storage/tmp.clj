@@ -12,8 +12,8 @@
   (:require
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [datoteka.fs :as fs]
    [datoteka.io :as io]
@@ -38,7 +38,7 @@
 
 (defmethod ig/expand-key ::cleaner
   [k v]
-  {k (assoc v ::min-age (dt/duration "60m"))})
+  {k (assoc v ::min-age (ct/duration "60m"))})
 
 (defmethod ig/init-key ::cleaner
   [_ cfg]
@@ -52,13 +52,13 @@
 
 (defn- io-loop
   [{:keys [::min-age] :as cfg}]
-  (l/inf :hint "started tmp cleaner" :default-min-age (dt/format-duration min-age))
+  (l/inf :hint "started tmp cleaner" :default-min-age (ct/format-duration min-age))
   (try
     (loop []
       (when-let [[path min-age'] (sp/take! queue)]
         (let [min-age (or min-age' min-age)]
           (l/dbg :hint "schedule tempfile deletion" :path path
-                 :expires-at (dt/plus (dt/now) min-age))
+                 :expires-at (ct/plus (ct/now) min-age))
           (px/schedule! (inst-ms min-age) (partial remove-temp-file cfg path))
           (recur))))
     (catch InterruptedException _
@@ -87,7 +87,7 @@
         path  (fs/join default-tmp-dir (str prefix (uuid/next) suffix))
         path  (Files/createFile path attrs)]
     (fs/delete-on-exit! path)
-    (sp/offer! queue [path (some-> min-age dt/duration)])
+    (sp/offer! queue [path (some-> min-age ct/duration)])
     path))
 
 (defn tempfile-from

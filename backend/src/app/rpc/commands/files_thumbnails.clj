@@ -13,6 +13,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.schema :as sm]
    [app.common.thumbnails :as thc]
+   [app.common.time :as ct]
    [app.common.types.shape-tree :as ctt]
    [app.config :as cf]
    [app.db :as db]
@@ -30,13 +31,12 @@
    [app.storage :as sto]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [cuerdas.core :as str]))
 
 ;; --- FEATURES
 
 (def long-cache-duration
-  (dt/duration {:days 7}))
+  (ct/duration {:days 7}))
 
 ;; --- COMMAND QUERY: get-file-object-thumbnails
 
@@ -247,7 +247,7 @@
 (defn- create-file-object-thumbnail!
   [{:keys [::sto/storage] :as cfg} file object-id media tag]
   (let [file-id   (:id file)
-        timestamp (dt/now)
+        timestamp (ct/now)
         media     (persist-thumbnail! storage media timestamp)
         [th1 th2] (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                                     (let [th1 (db/exec-one! conn [sql:get-file-object-thumbnail file-id object-id tag])
@@ -302,7 +302,7 @@
                                              {::sql/for-update true})]
     (sto/touch-object! storage media-id)
     (db/update! conn :file-tagged-object-thumbnail
-                {:deleted-at (dt/now)}
+                {:deleted-at (ct/now)}
                 {:file-id file-id
                  :object-id object-id
                  :tag tag})))
@@ -338,7 +338,7 @@
         hash  (sto/calculate-hash path)
         data  (-> (sto/content path)
                   (sto/wrap-with-hash hash))
-        tnow  (dt/now)
+        tnow  (ct/now)
         media (sto/put-object! storage
                                {::sto/content data
                                 ::sto/deduplicate? true

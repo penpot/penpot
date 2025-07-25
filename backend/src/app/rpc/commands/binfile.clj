@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
@@ -26,7 +27,6 @@
    [app.rpc.doc :as-alias doc]
    [app.tasks.file-gc]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [promesa.exec :as px]
    [yetti.response :as yres]))
@@ -114,7 +114,7 @@
                  3 (px/invoke! executor (partial bf.v3/import-files! cfg)))]
 
     (db/update! pool :project
-                {:modified-at (dt/now)}
+                {:modified-at (ct/now)}
                 {:id project-id}
                 {::db/return-keys false})
 

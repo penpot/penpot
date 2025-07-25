@@ -7,6 +7,7 @@
 (ns backend-tests.rpc-team-test
   (:require
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -14,7 +15,6 @@
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]
@@ -163,7 +163,7 @@
 
       ;; Proceed to delete the requester user
       (th/db-update! :profile
-                     {:deleted-at (dt/in-past "1h")}
+                     {:deleted-at (ct/in-past "1h")}
                      {:id (:id requester)})
 
       ;; Create a new profile with the same email
@@ -271,7 +271,7 @@
 
     (let [token (tokens/generate sprops
                                  {:iss :team-invitation
-                                  :exp (dt/in-future "1h")
+                                  :exp (ct/in-future "1h")
                                   :profile-id (:id profile1)
                                   :role :editor
                                   :team-id (:id team)
@@ -283,7 +283,7 @@
                     {:team-id (:id team)
                      :email-to (:email profile2)
                      :role "editor"
-                     :valid-until (dt/in-future "48h")})
+                     :valid-until (ct/in-future "48h")})
 
         (let [data {::th/type :verify-token :token token}
               out  (th/command! data)]
@@ -328,7 +328,7 @@
                     {:team-id (:id team)
                      :email-to (:email profile3)
                      :role "editor"
-                     :valid-until (dt/in-future "48h")})
+                     :valid-until (ct/in-future "48h")})
 
         (let [data {::th/type :verify-token
                     ::rpc/profile-id (:id profile1)
@@ -381,14 +381,14 @@
                 {:team-id (:team-id data)
                  :email-to "test1@mail.com"
                  :role "editor"
-                 :valid-until (dt/in-future "48h")})
+                 :valid-until (ct/in-future "48h")})
 
     ;; insert an entry on the database with an expired invitation
     (db/insert! th/*pool* :team-invitation
                 {:team-id (:team-id data)
                  :email-to "test2@mail.com"
                  :role "editor"
-                 :valid-until (dt/in-past "48h")})
+                 :valid-until (ct/in-past "48h")})
 
     (let [out (th/command! data)]
       (t/is (th/success? out))
@@ -415,7 +415,7 @@
                 {:team-id (:team-id data)
                  :email-to "test1@mail.com"
                  :role "editor"
-                 :valid-until (dt/in-future "48h")})
+                 :valid-until (ct/in-future "48h")})
 
     (let [out (th/command! data)
           ;; retrieve the value from the database and check its content
@@ -438,7 +438,7 @@
                 {:team-id (:team-id data)
                  :email-to "test1@mail.com"
                  :role "editor"
-                 :valid-until (dt/in-future "48h")})
+                 :valid-until (ct/in-future "48h")})
 
     (let [out (th/command! data)
           ;; retrieve the value from the database and check its content
@@ -582,7 +582,7 @@
 
     (let [rows (th/db-exec! ["select * from team where id = ?" (:id team)])]
       (t/is (= 1 (count rows)))
-      (t/is (dt/instant? (:deleted-at (first rows)))))
+      (t/is (ct/inst? (:deleted-at (first rows)))))
 
     (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
       (t/is (= 5 (:processed result))))))
@@ -626,7 +626,7 @@
       (th/reset-mock! mock)
 
       (th/db-update! :team-access-request
-                     {:valid-until (dt/in-past "1h")}
+                     {:valid-until (ct/in-past "1h")}
                      {:team-id (:id team)
                       :requester-id (:id requester)})
 

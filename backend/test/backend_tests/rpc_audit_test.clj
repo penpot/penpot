@@ -7,10 +7,10 @@
 (ns backend-tests.rpc-audit-test
   (:require
    [app.common.pprint :as pp]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [yetti.request]))
@@ -46,7 +46,7 @@
                                      :route "dashboard-files"}
                              :context {:engine "blink"}
                              :profile-id (:id prof)
-                             :timestamp (dt/now)
+                             :timestamp (ct/now)
                              :type "action"}]}
 
           params  (with-meta params
@@ -79,7 +79,7 @@
                                      :route "dashboard-files"}
                              :context {:engine "blink"}
                              :profile-id uuid/zero
-                             :timestamp (dt/now)
+                             :timestamp (ct/now)
                              :type "action"}]}
           params  (with-meta params
                     {:app.http/request http-request})

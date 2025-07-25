@@ -3,6 +3,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -15,7 +16,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -223,8 +223,6 @@
         teams*         (mf/use-state nil)
         teams          (deref teams*)
 
-        locale         (mf/deref i18n/locale)
-
         params-subscription
         (-> route :params :query :subscription)
 
@@ -249,10 +247,10 @@
         (= (:status subscription) "trialing")
 
         member-since
-        (dt/format-date-locale-short (:created-at profile) {:locale locale})
+        (ct/format-inst (:created-at profile) "d MMMM, yyyy")
 
         subscribed-since
-        (dt/format-date-locale-short (:start-date subscription) {:locale locale})
+        (ct/format-inst (:start-date profile) "d MMMM, yyyy")
 
         go-to-pricing-page
         (mf/use-fn

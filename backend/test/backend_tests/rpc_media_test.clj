@@ -6,11 +6,11 @@
 
 (ns backend-tests.rpc-media-test
   (:require
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.db :as db]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [datoteka.fs :as fs]))
@@ -257,7 +257,7 @@
                                    :is-shared false})
 
         _      (th/db-update! :file
-                              {:deleted-at (dt/now)}
+                              {:deleted-at (ct/now)}
                               {:id (:id file)})
 
         mfile  {:filename "sample.jpg"

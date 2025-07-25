@@ -10,6 +10,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
    [app.common.thumbnails :as thc]
+   [app.common.time :as ct]
    [app.common.types.component :as ctc]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
@@ -21,7 +22,6 @@
    [app.main.render :as render]
    [app.main.repo :as rp]
    [app.util.queue :as q]
-   [app.util.time :as tp]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -65,7 +65,7 @@
   "Returns the thumbnail for the given ids"
   [state file-id page-id frame-id tag]
   (let [object-id (thc/fmt-object-id file-id page-id frame-id tag)
-        tp        (tp/tpoint-ms)
+        tp        (ct/tpoint-ms)
         objects   (-> (dsh/lookup-file-data state file-id)
                       (dsh/get-page page-id)
                       :objects)
@@ -156,7 +156,7 @@
       ptk/WatchEvent
       (watch [_ state stream]
         (l/dbg :hint "update thumbnail" :requester requester :object-id object-id :tag tag)
-        (let [tp (tp/tpoint-ms)]
+        (let [tp (ct/tpoint-ms)]
           ;; Send the update to the back-end
           (->> (request-thumbnail state file-id page-id frame-id tag)
                (rx/mapcat (fn [blob]

@@ -12,12 +12,12 @@
    [app.common.geom.point :as gpt]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uuid :as uuid]
    [app.db.sql :as sql]
    [app.metrics :as mtx]
    [app.util.json :as json]
-   [app.util.time :as dt]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [integrant.core :as ig]
@@ -377,9 +377,9 @@
 
 (defn is-row-deleted?
   [{:keys [deleted-at]}]
-  (and (dt/instant? deleted-at)
+  (and (ct/inst? deleted-at)
        (< (inst-ms deleted-at)
-          (inst-ms (dt/now)))))
+          (inst-ms (ct/now)))))
 
 (defn get*
   "Retrieve a single row from database that matches a simple filters. Do
@@ -585,7 +585,7 @@
     (string? o)
     (pginterval o)
 
-    (dt/duration? o)
+    (ct/duration? o)
     (interval (inst-ms o))
 
     :else

@@ -12,11 +12,11 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.redis :as rds]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -29,10 +29,10 @@
    [:id ::sm/uuid]
    [:queue :string]
    [:name :string]
-   [:created-at ::sm/inst]
-   [:modified-at ::sm/inst]
-   [:scheduled-at {:optional true} ::sm/inst]
-   [:completed-at {:optional true} ::sm/inst]
+   [:created-at ::ct/inst]
+   [:modified-at ::ct/inst]
+   [:scheduled-at {:optional true} ::ct/inst]
+   [:completed-at {:optional true} ::ct/inst]
    [:error {:optional true} :string]
    [:max-retries :int]
    [:retry-num :int]
@@ -76,10 +76,10 @@
            :queue queue
            :runner-id id
            :retry (:retry-num task))
-    (let [tpoint  (dt/tpoint)
+    (let [tpoint  (ct/tpoint)
           task-fn (wrk/get-task registry (:name task))
           result  (when task-fn (task-fn task))
-          elapsed (dt/format-duration (tpoint))
+          elapsed (ct/format-duration (tpoint))
           result  (if (valid-task-result? result)
                     result
                     {:status "completed"})]
@@ -105,7 +105,7 @@
                     (:max-retries task))
                  (= ::retry (:type edata)))
           (cond-> {:status "retry" :error cause}
-            (dt/duration? (:delay edata))
+            (ct/duration? (:delay edata))
             (assoc :delay (:delay edata))
 
             (= ::noop (:strategy edata))
@@ -156,13 +156,13 @@
                             (str error))
                   task    (-> result meta ::task)
                   nretry  (+ (:retry-num task) inc-by)
-                  now     (dt/now)
+                  now     (ct/now)
                   delay   (->> (iterate #(* % 2) delay) (take nretry) (last))]
               (db/update! pool :task
                           {:error explain
                            :status "retry"
                            :modified-at now
-                           :scheduled-at (dt/plus now delay)
+                           :scheduled-at (ct/plus now delay)
                            :retry-num nretry}
                           {:id (:id task)})
               nil))
@@ -172,14 +172,14 @@
                   explain (ex-message error)]
               (db/update! pool :task
                           {:error explain
-                           :modified-at (dt/now)
+                           :modified-at (ct/now)
                            :status "failed"}
                           {:id (:id task)})
               nil))
 
           (handle-task-completion [result]
             (let [task (-> result meta ::task)
-                  now  (dt/now)]
+                  now  (ct/now)]
               (db/update! pool :task
                           {:completed-at now
                            :modified-at now
@@ -255,7 +255,7 @@
         (let [cfg    (-> cfg
                          (assoc ::rds/rconn rconn)
                          (assoc ::queue (str/ffmt "%:%" tenant queue))
-                         (assoc ::timeout (dt/duration "5s")))]
+                         (assoc ::timeout (ct/duration "5s")))]
           (loop []
             (when (px/interrupted?)
               (throw (InterruptedException. "interrupted")))

@@ -7,8 +7,6 @@
 (ns app.common.geom.matrix
   (:require
    #?(:clj [app.common.fressian :as fres])
-   #?(:cljs [cljs.pprint :as pp]
-      :clj  [clojure.pprint :as pp])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
@@ -17,32 +15,15 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
-   [app.common.spec :as us]
    [app.common.transit :as t]
-   [clojure.spec.alpha :as s])
+   [clojure.pprint :as pp])
   #?(:clj
      (:import
       java.util.List)))
 
-
 (def precision 6)
 
 ;; --- Matrix Impl
-(cr/defrecord Matrix [^double a
-                      ^double b
-                      ^double c
-                      ^double d
-                      ^double e
-                      ^double f]
-  Object
-  (toString [this]
-    (dm/fmt "matrix(%, %, %, %, %, %)"
-            (mth/to-fixed (.-a this) precision)
-            (mth/to-fixed (.-b this) precision)
-            (mth/to-fixed (.-c this) precision)
-            (mth/to-fixed (.-d this) precision)
-            (mth/to-fixed (.-e this) precision)
-            (mth/to-fixed (.-f this) precision))))
 
 (defn format-precision
   [mtx precision]
@@ -54,6 +35,16 @@
             (mth/to-fixed (.-d mtx) precision)
             (mth/to-fixed (.-e mtx) precision)
             (mth/to-fixed (.-f mtx) precision))))
+
+(cr/defrecord Matrix [^double a
+                      ^double b
+                      ^double c
+                      ^double d
+                      ^double e
+                      ^double f]
+  Object
+  (toString [this]
+    (format-precision this precision)))
 
 (defn matrix?
   "Return true if `v` is Matrix instance."
@@ -140,20 +131,6 @@
      :encode/string matrix->str
      ::oapi/type "string"
      ::oapi/format "matrix"}}))
-
-;; FIXME: deprecated
-(s/def ::a ::us/safe-float)
-(s/def ::b ::us/safe-float)
-(s/def ::c ::us/safe-float)
-(s/def ::d ::us/safe-float)
-(s/def ::e ::us/safe-float)
-(s/def ::f ::us/safe-float)
-
-(s/def ::matrix-attrs
-  (s/keys :req-un [::a ::b ::c ::d ::e ::f]))
-
-(s/def ::matrix
-  (s/and ::matrix-attrs matrix?))
 
 (defn close?
   [^Matrix m1 ^Matrix m2]
@@ -436,6 +413,20 @@
        ^boolean (mth/almost-zero? (dm/get-prop m :b))
        ^boolean (mth/almost-zero? (dm/get-prop m :c))
        ^boolean (mth/almost-zero? (- (dm/get-prop m :d) 1))))
+
+#?(:clj
+   (defmethod print-method Matrix
+     [o w]
+     (print-dup o w)))
+
+#?(:clj
+   (defmethod print-dup Matrix
+     [^Matrix mtx ^java.io.Writer writer]
+     (.write writer (str "#penpot/matrix \"" (matrix->str mtx) "\""))))
+
+(defmethod pp/simple-dispatch Matrix
+  [obj]
+  (pr obj))
 
 #?(:clj
    (fres/add-handlers!

@@ -114,7 +114,6 @@
     "js-beautify": "^1.15.4",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
-    "luxon": "^3.6.1",
     "opentype.js": "^1.3.4",
     "postcss-modules": "^6.0.1",
     "randomcolor": "^0.6.2",

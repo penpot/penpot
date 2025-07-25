@@ -5532,7 +5532,6 @@ __metadata:
     jsdom: "npm:^26.1.0"
     lodash: "npm:^4.17.21"
     lodash.debounce: "npm:^4.0.8"
-    luxon: "npm:^3.6.1"
     map-stream: "npm:0.0.7"
     marked: "npm:^15.0.12"
     mkdirp: "npm:^3.0.1"
@@ -7737,13 +7736,6 @@ __metadata:
   dependencies:
     es5-ext: "npm:~0.10.2"
   checksum: 10c0/83517032b46843601c4528be65e8aaf85f5a7860a9cfa3e4f2b5591da436e7cd748d95b450c91434c4ffb75d3ae4c069ddbdd9f71ada56a99a00c03088c51b4d
-  languageName: node
-  linkType: hard
-
-"luxon@npm:^3.6.1":
-  version: 3.6.1
-  resolution: "luxon@npm:3.6.1"
-  checksum: 10c0/906d57a9dc4d1de9383f2e9223e378c298607c1b4d17b6657b836a3cd120feb1c1de3b5d06d846a3417e1ca764de8476e8c23b3cd4083b5cdb870adcb06a99d5
   languageName: node
   linkType: hard
 

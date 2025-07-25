@@ -9,9 +9,9 @@
   of deleted or unreachable objects."
   (:require
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.db :as db]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [integrant.core :as ig]))
 
 (def ^:private sql:get-profiles
@@ -53,7 +53,7 @@
                  (l/trc :hint "permanently delete"
                         :rel "team"
                         :id (str id)
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  ;; Mark as deleted the storage object
                  (some->> photo-id (sto/touch-object! storage))
@@ -82,7 +82,7 @@
                         :rel "team-font-variant"
                         :id (str id)
                         :team-id (str team-id)
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  ;; Mark as deleted the all related storage objects
                  (some->> (:woff1-file-id font) (sto/touch-object! storage))
@@ -114,7 +114,7 @@
                         :rel "project"
                         :id (str id)
                         :team-id (str team-id)
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  ;; And finally, permanently delete the project.
                  (db/delete! conn :project {:id id})
@@ -140,7 +140,7 @@
                         :rel "file"
                         :id (str id)
                         :project-id (str project-id)
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  (when (= "objects-storage" (:data-backend file))
                    (sto/touch-object! storage (:data-ref-id file)))
@@ -169,7 +169,7 @@
                         :rel "file-thumbnail"
                         :file-id (str file-id)
                         :revn revn
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  ;; Mark as deleted the storage object
                  (some->> media-id (sto/touch-object! storage))
@@ -198,7 +198,7 @@
                         :rel "file-tagged-object-thumbnail"
                         :file-id (str file-id)
                         :object-id object-id
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  ;; Mark as deleted the storage object
                  (some->> media-id (sto/touch-object! storage))
@@ -227,7 +227,7 @@
                         :rel "file-data-fragment"
                         :id (str id)
                         :file-id (str file-id)
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  (some->> data-ref-id (sto/touch-object! storage))
                  (db/delete! conn :file-data-fragment {:file-id file-id :id id})
@@ -253,7 +253,7 @@
                         :rel "file-media-object"
                         :id (str id)
                         :file-id (str file-id)
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  ;; Mark as deleted the all related storage objects
                  (some->> (:media-id fmo) (sto/touch-object! storage))
@@ -282,7 +282,7 @@
                         :rel "file-change"
                         :id (str id)
                         :file-id (str file-id)
-                        :deleted-at (dt/format-instant deleted-at))
+                        :deleted-at (ct/format-inst deleted-at))
 
                  (when (= "objects-storage" (:data-backend xlog))
                    (sto/touch-object! storage (:data-ref-id xlog)))
@@ -328,7 +328,7 @@
 (defmethod ig/init-key ::handler
   [_ cfg]
   (fn [{:keys [props] :as task}]
-    (let [threshold (dt/duration (get props :deletion-threshold 0))
+    (let [threshold (ct/duration (get props :deletion-threshold 0))
           cfg       (assoc cfg ::deletion-threshold (db/interval threshold))]
       (loop [procs (map deref deletion-proc-vars)
              total 0]

@@ -9,6 +9,7 @@
    [app.common.features :as cfeat]
    [app.common.pprint :as pp]
    [app.common.thumbnails :as thc]
+   [app.common.time :as ct]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -18,7 +19,6 @@
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]))
@@ -135,7 +135,7 @@
           (t/is (nil? (:users result))))))
 
     (th/db-update! :file
-                   {:deleted-at (dt/now)}
+                   {:deleted-at (ct/now)}
                    {:id file-id})
 
     (t/testing "query single file after delete and wait"
@@ -1844,7 +1844,7 @@
 
     (th/run-task! :delete-object
                   {:object :file
-                   :deleted-at (dt/now)
+                   :deleted-at (ct/now)
                    :id (:id file-1)})
 
     ;; Check that file media object references are marked all for deletion

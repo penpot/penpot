@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
+   [app.common.time :as-alias ct]
    [app.common.types.page :as ctp]
    [app.common.types.plugins :as ctpg]
    [app.common.types.variant :as ctv]
@@ -25,7 +26,7 @@
      [:id ::sm/uuid]
      [:name :string]
      [:path {:optional true} [:maybe :string]]
-     [:modified-at {:optional true} ::sm/inst]
+     [:modified-at {:optional true} ::ct/inst]
      [:objects {:gen/max 10 :optional true} ctp/schema:objects]
      [:main-instance-id ::sm/uuid]
      [:main-instance-page ::sm/uuid]

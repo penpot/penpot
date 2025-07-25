@@ -10,11 +10,11 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.db :as db]
    [app.metrics :as mtx]
    [app.redis :as rds]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -32,9 +32,9 @@
 (defmethod ig/expand-key ::wrk/dispatcher
   [k v]
   {k (-> (d/without-nils v)
-         (assoc ::timeout (dt/duration "10s"))
+         (assoc ::timeout (ct/duration "10s"))
          (assoc ::batch-size 100)
-         (assoc ::wait-duration (dt/duration "5s")))})
+         (assoc ::wait-duration (ct/duration "5s")))})
 
 (defmethod ig/assert-key ::wrk/dispatcher
   [_ cfg]

@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
+   [app.common.time :as ct]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -17,7 +18,6 @@
    [app.util.globals :as ug]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
@@ -173,8 +173,8 @@
   (ptk/reify ::update-plugins-permissions-peek
     ptk/UpdateEvent
     (update [_ state]
-      (let [now        (dt/now)
-            expiration (dt/minus now (dt/duration {:days 1}))
+      (let [now        (ct/now)
+            expiration (ct/in-past {:days 1})
             updated-at (dm/get-in state [:plugins-permissions-peek :updated-at] 0)
             expired?   (> expiration updated-at)]
 

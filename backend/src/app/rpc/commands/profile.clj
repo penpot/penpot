@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.plugins :refer [schema:plugin-registry]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -28,7 +29,6 @@
    [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [cuerdas.core :as str]
    [promesa.exec :as px]))
@@ -70,8 +70,8 @@
    [:is-blocked {:optional true} ::sm/boolean]
    [:is-demo {:optional true} ::sm/boolean]
    [:is-muted {:optional true} ::sm/boolean]
-   [:created-at {:optional true} ::sm/inst]
-   [:modified-at {:optional true} ::sm/inst]
+   [:created-at {:optional true} ::ct/inst]
+   [:modified-at {:optional true} ::ct/inst]
    [:default-project-id {:optional true} ::sm/uuid]
    [:default-team-id {:optional true} ::sm/uuid]
    [:props {:optional true} schema:props]])
@@ -352,13 +352,13 @@
   [{:keys [::db/conn] :as cfg} {:keys [profile email] :as params}]
   (let [token   (tokens/generate (::setup/props cfg)
                                  {:iss :change-email
-                                  :exp (dt/in-future "15m")
+                                  :exp (ct/in-future "15m")
                                   :profile-id (:id profile)
                                   :email email})
         ptoken  (tokens/generate (::setup/props cfg)
                                  {:iss :profile-identity
                                   :profile-id (:id profile)
-                                  :exp (dt/in-future {:days 30})})]
+                                  :exp (ct/in-future {:days 30})})]
 
     (when (not= email (:email profile))
       (check-profile-existence! conn params))
@@ -444,7 +444,7 @@
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id] :as params}]
   (let [teams      (get-owned-teams conn profile-id)
-        deleted-at (dt/now)]
+        deleted-at (ct/now)]
 
     ;; If we found owned teams with participants, we don't allow
     ;; delete profile until the user properly transfer ownership or

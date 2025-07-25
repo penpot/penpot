@@ -13,11 +13,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
-   [app.common.time :as dt]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
-   [clojure.core.protocols :as protocols]
+   [clojure.core.protocols :as cp]
+   [clojure.datafy :refer [datafy]]
+   [clojure.pprint :as pp]
    [clojure.set :as set]
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
@@ -71,6 +73,9 @@
 ;; === Token
 
 (defrecord Token [id name type value description modified-at]
+  cp/Datafiable
+  (datafy [this] (into {} this))
+
   INamedItem
   (get-name [_]
     name)
@@ -87,6 +92,34 @@
   (set-description [this new-description]
     (assoc this :description new-description)))
 
+(defmethod pp/simple-dispatch Token
+  [^Token obj]
+  (.write *out* "#penpot/token ")
+  (pp/pprint-newline :miser)
+  (pp/pprint (datafy obj)))
+
+#?(:clj
+   (do
+     (defmethod print-method Token
+       [^Token this ^java.io.Writer w]
+       (.write w "#penpot/token ")
+       (print-method (datafy this) w))
+
+     (defmethod print-dup Token
+       [^Token this ^java.io.Writer w]
+       (print-method this w)))
+
+   :cljs
+   (extend-type Token
+     cljs.core/IPrintWithWriter
+     (-pr-writer [this writer opts]
+       (-write writer "#penpot/token ")
+       (-pr-writer (datafy this) writer opts))
+
+     cljs.core/IEncodeJS
+     (-clj->js [this]
+       (clj->js (datafy this)))))
+
 (defn token?
   [o]
   (instance? Token o))
@@ -98,7 +131,7 @@
    [:type [::sm/one-of cto/token-types]]
    [:value ::sm/any]
    [:description {:optional true} :string]
-   [:modified-at {:optional true} ::sm/inst]])
+   [:modified-at {:optional true} ::ct/inst]])
 
 (declare make-token)
 
@@ -118,7 +151,7 @@
   [& {:as attrs}]
   (-> attrs
       (update :id #(or % (uuid/next)))
-      (update :modified-at #(or % (dt/now)))
+      (update :modified-at #(or % (ct/now)))
       (update :description d/nilv "")
       (check-token-attrs)
       (map->Token)))
@@ -175,25 +208,26 @@
 (defrecord TokenSetLegacy [id name description modified-at tokens])
 
 (deftype TokenSet [id name description modified-at tokens]
-  #?@(:clj  [clojure.lang.IDeref
-             (deref [_] {:id id
-                         :name name
-                         :description description
-                         :modified-at modified-at
-                         :tokens tokens})]
-      :cljs [cljs.core/IDeref
-             (-deref [_] {:id id
-                          :name name
-                          :description description
-                          :modified-at modified-at
-                          :tokens tokens})])
+  Object
+  (equals [_ other]
+    (and (instance? TokenSet other)
+         (= id (.-id ^TokenSet other))
+         (= name (.-name ^TokenSet other))
+         (= description (.-description ^TokenSet other))
+         (= modified-at (.-modified-at ^TokenSet other))
+         (= tokens (.-tokens ^TokenSet other))))
 
-  #?@(:cljs [cljs.core/IEncodeJS
-             (-clj->js [_] (js-obj "id" (clj->js id)
-                                   "name" (clj->js name)
-                                   "description" (clj->js description)
-                                   "modified-at" (clj->js modified-at)
-                                   "tokens" (clj->js tokens)))])
+  #?@(:cljs [cljs.core/IEquiv
+             (-equiv [this other] (.equals ^TokenSet this other))])
+
+  cp/Datafiable
+  (datafy [_]
+    {:id id
+     :name name
+     :description description
+     :modified-at modified-at
+     :tokens tokens})
+
   INamedItem
   (get-name [_]
     name)
@@ -208,14 +242,14 @@
     (TokenSet. id
                new-name
                description
-               (dt/now)
+               (ct/now)
                tokens))
 
   (set-description [_ new-description]
     (TokenSet. id
                name
                (d/nilv new-description "")
-               (dt/now)
+               (ct/now)
                tokens))
 
   ITokenSet
@@ -231,17 +265,17 @@
       (TokenSet. id
                  name
                  description
-                 (dt/now)
+                 (ct/now)
                  (assoc tokens (:name token) token))))
 
   (update-token [this id f]
     (if-let [token (token-by-id this id)]
       (let [token' (-> (make-token (f token))
-                       (assoc :modified-at (dt/now)))]
+                       (assoc :modified-at (ct/now)))]
         (TokenSet. id
                    name
                    description
-                   (dt/now)
+                   (ct/now)
                    (if (= (:name token) (:name token'))
                      (assoc tokens (:name token') token')
                      (-> tokens
@@ -254,7 +288,7 @@
       (TokenSet. id
                  name
                  description
-                 (dt/now)
+                 (ct/now)
                  (dissoc tokens (:name token)))))
 
   (get-token [this id]
@@ -265,6 +299,33 @@
 
   (get-tokens-map [_]
     tokens))
+
+(defmethod pp/simple-dispatch TokenSet [^TokenSet obj]
+  (.write *out* "#penpot/token-set ")
+  (pp/pprint-newline :miser)
+  (pp/pprint (datafy obj)))
+
+#?(:clj
+   (do
+     (defmethod print-method TokenSet
+       [^TokenSet this ^java.io.Writer w]
+       (.write w "#penpot/token-set ")
+       (print-method (datafy this) w))
+
+     (defmethod print-dup TokenSet
+       [^TokenSet this ^java.io.Writer w]
+       (print-method this w)))
+
+   :cljs
+   (extend-type TokenSet
+     cljs.core/IPrintWithWriter
+     (-pr-writer [this writer opts]
+       (-write writer "#penpot/token-set ")
+       (-pr-writer (datafy this) writer opts))
+
+     cljs.core/IEncodeJS
+     (-clj->js [this]
+       (clj->js (datafy this)))))
 
 (defn token-set?
   [o]
@@ -279,7 +340,7 @@
    [:id ::sm/uuid]
    [:name :string]
    [:description {:optional true} :string]
-   [:modified-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::ct/inst]
    [:tokens {:optional true
              :gen/gen (->> (sg/map-of (sg/generator ::sm/text)
                                       (sg/generator schema:token))
@@ -316,7 +377,7 @@
   [& {:as attrs}]
   (let [attrs (-> attrs
                   (update :id #(or % (uuid/next)))
-                  (update :modified-at #(or % (dt/now)))
+                  (update :modified-at #(or % (ct/now)))
                   (update :tokens #(into (d/ordered-map) %))
                   (update :description d/nilv "")
                   (check-token-set-attrs))]
@@ -528,6 +589,9 @@
   (hidden-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
 
 (defrecord TokenTheme [id name group description is-source external-id modified-at sets]
+  cp/Datafiable
+  (datafy [this] (into {} this))
+
   INamedItem
   (get-name [_]
     name)
@@ -552,7 +616,7 @@
                  description
                  is-source
                  external-id
-                 (dt/now)
+                 (ct/now)
                  set-names))
 
   (enable-set [this set-name]
@@ -580,7 +644,7 @@
                    description
                    is-source
                    external-id
-                   (dt/now)
+                   (ct/now)
                    (conj (disj sets prev-set-name) set-name))
       this))
 
@@ -594,6 +658,34 @@
   (hidden-theme? [this]
     (theme-matches-group-name this hidden-theme-group hidden-theme-name)))
 
+(defmethod pp/simple-dispatch TokenTheme
+  [^TokenTheme obj]
+  (.write *out* "#penpot/token-theme ")
+  (pp/pprint-newline :miser)
+  (pp/pprint (datafy obj)))
+
+#?(:clj
+   (do
+     (defmethod print-method TokenTheme
+       [^TokenTheme this ^java.io.Writer w]
+       (.write w "#penpot/token-theme ")
+       (print-method (datafy this) w))
+
+     (defmethod print-dup TokenTheme
+       [^TokenTheme this ^java.io.Writer w]
+       (print-method this w)))
+
+   :cljs
+   (extend-type TokenTheme
+     cljs.core/IPrintWithWriter
+     (-pr-writer [this writer opts]
+       (-write writer "#penpot/token-theme ")
+       (-pr-writer (datafy this) writer opts))
+
+     cljs.core/IEncodeJS
+     (-clj->js [this]
+       (clj->js (datafy this)))))
+
 (defn token-theme?
   [o]
   (instance? TokenTheme o))
@@ -606,7 +698,7 @@
    [:description {:optional true} :string]
    [:is-source {:optional true} :boolean]
    [:external-id {:optional true} :string]
-   [:modified-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::ct/inst]
    [:sets {:optional true} [:set {:gen/max 5} :string]]])
 
 (def schema:token-theme
@@ -640,7 +732,7 @@
         (update :description d/nilv "")
         (update :is-source d/nilv false)
         (update :external-id #(or % (str new-id)))
-        (update :modified-at #(or % (dt/now)))
+        (update :modified-at #(or % (ct/now)))
         (update :sets set)
         (check-token-theme-attrs)
         (map->TokenTheme))))
@@ -832,26 +924,12 @@ Will return a value that matches this schema:
 
 (deftype TokensLib [sets themes active-themes]
   ;; This is to convert the TokensLib to a plain map, for debugging or unit tests.
-  protocols/Datafiable
+  cp/Datafiable
   (datafy [_]
-    {:sets (d/update-vals sets deref)
+    {:sets sets
      :themes themes
      :active-themes active-themes})
 
-  ;; TODO: this is used in serialization, but there should be a better way to do it
-  #?@(:clj  [clojure.lang.IDeref
-             (deref [_] {:sets sets
-                         :themes themes
-                         :active-themes active-themes})]
-      :cljs [cljs.core/IDeref
-             (-deref [_] {:sets sets
-                          :themes themes
-                          :active-themes active-themes})])
-
-  #?@(:cljs [cljs.core/IEncodeJS
-             (-clj->js [_] (js-obj "sets" (clj->js sets)
-                                   "themes" (clj->js themes)
-                                   "active-themes" (clj->js active-themes)))])
   #?@(:clj
       [json/JSONWriter
        (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
@@ -1070,7 +1148,7 @@ Will return a value that matches this schema:
     (let [theme (dm/get-in themes [group name])]
       (if theme
         (let [theme' (-> (make-token-theme (f theme))
-                         (assoc :modified-at (dt/now)))
+                         (assoc :modified-at (ct/now)))
               group' (:group theme')
               name'  (:name theme')
               same-group? (= group group')
@@ -1227,6 +1305,33 @@ Will return a value that matches this schema:
     (and (valid-token-sets? sets)
          (valid-token-themes? themes)
          (valid-active-token-themes? active-themes))))
+
+(defmethod pp/simple-dispatch TokensLib
+  [^TokensLib obj]
+  (.write *out* "#penpot/token-lib ")
+  (pp/pprint-newline :miser)
+  (pp/pprint (export-dtcg-json obj)))
+
+#?(:clj
+   (do
+     (defmethod print-method TokensLib
+       [^TokensLib obj ^java.io.Writer w]
+       (.write w "#penpot/token-lib ")
+       (print-method (export-dtcg-json obj) w))
+
+     (defmethod print-dup TokensLib
+       [^TokensLib obj ^java.io.Writer w]
+       (print-method obj w)))
+
+   :cljs
+   (extend-type TokensLib
+     cljs.core/IPrintWithWriter
+     (-pr-writer [this writer opts]
+       (-write writer "#penpot/token-lib ")
+       (-pr-writer (export-dtcg-json this) writer opts))
+
+     cljs.core/IEncodeJS
+     (-clj->js [this] (clj->js (datafy this)))))
 
 (defn get-hidden-theme
   [tokens-lib]
@@ -1448,7 +1553,7 @@ Will return a value that matches this schema:
   (assert (= (get-json-format decoded-json-tokens) :json-format/legacy) "expected a legacy format for `decoded-json-tokens`")
   (parse-single-set-dtcg-json set-name (legacy-json->dtcg-json decoded-json-tokens)))
 
-(defn- parse-multi-set-dtcg-json
+(defn parse-multi-set-dtcg-json
   "Parse a decoded json file with multi sets in DTCG format into a TokensLib."
   [decoded-json]
   (assert (map? decoded-json) "expected a plain clojure map for `decoded-json`")
@@ -1490,7 +1595,7 @@ Will return a value that matches this schema:
                      :is-source (get theme "is-source")
                      :external-id (get theme "id")
                      :modified-at (some-> (get theme "modified-at")
-                                          (dt/parse-instant))
+                                          (ct/inst))
                      :sets (into #{}
                                  (comp (map key)
                                        xf-normalize-set-name
@@ -1680,43 +1785,25 @@ Will return a value that matches this schema:
 (t/add-handlers!
  {:id "penpot/tokens-lib"
   :class TokensLib
-  :wfn deref
+  :wfn datafy
   :rfn #(make-tokens-lib %)}
 
  {:id "penpot/token-set"
   :class TokenSet
-  :wfn deref
+  :wfn datafy
   :rfn #(make-token-set %)}
 
  {:id "penpot/token-theme"
   :class TokenTheme
-  :wfn #(into {} %)
+  :wfn datafy
   :rfn #(map->TokenTheme %)}
 
  {:id "penpot/token"
   :class Token
-  :wfn #(into {} %)
+  :wfn datafy
   :rfn #(map->Token %)})
 
 ;; === Serialization handlers for database (fressian)
-
-#?(:clj
-   (defn- read-tokens-lib-v1-0
-     "Reads the first version of tokens lib, now completly obsolete"
-     [r]
-     (let [;; Migrate sets tree without prefix to new format
-           prev-sets (->> (fres/read-object! r)
-                          (tree-seq d/ordered-map? vals)
-                          (filter (partial instance? TokenSet)))
-
-           sets  (-> (reduce add-set (make-tokens-lib) prev-sets)
-                     (deref)
-                     (:sets))
-
-           _set-groups   (fres/read-object! r)
-           themes        (fres/read-object! r)
-           active-themes (fres/read-object! r)]
-       (->TokensLib sets themes active-themes))))
 
 #?(:clj
    (defn- read-tokens-lib-v1-1
@@ -1851,7 +1938,7 @@ Will return a value that matches this schema:
      :class TokenSet
      :wfn (fn [n w o]
             (fres/write-tag! w n 1)
-            (fres/write-object! w (into {} (deref o))))
+            (fres/write-object! w (datafy o)))
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
               (make-token-set obj)))}
@@ -1864,10 +1951,6 @@ Will return a value that matches this schema:
      :rfn (fn [r]
             (let [obj (fres/read-object! r)]
               (make-token-theme obj)))}
-
-    ;; LEGACY TOKENS LIB READERS (with migrations)
-    {:name "penpot/tokens-lib/v1"
-     :rfn read-tokens-lib-v1-0}
 
     {:name "penpot/tokens-lib/v1.1"
      :rfn read-tokens-lib-v1-1}

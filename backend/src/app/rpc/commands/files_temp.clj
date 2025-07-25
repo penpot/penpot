@@ -10,6 +10,7 @@
    [app.common.features :as cfeat]
    [app.common.files.changes :as cpc]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -27,7 +28,6 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [clojure.set :as set]))
 
 ;; --- MUTATION COMMAND: create-temp-file
@@ -72,7 +72,7 @@
         params
         (-> params
             (assoc :profile-id profile-id)
-            (assoc :deleted-at (dt/in-future {:days 1}))
+            (assoc :deleted-at (ct/in-future {:days 1}))
             (assoc :features features))]
 
     (files.create/create-file cfg params)))
@@ -97,7 +97,7 @@
                                 {:id (uuid/next)
                                  :session-id session-id
                                  :profile-id profile-id
-                                 :created-at (dt/now)
+                                 :created-at (ct/now)
                                  :file-id id
                                  :revn revn
                                  :data nil

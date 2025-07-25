@@ -9,7 +9,7 @@
   (:refer-clojure :exclude [get])
   (:require
    [app.common.schema :as sm]
-   [app.util.time :as dt]
+   [app.common.time :as ct]
    [promesa.exec :as px])
   (:import
    com.github.benmanes.caffeine.cache.AsyncCache
@@ -51,7 +51,7 @@
   (let [cache (as-> (Caffeine/newBuilder) builder
                 (if (fn? on-remove) (.removalListener builder (create-listener on-remove)) builder)
                 (if executor  (.executor builder ^Executor (px/resolve-executor executor)) builder)
-                (if keepalive (.expireAfterAccess builder ^Duration (dt/duration keepalive)) builder)
+                (if keepalive (.expireAfterAccess builder ^Duration (ct/duration keepalive)) builder)
                 (if (int? max-size) (.maximumSize builder (long max-size)) builder)
                 (.recordStats builder)
                 (.buildAsync builder))

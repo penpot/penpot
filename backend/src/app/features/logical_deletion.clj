@@ -7,8 +7,8 @@
 (ns app.features.logical-deletion
   "A code related to handle logical deletion mechanism"
   (:require
-   [app.config :as cf]
-   [app.util.time :as dt]))
+   [app.common.time :as ct]
+   [app.config :as cf]))
 
 (defn get-deletion-delay
   "Calculate the next deleted-at for a resource (file, team, etc) in function
@@ -18,11 +18,11 @@
     (cond
       (and (= (:type subscription) "unlimited")
            (= (:status subscription) "active"))
-      (dt/duration {:days 30})
+      (ct/duration {:days 30})
 
       (and (= (:type subscription) "enterprise")
            (= (:status subscription) "active"))
-      (dt/duration {:days 90})
+      (ct/duration {:days 90})
 
       :else
       (cf/get-deletion-delay))

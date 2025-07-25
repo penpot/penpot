@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.spec :as us]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
    [app.http :as-alias http]
@@ -31,7 +32,6 @@
    [app.storage :as-alias sto]
    [app.util.inet :as inet]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [clojure.spec.alpha :as s]
    [cuerdas.core :as str]
    [integrant.core :as ig]
@@ -103,7 +103,7 @@
         data         (-> params
                          (assoc ::handler-name handler-name)
                          (assoc ::ip-addr ip-addr)
-                         (assoc ::request-at (dt/now))
+                         (assoc ::request-at (ct/now))
                          (assoc ::external-session-id session-id)
                          (assoc ::external-event-origin event-origin)
                          (assoc ::session/id (::session/id request))
@@ -130,7 +130,7 @@
   [{:keys [::mtx/metrics ::metrics-id]} f mdata]
   (let [labels (into-array String [(::sv/name mdata)])]
     (fn [cfg params]
-      (let [tp (dt/tpoint)]
+      (let [tp (ct/tpoint)]
         (try
           (f cfg params)
           (finally
