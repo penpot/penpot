@@ -378,7 +378,15 @@ title: 10· Design Tokens
 </ol>
 
 <h3 id="design-tokens-import-options">Import Options</h3>
-<h4>Single file</h4>
+
+<h4>ZIP file</h4>
+<p>You can import tokens from a <strong>.zip</strong> file. This file can either contain a single JSON file or a folder structure with multiple files. The ZIP import option provides flexibility for organizing your tokens before importing them into Penpot.</p>
+<ul>
+  <li>If the ZIP contains a single JSON file, it will be imported as a single set of tokens.</li>
+  <li>If the ZIP contains a folder structure, each file and folder will be interpreted as separate token sets, following the same rules as the multifile import.</li>
+</ul>
+
+<h4>Single JSON file</h4>
 
 <p>You can import a JSON file comprising all tokens, token sets and token themes.</p>
 <p>When importing a single file, the first-level keys of the json file will be interpreted as the set name.</p>
