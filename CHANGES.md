@@ -71,8 +71,12 @@
 ### :bug: Bugs fixed
 
 - Fix unexpected exception on processing old texts [Github #6889](https://github.com/penpot/penpot/pull/6889)
+<<<<<<< HEAD
 - Fix error on inspect tab when selecting multiple shapes [Taiga #11655](https://tree.taiga.io/project/penpot/issue/11655)
 
+=======
+- Fix UI theme selection from main menu [Taiga #11567](https://tree.taiga.io/project/penpot/issue/11567)
+>>>>>>> 77793ac65b9387fd4c86f4667ef416f916b866f4
 
 ## 2.8.0
 
