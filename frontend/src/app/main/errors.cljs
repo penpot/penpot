@@ -148,6 +148,38 @@
     (= code :vern-conflict)
     (st/emit! (ptk/event ::dw/reload-current-file))
 
+    (= code :snapshot-is-locked)
+    (let [message (tr "errors.version-locked")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
+
+    (= code :only-creator-can-lock)
+    (let [message (tr "errors.only-creator-can-lock")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
+
+    (= code :only-creator-can-unlock)
+    (let [message (tr "errors.only-creator-can-unlock")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
+
+    (= code :snapshot-already-locked)
+    (let [message (tr "errors.version-already-locked")]
+      (st/async-emit!
+       (ntf/show {:content message
+                  :type :toast
+                  :level :error
+                  :timeout 3000})))
+
     :else
     (st/async-emit! (rt/assign-exception error))))
 

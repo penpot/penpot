@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
@@ -25,6 +26,7 @@
    [:class {:optional true} :string]
    [:active {:optional true} :boolean]
    [:editing {:optional true} :boolean]
+   [:locked {:optional true} :boolean]
    [:user
     [:map
      [:name {:optional true} [:maybe :string]]
@@ -39,7 +41,7 @@
 
 (mf/defc user-milestone*
   {::mf/schema schema:milestone}
-  [{:keys [class active editing user label date
+  [{:keys [class active editing locked user label date
            onOpenMenu onFocusInput onBlurInput onKeyDownInput] :rest props}]
   (let [class (d/append-class class (stl/css-case :milestone true :is-selected active))
         props (mf/spread-props props {:class class :data-testid "milestone"})
@@ -60,7 +62,10 @@
          :on-focus onFocusInput
          :on-blur onBlurInput
          :on-key-down onKeyDownInput}]
-       [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label])
+       [:div {:class (stl/css :name-wrapper)}
+        [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label]
+        (when locked
+          [:> i/icon* {:icon-id i/lock :class (stl/css :lock-icon)}])])
 
      [:*
       [:time {:dateTime (dt/format date :iso)
