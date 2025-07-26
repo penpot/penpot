@@ -163,7 +163,8 @@
 
 (defn get-stroke-data
   [stroke]
-  (let [width (:stroke-width stroke)
+  (let [
+        width (:stroke-width stroke)
         style (:stroke-style stroke)
         color {:color (:stroke-color stroke)
                :opacity (:stroke-opacity stroke)
@@ -190,6 +191,16 @@
 
     (every? some? [r1 r2 r3 r4])
     [r1 r2 r3 r4]))
+
+(defmethod get-value :border-style
+  [_ shape _ _]
+  (when-not (cgc/svg-markup? shape)
+    (get-stroke-data (first (:strokes shape)))))
+
+(defmethod get-value :border-width
+  [_ shape _ _]
+  (when-not (cgc/svg-markup? shape)
+    (get-stroke-data (first (:strokes shape)))))
 
 (defmethod get-value :box-shadow
   [_ shape _ _]

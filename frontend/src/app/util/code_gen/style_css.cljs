@@ -170,6 +170,7 @@ body {
 
   ([property value options]
    (when (some? value)
+     (prn "format-css-value" property value options)
      (format-value property value options))))
 
 (defn format-css-property
@@ -198,7 +199,7 @@ body {
   ([objects shape properties options]
    (-> shape
        (shape->css-properties objects properties options)
-       (format-css-properties options))))
+       (format-value options))))
 
 (defn format-js-styles
   [properties _options]
@@ -297,11 +298,13 @@ body {
        (format-css-property options))))
 
 (defn get-css-value
+  "Get the CSS value for a given property of a shape."
   ([objects shape property]
    (get-css-value objects shape property nil))
 
   ([objects shape property options]
    (when-let [prop (shape->css-property shape objects property options)]
+     (prn "get-css-value" property prop)
      (format-css-value prop options))))
 
 (defn generate-style
