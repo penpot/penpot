@@ -1380,6 +1380,22 @@ msgstr "Password should at least be 8 characters"
 msgid "errors.paste-data-validation"
 msgstr "Invalid data in clipboard"
 
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "This version is locked and cannot be deleted by others"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Only the version creator can lock it"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Only the version creator can unlock it"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "This version is already locked"
+
 #: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
 msgid "errors.profile-blocked"
 msgstr "The profile is blocked"
@@ -2133,6 +2149,10 @@ msgstr "Libraries & Templates"
 msgid "labels.loading"
 msgstr "Loading…"
 
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "Lock"
+
 #: src/app/main/ui/viewer/header.cljs:208
 msgid "labels.log-or-sign"
 msgstr "Log in or sign up"
@@ -2452,6 +2472,10 @@ msgstr "Tutorials"
 #: src/app/main/data/workspace/tokens/errors.cljs:73
 msgid "labels.unknown-error"
 msgstr "Unknown error"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "Unlock"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:264
 msgid "labels.unpublish-multi-files"
@@ -7880,6 +7904,15 @@ msgstr "History"
 #: src/app/main/ui/ds/product/autosaved_milestone.cljs:66, src/app/main/ui/ds/product/user_milestone.cljs:73
 msgid "workspace.versions.version-menu"
 msgstr "Open version menu"
+
+msgid "workspace.versions.locked-by-other"
+msgstr "This version is locked by %s and cannot be modified"
+
+msgid "workspace.versions.locked-by-you"
+msgstr "This version is locked by you"
+
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Locked version - only the creator can modify it"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:372
 #, markdown

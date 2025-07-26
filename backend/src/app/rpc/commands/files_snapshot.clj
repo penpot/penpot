@@ -38,7 +38,7 @@
 
 (def sql:get-file-snapshots
   "WITH changes AS (
-      SELECT id, label, revn, created_at, created_by, profile_id
+      SELECT id, label, revn, created_at, created_by, profile_id, locked_by
         FROM file_change
        WHERE file_id = ?
          AND data IS NOT NULL
@@ -284,7 +284,7 @@
   [conn id]
   (db/get conn :file-change
           {:id id}
-          {::sql/columns [:id :file-id :created-by :deleted-at]
+          {::sql/columns [:id :file-id :created-by :deleted-at :profile-id :locked-by]
            ::db/for-update true}))
 
 (sv/defmethod ::update-file-snapshot
@@ -324,4 +324,111 @@
                               :snapshot-id id
                               :profile-id profile-id))
 
+                  ;; Check if version is locked by someone else
+                  (when (and (:locked-by snapshot)
+                             (not= (:locked-by snapshot) profile-id))
+                    (ex/raise :type :validation
+                              :code :snapshot-is-locked
+                              :hint "Cannot delete a locked version"
+                              :snapshot-id id
+                              :profile-id profile-id
+                              :locked-by (:locked-by snapshot)))
+
                   (delete-file-snapshot! conn id)))))
+
+;;; Lock/unlock version endpoints
+
+(def ^:private schema:lock-file-snapshot
+  [:map {:title "lock-file-snapshot"}
+   [:id ::sm/uuid]])
+
+(defn- lock-file-snapshot!
+  [conn snapshot-id profile-id]
+  (db/update! conn :file-change
+              {:locked-by profile-id}
+              {:id snapshot-id}
+              {::db/return-keys false})
+  nil)
+
+(sv/defmethod ::lock-file-snapshot
+  {::doc/added "1.20"
+   ::sm/params schema:lock-file-snapshot}
+  [cfg {:keys [::rpc/profile-id id]}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn]}]
+                (let [snapshot (get-snapshot conn id)]
+                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+
+                  (when (not= (:created-by snapshot) "user")
+                    (ex/raise :type :validation
+                              :code :system-snapshots-cant-be-locked
+                              :hint "Only user-created versions can be locked"
+                              :snapshot-id id
+                              :profile-id profile-id))
+
+                  ;; Only the creator can lock their own version
+                  (when (not= (:profile-id snapshot) profile-id)
+                    (ex/raise :type :validation
+                              :code :only-creator-can-lock
+                              :hint "Only the version creator can lock it"
+                              :snapshot-id id
+                              :profile-id profile-id
+                              :creator-id (:profile-id snapshot)))
+
+                  ;; Check if already locked
+                  (when (:locked-by snapshot)
+                    (ex/raise :type :validation
+                              :code :snapshot-already-locked
+                              :hint "Version is already locked"
+                              :snapshot-id id
+                              :profile-id profile-id
+                              :locked-by (:locked-by snapshot)))
+
+                  (lock-file-snapshot! conn id profile-id)))))
+
+(def ^:private schema:unlock-file-snapshot
+  [:map {:title "unlock-file-snapshot"}
+   [:id ::sm/uuid]])
+
+(defn- unlock-file-snapshot!
+  [conn snapshot-id]
+  (db/update! conn :file-change
+              {:locked-by nil}
+              {:id snapshot-id}
+              {::db/return-keys false})
+  nil)
+
+(sv/defmethod ::unlock-file-snapshot
+  {::doc/added "1.20"
+   ::sm/params schema:unlock-file-snapshot}
+  [cfg {:keys [::rpc/profile-id id]}]
+  (db/tx-run! cfg
+              (fn [{:keys [::db/conn]}]
+                (let [snapshot (get-snapshot conn id)]
+                  (files/check-edition-permissions! conn profile-id (:file-id snapshot))
+
+                  (when (not= (:created-by snapshot) "user")
+                    (ex/raise :type :validation
+                              :code :system-snapshots-cant-be-unlocked
+                              :hint "Only user-created versions can be unlocked"
+                              :snapshot-id id
+                              :profile-id profile-id))
+
+                  ;; Only the creator can unlock their own version
+                  (when (not= (:profile-id snapshot) profile-id)
+                    (ex/raise :type :validation
+                              :code :only-creator-can-unlock
+                              :hint "Only the version creator can unlock it"
+                              :snapshot-id id
+                              :profile-id profile-id
+                              :creator-id (:profile-id snapshot)))
+
+                  ;; Check if not locked
+                  (when (not (:locked-by snapshot))
+                    (ex/raise :type :validation
+                              :code :snapshot-not-locked
+                              :hint "Version is not locked"
+                              :snapshot-id id
+                              :profile-id profile-id))
+
+                  (unlock-file-snapshot! conn id)))))
