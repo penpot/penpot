@@ -169,7 +169,7 @@
             is-version-creator? (= current-user-id version-creator-id)
             is-locked?         (some? locked-by-id)
             is-locked-by-me?   (= current-user-id locked-by-id)
-            can-rename?        (or (not is-locked?) (and is-locked? is-locked-by-me?))
+            can-rename?        is-version-creator?
             can-lock?          (and is-version-creator? (not is-locked?))
             can-unlock?        (and is-version-creator? is-locked-by-me?)
             can-delete?        (or (not is-locked?) (and is-locked? is-locked-by-me?))]
