@@ -11,7 +11,6 @@
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
-   [app.common.uuid :as uuid]
    [app.render-wasm.api :as api]
    [beicon.v2.core :as rx]
    [clojure.core :as c]

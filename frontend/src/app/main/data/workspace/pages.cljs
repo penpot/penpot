@@ -27,7 +27,9 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.errors]
+   [app.main.features :as features]
    [app.main.router :as rt]
+   [app.render-wasm.shape :as wasm.shape]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -128,6 +130,14 @@
 ;; Workspace Page CRUD
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn update-page-root
+  [file-id page-id]
+  (ptk/reify ::update-page-root
+    ptk/UpdateEvent
+    (update [_ state]
+      (-> state
+          (update-in [:files file-id :data :pages-index page-id :objects uuid/zero] wasm.shape/create-shape)))))
+
 (defn create-page
   [{:keys [page-id file-id]}]
   (let [id (or page-id (uuid/next))]
@@ -146,7 +156,11 @@
               changes (-> (pcb/empty-changes it)
                           (pcb/add-empty-page id name))]
 
-          (rx/of (dch/commit-changes changes)))))))
+          (rx/concat
+           (rx/of (dch/commit-changes changes))
+           (if (features/active-feature? state "render-wasm/v1")
+             (rx/of (update-page-root file-id id))
+             (rx/empty))))))))
 
 (defn duplicate-page
   [page-id]
