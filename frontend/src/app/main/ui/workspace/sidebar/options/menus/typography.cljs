@@ -10,7 +10,6 @@
    ["react-virtualized" :as rvt]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.exceptions :as ex]
    [app.common.text :as txt]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
@@ -41,22 +40,7 @@
     ""
     (ust/format-precision value 2)))
 
-(defn- get-next-font
-  [{:keys [id] :as current} fonts]
-  (if (seq fonts)
-    (let [index (d/index-of-pred fonts #(= (:id %) id))
-          index (or index -1)
-          next  (ex/ignoring (nth fonts (inc index)))]
-      (or next (first fonts)))
-    current))
 
-(defn- get-prev-font
-  [{:keys [id] :as current} fonts]
-  (if (seq fonts)
-    (let [index (d/index-of-pred fonts #(= (:id %) id))
-          next  (ex/ignoring (nth fonts (dec index)))]
-      (or next (peek fonts)))
-    current))
 
 (mf/defc font-item*
   {::mf/wrap [mf/memo]}
@@ -96,8 +80,7 @@
 
 (mf/defc font-selector*
   [{:keys [on-select on-close current-font show-recent full-size]}]
-  (let [selected     (mf/use-state current-font)
-        state*       (mf/use-state
+  (let [state*       (mf/use-state
                       #(do {:term "" :backends #{}}))
         state        (deref state*)
 
@@ -112,23 +95,40 @@
         recent-fonts (mf/with-memo [state recent-fonts]
                        (filter-fonts state recent-fonts))
 
+        ;; Combine recent fonts with filtered fonts, avoiding duplicates
+        combined-fonts (mf/with-memo [recent-fonts fonts]
+                         (let [recent-ids (set (map :id recent-fonts))]
+                           (vec (concat recent-fonts (remove #(recent-ids (:id %)) fonts)))))
+
+        ;; Find the index of current font in the combined list
+        current-index (mf/with-memo [combined-fonts current-font]
+                        (or (some (fn [[idx font]]
+                                    (when (= (:id current-font) (:id font)) idx))
+                                  (map-indexed vector combined-fonts))
+                            0))
+
+        ;; Initialize selected with current font index
+        selected-index (mf/use-state current-index)
+
         full-size?   (boolean (and full-size show-recent))
 
         select-next
         (mf/use-fn
-         (mf/deps fonts)
+         (mf/deps combined-fonts)
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
-           (swap! selected get-next-font fonts)))
+           (let [next-idx (mod (inc @selected-index) (count combined-fonts))]
+             (reset! selected-index next-idx))))
 
         select-prev
         (mf/use-fn
-         (mf/deps fonts)
+         (mf/deps combined-fonts)
          (fn [event]
            (dom/stop-propagation event)
            (dom/prevent-default event)
-           (swap! selected get-prev-font fonts)))
+           (let [prev-idx (mod (dec @selected-index) (count combined-fonts))]
+             (reset! selected-index prev-idx))))
 
         on-select-and-close
         (mf/use-fn
@@ -139,35 +139,32 @@
 
         on-key-down
         (mf/use-fn
-         (mf/deps fonts)
+         (mf/deps combined-fonts)
          (fn [event]
            (cond
              (kbd/up-arrow? event)   (select-prev event)
              (kbd/down-arrow? event) (select-next event)
              (kbd/esc? event)        (on-close)
-             (kbd/enter? event)      (do (on-select-and-close @selected))
+             (kbd/enter? event)      (do
+                                       (let [selected-font (nth combined-fonts @selected-index)]
+                                         (on-select-and-close selected-font)))
              :else                   (dom/focus! (mf/ref-val input)))))
 
         on-filter-change
         (mf/use-fn
          (fn [event]
-           (swap! state* assoc :term event)))
-
-        on-select-and-close
-        (mf/use-fn
-         (mf/deps on-select on-close)
-         (fn [font]
-           (on-select font)
-           (on-close)))]
+           (swap! state* assoc :term event)
+           ;; Reset selection to first item when filter changes
+           (reset! selected-index 0)))]
 
     (mf/with-effect [fonts]
       (let [key (events/listen js/document "keydown" on-key-down)]
         #(events/unlistenByKey key)))
 
-    (mf/with-effect [@selected]
+    (mf/with-effect [@selected-index]
       (when-let [inst (mf/ref-val flist)]
-        (when-let [index (:index @selected)]
-          (.scrollToRow ^js inst index))))
+        (when (and (>= @selected-index 0) (< @selected-index (count combined-fonts)))
+          (.scrollToRow ^js inst @selected-index))))
 
     (mf/with-effect []
       (st/emit! (dsc/push-shortcuts :typography {}))
@@ -175,15 +172,12 @@
         (st/emit! (dsc/pop-shortcuts :typography))))
 
     (mf/with-effect []
-      (let [index  (d/index-of-pred fonts #(= (:id %) (:id current-font)))
+      (let [index  (d/index-of-pred combined-fonts #(= (:id %) (:id current-font)))
             inst   (mf/ref-val flist)]
-        (tm/schedule
-         #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
-            (.scrollToPosition ^js inst offset)))))
-
-    (mf/with-effect [(:term state) fonts]
-      (when (and (seq fonts) (not= (:id @selected) (:id (first fonts))))
-        (reset! selected (first fonts))))
+        (when (and index (>= index 0))
+          (tm/schedule
+           #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
+              (.scrollToPosition ^js inst offset))))))
 
     [:div {:class (stl/css :font-selector)}
      [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}
@@ -200,7 +194,7 @@
                             :font font
                             :style {}
                             :on-click on-select-and-close
-                            :is-current (= (:id font) (:id @selected))}])])]
+                            :is-current (= idx @selected-index)}])])]
 
       [:div {:class (stl/css-case :fonts-list true
                                   :fonts-list-full-size full-size?)}
@@ -208,17 +202,17 @@
         (fn [props]
           (let [width  (unchecked-get props "width")
                 height (unchecked-get props "height")
-                render #(row-renderer fonts @selected on-select-and-close %)]
+                render #(row-renderer combined-fonts @selected-index on-select-and-close %)]
             (mf/html
              [:> rvt/List #js {:height height
                                :ref flist
                                :width width
-                               :rowCount (count fonts)
+                               :rowCount (count combined-fonts)
                                :rowHeight 36
                                :rowRenderer render}])))]]]]))
 
 (defn row-renderer
-  [fonts selected on-select props]
+  [fonts selected-index on-select props]
   (let [index (unchecked-get props "index")
         key   (unchecked-get props "key")
         style (unchecked-get props "style")
@@ -228,7 +222,7 @@
                      :font font
                      :style style
                      :on-click on-select
-                     :is-current (= (:id font) (:id selected))}])))
+                     :is-current (= index selected-index)}])))
 
 (mf/defc font-options
   {::mf/wrap-props false}
