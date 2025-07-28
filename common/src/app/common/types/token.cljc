@@ -300,7 +300,7 @@
    :height #{:sizing :dimensions}
    :max-width #{:sizing :dimensions}
    :max-height #{:sizing :dimensions}
-   :x #{:spacing :dimensions} ;; should be position? like input
+   :x #{:spacing :dimensions}
    :y #{:spacing :dimensions}
    :rotation #{:number}
    :border-radius #{:border-radius :dimensions}

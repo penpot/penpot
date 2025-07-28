@@ -292,59 +292,60 @@
            (set-width (if (> width sidebar-default-width)
                         sidebar-default-width
                         sidebar-default-max-width))))
-                tokens-lib (deref refs/tokens-lib)
+        tokens-lib (mf/deref refs/tokens-lib)
+
         active-theme-tokens
         (mf/with-memo [tokens-lib]
           (if tokens-lib
             (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
-        
+
         active-theme-tokens'
         (sd/use-resolved-tokens* active-theme-tokens)
-        
+        ;; Group tokens by type
         ordered-tokens
         (mf/with-memo [active-theme-tokens']
           (ctob/group-by-type active-theme-tokens'))]
 
     [:> (mf/provider muc/sidebar) {:value :right}
      [:> (mf/provider muc/tokens-by-type) {:value ordered-tokens}
-      
+
       [:aside
-      {:class (stl/css-case :right-settings-bar true
-                            :not-expand (not can-be-expanded?)
-                            :expanded (> width sidebar-default-width))
+       {:class (stl/css-case :right-settings-bar true
+                             :not-expand (not can-be-expanded?)
+                             :expanded (> width sidebar-default-width))
 
-       :id "right-sidebar-aside"
-       :data-testid "right-sidebar"
-       :data-size (str width)
-       :style {:--width (if can-be-expanded?
-                          (dm/str width "px")
-                          (dm/str sidebar-default-width "px"))}}
+        :id "right-sidebar-aside"
+        :data-testid "right-sidebar"
+        :data-size (str width)
+        :style {:--width (if can-be-expanded?
+                           (dm/str width "px")
+                           (dm/str sidebar-default-width "px"))}}
 
-      (when can-be-expanded?
-        [:div {:class (stl/css :resize-area)
-               :on-pointer-down on-pointer-down
-               :on-lost-pointer-capture on-lost-pointer-capture
-               :on-pointer-move on-pointer-move}])
+       (when can-be-expanded?
+         [:div {:class (stl/css :resize-area)
+                :on-pointer-down on-pointer-down
+                :on-lost-pointer-capture on-lost-pointer-capture
+                :on-pointer-move on-pointer-move}])
 
-      [:> right-header*
-       {:file file
-        :layout layout
-        :page-id page-id}]
+       [:> right-header*
+        {:file file
+         :layout layout
+         :page-id page-id}]
 
-      [:div {:class (stl/css :settings-bar-inside)}
-       (cond
-         dbg-shape-panel?
-         [:> debug-shape-info*]
+       [:div {:class (stl/css :settings-bar-inside)}
+        (cond
+          dbg-shape-panel?
+          [:> debug-shape-info*]
 
-         is-comments?
-         [:> comments-sidebar* {}]
+          is-comments?
+          [:> comments-sidebar* {}]
 
-         is-history?
-         [:> history-content* {}]
+          is-history?
+          [:> history-content* {}]
 
-         :else
-         (let [props (mf/spread-props props
-                                      {:on-change-section on-change-section
-                                       :on-expand on-expand})]
-           [:> options-toolbox* props]))]]]]))
+          :else
+          (let [props (mf/spread-props props
+                                       {:on-change-section on-change-section
+                                        :on-expand on-expand})]
+            [:> options-toolbox* props]))]]]]))

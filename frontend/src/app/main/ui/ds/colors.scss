@@ -59,13 +59,11 @@ $gray-800: #2e3434;
 $gray-200: #e8eaee;
 $gray-100: #eef0f2;
 $gray-50: #f3f4f6;
-$gray-30: #cfcfcf;
 $white: #fff;
 $white-60: #ffffff99;
 $white-90: #ffffffe6;
 
 $blue-teal-700: #495e74;
-$blue-teal-300: #4b5454;
 $grayish-blue-500: #8f9da3;
 
 $grayish-red: #bfbfbf;
@@ -99,7 +97,6 @@ $grayish-red: #bfbfbf;
 
   --color-foreground-primary: #{$black};
   --color-foreground-secondary: #{$blue-teal-700};
-  --color-foreground-tertiary: #{$blue-teal-300};
 
   --color-shadow-dark: #{color.change($gray-200, $alpha: 0.6)};
   --color-overlay-default: #{$white-60};
@@ -143,7 +140,6 @@ $grayish-red: #bfbfbf;
 
   --color-foreground-primary: #{$white};
   --color-foreground-secondary: #{$grayish-blue-500};
-  --color-foreground-tertiary: #{$gray-30};
 
   --color-shadow-dark: #{color.change($black, $alpha: 0.6)};
   --color-overlay-default: #{$gray-950-60};

@@ -36,6 +36,10 @@
   (let [option (get options new-index)
         id     (get option :id)
         node   (obj/get nodes id)]
+    ;; (js/console.log "handle-focus-change" id)
+    ;; (js/console.log "nodes" nodes)
+    ;; (prn "option" option)
+    ;; (prn new-index)
     (reset! focused* id)
     (dom/scroll-into-view-if-needed! node)))
 

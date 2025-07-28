@@ -86,6 +86,67 @@
           (str/replace #"^\{" "")
           (str/replace #"\}$" "")))
 
+(defn- token->dropdown-option
+  [token]
+  {:id (str (get token :id))
+   :type :token
+   :resolved-value (get token :resolved-value)
+   :name (get token :name)})
+
+(defn- generate-dropdown-options
+  [tokens]
+  (->> tokens
+       (map (fn [[type items]]
+              (cons {:group true
+                     :type  :group
+                     :id (dm/str "group-" (name type))
+                     :name  (name type)}
+                    (map token->dropdown-option items))))
+       (interpose [{:separator true
+                    :id "separator"
+                    :type :separator}])
+       (apply concat)
+       (vec)
+       (not-empty)))
+
+(defn extract-partial-brace-text [s]
+  (when-let [start (str/last-index-of s "{")]
+    (subs s (inc start))))
+
+(defn filter-token-groups-by-name [tokens-by-type filter-text]
+  (let [lc-filter (str/lower filter-text)]
+    (into {}
+          (keep (fn [[group tokens]]
+                  (let [filtered (filter #(str/includes? (str/lower (:name %)) lc-filter) tokens)]
+                    (when (seq filtered)
+                      [group filtered]))))
+          tokens-by-type)))
+
+(defn valid-token-option? [option focused-id]
+  (and focused-id
+       (= (:id option) focused-id)
+       (not= :group (:type option))
+       (not= :separator (:type option))))
+
+(defn focusable-option? [option]
+  (and (:id option)
+       (not= :group (:type option))
+       (not= :separator (:type option))))
+
+(defn next-focus-index
+  [options focused-id direction]
+  (let [len (count options)
+        start-index (or (d/index-of-pred options #(= focused-id (:id %))) -1)
+        indices (case direction
+                  :down (range (inc start-index) (+ len start-index))
+                  :up   (range (dec start-index) (- start-index len) -1))]
+    (some (fn [i]
+            (let [j (mod i len)]
+              (when (focusable-option? (nth options j))
+                j)))
+          indices)))
+
+
 (def ^:private schema:token-field
   [:map
    [:id {:optional true} [:maybe :string]]
@@ -174,76 +235,6 @@
    [:on-blur {:optional true} fn?]
    [:on-focus {:optional true} fn?]])
 
-(defn- token->dropdown-option
-  [token]
-  {:id (str (get token :id))
-   :type :token
-   :resolved-value (get token :resolved-value)
-   :name (get token :name)})
-
-(defn- generate-dropdown-options
-  [tokens]
-  (->> tokens
-       (map (fn [[type items]]
-              (cons {:group true
-                     :type  :group
-                     :name  (name type)
-                     :id    (str (uuid/next))}
-                    (map token->dropdown-option items))))
-       (interpose [{:separator true
-                    :type :separator}])
-       (apply concat)
-       (not-empty)))
-
-(defn mapcat-indexed [f coll]
-  (apply concat (map-indexed f coll)))
-
-(defn filter-structured-options
-  [options filter-str]
-  (let [filter-str (str/lower filter-str)
-
-        ;; Agrupar por bloques [[:group] [...tokens]]
-        grouped-blocks
-        (->> options
-             (partition-by #(contains? % :group))
-             (partition 2))
-
-        ;; Filtrar por nombre
-        visible-groups
-        (->> grouped-blocks
-             (keep (fn [[group tokens]]
-                     (let [visible-tokens
-                           (filter #(str/includes?
-                                     (str/lower (:name %))
-                                     filter-str)
-                                   tokens)]
-                       (when (seq visible-tokens)
-                         [group visible-tokens])))))
-
-        more-than-one? (> (count visible-groups) 1)
-
-        ;; Resultado reconstruido
-        result
-        (->> visible-groups
-             (mapcat-indexed
-              (fn [i [group tokens]]
-                (let [separator (when (and more-than-one? (pos? i))
-                                  [{:separator true
-                                    :type :separator
-                                    :id (str (uuid/next))}])]
-                  (concat separator group tokens))))
-             (not-empty))]
-
-    ;; Si no hay resultado, devolver mensaje especial
-    (or result
-        [{:type :empty
-          :label (tr "workspace.token.no-tokens")
-          :id (str (uuid/next))}])))
-
-(defn extract-partial-brace-text [s]
-  (when-let [start (str/last-index-of s "{")]
-    (subs s (inc start))))
-
 (mf/defc numeric-input*
   {::mf/forward-ref true
    ::mf/schema schema:numeric-input}
@@ -251,19 +242,23 @@
            min max max-length step
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
-           on-change on-blur on-focus on-detach] :rest props} ref]
+           on-change on-blur on-focus on-detach
+           property] :rest props} ref]
   (let [;; NOTE: we use mfu/bean here for transparently handle
         ;; options provide as clojure data structures or javascript
         ;; plain objects and lists.
         tokens          (if (object? tokens)
                           (mfu/bean tokens)
                           tokens)
-        options         (mf/with-memo [tokens]
-                          (generate-dropdown-options tokens))
 
-        value (if (= :multiple applied-token)
-                :multiple
-                value)
+        value           (if (= :multiple applied-token)
+                          :multiple
+                          value)
+        is-multiple?    (= :multiple value)
+        value           (cond
+                          is-multiple? nil
+                          (and nillable (nil? value)) nil
+                          :else (d/parse-double value default))
 
         ;; Defautl props
         nillable        (d/nilv nillable false)
@@ -280,43 +275,35 @@
         listbox-id      (mf/use-id)
 
         ;; State and values
-        is-open*           (mf/use-state false)
-        is-open            (deref is-open*)
+        is-open*        (mf/use-state false)
+        is-open         (deref is-open*)
 
-        is-token*          (mf/use-state applied-token)
-        is-token           (deref is-token*)
+        is-token*       (mf/use-state applied-token)
+        is-token        (deref is-token*)
+
+        focused-id*     (mf/use-state nil)
+        focused-id      (deref focused-id*)
+
+        filter-id*      (mf/use-state "")
+        filter-id       (deref filter-id*)
+
+        raw-value*      (mf/use-ref nil)
+        last-value*     (mf/use-ref nil)
+
+        dropdown-options
+        (mf/with-memo [tokens filter-id]
+          (let [partial (extract-partial-brace-text filter-id)
+                options (if (seq partial)
+                          (filter-token-groups-by-name tokens partial)
+                          tokens)]
+            (generate-dropdown-options options)))
 
         selected-token-id  (if applied-token
-                             (:id (get-option-by-name options applied-token))
+                             (:id (get-option-by-name dropdown-options applied-token))
                              nil)
 
         selected-id*       (mf/use-state selected-token-id)
         selected-id        (deref selected-id*)
-
-        focused-id*        (mf/use-state nil)
-        focused-id         (deref focused-id*)
-
-        filter-id*         (mf/use-state "")
-        filter-id          (deref filter-id*)
-
-        is-multiple?       (= :multiple value)
-
-        value        (cond
-                       is-multiple? nil
-                       (and nillable (nil? value)) nil
-                       :else (d/parse-double value default))
-
-        ;; Raw value is used to store the raw input value
-        raw-value* (mf/use-ref nil)
-
-        ;; Last value is used to store the last valid value
-        last-value* (mf/use-ref nil)
-
-        filter-structured-options (mf/with-memo [options filter-id]
-                                    (let [partial (extract-partial-brace-text filter-id)]
-                                      (if (seq partial)
-                                        (filter-structured-options options partial)
-                                        options)))
 
         ;; Refs
         wrapper-ref          (mf/use-ref nil)
@@ -362,7 +349,7 @@
                (when (fn? on-change)
                  (on-change parsed))
 
-              ;; Comprar si es valor es necesario, sino borrar
+               ;; Comprar si es valor es necesario, sino borrar
                (mf/set-ref-val! raw-value* (fmt/format-number parsed))
                (update-input (fmt/format-number parsed)))
 
@@ -380,7 +367,8 @@
                  (mf/set-ref-val!  last-value* fallback-value)
                  (reset! is-token* nil)
                  (update-input (fmt/format-number fallback-value))
-                 (when (and (fn? on-change) (not= fallback-value value))
+
+                 (when (and (fn? on-change) (not= fallback-value (str value)))
                    (on-change fallback-value)))))))
 
         apply-token
@@ -409,21 +397,21 @@
 
         on-option-click
         (mf/use-fn
-         (mf/deps options)
+         (mf/deps dropdown-options on-token-apply)
          (fn [event]
-           (let [node   (dom/get-current-target event)
+           (let [_ (prn "on-option-click")
+                 node   (dom/get-current-target event)
                  id     (dom/get-data node "id")
-                 option (get-option options id)
+                 option (get-option dropdown-options id)
                  value  (get option :resolved-value)
                  name   (get option :name)]
-
              (on-token-apply id value name))))
 
         on-option-enter
         (mf/use-fn
-         (mf/deps options focused-id apply-value)
+         (mf/deps dropdown-options focused-id on-token-apply)
          (fn [_]
-           (let [option (get-option options focused-id)
+           (let [option (get-option dropdown-options focused-id)
                  value  (get option :resolved-value)
                  name   (get option :name)]
              (on-token-apply id value name))))
@@ -432,7 +420,7 @@
         (mf/use-fn
          (mf/deps apply-value on-blur)
          (fn [event]
-           (let [target   (dom/get-related-target event)
+           (let [target    (dom/get-related-target event)
                  self-node (mf/ref-val wrapper-ref)]
              (when-not (dom/is-child? self-node target)
                (reset! filter-id* "")
@@ -441,13 +429,12 @@
            (when (mf/ref-val dirty-ref)
              (apply-value (mf/ref-val raw-value*))
              (reset! filter-id* "")
-
              (when (fn? on-blur)
                (on-blur event)))))
 
         handle-key-down
         (mf/use-fn
-         (mf/deps apply-value update-input parse-value options)
+         (mf/deps apply-value update-input parse-value is-open focused-id)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [up?     (kbd/up-arrow? event)
@@ -457,11 +444,7 @@
                  node    (mf/ref-val ref)
                  tokens? (= (.-key event) "{")
                  close-tokens (= (.-key event) "}")
-
-                 options (mf/ref-val options-ref)
-                 len     (count options)
-                 index   (d/index-of-pred options #(= focused-id (get % :id)))
-                 index   (d/nilv index -1)]
+                 options (mf/ref-val options-ref)]
 
              (cond
                (and (some? options) tokens?)
@@ -488,12 +471,13 @@
                  (reset! is-open* false)
                  (dom/blur! node))
 
+               (kbd/home? event)
+               (handle-focus-change options focused-id* 0 (mf/ref-val nodes-ref))
+
                up?
                (if is-open
-                 (let [new-index (if (= index -1)
-                                   (dec len)
-                                   (mod (- index 1) len))]
-                   (handle-focus-change options focused-id* new-index nodes-ref))
+                 (let [new-index (next-focus-index options focused-id :up)]
+                   (handle-focus-change options focused-id* new-index (mf/ref-val nodes-ref)))
 
                  (let [parsed  (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
@@ -504,10 +488,8 @@
 
                down?
                (if is-open
-                 (let [new-index (if (= index -1)
-                                   0
-                                   (mod (+ index 1) len))]
-                   (handle-focus-change options focused-id* new-index nodes-ref))
+                 (let [new-index (next-focus-index options focused-id :down)]
+                   (handle-focus-change options focused-id* new-index (mf/ref-val nodes-ref)))
 
                  (let [parsed  (parse-value (mf/ref-val raw-value*) (mf/ref-val last-value*) min max nillable)
                        current-value (or parsed default)
@@ -586,9 +568,6 @@
                  up?        (kbd/up-arrow? event)
                  down?      (kbd/down-arrow? event)
                  options    (mf/ref-val options-ref)
-                 len        (count options)
-                 index      (d/index-of-pred options #(= focused-id (get % :id)))
-                 index      (d/nilv index -1)
                  detach-btn (mf/ref-val token-detach-btn-ref)
                  target     (dom/get-target event)]
 
@@ -615,16 +594,12 @@
 
                  up?
                  (when is-open
-                   (let [new-index (if (= index -1)
-                                     (dec len)
-                                     (mod (- index 1) len))]
+                   (let [new-index (next-focus-index options focused-id :up)]
                      (handle-focus-change options focused-id* new-index nodes-ref)))
 
                  down?
                  (when is-open
-                   (let [new-index (if (= index -1)
-                                     0
-                                     (mod (+ index 1) len))]
+                   (let [new-index (next-focus-index options focused-id :down)]
                      (handle-focus-change options focused-id* new-index nodes-ref))))))))
 
         props
@@ -640,12 +615,12 @@
                                 :on-focus handle-focus
                                 :on-change store-raw-value
                                 :disabled disabled
+                                :aria-labelledby property
                                 :slot-start (when icon
                                               (mf/html [:> icon* {:icon-id icon
-                                                                  ;; :size "s"
                                                                   :class (stl/css :icon)}]))
                                 :slot-end (when-not disabled
-                                            (when (some? options)
+                                            (when (some? dropdown-options)
                                               (mf/html [:> icon-button* {:variant "action"
                                                                          :icon "tokens"
                                                                          :class (stl/css :invisible-button)
@@ -656,7 +631,7 @@
 
         token-props
         (when (and is-token (not= :multiple is-token))
-          (let [token (get-option-by-name options is-token)
+          (let [token (get-option-by-name dropdown-options is-token)
                 id (get token :id)
                 label (get token :name)
                 token-value (or (get token :resolved-value)
@@ -667,6 +642,7 @@
                               :value token-value
                               :on-click open-dropdown-token
                               :on-token-key-down on-token-key-down
+                              :aria-labelledby property
                               :disabled disabled
                               :slot-start (when icon
                                             (mf/html [:> icon* {:icon-id icon
@@ -691,7 +667,7 @@
         (mf/set-ref-val! last-value* value')
         (reset! is-token* applied-token)
         (if applied-token
-          (let [token-id (:id (get-option-by-name options applied-token))]
+          (let [token-id (:id (get-option-by-name dropdown-options applied-token))]
             (reset! selected-id* token-id))
           (reset! selected-id* nil))
 
@@ -703,20 +679,23 @@
         (let [key (events/listen node "wheel" handle-mouse-wheel #js {:passive false})]
           #(events/unlistenByKey key))))
 
-    (mf/with-effect [options]
-      (mf/set-ref-val! options-ref options))
+    (mf/with-effect [dropdown-options]
+      (mf/set-ref-val! options-ref dropdown-options))
 
     [:div {:class (dm/str class " " (stl/css :input-wrapper))
            :ref wrapper-ref}
+
      (if (and is-token (not= :multiple is-token))
        [:> token-field* token-props]
-
-       [:> input-field* props])
+       [:> tooltip*
+        {:content property
+         :id property}
+        [:> input-field* props]])
 
      (when is-open
        [:> options-dropdown* {:on-click on-option-click
                               :id listbox-id
-                              :options filter-structured-options
+                              :options dropdown-options
                               :selected selected-id
                               :focused focused-id
                               :style {:width "247px"} ;; revisar

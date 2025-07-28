@@ -280,6 +280,7 @@
                                             :attributes #{attr}
                                             :shape-ids shape-ids})))))
         on-detach-y #(detach-token % :y)
+        on-detach-x #(detach-token % :x)
 
         ;; CLIP CONTENT AND SHOW IN VIEWER
         on-change-clip-content
@@ -396,7 +397,7 @@
      (when (options :position)
        (let [tokens (not-empty (select-keys tokens (:y tk/tokens-by-input)))]
          [:div {:class (stl/css :position)}
-          [:div {:class (stl/css-case :x-position true
+          #_[:div {:class (stl/css-case :x-position true
                                       :disabled disabled-position-x?)
                  :title (tr "workspace.options.x")}
            [:span {:class (stl/css :icon-text)} "X"]
@@ -405,16 +406,30 @@
                                :on-change on-pos-x-change
                                :disabled disabled-position-x?
                                :class (stl/css :numeric-input)
-                               :value (:x values)}]]
+                               :value (:x values)}]
+           
+           ]
+          [:> ni/numeric-input* {:placeholder (if (or (= :multiple (:applied-tokens values))
+                                                      (= :multiple (:x values)))
+                                                (tr "settings.multiple") "--")
+                                 :disabled disabled-position-x?
+                                 :on-change on-pos-x-change
+                                 :on-detach on-detach-x
+                                 :icon "character-x"
+                                 :property (tr "workspace.options.x")
+                                 :tokens tokens
+                                 :applied-token (:x applied-tokens)
+                                 :class (stl/css :numeric-input)
+                                 :value (:x values)}]
 
-          [:> ni/numeric-input* {:no-validate true
-                                 :placeholder (if (or (= :multiple (:applied-tokens values))
+          [:> ni/numeric-input* {:placeholder (if (or (= :multiple (:applied-tokens values))
                                                       (= :multiple (:y values)))
                                                 (tr "settings.multiple") "--")
                                  :disabled disabled-position-y?
                                  :on-change on-pos-y-change
                                  :on-detach on-detach-y
                                  :icon "character-y"
+                                 :property (tr "workspace.options.y")
                                  :tokens tokens
                                  :applied-token (:y applied-tokens)
                                  :class (stl/css :numeric-input)

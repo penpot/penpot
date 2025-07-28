@@ -213,7 +213,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [data    (dsh/lookup-file-data state)
-            tlib (get-tokens-lib state)
+            tlib    (get-tokens-lib state)
             changes (-> (pcb/empty-changes)
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
