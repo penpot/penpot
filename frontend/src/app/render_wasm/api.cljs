@@ -783,8 +783,13 @@
            (rx/tap (fn [_] (request-render "set-objects")))
            (rx/reduce conj [])
            (rx/subs! (fn [_]
+                       (clear-drawing-cache)
+                       (request-render "pending-finished")
                        (.dispatchEvent ^js js/document event))))
-      (.dispatchEvent ^js js/document event))))
+      (do
+        (clear-drawing-cache)
+        (request-render "pending-finished")
+        (.dispatchEvent ^js js/document event)))))
 
 (defn process-object
   [shape]
@@ -804,8 +809,6 @@
               (recur (inc index) (into pending pending')))
             pending))]
     (perf/end-measure "set-objects")
-    (clear-drawing-cache)
-    (request-render "set-objects")
     (process-pending pending)))
 
 (defn clear-focus-mode
