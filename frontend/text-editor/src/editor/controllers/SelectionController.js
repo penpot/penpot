@@ -1524,6 +1524,7 @@ export class SelectionController extends EventTarget {
 
     const startNode = getClosestTextNode(this.#range.startContainer);
     const endNode = getClosestTextNode(this.#range.endContainer);
+
     const startOffset = this.#range.startOffset;
     const endOffset = this.#range.endOffset;
 
