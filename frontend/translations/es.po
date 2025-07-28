@@ -7231,6 +7231,10 @@ msgstr "No existen tokens, temas o sets para exportar."
 msgid "workspace.tokens.text-case-value-enter"
 msgstr "Introduce una capitalización: none | Uppercase | Lowercase | Capitalize"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr "Valor de token no valido: Los únicos valores aceptados son none, Uppercase, Lowercase y Capitalize"
+
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
 msgstr "Previsualizar:"
