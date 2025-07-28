@@ -208,31 +208,13 @@
 
 (defn set-wasm-multi-attrs!
   [shape properties]
-  (api/use-shape (:id shape))
-  (let [result
-        (->> properties
-             (mapcat #(set-wasm-single-attr! shape %)))
-        pending (-> (d/index-by :key :callback result) vals)]
-    (if (and pending (seq pending))
-      (->> (rx/from pending)
-           (rx/mapcat (fn [callback] (callback)))
-           (rx/reduce conj [])
-           (rx/subs!
-            (fn [_]
-              (api/update-shape-tiles)
-              (api/clear-drawing-cache)
-              (api/request-render "set-wasm-attrs-pending"))))
-      (do
-        (api/update-shape-tiles)
-        (api/request-render "set-wasm-attrs")))))
-
-(defn set-wasm-attrs!
-  [shape k v]
-  (let [shape (assoc shape k v)]
+  ;; Only call WASM API if the shape is in the current page
+  (when (api/shape-in-current-page? (:id shape))
     (api/use-shape (:id shape))
-    (let [result (set-wasm-single-attr! shape k)
+    (let [result
+          (->> properties
+               (mapcat #(set-wasm-single-attr! shape %)))
           pending (-> (d/index-by :key :callback result) vals)]
-      ;; TODO: set-wasm-attrs is called twice with every set
       (if (and pending (seq pending))
         (->> (rx/from pending)
              (rx/mapcat (fn [callback] (callback)))
@@ -245,6 +227,28 @@
         (do
           (api/update-shape-tiles)
           (api/request-render "set-wasm-attrs"))))))
+
+(defn set-wasm-attrs!
+  [shape k v]
+  (let [shape (assoc shape k v)]
+    ;; Only call WASM API if the shape is in the current page
+    (when (api/shape-in-current-page? (:id shape))
+      (api/use-shape (:id shape))
+      (let [result (set-wasm-single-attr! shape k)
+            pending (-> (d/index-by :key :callback result) vals)]
+        ;; TODO: set-wasm-attrs is called twice with every set
+        (if (and pending (seq pending))
+          (->> (rx/from pending)
+               (rx/mapcat (fn [callback] (callback)))
+               (rx/reduce conj [])
+               (rx/subs!
+                (fn [_]
+                  (api/update-shape-tiles)
+                  (api/clear-drawing-cache)
+                  (api/request-render "set-wasm-attrs-pending"))))
+          (do
+            (api/update-shape-tiles)
+            (api/request-render "set-wasm-attrs")))))))
 
 (defn- impl-assoc
   [self k v]
@@ -274,7 +278,9 @@
   [self k]
   (when ^boolean shape/*wasm-sync*
     (binding [shape/*wasm-sync* false]
-      (set-wasm-attrs! self k nil)))
+      ;; Only call WASM API if the shape is in the current page
+      (when (api/shape-in-current-page? (.-id ^ShapeProxy self))
+        (set-wasm-attrs! self k nil))))
 
   (case k
     :id
