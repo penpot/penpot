@@ -6,10 +6,8 @@
 
 (ns app.main.data.workspace.drawing.common
   (:require
-   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
-   [app.common.math :as mth]
    [app.common.types.modifiers :as ctm]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
@@ -25,27 +23,35 @@
   (ptk/reify ::clear-drawing
     ptk/UpdateEvent
     (update [_ state]
-      (update state :workspace-drawing dissoc :tool :object))))
+      (dissoc state :workspace-drawing))))
 
 (defn handle-finish-drawing
   []
   (ptk/reify ::handle-finish-drawing
     ptk/WatchEvent
     (watch [_ state _]
-      (let [tool    (dm/get-in state [:workspace-drawing :tool])
-            shape   (dm/get-in state [:workspace-drawing :object])
-            objects (dsh/lookup-page-objects state)
-            page-id (:current-page-id state)]
+      (let [drawing-state
+            (get state :workspace-drawing)
+
+            shape
+            (get drawing-state :object)
+
+            tool
+            (get drawing-state :tool)
+
+            objects
+            (dsh/lookup-page-objects state)
+
+            page-id
+            (:current-page-id state)]
 
         (rx/concat
          (when (:initialized? shape)
            (let [click-draw? (:click-draw? shape)
                  text?       (cfh/text-shape? shape)
-                 vbox        (dm/get-in state [:workspace-local :vbox])
 
-                 min-side    (mth/min 100
-                                      (mth/floor (dm/get-prop vbox :width))
-                                      (mth/floor (dm/get-prop vbox :height)))
+                 width       (get drawing-state :width 100)
+                 height      (get drawing-state :height 100)
 
                  shape
                  (cond-> shape
@@ -53,14 +59,14 @@
                    (assoc :grow-type :fixed)
 
                    (and ^boolean click-draw? (not ^boolean text?))
-                   (-> (assoc :width min-side)
-                       (assoc :height min-side)
+                   (-> (assoc :width width)
+                       (assoc :height height)
                        ;; NOTE: we need to recalculate the selrect and
                        ;; points, so we assign `nil` to it
                        (assoc :selrect nil)
                        (assoc :points nil)
                        (cts/setup-shape)
-                       (gsh/transform-shape (ctm/move-modifiers (- (/ min-side 2)) (- (/ min-side 2)))))
+                       (gsh/transform-shape (ctm/move-modifiers (- (/ width 2)) (- (/ height 2)))))
 
                    (and click-draw? text?)
                    (-> (assoc :height 17 :width 4 :grow-type :auto-width)

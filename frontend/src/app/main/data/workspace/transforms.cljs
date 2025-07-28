@@ -551,9 +551,7 @@
 
 (defn start-move-selected
   "Enter mouse move mode, until mouse button is released."
-  ([]
-   (start-move-selected nil false))
-
+  ([] (start-move-selected nil false))
   ([id shift?]
    (ptk/reify ::start-move-selected
      ptk/WatchEvent
@@ -972,8 +970,9 @@
 (defn move-selected
   "Move shapes a fixed increment in one direction, from a keyboard action."
   [direction shift?]
-  (dm/assert! (contains? valid-directions direction))
-  (dm/assert! (boolean? shift?))
+
+  (assert (contains? valid-directions direction))
+  (assert (boolean? shift?))
 
   (ptk/reify ::move-selected
     ptk/WatchEvent

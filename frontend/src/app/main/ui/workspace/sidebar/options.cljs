@@ -19,6 +19,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.inspect.right-sidebar :as hrs]
+   [app.main.ui.workspace.sidebar.options.drawing :as drawing]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
@@ -109,11 +110,8 @@
        [:& specialized-panel {:panel sp-panel}]
 
        (d/not-empty? drawing)
-       [:> shape-options*
-        {:shape (:object drawing)
-         :page-id page-id
-         :file-id file-id
-         :libraries libraries}]
+       [:> drawing/drawing-options*
+        {:drawing-state drawing}]
 
        (= 0 (count selected))
        [:> page/options*]
