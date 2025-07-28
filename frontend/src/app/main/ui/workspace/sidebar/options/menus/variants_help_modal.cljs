@@ -57,7 +57,7 @@
          [:li {:class (stl/css :rule-item)}
           [:div {:class (stl/css :rule-item-icon)}
            [:> icon* {:icon-id i/text-mixed
-                      :size "s"
+                      :size "m"
                       :aria-hidden true}]]
 
           [:div {:class (stl/css :rule-item-text)}
@@ -68,7 +68,7 @@
          [:li {:class (stl/css :rule-item)}
           [:div {:class (stl/css :rule-item-icon)}
            [:> icon* {:icon-id i/img
-                      :size "s"
+                      :size "m"
                       :aria-hidden true}]]
 
           [:> text* {:typography t/body-large
@@ -79,7 +79,7 @@
          [:li {:class (stl/css :rule-item)}
           [:div {:class (stl/css :rule-item-icon)}
            [:> icon* {:icon-id i/folder
-                      :size "s"
+                      :size "m"
                       :aria-hidden true}]]
 
           [:> text* {:class (stl/css :rule-item-text)

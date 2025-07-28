@@ -13,7 +13,7 @@
 .modal-dialog {
   @extend .modal-container-base;
 
-  max-width: $s-800;
+  max-width: $s-888;
   width: 100%;
   max-height: unset;
 }
@@ -27,6 +27,7 @@
   display: flex;
   color: var(--color-foreground-secondary);
   padding-block-end: $s-32;
+  gap: $s-32;
 }
 
 .modal-close-btn {
@@ -72,13 +73,20 @@
 .button-row {
   display: flex;
   justify-content: end;
-  padding-block-start: $s-8;
 }
 
 .help-text {
-  inline-size: 100%;
+  flex: 0 1 50%;
+
+  :last-child {
+    margin-block-end: 0;
+  }
 }
 
-.help-image img {
-  inline-size: 374px;
+.help-image {
+  flex: 0 1 50%;
+
+  img {
+    border-radius: $br-8;
+  }
 }

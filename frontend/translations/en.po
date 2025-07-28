@@ -5521,25 +5521,25 @@ msgid "workspace.options.component.variants-help-modal.title"
 msgstr "How variants stay connected"
 
 msgid "workspace.options.component.variants-help-modal.intro"
-msgstr "To keep changes when switching between variants, Penpot connects layers using these rules:"
+msgstr "To keep changes when switching between variants, Penpot connects layers that:"
 
 msgid "workspace.options.component.variants-help-modal.rule1"
-msgstr "Same name"
+msgstr "Share the same name."
 
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "Same type"
+msgstr "Are the same type"
 
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
-msgstr "Rectangle, ellipsis, paths and boolean operations count as same type"
+msgstr "Rectangle, ellipsis, paths and boolean operations count as same type."
 
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "Same hierachy level"
+msgstr "Have the same hierachy level"
 
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
-msgstr "Goups, boards and layouts are considered equivalent"
+msgstr "Goups, boards and layouts are considered equivalent."
 
 msgid "workspace.options.component.variants-help-modal.outro"
-msgstr "Changing any of these (e.g., renaming or moving a layer) breaks the connection, but reverting the change will restore it."
+msgstr "Changing any of these (e.g., renaming or grouping a layer) breaks the connection, but reverting the change will restore it."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"

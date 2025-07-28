@@ -18,13 +18,13 @@
   {::mf/props :obj}
   [{:keys [class collapsable collapsed title children
            btn-children all-clickable add-icon-gap
-           on-collapsed on-btn-click]}]
+           title-class on-collapsed on-btn-click]}]
   (let [klass     (stl/css-case :title-bar true
                                 :all-clickable all-clickable)
         klass     (dm/str klass " " class)]
     [:div {:class klass}
      (if ^boolean collapsable
-       [:div {:class (stl/css :title-wrapper)}
+       [:div {:class [(stl/css :title-wrapper) title-class]}
         (if ^boolean all-clickable
           [:button {:class (stl/css :toggle-btn)
                     :on-click on-collapsed}
@@ -41,9 +41,9 @@
             chevron-icon]
            [:div {:class (stl/css :title)}
             title]])]
-       [:div {:class (stl/css-case
-                      :title-only true
-                      :title-only-icon-gap add-icon-gap)}
+       [:div {:class [(stl/css-case
+                       :title-only true
+                       :title-only-icon-gap add-icon-gap) title-class]}
         title])
      children
      (when (some? on-btn-click)
