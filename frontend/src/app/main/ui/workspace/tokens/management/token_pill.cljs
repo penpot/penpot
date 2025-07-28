@@ -176,7 +176,7 @@
          selected-shapes)))
 
 (def token-types-with-status-icon
-  #{:color :border-radius :rotation :sizing :dimensions :opacity :spacing :stroke-width})
+  #{:color :border-radius :rotation :sizing :dimensions :opacity :spacing :stroke-width :text-case})
 
 (mf/defc token-pill*
   {::mf/wrap [mf/memo]}

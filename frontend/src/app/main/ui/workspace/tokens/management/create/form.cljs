@@ -787,10 +787,18 @@
                              :custom-input-token-value font-picker*
                              :on-value-resolve on-value-resolve})]))
 
+(mf/defc text-case-form*
+  [{:keys [token] :rest props}]
+  (let [placeholder (tr "workspace.tokens.text-case-value-enter")]
+    [:> form*
+     (mf/spread-props props {:token token
+                             :input-placeholder placeholder})]))
+
 (mf/defc form-wrapper*
   [{:keys [token token-type] :as props}]
   (let [token-type' (or (:type token) token-type)]
     (case token-type'
       :color [:> color-form* props]
       :font-family [:> font-family-form* props]
+      :text-case [:> text-case-form* props]
       [:> form* props])))
