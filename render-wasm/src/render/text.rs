@@ -232,7 +232,7 @@ pub fn render_as_path(
 //     shadows::render_text_drop_shadows(self, &shape, &paths, antialias);
 //     text::render(self, &paths, None, None);
 
-//     for stroke in shape.strokes().rev() {
+//     for stroke in shape.visible_strokes().rev() {
 //         shadows::render_text_path_stroke_drop_shadows(
 //             self, &shape, &paths, stroke, antialias,
 //         );
