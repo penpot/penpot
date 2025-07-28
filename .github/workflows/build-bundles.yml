@@ -1,13 +1,6 @@
-name: Build and Upload Penpot Bundles non-prod
+name: Build and Upload Penpot Bundles
 
 on:
-  # Create bundler for every tag
-  push:
-    tags:
-      - '**' # Pattern matched against refs/tags
-  # Create bundler every hour between 5:00 and 20:00 on working days
-  schedule:
-    - cron: '0 5-20 * * 1-5'
   # Create bundler from manual action
   workflow_dispatch:
     inputs:
@@ -23,6 +16,12 @@ on:
         options:
           - individual
           - all
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch'
+        type: string
+        required: true
 
 jobs:
   build-bundles:
@@ -38,6 +37,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.gh_ref }}
 
       - name: Extract somer useful variables
         id: vars
