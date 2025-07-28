@@ -1068,9 +1068,3 @@
                        (js/console.error cause)
                        (p/resolved false)))))
       (p/resolved false))))
-
-(defn shape-in-current-page?
-  "Check if a shape is in the current page by looking up the current page objects"
-  [shape-id]
-  (let [objects (deref refs/workspace-page-objects)]
-    (contains? objects shape-id)))
