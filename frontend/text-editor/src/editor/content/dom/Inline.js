@@ -111,9 +111,11 @@ export function createInline(textOrLineBreak, styles, attrs) {
   ) {
     throw new TypeError("Invalid inline child");
   }
-  if (textOrLineBreak instanceof Text
-   && textOrLineBreak.nodeValue.length === 0) {
-    console.trace("nodeValue", textOrLineBreak.nodeValue)
+  if (
+    textOrLineBreak instanceof Text &&
+    textOrLineBreak.nodeValue.length === 0
+  ) {
+    console.trace("nodeValue", textOrLineBreak.nodeValue);
     throw new TypeError("Invalid inline child, cannot be an empty text");
   }
   return createElement(TAG, {
@@ -139,7 +141,7 @@ export function createInlineFrom(inline, textOrLineBreak, styles, attrs) {
   return createInline(
     textOrLineBreak,
     mergeStyles(STYLES, inline.style, styles),
-    attrs
+    attrs,
   );
 }
 
@@ -151,6 +153,16 @@ export function createInlineFrom(inline, textOrLineBreak, styles, attrs) {
  */
 export function createEmptyInline(styles) {
   return createInline(createLineBreak(), styles);
+}
+
+export function createVoidInline(styles) {
+  return createElement(TAG, {
+    attributes: { id: createRandomId() },
+    data: { itype: TYPE },
+    styles: styles,
+    allowedStyles: STYLES,
+    children: new Text(""),
+  });
 }
 
 /**

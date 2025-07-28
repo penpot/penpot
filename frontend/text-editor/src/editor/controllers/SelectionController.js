@@ -18,6 +18,7 @@ import {
   setInlineStyles,
   splitInline,
   createEmptyInline,
+  createVoidInline,
 } from "../content/dom/Inline.js";
 import {
   createEmptyParagraph,
@@ -1697,7 +1698,7 @@ export class SelectionController extends EventTarget {
     // node, then we can apply styles directly to that
     // node.
     if (startNode === endNode && startNode.nodeType === Node.TEXT_NODE) {
-      // The styles are applied to the node completelly.
+      // The styles are applied to the node completely.
       if (startOffset === 0 && endOffset === endNode.nodeValue.length) {
         const paragraph = this.startParagraph;
         const inline = this.startInline;
@@ -1728,9 +1729,18 @@ export class SelectionController extends EventTarget {
 
         // FIXME: This can change focus <-> anchor order.
         this.setSelection(midText, 0, midText, midText.nodeValue.length);
-
-        // The styles are applied to the paragraph.
-      } else {
+      }
+      // the styles are applied to the current caret
+      else if (
+        this.startOffset === this.endOffset &&
+        this.endOffset === endNode.nodeValue.length
+      ) {
+        const newInline = createVoidInline(newStyles);
+        this.endInline.after(newInline);
+        this.setSelection(newInline.firstChild, 0, newInline.firstChild, 0);
+      }
+      // The styles are applied to the paragraph
+      else {
         const paragraph = this.startParagraph;
         setParagraphStyles(paragraph, newStyles);
       }
