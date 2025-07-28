@@ -45,7 +45,7 @@ export const STYLES = [
   ["text-decoration"],
   ["text-transform"],
   ["text-align"],
-  ["direction"]
+  ["direction"],
 ];
 
 /**
@@ -56,13 +56,11 @@ export const STYLES = [
  * @param {*} node
  */
 export function fixParagraph(node) {
-  if  (!isParagraph(node) || !isLineBreak(node.firstChild)) {
+  if (!isParagraph(node) || !isLineBreak(node.firstChild)) {
     return;
   }
   const br = createLineBreak();
-  node.replaceChildren(
-    createInline(br)
-  );
+  node.replaceChildren(createInline(br));
   return br;
 }
 
@@ -132,9 +130,7 @@ export function createParagraph(inlines, styles, attrs) {
  * @returns {HTMLDivElement}
  */
 export function createEmptyParagraph(styles) {
-  return createParagraph([
-    createEmptyInline(styles)
-  ], styles);
+  return createParagraph([createEmptyInline(styles)], styles);
 }
 
 /**
@@ -157,8 +153,7 @@ export function setParagraphStyles(element, styles) {
 export function getParagraph(node) {
   if (!node) return null;
   if (isParagraph(node)) return node;
-  if (node.nodeType === Node.TEXT_NODE
-   || isLineBreak(node)) {
+  if (node.nodeType === Node.TEXT_NODE || isLineBreak(node)) {
     const paragraph = node?.parentElement?.parentElement;
     if (!paragraph) {
       return null;
