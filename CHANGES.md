@@ -11,6 +11,7 @@
 ### :sparkles: New features & Enhancements
 
 ### :bug: Bugs fixed
+- Display strokes information in inspect tab [Taiga #11154](https://tree.taiga.io/project/penpot/issue/11154)
 
 - Fix problem with booleans selection [Taiga #11627](https://tree.taiga.io/project/penpot/issue/11627)
 - Fix missing font when copy&paste a chunk of text [Taiga #11522](https://tree.taiga.io/project/penpot/issue/11522)
