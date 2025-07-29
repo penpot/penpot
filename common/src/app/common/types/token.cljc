@@ -128,6 +128,15 @@
 
 (def dimensions-keys (schema-keys schema:dimensions))
 
+(def ^:private schema:axis
+  [:map
+   [:x {:optional true} token-name-ref]
+   [:y {:optional true} token-name-ref]])
+
+(def axis-keys (schema-keys schema:axis))
+
+
+
 (def ^:private schema:rotation
   [:map
    [:rotation {:optional true} token-name-ref]])
@@ -165,6 +174,7 @@
                          opacity-keys
                          spacing-keys
                          dimensions-keys
+                         axis-keys
                          rotation-keys
                          typography-keys
                          number-keys))
@@ -216,7 +226,8 @@
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
      (rotation-keys shape-attr) #{shape-attr}
-     (number-keys shape-attr) #{shape-attr})))
+     (number-keys shape-attr) #{shape-attr}
+     (axis-keys shape-attr) #{shape-attr})))
 
 (defn token-attr->shape-attr
   [token-attr]
