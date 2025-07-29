@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## 2.8.1 (Unreleased)
+## 2.8.1
 
 ### :bug: Bugs fixed
 
