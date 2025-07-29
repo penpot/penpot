@@ -55,14 +55,21 @@
 
         ;; Excluding nil values
         values               (d/without-nils values)
-        fills                (if (contains? cfg/flags :frontend-binary-fills)
+
+        fills                (get values :fills)
+        fills                (if (and (contains? cfg/flags :frontend-binary-fills)
+                                      (not= fills :multiple))
                                (take types.fill/MAX-FILLS (d/nilv (:fills values) []))
-                               (:fills values))
+                               fills)
+
+
         has-fills?           (or (= :multiple fills) (some? (seq fills)))
+
         can-add-fills?       (if (contains? cfg/flags :frontend-binary-fills)
                                (and (not (= :multiple fills))
                                     (< (count fills) types.fill/MAX-FILLS))
                                (not (= :multiple fills)))
+
 
         state*               (mf/use-state has-fills?)
         open?                (deref state*)
