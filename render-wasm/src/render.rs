@@ -561,6 +561,7 @@ impl RenderState {
 
                 shadows::render_fill_inner_shadows(self, shape, antialias);
                 shadows::render_fill_drop_shadows(self, shape, antialias);
+                // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
         self.apply_drawing_to_render_canvas(Some(&shape));
