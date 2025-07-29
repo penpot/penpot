@@ -125,7 +125,7 @@ RUN set -ex; \
 
 COPY --from=build /opt/jre /opt/jre
 COPY --from=build /opt/node /opt/node
-COPY --from=penpotapp/imagemagick:7.1.1-47 /opt/imagick /opt/imagick
+COPY --from=penpotapp/imagemagick:7.1.2-0 /opt/imagick /opt/imagick
 COPY --chown=penpot:penpot ./bundle-backend/ /opt/penpot/backend/
 
 USER penpot:penpot
