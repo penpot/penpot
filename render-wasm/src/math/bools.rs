@@ -1,4 +1,5 @@
 use super::Matrix;
+use crate::render::{RenderState, SurfaceId};
 use crate::shapes::{BoolType, Path, Segment, Shape, StructureEntry, ToPath, Type};
 use crate::state::ShapesPool;
 use crate::uuid::Uuid;
@@ -428,3 +429,119 @@ pub fn update_bool_to_path(
     shape
 }
 
+#[allow(dead_code)]
+// Debug utility for boolean shapes
+pub fn debug_render_bool_paths(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    shapes: &ShapesPool,
+    modifiers: &HashMap<Uuid, Matrix>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
+) {
+    let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
+
+    let mut shape = shape.clone();
+
+    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+
+    let Type::Bool(bool_data) = &mut shape.shape_type else {
+        return;
+    };
+
+    if children_ids.is_empty() {
+        return;
+    }
+
+    let Some(child) = shapes.get(&children_ids[children_ids.len() - 1]) else {
+        return;
+    };
+
+    let mut current_path = child.to_path(shapes, modifiers, structure);
+
+    for idx in (0..children_ids.len() - 1).rev() {
+        let Some(other) = shapes.get(&children_ids[idx]) else {
+            continue;
+        };
+        let other_path = other.to_path(shapes, modifiers, structure);
+
+        let (segs_a, segs_b) = split_segments(&current_path, &other_path);
+
+        let beziers = match bool_data.bool_type {
+            BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
+            BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
+            BoolType::Intersection => intersection(&current_path, segs_a, &other_path, segs_b),
+            BoolType::Exclusion => exclusion(segs_a, segs_b),
+        };
+        current_path = Path::new(beziers_to_segments(&beziers));
+
+        if idx == 0 {
+            for b in &beziers {
+                let mut paint = skia::Paint::default();
+                paint.set_color(skia::Color::RED);
+                paint.set_alpha_f(1.0);
+                paint.set_style(skia::PaintStyle::Stroke);
+
+                let mut path = skia::Path::default();
+                path.move_to((b.1.start.x as f32, b.1.start.y as f32));
+
+                match b.1.handles {
+                    BezierHandles::Linear => {
+                        path.line_to((b.1.end.x as f32, b.1.end.y as f32));
+                    }
+                    BezierHandles::Quadratic { handle } => {
+                        path.quad_to(
+                            (handle.x as f32, handle.y as f32),
+                            (b.1.end.x as f32, b.1.end.y as f32),
+                        );
+                    }
+                    BezierHandles::Cubic {
+                        handle_start,
+                        handle_end,
+                    } => {
+                        path.cubic_to(
+                            (handle_start.x as f32, handle_start.y as f32),
+                            (handle_end.x as f32, handle_end.y as f32),
+                            (b.1.end.x as f32, b.1.end.y as f32),
+                        );
+                    }
+                }
+                canvas.draw_path(&path, &paint);
+
+                let mut v1 = b.1.normal(TValue::Parametric(1.0));
+                v1 *= 0.5;
+                let v2 = v1.perp();
+
+                let p1 = b.1.end + v1 + v2;
+                let p2 = b.1.end - v1 + v2;
+
+                canvas.draw_line(
+                    (b.1.end.x as f32, b.1.end.y as f32),
+                    (p1.x as f32, p1.y as f32),
+                    &paint,
+                );
+
+                canvas.draw_line(
+                    (b.1.end.x as f32, b.1.end.y as f32),
+                    (p2.x as f32, p2.y as f32),
+                    &paint,
+                );
+
+                let v3 = b.1.normal(TValue::Parametric(0.0));
+                let p3 = b.1.start + v3;
+                let p4 = b.1.start - v3;
+
+                canvas.draw_line(
+                    (b.1.start.x as f32, b.1.start.y as f32),
+                    (p3.x as f32, p3.y as f32),
+                    &paint,
+                );
+
+                canvas.draw_line(
+                    (b.1.start.x as f32, b.1.start.y as f32),
+                    (p4.x as f32, p4.y as f32),
+                    &paint,
+                );
+            }
+        }
+    }
+}
