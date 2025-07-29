@@ -927,6 +927,12 @@
             [:div ":touched " (str (:touched shape))])])])))
 
 
+(defn- move-empty-items-to-end [v]
+  (let [non-empty-items (filterv (complement empty?) v)
+        empty-items     (filterv empty? v)]
+    (vec (concat non-empty-items empty-items))))
+
+
 (mf/defc variant-menu*
   [{:keys [shapes]}]
   (let [multi?             (> (count shapes) 1)
@@ -1065,7 +1071,10 @@
         (when-not multi?
           [:div {:class (stl/css :variant-property-list)}
            (for [[pos property] (map vector (range) properties)]
-             (let [meta (str/join ", " (:value property))]
+             (let [meta (->> (:value property)
+                             (move-empty-items-to-end)
+                             (replace {"" "--"})
+                             (str/join ", "))]
                [:div {:key (str (:id shape) pos)
                       :class (stl/css :variant-property-row)}
                 [:> input-with-meta* {:value (:name property)
