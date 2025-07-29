@@ -40,10 +40,9 @@
     ""
     (ust/format-precision value 2)))
 
-
-
 (mf/defc font-item*
-  {::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]
+   ::mf/private true}
   [{:keys [font is-current on-click style]}]
   (let [item-ref (mf/use-ref)
         on-click (mf/use-fn (mf/deps font) #(on-click font))]
@@ -67,7 +66,7 @@
 
 (declare row-renderer)
 
-(defn filter-fonts
+(defn- filter-fonts
   [{:keys [term backends]} fonts]
   (let [term (str/lower term)
         xform (cond-> (map identity)
@@ -96,21 +95,22 @@
                        (filter-fonts state recent-fonts))
 
         ;; Combine recent fonts with filtered fonts, avoiding duplicates
-        combined-fonts (mf/with-memo [recent-fonts fonts]
-                         (let [recent-ids (set (map :id recent-fonts))]
-                           (vec (concat recent-fonts (remove #(recent-ids (:id %)) fonts)))))
-
-        ;; Find the index of current font in the combined list
-        current-index (mf/with-memo [combined-fonts current-font]
-                        (or (some (fn [[idx font]]
-                                    (when (= (:id current-font) (:id font)) idx))
-                                  (map-indexed vector combined-fonts))
-                            0))
+        combined-fonts
+        (mf/with-memo [recent-fonts fonts]
+          (let [recent-ids (into #{} d/xf:map-id recent-fonts)]
+            (into recent-fonts (remove #(contains? recent-ids (:id %))) fonts)))
 
         ;; Initialize selected with current font index
-        selected-index (mf/use-state current-index)
+        selected-index
+        (mf/use-state
+         (fn []
+           (or (some (fn [[idx font]]
+                       (when (= (:id current-font) (:id font)) idx))
+                     (map-indexed vector combined-fonts))
+               0)))
 
-        full-size?   (boolean (and full-size show-recent))
+        full-size?
+        (boolean (and full-size show-recent))
 
         select-next
         (mf/use-fn
