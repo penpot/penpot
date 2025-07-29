@@ -181,7 +181,7 @@
          [:div {:class (stl/css :form-container)}
           [:& recovery-sent-page {:email @user-email}]])]]]))
 
-(mf/defc request-dialog
+(mf/defc request-dialog*
   {::mf/props :obj}
   [{:keys [title content button-text on-button-click cancel-text on-close]}]
   (let [on-click (or on-button-click on-close)]
@@ -235,45 +235,45 @@
 
     (cond
       is-default
-      [:& request-dialog {:title (tr "not-found.no-permission.project")
-                          :button-text (tr "not-found.no-permission.go-dashboard")
-                          :on-close on-close}]
+      [:> request-dialog* {:title (tr "not-found.no-permission.project")
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
       (and (some? file-id) (:already-requested requested))
-      [:& request-dialog {:title (tr "not-found.no-permission.already-requested.file")
-                          :content [(tr "not-found.no-permission.already-requested.or-others.file")]
-                          :button-text (tr "not-found.no-permission.go-dashboard")
-                          :on-close on-close}]
+      [:> request-dialog* {:title (tr "not-found.no-permission.already-requested.file")
+                           :content [(tr "not-found.no-permission.already-requested.or-others.file")]
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
       (:already-requested requested)
-      [:& request-dialog {:title (tr "not-found.no-permission.already-requested.project")
-                          :content [(tr "not-found.no-permission.already-requested.or-others.project")]
-                          :button-text (tr "not-found.no-permission.go-dashboard")
-                          :on-close on-close}]
+      [:> request-dialog* {:title (tr "not-found.no-permission.already-requested.project")
+                           :content [(tr "not-found.no-permission.already-requested.or-others.project")]
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
       (:sent requested)
-      [:& request-dialog {:title (tr "not-found.no-permission.done.success")
-                          :content [(tr "not-found.no-permission.done.remember")]
-                          :button-text (tr "not-found.no-permission.go-dashboard")
-                          :on-close on-close}]
+      [:> request-dialog* {:title (tr "not-found.no-permission.done.success")
+                           :content [(tr "not-found.no-permission.done.remember")]
+                           :button-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
       (some? file-id)
-      [:& request-dialog {:title (tr "not-found.no-permission.file")
-                          :content [(tr "not-found.no-permission.you-can-ask.file")
-                                    (tr "not-found.no-permission.if-approves")]
-                          :button-text (tr "not-found.no-permission.ask")
-                          :on-button-click on-request-access
-                          :cancel-text (tr "not-found.no-permission.go-dashboard")
-                          :on-close on-close}]
+      [:> request-dialog* {:title (tr "not-found.no-permission.file")
+                           :content [(tr "not-found.no-permission.you-can-ask.file")
+                                     (tr "not-found.no-permission.if-approves")]
+                           :button-text (tr "not-found.no-permission.ask")
+                           :on-button-click on-request-access
+                           :cancel-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}]
 
       (some? team-id)
-      [:& request-dialog {:title (tr "not-found.no-permission.project")
-                          :content [(tr "not-found.no-permission.you-can-ask.project")
-                                    (tr "not-found.no-permission.if-approves")]
-                          :button-text (tr "not-found.no-permission.ask")
-                          :on-button-click on-request-access
-                          :cancel-text (tr "not-found.no-permission.go-dashboard")
-                          :on-close on-close}])))
+      [:> request-dialog* {:title (tr "not-found.no-permission.project")
+                           :content [(tr "not-found.no-permission.you-can-ask.project")
+                                     (tr "not-found.no-permission.if-approves")]
+                           :button-text (tr "not-found.no-permission.ask")
+                           :on-button-click on-request-access
+                           :cancel-text (tr "not-found.no-permission.go-dashboard")
+                           :on-close on-close}])))
 
 (mf/defc not-found*
   []
@@ -535,6 +535,7 @@
            [:> request-access* {:file-id (:file-id info)
                                 :team-id  (:team-id info)
                                 :is-default (:team-default info)
+                                :profile profile
                                 :is-workspace workspace?}]]
 
           [:> exception-section* props])))))
