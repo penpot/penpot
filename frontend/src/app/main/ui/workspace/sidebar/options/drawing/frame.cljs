@@ -21,8 +21,10 @@
 (mf/defc options*
   [{:keys [drawing-state]}]
 
-  (let [show*          (mf/use-state false)
-        show?          (deref show*)
+  (let [show*                 (mf/use-state false)
+        show?                 (deref show*)
+        selected-preset-name* (mf/use-state nil)
+        selected-preset-name  (deref selected-preset-name*)
 
         on-open
         (mf/use-fn
@@ -35,12 +37,16 @@
         on-preset-selected
         (mf/use-fn
          (fn [event]
-           (let [width (-> (dom/get-current-target event)
-                           (dom/get-data "width")
-                           (d/read-string))
+           (let [width  (-> (dom/get-current-target event)
+                            (dom/get-data "width")
+                            (d/read-string))
                  height (-> (dom/get-current-target event)
                             (dom/get-data "height")
-                            (d/read-string))]
+                            (d/read-string))
+                 name   (-> (dom/get-current-target event)
+                            (dom/get-data "name"))]
+
+             (reset! selected-preset-name* name)
              (st/emit! (dwd/set-default-size width height)))))
 
         orientation
@@ -59,7 +65,7 @@
      [:div {:class (stl/css-case  :presets-wrapper true
                                   :opened show?)
             :on-click on-open}
-      [:span {:class (stl/css :select-name)} (tr "workspace.options.size-presets")]
+      [:span {:class (stl/css :select-name)} (or selected-preset-name (tr "workspace.options.size-presets"))]
       [:span {:class (stl/css :collapsed-icon)} i/arrow]
       [:& dropdown {:show show?
                     :on-close on-close}
@@ -78,6 +84,7 @@
                                          :match preset-match)
                     :data-width (str (:width preset))
                     :data-height (str (:height preset))
+                    :data-name (:name preset)
                     :on-click on-preset-selected}
                [:div {:class (stl/css :name-wrapper)}
                 [:span {:class (stl/css :preset-name)} (:name preset)]
