@@ -304,7 +304,6 @@
    (when (string? value)
      (generate-text-shape-update {:text-transform value} shape-ids page-id))))
 
-
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
 (defn apply-token

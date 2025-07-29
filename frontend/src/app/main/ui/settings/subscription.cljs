@@ -365,17 +365,17 @@
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise-trial")
                            :card-title-icon i/character-e
                            :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
-                           :benefits [(tr "subscription.settings.enterprise.security"),
+                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage"),
                                       (tr "subscription.settings.enterprise.capped-bill"),
-                                      (tr "subscription.settings.enterprise.unlimited-storage")]
+                                      (tr "subscription.settings.enterprise.autosave")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments}]
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                            :card-title-icon i/character-e
                            :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
-                           :benefits [(tr "subscription.settings.enterprise.security"),
+                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage"),
                                       (tr "subscription.settings.enterprise.capped-bill"),
-                                      (tr "subscription.settings.enterprise.unlimited-storage")]
+                                      (tr "subscription.settings.enterprise.autosave")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments}]))
 
@@ -425,9 +425,9 @@
                          :price-value "$950"
                          :price-period (tr "subscription.settings.price-organization-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
-                         :benefits [(tr "subscription.settings.enterprise.security"),
+                         :benefits [(tr "subscription.settings.enterprise.unlimited-storage"),
                                     (tr "subscription.settings.enterprise.capped-bill"),
-                                    (tr "subscription.settings.enterprise.unlimited-storage")]
+                                    (tr "subscription.settings.enterprise.autosave")]
                          :cta-text (if subscription (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")

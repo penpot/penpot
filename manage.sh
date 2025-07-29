@@ -7,7 +7,7 @@ export DEVENV_PNAME="penpotdev";
 export CURRENT_USER_ID=$(id -u);
 export CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD);
 
-export IMAGEMAGICK_VERSION=7.1.1-47
+export IMAGEMAGICK_VERSION=7.1.2-0
 
 # Safe directory to avoid ownership errors with Git
 git config --global --add safe.directory /home/penpot/penpot || true

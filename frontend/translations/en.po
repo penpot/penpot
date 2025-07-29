@@ -4313,11 +4313,6 @@ msgstr "Please upgrade to match your usage. Contact with the team owner: %s"
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Enterprise plan"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "Advanced security, activity logs, dedicated support and more."
-
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
 msgid "subscription.dashboard.power-up.professional.bottom"
@@ -4357,9 +4352,9 @@ msgstr "Enterprise plan (trial)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom"
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
-"Get extra editors, more storage and backup, advanced security and more. "
+"Get extra editors, more backup, unlimited storage and more. "
 "[Take a look to the Enterprise plan.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
@@ -4417,9 +4412,8 @@ msgstr "Enterprise (trial)"
 msgid "subscription.settings.enterprise.unlimited-storage"
 msgstr "Unlimited storage and 90-day autosave versions and file recovery"
 
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Advanced security"
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90-day autosave versions and file recovery"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
 msgid "subscription.settings.enterprise.capped-bill"

@@ -68,6 +68,8 @@
 - Fix problem when changing between flex/grid layout [Taiga #11625](https://tree.taiga.io/project/penpot/issue/11625)
 - Fix opacity on stroke gradients [Taiga #11646](https://tree.taiga.io/project/penpot/issue/11646)
 - Fix change from gradient to solid color [Taiga #11648](https://tree.taiga.io/project/penpot/issue/11648)
+- Fix the context menu always closes after any action [Taiga #11624](https://tree.taiga.io/project/penpot/issue/11624)
+- Fix font selector highlight inconsistency when using keyboard navigation [Taiga #11668](https://tree.taiga.io/project/penpot/issue/11668)
 
 ## 2.8.1 (Unreleased)
 
@@ -75,6 +77,7 @@
 
 - Fix unexpected exception on processing old texts [Github #6889](https://github.com/penpot/penpot/pull/6889)
 - Fix UI theme selection from main menu [Taiga #11567](https://tree.taiga.io/project/penpot/issue/11567)
+- Add missing migration information to file snapshots [Github #686](https://github.com/penpot/penpot/pull/6864)
 
 ## 2.8.0
 

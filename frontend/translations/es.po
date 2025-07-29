@@ -4340,11 +4340,6 @@ msgstr "Por favor, mejóralo para adaptarlo a tu uso. Contacta con el "
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Plan Enterprise"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "Seguridad avanzada, registros de actividad, asistencia dedicada y mucho más."
-
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
 msgid "subscription.dashboard.power-up.professional.bottom"
@@ -4388,9 +4383,9 @@ msgstr "Plan Unlimited"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom"
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
-"Consigue editores adicionales, más almacenamiento y copias de seguridad, seguridad avanzada y mucho más. "
+"Consigue editores adicionales, copias de seguridad, almacenamiento ilimitado y mucho más. "
 "[Echa un ojo al Plan Enterprise|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
@@ -4445,9 +4440,8 @@ msgstr "Enterprise (prueba)"
 msgid "subscription.settings.enterprise.unlimited-storage"
 msgstr "Almacenamiento ilimitado y versiones de autoguardado de 90 días y recuperación de archivos"
 
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Seguridad avanzada"
+msgid "subscription.settings.enterprise.autosave"
+msgstr "Versiones guardadas automáticamente cada 90 días y recuperación de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
 msgid "subscription.settings.enterprise.capped-bill"
