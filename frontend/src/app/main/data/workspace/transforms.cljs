@@ -395,7 +395,7 @@
                  (gm/set-objects-modifiers objects))]
 
          (if (features/active-feature? state "render-wasm/v1")
-           (rx/of (dwm/apply-wasm-modifiers modif-tree))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree {:ignore-snap-pixel true}))
            (rx/of (dwm/apply-modifiers* objects modif-tree nil options))))))))
 
 (defn change-orientation
