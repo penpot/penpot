@@ -156,10 +156,8 @@
 
         ;; The original-shape is in a copy. For the relation rules, we need the referenced
         ;; shape on the main component
-        orig-ref-shape     (ctf/find-ref-shape nil container libraries original-shape)
-
-        orig-ref-objects   (-> (ctf/get-component-container-from-head orig-ref-shape libraries)
-                               :objects)
+        orig-ref-shape     (ctf/find-ref-shape nil container libraries original-shape {:with-context? true})
+        orig-ref-objects   (:objects (:container (meta orig-ref-shape)))
 
         ;; Adds a :shape-path attribute to the children of the orig-ref-shape,
         ;; that contains the type of its ancestors and its name
