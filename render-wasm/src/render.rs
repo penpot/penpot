@@ -800,6 +800,16 @@ impl RenderState {
         // Detect clipping and apply it properly
         if let Type::Frame(_) = &element.shape_type {
             if element.clip() {
+                let antialias = element.should_use_antialias(self.get_scale());
+                
+                // First, render drop shadows for the frame (before clipping)
+                shadows::render_fill_drop_shadows(self, element, antialias);
+                
+                // Render stroke drop shadows for the frame (before clipping)
+                for stroke in element.visible_strokes().rev() {
+                    shadows::render_stroke_drop_shadows(self, element, stroke, antialias);
+                }
+                
                 let mut layer_paint = skia::Paint::default();
                 layer_paint.set_blend_mode(skia::BlendMode::DstIn);
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
@@ -825,7 +835,13 @@ impl RenderState {
                 element_strokes.to_mut().clear_shadows();
                 self.render_shape(&element_strokes, modifiers, scale_content);
 
-                // TODO: drop shadows. With thos approach actually drop shadows for frames with clipped content are lost.
+                // Render inner shadows after clipping is applied
+                shadows::render_fill_inner_shadows(self, element, antialias);
+                
+                // Render stroke inner shadows after clipping is applied
+                for stroke in element.visible_strokes().rev() {
+                    shadows::render_stroke_inner_shadows(self, element, stroke, antialias);
+                }
             }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
@@ -1202,5 +1218,43 @@ impl RenderState {
 
     pub fn get_cached_scale(&self) -> f32 {
         self.cached_viewbox.zoom() * self.options.dpr()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::{Frame, Shadow, ShadowStyle, Type};
+
+    #[test]
+    fn test_frame_clipping_with_shadows() {
+        // Create a render state
+        let mut render_state = RenderState::new(800, 600);
+        
+        // Create a frame with clipping and shadows
+        let mut frame = Shape::new(Uuid::new_v4());
+        frame.set_shape_type(Type::Frame(Frame::default()));
+        frame.set_selrect(100.0, 100.0, 200.0, 200.0);
+        frame.set_clip(true);
+        
+        // Add a drop shadow to the frame
+        let shadow = Shadow::new(
+            skia::Color::BLACK,
+            10.0,  // blur
+            0.0,   // spread
+            (5.0, 5.0),  // offset
+            ShadowStyle::Drop,
+            false, // hidden
+        );
+        frame.add_shadow(shadow);
+        
+        // Verify that the frame has shadows
+        assert!(!frame.drop_shadows().next().is_none());
+        
+        // Test that the frame has clipping enabled
+        assert!(frame.clip());
+        
+        // Test that the frame is a frame type
+        assert!(matches!(frame.shape_type, Type::Frame(_)));
     }
 }
