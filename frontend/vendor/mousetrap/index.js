@@ -845,8 +845,8 @@ function Mousetrap(targetElement) {
     // a callback is added for this key
     self._callbacks[info.key] = self._callbacks[info.key] || [];
 
-    // remove an existing match if there is one
-    _getMatches(info.key, info.modifiers, {type: info.action}, sequenceName, combination, level);
+    // // remove an existing match if there is one
+    // _getMatches(info.key, info.modifiers, {type: info.action}, sequenceName, combination, level);
 
     // add this call back to the array
     // if it is a sequence put it at the beginning
