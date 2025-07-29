@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.pprint :as pp]
    [app.common.uri :as u]
+   [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.refs :as refs]
@@ -485,24 +486,24 @@
   {::mf/props :obj}
   [{:keys [data route] :as props}]
 
-  (let [type         (:type data)
-        path         (:path route)
+  (let [type        (:type data)
+        path        (:path route)
+        params      (:query-params route)
 
-        params       (:query-params route)
-
-        workspace?   (str/includes? path "workspace")
-        dashboard?   (str/includes? path "dashboard")
-        view?        (str/includes? path "view")
+        workspace?  (str/includes? path "workspace")
+        dashboard?  (str/includes? path "dashboard")
+        view?       (str/includes? path "view")
 
         ;; We store the request access info int this state
-        info*        (mf/use-state nil)
-        info         (deref info*)
+        info*       (mf/use-state nil)
+        info        (deref info*)
 
-        loaded?      (get info :loaded false)
-        profile      (mf/deref refs/profile)
+        profile     (mf/deref refs/profile)
 
-        auth-error?
-        (= type :authentication)
+        auth-error? (= type :authentication)
+
+        authenticated?
+        (is-authenticated? profile)
 
         request-access?
         (and
@@ -517,8 +518,7 @@
              (rx/subs! (partial reset! info*)
                        (partial reset! info* {:loaded true})))))
 
-
-    (if auth-error?
+    (if (and auth-error? (not authenticated?))
       [:> context-wrapper*
        {:is-workspace workspace?
         :is-dashboard dashboard?
@@ -526,7 +526,7 @@
         :profile profile}
        [:> login-dialog* {}]]
 
-      (when loaded?
+      (when (get info :loaded false)
         (if request-access?
           [:> context-wrapper* {:is-workspace workspace?
                                 :is-dashboard dashboard?
