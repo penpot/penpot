@@ -20,6 +20,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
    [app.common.types.path :as path]
+   [app.common.types.shape :as shape]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -637,7 +638,8 @@
       (let [objects          (dsh/lookup-page-objects state)
 
             ignore-tree
-            (calculate-ignore-tree modif-tree objects)
+            (binding [shape/*wasm-sync* false]
+              (calculate-ignore-tree modif-tree objects))
 
             options
             (-> params
