@@ -75,7 +75,7 @@
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.unlimited-plan")
-          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom", subscription-href)
+          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom-text", subscription-href)
           :has-dropdown true}])
 
       "enterprise"
