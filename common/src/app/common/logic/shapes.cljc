@@ -11,7 +11,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.variant-properties :as clvp]
-   [app.common.text :as ct]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
