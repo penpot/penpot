@@ -116,7 +116,10 @@
         id (get shape :id)]
     (case k
       :parent-id    (api/set-parent-id v)
-      :type         (api/set-shape-type v)
+      :type         (do
+                      (api/set-shape-type v)
+                      (when (or (= v :path) (= v :bool))
+                        (api/set-shape-path-content (:content shape))))
       :bool-type    (api/set-shape-bool-type v)
       :selrect      (api/set-shape-selrect v)
       :show-content (if (= (:type shape) :frame)
