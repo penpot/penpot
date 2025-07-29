@@ -535,6 +535,7 @@
            [:> request-access* {:file-id (:file-id info)
                                 :team-id  (:team-id info)
                                 :is-default (:team-default info)
+                                :profile profile
                                 :is-workspace workspace?}]]
 
           [:> exception-section* props])))))
