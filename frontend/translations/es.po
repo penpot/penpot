@@ -6975,6 +6975,10 @@ msgstr "Eliminar layout"
 msgid "workspace.shape.menu.remove-variant-property"
 msgstr "Eliminar propiedad"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "La variante debe tener al menos una propiedad"
+
 #: src/app/main/ui/workspace/context_menu.cljs:318
 msgid "workspace.shape.menu.rename"
 msgstr "Renombrar"
