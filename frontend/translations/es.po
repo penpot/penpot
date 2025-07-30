@@ -6850,6 +6850,13 @@ msgstr "Crear una nota"
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Tablero de selección"
 
+#: src/app/main/ui/workspace/context_menu.cljs:385
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combinar como variantes"
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Los componentes tienen que estar en la misma página"
+
 #: src/app/main/ui/workspace/context_menu.cljs:573
 msgid "workspace.shape.menu.create-component"
 msgstr "Crear componente"

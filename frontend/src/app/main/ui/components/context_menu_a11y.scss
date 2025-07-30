@@ -105,6 +105,11 @@
         }
       }
 
+      .context-menu-action-disabled,
+      &:hover .context-menu-action-disabled {
+        color: var(--color-foreground-secondary);
+      }
+
       &:focus {
         outline: none;
       }

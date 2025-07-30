@@ -317,13 +317,21 @@
                                      (seq (:colors selected))
                                      (seq (:typographies selected)))
 
-        any-variant?             (mf/with-memo [selected components current-component-id]
-                                   (let [selected-and-current (-> (d/nilv selected [])
-                                                                  (conj current-component-id)
-                                                                  set)]
-                                     (->> components
-                                          (filter #(contains? selected-and-current (:id %)))
-                                          (some ctc/is-variant?))))
+        selected-and-current     (mf/with-memo [selected components current-component-id]
+                                   (-> (d/nilv selected [])
+                                       (conj current-component-id)
+                                       set))
+
+        selected-and-current-full (mf/with-memo [selected-and-current]
+                                    (->> components
+                                         (filter #(contains? selected-and-current (:id %)))))
+
+        any-variant?             (mf/with-memo [selected-and-current]
+                                   (some ctc/is-variant? selected-and-current-full))
+
+        all-same-page?           (mf/with-memo [selected-and-current]
+                                   (let [page (:main-instance-page (first selected-and-current-full))]
+                                     (every? #(= page (:main-instance-page %)) selected-and-current-full)))
 
         groups                   (mf/with-memo [components reverse-sort?]
                                    (grp/group-assets components reverse-sort?))
@@ -497,7 +505,17 @@
                (st/emit! (dwl/go-to-component-file file-id component))))))
 
         on-asset-click
-        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
+        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))
+
+        on-combine-as-variants
+        (mf/use-fn
+         (mf/deps selected-and-current-full)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [page-id (->> selected-and-current-full first :main-instance-page)
+                 ids (into #{} (map :main-instance-id selected-full))]
+
+             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))]
 
     [:& cmm/asset-section {:file-id file-id
                            :title (tr "workspace.assets.components")
@@ -575,4 +593,10 @@
                   (when (not multi-assets?)
                     {:name   (tr "workspace.shape.menu.show-main")
                      :id     "assets-show-main-component"
-                     :handler on-show-main})]}]]]))
+                     :handler on-show-main})
+                  (when (and is-local multi-components? (not any-variant?))
+                    {:name   (tr "workspace.shape.menu.combine-as-variants")
+                     :id     "assets-combine-as-variants"
+                     :title (when-not all-same-page? (tr "workspace.shape.menu.combine-as-variants-error"))
+                     :disabled (not all-same-page?)
+                     :handler on-combine-as-variants})]}]]]))

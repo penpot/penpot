@@ -20,9 +20,11 @@
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
+   [app.main.data.common :as dcm]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.pages :as dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
@@ -338,83 +340,101 @@
 (defn transform-in-variant
   "Given the id of a main shape of a component, creates a variant structure for
    that component"
-  [main-instance-id]
-  (ptk/reify ::transform-in-variant
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [variant-id (uuid/next)
-            variant-vec [variant-id]
-            file-id      (:current-file-id state)
-            page-id      (:current-page-id state)
-            objects      (dsh/lookup-page-objects state file-id page-id)
-            main         (get objects main-instance-id)
-            parent       (get objects (:parent-id main))
-            component-id (:component-id main)
-            cpath        (cfh/split-path (:name main))
-            name         (first cpath)
-            num-props    (max 1 (dec (count cpath)))
-            cont-props   {:layout-item-h-sizing :auto
-                          :layout-item-v-sizing :auto
-                          :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
-                          :layout-gap     {:row-gap 0 :column-gap 20}
-                          :name name
-                          :r1 20
-                          :r2 20
-                          :r3 20
-                          :r4 20
-                          :is-variant-container true}
-            main-props   {:layout-item-h-sizing :fix
-                          :layout-item-v-sizing :fix
-                          :variant-id variant-id
-                          :name name}
-            stroke-props {:stroke-alignment :inner
-                          :stroke-style :solid
-                          :stroke-color "#bb97d8" ;; todo use color var?
-                          :stroke-opacity 1
-                          :stroke-width 2}
+  ([main-instance-id]
+   (transform-in-variant main-instance-id nil nil [] true true))
+  ([main-instance-id variant-id delta prefix duplicate? flex?]
+   (ptk/reify ::transform-in-variant
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [variant-id   (or variant-id (uuid/next))
+             variant-vec  [variant-id]
+             file-id      (:current-file-id state)
+             page-id      (:current-page-id state)
+             objects      (dsh/lookup-page-objects state file-id page-id)
+             main         (get objects main-instance-id)
+             parent       (get objects (:parent-id main))
+             component-id (:component-id main)
+             ;; If there is a prefix, set is as first item of path
+             cpath (-> (:name main)
+                       cfh/split-path
+                       (cond->
+                        (seq prefix)
+                         (->> (drop (count prefix))
+                              (cons (cfh/join-path prefix))
+                              vec)))
+
+             name         (first cpath)
+             num-props    (max 1 (dec (count cpath)))
+             base-props   {:is-variant-container true
+                           :name name
+                           :r1 20
+                           :r2 20
+                           :r3 20
+                           :r4 20}
+             flex-props   {:layout-item-h-sizing :auto
+                           :layout-item-v-sizing :auto
+                           :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
+                           :layout-gap     {:row-gap 0 :column-gap 20}}
+             cont-props    (if flex?
+                             (into base-props flex-props)
+                             base-props)
+             m-base-props {:name name
+                           :variant-id variant-id}
+             m-flex-props {:layout-item-h-sizing :fix
+                           :layout-item-v-sizing :fix}
+             main-props   (if flex?
+                            (into m-base-props m-flex-props)
+                            m-base-props)
+             stroke-props {:stroke-alignment :inner
+                           :stroke-style :solid
+                           :stroke-color "#bb97d8" ;; todo use color var?
+                           :stroke-opacity 1
+                           :stroke-width 2}
 
             ;; Move the position of the variant container so the main shape doesn't
             ;; change its position
-            delta        (if (ctsl/any-layout? parent)
-                           (gpt/point 0 0)
-                           (gpt/point -30 -30))
-            undo-id      (js/Symbol)]
+             delta        (or delta
+                              (if (ctsl/any-layout? parent)
+                                (gpt/point 0 0)
+                                (gpt/point -30 -30)))
+             undo-id      (js/Symbol)]
 
 
         ;;TODO Refactor all called methods in order to be able to
         ;;generate changes instead of call the events
-        (rx/concat
-         (rx/of
-          (dwu/start-undo-transaction undo-id)
+         (rx/concat
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
 
-          (when (not= name (:name main))
-            (dwl/rename-component component-id name))
+           (when (not= name (:name main))
+             (dwl/rename-component component-id name))
 
           ;; Create variant container
-          (dwsh/create-artboard-from-selection variant-id nil nil nil delta)
-          (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
-          (dwsl/create-layout-from-id variant-id :flex)
-          (dwsh/update-shapes variant-vec #(merge % cont-props))
-          (dwsh/update-shapes [main-instance-id] #(merge % main-props))
-          (cl/add-stroke variant-vec stroke-props)
-          (set-variant-id component-id variant-id))
+           (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
+           (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
+           (when flex? (dwsl/create-layout-from-id variant-id :flex))
+           (dwsh/update-shapes variant-vec #(merge % cont-props))
+           (dwsh/update-shapes [main-instance-id] #(merge % main-props))
+           (cl/add-stroke variant-vec stroke-props)
+           (set-variant-id component-id variant-id))
 
          ;; Add the necessary number of new properties, with default values
-         (rx/from
-          (repeatedly num-props
-                      #(add-new-property variant-id {:fill-values? true})))
+          (rx/from
+           (repeatedly num-props
+                       #(add-new-property variant-id {:fill-values? true})))
 
          ;; When the component has path, set the path items as properties values
-         (when (> (count cpath) 1)
-           (rx/from
-            (map
-             #(update-property-value component-id % (nth cpath (inc %)))
-             (range num-props))))
+          (when (> (count cpath) 1)
+            (rx/from
+             (map
+              #(update-property-value component-id % (nth cpath (inc %)))
+              (range num-props))))
 
-         (rx/of
-          (add-new-variant main-instance-id)
-          (dwu/commit-undo-transaction undo-id)
-          (ptk/data-event :layout/update {:ids [variant-id]})))))))
+          (rx/of
+           (when duplicate? (add-new-variant main-instance-id))
+           (dwu/commit-undo-transaction undo-id)
+           (when flex?
+             (ptk/data-event :layout/update {:ids [variant-id]})))))))))
 
 (defn add-component-or-variant
   "Manage the shared shortcut, and do the pertinent action"
@@ -508,4 +528,88 @@
         (if (ctc/is-variant? component)
           (rx/of (rename-variant (:variant-id component) name))
           (rx/of (dwl/rename-component-and-main-instance component-id name)))))))
+
+
+(defn- bounding-rect [shapes]
+  (let [xs   (map :x shapes)
+        ys   (map :y shapes)
+        x2s  (map #(+ (:x %) (:width %)) shapes)
+        y2s  (map #(+ (:y %) (:height %)) shapes)
+        min-x (apply min xs)
+        min-y (apply min ys)
+        max-x (apply max x2s)
+        max-y (apply max y2s)]
+    {:x min-x
+     :y min-y
+     :width (- max-x min-x)
+     :height (- max-y min-y)}))
+
+(defn common-prefix [paths]
+  (->> (apply map vector paths)
+       (take-while #(apply = %))
+       (map first)
+       vec))
+
+(defn combine-as-variants
+  ([]
+   (combine-as-variants nil {}))
+  ([selected {:keys [page-id]}]
+   (ptk/reify ::combine-as-variants
+     ptk/WatchEvent
+     (watch [_ state stream]
+       (let [current-page  (:current-page-id state)
+
+             combine
+             (fn [current-page]
+               (let [objects       (dsh/lookup-page-objects state current-page)
+                     selected      (or selected
+                                       (->> (dsh/lookup-selected state)
+                                            (cfh/clean-loops objects)
+                                            (remove (fn [id]
+                                                      (let [shape (get objects id)]
+                                                        (or (not (ctc/main-instance? shape))
+                                                            (ctc/is-variant? shape)))))))
+                     shapes        (mapv #(get objects %) selected)
+                     rect          (bounding-rect shapes)
+                     prefix        (->> shapes
+                                        (mapv #(cfh/split-path (:name %)))
+                                        (common-prefix))
+                     first-shape   (first shapes)
+                     delta         (gpt/point (- (:x rect) (:x first-shape) 30)
+                                              (- (:y rect) (:y first-shape) 30))
+                     common-parent (->> selected
+                                        (mapv #(-> (cfh/get-parent-ids objects %) reverse))
+                                        common-prefix
+                                        last)
+                     index         (-> (get objects common-parent)
+                                       :shapes
+                                       count
+                                       inc)
+                     variant-id    (uuid/next)
+                     undo-id       (js/Symbol)]
+                 (rx/concat
+                  (rx/of
+                   (when  (and page-id (not= current-page page-id))
+                     (dcm/go-to-workspace :page-id page-id))
+                   (dwu/start-undo-transaction undo-id)
+                   (transform-in-variant (first selected) variant-id delta prefix false false)
+                   (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
+                   (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
+                   (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
+                   (dwsh/relocate-shapes #{variant-id} common-parent index)
+                   (dwu/commit-undo-transaction undo-id)))))
+
+             redirect-to-page
+             (fn [page-id]
+               (rx/merge
+                (->> stream
+                     (rx/filter (ptk/type? ::dwpg/initialize-page))
+                     (rx/take 1)
+                     (rx/observe-on :async)
+                     (rx/mapcat (fn [_] (combine page-id))))
+                (rx/of (dcm/go-to-workspace :page-id page-id))))]
+
+         (if (and page-id (not= page-id current-page))
+           (redirect-to-page page-id)
+           (combine current-page)))))))
 
