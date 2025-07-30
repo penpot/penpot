@@ -108,11 +108,14 @@
         (if (d/not-empty? ids)
           (let [modif-tree (dwm/create-modif-tree ids (ctm/reflow-modifiers))]
             (if (features/active-feature? state "render-wasm/v1")
-              (rx/of (dwm/apply-wasm-modifiers modif-tree :stack-undo? true :undo-group undo-group))
-
+              (rx/of (dwm/apply-wasm-modifiers modif-tree
+                                               :stack-undo? true
+                                               :undo-group undo-group
+                                               :ignore-touched true))
               (rx/of (dwm/apply-modifiers {:page-id page-id
                                            :modifiers modif-tree
                                            :stack-undo? true
+                                           :ignore-touched true
                                            :undo-group undo-group}))))
           (rx/empty))))))
 
