@@ -292,7 +292,7 @@
                   (fix-gradients)
                   (assoc :text text))))
 
-          (split-texts [text styles]
+          (split-texts [text styles data]
             (let [cpoints  (text->code-points text)
                   children (->> (parse-draft-styles styles)
                                 (build-style-index (count cpoints))
@@ -301,7 +301,7 @@
                                 (mapv #(extract-text cpoints %)))]
               (cond-> children
                 (empty? children)
-                (conj {:text ""}))))
+                (conj (assoc data :text "")))))
 
           (build-paragraph [block]
             (let [key    (get block :key)
@@ -312,7 +312,7 @@
               (-> data
                   (assoc :key key)
                   (assoc :type "paragraph")
-                  (assoc :children (split-texts text styles)))))]
+                  (assoc :children (split-texts text styles data)))))]
 
     {:type "root"
      :children
