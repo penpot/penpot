@@ -354,7 +354,7 @@
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
-      (for [[pos prop] (map vector (range) properties)]
+      (for [[pos prop] (map-indexed vector properties)]
         [:div {:key (str variant-id "-" pos) :class (stl/css :variant-property-container)}
          [:*
           [:div {:class (stl/css :variant-property-name-wrapper)}
@@ -1073,10 +1073,11 @@
         (when-not multi?
           [:div {:class (stl/css :variant-property-list)}
            (for [[pos property] (map-indexed vector properties)]
-             (let [meta (->> (:value property)
-                             (move-empty-items-to-end)
-                             (replace {"" "--"})
-                             (str/join ", "))]
+             (let [last-prop? (<= (count properties) 1)
+                   meta       (->> (:value property)
+                                   (move-empty-items-to-end)
+                                   (replace {"" "--"})
+                                   (str/join ", "))]
                [:div {:key (str (:id shape) pos)
                       :class (stl/css :variant-property-row)}
                 [:> input-with-meta* {:value (:name property)
@@ -1085,11 +1086,13 @@
                                       :data-position pos
                                       :on-blur update-property-name}]
                 [:> icon-button* {:variant "ghost"
-                                  :aria-label (tr "workspace.shape.menu.remove-variant-property")
+                                  :aria-label (if last-prop?
+                                                (tr "workspace.shape.menu.remove-variant-property.last-property")
+                                                (tr "workspace.shape.menu.remove-variant-property"))
                                   :on-click remove-property
                                   :data-position pos
                                   :icon "remove"
-                                  :disabled (<= (count properties) 1)}]]))])
+                                  :disabled last-prop?}]]))])
 
         (if malformed?
           [:div {:class (stl/css :variant-warning-wrapper)}

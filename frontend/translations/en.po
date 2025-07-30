@@ -6973,6 +6973,10 @@ msgstr "Remove layout"
 msgid "workspace.shape.menu.remove-variant-property"
 msgstr "Remove property"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "Variant should have at least one property"
+
 #: src/app/main/ui/workspace/context_menu.cljs:318
 msgid "workspace.shape.menu.rename"
 msgstr "Rename"
