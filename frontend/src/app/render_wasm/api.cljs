@@ -1056,6 +1056,44 @@
     (h/call wasm/internal-module "_free_bytes")
     [row column]))
 
+(def RAW-SEGMENT-SIZE 28)
+
+(defn shape-to-path
+  [id]
+  (use-shape id)
+  (let [offset (h/call wasm/internal-module "_current_to_path")
+
+        heapu32 (mem/get-heap-u32)
+        heapu8 (mem/get-heap-u8)
+
+        len (aget heapu32 (mem/ptr8->ptr32 offset))
+        from-offset (+ offset 4)
+        to-offset   (+ offset 4 (* len RAW-SEGMENT-SIZE))
+
+        data (js/Uint8Array. (.slice heapu8 from-offset to-offset))
+
+        content (path/from-bytes data)]
+    (h/call wasm/internal-module "_free_bytes")
+    content))
+
+(defn get-bool-path-data
+  [id]
+  (use-shape id)
+  (let [offset (h/call wasm/internal-module "_get_bool_path_data")
+
+        heapu32 (mem/get-heap-u32)
+        heapu8 (mem/get-heap-u8)
+
+        len (aget heapu32 (mem/ptr8->ptr32 offset))
+        from-offset (+ offset 4)
+        to-offset   (+ offset 4 (* len RAW-SEGMENT-SIZE))
+
+        data (js/Uint8Array. (.slice heapu8 from-offset to-offset))
+
+        content (path/from-bytes data)]
+    (h/call wasm/internal-module "_free_bytes")
+    content))
+
 (defonce module
   (delay
     (if (exists? js/dynamicImport)
