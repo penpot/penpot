@@ -1555,15 +1555,13 @@
 (defmethod migrate-data "0010-fix-swap-slots-pointing-non-existent-shapes"
   [data _]
   (letfn [(fix-shape [page shape]
-            (let [shape-swap-slot (ctk/get-swap-slot shape)]
-              (if shape-swap-slot
-                (let [libs   (when (:libs data)
-                               (deref (:libs data)))
-                      ref-id (ctf/find-ref-id-for-swapped shape page libs)]
-                  (if (nil? ref-id)
-                    (ctk/remove-swap-slot shape)
-                    shape))
-                shape)))
+            (if (ctk/get-swap-slot shape)
+              (let [libs (some-> (:libs data) deref)
+                    ref-id (when libs (ctf/find-ref-id-for-swapped shape page libs))]
+                (if (nil? ref-id)
+                  (ctk/remove-swap-slot shape)
+                  shape))
+              shape))
 
           (update-page [page]
             (d/update-when page :objects d/update-vals (partial fix-shape page)))]
