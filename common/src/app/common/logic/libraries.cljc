@@ -2340,6 +2340,8 @@
         inside-comp? (ctn/in-any-component? objects parent)
 
         [new-shape changes]
+        ;; When we make a swap of an item, there can be copies which swap-slot points to that item
+        ;; so we want to assign the item id to the new instanciated copy, to mantain that reference
         (generate-instantiate-component changes
                                         objects
                                         (:id file)
@@ -2347,9 +2349,10 @@
                                         position
                                         page
                                         libraries
-                                        nil
+                                        (:id shape)
                                         (:parent-id shape)
                                         (:frame-id shape)
+                                        {(:id shape) (:id shape)} ;; keep the id of the original shape
                                         {:force-frame? true})
 
         new-shape (cond-> new-shape
