@@ -826,11 +826,13 @@ impl RenderState {
 
         let drop_shadows: Vec<_> = element.drop_shadows().filter(|s| !s.hidden()).collect();
         if !drop_shadows.is_empty() {
+            let scale = self.get_scale();
             // Tomar snapshot de la surface Current
             let snapshot = self.surfaces.snapshot(SurfaceId::Current);
             let canvas = self.surfaces.canvas(SurfaceId::Current);
             for shadow in drop_shadows {
-                if let Some(filter) = shadow.get_drop_shadow_filter() {
+                // TODO: refactor this static method to use get_drop_shadow_filter
+                if let Some(filter) = Self::get_scaled_drop_shadow_filter(shadow, scale) {
                     let mut paint_shadow = skia_safe::Paint::default();
                     paint_shadow.set_image_filter(filter);
                     //TODO: ajustar al tamaño del tile y no del extended tile para que unas shadows no afecten a otras
@@ -1214,5 +1216,27 @@ impl RenderState {
 
     pub fn get_cached_scale(&self) -> f32 {
         self.cached_viewbox.zoom() * self.options.dpr()
+    }
+
+    fn get_scaled_drop_shadow_filter(shadow: &crate::shapes::Shadow, scale: f32) -> Option<skia::ImageFilter> {
+        // Scale the shadow parameters according to the current zoom level
+        let scaled_offset = (shadow.offset.0 * scale, shadow.offset.1 * scale);
+        let scaled_blur = shadow.blur * scale;
+        let scaled_spread = shadow.spread * scale;
+        
+        let mut filter = skia::image_filters::drop_shadow_only(
+            scaled_offset,
+            (scaled_blur, scaled_blur),
+            shadow.color,
+            None,
+            None,
+            None,
+        );
+
+        if scaled_spread > 0. {
+            filter = skia::image_filters::dilate((scaled_spread, scaled_spread), filter, None);
+        }
+
+        filter
     }
 }
