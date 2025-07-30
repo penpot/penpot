@@ -106,8 +106,10 @@
   (ptk/reify ::focus-editor
     ptk/EffectEvent
     (effect [_ state _]
-      (when-let [editor (:workspace-editor state)]
-        (ts/schedule #(.focus ^js editor))))))
+      (let [editor (:workspace-editor state)
+            element (when editor (.-element editor))]
+        (when (and element (.-focus element))
+          (ts/schedule #(.focus ^js element)))))))
 
 (defn gen-name
   [editor]
