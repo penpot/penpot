@@ -927,6 +927,14 @@
             [:div ":touched " (str (:touched shape))])])])))
 
 
+(defn- move-empty-items-to-end
+  "Creates a new vector with the empty items at the end"
+  [v]
+  (-> []
+      (into (remove empty?) v)
+      (into (filter empty?) v)))
+
+
 (mf/defc variant-menu*
   [{:keys [shapes]}]
   (let [multi?             (> (count shapes) 1)
@@ -1064,8 +1072,11 @@
 
         (when-not multi?
           [:div {:class (stl/css :variant-property-list)}
-           (for [[pos property] (map vector (range) properties)]
-             (let [meta (str/join ", " (:value property))]
+           (for [[pos property] (map-indexed vector properties)]
+             (let [meta (->> (:value property)
+                             (move-empty-items-to-end)
+                             (replace {"" "--"})
+                             (str/join ", "))]
                [:div {:key (str (:id shape) pos)
                       :class (stl/css :variant-property-row)}
                 [:> input-with-meta* {:value (:name property)
