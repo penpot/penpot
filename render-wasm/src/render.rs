@@ -21,7 +21,7 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Corners, Fill, Shadow, ShadowStyle, Shape, SolidColor, StructureEntry, Type};
+use crate::shapes::{Corners, Fill, Shadow, Shape, SolidColor, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
@@ -426,6 +426,11 @@ impl RenderState {
             shape.to_mut().apply_transform(modifiers);
         }
 
+        // Concatenate nested shadows to the shape's shadows
+        if let Some(nested_shadows) = self.nested_shadows.last() {
+            shape.to_mut().shadows.extend(nested_shadows.clone());
+        }
+
         let center = shape.center();
         let mut matrix = shape.transform;
         matrix.post_translate(center);
@@ -549,27 +554,9 @@ impl RenderState {
                     shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 
-                // Always render nested shadows if available
-                if shape.has_fills() {
-                    if let Some(shadows_to_render) = self.nested_shadows.last() {
-                        let shadows_to_render = shadows_to_render.clone();
-                        // TODO: review this duplicated-logic
-                        for shadow in shadows_to_render.iter() {
-                            match shadow.style() {
-                                ShadowStyle::Drop => {
-                                    shadows::render_fill_drop_shadow(self, &shape, shadow, antialias);
-                                }
-                                ShadowStyle::Inner => {
-                                    shadows::render_fill_inner_shadow(self, &shape, shadow, antialias);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Render the shape's own shadows
-                shadows::render_fill_inner_shadows(self, &shape, antialias);
-                shadows::render_fill_drop_shadows(self, &shape, antialias);
+                // Render all shadows (own + nested) using existing logic
+                shadows::render_fill_inner_shadows(self, shape.as_ref(), antialias);
+                shadows::render_fill_drop_shadows(self, shape.as_ref(), antialias);
             }
         };
         self.apply_drawing_to_render_canvas(Some(&shape));
@@ -741,11 +728,13 @@ impl RenderState {
             }
         }
 
-        if let Type::Frame(_) = element.shape_type {
-            let shadows = &element.shadows;
-            self.nested_shadows.push(shadows.to_vec());
+        match element.shape_type {
+            Type::Frame(_) | Type::Group(_) => {
+                let shadows = &element.shadows;
+                self.nested_shadows.push(shadows.to_vec());
+            }
+            _ => {}
         }
-
 
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
@@ -823,8 +812,12 @@ impl RenderState {
         if let Type::Group(_) = element.shape_type {
             self.nested_fills.pop();
         }
-        if let Type::Frame(_) = element.shape_type {
-            self.nested_shadows.pop();
+
+        match element.shape_type {
+            Type::Frame(_) | Type::Group(_) => {
+                self.nested_shadows.pop();
+            }
+            _ => {}
         }
 
         // Detect clipping and apply it properly
