@@ -201,6 +201,21 @@ pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
         .into()
 }
 
+fn is_modified_child(
+    shape: &Shape,
+    shapes: &ShapesPool,
+    modifiers: &HashMap<Uuid, Matrix>,
+) -> bool {
+    if modifiers.is_empty() {
+        return false;
+    }
+    if modifiers.contains_key(&shape.id) {
+        return false;
+    }
+    let ids = shape.all_children(shapes, true, false);
+    ids.iter().any(|id| modifiers.contains_key(id))
+}
+
 impl RenderState {
     pub fn new(width: i32, height: i32) -> RenderState {
         // This needs to be done once per WebGL context.
@@ -527,7 +542,11 @@ impl RenderState {
                 });
 
                 let shape = if let Type::Bool(_) = &shape.shape_type {
-                    &bools::update_bool_to_path(&shape, shapes, modifiers, structure)
+                    if is_modified_child(&shape, shapes, modifiers) {
+                        &bools::update_bool_to_path(&shape, shapes, modifiers, structure)
+                    } else {
+                        &shape
+                    }
                 } else {
                     &shape
                 };

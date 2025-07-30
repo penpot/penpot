@@ -794,23 +794,27 @@ impl Shape {
         }
     }
 
-    pub fn all_children_with_self(
+    pub fn all_children(
         &self,
         shapes: &ShapesPool,
         include_hidden: bool,
+        include_self: bool,
     ) -> IndexSet<Uuid> {
-        once(self.id)
-            .chain(
-                self.children_ids(include_hidden)
-                    .into_iter()
-                    .flat_map(|id| {
-                        shapes
-                            .get(&id)
-                            .map(|s| s.all_children_with_self(shapes, include_hidden))
-                            .unwrap_or_default()
-                    }),
-            )
-            .collect()
+        let all_children = self
+            .children_ids(include_hidden)
+            .into_iter()
+            .flat_map(|id| {
+                shapes
+                    .get(&id)
+                    .map(|s| s.all_children(shapes, include_hidden, true))
+                    .unwrap_or_default()
+            });
+
+        if include_self {
+            once(self.id).chain(all_children).collect()
+        } else {
+            all_children.collect()
+        }
     }
 
     pub fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {
