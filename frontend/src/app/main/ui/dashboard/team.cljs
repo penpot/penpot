@@ -1137,53 +1137,54 @@
     [:*
      [:& header {:section :dashboard-team-settings :team team}]
      [:section {:class (stl/css :dashboard-team-settings)}
-      [:div {:class (stl/css :block :info-block)}
-       [:div {:class (stl/css :team-icon)}
-        (when can-edit
-          [:button {:class (stl/css :update-overlay)
-                    :on-click on-image-click}
-           image-icon])
-        [:img {:class (stl/css :team-image)
-               :src (cfg/resolve-team-photo-url team)}]
-        (when can-edit
-          [:& file-uploader {:accept "image/jpeg,image/png"
-                             :multi false
-                             :ref finput
-                             :on-selected on-file-selected}])]
-       [:div {:class (stl/css :block-label)}
-        (tr "dashboard.team-info")]
-       [:div {:class (stl/css :block-text)}
-        (:name team)]]
+      [:div {:class (stl/css :settings-container)}
+       [:div {:class (stl/css :block :info-block)}
+        [:div {:class (stl/css :team-icon)}
+         (when can-edit
+           [:button {:class (stl/css :update-overlay)
+                     :on-click on-image-click}
+            image-icon])
+         [:img {:class (stl/css :team-image)
+                :src (cfg/resolve-team-photo-url team)}]
+         (when can-edit
+           [:& file-uploader {:accept "image/jpeg,image/png"
+                              :multi false
+                              :ref finput
+                              :on-selected on-file-selected}])]
+        [:div {:class (stl/css :block-label)}
+         (tr "dashboard.team-info")]
+        [:div {:class (stl/css :block-text)}
+         (:name team)]]
 
-      [:div {:class (stl/css :block)}
-       [:div {:class (stl/css :block-label)}
-        (tr "dashboard.team-members")]
+       [:div {:class (stl/css :block)}
+        [:div {:class (stl/css :block-label)}
+         (tr "dashboard.team-members")]
 
-       [:div {:class (stl/css :block-content)}
-        [:img {:class (stl/css :owner-icon)
-               :src (cfg/resolve-profile-photo-url owner)}]
-        [:span {:class (stl/css :block-text)}
-         (str (:name owner) " ("  (tr "labels.owner") ")")]]
+        [:div {:class (stl/css :block-content)}
+         [:img {:class (stl/css :owner-icon)
+                :src (cfg/resolve-profile-photo-url owner)}]
+         [:span {:class (stl/css :block-text)}
+          (str (:name owner) " ("  (tr "labels.owner") ")")]]
 
-       [:div {:class (stl/css :block-content)}
-        user-icon
-        [:span {:class (stl/css :block-text)}
-         (tr "dashboard.num-of-members" (count members))]]]
+        [:div {:class (stl/css :block-content)}
+         user-icon
+         [:span {:class (stl/css :block-text)}
+          (tr "dashboard.num-of-members" (count members))]]]
 
-      [:div {:class (stl/css :block)}
-       [:div {:class (stl/css :block-label)}
-        (tr "dashboard.team-projects")]
+       [:div {:class (stl/css :block)}
+        [:div {:class (stl/css :block-label)}
+         (tr "dashboard.team-projects")]
 
-       [:div {:class (stl/css :block-content)}
-        group-icon
-        [:span {:class (stl/css :block-text)}
-         (tr "labels.num-of-projects" (i18n/c (dec (:projects stats))))]]
+        [:div {:class (stl/css :block-content)}
+         group-icon
+         [:span {:class (stl/css :block-text)}
+          (tr "labels.num-of-projects" (i18n/c (dec (:projects stats))))]]
 
-       [:div {:class (stl/css :block-content)}
-        document-icon
-        [:span {:class (stl/css :block-text)}
-         (tr "labels.num-of-files" (i18n/c (:files stats)))]]]
+        [:div {:class (stl/css :block-content)}
+         document-icon
+         [:span {:class (stl/css :block-text)}
+          (tr "labels.num-of-files" (i18n/c (:files stats)))]]]
 
-      (when (contains? cfg/flags :subscriptions)
-        [:> team* {:is-owner (:is-owner permissions) :team team}])]]))
+       (when (contains? cfg/flags :subscriptions)
+         [:> team* {:is-owner (:is-owner permissions) :team team}])]]]))
 
