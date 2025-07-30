@@ -4,21 +4,24 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.main.ui.ds.product.user-milestone
+(ns app.main.ui.ds.product.milestone
   (:require-macros
    [app.main.style :as stl])
   (:require
+   [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.profile :refer [schema:profile]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
-   [app.main.ui.ds.utilities.date :refer [valid-date?]]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.object :as obj]
    [rumext.v2 :as mf]))
+
+(def ^:private schema:callback
+  [:maybe [:fn fn?]])
 
 (def ^:private schema:milestone
   [:map
@@ -26,61 +29,59 @@
    [:active {:optional true} :boolean]
    [:editing {:optional true} :boolean]
    [:locked {:optional true} :boolean]
-   [:user
-    [:map
-     [:name {:optional true} [:maybe :string]]
-     [:avatar {:optional true} [:maybe :string]]
-     [:color {:optional true} [:maybe :string]]]]
+   [:profile {:optional true} schema:profile]
    [:label :string]
-   [:date [:fn valid-date?]]
-   [:onOpenMenu {:optional true} [:maybe [:fn fn?]]]
-   [:onFocusInput {:optional true} [:maybe [:fn fn?]]]
-   [:onBlurInput {:optional true} [:maybe [:fn fn?]]]
-   [:onKeyDownInput {:optional true} [:maybe [:fn fn?]]]])
+   [:created-at ::ct/inst]
+   [:on-open-menu {:optional true} schema:callback]
+   [:on-focus-menu {:optional true} schema:callback]
+   [:on-blur-menu {:optional true} schema:callback]
+   [:on-key-down-input {:optional true} schema:callback]])
 
-(mf/defc user-milestone*
-  {::mf/schema schema:milestone}
-  [{:keys [class active editing locked user label date
-           onOpenMenu onFocusInput onBlurInput onKeyDownInput] :rest props}]
-  (let [class' (stl/css-case :milestone true
-                             :is-selected active)
-        props  (mf/spread-props props {:class [class class']
-                                       :data-testid "milestone"})
-        date   (if (ct/inst? date)
-                 date
-                 (ct/inst date))]
+(mf/defc milestone*
+  {::mf/schema (sm/schema schema:milestone)}
+  [{:keys [class active editing locked label created-at profile
+           on-open-menu on-focus-input on-blur-input on-key-down-input] :rest props}]
+  (let [class'
+        (stl/css-case :milestone true
+                      :is-selected active)
+        props
+        (mf/spread-props props
+                         {:class [class class']
+                          :data-testid "milestone"})
+        created-at
+        (if (ct/inst? created-at)
+          created-at
+          (ct/inst created-at))]
 
     [:> :div props
-     [:> avatar* {:name (obj/get user "name")
-                  :url (obj/get user "avatar")
-                  :color (obj/get user "color")
+     [:> avatar* {:profile profile
                   :variant "S"
                   :class (stl/css :avatar)}]
 
-     (if editing
+     (if ^boolean editing
        [:> input*
         {:class (stl/css :name-input)
          :variant "seamless"
          :default-value label
          :auto-focus true
-         :on-focus onFocusInput
-         :on-blur onBlurInput
-         :on-key-down onKeyDownInput}]
+         :on-focus on-focus-input
+         :on-blur on-blur-input
+         :on-key-down on-key-down-input}]
        [:div {:class (stl/css :name-wrapper)}
         [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label]
         (when locked
           [:> i/icon* {:icon-id i/lock :class (stl/css :lock-icon)}])])
 
      [:*
-      [:time {:date-time (ct/format-inst date :iso)
+      [:time {:date-time (ct/format-inst created-at :iso)
               :class (stl/css :date)}
-       (ct/timeago date)]
+       (ct/timeago created-at)]
 
       [:div {:class (stl/css :milestone-buttons)}
        [:> icon-button* {:class (stl/css :menu-button)
                          :variant "ghost"
                          :icon "menu"
                          :aria-label (tr "workspace.versions.version-menu")
-                         :on-click onOpenMenu}]]]]))
+                         :on-click on-open-menu}]]]]))
 
 
