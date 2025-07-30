@@ -18,7 +18,9 @@
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
-   [app.util.pointer-map :as pmap]))
+   [app.util.pointer-map :as pmap]
+   [app.worker :as wrk]
+   [promesa.exec :as px]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OFFLOAD
@@ -80,6 +82,12 @@
   [system file]
   (let [data (get-file-data system file)]
     (assoc file :data data)))
+
+(defn decode-file-data
+  [{:keys [::wrk/executor]} {:keys [data] :as file}]
+  (cond-> file
+    (bytes? data)
+    (assoc :data (px/invoke! executor #(blob/decode data)))))
 
 (defn load-pointer
   "A database loader pointer helper"

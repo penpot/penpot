@@ -13,11 +13,26 @@
   #?(:clj
      (:import lambdaisland.uri.URI)))
 
-(dm/export u/uri)
 (dm/export u/join)
+(dm/export u/parse)
 (dm/export u/query-encode)
 (dm/export un/percent-encode)
 (dm/export u/uri?)
+
+(defn uri
+  [o]
+  (cond
+    (u/uri? o)
+    o
+
+    (map? o)
+    (u/map->URI o)
+
+    (nil? o)
+    o
+
+    :else
+    (u/parse o)))
 
 (defn query-string->map
   [s]
