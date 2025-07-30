@@ -21,30 +21,30 @@
 (mf/defc options*
   [{:keys [drawing-state]}]
 
-  (let [show*                 (mf/use-state false)
-        show?                 (deref show*)
-        selected-preset-name* (mf/use-state nil)
-        selected-preset-name  (deref selected-preset-name*)
+  (let [show* (mf/use-state false)
+        show? (deref show*)
+
+        selected-preset-name*
+        (mf/use-state nil)
+
+        selected-preset-name
+        (deref selected-preset-name*)
 
         on-open
-        (mf/use-fn
-         (fn [] (reset! show* true)))
+        (mf/use-fn (fn [] (reset! show* true)))
 
         on-close
-        (mf/use-fn
-         (fn [] (reset! show* false)))
+        (mf/use-fn (fn [] (reset! show* false)))
 
         on-preset-selected
         (mf/use-fn
          (fn [event]
-           (let [width  (-> (dom/get-current-target event)
-                            (dom/get-data "width")
+           (let [target (dom/get-current-target event)
+                 name   (dom/get-data target "name")
+                 width  (-> (dom/get-data target "width")
                             (d/read-string))
-                 height (-> (dom/get-current-target event)
-                            (dom/get-data "height")
-                            (d/read-string))
-                 name   (-> (dom/get-current-target event)
-                            (dom/get-data "name"))]
+                 height (-> (dom/get-data target "height")
+                            (d/read-string))]
 
              (reset! selected-preset-name* name)
              (st/emit! (dwd/set-default-size width height)))))
@@ -65,7 +65,9 @@
      [:div {:class (stl/css-case  :presets-wrapper true
                                   :opened show?)
             :on-click on-open}
-      [:span {:class (stl/css :select-name)} (or selected-preset-name (tr "workspace.options.size-presets"))]
+      [:span {:class (stl/css :select-name)}
+       (or selected-preset-name
+           (tr "workspace.options.size-presets"))]
       [:span {:class (stl/css :collapsed-icon)} i/arrow]
       [:& dropdown {:show show?
                     :on-close on-close}
