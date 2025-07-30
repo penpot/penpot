@@ -36,11 +36,12 @@
         text-changed-attrs
         (fn [shape]
           (let [new-shape (get new-objects (:id shape))
-                attrs (ctt/get-diff-attrs (:content shape) (:content new-shape))
+                attrs     (ctt/get-diff-attrs (:content shape) (:content new-shape))
+
                 ;; Unapply token when applying typography asset style
-                attrs (if (set/intersection text-typography-attrs attrs)
-                        (into attrs cto/typography-keys)
-                        attrs)]
+                attrs     (if (seq (set/intersection text-typography-attrs attrs))
+                            (into attrs cto/typography-keys)
+                            attrs)]
             (apply set/union (map cto/shape-attr->token-attrs attrs))))
 
         check-attr (fn [shape changes attr]
