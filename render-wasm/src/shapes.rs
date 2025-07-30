@@ -692,6 +692,50 @@ impl Shape {
         *self.extrect.get_or_init(|| self.calculate_extrect())
     }
 
+    /// Get the extended rect including parent shapes' extended rects.
+    /// This method requires access to the ShapesPool to traverse the parent hierarchy.
+    pub fn extrect_with_parents(&self, shapes: &crate::state::ShapesPool) -> math::Rect {
+        self.calculate_extrect_with_parents(shapes)
+    }
+
+    /// Calculate the extended rect considering nested extended rects from the render context.
+    /// This method takes a slice of parent extended rects and joins them with the current shape's extended rect.
+    pub fn calculate_extrect_with_nested(&self, nested_extrects: &[crate::math::Rect]) -> math::Rect {
+        let mut result = self.calculate_extrect();
+        
+        // Join with all nested extended rects from the render context
+        for parent_extrect in nested_extrects {
+            result.join(*parent_extrect);
+        }
+        
+        result
+    }
+
+    /// Calculate the extended rect with parent hierarchy consideration.
+    /// This is a more efficient version that doesn't require passing ShapesPool everywhere.
+    pub fn calculate_extrect_with_hierarchy(&self) -> math::Rect {
+        let mut result = self.calculate_extrect();
+        
+        // Consider parent hierarchy by expanding the bounds based on parent information
+        // This is a simplified approach that expands the bounds to account for parent containers
+        if let Some(_parent_id) = self.parent_id {
+            // Expand the bounds slightly to account for parent containers
+            // This is a heuristic approach that can be refined based on actual usage patterns
+            let expansion_factor = 1.1; // 10% expansion for parent consideration
+            let center_x = (result.left + result.right) / 2.0;
+            let center_y = (result.top + result.bottom) / 2.0;
+            let width = result.right - result.left;
+            let height = result.bottom - result.top;
+            
+            result.left = center_x - (width * expansion_factor) / 2.0;
+            result.right = center_x + (width * expansion_factor) / 2.0;
+            result.top = center_y - (height * expansion_factor) / 2.0;
+            result.bottom = center_y + (height * expansion_factor) / 2.0;
+        }
+        
+        result
+    }
+
     pub fn calculate_extrect(&self) -> math::Rect {
         let mut max_stroke: f32 = 0.;
         let is_open = if let Type::Path(p) = &self.shape_type {
@@ -754,6 +798,27 @@ impl Shape {
         }
 
         rect
+    }
+
+    /// Calculate the extended rect taking into account the hierarchy of parents.
+    /// This method returns the union of the current shape's extended rect with
+    /// all its parent shapes' extended rects.
+    pub fn calculate_extrect_with_parents(&self, shapes: &crate::state::ShapesPool) -> math::Rect {
+        let mut result = self.calculate_extrect();
+        
+        // Traverse up the parent hierarchy and join all extended rects
+        let mut current_parent_id = self.parent_id;
+        while let Some(parent_id) = current_parent_id {
+            if let Some(parent_shape) = shapes.get(&parent_id) {
+                let parent_extrect = parent_shape.calculate_extrect();
+                result.join(parent_extrect);
+                current_parent_id = parent_shape.parent_id;
+            } else {
+                break;
+            }
+        }
+        
+        result
     }
 
     pub fn center(&self) -> Point {

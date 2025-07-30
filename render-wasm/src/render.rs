@@ -177,6 +177,10 @@ pub(crate) struct RenderState {
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_shadows: Vec<Vec<Shadow>>,
+    // nested_extrect maintains a stack of parent extended rects that apply to nested shapes
+    // This ensures that child shapes consider their parent's extended rect when calculating
+    // their own extended rect for rendering and tile calculations.
+    pub nested_extrect: Vec<crate::math::Rect>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
 }
@@ -246,6 +250,7 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             nested_shadows: vec![],
+            nested_extrect: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
         }
@@ -732,6 +737,10 @@ impl RenderState {
             Type::Frame(_) | Type::Group(_) => {
                 let shadows = &element.shadows;
                 self.nested_shadows.push(shadows.to_vec());
+                
+                // Add the parent's extended rect to the nested stack
+                let parent_extrect = element.calculate_extrect();
+                self.nested_extrect.push(parent_extrect);
             }
             _ => {}
         }
@@ -816,6 +825,7 @@ impl RenderState {
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_shadows.pop();
+                self.nested_extrect.pop();
             }
             _ => {}
         }
@@ -919,7 +929,7 @@ impl RenderState {
             // If the shape is not in the tile set, then we update
             // it.
             if self.tiles.get_tiles_of(node_id).is_none() {
-                self.update_tile_for(element);
+                                    self.update_tile_for(element);
             }
 
             if visited_children {
@@ -939,7 +949,7 @@ impl RenderState {
                     transformed_element.to_mut().apply_transform(modifier);
                 }
 
-                let is_visible = transformed_element.extrect().intersects(self.render_area)
+                let is_visible = self.get_extended_rect_with_nested(&transformed_element).intersects(self.render_area)
                     && !transformed_element.hidden
                     && !transformed_element.visually_insignificant(self.get_scale());
 
@@ -1122,7 +1132,7 @@ impl RenderState {
 
     pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> TileRect {
         let tile_size = tiles::get_tile_size(self.get_scale());
-        tiles::get_tiles_for_rect(shape.extrect(), tile_size)
+        tiles::get_tiles_for_rect(self.get_extended_rect_with_nested(shape), tile_size)
     }
 
     pub fn update_tile_for(&mut self, shape: &Shape) {
@@ -1225,5 +1235,11 @@ impl RenderState {
 
     pub fn get_cached_scale(&self) -> f32 {
         self.cached_viewbox.zoom() * self.options.dpr()
+    }
+
+    /// Get the extended rect of a shape considering the nested extended rects from the render context.
+    /// This method joins the shape's extended rect with all parent extended rects in the current context.
+    pub fn get_extended_rect_with_nested(&self, shape: &Shape) -> crate::math::Rect {
+        shape.calculate_extrect_with_nested(&self.nested_extrect)
     }
 }
