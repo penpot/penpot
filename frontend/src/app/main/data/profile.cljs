@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.schema :as sm]
    [app.common.spec :as us]
+   [app.common.types.profile :refer [schema:profile]]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.event :as ev]
@@ -26,16 +27,6 @@
 (declare update-profile-props)
 
 ;; --- SCHEMAS
-
-(def ^:private
-  schema:profile
-  [:map {:title "Profile"}
-   [:id ::sm/uuid]
-   [:created-at {:optional true} :any]
-   [:fullname {:optional true} :string]
-   [:email {:optional true} :string]
-   [:lang {:optional true} :string]
-   [:theme {:optional true} :string]])
 
 (def check-profile
   (sm/check-fn schema:profile))

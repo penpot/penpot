@@ -1,11 +1,11 @@
 import * as React from "react";
 import Components from "@target/components";
 
-const { AutosavedMilestone } = Components;
+const { MilestoneGroup } = Components;
 
 export default {
-  title: "Product/Milestones/Autosaved",
-  component: AutosavedMilestone,
+  title: "Product/Milestones/MilestoneGroup",
+  component: MilestoneGroup,
 
   argTypes: {
     label: {
@@ -27,17 +27,10 @@ export default {
   args: {
     label: "Milestone 1",
     active: false,
-    versionToggled: false,
-    snapshots: [1737452413841, 1737452422063, 1737452431603],
-    autosavedMessage: "3 autosave versions",
+    snapshots: [1737452413841, 1737452422063, 1737452431603]
   },
   render: ({ ...args }) => {
-    const user = {
-      name: args.userName,
-      avatar: args.userAvatar,
-      color: args.userColor,
-    };
-    return <AutosavedMilestone user={user} {...args} />;
+    return <MilestoneGroup {...args} />;
   },
 };
 
