@@ -542,13 +542,8 @@ impl RenderState {
                 }
 
                 for stroke in shape.visible_strokes().rev() {
-                    shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
                     strokes::render(self, &shape, stroke, None, None, None, antialias, None);
-                    shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
-
-                shadows::render_fill_inner_shadows(self, &shape, antialias);
-                shadows::render_fill_drop_shadows(self, &shape, antialias);
             }
         };
         self.apply_drawing_to_render_canvas(Some(&shape));
@@ -748,7 +743,6 @@ impl RenderState {
         self.focus_mode.enter(&element.id);
     }
 
-    #[inline]
     pub fn render_shape_exit(
         &mut self,
         element: &Shape,
@@ -829,6 +823,24 @@ impl RenderState {
             }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
+
+        let drop_shadows: Vec<_> = element.drop_shadows().filter(|s| !s.hidden()).collect();
+        if !drop_shadows.is_empty() {
+            // Tomar snapshot de la surface Current
+            let snapshot = self.surfaces.snapshot(SurfaceId::Current);
+            let canvas = self.surfaces.canvas(SurfaceId::Current);
+            for shadow in drop_shadows {
+                if let Some(filter) = shadow.get_drop_shadow_filter() {
+                    let mut paint_shadow = skia_safe::Paint::default();
+                    paint_shadow.set_image_filter(filter);
+                    //TODO: ajustar al tamaño del tile y no del extended tile para que unas shadows no afecten a otras
+                    canvas.draw_image(&snapshot, (0, 0), Some(&paint_shadow));
+                }
+            }
+            // debug::console_debug_surface(self, SurfaceId::Current);
+            canvas.draw_image(&snapshot, (0, 0), Some(&skia::Paint::default()));
+        }
+
         self.focus_mode.exit(&element.id);
     }
 
@@ -1043,7 +1055,7 @@ impl RenderState {
             // println!("clear current {:?}", self.current_tile);
             self.surfaces
                 .canvas(SurfaceId::Current)
-                .clear(self.background_color);
+                .clear(skia::Color::TRANSPARENT);
 
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
