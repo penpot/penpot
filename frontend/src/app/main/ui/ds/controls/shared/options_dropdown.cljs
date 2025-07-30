@@ -49,7 +49,7 @@
 
 (mf/defc option*
   {::mf/private true}
-  [{:keys [id ref label icon aria-label on-click selected focused dimmed] :rest props}]
+  [{:keys [id ref label icon aria-label on-click selected focused] :rest props}]
   (let [class (stl/css-case :option true
                             :option-with-icon (some? icon)
                             :option-selected selected
@@ -72,9 +72,7 @@
          :aria-hidden (when label true)
          :aria-label  (when (not label) aria-label)}])
 
-     [:span {:class (stl/css-case :option-text true
-                                  :option-text-dimmed dimmed)}
-      label]
+     [:span {:class (stl/css :option-text)} label]
 
      (when selected
        [:> i/icon*
@@ -117,7 +115,6 @@
                       :aria-label aria-label
                       :ref ref
                       :focused (= id focused)
-                      :dimmed false
                       :on-click on-click}]))
 
      (when (seq options-blank)
@@ -138,5 +135,4 @@
                          :aria-label aria-label
                          :ref ref
                          :focused (= id focused)
-                         :dimmed true
                          :on-click on-click}]))])]))
