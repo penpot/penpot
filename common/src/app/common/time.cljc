@@ -368,6 +368,9 @@
      Duration
      (inst-ms* [v] (.toMillis ^Duration v))
 
+     java.nio.file.attribute.FileTime
+     (inst-ms* [v] (.toMillis ^java.nio.file.attribute.FileTime v))
+
      OffsetDateTime
      (inst-ms* [v] (.toEpochMilli (.toInstant ^OffsetDateTime v)))
 
