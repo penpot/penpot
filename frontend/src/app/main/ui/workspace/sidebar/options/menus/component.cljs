@@ -927,10 +927,12 @@
             [:div ":touched " (str (:touched shape))])])])))
 
 
-(defn- move-empty-items-to-end [v]
-  (let [non-empty-items (filterv (complement empty?) v)
-        empty-items     (filterv empty? v)]
-    (vec (concat non-empty-items empty-items))))
+(defn- move-empty-items-to-end
+  "Creates a new vector with the empty items at the end"
+  [v]
+  (-> []
+      (into (remove empty?) v)
+      (into (filter empty?) v)))
 
 
 (mf/defc variant-menu*
@@ -1070,7 +1072,7 @@
 
         (when-not multi?
           [:div {:class (stl/css :variant-property-list)}
-           (for [[pos property] (map vector (range) properties)]
+           (for [[pos property] (map-indexed vector properties)]
              (let [meta (->> (:value property)
                              (move-empty-items-to-end)
                              (replace {"" "--"})
