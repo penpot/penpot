@@ -54,6 +54,7 @@
 (def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
 (def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
 (def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
+(def RAW-SEGMENT-SIZE 28)
 
 (defn modifier-get-entries-size
   "Returns the list of a modifier list in bytes"
@@ -1056,8 +1057,6 @@
     (h/call wasm/internal-module "_free_bytes")
     [row column]))
 
-(def RAW-SEGMENT-SIZE 28)
-
 (defn shape-to-path
   [id]
   (use-shape id)
@@ -1076,11 +1075,20 @@
     (h/call wasm/internal-module "_free_bytes")
     content))
 
-(defn get-bool-path-data
-  [id]
-  (use-shape id)
-  (let [offset (h/call wasm/internal-module "_get_bool_path_data")
+(defn calculate-bool
+  [bool-type ids]
+  (let [num-ids (count ids)
+        offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-ids))
+        heap (mem/get-heap-u32)]
 
+    (loop [entries (seq ids)
+           current-offset  offset]
+      (when-not (empty? entries)
+        (let [id (first entries)]
+          (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
+          (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE))))))
+
+  (let [offset (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
         heapu32 (mem/get-heap-u32)
         heapu8 (mem/get-heap-u8)
 

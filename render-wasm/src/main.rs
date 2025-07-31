@@ -40,6 +40,7 @@ macro_rules! with_state_mut {
     }};
 }
 
+#[macro_export]
 macro_rules! with_state {
     ($state:ident, $block:block) => {{
         let $state = unsafe {

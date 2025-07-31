@@ -1,8 +1,12 @@
-use crate::shapes::{Path, Segment, ToPath};
-use crate::{mem, with_current_shape, with_current_shape_mut, STATE};
+#![allow(unused_mut, unused_variables)]
+use indexmap::IndexSet;
 use mem::SerializableResult;
+use uuid::Uuid;
 
 use crate::math::bools;
+use crate::shapes::{BoolType, Path, Segment, ToPath};
+use crate::uuid;
+use crate::{mem, with_current_shape, with_current_shape_mut, with_state, STATE};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
 
@@ -79,7 +83,8 @@ impl RawMoveCommand {
     pub fn new((x, y): (f32, f32)) -> Self {
         Self {
             _padding: [0u32; 4],
-            x, y
+            x,
+            y,
         }
     }
 }
@@ -96,7 +101,8 @@ impl RawLineCommand {
     pub fn new((x, y): (f32, f32)) -> Self {
         Self {
             _padding: [0u32; 4],
-            x, y
+            x,
+            y,
         }
     }
 }
@@ -115,7 +121,12 @@ struct RawCurveCommand {
 impl RawCurveCommand {
     pub fn new((c1_x, c1_y): (f32, f32), (c2_x, c2_y): (f32, f32), (x, y): (f32, f32)) -> Self {
         Self {
-            c1_x, c1_y, c2_x, c2_y, x, y
+            c1_x,
+            c1_y,
+            c2_x,
+            c2_y,
+            x,
+            y,
         }
     }
 }
@@ -172,10 +183,26 @@ pub extern "C" fn current_to_path() -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn get_bool_path_data() -> *mut u8 {
-    let mut result = Vec::<RawSegmentData>::default();
-    with_current_shape!(state, |shape: &Shape| {
-        let path = bools::bool_to_path(shape, &state.shapes, &state.modifiers, &state.structure);
+pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
+    let bytes = mem::bytes_or_empty();
+
+    let entries: IndexSet<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    mem::free_bytes();
+
+    let bool_type = BoolType::from(raw_bool_type);
+    let result;
+    with_state!(state, {
+        let path = bools::bool_from_shapes(
+            bool_type,
+            &entries,
+            &state.shapes,
+            &state.modifiers,
+            &state.structure,
+        );
         result = path
             .segments()
             .iter()
