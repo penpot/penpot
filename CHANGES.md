@@ -51,7 +51,6 @@
 - Fix opacity on stroke gradients [Taiga #11646](https://tree.taiga.io/project/penpot/issue/11646)
 - Fix change from gradient to solid color [Taiga #11648](https://tree.taiga.io/project/penpot/issue/11648)
 - Fix the context menu always closes after any action [Taiga #11624](https://tree.taiga.io/project/penpot/issue/11624)
-- Fix font selector highlight inconsistency when using keyboard navigation [Taiga #11668](https://tree.taiga.io/project/penpot/issue/11668)
 - Fix X & Y position do not sincronize with tokens [Taiga #11617](https://tree.taiga.io/project/penpot/issue/11617)
 - Fix tooltip position after first time [Taiga #11688](https://tree.taiga.io/project/penpot/issue/11688)
 
