@@ -26,7 +26,7 @@ jobs:
       - name: Check Commit Type
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^(Merge|:(lipstick|globe_with_meridians|wrench|books|arrow_up|arrow_down|zap|ambulance|construction|boom|fire|whale|bug|sparkles|paperclip|tada|recycle):)\s[A-Z].*[^.]$'
+          pattern: '^(Merge|Revert|:(lipstick|globe_with_meridians|wrench|books|arrow_up|arrow_down|zap|ambulance|construction|boom|fire|whale|bug|sparkles|paperclip|tada|recycle):)\s[A-Z].*[^.]$'
           flags: 'gm'
           error: 'Commit should match CONTRIBUTING.md guideline'
           checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
