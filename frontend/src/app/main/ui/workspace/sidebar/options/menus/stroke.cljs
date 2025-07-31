@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.sidebar.options.menus.stroke
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.stroke :as cts]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
@@ -157,11 +157,7 @@
         on-add-stroke
         (fn [_]
           (st/emit! (udw/trigger-bounding-box-cloaking ids))
-          (st/emit! (dc/add-stroke ids {:stroke-alignment :inner
-                                        :stroke-style :solid
-                                        :stroke-color clr/black
-                                        :stroke-opacity 1
-                                        :stroke-width 1}))
+          (st/emit! (dc/add-stroke ids cts/default-stroke))
           (when (not (some? (seq strokes))) (open-content)))
 
         disable-drag    (mf/use-state false)

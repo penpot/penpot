@@ -450,9 +450,9 @@
              (t/testing "token got applied to rect with stroke and shape stroke got updated"
                (t/is (= (:stroke-width (:applied-tokens rect-with-stroke')) (:name token-target')))
                (t/is (= (get-in rect-with-stroke' [:strokes 0 :stroke-width]) 10)))
-             (t/testing "token got applied to rect without stroke but shape didnt get updated"
+             (t/testing "token got applied to rect without stroke and shape stroke got updated"
                (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
-               (t/is (empty? (:strokes rect-without-stroke')))))))))))
+               (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
 
 (t/deftest test-apply-font-size
   (t/testing "applies font-size token and updates the text font-size"

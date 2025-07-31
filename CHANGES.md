@@ -53,6 +53,7 @@
 - Fix X & Y position do not sincronize with tokens [Taiga #11617](https://tree.taiga.io/project/penpot/issue/11617)
 - Fix tooltip position after first time [Taiga #11688](https://tree.taiga.io/project/penpot/issue/11688)
 - Fix export button width on inspect tab [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
+- Fix stroke width token application [Taiga #11724](https://tree.taiga.io/project/penpot/issue/11724)
 
 ## 2.8.1 (Unreleased)
 
