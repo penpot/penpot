@@ -198,7 +198,7 @@
         background-color (:background page)
 
         text-color       (or fill-color (get-default-text-color {:frame frame
-                                                                 :background-color background-color}))
+                                                                 :background-color background-color}) color/black)
 
         fonts
         (-> (mf/use-memo (mf/deps content) #(get-fonts content))
