@@ -983,7 +983,7 @@
         menu-open?         (deref menu-open*)
 
         menu-entries       [{:title (tr "workspace.shape.menu.add-variant-property")
-                             :action #(st/emit! (dwv/add-new-property variant-id))}
+                             :action #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"}))}
                             {:title (tr "workspace.shape.menu.add-variant")
                              :action #(st/emit! (dwv/add-new-variant (:id shape)))}]
 

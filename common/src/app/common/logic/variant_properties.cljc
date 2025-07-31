@@ -77,7 +77,7 @@
 
 
 (defn generate-add-new-property
-  [changes variant-id & {:keys [fill-values? property-name]}]
+  [changes variant-id & {:keys [fill-values? property-name property-value]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
@@ -95,13 +95,17 @@
 
                         update-props #(-> (d/nilv % [])
                                           (conj {:name property-name
-                                                 :value (if fill-values? (str ctv/value-prefix num) "")}))
+                                                 :value (cond fill-values?   (str ctv/value-prefix num)
+                                                              property-value property-value
+                                                              :else          "")}))
 
-                        update-name #(if fill-values?
-                                       (if (str/empty? %)
-                                         (str ctv/value-prefix num)
-                                         (str % ", " ctv/value-prefix num))
-                                       %)]
+                        update-name #(cond fill-values?   (if (str/empty? %)
+                                                            (str ctv/value-prefix num)
+                                                            (str % ", " ctv/value-prefix num))
+                                           property-value (if (str/empty? %)
+                                                            property-value
+                                                            (str % ", " property-value))
+                                           :else %)]
                     [(inc num)
                      (-> changes
                          (pcb/update-component (:id component)
