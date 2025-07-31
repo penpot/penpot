@@ -5,6 +5,7 @@ use crate::state::ShapesPool;
 use crate::uuid::Uuid;
 use bezier_rs::{Bezier, BezierHandles, ProjectionOptions, TValue};
 use glam::DVec2;
+use indexmap::IndexSet;
 use skia_safe as skia;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap};
@@ -383,64 +384,13 @@ fn beziers_to_segments(beziers: &[(BezierSource, Bezier)]) -> Vec<Segment> {
     result
 }
 
-pub fn update_bool_to_path(
-    shape: &Shape,
-    shapes: &ShapesPool,
-    modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
-) -> Shape {
-    let mut shape = shape.clone();
-
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
-
-    let Type::Bool(bool_data) = &mut shape.shape_type else {
-        return shape;
-    };
-
-    if children_ids.is_empty() {
-        return shape;
-    }
-
-    let Some(child) = shapes.get(&children_ids[children_ids.len() - 1]) else {
-        return shape;
-    };
-
-    let mut current_path = child.to_path(shapes, modifiers, structure);
-
-    for idx in (0..children_ids.len() - 1).rev() {
-        let Some(other) = shapes.get(&children_ids[idx]) else {
-            continue;
-        };
-        let other_path = other.to_path(shapes, modifiers, structure);
-
-        let (segs_a, segs_b) = split_segments(&current_path, &other_path);
-
-        let beziers = match bool_data.bool_type {
-            BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
-            BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
-            BoolType::Intersection => intersection(&current_path, segs_a, &other_path, segs_b),
-            BoolType::Exclusion => exclusion(segs_a, segs_b),
-        };
-
-        current_path = Path::new(beziers_to_segments(&beziers));
-    }
-
-    bool_data.path = current_path;
-    shape
-}
-
-pub fn bool_to_path(
-    shape: &Shape,
+pub fn bool_from_shapes(
+    bool_type: BoolType,
+    children_ids: &IndexSet<Uuid>,
     shapes: &ShapesPool,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Path {
-    let Type::Bool(bool_data) = &shape.shape_type else {
-        return shape.to_path(shapes, modifiers, structure);
-    };
-
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
-
     if children_ids.is_empty() {
         return Path::default();
     }
@@ -459,7 +409,7 @@ pub fn bool_to_path(
 
         let (segs_a, segs_b) = split_segments(&current_path, &other_path);
 
-        let beziers = match bool_data.bool_type {
+        let beziers = match bool_type {
             BoolType::Union => union(&current_path, segs_a, &other_path, segs_b),
             BoolType::Difference => difference(&current_path, segs_a, &other_path, segs_b),
             BoolType::Intersection => intersection(&current_path, segs_a, &other_path, segs_b),
@@ -470,6 +420,28 @@ pub fn bool_to_path(
     }
 
     current_path
+}
+
+pub fn update_bool_to_path(
+    shape: &Shape,
+    shapes: &ShapesPool,
+    modifiers: &HashMap<Uuid, Matrix>,
+    structure: &HashMap<Uuid, Vec<StructureEntry>>,
+) -> Shape {
+    let mut shape = shape.clone();
+    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+
+    let Type::Bool(bool_data) = &mut shape.shape_type else {
+        return shape;
+    };
+    bool_data.path = bool_from_shapes(
+        bool_data.bool_type,
+        &children_ids,
+        shapes,
+        modifiers,
+        structure,
+    );
+    shape
 }
 
 #[allow(dead_code)]
