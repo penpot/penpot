@@ -812,6 +812,12 @@
         (mf/use-fn
          #(swap! state* assoc :menu-open false))
 
+        on-click-variant-title-help
+        (mf/use-fn
+         (fn []
+           (modal/show! {:type :variants-help-modal})
+           (modal/allow-click-outside!)))
+
         on-component-back
         (mf/use-fn
          #(st/emit! ::dwsp/interrupt))
@@ -852,13 +858,21 @@
                          :collapsed    (not open?)
                          :on-collapsed toggle-content
                          :title        (tr "workspace.options.component")
-                         :class        (stl/css :title-spacing-component)}
+                         :class        (stl/css :title-spacing-component)
+                         :title-class (stl/css-case :title-bar-variant is-variant?)}
            [:span {:class (stl/css :copy-text)}
             (if main-instance?
               (if is-variant?
                 (tr "workspace.options.component.variant")
                 (tr "workspace.options.component.main"))
-              (tr "workspace.options.component.copy"))]])]
+              (tr "workspace.options.component.copy"))]
+
+           (when is-variant?
+             [:div {:class (stl/css :variants-help-modal-button)}
+              [:> icon-button* {:variant "ghost"
+                                :aria-label (tr "workspace.options.component.variants-help-modal.title")
+                                :on-click on-click-variant-title-help
+                                :icon "help"}]])])]
 
        (when open?
          [:div {:class (stl/css :element-content)}

@@ -35,6 +35,11 @@
 .title-spacing-component {
   justify-content: flex-start;
   gap: $s-4;
+  margin-bottom: $s-4;
+}
+
+.title-bar-variant {
+  flex-grow: 0;
 }
 
 .variants-help-modal-button {
