@@ -267,6 +267,8 @@
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
         font-size (partial generic-attribute-actions #{:font-size} "Font Size")
+        letter-spacing (partial generic-attribute-actions #{:letter-spacing} "Letter Spacing")
+        font-family (partial generic-attribute-actions #{:font-family} "Font Family")
         line-height #(generic-attribute-actions #{:line-height} "Line Height" (assoc % :on-update-shape dwta/update-line-height))
         text-case (partial generic-attribute-actions #{:text-case} "Text Case")
         border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
@@ -292,6 +294,9 @@
                   (when (seq line-height) line-height))))
      :stroke-width stroke-width
      :font-size font-size
+     :font-family font-family
+     :line-height line-height
+     :letter-spacing letter-spacing
      :text-case text-case
      :dimensions (fn [context-data]
                    (-> (concat
