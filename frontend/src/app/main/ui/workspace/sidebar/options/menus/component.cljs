@@ -1010,11 +1010,12 @@
         (mf/use-fn
          (mf/deps variant-id)
          (fn [event]
-           (let [new-name (dom/get-target-val event)
-                 pos (-> (dom/get-current-target event)
-                         (dom/get-data "position")
-                         int)]
-             (st/emit! (dwv/update-property-name variant-id pos new-name)))))
+           (let [value (dom/get-target-val event)
+                 pos   (-> (dom/get-current-target event)
+                           (dom/get-data "position")
+                           int)]
+             (when (seq value)
+               (st/emit! (dwv/update-property-name variant-id pos value))))))
 
         remove-property
         (mf/use-fn
