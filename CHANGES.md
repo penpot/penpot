@@ -52,6 +52,7 @@
 - Fix the context menu always closes after any action [Taiga #11624](https://tree.taiga.io/project/penpot/issue/11624)
 - Fix X & Y position do not sincronize with tokens [Taiga #11617](https://tree.taiga.io/project/penpot/issue/11617)
 - Fix tooltip position after first time [Taiga #11688](https://tree.taiga.io/project/penpot/issue/11688)
+- Fix export button width on inspect tab [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
 
 ## 2.8.1 (Unreleased)
 
