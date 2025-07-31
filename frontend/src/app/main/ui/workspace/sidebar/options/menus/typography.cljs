@@ -112,6 +112,7 @@
         recent-fonts (mf/with-memo [state recent-fonts]
                        (filter-fonts state recent-fonts))
 
+
         full-size?   (boolean (and full-size show-recent))
 
         select-next
@@ -130,13 +131,6 @@
            (dom/prevent-default event)
            (swap! selected get-prev-font fonts)))
 
-        on-select-and-close
-        (mf/use-fn
-         (mf/deps on-select on-close)
-         (fn [font]
-           (on-select font)
-           (on-close)))
-
         on-key-down
         (mf/use-fn
          (mf/deps fonts)
@@ -145,7 +139,7 @@
              (kbd/up-arrow? event)   (select-prev event)
              (kbd/down-arrow? event) (select-next event)
              (kbd/esc? event)        (on-close)
-             (kbd/enter? event)      (do (on-select-and-close @selected))
+             (kbd/enter? event)      (on-close)
              :else                   (dom/focus! (mf/ref-val input)))))
 
         on-filter-change
@@ -169,6 +163,9 @@
         (when-let [index (:index @selected)]
           (.scrollToRow ^js inst index))))
 
+    (mf/with-effect [@selected]
+      (on-select @selected))
+
     (mf/with-effect []
       (st/emit! (dsc/push-shortcuts :typography {}))
       (fn []
@@ -180,10 +177,6 @@
         (tm/schedule
          #(let [offset (.getOffsetForRow ^js inst #js {:alignment "center" :index index})]
             (.scrollToPosition ^js inst offset)))))
-
-    (mf/with-effect [(:term state) fonts]
-      (when (and (seq fonts) (not= (:id @selected) (:id (first fonts))))
-        (reset! selected (first fonts))))
 
     [:div {:class (stl/css :font-selector)}
      [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}
