@@ -157,9 +157,7 @@
   (let [tooltip-brect (dom/get-bounding-rect tooltip)
         window-size   (dom/get-window-size)]
     (when-let [[placement placement-rect] (find-matching-placement placement tooltip-brect origin-brect window-size offset)]
-      (let [height (if (or (= placement "right") (= placement "left"))
-                     (- (:height placement-rect) arrow-height)
-                     (:height placement-rect))]
+      (let [height (:height placement-rect)]
         (dom/set-css-property! tooltip "block-size" (dm/str height "px"))
         (dom/set-css-property! tooltip "inset-block-start" (dm/str (:top placement-rect) "px"))
         (dom/set-css-property! tooltip "inset-inline-start" (dm/str (:left placement-rect) "px")))
