@@ -1250,9 +1250,8 @@ impl RenderState {
                         }
                         self.update_tile_for(&shape);
 
-                        // Reset nested_extrect when exiting a top-level frame (frame-id is None)
                         // TODO: check this parent_id is enough
-                        if shape.is_frame() && shape.parent_id.is_none() {
+                        if shape.parent_id.is_none() {
                             self.nested_extrect = Rect::new_empty();
                         }
                     }
