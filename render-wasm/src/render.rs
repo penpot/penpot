@@ -826,9 +826,8 @@ impl RenderState {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_shadows.pop();
 
-                // Reset nested_extrect when exiting a top-level frame
                 // TODO: check this parent_id is enough
-                if element.is_frame() && element.parent_id.is_none() {
+                if element.parent_id.is_none() {
                     self.nested_extrect = Rect::new_empty();
                 }
             }
@@ -1139,8 +1138,7 @@ impl RenderState {
 
     pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> TileRect {
         let tile_size = tiles::get_tile_size(self.get_scale());
-        // println!("get_tiles_for_shape {:?} {:?}", shape.id, tiles::get_tiles_for_rect(self.get_extended_rect_with_nested(shape), tile_size));
-        // println!("nested_extrect {:?}", self.nested_extrect);
+        println!("get_tiles_for_shape shape {:?} {:?}", shape.id, self.get_extended_rect_with_nested(shape));
         tiles::get_tiles_for_rect(self.get_extended_rect_with_nested(shape), tile_size)
     }
 
@@ -1214,6 +1212,10 @@ impl RenderState {
 
         // Stack to track nodes to process: (shape_id, is_entering)
         let mut nodes = vec![(Uuid::nil(), true)];
+        
+        // Map to track accumulated children rects for each node
+        // TODO: replicate in render_shape_tree_partial_uncached
+        let mut accumulated_children: HashMap<Uuid, Rect> = HashMap::new();
 
         while let Some((shape_id, is_entering)) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
@@ -1225,9 +1227,12 @@ impl RenderState {
                             shape.to_mut().apply_transform(modifier);
                         }
 
+                        // Initialize accumulated_children for this node with its own rect
+                        let shape_extrect = shape.calculate_extrect();
+                        accumulated_children.insert(shape_id, shape_extrect);
+                        
                         // Update nested_extrect with current shape's extended rect
-                        let extrect = shape.calculate_extrect();
-                        self.nested_extrect.join(&extrect);
+                        self.nested_extrect.join(&shape_extrect);
 
                         // Schedule exit for this node
                         nodes.push((shape_id, false));
@@ -1248,9 +1253,23 @@ impl RenderState {
                         if let Some(modifier) = modifiers.get(&shape_id) {
                             shape.to_mut().apply_transform(modifier);
                         }
+                        println!("EXITING SHAPE {:?}", shape.id);
                         self.update_tile_for(&shape);
 
-                        // TODO: check this parent_id is enough
+                        // When exiting a shape, accumulate its nested_extrect into its parent's accumulated_children
+                        if let Some(parent_id) = shape.parent_id {
+                            if let Some(parent_accumulated) = accumulated_children.get_mut(&parent_id) {
+                                // Add this shape's nested_extrect to the parent's accumulated rect
+                                parent_accumulated.join(&self.nested_extrect);
+                            }
+                        }
+                        
+                        // Set the nested_extrect to the accumulated result for this shape
+                        if let Some(accumulated) = accumulated_children.get(&shape_id) {
+                            self.nested_extrect = *accumulated;
+                        }
+                        
+                        // Reset for top-level frames
                         if shape.parent_id.is_none() {
                             self.nested_extrect = Rect::new_empty();
                         }
