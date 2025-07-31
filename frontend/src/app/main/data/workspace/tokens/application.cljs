@@ -501,6 +501,7 @@
                      ctt/spacing-keys
                      ctt/sizing-keys
                      ctt/border-radius-keys
+                     ctt/axis-keys
                      ctt/stroke-width-keys)
     :on-update-shape update-shape-dimensions
     :modal {:key :tokens/dimensions

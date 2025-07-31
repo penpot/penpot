@@ -7,6 +7,7 @@
 (ns app.common.logic.shapes
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
@@ -25,7 +26,7 @@
 
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
-   of the attribute now has been given directly, and does not come from the token.
+  of the attribute now has been given directly, and does not come from the token.
   When applying a typography asset style we also unapply any typographic tokens."
   [changes objects changed-sub-attr]
   (let [new-objects     (pcb/get-objects changes)
@@ -35,33 +36,38 @@
         text-changed-attrs
         (fn [shape]
           (let [new-shape (get new-objects (:id shape))
-                attrs (ctt/get-diff-attrs (:content shape) (:content new-shape))
+                attrs     (ctt/get-diff-attrs (:content shape) (:content new-shape))
+
                 ;; Unapply token when applying typography asset style
-                attrs (if (set/intersection text-typography-attrs attrs)
-                        (into attrs cto/typography-keys)
-                        attrs)]
+                attrs     (if (seq (set/intersection text-typography-attrs attrs))
+                            (into attrs cto/typography-keys)
+                            attrs)]
             (apply set/union (map cto/shape-attr->token-attrs attrs))))
 
-        check-attr (fn [shape changes attr]
-                     (let [tokens      (get shape :applied-tokens {})
-                           token-attrs (if (or (not= (:type shape) :text) (not= attr :content))
-                                         (cto/shape-attr->token-attrs attr changed-sub-attr)
-                                         (text-changed-attrs shape))]
-                       (if (some #(contains? tokens %) token-attrs)
-                         (pcb/update-shapes changes [(:id shape)] #(cto/unapply-token-id % token-attrs))
-                         changes)))
+        check-attr
+        (fn [shape changes attr]
+          (let [shape-id    (dm/get-prop shape :id)
+                tokens      (get shape :applied-tokens {})
+                token-attrs (if (and (cfh/text-shape? shape) (= attr :content))
+                              (text-changed-attrs shape)
+                              (cto/shape-attr->token-attrs attr changed-sub-attr))]
 
-        check-shape (fn [changes mod-obj-change]
-                      (let [shape (get objects (:id mod-obj-change))
-                            xf (comp (filter #(= (:type %) :set))
-                                     (map :attr))
-                            attrs (into [] xf (:operations mod-obj-change))]
-                        (reduce (partial check-attr shape)
-                                changes
-                                attrs)))]
-    (reduce check-shape
-            changes
-            mod-obj-changes)))
+            (if (some #(contains? tokens %) token-attrs)
+              (pcb/update-shapes changes [shape-id] #(cto/unapply-token-id % token-attrs))
+              changes)))
+
+        check-shape
+        (fn [changes mod-obj-change]
+          (let [shape (get objects (:id mod-obj-change))
+                attrs (into []
+                            (comp (filter #(= (:type %) :set))
+                                  (map :attr))
+                            (:operations mod-obj-change))]
+            (reduce (partial check-attr shape)
+                    changes
+                    attrs)))]
+
+    (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
   [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects?]}]

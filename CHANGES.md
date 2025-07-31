@@ -45,7 +45,6 @@
 - Hide bounding box while editing visual effects [Taiga #11576](https://tree.taiga.io/project/penpot/issue/11576)
 - Improved text layer resizing: Allow double-click on text bounding box to set auto-width/auto-height [Taiga #11577](https://tree.taiga.io/project/penpot/issue/11577)
 - Improve text layer auto-resize: auto-width switches to auto-height on horizontal resize, and only switches to fixed on vertical resize [Taiga #11578](https://tree.taiga.io/project/penpot/issue/11578)
-- Highlight first font in font selector search. Apply only on Enter or click. [Taiga #11579](https://tree.taiga.io/project/penpot/issue/11579)
 - Add the ability to show login dialog on profile settings [Github #6871](https://github.com/penpot/penpot/pull/6871)
 - Improve the application of tokens with object specific tokens [Taiga #10209](https://tree.taiga.io/project/penpot/us/10209)
 
@@ -71,8 +70,8 @@
 - Fix opacity on stroke gradients [Taiga #11646](https://tree.taiga.io/project/penpot/issue/11646)
 - Fix change from gradient to solid color [Taiga #11648](https://tree.taiga.io/project/penpot/issue/11648)
 - Fix the context menu always closes after any action [Taiga #11624](https://tree.taiga.io/project/penpot/issue/11624)
-- Fix font selector highlight inconsistency when using keyboard navigation [Taiga #11668](https://tree.taiga.io/project/penpot/issue/11668)
 - Fix X & Y position do not sincronize with tokens [Taiga #11617](https://tree.taiga.io/project/penpot/issue/11617)
+- Fix tooltip position after first time [Taiga #11688](https://tree.taiga.io/project/penpot/issue/11688)
 
 ## 2.8.1 (Unreleased)
 

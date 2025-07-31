@@ -154,12 +154,17 @@
   the dom with the result."
   [tooltip placement origin-brect offset]
   (show-popover tooltip)
-  (let [tooltip-brect (dom/get-bounding-rect tooltip)
+  (let [saved-height (dom/get-data tooltip "height")
+        saved-width (dom/get-data tooltip "width")
+        tooltip-brect (dom/get-bounding-rect tooltip)
+        tooltip-brect (assoc tooltip-brect :height (or saved-height (:height tooltip-brect)) :width (or saved-width (:width tooltip-brect)))
         window-size   (dom/get-window-size)]
     (when-let [[placement placement-rect] (find-matching-placement placement tooltip-brect origin-brect window-size offset)]
       (let [height (if (or (= placement "right") (= placement "left"))
                      (- (:height placement-rect) arrow-height)
                      (:height placement-rect))]
+        (dom/set-data! tooltip "height" (:height tooltip-brect))
+        (dom/set-data! tooltip "width" (:width tooltip-brect))
         (dom/set-css-property! tooltip "block-size" (dm/str height "px"))
         (dom/set-css-property! tooltip "inset-block-start" (dm/str (:top placement-rect) "px"))
         (dom/set-css-property! tooltip "inset-inline-start" (dm/str (:left placement-rect) "px")))
