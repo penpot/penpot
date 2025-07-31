@@ -177,10 +177,10 @@ pub(crate) struct RenderState {
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_shadows: Vec<Vec<Shadow>>,
-    // nested_extrect maintains a stack of parent extended rects that apply to nested shapes
+    // nested_extrect maintains the current extended rect context that applies to nested shapes
     // This ensures that child shapes consider their parent's extended rect when calculating
     // their own extended rect for rendering and tile calculations.
-    pub nested_extrect: Vec<crate::math::Rect>,
+    pub nested_extrect: crate::math::Rect,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
 }
@@ -250,7 +250,7 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             nested_shadows: vec![],
-            nested_extrect: vec![],
+            nested_extrect: Rect::new_empty(),
             show_grid: None,
             focus_mode: FocusMode::new(),
         }
@@ -737,10 +737,10 @@ impl RenderState {
             Type::Frame(_) | Type::Group(_) => {
                 let shadows = &element.shadows;
                 self.nested_shadows.push(shadows.to_vec());
-                
-                // Add the parent's extended rect to the nested stack
-                let parent_extrect = element.calculate_extrect();
-                self.nested_extrect.push(parent_extrect);
+
+                // Accumulate extended rect for containers
+                let extrect = element.calculate_extrect();
+                self.nested_extrect.join(&extrect);
             }
             _ => {}
         }
@@ -825,7 +825,12 @@ impl RenderState {
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_shadows.pop();
-                self.nested_extrect.pop();
+
+                // Reset nested_extrect when exiting a top-level frame
+                // TODO: check this parent_id is enough
+                if element.is_frame() && element.parent_id.is_none() {
+                    self.nested_extrect = Rect::new_empty();
+                }
             }
             _ => {}
         }
@@ -929,7 +934,7 @@ impl RenderState {
             // If the shape is not in the tile set, then we update
             // it.
             if self.tiles.get_tiles_of(node_id).is_none() {
-                                    self.update_tile_for(element);
+                self.update_tile_for(element);
             }
 
             if visited_children {
@@ -949,7 +954,9 @@ impl RenderState {
                     transformed_element.to_mut().apply_transform(modifier);
                 }
 
-                let is_visible = self.get_extended_rect_with_nested(&transformed_element).intersects(self.render_area)
+                let is_visible = self
+                    .get_extended_rect_with_nested(&transformed_element)
+                    .intersects(self.render_area)
                     && !transformed_element.hidden
                     && !transformed_element.visually_insignificant(self.get_scale());
 
@@ -1132,6 +1139,8 @@ impl RenderState {
 
     pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> TileRect {
         let tile_size = tiles::get_tile_size(self.get_scale());
+        // println!("get_tiles_for_shape {:?} {:?}", shape.id, tiles::get_tiles_for_rect(self.get_extended_rect_with_nested(shape), tile_size));
+        // println!("nested_extrect {:?}", self.nested_extrect);
         tiles::get_tiles_for_rect(self.get_extended_rect_with_nested(shape), tile_size)
     }
 
@@ -1199,23 +1208,58 @@ impl RenderState {
         performance::begin_measure!("rebuild_tiles");
         self.tiles.invalidate();
         self.surfaces.remove_cached_tiles();
-        let mut nodes = vec![Uuid::nil()];
-        while let Some(shape_id) = nodes.pop() {
-            if let Some(shape) = tree.get(&shape_id) {
-                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
-                if shape_id != Uuid::nil() {
-                    if let Some(modifier) = modifiers.get(&shape_id) {
-                        shape.to_mut().apply_transform(modifier);
-                    }
-                    self.update_tile_for(&shape);
-                }
 
-                let children = shape.modified_children_ids(structure.get(&shape.id), false);
-                for child_id in children.iter() {
-                    nodes.push(*child_id);
+        // Reset nested_extrect before starting
+        self.nested_extrect = Rect::new_empty();
+
+        // Stack to track nodes to process: (shape_id, is_entering)
+        let mut nodes = vec![(Uuid::nil(), true)];
+
+        while let Some((shape_id, is_entering)) = nodes.pop() {
+            if let Some(shape) = tree.get(&shape_id) {
+                if is_entering {
+                    // We're entering this node
+                    if shape_id != Uuid::nil() {
+                        let mut shape: Cow<Shape> = Cow::Borrowed(shape);
+                        if let Some(modifier) = modifiers.get(&shape_id) {
+                            shape.to_mut().apply_transform(modifier);
+                        }
+
+                        // Update nested_extrect with current shape's extended rect
+                        let extrect = shape.calculate_extrect();
+                        self.nested_extrect.join(&extrect);
+
+                        // Schedule exit for this node
+                        nodes.push((shape_id, false));
+                    } else {
+                        // Root node - schedule exit
+                        nodes.push((shape_id, false));
+                    }
+
+                    // Process children first
+                    let children = shape.modified_children_ids(structure.get(&shape.id), false);
+                    for child_id in children.iter() {
+                        nodes.push((*child_id, true));
+                    }
+                } else {
+                    // We're exiting this node
+                    if shape_id != Uuid::nil() {
+                        let mut shape: Cow<Shape> = Cow::Borrowed(shape);
+                        if let Some(modifier) = modifiers.get(&shape_id) {
+                            shape.to_mut().apply_transform(modifier);
+                        }
+                        self.update_tile_for(&shape);
+
+                        // Reset nested_extrect when exiting a top-level frame (frame-id is None)
+                        // TODO: check this parent_id is enough
+                        if shape.is_frame() && shape.parent_id.is_none() {
+                            self.nested_extrect = Rect::new_empty();
+                        }
+                    }
                 }
             }
         }
+
         performance::end_measure!("rebuild_tiles");
     }
 
@@ -1237,9 +1281,9 @@ impl RenderState {
         self.cached_viewbox.zoom() * self.options.dpr()
     }
 
-    /// Get the extended rect of a shape considering the nested extended rects from the render context.
-    /// This method joins the shape's extended rect with all parent extended rects in the current context.
+    /// Get the extended rect of a shape considering the nested extended rect from the render context.
+    /// This method joins the shape's extended rect with the current nested extended rect.
     pub fn get_extended_rect_with_nested(&self, shape: &Shape) -> crate::math::Rect {
-        shape.calculate_extrect_with_nested(&self.nested_extrect)
+        shape.calculate_extrect_with_nested(&[self.nested_extrect])
     }
 }
