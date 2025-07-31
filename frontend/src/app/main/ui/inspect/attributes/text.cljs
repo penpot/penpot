@@ -58,8 +58,8 @@
         file-library-workspace      (get (mf/deref refs/files) (:typography-ref-file style))
         typography-external-lib (get-in file-library-workspace [:data :typographies (:typography-ref-id style)])
 
-        color-format!       (mf/use-state :hex)
-        color-format* (deref color-format!)
+        color-format*       (mf/use-state :hex)
+        color-format        (deref color-format*)
 
         typography (or (get (or typography-library file-typographies-viewer file-typographies-workspace) (:typography-ref-id style)) typography-external-lib)]
 
@@ -67,7 +67,7 @@
      (when (:fills style)
        (for [[idx fill] (map-indexed vector (:fills style))]
          [:& color-row {:key idx
-                        :format @color-format*
+                        :format color-format
                         :color (types.fills/fill->color fill)
                         :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
                         :on-change-format #(reset! color-format* %)}]))
