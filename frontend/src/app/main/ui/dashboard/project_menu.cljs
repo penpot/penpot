@@ -117,15 +117,16 @@
             :handler on-delete})]]
 
     (mf/with-effect [show on-close]
-      (st/emit! (ptk/data-event :dropdown/open {:id "project-menu"}))
-      (let [stream (->> st/stream
-                        (rx/filter (ptk/type? :dropdown/open))
-                        (rx/map deref)
-                        (rx/filter #(not= "project-menu" (:id %)))
-                        (rx/take 1))
-            subs   (rx/subs! on-close stream)]
-        (fn []
-          (rx/dispose! subs))))
+      (when ^boolean show
+        (st/emit! (ptk/data-event :dropdown/open {:id "project-menu"}))
+        (let [stream (->> st/stream
+                          (rx/filter (ptk/type? :dropdown/open))
+                          (rx/map deref)
+                          (rx/filter #(not= "project-menu" (:id %)))
+                          (rx/take 1))
+              subs   (rx/subs! on-close stream)]
+          (fn []
+            (rx/dispose! subs)))))
 
     [:*
      [:> context-menu*
