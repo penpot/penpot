@@ -699,13 +699,27 @@ fn get_text_stroke_paints(stroke: &Stroke, bounds: &Rect) -> Vec<Paint> {
     match stroke.kind {
         StrokeKind::Inner => {
             let mut paint = skia::Paint::default();
-            paint.set_style(skia::PaintStyle::Stroke);
             paint.set_blend_mode(skia::BlendMode::SrcIn);
-            paint.set_anti_alias(true);
+            paint.set_style(skia::PaintStyle::StrokeAndFill);
             paint.set_stroke_width(stroke.width * 2.0);
+            paint.set_color(skia::Color::BLUE); // TODO fill?
+            paint.set_anti_alias(true);
+            paints.push(paint);
 
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_stroke_width(stroke.width * 2.0);
+            paint.set_blend_mode(skia::BlendMode::Clear);
+            paint.set_color(skia::Color::WHITE);
+            paint.set_anti_alias(true);
+            paints.push(paint);
+
+            let mut paint = skia::Paint::default();
+            // paint.set_style(skia::PaintStyle::StrokeAndFill);
+            // paint.set_stroke_width(stroke.width * 2.0);
+            paint.set_blend_mode(skia::BlendMode::DstOver);
+            paint.set_anti_alias(true);
             set_paint_fill(&mut paint, &stroke.fill, bounds);
-
             paints.push(paint);
         }
         StrokeKind::Center => {
