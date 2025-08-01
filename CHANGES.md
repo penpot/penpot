@@ -6,6 +6,7 @@
 
 - Fix unexpected exception on processing old texts [Github #6889](https://github.com/penpot/penpot/pull/6889)
 - Fix error on inspect tab when selecting multiple shapes [Taiga #11655](https://tree.taiga.io/project/penpot/issue/11655)
+- Fix missing package for the penport_exporter Docker image [GitHub #7205](https://github.com/penpot/penpot/issues/7025)
 
 
 ## 2.8.0
