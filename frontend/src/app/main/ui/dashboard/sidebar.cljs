@@ -69,8 +69,9 @@
 (def ^:private exit-icon
   (icon-xref :exit (stl/css :exit-icon)))
 
-(mf/defc sidebar-project
-  [{:keys [item selected?] :as props}]
+(mf/defc sidebar-project*
+  {::mf/private true}
+  [{:keys [item is-selected]}]
   (let [dstate           (mf/deref refs/dashboard-local)
         selected-files   (:selected-files dstate)
         selected-project (:selected-project dstate)
@@ -174,7 +175,7 @@
      [:li {:tab-index "0"
            :class (stl/css-case :project-element true
                                 :sidebar-nav-item true
-                                :current selected?
+                                :current is-selected
                                 :dragging (:dragging? local))
            :on-click on-click
            :on-key-down on-key-down
@@ -196,6 +197,7 @@
                         :on-close on-menu-close}]]))
 
 (mf/defc sidebar-search*
+  {::mf/private true}
   [{:keys [search-term team-id]}]
   (let [search-term (d/nilv search-term "")
         focused?    (mf/use-state false)
@@ -273,7 +275,7 @@
         search-icon])]))
 
 (mf/defc teams-selector-dropdown*
-  {::mf/wrap-props false}
+  {::mf/private true}
   [{:keys [team profile teams] :rest props}]
   (let [on-create-click
         (mf/use-fn #(st/emit! (modal/show :team-form {})))
@@ -323,6 +325,7 @@
       [:span {:class (stl/css :team-text)} (tr "dashboard.create-new-team")]]]))
 
 (mf/defc team-options-dropdown*
+  {::mf/private true}
   [{:keys [team profile] :rest props}]
   (let [go-members     #(st/emit! (dcm/go-to-dashboard-members))
         go-invitations #(st/emit! (dcm/go-to-dashboard-invitations))
@@ -737,12 +740,12 @@
        (if (seq pinned-projects)
          [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
           (for [item pinned-projects]
-            [:& sidebar-project
+            [:> sidebar-project*
              {:item item
               :key (dm/str (:id item))
               :id (:id item)
               :team-id (:id team)
-              :selected? (= (:id item) (:id project))}])]
+              :is-selected (= (:id item) (:id project))}])]
          [:div {:class (stl/css :sidebar-empty-placeholder)}
           pin-icon
           [:span {:class (stl/css :empty-text)} (tr "dashboard.no-projects-placeholder")]])]]
