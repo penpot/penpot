@@ -28,6 +28,7 @@ use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
 
+use crate::math;
 use crate::math::bools;
 
 pub use blend::BlendMode;
@@ -209,11 +210,18 @@ fn is_modified_child(
     if modifiers.is_empty() {
         return false;
     }
-    if modifiers.contains_key(&shape.id) {
-        return false;
-    }
+
     let ids = shape.all_children(shapes, true, false);
-    ids.iter().any(|id| modifiers.contains_key(id))
+    let default = &Matrix::default();
+    let parent_modifier = modifiers.get(&shape.id).unwrap_or(default);
+
+    // Returns true if the transform of any child is different to the parent's
+    ids.iter().any(|id| {
+        !math::is_close_matrix(
+            parent_modifier,
+            modifiers.get(id).unwrap_or(&Matrix::default()),
+        )
+    })
 }
 
 impl RenderState {
@@ -542,6 +550,9 @@ impl RenderState {
                 });
 
                 let shape = if let Type::Bool(_) = &shape.shape_type {
+                    // If any child transform doesn't match the parent transform means
+                    // that the children is transformed and we need to recalculate the
+                    // boolean
                     if is_modified_child(&shape, shapes, modifiers) {
                         &bools::update_bool_to_path(&shape, shapes, modifiers, structure)
                     } else {
