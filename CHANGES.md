@@ -27,6 +27,7 @@
 - Improve text layer auto-resize: auto-width switches to auto-height on horizontal resize, and only switches to fixed on vertical resize [Taiga #11578](https://tree.taiga.io/project/penpot/issue/11578)
 - Add the ability to show login dialog on profile settings [Github #6871](https://github.com/penpot/penpot/pull/6871)
 - Improve the application of tokens with object specific tokens [Taiga #10209](https://tree.taiga.io/project/penpot/us/10209)
+- Add info to apply-token event [Taiga #11710](https://tree.taiga.io/project/penpot/task/11710)
 
 ### :bug: Bugs fixed
 
