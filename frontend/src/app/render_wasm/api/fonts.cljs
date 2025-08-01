@@ -257,24 +257,27 @@
    :sinhala     {:font-id "gfont-noto-sans-sinhala" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :telugu      {:font-id "gfont-noto-sans-telugu"  :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :tibetan     {:font-id "gfont-noto-sans-tibetan" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :javanese    {:font-id "noto-sans-javanese"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :kannada     {:font-id "noto-sans-kannada"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :oriya       {:font-id "noto-sans-oriya"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :mongolian   {:font-id "noto-sans-mongolian"     :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :syriac      {:font-id "noto-sans-syriac"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :tifinagh    {:font-id "noto-sans-tifinagh"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :coptic      {:font-id "noto-sans-coptic"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :ol-chiki    {:font-id "noto-sans-ol-chiki"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :vai         {:font-id "noto-sans-vai"           :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :shavian     {:font-id "noto-sans-shavian"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :osmanya     {:font-id "noto-sans-osmanya"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :runic       {:font-id "noto-sans-runic"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :old-italic  {:font-id "noto-sans-old-italic"    :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :brahmi      {:font-id "noto-sans-brahmi"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :modi        {:font-id "noto-sans-modi"          :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :sora-sompeng {:font-id "noto-sans-sora-sompeng" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :bamum       {:font-id "noto-sans-bamum"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
-   :meroitic    {:font-id "noto-sans-meroitic"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}})
+   :javanese    {:font-id "gfont-noto-sans-javanese"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :kannada     {:font-id "gfont-noto-sans-kannada"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :oriya       {:font-id "gfont-noto-sans-oriya"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :mongolian   {:font-id "gfont-noto-sans-mongolian"     :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :syriac      {:font-id "gfont-noto-sans-syriac"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :tifinagh    {:font-id "gfont-noto-sans-tifinagh"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :coptic      {:font-id "gfont-noto-sans-coptic"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :ol-chiki    {:font-id "gfont-noto-sans-ol-chiki"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :vai         {:font-id "gfont-noto-sans-vai"           :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :shavian     {:font-id "gfont-noto-sans-shavian"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :osmanya     {:font-id "gfont-noto-sans-osmanya"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :runic       {:font-id "gfont-noto-sans-runic"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :old-italic  {:font-id "gfont-noto-sans-old-italic"    :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :brahmi      {:font-id "gfont-noto-sans-brahmi"        :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :modi        {:font-id "gfont-noto-sans-modi"          :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :sora-sompeng {:font-id "gfont-noto-sans-sora-sompeng" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :bamum       {:font-id "gfont-noto-sans-bamum"         :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :meroitic    {:font-id "gfont-noto-sans-meroitic"      :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :symbols     {:font-id "gfont-noto-sans-symbols"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :symbols-2   {:font-id "gfont-noto-sans-symbols-2" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
+   :music       {:font-id "gfont-noto-music" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}})
 
 
 (defn add-noto-fonts [fonts languages]

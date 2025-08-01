@@ -1,0 +1,1881 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u6bd7c17d-4f59-815e-8006-5c1f6882469a",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "New File 6",
+    "~:revn": 64,
+    "~:modified-at": "~m1754048253611",
+    "~:vern": 0,
+    "~:id": "~u74d31005-5d0c-81fe-8006-949a8226e8c4",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content-v2",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content-v2",
+            "0004-clean-shadow-color",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0007-clear-invalid-strokes-and-fills-v2",
+            "0008-fix-library-colors-v4",
+            "0009-clean-library-colors",
+            "0009-add-partial-text-touched-flags",
+            "0010-fix-swap-slots-pointing-non-existent-shapes"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u6bd7c17d-4f59-815e-8006-5c1f68846e43",
+    "~:created-at": "~m1754047030427",
+    "~:data": {
+        "~:pages": [
+            "~u74d31005-5d0c-81fe-8006-949a8226e8c5"
+        ],
+        "~:pages-index": {
+            "~u74d31005-5d0c-81fe-8006-949a8226e8c5": {
+                "~:objects": {
+                    "~u00000000-0000-0000-0000-000000000000": {
+                        "~#shape": {
+                            "~:y": 0,
+                            "~:hide-fill-on-export": false,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "Root Frame",
+                            "~:width": 0.01,
+                            "~:type": "~:frame",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 0,
+                                        "~:y": 0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.01
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0,
+                                        "~:y": 0.01
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 0,
+                            "~:proportion": 1,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 0,
+                                    "~:y": 0,
+                                    "~:width": 0.01,
+                                    "~:height": 0.01,
+                                    "~:x1": 0,
+                                    "~:y1": 0,
+                                    "~:x2": 0.01,
+                                    "~:y2": 0.01
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#FFFFFF",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": 0.01,
+                            "~:flip-y": null,
+                            "~:shapes": [
+                                "~uf42bc945-c423-807b-8006-949a8544f06e",
+                                "~u719b4a42-b802-807b-8006-949e9c9c2821",
+                                "~u719b4a42-b802-807b-8006-949eea11ff2e",
+                                "~uf42bc945-c423-807b-8006-949ae3b74598",
+                                "~uf42bc945-c423-807b-8006-949b06ced630",
+                                "~uf42bc945-c423-807b-8006-949af7430d15",
+                                "~uf42bc945-c423-807b-8006-949aa176e35e",
+                                "~u719b4a42-b802-807b-8006-949ebc33eff5",
+                                "~uf42bc945-c423-807b-8006-949b34aa521d",
+                                "~u25a05522-93f9-8071-8006-949dec50c0a3"
+                            ]
+                        }
+                    },
+                    "~u719b4a42-b802-807b-8006-949e9c9c2821": {
+                        "~#shape": {
+                            "~:y": 190.0000027586358,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "ep0hjq65t8",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-noto-sans-symbols",
+                                                        "~:key": "23cbuujevux",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Noto Sans Symbols",
+                                                        "~:text": "♻⚚⚖⛱⎙⛯🝈⏃⎃"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-noto-sans-symbols",
+                                                        "~:key": "13chpt0fq1p",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Noto Sans Symbols",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-noto-sans-symbols",
+                                                "~:key": "15e7mgfgmx9",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Noto Sans Symbols"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols-default",
+                            "~:width": 292.0000058533302,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000249122536,
+                                        "~:y": 190.0000027586358
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 172.00000336210485,
+                                        "~:y": 190.0000027586358
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 172.00000336210485,
+                                        "~:y": 233.00000305273772
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000249122536,
+                                        "~:y": 233.00000305273772
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u719b4a42-b802-807b-8006-949e9c9c2821",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": -120.00000249122535,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": -120.00000249122535,
+                                    "~:y": 190.0000027586358,
+                                    "~:width": 292.0000058533302,
+                                    "~:height": 43.00000029410194,
+                                    "~:x1": -120.00000249122535,
+                                    "~:y1": 190.0000027586358,
+                                    "~:x2": 172.00000336210485,
+                                    "~:y2": 233.00000305273772
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.00000029410194,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u719b4a42-b802-807b-8006-949eea11ff2e": {
+                        "~#shape": {
+                            "~:y": 253.00000004662445,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "ep0hjq65t8",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-noto-sans-symbols",
+                                                        "~:key": "23cbuujevux",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#0460ea",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Noto Sans Symbols",
+                                                        "~:text": "♻⚚⚖⛱⎙⛯🝈⏃⎃"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-noto-sans-symbols",
+                                                        "~:key": "13chpt0fq1p",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#0460ea",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Noto Sans Symbols",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-noto-sans-symbols",
+                                                "~:key": "15e7mgfgmx9",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#0460ea",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Noto Sans Symbols"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols-default",
+                            "~:width": 292.0000058533302,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000249122536,
+                                        "~:y": 253.00000004662445
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 172.00000336210485,
+                                        "~:y": 253.00000004662445
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 172.00000336210485,
+                                        "~:y": 296.0000003407264
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000249122536,
+                                        "~:y": 296.0000003407264
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~u719b4a42-b802-807b-8006-949eea11ff2e",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": -120.00000249122535,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": -120.00000249122535,
+                                    "~:y": 253.00000004662445,
+                                    "~:width": 292.0000058533302,
+                                    "~:height": 43.00000029410194,
+                                    "~:x1": -120.00000249122535,
+                                    "~:y1": 253.00000004662445,
+                                    "~:x2": 172.00000336210485,
+                                    "~:y2": 296.0000003407264
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.00000029410194,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uf42bc945-c423-807b-8006-949a8544f06e": {
+                        "~#shape": {
+                            "~:y": 190.00000278210962,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "ep0hjq65t8",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "23cbuujevux",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "♻⚚⚖⛱⎙⛯🝈⏃⎃"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "13chpt0fq1p",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-source-sans-3",
+                                                "~:key": "15e7mgfgmx9",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Source Sans 3"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols",
+                            "~:width": 314.0000110774031,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 541.0000162114279,
+                                        "~:y": 190.00000278210962
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 855.000027288831,
+                                        "~:y": 190.00000278210962
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 855.000027288831,
+                                        "~:y": 233.00000307621156
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 541.0000162114279,
+                                        "~:y": 233.00000307621156
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~uf42bc945-c423-807b-8006-949a8544f06e",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 541.0000162114279,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 541.0000162114279,
+                                    "~:y": 190.00000278210962,
+                                    "~:width": 314.0000110774031,
+                                    "~:height": 43.00000029410194,
+                                    "~:x1": 541.0000162114279,
+                                    "~:y1": 190.00000278210962,
+                                    "~:x2": 855.000027288831,
+                                    "~:y2": 233.00000307621156
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.00000029410194,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u25a05522-93f9-8071-8006-949dec50c0a3": {
+                        "~#shape": {
+                            "~:y": 531.9999872520937,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:last-resize-direction": "~:vertical",
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "jjehm4nngc",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "2bo5z246vlw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "𝄆 𝄙𝆏 𝅗𝅘𝅥𝅘𝅥𝅯𝅘𝅥𝅱 "
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "26pxiid8xn",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "𝄞𝄟"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "7m9yjo2x15",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "𝄢 𝄾𝄿𝄎 𝄴 𝄶𝅁𝄊 𝄇"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-source-sans-3",
+                                                "~:key": "23we51ua98o",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [],
+                                                "~:font-family": "Source Sans 3"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "music-color",
+                            "~:width": 297.00000632109175,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000249122536,
+                                        "~:y": 531.9999872520937
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 177.0000038298664,
+                                        "~:y": 531.9999872520937
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 177.0000038298664,
+                                        "~:y": 617.9999956685356
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000249122536,
+                                        "~:y": 617.9999956685356
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~u25a05522-93f9-8071-8006-949dec50c0a3",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": -120.00000249122536,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": -120.00000249122536,
+                                    "~:y": 531.9999872520937,
+                                    "~:width": 297.00000632109175,
+                                    "~:height": 86.00000841644191,
+                                    "~:x1": -120.00000249122536,
+                                    "~:y1": 531.9999872520937,
+                                    "~:x2": 177.0000038298664,
+                                    "~:y2": 617.9999956685356
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 86.00000841644191,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uf42bc945-c423-807b-8006-949af7430d15": {
+                        "~#shape": {
+                            "~:y": 253.00000009732878,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "ep0hjq65t8",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "23cbuujevux",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "♻⚚⚖⛱⎙⛯🝈⏃⎃"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "13chpt0fq1p",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-source-sans-3",
+                                                "~:key": "15e7mgfgmx9",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Source Sans 3"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols-and-shadows",
+                            "~:width": 314.0000110774031,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 206.00000153054413,
+                                        "~:y": 253.00000009732878
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 520.0000126079472,
+                                        "~:y": 253.00000009732878
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 520.0000126079472,
+                                        "~:y": 296.0000003914307
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 206.00000153054413,
+                                        "~:y": 296.0000003914307
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~uf42bc945-c423-807b-8006-949af7430d15",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 2,
+                                    "~:stroke-color": "#ec0303",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 206.0000015305441,
+                            "~:shadow": [
+                                {
+                                    "~:color": {
+                                        "~:color": "#000000",
+                                        "~:opacity": 0.2
+                                    },
+                                    "~:spread": 0,
+                                    "~:offset-y": 10,
+                                    "~:style": "~:drop-shadow",
+                                    "~:blur": 4,
+                                    "~:hidden": false,
+                                    "~:id": "~uf42bc945-c423-807b-8006-949afa408763",
+                                    "~:offset-x": 10
+                                }
+                            ],
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 206.0000015305441,
+                                    "~:y": 253.00000009732878,
+                                    "~:width": 314.0000110774031,
+                                    "~:height": 43.00000029410194,
+                                    "~:x1": 206.0000015305441,
+                                    "~:y1": 253.00000009732878,
+                                    "~:x2": 520.0000126079472,
+                                    "~:y2": 296.0000003914307
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.00000029410194,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~u719b4a42-b802-807b-8006-949ebc33eff5": {
+                        "~#shape": {
+                            "~:y": 420.99999097488046,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:last-resize-direction": "~:horizontal",
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "eaf8rrrx04",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-noto-sans-symbols-2",
+                                                        "~:key": "uecltsen8g",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Noto Sans Symbols 2",
+                                                        "~:text": "🌍✄✎ 🏔🏕🏌🏍🎭🎮 🡭🡱🡼 🯱🯲🯳🯴🯵🯶 🂮🂱🂲🂳"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-noto-sans-symbols-2",
+                                                        "~:key": "232ihbe9jry",
+                                                        "~:font-size": "0",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Noto Sans Symbols 2",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-noto-sans-symbols-2",
+                                                "~:key": "2copq7ufd0z",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Noto Sans Symbols 2"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols-2",
+                            "~:width": 734.0000059088642,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000372638893,
+                                        "~:y": 420.99999097488046
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 614.0000021824752,
+                                        "~:y": 420.99999097488046
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 614.0000021824752,
+                                        "~:y": 463.99998883901594
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000372638893,
+                                        "~:y": 463.99998883901594
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~u719b4a42-b802-807b-8006-949ebc33eff5",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": -120.00000372638894,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": -120.00000372638894,
+                                    "~:y": 420.99999097488046,
+                                    "~:width": 734.0000059088642,
+                                    "~:height": 42.99999786413548,
+                                    "~:x1": -120.00000372638894,
+                                    "~:y1": 420.99999097488046,
+                                    "~:x2": 614.0000021824752,
+                                    "~:y2": 463.99998883901594
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 42.99999786413548,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uf42bc945-c423-807b-8006-949b06ced630": {
+                        "~#shape": {
+                            "~:y": 253.00000020774723,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "ep0hjq65t8",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "23cbuujevux",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "underline",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#3bda35",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "♻⚚⚖⛱⎙⛯🝈⏃⎃"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "13chpt0fq1p",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "underline",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#3bda35",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-source-sans-3",
+                                                "~:key": "15e7mgfgmx9",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "underline",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#3bda35",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Source Sans 3"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols-and-decoration",
+                            "~:width": 313.9999951537908,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 541.0000020553105,
+                                        "~:y": 253.00000020774723
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 854.9999972091013,
+                                        "~:y": 253.00000020774723
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 854.9999972091013,
+                                        "~:y": 296.0000005018492
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 541.0000020553105,
+                                        "~:y": 296.0000005018492
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~uf42bc945-c423-807b-8006-949b06ced630",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 2,
+                                    "~:stroke-color": "#ec0303",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 541.0000020553105,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 541.0000020553105,
+                                    "~:y": 253.00000020774723,
+                                    "~:width": 313.9999951537908,
+                                    "~:height": 43.00000029410194,
+                                    "~:x1": 541.0000020553105,
+                                    "~:y1": 253.00000020774723,
+                                    "~:x2": 854.9999972091013,
+                                    "~:y2": 296.0000005018492
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.00000029410194,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uf42bc945-c423-807b-8006-949b34aa521d": {
+                        "~#shape": {
+                            "~:y": 529.9999872669948,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:last-resize-direction": "~:vertical",
+                            "~:grow-type": "~:fixed",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "jjehm4nngc",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "2bo5z246vlw",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#4710dd",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "𝄆 𝄙𝆏 𝅗𝅘𝅥𝅘𝅥𝅯𝅘𝅥𝅱 "
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "26pxiid8xn",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#2bdd0f",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "𝄞𝄟"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "7m9yjo2x15",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#4710dd",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "𝄢 𝄾𝄿𝄎 𝄴 𝄶𝅁𝄊 𝄇"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-source-sans-3",
+                                                "~:key": "23we51ua98o",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#2bdd0f",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Source Sans 3"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "music-color",
+                            "~:width": 297.00000632109175,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 177.0000070455178,
+                                        "~:y": 529.9999872669948
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 474.00001336660955,
+                                        "~:y": 529.9999872669948
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 474.00001336660955,
+                                        "~:y": 615.9999956834367
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 177.0000070455178,
+                                        "~:y": 615.9999956834367
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~uf42bc945-c423-807b-8006-949b34aa521d",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 177.0000070455178,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 177.0000070455178,
+                                    "~:y": 529.9999872669948,
+                                    "~:width": 297.00000632109175,
+                                    "~:height": 86.00000841644191,
+                                    "~:x1": 177.0000070455178,
+                                    "~:y1": 529.9999872669948,
+                                    "~:x2": 474.00001336660955,
+                                    "~:y2": 615.9999956834367
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 86.00000841644191,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uf42bc945-c423-807b-8006-949aa176e35e": {
+                        "~#shape": {
+                            "~:y": 351.0000095938789,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:last-resize-direction": "~:horizontal",
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "eaf8rrrx04",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "uecltsen8g",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "",
+                                                        "~:text": "🌍✄✎ 🏔🏕🏌🏍🎭🎮 🡭🡱🡼 🯱🯲🯳🯴🯵🯶 🂮🂱🂲🂳"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "232ihbe9jry",
+                                                        "~:font-size": "0",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-source-sans-3",
+                                                "~:key": "2copq7ufd0z",
+                                                "~:font-size": "0",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": ""
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols-2",
+                            "~:width": 777.000001312832,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000269397805,
+                                        "~:y": 351.0000095938789
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 656.999998618854,
+                                        "~:y": 351.0000095938789
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 656.999998618854,
+                                        "~:y": 394.00001002102346
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": -120.00000269397805,
+                                        "~:y": 394.00001002102346
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~uf42bc945-c423-807b-8006-949aa176e35e",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": -120.00000269397799,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": -120.00000269397799,
+                                    "~:y": 351.0000095938789,
+                                    "~:width": 777.000001312832,
+                                    "~:height": 43.000000427144585,
+                                    "~:x1": -120.00000269397799,
+                                    "~:y1": 351.0000095938789,
+                                    "~:x2": 656.999998618854,
+                                    "~:y2": 394.00001002102346
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.000000427144585,
+                            "~:flip-y": null
+                        }
+                    },
+                    "~uf42bc945-c423-807b-8006-949ae3b74598": {
+                        "~#shape": {
+                            "~:y": 190.00000278210962,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "ep0hjq65t8",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "23cbuujevux",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#3effff",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": "♻⚚⚖⛱⎙⛯🝈⏃⎃"
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-source-sans-3",
+                                                        "~:key": "13chpt0fq1p",
+                                                        "~:font-size": "36",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#3effff",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Source Sans 3",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-source-sans-3",
+                                                "~:key": "15e7mgfgmx9",
+                                                "~:font-size": "36",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#3effff",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Source Sans 3"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "symbols-and-color",
+                            "~:width": 314.0000110774032,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 206.99999756847254,
+                                        "~:y": 190.00000278210962
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 521.0000086458757,
+                                        "~:y": 190.00000278210962
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 521.0000086458757,
+                                        "~:y": 233.00000307621156
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 206.99999756847254,
+                                        "~:y": 233.00000307621156
+                                    }
+                                }
+                            ],
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:id": "~uf42bc945-c423-807b-8006-949ae3b74598",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [
+                                {
+                                    "~:stroke-style": "~:solid",
+                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-width": 2,
+                                    "~:stroke-color": "#ec0303",
+                                    "~:stroke-opacity": 1
+                                }
+                            ],
+                            "~:x": 206.9999975684725,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 206.9999975684725,
+                                    "~:y": 190.00000278210962,
+                                    "~:width": 314.0000110774032,
+                                    "~:height": 43.00000029410194,
+                                    "~:x1": 206.9999975684725,
+                                    "~:y1": 190.00000278210962,
+                                    "~:x2": 521.0000086458757,
+                                    "~:y2": 233.00000307621156
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 43.00000029410194,
+                            "~:flip-y": null
+                        }
+                    }
+                },
+                "~:id": "~u74d31005-5d0c-81fe-8006-949a8226e8c5",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u74d31005-5d0c-81fe-8006-949a8226e8c4",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}
