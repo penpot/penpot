@@ -192,7 +192,7 @@
                         :left (:x (:menu-pos local))
                         :top (:y (:menu-pos local))
                         :on-edit on-edit-open
-                        :on-menu-close on-menu-close}]]))
+                        :on-close on-menu-close}]]))
 
 (mf/defc sidebar-search
   [{:keys [search-term team-id] :as props}]
@@ -275,9 +275,7 @@
   {::mf/wrap-props false}
   [{:keys [team profile teams] :rest props}]
   (let [on-create-click
-        (mf/use-fn #(do
-                      (prn "QQQQ")
-                      (st/emit! (modal/show :team-form {}))))
+        (mf/use-fn #(st/emit! (modal/show :team-form {})))
 
         on-team-click
         (mf/use-fn

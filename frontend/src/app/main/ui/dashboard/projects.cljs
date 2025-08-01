@@ -271,7 +271,7 @@
             :left (+ 24 (:x (:menu-pos @local)))
             :top (:y (:menu-pos @local))
             :on-edit on-edit-open
-            :on-menu-close on-menu-close
+            :on-close on-menu-close
             :on-import on-import}])]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}

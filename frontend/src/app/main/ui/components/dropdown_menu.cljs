@@ -19,8 +19,9 @@
   (:import goog.events.EventType))
 
 (mf/defc dropdown-menu-item*
-  [{:keys [focuseable] :rest props}]
-  (let [tab-index (if focuseable "0" "-1")
+  [{:keys [can-focus] :rest props}]
+  (let [can-focus (d/nilv can-focus true)
+        tab-index (if can-focus "0" "-1")
         props     (mf/spread-props props {:role "menuitem" :tab-index tab-index})]
     [:> :li props]))
 
@@ -93,10 +94,7 @@
                           (rx/map deref)
                           (rx/filter #(not= id (:id %)))
                           (rx/take 1))
-              subs   (rx/subs! (fn []
-                                 (prn "aaaa")
-                                 (on-close))
-                               stream)]
+              subs   (rx/subs! on-close stream)]
           (fn []
             (rx/dispose! subs)))))
 
