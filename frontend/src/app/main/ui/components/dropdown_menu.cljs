@@ -8,45 +8,44 @@
   (:require
    [app.common.data :as d]
    [app.config :as cfg]
+   [app.main.store :as st]
    [app.util.dom :as dom]
    [app.util.globals :as globals]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
+   [beicon.v2.core :as rx]
    [goog.events :as events]
-   [goog.object :as gobj]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf])
   (:import goog.events.EventType))
 
 (mf/defc dropdown-menu-item*
-  {::mf/wrap-props false}
-  [props]
-  (let [props (-> (obj/clone props)
-                  (obj/set! "role" "menuitem"))]
+  [{:keys [can-focus] :rest props}]
+  (let [can-focus (d/nilv can-focus true)
+        tab-index (if can-focus "0" "-1")
+        props     (mf/spread-props props {:role "menuitem" :tab-index tab-index})]
     [:> :li props]))
 
-(mf/defc dropdown-menu'
-  {::mf/wrap-props false}
-  [props]
-  (let [children   (gobj/get props "children")
-        on-close   (gobj/get props "on-close")
-        ref        (gobj/get props "container")
-        ids        (gobj/get props "ids")
-        list-class (gobj/get props "list-class")
-        ids        (filter some? ids)
-        on-click
-        (fn [event]
-          (let [target (dom/get-target event)
+(mf/defc internal-dropdown-menu*
+  {::mf/private true}
+  [{:keys [on-close children class id]}]
 
-                ;; MacOS ctrl+click sends two events: context-menu and click.
-                ;; In order to not have two handlings we ignore ctrl+click for this platform
-                mac-ctrl-click? (and (cfg/check-platform? :macos) (kbd/ctrl? event))]
-            (when (and (not mac-ctrl-click?)
-                       (not (.-data-no-close ^js target)))
-              (if ref
-                (let [parent (mf/ref-val ref)]
-                  (when-not (or (not parent) (.contains parent target))
-                    (on-close)))
-                (on-close)))))
+  (assert (fn? on-close) "missing `on-close` prop")
+
+  (let [on-click
+        (mf/use-fn
+         (mf/deps on-close)
+         (fn [event]
+           (let [target (dom/get-target event)
+                 ;; MacOS ctrl+click sends two events: context-menu and click.
+                 ;; In order to not have two handlings we ignore ctrl+click for this platform
+                 mac-ctrl-click? (and (cfg/check-platform? :macos) (kbd/ctrl? event))]
+             (when (and (not mac-ctrl-click?)
+                        (not (.-data-no-close ^js target))
+                        (fn? on-close))
+               (on-close)))))
+
+        container
+        (mf/use-ref)
 
         on-keyup
         (fn [event]
@@ -55,35 +54,49 @@
 
         on-key-down
         (fn [event]
-          (let [first-id (dom/get-element (first ids))
-                first-element (dom/get-element first-id)
-                len (count ids)]
+          (when-let [container (mf/ref-val container)]
+            (let [entries (vec (dom/query-all container "[role=menuitem]"))]
 
-            (when (kbd/home? event)
-              (when first-element
-                (dom/focus! first-element)))
+              (cond
+                (kbd/up-arrow? event)
+                (let [selected (dom/get-active)
+                      index    (d/index-of-pred entries #(identical? % selected))
+                      target   (if (nil? index)
+                                 (peek entries)
+                                 (or (get entries (dec index)) (peek entries)))]
 
-            (when (kbd/up-arrow? event)
-              (let [actual-selected (dom/get-active)
-                    actual-id (dom/get-attribute actual-selected "id")
-                    actual-index (d/index-of ids actual-id)
-                    previous-id (if (= 0 actual-index)
-                                  (last ids)
-                                  (get ids (- actual-index 1) (last ids)))]
-                (dom/focus! (dom/get-element previous-id))))
+                  (dom/focus! target))
 
-            (when (kbd/down-arrow? event)
-              (let [actual-selected (dom/get-active)
-                    actual-id (dom/get-attribute actual-selected "id")
-                    actual-index (d/index-of ids actual-id)
-                    next-id (if (= (- len 1) actual-index)
-                              (first ids)
-                              (get ids (+ 1 actual-index) (first ids)))
-                    node-item (dom/get-element next-id)]
-                (dom/focus! node-item)))
+                (kbd/down-arrow? event)
+                (let [selected (dom/get-active)
+                      index    (d/index-of-pred entries #(identical? % selected))
+                      target   (if (nil? index)
+                                 (first entries)
+                                 (or (get entries (inc index)) (first entries)))]
+                  (dom/focus! target))
 
-            (when (kbd/tab? event)
-              (on-close))))]
+                (kbd/enter? event)
+                (let [selected (dom/get-active)]
+                  (dom/prevent-default event)
+                  (dom/click! selected))
+
+                (kbd/tab? event)
+                (on-close)))))]
+
+    (mf/with-effect [id]
+      (when id
+        (st/emit! (ptk/data-event :dropdown/open {:id id}))))
+
+    (mf/with-effect [on-close id]
+      (when id
+        (let [stream (->> st/stream
+                          (rx/filter (ptk/type? :dropdown/open))
+                          (rx/map deref)
+                          (rx/filter #(not= id (:id %)))
+                          (rx/take 1))
+              subs   (rx/subs! nil nil on-close stream)]
+          (fn []
+            (rx/dispose! subs)))))
 
     (mf/with-effect []
       (let [keys [(events/listen globals/document EventType.CLICK on-click)
@@ -93,21 +106,10 @@
         #(doseq [key keys]
            (events/unlistenByKey key))))
 
-    [:ul {:class list-class :role "menu"} children]))
+    [:ul {:class class :role "menu" :ref container} children]))
 
-(mf/defc dropdown-menu
-  {::mf/props :obj}
-  [props]
-  (assert (fn? (gobj/get props "on-close")) "missing `on-close` prop")
-  (assert (boolean? (gobj/get props "show")) "missing `show` prop")
+(mf/defc dropdown-menu*
+  [{:keys [show] :as props}]
+  (when show
+    [:> internal-dropdown-menu* props]))
 
-  (let [ids (obj/get props "ids")
-        ids (or ids
-                (->> (obj/get props "children")
-                     (keep (fn [o]
-                             (let [props (obj/get o "props")]
-                               (obj/get props "id"))))))]
-    (when (gobj/get props "show")
-      (mf/element
-       dropdown-menu'
-       (mf/spread-props props {:ids ids})))))

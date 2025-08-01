@@ -128,7 +128,7 @@
                            :left (- (:x (:menu-pos @local)) 180)
                            :top (:y (:menu-pos @local))
                            :on-edit on-edit
-                           :on-menu-close on-menu-close
+                           :on-close on-menu-close
                            :on-import on-import}])]]))
 
 (mf/defc files-section*

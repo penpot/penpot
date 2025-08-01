@@ -439,7 +439,7 @@
                             :can-edit can-edit
                             :navigate true
                             :on-edit on-edit
-                            :on-menu-close on-menu-close
+                            :on-close on-menu-close
                             :origin origin
                             :parent-id (dm/str file-id "-action-menu")}]])]]]]]))
 
