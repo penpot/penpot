@@ -7290,6 +7290,14 @@ msgstr "Enter text case: none | Uppercase | Lowercase | Capitalize"
 msgid "workspace.tokens.invalid-text-case-token-value"
 msgstr "Invalid token value: only none, Uppercase, Lowercase or Capitalize are accepted"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:799
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Enter text decoration: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:81
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr "Invalid token value: only none, underline and strike-through are accepted"
+
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
 msgstr "Preview:"
