@@ -19,6 +19,7 @@
 - Fix problem with booleans selection [Taiga #11627](https://tree.taiga.io/project/penpot/issue/11627)
 - Fix missing font when copy&paste a chunk of text [Taiga #11522](https://tree.taiga.io/project/penpot/issue/11522)
 - Fix bad swap slot after two swaps [Taiga #11659](https://tree.taiga.io/project/penpot/issue/11659)
+- Fix missing package for the penport_exporter Docker image [GitHub #7205](https://github.com/penpot/penpot/issues/7025)
 
 ## 2.9.0 (Unreleased)
 
