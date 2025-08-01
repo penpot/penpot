@@ -11,11 +11,11 @@
    [app.common.files.tokens :as cft]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.warnings :as wtw]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [promesa.core :as p]
@@ -347,7 +347,7 @@
   (let [state* (mf/use-state tokens)]
     (mf/with-effect [tokens interactive?]
       (if (seq tokens)
-        (let [tpoint  (dt/tpoint-ms)
+        (let [tpoint  (ct/tpoint-ms)
               tokens-s  (if interactive?
                           (resolve-tokens-interactive tokens)
                           (resolve-tokens tokens))]

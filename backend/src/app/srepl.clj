@@ -11,11 +11,11 @@
    [app.common.exceptions :as ex]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.srepl.cli :as cli]
    [app.srepl.main]
    [app.util.locks :as locks]
-   [app.util.time :as dt]
    [clojure.core :as c]
    [clojure.core.server :as ccs]
    [clojure.main :as cm]
@@ -77,7 +77,7 @@
         (loop []
           (when (try
                   (let [data   (read-line)
-                        tpoint (dt/tpoint)]
+                        tpoint (ct/tpoint)]
 
                     (l/dbg :hint "received" :data (if (= data ::eof) "EOF" data))
 

@@ -26,7 +26,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [lambdaisland.uri :as u]
    [okulary.core :as l]
@@ -67,10 +66,10 @@
              (map #(assoc % :type :version)))
         (->> data
              (filterv #(= "system" (:created-by %)))
-             (group-by #(.toISODate ^js (:created-at %)))
+             (group-by #(ct/format-inst (:created-at %) :iso-date))
              (map (fn [[day entries]]
                     {:type :snapshot
-                     :created-at (ct/parse-instant day)
+                     :created-at (ct/inst day)
                      :snapshots entries}))))
        (sort-by :created-at)
        (reverse)))
@@ -204,7 +203,7 @@
     [:li {:ref entry-ref :class (stl/css :version-entry-wrap)}
      [:> autosaved-milestone*
       {:label (tr "workspace.versions.autosaved.version"
-                  (dt/format (:created-at entry) :date-full))
+                  (ct/format-inst (:created-at entry) :localized-date))
        :autosavedMessage (tr "workspace.versions.autosaved.entry" (count (:snapshots entry)))
        :snapshots (mapv :created-at (:snapshots entry))
        :versionToggled is-expanded

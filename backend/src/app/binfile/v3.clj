@@ -20,6 +20,7 @@
    [app.common.media :as cmedia]
    [app.common.schema :as sm]
    [app.common.thumbnails :as cth]
+   [app.common.time :as ct]
    [app.common.types.color :as ctcl]
    [app.common.types.component :as ctc]
    [app.common.types.file :as ctf]
@@ -35,7 +36,6 @@
    [app.storage :as sto]
    [app.storage.impl :as sto.impl]
    [app.util.events :as events]
-   [app.util.time :as dt]
    [clojure.java.io :as jio]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
@@ -92,7 +92,7 @@
 
 (defn- default-now
   [o]
-  (or o (dt/now)))
+  (or o (ct/now)))
 
 ;; --- ENCODERS
 
@@ -937,10 +937,10 @@
       [file-id])))
 
 (defn- import-files
-  [{:keys [::bfc/timestamp ::bfc/input] :or {timestamp (dt/now)} :as cfg}]
+  [{:keys [::bfc/timestamp ::bfc/input] :or {timestamp (ct/now)} :as cfg}]
 
   (assert (instance? ZipFile input) "expected zip file")
-  (assert (dt/instant? timestamp) "expected valid instant")
+  (assert (ct/inst? timestamp) "expected valid instant")
 
   (let [manifest (-> (read-manifest input)
                      (validate-manifest))
@@ -1000,7 +1000,7 @@
    "expected instance of jio/IOFactory for `input`")
 
   (let [id (uuid/next)
-        tp (dt/tpoint)
+        tp (ct/tpoint)
         ab (volatile! false)
         cs (volatile! nil)]
     (try
@@ -1046,7 +1046,7 @@
    "expected instance of jio/IOFactory for `input`")
 
   (let [id (uuid/next)
-        tp (dt/tpoint)
+        tp (ct/tpoint)
         cs (volatile! nil)]
 
     (l/info :hint "import: started" :id (str id))
@@ -1061,7 +1061,7 @@
       (finally
         (l/info :hint "import: terminated"
                 :id (str id)
-                :elapsed (dt/format-duration (tp))
+                :elapsed (ct/format-duration (tp))
                 :error? (some? @cs))))))
 
 (defn get-manifest

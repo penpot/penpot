@@ -11,7 +11,6 @@
    [app.db :as db]
    [app.http :as http]
    [app.rpc :as-alias rpc]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]))
 

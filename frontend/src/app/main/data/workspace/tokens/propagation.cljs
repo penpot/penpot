@@ -8,6 +8,7 @@
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.helpers :as dsh]
@@ -16,7 +17,6 @@
    [app.main.data.workspace.thumbnails :as dwt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.undo :as dwu]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [clojure.data :as data]
    [clojure.set :as set]
@@ -143,7 +143,7 @@
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
-        tpoint          (dt/tpoint-ms)]
+        tpoint          (ct/tpoint-ms)]
 
     (l/inf :status "START" :hint "propagate-tokens")
     (->> (rx/concat

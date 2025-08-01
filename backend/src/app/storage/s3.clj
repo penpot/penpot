@@ -12,11 +12,11 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.storage :as-alias sto]
    [app.storage.impl :as impl]
    [app.storage.tmp :as tmp]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.java.io :as io]
    [datoteka.fs :as fs]
@@ -69,7 +69,7 @@
   20000)
 
 (def default-timeout
-  (dt/duration {:seconds 30}))
+  (ct/duration {:seconds 30}))
 
 (declare put-object)
 (declare get-object-bytes)
@@ -338,11 +338,11 @@
          (p/fmap #(.asByteArray ^ResponseBytes %)))))
 
 (def default-max-age
-  (dt/duration {:minutes 10}))
+  (ct/duration {:minutes 10}))
 
 (defn- get-object-url
   [{:keys [::presigner ::bucket ::prefix]} {:keys [id]} {:keys [max-age] :or {max-age default-max-age}}]
-  (assert (dt/duration? max-age) "expected valid duration instance")
+  (assert (ct/duration? max-age) "expected valid duration instance")
 
   (let [gor  (.. (GetObjectRequest/builder)
                  (bucket bucket)

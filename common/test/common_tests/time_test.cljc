@@ -10,7 +10,7 @@
    [clojure.test :as t]))
 
 (t/deftest compare-time
-  (let [dta (dt/parse-instant 10000)
-        dtb (dt/parse-instant 20000)]
+  (let [dta (dt/inst 10000)
+        dtb (dt/inst 20000)]
     (t/is (false? (dt/is-after? dta dtb)))
     (t/is (true? (dt/is-before? dta dtb)))))

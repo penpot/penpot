@@ -10,8 +10,9 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.db :as db]
-   [app.util.time :as dt]
+   [app.util.cron :as cron]
    [app.worker :as wrk]
    [app.worker.runner :refer [get-error-context]]
    [cuerdas.core :as str]
@@ -49,7 +50,7 @@
   [cfg {:keys [id cron] :as task}]
   (px/thread
     {:name (str "penpot/cron-task/" id)}
-    (let [tpoint (dt/tpoint)]
+    (let [tpoint (ct/tpoint)]
       (try
         (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                           (db/exec-one! conn ["SET LOCAL statement_timeout=0;"])
@@ -57,20 +58,20 @@
                           (when (lock-scheduled-task! conn id)
                             (db/update! conn :scheduled-task
                                         {:cron-expr (str cron)
-                                         :modified-at (dt/now)}
+                                         :modified-at (ct/now)}
                                         {:id id}
                                         {::db/return-keys false})
                             (l/dbg :hint "start" :id id)
                             ((:fn task) task)
-                            (let [elapsed (dt/format-duration (tpoint))]
+                            (let [elapsed (ct/format-duration (tpoint))]
                               (l/dbg :hint "end" :id id :elapsed elapsed)))))
 
         (catch InterruptedException _
-          (let [elapsed (dt/format-duration (tpoint))]
+          (let [elapsed (ct/format-duration (tpoint))]
             (l/debug :hint "task interrupted" :id id :elapsed elapsed)))
 
         (catch Throwable cause
-          (let [elapsed (dt/format-duration (tpoint))]
+          (let [elapsed (ct/format-duration (tpoint))]
             (binding [l/*context* (get-error-context cause task)]
               (l/err :hint "unhandled exception on running task"
                      :id id
@@ -82,10 +83,10 @@
 
 (defn- ms-until-valid
   [cron]
-  (assert (dt/cron? cron) "expected cron instance")
-  (let [now  (dt/now)
-        next (dt/next-valid-instant-from cron now)]
-    (dt/diff now next)))
+  (assert (cron/cron-expr? cron) "expected cron instance")
+  (let [now  (ct/now)
+        next (cron/next-valid-instant-from cron now)]
+    (ct/diff now next)))
 
 (defn- schedule-cron-task
   [{:keys [::running] :as cfg} {:keys [cron id] :as task}]
@@ -93,8 +94,8 @@
         ft (px/schedule! ts (partial execute-cron-task cfg task))]
 
     (l/dbg :hint "schedule" :id id
-           :ts (dt/format-duration ts)
-           :at (dt/format-instant (dt/in-future ts)))
+           :ts (ct/format-duration ts)
+           :at (ct/format-inst (ct/in-future ts)))
 
     (swap! running #(into #{ft} (filter p/pending?) %))))
 
@@ -104,7 +105,7 @@
     [:vector
      [:maybe
       [:map
-       [:cron [:fn dt/cron?]]
+       [:cron [:fn cron/cron-expr?]]
        [:task :keyword]
        [:props {:optional true} :map]
        [:id {:optional true} :keyword]]]]]

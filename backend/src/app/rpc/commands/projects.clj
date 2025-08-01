@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.features.logical-deletion :as ldel]
@@ -21,7 +22,6 @@
    [app.rpc.permissions :as perms]
    [app.rpc.quotes :as quotes]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]))
 
 ;; --- Check Project Permissions
@@ -218,7 +218,7 @@
 (sv/defmethod ::update-project-pin
   {::doc/added "1.18"
    ::sm/params schema:update-project-pin
-   ::webhooks/batch-timeout (dt/duration "5s")
+   ::webhooks/batch-timeout (ct/duration "5s")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
    ::webhooks/event? true
    ::db/transaction true}
@@ -257,7 +257,7 @@
   [conn team project-id]
   (let [delay   (ldel/get-deletion-delay team)
         project (db/update! conn :project
-                            {:deleted-at (dt/in-future delay)}
+                            {:deleted-at (ct/in-future delay)}
                             {:id project-id}
                             {::db/return-keys true})]
 

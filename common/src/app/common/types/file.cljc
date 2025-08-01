@@ -16,7 +16,7 @@
    [app.common.geom.shapes.tree-seq :as gsts]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.common.time :as dt]
+   [app.common.time :as ct]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -34,7 +34,6 @@
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTANTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -49,8 +48,8 @@
   "A schema that represents the file media object"
   [:map {:title "FileMedia"}
    [:id ::sm/uuid]
-   [:created-at {:optional true} ::sm/inst]
-   [:deleted-at {:optional true} ::sm/inst]
+   [:created-at {:optional true} ::ct/inst]
+   [:deleted-at {:optional true} ::ct/inst]
    [:name :string]
    [:width ::sm/safe-int]
    [:height ::sm/safe-int]
@@ -96,9 +95,9 @@
    [:name :string]
    [:revn :int]
    [:vern {:optional true} :int]
-   [:created-at ::sm/inst]
-   [:modified-at ::sm/inst]
-   [:deleted-at {:optional true} ::sm/inst]
+   [:created-at ::ct/inst]
+   [:modified-at ::ct/inst]
+   [:deleted-at {:optional true} ::ct/inst]
    [:project-id {:optional true} ::sm/uuid]
    [:team-id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} ::sm/boolean]
@@ -164,7 +163,7 @@
       :or {create-page true with-data true}}]
 
   (let [id          (or id (uuid/next))
-        created-at  (or created-at (dt/now))
+        created-at  (or created-at (ct/now))
         modified-at (or modified-at created-at)
         features    (d/nilv features #{})
 

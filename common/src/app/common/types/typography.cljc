@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
+   [app.common.time :as-alias ct]
    [app.common.types.plugins :as ctpg]
    [app.common.types.text :as txt]
    [app.common.uuid :as uuid]))
@@ -31,7 +32,7 @@
     [:line-height :string]
     [:letter-spacing :string]
     [:text-transform :string]
-    [:modified-at {:optional true} ::sm/inst]
+    [:modified-at {:optional true} ::ct/inst]
     [:path {:optional true} [:maybe :string]]
     [:plugin-data {:optional true} ::ctpg/plugin-data]]))
 

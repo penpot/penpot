@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -20,8 +21,7 @@
    [app.rpc.doc :as-alias doc]
    [app.rpc.helpers :as rph]
    [app.util.inet :as inet]
-   [app.util.services :as sv]
-   [app.util.time :as dt]))
+   [app.util.services :as sv]))
 
 (def ^:private event-columns
   [:id
@@ -49,7 +49,7 @@
 
 (defn- adjust-timestamp
   [{:keys [timestamp created-at] :as event}]
-  (let [margin (inst-ms (dt/diff timestamp created-at))]
+  (let [margin (inst-ms (ct/diff timestamp created-at))]
     (if (or (neg? margin)
             (> margin 3600000))
       ;; If event is in future or lags more than 1 hour, we reasign
@@ -63,7 +63,7 @@
   [{:keys [::db/pool]} {:keys [::rpc/profile-id events] :as params}]
   (let [request (-> params meta ::http/request)
         ip-addr (inet/parse-request request)
-        tnow    (dt/now)
+        tnow    (ct/now)
         xform   (comp
                  (map (fn [event]
                         (-> event
