@@ -187,4 +187,8 @@ impl Path {
     pub fn segments(&self) -> &Vec<Segment> {
         &self.segments
     }
+
+    pub fn bounds(&self) -> math::Bounds {
+        math::Bounds::from_rect(self.skia_path.bounds())
+    }
 }
