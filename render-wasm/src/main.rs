@@ -1,4 +1,3 @@
-#[cfg(target_arch = "wasm32")]
 mod emscripten;
 mod math;
 mod mem;
@@ -120,10 +119,10 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
 }
 
 #[no_mangle]
-pub extern "C" fn render(_: i32) {
+pub extern "C" fn render(_: i32, full: bool) {
     with_state_mut!(state, {
         state
-            .start_render_loop(performance::get_time())
+            .start_render_loop(performance::get_time(), full)
             .expect("Error rendering");
     });
 }

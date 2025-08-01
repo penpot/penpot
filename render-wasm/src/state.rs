@@ -55,13 +55,14 @@ impl State {
             .render_from_cache(&self.shapes, &self.modifiers, &self.structure);
     }
 
-    pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
+    pub fn start_render_loop(&mut self, timestamp: i32, full: bool) -> Result<(), String> {
         self.render_state.start_render_loop(
             &self.shapes,
             &self.modifiers,
             &self.structure,
             &self.scale_content,
             timestamp,
+            full,
         )?;
         Ok(())
     }
@@ -133,13 +134,13 @@ impl State {
 
         // We don't need to update the tile for the root shape.
         if !shape.id.is_nil() {
-            self.render_state.update_tile_for(&shape);
+            self.render_state.update_tiles_for(&shape);
         }
     }
 
     pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
         if let Some(shape) = self.shapes.get(&shape_id) {
-            self.render_state.update_tile_for(shape);
+            self.render_state.update_tiles_for(shape);
         }
     }
 
@@ -148,7 +149,7 @@ impl State {
             panic!("Invalid current shape")
         };
         if !shape.id.is_nil() {
-            self.render_state.update_tile_for(&shape.clone());
+            self.render_state.update_tiles_for(&shape.clone());
         }
     }
 
