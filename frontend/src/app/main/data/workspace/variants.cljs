@@ -530,15 +530,17 @@
           (rx/of (dwl/rename-component-and-main-instance component-id name)))))))
 
 
-(defn- bounding-rect [shapes]
-  (let [xs   (map :x shapes)
-        ys   (map :y shapes)
-        x2s  (map #(+ (:x %) (:width %)) shapes)
-        y2s  (map #(+ (:y %) (:height %)) shapes)
+(defn- bounding-rect [frames]
+  (let [xs   (map :x frames)
+        ys   (map :y frames)
+        x2s  (map #(+ (:x %) (:width %)) frames)
+        y2s  (map #(+ (:y %) (:height %)) frames)
         min-x (apply min xs)
         min-y (apply min ys)
         max-x (apply max x2s)
         max-y (apply max y2s)]
+    "Receives a list of frames (with X, y, width and height)
+     and calculates a rect that contains them all"
     {:x min-x
      :y min-y
      :width (- max-x min-x)
