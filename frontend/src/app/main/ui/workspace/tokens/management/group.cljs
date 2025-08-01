@@ -91,7 +91,7 @@
          (mf/deps selected-shapes not-editing?)
          (fn [event token]
            (dom/stop-propagation event)
-           (when (and not-editing? (seq selected-shapes))
+           (when (and not-editing? (seq selected-shapes) (not= (:type token) :number))
              (st/emit! (dwta/toggle-token {:token token
                                            :shapes selected-shapes})))))]
 

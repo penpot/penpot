@@ -7483,6 +7483,10 @@ msgstr "El tipo '%s' no está soportado (%s)\n"
 msgid "workspace.tokens.value-not-valid"
 msgstr "El valor no es válido"
 
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.tokens.more-options"
+msgstr "Click derecho para ver opciones"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61
 msgid "workspace.tokens.value-with-units"
 msgstr "Valor no válido: No se permiten unidades."
