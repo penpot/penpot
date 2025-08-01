@@ -17,7 +17,7 @@
 (defmacro read-byte
   [target offset]
   (if (:ns &env)
-    `(.getInt8 ~target ~offset true)
+    `(.getUint8 ~target ~offset true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(long (.get ~target ~offset)))))
 
@@ -70,7 +70,7 @@
 (defmacro write-byte
   [target offset value]
   (if (:ns &env)
-    `(.setInt8 ~target ~offset ~value true)
+    `(.setUint8 ~target ~offset ~value true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.put ~target ~offset (unchecked-byte ~value)))))
 
