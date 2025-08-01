@@ -468,8 +468,8 @@
                                 :data-testid "delete-team"}
         (tr "dashboard.delete-team")])]))
 
-(mf/defc sidebar-team-switch
-  [{:keys [team profile] :as props}]
+(mf/defc sidebar-team-switch*
+  [{:keys [team profile]}]
   (let [teams (mf/deref refs/teams)
 
         subscription
@@ -686,7 +686,7 @@
     [:*
      [:div {:class (stl/css-case :sidebar-content true)
             :ref container}
-      [:& sidebar-team-switch {:team team :profile profile}]
+      [:> sidebar-team-switch* {:team team :profile profile}]
 
       [:& sidebar-search {:search-term search-term
                           :team-id (:id team)}]
