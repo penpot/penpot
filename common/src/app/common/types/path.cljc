@@ -223,12 +223,16 @@
   (-> (calc-bool-content* shape objects)
       (impl/path-data)))
 
+(def update-bool-shape* nil)
+
 (defn update-bool-shape
   "Calculates the selrect+points for the boolean shape"
   [shape objects]
-  (let [content (calc-bool-content shape objects)
-        shape   (assoc shape :content content)]
-    (update-geometry shape)))
+  (if update-bool-shape*
+    (update-bool-shape* shape objects)
+    (let [content (calc-bool-content shape objects)
+          shape   (assoc shape :content content)]
+      (update-geometry shape))))
 
 (defn shape-with-open-path?
   [shape]

@@ -168,7 +168,7 @@
     :union 0
     :difference 1
     :intersection 2
-    :exclusion 3
+    :exclude 3
     0))
 
 (defn translate-blur-type
