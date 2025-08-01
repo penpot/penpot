@@ -933,7 +933,7 @@
 
                  :else
                  (let [child-id (obj/get child "$id")]
-                   (st/emit! (dw/relocate-shapes #{child-id} id 0))))))
+                   (st/emit! (dwsh/relocate-shapes #{child-id} id 0))))))
 
            :insertChild
            (fn [index child]
@@ -953,7 +953,7 @@
 
                  :else
                  (let [child-id (obj/get child "$id")]
-                   (st/emit! (dw/relocate-shapes #{child-id} id index))))))
+                   (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
 
            ;; Only for frames
            :addFlexLayout

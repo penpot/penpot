@@ -570,9 +570,14 @@
         heads                      (filter ctk/instance-head? shapes)
         components-menu-entries    (cmm/generate-components-menu-entries heads)
         variant-container?         (and single? (ctk/is-variant-container? (first shapes)))
-        do-add-component           #(st/emit! (dwl/add-component))
-        do-add-multiple-components #(st/emit! (dwl/add-multiple-components))
-        do-add-variant             #(st/emit! (dwv/add-new-variant (:id (first shapes))))]
+        all-main?                  (every? ctk/main-instance? shapes)
+        any-variant?               (some ctk/is-variant? shapes)
+        do-add-component           (mf/use-fn #(st/emit! (dwl/add-component)))
+        do-add-multiple-components (mf/use-fn #(st/emit! (dwl/add-multiple-components)))
+        do-combine-as-variants     (mf/use-fn #(st/emit! (dwv/combine-as-variants)))
+        do-add-variant             (mf/use-fn
+                                    (mf/deps shapes)
+                                    #(st/emit! (dwv/add-new-variant (:id (first shapes)))))]
     [:*
      (when can-make-component ;; We don't want to change the structure of component copies
        [:*
@@ -596,10 +601,17 @@
                            :on-click (:action entry)}])])
 
      (when variant-container?
-       [:> menu-separator*]
-       [:> menu-entry* {:title (tr "workspace.shape.menu.add-variant")
-                        :shortcut (sc/get-tooltip :create-component)
-                        :on-click do-add-variant}])]))
+       [:*
+        [:> menu-separator*]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.add-variant")
+                         :shortcut (sc/get-tooltip :create-component)
+                         :on-click do-add-variant}]])
+
+     (when (and (not single?) all-main? (not any-variant?))
+       [:*
+        [:> menu-separator*]
+        [:> menu-entry* {:title (tr "workspace.shape.menu.combine-as-variants")
+                         :on-click do-combine-as-variants}]])]))
 
 (mf/defc context-menu-delete*
   {::mf/props :obj

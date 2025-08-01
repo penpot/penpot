@@ -808,3 +808,22 @@
   right: $s-2;
   top: $s-2;
 }
+
+.combine-variant-button {
+  @include buttonStyle;
+  @include uppercaseTitleTipography;
+  cursor: default;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: $s-8;
+  border-radius: $br-8;
+  background-color: var(--assets-item-background-color);
+  color: var(--color-foreground-secondary);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--assets-item-background-color-hover);
+    color: var(--color-foreground-primary);
+  }
+}

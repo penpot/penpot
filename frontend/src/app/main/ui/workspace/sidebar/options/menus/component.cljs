@@ -778,6 +778,9 @@
         copies          (filter ctk/in-component-copy? shapes)
         can-swap?       (boolean (seq copies))
 
+        all-main?       (every? ctk/main-instance? shapes)
+        any-variant?    (some ctk/is-variant? shapes)
+
         ;; For when it's only one shape
         shape           (first shapes)
         id              (:id shape)
@@ -790,6 +793,7 @@
         data            (dm/get-in libraries [(:component-file shape) :data])
         variants?       (features/use-feature "variants/v1")
         is-variant?     (when variants? (ctk/is-variant? component))
+
         main-instance?  (ctk/main-instance? shape)
 
         components      (mapv #(ctf/resolve-component %
@@ -829,6 +833,9 @@
            (let [search-id "swap-component-search-filter"]
              (when can-swap? (st/emit! (dwsp/open-specialized-panel :component-swap)))
              (tm/schedule-on-idle #(dom/focus! (dom/get-element search-id))))))
+
+        on-combine-as-variants
+        #(st/emit! (dwv/combine-as-variants))
 
         ;; NOTE: function needed for force rerender from the bottom
         ;; components. This is because `component-annotation`
@@ -936,6 +943,11 @@
             [:> component-variant-main-instance* {:components components
                                                   :shapes shapes
                                                   :data data}])
+
+          (when (and multi all-main? (not any-variant?))
+            [:button {:class (stl/css :combine-variant-button)
+                      :on-click on-combine-as-variants}
+             [:span (tr "workspace.shape.menu.combine-as-variants")]])
 
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))

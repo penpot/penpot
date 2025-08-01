@@ -42,6 +42,8 @@
                [:map
                 [:name :string]
                 [:id :string]
+                [:title {:optional true} [:maybe :string]]
+                [:disabled {:optional true} [:maybe :boolean]]
                 [:handler {:optional true} fn?]
                 [:options {:optional true}
                  [:sequential [:ref ::option]]]]
@@ -258,7 +260,9 @@
              (let [name        (:name option)
                    id          (:id option)
                    sub-options (:options option)
-                   handler     (:handler option)]
+                   handler     (:handler option)
+                   title       (:title option)
+                   disabled    (:disabled option)]
                (when name
                  (if (= name :separator)
                    [:li {:key (dm/str "context-item-" index)
@@ -273,10 +277,12 @@
                          :role "menuitem"
                          :on-key-down dom/prevent-default}
                     (if-not sub-options
-                      [:a {:class (stl/css :context-menu-action)
+                      [:a {:class (stl/css-case :context-menu-action true :context-menu-action-disabled disabled)
+                           :title title
                            :on-click #(do (dom/stop-propagation %)
-                                          (on-close %)
-                                          (handler %))
+                                          (when-not disabled
+                                            (on-close %)
+                                            (handler %)))
                            :data-testid id}
                        (if (and in-dashboard? (= name "Default"))
                          (tr "dashboard.default-team-name")

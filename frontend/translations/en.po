@@ -6872,6 +6872,13 @@ msgstr "Create annotation"
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Selection to board"
 
+#: src/app/main/ui/workspace/context_menu.cljs:385
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combine as variants"
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Components need to be in the same page"
+
 #: src/app/main/ui/workspace/context_menu.cljs:573
 msgid "workspace.shape.menu.create-component"
 msgstr "Create component"
