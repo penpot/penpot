@@ -800,9 +800,7 @@
              (reset! show-profile-menu* true))))
 
         on-close
-        (fn [event]
-          (dom/stop-propagation event)
-          (reset! show-profile-menu* false))
+        (mf/use-fn #(reset! show-profile-menu* false))
 
         handle-click-url
         (mf/use-fn

@@ -211,7 +211,7 @@
                         (rx/map deref)
                         (rx/filter #(not= "file-menu" (:id %)))
                         (rx/take 1))
-            subs   (rx/subs! on-close stream)]
+            subs   (rx/subs! nil nil on-close stream)]
         (fn []
           (rx/dispose! subs))))
 

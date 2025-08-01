@@ -42,7 +42,7 @@
              (when (and (not mac-ctrl-click?)
                         (not (.-data-no-close ^js target))
                         (fn? on-close))
-               (on-close event)))))
+               (on-close)))))
 
         container
         (mf/use-ref)
@@ -94,7 +94,7 @@
                           (rx/map deref)
                           (rx/filter #(not= id (:id %)))
                           (rx/take 1))
-              subs   (rx/subs! on-close stream)]
+              subs   (rx/subs! nil nil on-close stream)]
           (fn []
             (rx/dispose! subs)))))
 
