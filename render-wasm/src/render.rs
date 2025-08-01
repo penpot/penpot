@@ -470,18 +470,6 @@ impl RenderState {
 
                 text::render(self, &shape, &mut paragraphs, None, None);
 
-                if shape.has_visible_inner_strokes() {
-                    // Inner strokes paints need the text fill to apply correctly their blend modes
-                    // (e.g., SrcATop, DstOver)
-                    text::render(
-                        self,
-                        &shape,
-                        &mut paragraphs,
-                        Some(SurfaceId::Strokes),
-                        None,
-                    );
-                }
-
                 for stroke in shape.visible_strokes().rev() {
                     let mut stroke_paragraphs =
                         text_content.get_skia_stroke_paragraphs(stroke, &shape.selrect());

@@ -24,6 +24,9 @@ pub fn render(
         _ => 0.0,
     };
 
+    let layer_rec = skia_safe::canvas::SaveLayerRec::default();
+    canvas.save_layer(&layer_rec);
+
     for group in paragraphs {
         let mut group_offset_y = global_offset_y;
         let group_len = group.len();
@@ -36,15 +39,7 @@ pub fn render(
                 let mut paragraph_builder =
                     ParagraphBuilder::new(&builder.get_paragraph_style(), fonts);
                 let mut text_style: skia_safe::Handle<_> = builder.peek_style();
-                let current_paint = text_style.foreground().clone();
-                let blend_mode = current_paint.as_blend_mode();
-                let mut new_paint = paint.unwrap().clone();
-                if blend_mode != Some(skia_safe::BlendMode::SrcIn) {
-                    new_paint.set_stroke_width(current_paint.stroke_width());
-                    new_paint.set_style(skia_safe::PaintStyle::StrokeAndFill);
-                }
-                new_paint.set_anti_alias(true);
-                text_style.set_foreground_paint(&new_paint);
+                text_style.set_foreground_paint(paint.unwrap());
                 paragraph_builder.reset();
                 paragraph_builder.push_style(&text_style);
                 paragraph_builder.add_text(&text);
@@ -138,6 +133,8 @@ pub fn render(
             global_offset_y = group_offset_y;
         }
     }
+
+    canvas.restore();
 }
 
 pub fn calculate_text_decoration_rect(
