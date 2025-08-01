@@ -7,6 +7,7 @@
 (ns app.main.ui.dashboard.sidebar
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -194,9 +195,9 @@
                         :on-edit on-edit-open
                         :on-close on-menu-close}]]))
 
-(mf/defc sidebar-search
-  [{:keys [search-term team-id] :as props}]
-  (let [search-term (or search-term "")
+(mf/defc sidebar-search*
+  [{:keys [search-term team-id]}]
+  (let [search-term (d/nilv search-term "")
         focused?    (mf/use-state false)
         emit!       (mf/use-memo #(f/debounce st/emit! 500))
 
@@ -688,8 +689,8 @@
             :ref container}
       [:> sidebar-team-switch* {:team team :profile profile}]
 
-      [:& sidebar-search {:search-term search-term
-                          :team-id (:id team)}]
+      [:> sidebar-search* {:search-term search-term
+                           :team-id (:id team)}]
 
       [:div {:class (stl/css :sidebar-content-section)}
        [:ul {:class (stl/css :sidebar-nav)}
