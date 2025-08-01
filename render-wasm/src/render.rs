@@ -181,6 +181,8 @@ pub(crate) struct RenderState {
     // This ensures that child shapes consider their parent's extended rect when calculating
     // their own extended rect for rendering and tile calculations.
     pub nested_extrect: crate::math::Rect,
+    // Map to track accumulated children rects for each node during tree traversal
+    pub accumulated_children: HashMap<Uuid, Rect>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
 }
@@ -251,6 +253,7 @@ impl RenderState {
             nested_fills: vec![],
             nested_shadows: vec![],
             nested_extrect: Rect::new_empty(),
+            accumulated_children: HashMap::new(),
             show_grid: None,
             focus_mode: FocusMode::new(),
         }
@@ -733,14 +736,17 @@ impl RenderState {
             }
         }
 
+        // Initialize accumulated_children for this node with its own rect
+        let shape_extrect = element.calculate_extrect();
+        self.accumulated_children.insert(element.id, shape_extrect);
+        
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 let shadows = &element.shadows;
                 self.nested_shadows.push(shadows.to_vec());
 
                 // Accumulate extended rect for containers
-                let extrect = element.calculate_extrect();
-                self.nested_extrect.join(&extrect);
+                self.nested_extrect.join(&shape_extrect);
             }
             _ => {}
         }
@@ -822,13 +828,27 @@ impl RenderState {
             self.nested_fills.pop();
         }
 
+        // When exiting a shape, accumulate its nested_extrect into its parent's accumulated_children
+        if let Some(parent_id) = element.parent_id {
+            if let Some(parent_accumulated) = self.accumulated_children.get_mut(&parent_id) {
+                // Add this shape's nested_extrect to the parent's accumulated rect
+                parent_accumulated.join(&self.nested_extrect);
+            }
+        }
+        
+        // Set the nested_extrect to the accumulated result for this shape
+        if let Some(accumulated) = self.accumulated_children.get(&element.id) {
+            self.nested_extrect = *accumulated;
+        }
+        
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_shadows.pop();
 
-                // TODO: check this parent_id is enough
+                // Reset for top-level frames
                 if element.parent_id.is_none() {
                     self.nested_extrect = Rect::new_empty();
+                    self.accumulated_children.clear();
                 }
             }
             _ => {}
@@ -913,6 +933,9 @@ impl RenderState {
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(bool, bool), String> {
+        // Reset accumulated_children before starting
+        self.accumulated_children.clear();
+        
         let mut iteration = 0;
         let mut is_empty = true;
         while let Some(node_render_state) = self.pending_nodes.pop() {
@@ -1207,15 +1230,12 @@ impl RenderState {
         self.tiles.invalidate();
         self.surfaces.remove_cached_tiles();
 
-        // Reset nested_extrect before starting
+        // Reset nested_extrect and accumulated_children before starting
         self.nested_extrect = Rect::new_empty();
+        self.accumulated_children.clear();
 
         // Stack to track nodes to process: (shape_id, is_entering)
         let mut nodes = vec![(Uuid::nil(), true)];
-        
-        // Map to track accumulated children rects for each node
-        // TODO: replicate in render_shape_tree_partial_uncached
-        let mut accumulated_children: HashMap<Uuid, Rect> = HashMap::new();
 
         while let Some((shape_id, is_entering)) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
@@ -1229,7 +1249,7 @@ impl RenderState {
 
                         // Initialize accumulated_children for this node with its own rect
                         let shape_extrect = shape.calculate_extrect();
-                        accumulated_children.insert(shape_id, shape_extrect);
+                        self.accumulated_children.insert(shape_id, shape_extrect);
                         
                         // Update nested_extrect with current shape's extended rect
                         self.nested_extrect.join(&shape_extrect);
@@ -1258,14 +1278,14 @@ impl RenderState {
 
                         // When exiting a shape, accumulate its nested_extrect into its parent's accumulated_children
                         if let Some(parent_id) = shape.parent_id {
-                            if let Some(parent_accumulated) = accumulated_children.get_mut(&parent_id) {
+                            if let Some(parent_accumulated) = self.accumulated_children.get_mut(&parent_id) {
                                 // Add this shape's nested_extrect to the parent's accumulated rect
                                 parent_accumulated.join(&self.nested_extrect);
                             }
                         }
                         
                         // Set the nested_extrect to the accumulated result for this shape
-                        if let Some(accumulated) = accumulated_children.get(&shape_id) {
+                        if let Some(accumulated) = self.accumulated_children.get(&shape_id) {
                             self.nested_extrect = *accumulated;
                         }
                         
