@@ -14,7 +14,7 @@ pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, a
     }
 }
 
-pub fn render_fill_drop_shadow(
+fn render_fill_drop_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,
@@ -32,7 +32,7 @@ pub fn render_fill_inner_shadows(render_state: &mut RenderState, shape: &Shape, 
     }
 }
 
-pub fn render_fill_inner_shadow(
+fn render_fill_inner_shadow(
     render_state: &mut RenderState,
     shape: &Shape,
     shadow: &Shadow,

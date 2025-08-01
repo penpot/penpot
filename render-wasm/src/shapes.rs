@@ -692,8 +692,8 @@ impl Shape {
         *self.extrect.get_or_init(|| self.calculate_extrect())
     }
 
-    /// Calculate the extended rect considering nested extended rects from the render context.
-    /// This method takes a slice of parent extended rects and joins them with the current shape's extended rect.
+    // Calculate the extended rect considering nested extended rects from the render context.
+    // This method takes a slice of parent extended rects and joins them with the current shape's extended rect.
     pub fn calculate_extrect_with_nested(
         &self,
         nested_extrects: &[crate::math::Rect],

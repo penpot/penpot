@@ -176,6 +176,11 @@ pub(crate) struct RenderState {
     // can affect its child elements if they don't specify one themselves. If the planned
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
+    // nested_shadows maintains a stack of shadows from parent containers that
+    // are inherited by child shapes during tree traversal. When entering
+    // its shadows are pushed onto this stack, and when rendering child shapes, these
+    // inherited shadows are concatenated with the shape's own shadows. The stack is popped
+    // when exiting the container to restore the previous shadow context.
     pub nested_shadows: Vec<Vec<Shadow>>,
     // nested_extrect maintains the current extended rect context that applies to nested shapes
     // This ensures that child shapes consider their parent's extended rect when calculating
@@ -562,7 +567,6 @@ impl RenderState {
                     shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 
-                // Render all shadows (own + nested) using existing logic
                 shadows::render_fill_inner_shadows(self, shape.as_ref(), antialias);
                 shadows::render_fill_drop_shadows(self, shape.as_ref(), antialias);
             }
@@ -1161,7 +1165,6 @@ impl RenderState {
 
     pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> TileRect {
         let tile_size = tiles::get_tile_size(self.get_scale());
-        println!("get_tiles_for_shape shape {:?} {:?}", shape.id, self.get_extended_rect_with_nested(shape));
         tiles::get_tiles_for_rect(self.get_extended_rect_with_nested(shape), tile_size)
     }
 
@@ -1273,7 +1276,6 @@ impl RenderState {
                         if let Some(modifier) = modifiers.get(&shape_id) {
                             shape.to_mut().apply_transform(modifier);
                         }
-                        println!("EXITING SHAPE {:?}", shape.id);
                         self.update_tile_for(&shape);
 
                         // When exiting a shape, accumulate its nested_extrect into its parent's accumulated_children
@@ -1319,8 +1321,8 @@ impl RenderState {
         self.cached_viewbox.zoom() * self.options.dpr()
     }
 
-    /// Get the extended rect of a shape considering the nested extended rect from the render context.
-    /// This method joins the shape's extended rect with the current nested extended rect.
+    // Get the extended rect of a shape considering the nested extended rect from the render context.
+    // This method joins the shape's extended rect with the current nested extended rect.
     pub fn get_extended_rect_with_nested(&self, shape: &Shape) -> crate::math::Rect {
         shape.calculate_extrect_with_nested(&[self.nested_extrect])
     }
