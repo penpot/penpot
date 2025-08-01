@@ -10,6 +10,7 @@
    [app.common.files.tokens :as cft]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.stroke :as cts]
    [app.common.types.text :as txt]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
@@ -93,8 +94,10 @@
    (when (number? value)
      (dwsh/update-shapes shape-ids
                          (fn [shape]
-                           (when (seq (:strokes shape))
-                             (assoc-in shape [:strokes 0 :stroke-width] value)))
+                           (if (seq (:strokes shape))
+                             (assoc-in shape [:strokes 0 :stroke-width] value)
+                             (let [stroke (assoc cts/default-stroke :stroke-width value)]
+                               (assoc shape :strokes [stroke]))))
                          {:reg-objects? true
                           :ignore-touched true
                           :page-id page-id

@@ -61,6 +61,7 @@
 - Keep color data when copying from info tab into CSS [Taiga #11144](https://tree.taiga.io/project/penpot/issue/11144)
 - Update HSL values to modern syntax as defined in W3C CSS Color Module Level 4 [Taiga #11144](https://tree.taiga.io/project/penpot/issue/11144)
 - Fix main component receives focus and is selected when using 'Show Main Component' [Taiga #11402](https://tree.taiga.io/project/penpot/issue/11402)
+- Fix UI theme selection from main menu [Taiga #11567](https://tree.taiga.io/project/penpot/issue/11567)
 - Fix duplicating pages with mainInstance shapes nested inside groups [Taiga #10774](https://tree.taiga.io/project/penpot/issue/10774)
 - Fix ESC key not closing Add/Manage Libraries modal [Taiga #11523](https://tree.taiga.io/project/penpot/issue/11523)
 - Fix copying a shadow color from info tab [Taiga #11211](https://tree.taiga.io/project/penpot/issue/11211)
@@ -73,15 +74,16 @@
 - Fix the context menu always closes after any action [Taiga #11624](https://tree.taiga.io/project/penpot/issue/11624)
 - Fix X & Y position do not sincronize with tokens [Taiga #11617](https://tree.taiga.io/project/penpot/issue/11617)
 - Fix tooltip position after first time [Taiga #11688](https://tree.taiga.io/project/penpot/issue/11688)
+- Fix export button width on inspect tab [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
+- Fix stroke width token application [Taiga #11724](https://tree.taiga.io/project/penpot/issue/11724)
 
-## 2.8.1 (Unreleased)
+## 2.8.1
 
 ### :bug: Bugs fixed
 
 - Fix unexpected exception on processing old texts [Github #6889](https://github.com/penpot/penpot/pull/6889)
-- Fix UI theme selection from main menu [Taiga #11567](https://tree.taiga.io/project/penpot/issue/11567)
-- Add missing migration information to file snapshots [Github #686](https://github.com/penpot/penpot/pull/6864)
 - Fix error on inspect tab when selecting multiple shapes [Taiga #11655](https://tree.taiga.io/project/penpot/issue/11655)
+- Fix missing package for the penport_exporter Docker image [GitHub #7205](https://github.com/penpot/penpot/issues/7025)
 
 ## 2.8.0
 
