@@ -468,7 +468,7 @@
         (tr "dashboard.delete-team")])]))
 
 (mf/defc sidebar-team-switch*
-  [{:keys [team profile] :as props}]
+  [{:keys [team profile]}]
   (let [teams (mf/deref refs/teams)
 
         subscription
