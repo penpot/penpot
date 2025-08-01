@@ -133,13 +133,13 @@ impl State {
 
         // We don't need to update the tile for the root shape.
         if !shape.id.is_nil() {
-            self.render_state.update_tile_for(&shape);
+            self.render_state.update_tile_for(&shape, &self.shapes);
         }
     }
 
     pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
         if let Some(shape) = self.shapes.get(&shape_id) {
-            self.render_state.update_tile_for(shape);
+            self.render_state.update_tile_for(shape, &self.shapes);
         }
     }
 
@@ -148,7 +148,7 @@ impl State {
             panic!("Invalid current shape")
         };
         if !shape.id.is_nil() {
-            self.render_state.update_tile_for(&shape.clone());
+            self.render_state.update_tile_for(&shape.clone(), &self.shapes);
         }
     }
 
