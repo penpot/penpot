@@ -21,6 +21,7 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- get-project-name
@@ -55,13 +56,12 @@
           projects))
 
 (mf/defc file-menu*
-  [{:keys [files on-edit on-menu-close top left navigate origin parent-id can-edit show]}]
+  [{:keys [files on-edit on-menu-close top left navigate origin parent-id can-edit]}]
 
   (assert (seq files) "missing `files` prop")
   (assert (fn? on-edit) "missing `on-edit` prop")
   (assert (fn? on-menu-close) "missing `on-menu-close` prop")
   (assert (boolean? navigate) "missing `navigate` prop")
-  (assert (boolean? show) "missing `show` prop")
 
   (let [is-lib-page?     (= :libraries origin)
         is-search-page?  (= :search origin)
@@ -209,6 +209,7 @@
          (partial on-export-files :legacy-zip))]
 
     (mf/with-effect []
+      (st/emit! (ptk/data-event :dropdown/open {:id "file-menu"}))
       (->> (rp/cmd! :get-all-projects)
            (rx/map group-by-team)
            (rx/subs! #(reset! teams* %))))

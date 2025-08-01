@@ -164,7 +164,7 @@
       (-> state
           (dissoc :selected-files)
           (dissoc :selected-project)
-          (update :dashboard-local dissoc :menu-pos)))))
+          (update :dashboard-local dissoc :menu-open :menu-pos)))))
 
 (defn toggle-file-select
   [{:keys [id project-id] :as file}]
@@ -180,33 +180,34 @@
           state)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Handle dropdowns
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn hide-dropdown
-  ([]
-   (ptk/reify ::hide-dropdown
-     ptk/UpdateEvent
-     (update [_ state]
-       (update state :dashboard-local assoc
-               :menu-open false
-               :menu-pos nil
-               :menu-id nil)))))
-
-(defn show-dropdown
-  ([dropdown-id] (show-dropdown dropdown-id nil))
-  ([dropdown-id pos]
-   (ptk/reify ::show-dropdown
-     ptk/UpdateEvent
-     (update [_ state]
-       (update state :dashboard-local assoc
-               :menu-open true
-               :menu-id dropdown-id
-               :menu-pos pos)))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Show grid menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn show-file-menu-with-position
+  [file-id pos]
+  (ptk/reify ::show-file-menu-with-position
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local assoc
+              :menu-open true
+              :menu-pos pos
+              :file-id file-id))))
+
+(defn show-file-menu
+  []
+  (ptk/reify ::show-file-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :menu-open true))))
+
+(defn hide-file-menu
+  []
+  (ptk/reify ::hide-file-menu
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :dashboard-local
+              assoc :menu-open false))))
 
 (defn start-edit-file-name
   [file-id]
@@ -215,7 +216,7 @@
     (update [_ state]
       (update state :dashboard-local
               assoc :edition true
-              :menu-id file-id))))
+              :file-id file-id))))
 
 (defn stop-edit-file-name
   []

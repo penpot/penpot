@@ -35,16 +35,10 @@
   [{:keys [project create-fn can-edit]}]
   (let [project-id (:id project)
 
-        dstate     (mf/deref refs/dashboard-local)
-        show-menu? (boolean (and (:menu-open dstate)
-                                 (= (:menu-id dstate) "dropdown-files-menu")))
-
-        menu-pos
-        (get dstate :menu-pos)
-
         local
         (mf/use-state
-         {:edition false})
+         {:menu-open false
+          :edition false})
 
         on-create-click
         (mf/use-fn
@@ -56,21 +50,15 @@
         on-menu-click
         (mf/use-fn
          (fn [event]
-           (dom/stop-propagation event)
-           (let [client-position
-                 (dom/get-client-position event)]
-             (st/emit! (dd/show-dropdown "dropdown-files-menu" client-position)))))
+           (let [position (dom/get-client-position event)]
+             (dom/prevent-default event)
+             (swap! local assoc :menu-open true :menu-pos position))))
 
         on-menu-close
-        (mf/use-fn
-         (fn [_]
-           (st/emit! (dd/hide-dropdown))))
+        (mf/use-fn #(swap! local assoc :menu-open false))
 
         on-edit
-        (mf/use-fn
-         (fn [_]
-           (swap! local assoc :edition true)
-           (st/emit! (dd/hide-dropdown))))
+        (mf/use-fn #(swap! local assoc :edition true :menu-open false))
 
         toggle-pin
         (mf/use-fn
@@ -136,9 +124,9 @@
 
       (when ^boolean can-edit
         [:> project-menu* {:project project
-                           :show show-menu?
-                           :left (- (:x menu-pos) 180)
-                           :top (:y menu-pos)
+                           :show (:menu-open @local)
+                           :left (- (:x (:menu-pos @local)) 180)
+                           :top (:y (:menu-pos @local))
                            :on-edit on-edit
                            :on-menu-close on-menu-close
                            :on-import on-import}])]]))
