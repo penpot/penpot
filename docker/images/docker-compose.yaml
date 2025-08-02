@@ -75,7 +75,7 @@ services:
     image: "penpotapp/frontend:${PENPOT_VERSION:-latest}"
     restart: always
     ports:
-      - 9001:8080
+      - 9001:80
 
     volumes:
       - penpot_assets:/opt/data/assets
