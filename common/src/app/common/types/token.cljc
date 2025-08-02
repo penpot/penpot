@@ -30,22 +30,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
-  {:boolean        "boolean"
-   :border-radius  "borderRadius"
-   :color          "color"
-   :dimensions     "dimension"
-   :font-family    "fontFamilies"
-   :font-size      "fontSizes"
-   :letter-spacing "letterSpacing"
-   :text-case      "textCase"
-   :number         "number"
-   :opacity        "opacity"
-   :other          "other"
-   :rotation       "rotation"
-   :sizing         "sizing"
-   :spacing        "spacing"
-   :string         "string"
-   :stroke-width   "strokeWidth"})
+  {:boolean         "boolean"
+   :border-radius   "borderRadius"
+   :color           "color"
+   :dimensions      "dimension"
+   :font-family     "fontFamilies"
+   :font-size       "fontSizes"
+   :letter-spacing  "letterSpacing"
+   :text-case       "textCase"
+   :text-decoration "textDecoration"
+   :number          "number"
+   :opacity         "opacity"
+   :other           "other"
+   :rotation        "rotation"
+   :sizing          "sizing"
+   :spacing         "spacing"
+   :string          "string"
+   :stroke-width    "strokeWidth"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
@@ -170,10 +171,17 @@
 
 (def text-case-keys (schema-keys schema:text-case))
 
+(def ^:private schema:text-decoration
+  [:map
+   [:text-decoration {:optional true} token-name-ref]])
+
+(def text-decoration-keys (schema-keys schema:text-decoration))
+
 (def typography-keys (set/union font-size-keys
                                 letter-spacing-keys
                                 font-family-keys
-                                text-case-keys))
+                                text-case-keys
+                                text-decoration-keys))
 
 ;; TODO: Created to extract the font-size feature from the typography feature flag.
 ;; Delete this once the typography feature flag is removed.
@@ -212,6 +220,7 @@
    schema:letter-spacing
    schema:font-family
    schema:text-case
+   schema:text-decoration
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -243,6 +252,7 @@
      (letter-spacing-keys shape-attr) #{shape-attr}
      (font-family-keys shape-attr) #{shape-attr}
      (text-case-keys shape-attr) #{shape-attr}
+     (text-decoration-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

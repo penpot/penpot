@@ -175,6 +175,24 @@
       :else
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-text-case value)]})))
 
+(defn- parse-sd-token-text-decoration-value
+  "Parses `value` of a text-decoration `sd-token` into a map like `{:value \"underline\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`."
+  [value]
+  (let [normalized-value (str/lower (str/trim value))
+        valid? (contains? #{"none" "underline" "strike-through"} normalized-value)
+        references (seq (ctob/find-token-value-references value))]
+    (cond
+      valid?
+      {:value normalized-value}
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-text-decoration value)]})))
+
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
   The `get-origin-token` argument should be a function that takes an
@@ -218,6 +236,7 @@
                                 :opacity (parse-sd-token-opacity-value value has-references?)
                                 :stroke-width (parse-sd-token-stroke-width-value value has-references?)
                                 :text-case (parse-sd-token-text-case-value value)
+                                :text-decoration (parse-sd-token-text-decoration-value value)
                                 :number (parse-sd-token-number-value value)
                                 (parse-sd-token-general-value value))
            output-token (cond (:errors parsed-token-value)

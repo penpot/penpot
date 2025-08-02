@@ -307,6 +307,15 @@
    (when (string? value)
      (generate-text-shape-update {:text-transform value} shape-ids page-id))))
 
+(defn update-text-decoration
+  ([value shape-ids attributes] (update-text-decoration value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (when (string? value)
+     (let [css-value (case value
+                       "strike-through" "line-through"
+                       value)]
+       (generate-text-shape-update {:text-decoration css-value} shape-ids page-id)))))
+
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
 (defn apply-token
@@ -480,6 +489,14 @@
     :modal {:key :tokens/text-case
             :fields [{:label "Text Case"
                       :key :text-case}]}}
+
+   :text-decoration
+   {:title "Text Decoration"
+    :attributes ctt/text-decoration-keys
+    :on-update-shape update-text-decoration
+    :modal {:key :tokens/text-decoration
+            :fields [{:label "Text Decoration"
+                      :key :text-decoration}]}}
 
    :stroke-width
    {:title "Stroke Width"

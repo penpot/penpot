@@ -76,6 +76,10 @@
    {:error/code :error.style-dictionary/invalid-token-value-text-case
     :error/fn #(tr "workspace.tokens.invalid-text-case-token-value" %)}
 
+   :error.style-dictionary/invalid-token-value-text-decoration
+   {:error/code :error.style-dictionary/invalid-token-value-text-decoration
+    :error/fn #(tr "workspace.tokens.invalid-text-decoration-token-value" %)}
+
    :error/unknown
    {:error/code :error/unknown
     :error/fn #(tr "labels.unknown-error")}})
