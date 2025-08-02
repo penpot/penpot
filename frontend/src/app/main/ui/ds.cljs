@@ -27,20 +27,19 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.ds.notifications.shared.notification-pill :refer [notification-pill*]]
    [app.main.ui.ds.notifications.toast :refer [toast*]]
-   [app.main.ui.ds.product.autosaved-milestone :refer [autosaved-milestone*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
-   [app.main.ui.ds.product.user-milestone :refer [user-milestone*]]
+   [app.main.ui.ds.product.milestone :refer [milestone*]]
+   [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
    [app.main.ui.ds.storybook :as sb]
    [app.main.ui.ds.tooltip.tooltip :refer [tooltip*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.i18n :as i18n]
    [rumext.v2 :as mf]))
-
 
 (i18n/init! cf/translations)
 
@@ -72,8 +71,8 @@
     :Swatch swatch*
     :Cta cta*
     :Avatar avatar*
-    :AutosavedMilestone autosaved-milestone*
-    :UserMilestone user-milestone*
+    :Milestone milestone*
+    :MilestoneGroup milestone-group*
     :Date date*
     ;; meta / misc
     :meta

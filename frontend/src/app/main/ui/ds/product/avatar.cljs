@@ -9,37 +9,44 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.common.schema :as sm]
+   [app.common.types.profile :refer [schema:profile]]
+   [app.config :as cfg]
    [app.util.avatars :as avatars]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [rumext.v2.util :as mfu]))
 
 (def ^:private schema:avatar
   [:map
    [:class {:optional true} :string]
    [:tag {:optional true} :string]
-   [:name {:optional true} [:maybe :string]]
-   [:url {:optional true} [:maybe :string]]
-   [:color {:optional true} [:maybe :string]]
+   [:profile schema:profile]
    [:selected {:optional true} :boolean]
    [:variant {:optional true}
     [:maybe [:enum "S" "M" "L"]]]])
 
-(mf/defc avatar*
-  {::mf/schema schema:avatar}
+(defn- get-url
+  [{:keys [photo-url photo-id fullname]}]
+  (or photo-url
+      (some-> photo-id cfg/resolve-media)
+      (avatars/generate {:name fullname})))
 
-  [{:keys [tag class name color url selected variant] :rest props}]
-  (let [variant (or variant "S")
-        url     (if (and (some? url) (d/not-empty? url))
-                  url
-                  (avatars/generate {:name name :color color}))]
-    [:> (or tag "div")
-     {:class (d/append-class
-              class
-              (stl/css-case :avatar true
-                            :avatar-small (= variant "S")
-                            :avatar-medium (= variant "M")
-                            :avatar-large (= variant "L")
-                            :is-selected selected))
-      :style {"--avatar-color" color}
-      :title name}
+(mf/defc avatar*
+  {::mf/schema (sm/schema schema:avatar)}
+  [{:keys [tag class profile selected variant]}]
+  (let [variant (d/nilv variant "S")
+        profile (if (object? profile)
+                  (mfu/bean profile)
+                  profile)
+        href    (mf/with-memo [profile]
+                  (get-url profile))
+        class'  (stl/css-case :avatar true
+                              :avatar-small (= variant "S")
+                              :avatar-medium (= variant "M")
+                              :avatar-large (= variant "L")
+                              :is-selected selected)]
+    [:> (d/nilv tag "div")
+     {:class [class class']
+      :title (:fullname profile)}
      [:div {:class (stl/css :avatar-image)}
-      [:img {:alt name :src url}]]]))
+      [:img {:alt (:fullname profile) :src href}]]]))
