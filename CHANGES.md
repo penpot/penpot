@@ -54,6 +54,7 @@
 - Fix the context menu always closes after any action [Taiga #11624](https://tree.taiga.io/project/penpot/issue/11624)
 - Fix X & Y position do not sincronize with tokens [Taiga #11617](https://tree.taiga.io/project/penpot/issue/11617)
 - Fix tooltip position after first time [Taiga #11688](https://tree.taiga.io/project/penpot/issue/11688)
+- Fix inconsistent ordering of pinned projects on dashboard sidebar [Taiga #11674](https://tree.taiga.io/project/penpot/issue/11674)
 - Fix export button width on inspect tab [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
 - Fix stroke width token application [Taiga #11724](https://tree.taiga.io/project/penpot/issue/11724)
 - Fix number token application on shape [Taiga #11331](https://tree.taiga.io/project/penpot/task/11331)
