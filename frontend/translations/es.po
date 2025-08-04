@@ -7236,6 +7236,10 @@ msgstr "No existen tokens, temas o sets para exportar."
 msgid "workspace.tokens.text-case-value-enter"
 msgstr "Introduce una capitalización: none | Uppercase | Lowercase | Capitalize"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:799
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Introduce text decoration: none | underline | strike-through"
+
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
 msgstr "Previsualizar:"
