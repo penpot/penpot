@@ -100,7 +100,7 @@
   (pbh/create :permits (or (:permits config) (:concurrency config))
               :queue (or (:queue config) (:queue-size config))
               :timeout (:timeout config)
-              :type :semaphore))
+              :executor :virtual))
 
 (defn- create-cache
   [{:keys [::wrk/executor]}]
