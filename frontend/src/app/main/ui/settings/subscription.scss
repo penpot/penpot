@@ -251,6 +251,8 @@
   list-style-type: disc;
   margin-inline-start: var(--sp-xl);
   margin-block: var(--sp-xxl);
+  max-height: $s-216;
+  overflow-y: auto;
 }
 
 .input-field {

@@ -202,7 +202,7 @@
              "canceled"
              "incomplete"
              "incomplete_expired"
-             "pass_due"
+             "past_due"
              "paused"
              "trialing"
              "unpaid"]]

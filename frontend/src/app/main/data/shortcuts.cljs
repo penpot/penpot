@@ -148,18 +148,17 @@
 
 (defn- bind!
   [shortcuts]
-  (let [msbind (fn [command callback type]
-                 (let [command (if (vector? command)
+  (->> shortcuts
+       (remove #(:disabled (second %)))
+       (run! (fn [[key {:keys [command fn type overwrite]}]]
+               (let [callback  (wrap-cb key fn)
+                     undefined (js* "(void 0)")
+                     commands  (if (vector? command)
                                  (into-array command)
-                                 command)]
-                   (if type
-                     (mousetrap/bind command callback type)
-                     (mousetrap/bind command callback))))]
-    (->> shortcuts
-         (remove #(:disabled (second %)))
-         (run! (fn [[key {:keys [command fn type]}]]
-                 (let [callback (wrap-cb key fn)]
-                   (msbind command callback type)))))))
+                                 #js [command])]
+                 (if type
+                   (mousetrap/bind commands callback type overwrite)
+                   (mousetrap/bind commands callback undefined overwrite)))))))
 
 (defn- reset!
   ([]
