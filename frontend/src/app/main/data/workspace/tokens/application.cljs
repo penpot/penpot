@@ -350,9 +350,12 @@
                                       [])
 
                         resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
-                        tokenized-attributes (cft/attributes-map attributes token)]
+                        tokenized-attributes (cft/attributes-map attributes token)
+                        type (:type token)]
                     (rx/of
-                     (st/emit! (ptk/event ::ev/event {::ev/name "apply-tokens"}))
+                     (st/emit! (ev/event {::ev/name "apply-tokens"
+                                          :type type
+                                          :applyed-to attributes}))
                      (dwu/start-undo-transaction undo-id)
                      (dwsh/update-shapes shape-ids (fn [shape]
                                                      (cond-> shape

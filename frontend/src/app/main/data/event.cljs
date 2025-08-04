@@ -79,14 +79,29 @@
 (defprotocol Event
   (-data [_] "Get event data"))
 
+(defn- coerce-to-string
+  [v]
+  (cond
+    (keyword? v)
+    (name v)
+    (string? v)
+    v
+    (nil? v)
+    nil
+    :else
+    (str v)))
+
+(def ^:private xf:coerce-to-string
+  (keep coerce-to-string))
+
 (defn- simplify-props
   "Removes complex data types from props."
   [data]
   (reduce-kv (fn [data k v]
                (cond
                  (map? v)    (assoc data k :placeholder/map)
-                 (vector? v) (assoc data k :placeholder/vec)
-                 (set? v)    (assoc data k :placeholder/set)
+                 (vector? v) (assoc data k (into [] xf:coerce-to-string v))
+                 (set? v)    (assoc data k (into [] xf:coerce-to-string v))
                  (coll? v)   (assoc data k :placeholder/coll)
                  (fn? v)     (assoc data k :placeholder/fn)
                  (nil? v)    (dissoc data k)

@@ -7609,6 +7609,10 @@ msgstr "Type '%s' is not supported (%s)\n"
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
 
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.tokens.more-options"
+msgstr "Right click to see options"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61
 msgid "workspace.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
