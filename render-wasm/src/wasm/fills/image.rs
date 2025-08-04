@@ -12,7 +12,7 @@ pub struct RawImageFillData {
     d: u32,
     opacity: u8,
     flags: u8,
-    _padding: u16, // reserved for future use
+    // 16-bit padding here, reserved for future use
     width: i32,
     height: i32,
 }
