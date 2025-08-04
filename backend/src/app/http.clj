@@ -69,6 +69,7 @@
                  :http/host host
                  :http/max-body-size (::max-body-size cfg)
                  :http/max-multipart-body-size (::max-multipart-body-size cfg)
+                 :xnio/direct-buffers false
                  :xnio/io-threads (or (::io-threads cfg)
                                       (max 3 (px/get-available-processors)))
                  :xnio/dispatch :virtual
