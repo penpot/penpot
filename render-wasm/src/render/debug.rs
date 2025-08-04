@@ -1,5 +1,11 @@
 use crate::shapes::Shape;
+use crate::state::ShapesPool;
+use crate::uuid::Uuid;
+
+use crate::math::Matrix;
 use skia_safe::{self as skia, Rect};
+
+use std::collections::HashMap;
 
 use super::{tiles, RenderState, SurfaceId};
 
@@ -58,7 +64,13 @@ pub fn render_wasm_label(render_state: &mut RenderState) {
     canvas.draw_str(str, p, debug_font, &paint);
 }
 
-pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, intersected: bool) {
+pub fn render_debug_shape(
+    render_state: &mut RenderState,
+    element: &Shape,
+    intersected: bool,
+    shapes_pool: &ShapesPool,
+    modifiers: &HashMap<Uuid, Matrix>,
+) {
     let mut paint = skia::Paint::default();
     paint.set_style(skia::PaintStyle::Stroke);
     paint.set_color(if intersected {
@@ -68,7 +80,7 @@ pub fn render_debug_shape(render_state: &mut RenderState, element: &Shape, inter
     });
     paint.set_stroke_width(1.);
 
-    let rect = get_debug_rect(element.extrect());
+    let rect = get_debug_rect(element.extrect(shapes_pool, modifiers));
     render_state
         .surfaces
         .canvas(SurfaceId::Debug)

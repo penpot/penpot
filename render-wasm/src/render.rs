@@ -896,7 +896,7 @@ impl RenderState {
             // If the shape is not in the tile set, then we update
             // it.
             if self.tiles.get_tiles_of(node_id).is_none() {
-                self.update_tile_for(element);
+                self.update_tile_for(element, tree, modifiers);
             }
 
             if visited_children {
@@ -916,12 +916,24 @@ impl RenderState {
                     transformed_element.to_mut().apply_transform(modifier);
                 }
 
-                let is_visible = transformed_element.extrect().intersects(self.render_area)
+                let is_visible = transformed_element
+                    .extrect(tree, modifiers)
+                    .intersects(self.render_area)
                     && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(self.get_scale());
+                    && !transformed_element.visually_insignificant(
+                        self.get_scale(),
+                        tree,
+                        modifiers,
+                    );
 
                 if self.options.is_debug_visible() {
-                    debug::render_debug_shape(self, &transformed_element, is_visible);
+                    debug::render_debug_shape(
+                        self,
+                        &transformed_element,
+                        is_visible,
+                        tree,
+                        modifiers,
+                    );
                 }
 
                 if !is_visible {
@@ -1040,7 +1052,6 @@ impl RenderState {
                 }
             }
 
-            // println!("clear current {:?}", self.current_tile);
             self.surfaces
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
@@ -1097,13 +1108,23 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn get_tiles_for_shape(&mut self, shape: &Shape) -> TileRect {
+    pub fn get_tiles_for_shape(
+        &mut self,
+        shape: &Shape,
+        tree: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> TileRect {
         let tile_size = tiles::get_tile_size(self.get_scale());
-        tiles::get_tiles_for_rect(shape.extrect(), tile_size)
+        tiles::get_tiles_for_rect(shape.extrect(tree, modifiers), tile_size)
     }
 
-    pub fn update_tile_for(&mut self, shape: &Shape) {
-        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape);
+    pub fn update_tile_for(
+        &mut self,
+        shape: &Shape,
+        tree: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) {
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree, modifiers);
         let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
             .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
             .collect();
@@ -1144,7 +1165,7 @@ impl RenderState {
                     if let Some(modifier) = modifiers.get(&shape_id) {
                         shape.to_mut().apply_transform(modifier);
                     }
-                    self.update_tile_for(&shape);
+                    self.update_tile_for(&shape, tree, modifiers);
                 } else {
                     // We only need to rebuild tiles from the first level.
                     let children = shape.modified_children_ids(structure.get(&shape.id), false);
@@ -1174,7 +1195,7 @@ impl RenderState {
                     if let Some(modifier) = modifiers.get(&shape_id) {
                         shape.to_mut().apply_transform(modifier);
                     }
-                    self.update_tile_for(&shape);
+                    self.update_tile_for(&shape, tree, modifiers);
                 }
 
                 let children = shape.modified_children_ids(structure.get(&shape.id), false);
@@ -1186,13 +1207,52 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles");
     }
 
-    pub fn rebuild_modifier_tiles(&mut self, tree: &ShapesPool, modifiers: &HashMap<Uuid, Matrix>) {
-        for (uuid, matrix) in modifiers {
-            if let Some(shape) = tree.get(uuid) {
-                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
-                shape.to_mut().apply_transform(matrix);
-                self.update_tile_for(&shape);
+    /// Processes all ancestors of a shape, invalidating their extended rectangles and updating their tiles
+    ///
+    /// When a shape changes, all its ancestors need to have their extended rectangles recalculated
+    /// because they may contain the changed shape. This function:
+    /// 1. Invalidates the extrect cache for each ancestor
+    /// 2. Updates the tiles for each ancestor to ensure proper rendering
+    pub fn process_shape_ancestors(
+        &mut self,
+        shape: &Shape,
+        tree: &mut ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) {
+        for ancestor in shape.all_ancestors(tree, false) {
+            if let Some(ancestor) = tree.get_mut(&ancestor) {
+                ancestor.invalidate_extrect();
             }
+            if let Some(ancestor) = tree.get(&ancestor) {
+                if !ancestor.id.is_nil() {
+                    self.update_tile_for(ancestor, tree, modifiers);
+                }
+            }
+        }
+    }
+
+    /// Rebuilds tiles for shapes with modifiers and processes their ancestors
+    ///
+    /// This function applies transformation modifiers to shapes and updates their tiles.
+    /// Additionally, it processes all ancestors of modified shapes to ensure their
+    /// extended rectangles are properly recalculated and their tiles are updated.
+    /// This is crucial for frames and groups that contain transformed children.
+    pub fn rebuild_modifier_tiles(
+        &mut self,
+        tree: &mut ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) {
+        for (uuid, matrix) in modifiers {
+            let mut shape = {
+                let Some(shape) = tree.get(uuid) else {
+                    panic!("Invalid current shape")
+                };
+                shape.clone()
+            };
+
+            shape.apply_transform(matrix);
+            self.update_tile_for(&shape, tree, modifiers);
+            self.process_shape_ancestors(&shape, tree, modifiers);
         }
     }
 
