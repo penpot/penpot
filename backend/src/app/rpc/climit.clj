@@ -100,7 +100,7 @@
   (pbh/create :permits (or (:permits config) (:concurrency config))
               :queue (or (:queue config) (:queue-size config))
               :timeout (:timeout config)
-              :executor :virtual))
+              :type :semaphore))
 
 (defn- create-cache
   [{:keys [::wrk/executor]}]
@@ -178,12 +178,12 @@
         (measure metrics mlabels stats nil)
         (log "enqueued" req-id stats limit-id limit-label limit-params nil))
 
-      (px/invoke! limiter (fn []
-                            (let [elapsed (tpoint)
-                                  stats   (pbh/get-stats limiter)]
-                              (measure metrics mlabels stats elapsed)
-                              (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
-                              (handler))))
+      (pbh/invoke! limiter (fn []
+                             (let [elapsed (tpoint)
+                                   stats   (pbh/get-stats limiter)]
+                               (measure metrics mlabels stats elapsed)
+                               (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
+                               (handler))))
 
       (catch ExceptionInfo cause
         (let [{:keys [type code]} (ex-data cause)]
