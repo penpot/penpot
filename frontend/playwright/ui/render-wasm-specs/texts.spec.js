@@ -27,6 +27,21 @@ async function mockGetJapaneseFont(workspace) {
   );
 }
 
+async function mockGetSymbolsFont(workspace) {
+  await workspace.mockGetAsset(
+    /notosanssymbols.*\.ttf$/,
+    "render-wasm/assets/notosanssymbolssubset.ttf"
+  );
+  await workspace.mockGetAsset(
+    /notosanssymbols2.*\.ttf$/,
+    "render-wasm/assets/notosanssymbols2subset.ttf"
+  );
+  await workspace.mockGetAsset(
+    /notomusic.*\.ttf$/,
+    "render-wasm/assets/notomusicsubset.ttf"
+  );
+}
+
 
 test("Renders a file with texts", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
@@ -139,6 +154,22 @@ test("Renders a file with texts with images", async ({ page }) => {
   await workspace.goToWorkspace({
     id: "6bd7c17d-4f59-815e-8006-5e96453952b0",
     pageId: "6bd7c17d-4f59-815e-8006-5e96453952b1",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with texts with emoji and different symbols", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await mockGetEmojiFont(workspace);
+  await mockGetSymbolsFont(workspace);
+
+  await workspace.mockGetFile("render-wasm/get-file-text-symbols.json");
+
+  await workspace.goToWorkspace({
+    id: "74d31005-5d0c-81fe-8006-949a8226e8c4",
+    pageId: "74d31005-5d0c-81fe-8006-949a8226e8c5",
   });
   await workspace.waitForFirstRender();
   await expect(workspace.canvas).toHaveScreenshot();
