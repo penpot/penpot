@@ -107,7 +107,7 @@ test("User creates a variant", async ({ page }) => {
 
   // The design tab shows the variant properties
   await expect(
-    workspacePage.page.getByTitle("Property1: Value 1, Value 2"),
+    workspacePage.page.getByTitle("Property 1: Value 1, Value 2"),
   ).toBeVisible();
 });
 

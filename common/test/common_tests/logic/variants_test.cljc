@@ -204,7 +204,7 @@
     (t/is (= (count (:variant-properties comp01')) 1))
     (t/is (= (count (:variant-properties comp02)) 2))
     (t/is (= (count (:variant-properties comp02')) 1))
-    (t/is (= (-> comp01' :variant-properties first :name) "Property2"))))
+    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))))
 
 (t/deftest test-update-property-value
   (let [;; ==== Setup
