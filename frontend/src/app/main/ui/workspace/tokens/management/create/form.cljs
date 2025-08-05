@@ -795,10 +795,9 @@
 
 (mf/defc text-decoration-form*
   [{:keys [token] :rest props}]
-  (let [placeholder (tr "workspace.tokens.text-decoration-value-enter")]
-    [:> form*
-     (mf/spread-props props {:token token
-                             :input-placeholder placeholder})]))
+  [:> form*
+   (mf/spread-props props {:token token
+                           :input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})])
 
 (mf/defc form-wrapper*
   [{:keys [token token-type] :as props}]
