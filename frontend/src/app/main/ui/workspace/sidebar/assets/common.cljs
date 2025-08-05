@@ -443,7 +443,8 @@
              (st/emit! (dwv/transform-in-variant id))))
 
         do-add-new-property
-        #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"}))
+        #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"
+                                                     :editing? true}))
 
         do-show-local-component
         #(st/emit! (dwl/go-to-local-component :id component-id))

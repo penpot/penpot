@@ -27,7 +27,12 @@
     (reduce (fn [changes component]
               (pcb/update-component
                changes (:id component)
-               #(assoc-in % [:variant-properties pos :name] new-name)
+               (fn [component]
+                 (d/update-in-when component [:variant-properties pos]
+                                   (fn [property]
+                                     (-> property
+                                         (assoc :name new-name)
+                                         (with-meta nil)))))
                {:apply-changes-local-library? true}))
             changes
             related-components)))
@@ -77,7 +82,7 @@
 
 
 (defn generate-add-new-property
-  [changes variant-id & {:keys [fill-values? property-name property-value]}]
+  [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
         related-components (cfv/find-variant-components data objects variant-id)
@@ -89,15 +94,18 @@
         prop-names         (mapv :name props)
         property-name      (ctv/update-number-in-repeated-item prop-names property-name)
 
+        mdata              (if editing? {:editing? true} nil)
+
         [_ changes]
         (reduce (fn [[num changes] component]
                   (let [main-id      (:main-instance-id component)
 
                         update-props #(-> (d/nilv % [])
-                                          (conj {:name property-name
-                                                 :value (cond fill-values?   (str ctv/value-prefix num)
-                                                              property-value property-value
-                                                              :else          "")}))
+                                          (conj (with-meta {:name property-name
+                                                            :value (cond fill-values?   (str ctv/value-prefix num)
+                                                                         property-value property-value
+                                                                         :else          "")}
+                                                  mdata)))
 
                         update-name #(cond fill-values?   (if (str/empty? %)
                                                             (str ctv/value-prefix num)
