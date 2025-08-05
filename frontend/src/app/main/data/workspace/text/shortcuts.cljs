@@ -205,11 +205,14 @@
                          (filter cfh/text-shape?)
                          (not-empty))
 
+        ;; Check if we're actually editing text content (not just selecting text shapes)
+        editing-text? (some? (deref refs/workspace-editor))
+
         props       (if (> (count text-shapes) 1)
                       (blend-props text-shapes props)
                       props)]
 
-    (when (and can-edit? (not read-only?) text-shapes)
+    (when (and can-edit? (not read-only?) text-shapes editing-text?)
       (st/emit! (dwu/start-undo-transaction undo-id))
       (run! #(update-attrs % props) text-shapes)
       (st/emit! (dwu/commit-undo-transaction undo-id)))))
