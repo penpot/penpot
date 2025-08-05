@@ -148,7 +148,7 @@
     (when (some? instance)
       (st/emit! (dwt/focus-editor)))
 
-    ;; This function is called when the component is unmount
+    ;; This function is called when the component is unmounted
     (fn []
       (.removeEventListener ^js global/document "keyup" on-key-up)
       (.removeEventListener ^js instance "blur" on-blur)
