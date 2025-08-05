@@ -86,6 +86,7 @@
         start-y (:start-y gradient)
         end-x   (:end-x gradient)
         end-y   (:end-y gradient)
+        alpha   (mth/floor (* opacity 0xff))
         width   (:width gradient 0)
         stops   (into [] xf:take-stops (:stops gradient))
         type    (if (= (:type gradient) :linear)
@@ -97,7 +98,7 @@
     (buf/write-float buffer (+ offset 8)  start-y)
     (buf/write-float buffer (+ offset 12) end-x)
     (buf/write-float buffer (+ offset 16) end-y)
-    (buf/write-float buffer (+ offset 20) opacity)
+    (buf/write-byte  buffer (+ offset 20) alpha)
     (buf/write-float buffer (+ offset 24) width)
     (buf/write-byte  buffer (+ offset 28) (count stops))
 
@@ -121,13 +122,16 @@
   (let [image-id     (get image :id)
         image-width  (get image :width)
         image-height (get image :height)
-        keep-aspect-ratio   (get image :keep-aspect-ratio false)]
+        alpha      (mth/floor (* opacity 0xff))
+        keep-aspect-ratio  (if (get image :keep-aspect-ratio false) 0x01 0x00)
+        flags        (bit-or keep-aspect-ratio 0x00)]
     (buf/write-byte  buffer (+ offset  0) 0x03)
     (buf/write-uuid  buffer (+ offset  4) image-id)
-    (buf/write-float buffer (+ offset 20) opacity)
+    (buf/write-byte  buffer (+ offset 20) alpha)
+    (buf/write-byte  buffer (+ offset 21) flags)
+    (buf/write-short buffer (+ offset 22) 0) ;; 2-byte padding (reserved for future use)
     (buf/write-int   buffer (+ offset 24) image-width)
     (buf/write-int   buffer (+ offset 28) image-height)
-    (buf/write-bool  buffer (+ offset 32) keep-aspect-ratio)
     (+ offset FILL-BYTE-SIZE)))
 
 (defn- write-metadata
@@ -180,9 +184,10 @@
                         start-y (buf/read-float dbuffer (+ doffset 8))
                         end-x   (buf/read-float dbuffer (+ doffset 12))
                         end-y   (buf/read-float dbuffer (+ doffset 16))
-                        alpha   (buf/read-float dbuffer (+ doffset 20))
+                        alpha   (buf/read-unsigned-byte dbuffer (+ doffset 20))
                         width   (buf/read-float dbuffer (+ doffset 24))
                         stops   (buf/read-byte  dbuffer (+ doffset 28))
+                        opacity (mth/precision (/ alpha 0xff) 2)
                         type    (if (= type 1)
                                   :linear
                                   :radial)
@@ -193,7 +198,7 @@
                                            (conj result (read-stop dbuffer (+ doffset 32 (* GRADIENT-STOP-SIZE index)))))
                                     result))]
 
-                    {:fill-opacity alpha
+                    {:fill-opacity opacity
                      :fill-color-gradient {:start-x start-x
                                            :start-y start-y
                                            :end-x end-x
@@ -202,20 +207,22 @@
                                            :stops stops
                                            :type type}})
 
-                  3
-                  (let [ratio  (buf/read-bool  dbuffer (+ doffset 32))
-                        id     (buf/read-uuid  dbuffer (+ doffset 4))
-                        alpha  (buf/read-float dbuffer (+ doffset 20))
-                        width  (buf/read-int   dbuffer (+ doffset 24))
-                        height (buf/read-int   dbuffer (+ doffset 28))
-                        mtype  (buf/read-short mbuffer (+ moffset 2))
-                        mtype  (case mtype
-                                 0x01 "image/jpeg"
-                                 0x02 "image/png"
-                                 0x03 "image/gif"
-                                 0x04 "image/webp"
-                                 0x05 "image/svg+xml")]
-                    {:fill-opacity alpha
+                  3 ;; image fill
+                  (let [id      (buf/read-uuid  dbuffer (+ doffset 4))
+                        alpha   (buf/read-unsigned-byte dbuffer (+ doffset 20))
+                        opacity (mth/precision (/ alpha 0xff) 2)
+                        flags   (buf/read-unsigned-byte dbuffer (+ doffset 21))
+                        ratio   (boolean (bit-and flags 0x01))
+                        width   (buf/read-int   dbuffer (+ doffset 24))
+                        height  (buf/read-int   dbuffer (+ doffset 28))
+                        mtype   (buf/read-short mbuffer (+ moffset 2))
+                        mtype   (case mtype
+                                  0x01 "image/jpeg"
+                                  0x02 "image/png"
+                                  0x03 "image/gif"
+                                  0x04 "image/webp"
+                                  0x05 "image/svg+xml")]
+                    {:fill-opacity opacity
                      :fill-image {:id id
                                   :width width
                                   :height height

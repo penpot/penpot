@@ -10,7 +10,8 @@ pub struct RawGradientData {
     start_y: f32,
     end_x: f32,
     end_y: f32,
-    opacity: f32,
+    opacity: u8,
+    // 24-bit padding here, reserved for future use
     width: f32,
     stop_count: u8,
     stops: [RawStopData; MAX_GRADIENT_STOPS],
@@ -55,7 +56,7 @@ impl From<RawGradientData> for Gradient {
         Gradient::new(
             raw_gradient.start(),
             raw_gradient.end(),
-            (raw_gradient.opacity * 255.) as u8,
+            raw_gradient.opacity,
             raw_gradient.width,
             &stops,
         )

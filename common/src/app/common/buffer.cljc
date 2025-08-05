@@ -21,6 +21,13 @@
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(long (.get ~target ~offset)))))
 
+(defmacro read-unsigned-byte
+  [target offset]
+  (if (:ns &env)
+    `(.getUint8 ~target ~offset true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(bit-and (long (.get ~target ~offset)) 0xff))))
+
 (defmacro read-bool
   [target offset]
   (if (:ns &env)
