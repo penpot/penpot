@@ -231,7 +231,8 @@
     ::http/router                  (ig/ref ::http/router)
     ::http/io-threads              (cf/get :http-server-io-threads)
     ::http/max-body-size           (cf/get :http-server-max-body-size)
-    ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)}
+    ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)
+    ::wrk/executor                 (ig/ref ::wrk/executor)}
 
    ::ldap/provider
    {:host           (cf/get :ldap-host)
