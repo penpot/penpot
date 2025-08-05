@@ -310,11 +310,18 @@
 (defn update-text-decoration
   ([value shape-ids attributes] (update-text-decoration value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (when (string? value)
+   (when (ctt/valid-text-decoration value)
      (let [css-value (case value
                        "strike-through" "line-through"
                        value)]
        (generate-text-shape-update {:text-decoration css-value} shape-ids page-id)))))
+
+(defn update-text-decoration-interactive
+  ([value shape-ids attributes] (update-text-decoration-interactive value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (when (ctt/valid-text-decoration value)
+     (st/emit! (ptk/data-event :expand-text-more-options))
+     (update-text-decoration value shape-ids attributes page-id))))
 
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
@@ -496,7 +503,7 @@
    :text-decoration
    {:title "Text Decoration"
     :attributes ctt/text-decoration-keys
-    :on-update-shape update-text-decoration
+    :on-update-shape update-text-decoration-interactive
     :modal {:key :tokens/text-decoration
             :fields [{:label "Text Decoration"
                       :key :text-decoration}]}}

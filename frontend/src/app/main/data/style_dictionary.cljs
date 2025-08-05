@@ -12,6 +12,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
@@ -179,12 +180,11 @@
   "Parses `value` of a text-decoration `sd-token` into a map like `{:value \"underline\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [normalized-value (str/lower (str/trim value))
-        valid? (contains? #{"none" "underline" "strike-through"} normalized-value)
+  (let [valid-text-decoration (ctt/valid-text-decoration value)
         references (seq (ctob/find-token-value-references value))]
     (cond
-      valid?
-      {:value normalized-value}
+      valid-text-decoration
+      {:value valid-text-decoration}
 
       references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]

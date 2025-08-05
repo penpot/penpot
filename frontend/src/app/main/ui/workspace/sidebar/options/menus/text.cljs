@@ -22,12 +22,16 @@
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
-   [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry text-options]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options
+                                                                   typography-entry]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.text.ui :as txu]
    [app.util.timers :as ts]
+   [beicon.v2.core :as rx]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc text-align-options
@@ -270,6 +274,11 @@
          (fn [changes]
            (st/emit! (dwl/update-typography (merge typography changes) file-id))))
 
+        expand-stream
+        (mf/with-memo []
+          (->> st/stream
+               (rx/filter (ptk/type? :expand-text-more-options))))
+
         multiple? (->> values vals (d/seek #(= % :multiple)))
 
         opts #js {:ids ids
@@ -284,6 +293,9 @@
                        (when (not= "INPUT" (-> (dom/get-active) (dom/get-tag-name)))
                          (let [node (txu/get-text-editor-content)]
                            (dom/focus! node))))))}]
+    (hooks/use-stream
+     expand-stream
+     #(swap! state* assoc-in [:more-options] true))
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
