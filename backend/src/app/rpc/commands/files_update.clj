@@ -37,9 +37,7 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.worker :as wrk]
-   [clojure.set :as set]
-   [promesa.exec :as px]))
+   [clojure.set :as set]))
 
 (declare ^:private get-lagged-changes)
 (declare ^:private send-notifications!)
@@ -209,7 +207,7 @@
   Follow the inner implementation to `update-file-data!` function.
 
   Only intended for internal use on this module."
-  [{:keys [::db/conn ::wrk/executor ::timestamp] :as cfg}
+  [{:keys [::db/conn ::timestamp] :as cfg}
    {:keys [profile-id file team features changes session-id skip-validate] :as params}]
 
   (let [;; Retrieve the file data
@@ -222,15 +220,11 @@
 
     ;; We create a new lexycal scope for clearly delimit the result of
     ;; executing this update file operation and all its side effects
-    (let [file (px/invoke! executor
-                           (fn []
-                             ;; Process the file data on separated thread for avoid to do
-                             ;; the CPU intensive operation on vthread.
-                             (binding [cfeat/*current*  features
-                                       cfeat/*previous* (:features file)]
-                               (update-file-data! cfg file
-                                                  process-changes-and-validate
-                                                  changes skip-validate))))]
+    (let [file (binding [cfeat/*current*  features
+                         cfeat/*previous* (:features file)]
+                 (update-file-data! cfg file
+                                    process-changes-and-validate
+                                    changes skip-validate))]
 
       (feat.fmigr/upsert-migrations! conn file)
       (persist-file! cfg file)

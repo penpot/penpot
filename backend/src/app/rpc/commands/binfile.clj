@@ -28,7 +28,6 @@
    [app.tasks.file-gc]
    [app.util.services :as sv]
    [app.worker :as-alias wrk]
-   [promesa.exec :as px]
    [yetti.response :as yres]))
 
 (set! *warn-on-reflection* true)
@@ -94,7 +93,7 @@
 ;; --- Command: import-binfile
 
 (defn- import-binfile
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [profile-id project-id version name file]}]
+  [{:keys [::db/pool] :as cfg} {:keys [profile-id project-id version name file]}]
   (let [team   (teams/get-team pool
                                :profile-id profile-id
                                :project-id project-id)
@@ -105,13 +104,9 @@
                    (assoc ::bfc/name name)
                    (assoc ::bfc/input (:path file)))
 
-        ;; NOTE: the importation process performs some operations that are
-        ;; not very friendly with virtual threads, and for avoid
-        ;; unexpected blocking of other concurrent operations we dispatch
-        ;; that operation to a dedicated executor.
         result (case (int version)
-                 1 (px/invoke! executor (partial bf.v1/import-files! cfg))
-                 3 (px/invoke! executor (partial bf.v3/import-files! cfg)))]
+                 1 (bf.v1/import-files! cfg)
+                 3 (bf.v3/import-files! cfg))]
 
     (db/update! pool :project
                 {:modified-at (ct/now)}

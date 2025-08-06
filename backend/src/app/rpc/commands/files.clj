@@ -39,8 +39,7 @@
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
    [app.worker :as wrk]
-   [cuerdas.core :as str]
-   [promesa.exec :as px]))
+   [cuerdas.core :as str]))
 
 ;; --- FEATURES
 
@@ -251,7 +250,7 @@
           (feat.fmigr/resolve-applied-migrations cfg file))))))
 
 (defn get-file
-  [{:keys [::db/conn ::wrk/executor] :as cfg} id
+  [{:keys [::db/conn] :as cfg} id
    & {:keys [project-id
              migrate?
              include-deleted?
@@ -273,13 +272,8 @@
                              ::db/remove-deleted (not include-deleted?)
                              ::sql/for-update lock-for-update?})
                     (feat.fmigr/resolve-applied-migrations cfg)
-                    (feat.fdata/resolve-file-data cfg))
-
-        ;; NOTE: we perform the file decoding in a separate thread
-        ;; because it has heavy and synchronous operations for
-        ;; decoding file body that are not very friendly with virtual
-        ;; threads.
-        file   (px/invoke! executor #(decode-row file))
+                    (feat.fdata/resolve-file-data cfg)
+                    (decode-row))
 
         file   (if (and migrate? (fmg/need-migration? file))
                  (migrate-file cfg file options)

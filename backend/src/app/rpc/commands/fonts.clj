@@ -26,9 +26,7 @@
    [app.rpc.helpers :as rph]
    [app.rpc.quotes :as quotes]
    [app.storage :as sto]
-   [app.util.services :as sv]
-   [app.worker :as-alias wrk]
-   [promesa.exec :as px]))
+   [app.util.services :as sv]))
 
 (def valid-weight #{100 200 300 400 500 600 700 800 900 950})
 (def valid-style #{"normal" "italic"})
@@ -105,7 +103,7 @@
                 (create-font-variant cfg (assoc params :profile-id profile-id)))))
 
 (defn create-font-variant
-  [{:keys [::sto/storage ::db/conn ::wrk/executor]} {:keys [data] :as params}]
+  [{:keys [::sto/storage ::db/conn]} {:keys [data] :as params}]
   (letfn [(generate-missing! [data]
             (let [data (media/run {:cmd :generate-fonts :input data})]
               (when (and (not (contains? data "font/otf"))
@@ -157,7 +155,7 @@
                          :otf-file-id (:id otf)
                          :ttf-file-id (:id ttf)}))]
 
-    (let [data   (px/invoke! executor (partial generate-missing! data))
+    (let [data   (generate-missing! data)
           assets (persist-fonts-files! data)
           result (insert-font-variant! assets)]
       (vary-meta result assoc ::audit/replace-props (update params :data (comp vec keys))))))

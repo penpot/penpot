@@ -96,7 +96,7 @@
     [:http-server-max-body-size {:optional true} ::sm/int]
     [:http-server-max-multipart-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
-    [:http-server-worker-threads {:optional true} ::sm/int]
+    [:http-server-max-worker-threads {:optional true} ::sm/int]
 
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
@@ -214,20 +214,14 @@
     [:media-uri {:optional true} :string]
     [:assets-path {:optional true} :string]
 
-    ;; Legacy, will be removed in 2.5
-    [:assets-storage-backend {:optional true} :keyword]
-    [:storage-assets-fs-directory {:optional true} :string]
-    [:storage-assets-s3-bucket {:optional true} :string]
-    [:storage-assets-s3-region {:optional true} :keyword]
-    [:storage-assets-s3-endpoint {:optional true} ::sm/uri]
-    [:storage-assets-s3-io-threads {:optional true} ::sm/int]
+    [:netty-io-threads {:optional true} ::sm/int]
+    [:executor-threads {:optional true} ::sm/int]
 
     [:objects-storage-backend {:optional true} :keyword]
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
-    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
-    [:objects-storage-s3-io-threads {:optional true} ::sm/int]]))
+    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]]))
 
 (defn- parse-flags
   [config]

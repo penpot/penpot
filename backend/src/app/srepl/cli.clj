@@ -7,7 +7,7 @@
 (ns app.srepl.cli
   "PREPL API for external usage (CLI or ADMIN)"
   (:require
-   [app.auth :as auth]
+   [app.auth :refer [derive-password]]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -54,7 +54,7 @@
   (some-> (get-current-system)
           (db/tx-run!
            (fn [{:keys [::db/conn] :as system}]
-             (let [password (cmd.profile/derive-password system password)
+             (let [password (derive-password password)
                    params   {:id (uuid/next)
                              :email email
                              :fullname fullname
@@ -74,7 +74,7 @@
                             (assoc :fullname fullname)
 
                             (some? password)
-                            (assoc :password (auth/derive-password password))
+                            (assoc :password (derive-password password))
 
                             (some? is-active)
                             (assoc :is-active is-active))]
@@ -124,7 +124,7 @@
 
 (defmethod exec-command "derive-password"
   [{:keys [password]}]
-  (auth/derive-password password))
+  (derive-password password))
 
 (defmethod exec-command "authenticate"
   [{:keys [token]}]

@@ -34,8 +34,7 @@
    [clojure.set :as set]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io]
-   [promesa.exec :as px]))
+   [datoteka.io :as io]))
 
 (set! *warn-on-reflection* true)
 
@@ -476,7 +475,7 @@
         (vary-meta dissoc ::fmg/migrated))))
 
 (defn encode-file
-  [{:keys [::wrk/executor] :as cfg} {:keys [id features] :as file}]
+  [cfg {:keys [id features] :as file}]
   (let [file (if (and (contains? features "fdata/objects-map")
                       (:data file))
                (fdata/enable-objects-map file)
@@ -493,7 +492,7 @@
 
     (-> file
         (d/update-when :features into-array)
-        (d/update-when :data (fn [data] (px/invoke! executor #(blob/encode data)))))))
+        (d/update-when :data blob/encode))))
 
 (defn- file->params
   [file]
