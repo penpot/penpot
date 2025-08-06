@@ -29,6 +29,7 @@
   (let [shape-id                  (:id shape)
         ids                       (hooks/use-equal-memo [shape-id])
         type                      (:type shape)
+        applied-tokens            (:applied-tokens shape)
         measure-values            (select-measure-keys shape)
         layer-values              (select-keys shape layer-attrs)
         constraint-values         (select-keys shape constraint-attrs)
@@ -57,6 +58,7 @@
      [:> measures-menu* {:ids ids
                          :type type
                          :values measure-values
+                         :applied-tokens applied-tokens
                          :shape shape}]
 
      [:& layout-container-menu

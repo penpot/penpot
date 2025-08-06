@@ -32,6 +32,7 @@
   [{:keys [shape file-id libraries] :as props}]
   (let [ids    [(:id shape)]
         type   (:type shape)
+        applied-tokens (:applied-tokens shape)
 
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
         is-layout-child? (mf/deref is-layout-child-ref)
@@ -98,6 +99,7 @@
      [:> measures-menu*
       {:ids ids
        :type type
+       :applied-tokens applied-tokens
        :values (select-keys shape measure-attrs)
        :shape shape}]
 

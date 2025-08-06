@@ -7621,6 +7621,26 @@ msgstr "Invalid value: Units are not allowed."
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name."
 
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "workspace.token.no-active-token-option"
+msgstr "This token is not available in any active set or theme."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "workspace.token.detach-token"
+msgstr "Detach token"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "workspace.token.no-tokens"
+msgstr "No applicable tokens in active sets or themes."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "workspace.token.no-matches"
+msgstr "No matches found."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "workspace.token.tokens-dropdown"
+msgstr "Open token list"
+
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Assets"

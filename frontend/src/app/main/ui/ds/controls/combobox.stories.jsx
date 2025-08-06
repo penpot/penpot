@@ -189,25 +189,28 @@ export const TestInteractions = {
       await userEvent.clear(input);
     });
 
-    await step("Filter with 'es' (Tuesday, Wednesday) and select Wednesday", async () => {
-      await userEvent.clear(input);
-      await userEvent.keyboard("{Escape}");
+    await step(
+      "Filter with 'es' (Tuesday, Wednesday) and select Wednesday",
+      async () => {
+        await userEvent.clear(input);
+        await userEvent.keyboard("{Escape}");
 
-      await userEvent.click(input);
+        await userEvent.click(input);
 
-      await userEvent.type(input, "es");
+        await userEvent.type(input, "es");
 
-      const options = await canvas.findAllByTestId("dropdown-option");
-      expect(options).toHaveLength(2);
+        const options = await canvas.findAllByTestId("dropdown-option");
+        expect(options).toHaveLength(2);
 
-      await userEvent.keyboard("[ArrowDown]");
-      await userEvent.keyboard("[ArrowDown]");
+        await userEvent.keyboard("[ArrowDown]");
+        await userEvent.keyboard("[ArrowDown]");
 
-      await userEvent.keyboard("{Enter}");
+        await userEvent.keyboard("{Enter}");
 
-      expect(input).toHaveValue("Wednesday");
-      expect(lastValue).toBe("Wednesday");
-    });
+        expect(input).toHaveValue("Wednesday");
+        expect(lastValue).toBe("Wednesday");
+      },
+    );
 
     await step("Close dropdown when focusing out", async () => {
       await userEvent.clear(input);

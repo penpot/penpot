@@ -374,3 +374,28 @@
   "Joins font family `value` into a string to be edited with a single input."
   [font-families]
   (str/join ", " font-families))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKENS TYPES FOR EACH INPUT
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def tokens-by-input
+  {:width #{:sizing :dimensions}
+   :height #{:sizing :dimensions}
+   :max-width #{:sizing :dimensions}
+   :max-height #{:sizing :dimensions}
+   :x #{:spacing :dimensions}
+   :y #{:spacing :dimensions}
+   :rotation #{:number}
+   :border-radius #{:border-radius :dimensions}
+   :row-gap #{:spacing :dimensions}
+   :column-gap #{:spacing :dimensions}
+   :horizontal-padding #{:spacing :dimensions}
+   :vertical-padding #{:spacing :dimensions}
+   :sided-paddings #{:spacing :dimensions}
+   :horizontal-margin #{:spacing :dimensions}
+   :vertical-margin #{:spacing :dimensions}
+   :sided-margins #{:spacing :dimensions}
+   :Line-height #{:line-height :number}
+   :font-size #{:font-size}
+   :letter-spacing #{:letter-spacing}})
