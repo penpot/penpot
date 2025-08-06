@@ -280,6 +280,7 @@
 (def ^:icon-id text-uppercase "text-uppercase")
 (def ^:icon-id thumbnail "thumbnail")
 (def ^:icon-id tick "tick")
+(def ^:icon-id tokens "tokens")
 (def ^:icon-id to-corner "to-corner")
 (def ^:icon-id to-curve "to-curve")
 (def ^:icon-id tree "tree")

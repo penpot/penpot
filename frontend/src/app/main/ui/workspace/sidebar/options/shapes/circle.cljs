@@ -26,7 +26,7 @@
   [{:keys [shape] :as props}]
   (let [ids [(:id shape)]
         type (:type shape)
-
+        applied-tokens (:applied-tokens shape)
         measure-values (select-keys shape measure-attrs)
         stroke-values (select-keys shape stroke-attrs)
         layer-values (select-keys shape layer-attrs)
@@ -54,6 +54,7 @@
                      :values layer-values}]
 
      [:> measures-menu* {:ids ids
+                         :applied-tokens applied-tokens
                          :type type
                          :values measure-values
                          :shape shape}]
