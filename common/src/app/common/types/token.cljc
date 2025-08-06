@@ -374,3 +374,10 @@
   "Joins font family `value` into a string to be edited with a single input."
   [font-families]
   (str/join ", " font-families))
+
+(def text-decoration-values #{"none" "underline" "strike-through"})
+
+(defn valid-text-decoration [value]
+  (let [normalized-value (str/lower (str/trim value))]
+    (when (contains? text-decoration-values normalized-value)
+      normalized-value)))
