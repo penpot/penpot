@@ -42,6 +42,7 @@
    [app.svgo :as-alias svgo]
    [app.util.cron]
    [app.worker :as-alias wrk]
+   [app.worker.executor]
    [clojure.test :as test]
    [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
@@ -148,23 +149,11 @@
     ::mdef/labels []
     ::mdef/type :histogram}
 
-   :executors-active-threads
-   {::mdef/name "penpot_executors_active_threads"
-    ::mdef/help "Current number of threads available in the executor service."
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}
-
-   :executors-completed-tasks
-   {::mdef/name "penpot_executors_completed_tasks_total"
-    ::mdef/help "Approximate number of completed tasks by the executor."
-    ::mdef/labels ["name"]
-    ::mdef/type :counter}
-
-   :executors-running-threads
-   {::mdef/name "penpot_executors_running_threads"
-    ::mdef/help "Current number of threads with state RUNNING."
-    ::mdef/labels ["name"]
-    ::mdef/type :gauge}})
+   :http-server-dispatch-timing
+   {::mdef/name "penpot_http_server_dispatch_timing"
+    ::mdef/help "Histogram of dispatch handler"
+    ::mdef/labels []
+    ::mdef/type :histogram}})
 
 (def system-config
   {::db/pool
@@ -176,14 +165,12 @@
     ::db/max-size   (cf/get :database-max-pool-size 60)
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
-   ;; Default thread pool for IO operations
-   ::wrk/executor
-   {}
+   ;; Default netty IO pool (shared between several services)
+   ::wrk/netty-io-executor
+   {:threads (cf/get :netty-io-threads)}
 
-   ::wrk/monitor
-   {::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::wrk/executor (ig/ref ::wrk/executor)
-    ::wrk/name     "default"}
+   ::wrk/netty-executor
+   {:threads (cf/get :executor-threads)}
 
    :app.migrations/migrations
    {::db/pool (ig/ref ::db/pool)}
@@ -197,14 +184,19 @@
    ::rds/redis
    {::rds/uri      (cf/get :redis-uri)
     ::mtx/metrics  (ig/ref ::mtx/metrics)
-    ::wrk/executor (ig/ref ::wrk/executor)}
+
+    ::wrk/netty-executor
+    (ig/ref ::wrk/netty-executor)
+
+    ::wrk/netty-io-executor
+    (ig/ref ::wrk/netty-io-executor)}
 
    ::mbus/msgbus
-   {::wrk/executor  (ig/ref ::wrk/executor)
+   {::wrk/executor  (ig/ref ::wrk/netty-executor)
     ::rds/redis     (ig/ref ::rds/redis)}
 
    :app.storage.tmp/cleaner
-   {::wrk/executor (ig/ref ::wrk/executor)}
+   {::wrk/executor (ig/ref ::wrk/netty-executor)}
 
    ::sto.gc-deleted/handler
    {::db/pool      (ig/ref ::db/pool)
@@ -232,9 +224,10 @@
     ::http/host                    (cf/get :http-server-host)
     ::http/router                  (ig/ref ::http/router)
     ::http/io-threads              (cf/get :http-server-io-threads)
+    ::http/max-worker-threads      (cf/get :http-server-max-worker-threads)
     ::http/max-body-size           (cf/get :http-server-max-body-size)
     ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)
-    ::wrk/executor                 (ig/ref ::wrk/executor)}
+    ::mtx/metrics                  (ig/ref ::mtx/metrics)}
 
    ::ldap/provider
    {:host           (cf/get :ldap-host)
@@ -312,17 +305,17 @@
 
    ::rpc/climit
    {::mtx/metrics        (ig/ref ::mtx/metrics)
-    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::wrk/executor       (ig/ref ::wrk/netty-executor)
     ::climit/config      (cf/get :rpc-climit-config)
     ::climit/enabled     (contains? cf/flags :rpc-climit)}
 
    :app.rpc/rlimit
-   {::wrk/executor (ig/ref ::wrk/executor)}
+   {::wrk/executor (ig/ref ::wrk/netty-executor)}
 
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
-    ::wrk/executor       (ig/ref ::wrk/executor)
+    ::wrk/executor       (ig/ref ::wrk/netty-executor)
     ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
     ::sto/storage        (ig/ref ::sto/storage)
@@ -468,20 +461,15 @@
      :assets-fs (ig/ref :app.storage.fs/backend)}}
 
    :app.storage.s3/backend
-   {::sto.s3/region     (or (cf/get :storage-assets-s3-region)
-                            (cf/get :objects-storage-s3-region))
-    ::sto.s3/endpoint   (or (cf/get :storage-assets-s3-endpoint)
-                            (cf/get :objects-storage-s3-endpoint))
-    ::sto.s3/bucket     (or (cf/get :storage-assets-s3-bucket)
-                            (cf/get :objects-storage-s3-bucket))
-    ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
-                            (cf/get :objects-storage-s3-io-threads))
-    ::wrk/executor      (ig/ref ::wrk/executor)}
+   {::sto.s3/region   (cf/get :objects-storage-s3-region)
+    ::sto.s3/endpoint (cf/get :objects-storage-s3-endpoint)
+    ::sto.s3/bucket   (cf/get :objects-storage-s3-bucket)
+
+    ::wrk/netty-io-executor
+    (ig/ref ::wrk/netty-io-executor)}
 
    :app.storage.fs/backend
-   {::sto.fs/directory (or (cf/get :storage-assets-fs-directory)
-                           (cf/get :objects-storage-fs-directory))}})
-
+   {::sto.fs/directory (cf/get :objects-storage-fs-directory)}})
 
 (def worker-config
   {::wrk/cron

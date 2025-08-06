@@ -6,6 +6,7 @@
 
 (ns app.rpc.commands.auth
   (:require
+   [app.auth :as auth]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
@@ -62,7 +63,7 @@
               (ex/raise :type :validation
                         :code :account-without-password
                         :hint "the current account does not have password")
-              (let [result (profile/verify-password cfg password (:password profile))]
+              (let [result (auth/verify-password password (:password profile))]
                 (when (:update result)
                   (l/trc :hint "updating profile password"
                          :id (str (:id profile))
@@ -156,7 +157,7 @@
               (:profile-id tdata)))
 
           (update-password [conn profile-id]
-            (let [pwd (profile/derive-password cfg password)]
+            (let [pwd (auth/derive-password password)]
               (db/update! conn :profile {:password pwd :is-active true} {:id profile-id})
               nil))]
 
@@ -378,7 +379,7 @@
                                              (not (contains? cf/flags :email-verification)))
                                params    (-> params
                                              (assoc :is-active is-active)
-                                             (update :password #(profile/derive-password cfg %)))
+                                             (update :password auth/derive-password))
                                profile   (->> (create-profile! conn params)
                                               (create-profile-rels! conn))]
                            (vary-meta profile assoc :created true))))

@@ -28,8 +28,8 @@
   com.google.guava/guava {:mvn/version "33.4.8-jre"}
 
   funcool/yetti
-  {:git/tag "v11.4"
-   :git/sha "ce50d42"
+  {:git/tag "v11.6"
+   :git/sha "94dc017"
    :git/url "https://github.com/funcool/yetti.git"
    :exclusions [org.slf4j/slf4j-api]}
 
@@ -85,7 +85,9 @@
 
   :test
   {:main-opts ["-m" "kaocha.runner"]
-   :jvm-opts ["-Dlog4j2.configurationFile=log4j2-devenv-repl.xml"]
+   :jvm-opts ["-Dlog4j2.configurationFile=log4j2-devenv-repl.xml"
+              "--sun-misc-unsafe-memory-access=allow"
+              "--enable-native-access=ALL-UNNAMED"]
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
 
   :outdated

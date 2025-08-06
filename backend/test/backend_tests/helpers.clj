@@ -113,7 +113,6 @@
                              :app.auth.oidc.providers/generic
                              :app.setup/templates
                              :app.auth.oidc/routes
-                             :app.worker/monitor
                              :app.http.oauth/handler
                              :app.notifications/handler
                              :app.loggers.mattermost/reporter

@@ -24,10 +24,8 @@
    [app.storage :as sto]
    [app.storage.tmp :as tmp]
    [app.util.services :as sv]
-   [app.worker :as-alias wrk]
    [cuerdas.core :as str]
-   [datoteka.io :as io]
-   [promesa.exec :as px]))
+   [datoteka.io :as io]))
 
 (def default-max-file-size
   (* 1024 1024 10)) ; 10 MiB
@@ -153,9 +151,9 @@
       (assoc ::image (process-main-image info)))))
 
 (defn- create-file-media-object
-  [{:keys [::sto/storage ::db/conn ::wrk/executor] :as cfg}
+  [{:keys [::sto/storage ::db/conn] :as cfg}
    {:keys [id file-id is-local name content]}]
-  (let [result (px/invoke! executor (partial process-image content))
+  (let [result (process-image content)
         image  (sto/put-object! storage (::image result))
         thumb  (when-let [params (::thumb result)]
                  (sto/put-object! storage params))]

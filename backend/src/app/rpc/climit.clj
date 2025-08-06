@@ -21,7 +21,6 @@
    [clojure.set :as set]
    [datoteka.fs :as fs]
    [integrant.core :as ig]
-   [promesa.exec :as px]
    [promesa.exec.bulkhead :as pbh])
   (:import
    clojure.lang.ExceptionInfo
@@ -289,13 +288,9 @@
           (get-limits cfg)))
 
 (defn invoke!
-  "Run a function in context of climit.
-  Intended to be used in virtual threads."
-  [{:keys [::executor ::rpc/climit] :as cfg} f params]
+  "Run a function in context of climit."
+  [{:keys [::rpc/climit] :as cfg} f params]
   (let [f (if climit
-            (let [f (if (some? executor)
-                      (fn [cfg params] (px/await! (px/submit! executor (fn [] (f cfg params)))))
-                      f)]
-              (build-exec-chain cfg f))
+            (build-exec-chain cfg f)
             f)]
     (f cfg params)))

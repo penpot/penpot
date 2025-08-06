@@ -248,7 +248,7 @@
 (defn- start-thread!
   [{:keys [::rds/redis ::id ::queue ::wrk/tenant] :as cfg}]
   (px/thread
-    {:name (format "penpot/worker/runner:%s" id)}
+    {:name (str "penpot/worker-runner/" id)}
     (l/inf :hint "started" :id id :queue queue)
     (try
       (dm/with-open [rconn (rds/connect redis)]
@@ -303,7 +303,7 @@
       (l/wrn :hint "not started (db is read-only)" :queue queue :parallelism parallelism)
       (doall
        (->> (range parallelism)
-            (map #(assoc cfg ::id %))
+            (map #(assoc cfg ::id (str queue "/" %)))
             (map start-thread!))))))
 
 (defmethod ig/halt-key! ::wrk/runner
