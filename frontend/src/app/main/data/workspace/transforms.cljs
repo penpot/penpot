@@ -945,13 +945,13 @@
                          (rx/take-until stopper))]
                 (rx/concat
                  (rx/merge
-                  (rx/of (nudge-selected-shapes direction shift?))
                   (->> modif-stream
                        (rx/map #(dwm/set-wasm-modifiers % {:ignore-snap-pixel true})))
 
                   (->> modif-stream
                        (rx/last)
-                       (rx/map #(dwm/apply-wasm-modifiers % {:ignore-snap-pixel true}))))
+                       (rx/map #(dwm/apply-wasm-modifiers % {:ignore-snap-pixel true})))
+                  (rx/of (nudge-selected-shapes direction shift?)))
                  (rx/of (finish-transform))))
 
               (rx/concat
