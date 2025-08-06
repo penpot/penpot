@@ -146,6 +146,12 @@
     ::mdef/labels []
     ::mdef/type :histogram}
 
+   :http-server-dispatch-timing
+   {::mdef/name "penpot_http_server_dispatch_timing"
+    ::mdef/help "Histogram of dispatch handler"
+    ::mdef/labels []
+    ::mdef/type :histogram}
+
    :executors-active-threads
    {::mdef/name "penpot_executors_active_threads"
     ::mdef/help "Current number of threads available in the executor service."
@@ -223,16 +229,20 @@
    ::http.awsns/routes
    {::setup/props        (ig/ref ::setup/props)
     ::db/pool            (ig/ref ::db/pool)
-    ::http.client/client (ig/ref ::http.client/client)}
+    ::http.client/client (ig/ref ::http.client/client)
+    ::wrk/executor       (ig/ref ::wrk/executor)}
 
    ::http/server
    {::http/port                    (cf/get :http-server-port)
     ::http/host                    (cf/get :http-server-host)
     ::http/router                  (ig/ref ::http/router)
     ::http/io-threads              (cf/get :http-server-io-threads)
+    ::http/worker-threads          (cf/get :http-server-worker-threads)
     ::http/max-body-size           (cf/get :http-server-max-body-size)
     ::http/max-multipart-body-size (cf/get :http-server-max-multipart-body-size)
-    ::wrk/executor                 (ig/ref ::wrk/executor)}
+    ::wrk/executor                 (ig/ref ::wrk/executor)
+    ::mtx/metrics                  (ig/ref ::mtx/metrics)}
+
 
    ::ldap/provider
    {:host           (cf/get :ldap-host)

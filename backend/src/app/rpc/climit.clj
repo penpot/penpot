@@ -294,7 +294,8 @@
   [{:keys [::executor ::rpc/climit] :as cfg} f params]
   (let [f (if climit
             (let [f (if (some? executor)
-                      (fn [cfg params] (px/await! (px/submit! executor (fn [] (f cfg params)))))
+                      (fn [cfg params]
+                        (px/await! (px/submit! executor (fn [] (f cfg params)))))
                       f)]
               (build-exec-chain cfg f))
             f)]

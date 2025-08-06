@@ -121,7 +121,7 @@
 (defmethod ig/halt-key! ::backend
   [_ {:keys [::close-fn]}]
   (when (fn? close-fn)
-    (px/run! close-fn)))
+    (close-fn)))
 
 (def ^:private schema:backend
   [:map {:title "s3-backend"}
@@ -200,14 +200,19 @@
 (defn- build-s3-client
   [{:keys [::region ::endpoint ::io-threads ::wrk/executor]}]
   (let [aconfig  (-> (ClientAsyncConfiguration/builder)
-                     (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
+                     ;; We don't pass the executor here bacuse we are
+                     ;; no longer need to make the completion explicit
+                     ;; on our pool (we still maintain the commented
+                     ;; code for possible future reference)
+                     ;;
+                     ;; (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
                      (.build))
 
         sconfig  (-> (S3Configuration/builder)
                      (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
                      (.build))
 
-        thr-num  (or io-threads (min 16 (px/get-available-processors)))
+        thr-num  (or io-threads (px/get-available-processors))
         hclient  (-> (NettyNioAsyncHttpClient/builder)
                      (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
                                                  (.numberOfThreads (int thr-num))))

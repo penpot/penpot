@@ -278,7 +278,7 @@
         ;; because it has heavy and synchronous operations for
         ;; decoding file body that are not very friendly with virtual
         ;; threads.
-        file   (px/invoke! executor #(decode-row file))
+        file   (decode-row file)
 
         file   (if (and migrate? (fmg/need-migration? file))
                  (migrate-file cfg file options)
