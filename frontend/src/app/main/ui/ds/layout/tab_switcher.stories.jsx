@@ -13,8 +13,8 @@ const Padded = ({ children }) => (
   <div style={{ padding: "10px" }}>{children}</div>
 );
 
-const TabSwitcherWrapper = ({tabs, ...props}) => {
-  const navTabs = tabs.map(({content, ...item}) => {
+const TabSwitcherWrapper = ({ tabs, ...props }) => {
+  const navTabs = tabs.map(({ content, ...item }) => {
     return item;
   });
 
@@ -28,7 +28,12 @@ const TabSwitcherWrapper = ({tabs, ...props}) => {
   }, {});
 
   return (
-    <TabSwitcher tabs={navTabs} selected={selected} onChange={setSelected} {...props}>
+    <TabSwitcher
+      tabs={navTabs}
+      selected={selected}
+      onChange={setSelected}
+      {...props}
+    >
       {content[selected]}
     </TabSwitcher>
   );
@@ -77,12 +82,7 @@ export default {
   },
   parameters: {
     controls: {
-      exclude: [
-        "tabs",
-        "actionButton",
-        "default",
-        "actionButtonPosition",
-      ],
+      exclude: ["tabs", "actionButton", "default", "actionButtonPosition"],
     },
   },
   render: ({ ...args }) => <TabSwitcherWrapper {...args} />,

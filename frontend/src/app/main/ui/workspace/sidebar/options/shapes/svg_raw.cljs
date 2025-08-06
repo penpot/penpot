@@ -98,6 +98,7 @@
 
   (let [ids [(:id shape)]
         type (:type shape)
+        applied-tokens (:applied-tokens shape)
 
         {:keys [tag] :as content} (:content shape)
         measure-values (select-keys shape measure-attrs)
@@ -126,6 +127,7 @@
       [:*
        [:> measures-menu* {:ids ids
                            :type type
+                           :applied-tokens applied-tokens
                            :values measure-values
                            :shape shape}]
 

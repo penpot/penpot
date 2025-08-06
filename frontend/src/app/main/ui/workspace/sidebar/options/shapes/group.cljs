@@ -36,6 +36,7 @@
         libraries                (unchecked-get props "libraries")
         objects                  (->> shape-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
         file-id                  (unchecked-get props "file-id")
+        applied-tokens           (unchecked-get props "applied-tokens")
         layout-container-values  (select-keys shape layout-container-flex-attrs)
         ids                      [(:id shape)]
         is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
@@ -68,7 +69,11 @@
 
     [:div {:class (stl/css :options)}
      [:& layer-menu {:type type :ids layer-ids :values layer-values}]
-     [:> measures-menu* {:type type :ids measure-ids :values measure-values :shape shape}]
+     [:> measures-menu* {:type type
+                         :ids measure-ids
+                         :applied-tokens applied-tokens
+                         :values measure-values
+                         :shape shape}]
 
      [:& layout-container-menu
       {:type type
