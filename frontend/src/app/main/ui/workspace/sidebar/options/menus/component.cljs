@@ -339,7 +339,7 @@
            (let [value (d/nilv (str/trim value) "")]
              (doseq [id component-ids]
                (st/emit! (dwv/update-property-value id pos value))
-               (st/emit! (dwv/update-error id nil))))))
+               (st/emit! (dwv/update-error id))))))
 
         update-property-name
         (mf/use-fn
