@@ -22,6 +22,7 @@
 - Fix missing package for the `penpot_exporter` Docker image [GitHub #7205](https://github.com/penpot/penpot/issues/7025)
 - Fix issue where multiple dropdown menus could be opened simultaneously on the dashboard page [Taiga #11500](https://tree.taiga.io/project/penpot/issue/11500)
 - Fix font size/variant not updated when editing a text [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11552)
+- Fix issue where Alt + arrow keys shortcut interferes with letter-spacing when moving text layers [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11771)
 
 ## 2.9.0 (Unreleased)
 
