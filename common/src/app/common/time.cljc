@@ -7,20 +7,59 @@
 (ns app.common.time
   "Minimal cross-platoform date time api for specific use cases on types
   definition and other common code."
+  (:refer-clojure :exclude [inst?])
   #?(:cljs
      (:require
       ["luxon" :as lxn])
      :clj
      (:import
-      java.time.format.DateTimeFormatter
+      java.time.Duration
       java.time.Instant
-      java.time.Duration)))
+      java.time.format.DateTimeFormatter
+      java.time.temporal.ChronoUnit
+      java.time.temporal.TemporalUnit)))
 
 #?(:cljs
    (def DateTime lxn/DateTime))
 
 #?(:cljs
    (def Duration lxn/Duration))
+
+(defn- resolve-temporal-unit
+  [o]
+  (case o
+    (:nanos :nano)
+    #?(:clj ChronoUnit/NANOS
+       :cljs (throw (js/Error. "not supported nanos")))
+
+    (:micros :microsecond :micro)
+    #?(:clj ChronoUnit/MICROS
+       :cljs (throw (js/Error. "not supported nanos")))
+
+    (:millis :millisecond :milli)
+    #?(:clj ChronoUnit/MILLIS
+       :cljs "millisecond")
+
+    (:seconds :second)
+    #?(:clj ChronoUnit/SECONDS
+       :cljs "second")
+
+    (:minutes :minute)
+    #?(:clj ChronoUnit/MINUTES
+       :cljs "minute")
+
+    (:hours :hour)
+    #?(:clj ChronoUnit/HOURS
+       :cljs "hour")
+
+    (:days :day)
+    #?(:clj ChronoUnit/DAYS
+       :cljs "day")))
+
+(defn temporal-unit
+  [o]
+  #?(:clj (if (instance? TemporalUnit o) o (resolve-temporal-unit o))
+     :cljs (resolve-temporal-unit o)))
 
 (defn now
   []
@@ -49,6 +88,11 @@
   #?(:clj (instance? Instant o)
      :cljs (instance? DateTime o)))
 
+(defn inst?
+  [o]
+  #?(:clj (instance? Instant o)
+     :cljs (instance? DateTime o)))
+
 (defn parse-instant
   [s]
   (cond
@@ -62,6 +106,24 @@
     (string? s)
     #?(:clj (Instant/parse s)
        :cljs (.fromISO ^js DateTime s))))
+
+(defn inst
+  [s]
+  (parse-instant s))
+
+#?(:clj
+   (defn truncate
+     [o unit]
+     (let [unit (temporal-unit unit)]
+       (cond
+         (inst? o)
+         (.truncatedTo ^Instant o ^TemporalUnit unit)
+
+         (instance? Duration o)
+         (.truncatedTo ^Duration o ^TemporalUnit unit)
+
+         :else
+         (throw (IllegalArgumentException. "only instant and duration allowed"))))))
 
 (defn format-instant
   [v]
