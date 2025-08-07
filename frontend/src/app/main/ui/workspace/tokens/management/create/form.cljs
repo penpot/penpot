@@ -799,6 +799,12 @@
    (mf/spread-props props {:token token
                            :input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})])
 
+(mf/defc font-weight-form*
+  [{:keys [token] :rest props}]
+  [:> form*
+   (mf/spread-props props {:token token
+                           :input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})])
+
 (mf/defc form-wrapper*
   [{:keys [token token-type] :as props}]
   (let [token-type' (or (:type token) token-type)]
@@ -807,4 +813,5 @@
       :font-family [:> font-family-form* props]
       :text-case [:> text-case-form* props]
       :text-decoration [:> text-decoration-form* props]
+      :font-weight [:> font-weight-form* props]
       [:> form* props])))

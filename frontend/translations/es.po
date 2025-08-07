@@ -7240,6 +7240,14 @@ msgstr "Introduce: none | uppercase | lowercase | capitalize o {alias}"
 msgid "workspace.tokens.text-decoration-value-enter"
 msgstr "Introduce text decoration: none | underline | strike-through"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr "Valor de peso de fuente inválido: usa valores numéricos (100-950) o nombres estándar (thin, light, regular, bold, etc.) opcionalmente seguidos de 'Italic'"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Introduce: 400, Bold, 700 Italic, o {alias}"
+
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
 msgstr "Previsualizar:"

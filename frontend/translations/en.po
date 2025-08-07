@@ -7289,6 +7289,14 @@ msgstr "Invalid token value: only none, Uppercase, Lowercase or Capitalize are a
 msgid "workspace.tokens.text-decoration-value-enter"
 msgstr "Enter text decoration: none | underline | strike-through"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr "Invalid font weight value: use numeric values (100-950) or standard names (thin, light, regular, bold, etc.) optionally followed by 'Italic'"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Enter: 400, Bold, 700 Italic, or {alias}"
+
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:81
 msgid "workspace.tokens.invalid-text-decoration-token-value"
 msgstr "Invalid token value: only none, underline and strike-through are accepted"
