@@ -22,6 +22,7 @@
 - Fix issue where multiple dropdown menus could be opened simultaneously on the dashboard page [Taiga #11500](https://tree.taiga.io/project/penpot/issue/11500)
 - Fix font size/variant not updated when editing a text [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11552)
 - Fix issue where Alt + arrow keys shortcut interferes with letter-spacing when moving text layers [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11771)
+- Fix consistency issues on how font variants are visualized [Taiga #11499](https://tree.taiga.io/project/penpot/us/11499)
 
 ## 2.9.0 (Unreleased)
 
