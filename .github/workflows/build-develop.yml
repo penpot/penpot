@@ -1,0 +1,12 @@
+name: Build and Upload Penpot DEVELOP Bundles
+
+on:
+  schedule:
+    - cron: '16 5-20 * * 1-5'
+
+jobs:
+  build-develop-bundle:
+    uses: ./.github/workflows/build-bundles.yml
+    secrets: inherit
+    with:
+      gh_ref: "develop"
