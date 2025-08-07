@@ -1090,21 +1090,23 @@
 
 ;; === Operations
 
-(def ^:private decode-shape
-  (sm/decoder cts/schema:shape sm/json-transformer))
+(def  decode-shape-attrs
+  (sm/decoder cts/schema:shape-attrs sm/json-transformer))
 
 (defmethod process-operation :assign
   [{:keys [type] :as shape} {:keys [value] :as op}]
   (let [modifications (assoc value :type type)
-        modifications (decode-shape modifications)]
+        modifications (decode-shape-attrs modifications)]
     (reduce-kv (fn [shape k v]
-                 (process-operation shape {:type :set
-                                           :attr k
-                                           :val v
-                                           :ignore-touched (:ignore-touched op)
-                                           :ignore-geometry (:ignore-geometry op)}))
+                 (if (not= v (get shape k))
+                   (process-operation shape {:type :set
+                                             :attr k
+                                             :val v
+                                             :ignore-touched (:ignore-touched op)
+                                             :ignore-geometry (:ignore-geometry op)})
+                   shape))
                shape
-               modifications)))
+               (dissoc modifications :type))))
 
 (defmethod process-operation :set
   [shape op]
