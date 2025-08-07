@@ -297,7 +297,7 @@
   display: flex;
   align-items: center;
   margin-bottom: $s-4;
-  padding-right: $s-8;
+  padding-right: $s-4;
   font-size: $s-12;
   cursor: pointer;
   width: 100%;
@@ -305,6 +305,10 @@
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color);
+
+  .variant-icon {
+    background-color: none;
+  }
 
   .component-name {
     @include textEllipsis;
@@ -342,14 +346,14 @@
 
 .component-grid {
   display: grid;
-  grid-template-columns: repeat(2, $s-124);
-  grid-auto-rows: $s-124;
+  grid-template-columns: repeat(auto-fill, minmax($s-96, 1fr));
   gap: $s-4;
 }
 
 .grid-cell {
   @include flexCenter;
   place-items: center;
+  aspect-ratio: 1 / 1;
   flex-wrap: wrap;
   position: relative;
   padding: $s-8;
@@ -359,6 +363,10 @@
   --assets-component-current-border-color: var(--assets-component-border-color);
   border: $s-4 solid var(--assets-component-current-border-color);
   cursor: pointer;
+
+  .variant-icon {
+    background-color: var(--color-background-tertiary);
+  }
 
   img {
     height: auto;
@@ -381,21 +389,24 @@
     @include textEllipsis;
     display: none;
     position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    padding: $s-2;
-    text-align: center;
+    left: $s-4;
+    bottom: $s-4;
+    height: calc($s-24 - $s-2);
+    width: calc(100% - 2 * $s-4);
+    padding: $s-2 $s-6;
+    column-gap: $s-4;
+    border-radius: $br-4;
+    background-color: var(--assets-item-name-background-color);
+    border: $s-1 solid transparent;
+    color: var(--assets-item-name-foreground-color);
     direction: rtl;
   }
 
   &:hover {
-    background-color: var(--assets-item-background-color-hover);
-
     .component-name {
       display: block;
       color: var(--assets-item-name-foreground-color-hover);
-      background: linear-gradient(to top, var(--assets-item-background-color-hover) 0%, transparent 100%);
+      background: var(--assets-item-background-color-hover);
     }
   }
 
@@ -439,7 +450,6 @@
 
 .component-swap {
   padding-top: $s-12;
-  max-width: $s-248;
 }
 
 .component-swap-content {
@@ -789,7 +799,6 @@
   @include flexCenter;
   height: $s-24;
   width: $s-24;
-  background-color: var(--color-background-tertiary);
   border-radius: $br-8;
   order: 3;
 

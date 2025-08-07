@@ -56,6 +56,7 @@
   @extend .button-tag;
   border-radius: $br-8;
   height: 100%;
+  padding-right: $s-8;
   svg {
     @extend .button-icon-small;
     color: transparent;
