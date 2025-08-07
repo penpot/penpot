@@ -30,6 +30,7 @@
    [app.main.store :as st]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
+   [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
 (declare token-properties)
@@ -284,7 +285,9 @@
 (defn update-font-family
   ([value shape-ids attributes] (update-font-family value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [font-family (first value)
+   (let [font-family (-> (first value)
+                         ;; Strip quotes around font-family like `"Inter"`
+                         (str/trim #"[\"']"))
          font (some-> font-family
                       (fonts/find-font-family))
          text-attrs (if font
