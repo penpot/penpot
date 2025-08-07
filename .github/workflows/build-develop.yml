@@ -7,5 +7,6 @@ on:
 jobs:
   build-develop-bundle:
     uses: ./.github/workflows/build-bundles.yml
+    secrets: inherit
     with:
       gh_ref: "develop"

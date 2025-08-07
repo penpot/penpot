@@ -1,7 +1,7 @@
 name: Build and Upload Penpot Bundles
 
 on:
-  # Create bundler from manual action
+  # Create bundle from manual action
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -32,8 +32,7 @@ jobs:
           echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "gh_branch=${{ github.base_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
-      # Set up Docker Buildx for multi-arch build
-      - name: Set up Docker Buildx
+      - name: Set up Docker Buildx for multi-arch build
         uses: docker/setup-buildx-action@v3
 
       - name: Run manage.sh build-bundle from host
@@ -55,15 +54,11 @@ jobs:
           aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.commit_hash }}.zip
 
       - name: Notify Mattermost
+        if: failure()
         uses: mattermost/action-mattermost-notify@master
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
           TEXT: |
-            📦 *New Penpot bundle generated*
+            ❌ *[PENPOT] Error during the execution of the job*
             📄 Triggered from ref: `${{ steps.vars.outputs.gh_branch}}`
             🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-      - name: Print artifact summary URL
-        run: |
-          echo "📦 Artifacts available at:"
-          echo "🔗 https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
