@@ -30,7 +30,7 @@
   funcool/tubax {:mvn/version "2021.05.20-0"}
   funcool/cuerdas {:mvn/version "2025.06.16-414"}
   funcool/promesa
-  {:git/sha "f52f58cfacf62f59eab717e2637f37729d0cc383"
+  {:git/sha "46048fc0d4bf5466a2a4121f5d52aefa6337f2e8"
    :git/url "https://github.com/funcool/promesa"}
 
   funcool/datoteka

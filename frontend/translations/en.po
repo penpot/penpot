@@ -4411,11 +4411,6 @@ msgstr "Subscription"
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "Add a payment method to continue after your trial"
 
-#: src/app/main/ui/settings/subscription.cljs:82, src/app/main/ui/settings/subscription.cljs:115, src/app/main/ui/settings/subscription.cljs:127
-#, fuzzy, unused
-msgid "subscription.settings.benefits.all-professiona-benefits"
-msgstr ""
-
 #: src/app/main/ui/settings/subscription.cljs:247, src/app/main/ui/settings/subscription.cljs:268, src/app/main/ui/settings/subscription.cljs:303, src/app/main/ui/settings/subscription.cljs:317
 msgid "subscription.settings.benefits.all-professional-benefits"
 msgstr "All Professional plan benefits and:"

@@ -40,7 +40,7 @@
            "We're keeping the momentum going with another exciting round of improvements and features!"]
 
           [:p  {:class (stl/css :feature-content)}
-           "This release brings major progress in Design Token management (including our very first typography tokens!), smarter text overrides for components, and a rich collection of quality-of-life enhancements."]
+           "This release brings major progress in Design Token management (including our very first typography token!), smarter text overrides for components, and a rich collection of quality-of-life enhancements."]
 
           [:p  {:class (stl/css :feature-content)}
            "Let’s dive in!"]]
@@ -65,7 +65,7 @@
 
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "You can now define and manage font size tokens right from the Design Tokens panel. This is just the first of many typography token types to come. Font weight token is next!"]
+           "You can now define and manage font size tokens right from the Design Tokens panel. This is just the first of many typography token types to come. Font family token is next!"]
 
           [:p {:class (stl/css :feature-content)}
            "And there’s more progress on Tokens, including support for importing multiple token files via .zip, and smarter token visibility, only showing the relevant tokens for each layer type."]]
@@ -95,10 +95,10 @@
 
          [:div {:class (stl/css :feature)}
           [:p {:class (stl/css :feature-content)}
-           "When overriding text inside components, you can now tweak and preserve individual properties like color, effects, font size or font weight."]
+           "You can now edit the text content independently from its properties—such as color, effects, font size, or weight—allowing you to update the wording while preserving the styling."]
 
           [:p {:class (stl/css :feature-content)}
-           "Now you can confidently apply different tokens to copies of a component, knowing that their intended overrides will remain. This greatly improves consistency, predictability, and control when working with texts in components."]]
+           "This change (inspired by community feedback) greatly improves consistency, predictability, and control when working with texts in components."]]
 
          [:div {:class (stl/css :navigation)}
           [:& c/navigation-bullets

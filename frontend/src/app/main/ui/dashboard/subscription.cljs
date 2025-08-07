@@ -125,7 +125,11 @@
 
 (mf/defc menu-team-icon*
   [{:keys [subscription-type]}]
-  [:span {:class (stl/css :subscription-icon) :data-testid "subscription-icon"}
+  [:span {:class (stl/css :subscription-icon)
+          :title (if (= subscription-type "unlimited")
+                   (tr "subscription.dashboard.power-up.unlimited-plan")
+                   (tr "subscription.dashboard.power-up.enterprise-plan"))
+          :data-testid "subscription-icon"}
    (case subscription-type
      "unlimited" i/character-u
      "enterprise" i/character-e)])
