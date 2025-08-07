@@ -186,6 +186,10 @@
                           :modified-at modified-at
                           :tokens tokens})])
 
+  #?@(:clj
+      [json/JSONWriter
+       (-write [this writter options] (json/-write (deref this) writter options))])
+
   #?@(:cljs [cljs.core/IEncodeJS
              (-clj->js [_] (js-obj "id" (clj->js id)
                                    "name" (clj->js name)
@@ -292,7 +296,9 @@
 (declare make-token-set)
 
 (def schema:token-set
-  (sm/required-keys schema:token-set-attrs))
+  [:schema {:gen/gen (->> (sg/generator schema:token-set-attrs)
+                          (sg/fmap #(make-token-set %)))}
+   (sm/required-keys schema:token-set-attrs)])
 
 (sm/register! ::token-set schema:token-set) ;; need to register for the recursive schema of token-sets
 
