@@ -71,7 +71,7 @@
         component (ctcl/get-component data component-id true)
         main-id   (:main-instance-id component)]
     (-> changes
-        (pcb/update-shapes [main-id] (if (str/blank? value)
+        (pcb/update-shapes [main-id] (if (nil? value)
                                        #(dissoc % :variant-error)
                                        #(assoc % :variant-error value))))))
 
