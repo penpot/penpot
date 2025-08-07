@@ -22,9 +22,9 @@
         (ths/add-sample-shape root2-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value2")
         (ths/add-sample-shape root1-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value1")
         (thc/make-component component1-label root1-label)
-        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "Value1"}]})
+        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value1"}]})
         (thc/make-component component2-label root2-label)
-        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "Value2"}]}))))
+        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value2"}]}))))
 
 (defn add-variant-two-properties
   [file variant-label component1-label root1-label component2-label root2-label
@@ -36,9 +36,9 @@
         (ths/add-sample-shape root2-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "p1v2, p2v2")
         (ths/add-sample-shape root1-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "p1v1, p2v1")
         (thc/make-component component1-label root1-label)
-        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "p1v1"} {:name "Property2" :value "p2v1"}]})
+        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "p1v1"} {:name "Property 2" :value "p2v1"}]})
         (thc/make-component component2-label root2-label)
-        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "p1v2"} {:name "Property2" :value "p2v2"}]}))))
+        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "p1v2"} {:name "Property 2" :value "p2v2"}]}))))
 
 (defn add-variant-with-child
   [file variant-label component1-label root1-label component2-label root2-label child1-label child2-label
@@ -51,9 +51,9 @@
         (ths/add-sample-shape child1-label (assoc child1-params :parent-label root1-label))
         (ths/add-sample-shape child2-label (assoc child2-params :parent-label root2-label))
         (thc/make-component component1-label root1-label)
-        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "Value1"}]})
+        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value1"}]})
         (thc/make-component component2-label root2-label)
-        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "Value2"}]}))))
+        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value2"}]}))))
 
 
 (defn add-variant-with-text
@@ -81,6 +81,6 @@
                               (merge text2
                                      text2-params))
         (thc/make-component component1-label root1-label)
-        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "Value1"}]})
+        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value1"}]})
         (thc/make-component component2-label root2-label)
-        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property1" :value "Value2"}]}))))
+        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value2"}]}))))
