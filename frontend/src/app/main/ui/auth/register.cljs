@@ -85,6 +85,9 @@
          (fn [cause]
            (let [{:keys [type code] :as edata} (ex-data cause)]
              (condp = [type code]
+               [:restriction :email-does-not-match-invitation]
+               (st/emit! (ntf/error (tr "errors.email-does-not-match-invitation")))
+
                [:restriction :registration-disabled]
                (st/emit! (ntf/error (tr "errors.registration-disabled")))
 
@@ -148,7 +151,7 @@
 
              (->> (rp/cmd! :prepare-register-profile cdata)
                   (rx/finalize #(reset! submitted? false))
-                  (rx/subs! on-register-profile)))))]
+                  (rx/subs! on-register-profile on-error)))))]
 
     [:& fm/form {:on-submit on-submit :form form}
      [:div {:class (stl/css :fields-row)}

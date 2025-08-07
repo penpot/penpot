@@ -1,0 +1,349 @@
+{
+    "~:features": {
+        "~#set": [
+            "fdata/path-data",
+            "plugins/runtime",
+            "design-tokens/v1",
+            "layout/grid",
+            "styles/v2",
+            "fdata/pointer-map",
+            "fdata/objects-map",
+            "render-wasm/v1",
+            "components/v2",
+            "fdata/shape-data-type"
+        ]
+    },
+    "~:team-id": "~u1091e979-bbec-8194-8005-f7aa420b5660",
+    "~:permissions": {
+        "~:type": "~:membership",
+        "~:is-owner": true,
+        "~:is-admin": true,
+        "~:can-edit": true,
+        "~:can-read": true,
+        "~:is-logged": true
+    },
+    "~:has-media-trimmed": false,
+    "~:comment-thread-seqn": 0,
+    "~:name": "simple-text",
+    "~:revn": 7,
+    "~:modified-at": "~m1749629891313",
+    "~:vern": 0,
+    "~:id": "~u3b0d758a-8c9d-8013-8006-52c8337e5c72",
+    "~:is-shared": false,
+    "~:migrations": {
+        "~#ordered-set": [
+            "legacy-2",
+            "legacy-3",
+            "legacy-5",
+            "legacy-6",
+            "legacy-7",
+            "legacy-8",
+            "legacy-9",
+            "legacy-10",
+            "legacy-11",
+            "legacy-12",
+            "legacy-13",
+            "legacy-14",
+            "legacy-16",
+            "legacy-17",
+            "legacy-18",
+            "legacy-19",
+            "legacy-25",
+            "legacy-26",
+            "legacy-27",
+            "legacy-28",
+            "legacy-29",
+            "legacy-31",
+            "legacy-32",
+            "legacy-33",
+            "legacy-34",
+            "legacy-36",
+            "legacy-37",
+            "legacy-38",
+            "legacy-39",
+            "legacy-40",
+            "legacy-41",
+            "legacy-42",
+            "legacy-43",
+            "legacy-44",
+            "legacy-45",
+            "legacy-46",
+            "legacy-47",
+            "legacy-48",
+            "legacy-49",
+            "legacy-50",
+            "legacy-51",
+            "legacy-52",
+            "legacy-53",
+            "legacy-54",
+            "legacy-55",
+            "legacy-56",
+            "legacy-57",
+            "legacy-59",
+            "legacy-62",
+            "legacy-65",
+            "legacy-66",
+            "legacy-67",
+            "0001-remove-tokens-from-groups",
+            "0002-normalize-bool-content",
+            "0002-clean-shape-interactions",
+            "0003-fix-root-shape",
+            "0003-convert-path-content",
+            "0004-clean-shadow-and-colors",
+            "0005-deprecate-image-type",
+            "0006-fix-old-texts-fills",
+            "0007-clear-invalid-strokes-and-fills-v2",
+            "0008-fix-library-colors-opacity"
+        ]
+    },
+    "~:version": 67,
+    "~:project-id": "~u1091e979-bbec-8194-8005-f7aa420b8b07",
+    "~:created-at": "~m1749629823499",
+    "~:data": {
+        "~:pages": [
+            "~u3b0d758a-8c9d-8013-8006-52c8337e5c73"
+        ],
+        "~:pages-index": {
+            "~u3b0d758a-8c9d-8013-8006-52c8337e5c73": {
+                "~:objects": {
+                    "~u00000000-0000-0000-0000-000000000000": {
+                        "~#shape": {
+                            "~:y": 0,
+                            "~:hide-fill-on-export": false,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:name": "Root Frame",
+                            "~:width": 0.01,
+                            "~:type": "~:frame",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 0.0,
+                                        "~:y": 0.0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.0
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.01,
+                                        "~:y": 0.01
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 0.0,
+                                        "~:y": 0.01
+                                    }
+                                }
+                            ],
+                            "~:r2": 0,
+                            "~:proportion-lock": false,
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:r3": 0,
+                            "~:r1": 0,
+                            "~:id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 0,
+                            "~:proportion": 1.0,
+                            "~:r4": 0,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 0,
+                                    "~:y": 0,
+                                    "~:width": 0.01,
+                                    "~:height": 0.01,
+                                    "~:x1": 0,
+                                    "~:y1": 0,
+                                    "~:x2": 0.01,
+                                    "~:y2": 0.01
+                                }
+                            },
+                            "~:fills": [
+                                {
+                                    "~:fill-color": "#FFFFFF",
+                                    "~:fill-opacity": 1
+                                }
+                            ],
+                            "~:flip-x": null,
+                            "~:height": 0.01,
+                            "~:flip-y": null,
+                            "~:shapes": [
+                                "~u7274a6af-66db-8009-8006-52c837bed25d"
+                            ]
+                        }
+                    },
+                    "~u7274a6af-66db-8009-8006-52c837bed25d": {
+                        "~#shape": {
+                            "~:y": 368.000005463652,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:grow-type": "~:auto-width",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "13hr3ftth2o",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "1qm8gi1rphc",
+                                                        "~:font-size": "48",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "this is a text"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "r8gahivbg7",
+                                                "~:font-size": "48",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "this is a text",
+                            "~:width": 237.0000390021974,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 414.9999714372273,
+                                        "~:y": 368.000005463652
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 652.0000104394247,
+                                        "~:y": 368.000005463652
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 652.0000104394247,
+                                        "~:y": 426.0000039162686
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 414.9999714372273,
+                                        "~:y": 426.0000039162686
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1.0,
+                                    "~:b": 0.0,
+                                    "~:c": 0.0,
+                                    "~:d": 1.0,
+                                    "~:e": 0.0,
+                                    "~:f": 0.0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~u7274a6af-66db-8009-8006-52c837bed25d",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:x": 414.9999714372274,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 414.9999714372274,
+                                    "~:y": 368.000005463652,
+                                    "~:width": 237.0000390021974,
+                                    "~:height": 57.99999845261664,
+                                    "~:x1": 414.9999714372274,
+                                    "~:y1": 368.000005463652,
+                                    "~:x2": 652.0000104394248,
+                                    "~:y2": 426.0000039162686
+                                }
+                            },
+                            "~:flip-x": null,
+                            "~:height": 57.99999845261664,
+                            "~:flip-y": null
+                        }
+                    }
+                },
+                "~:id": "~u3b0d758a-8c9d-8013-8006-52c8337e5c73",
+                "~:name": "Page 1"
+            }
+        },
+        "~:id": "~u3b0d758a-8c9d-8013-8006-52c8337e5c72",
+        "~:options": {
+            "~:components-v2": true,
+            "~:base-font-size": "16px"
+        }
+    }
+}

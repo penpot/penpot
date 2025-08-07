@@ -17,7 +17,7 @@
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.fill :refer [fill-menu fill-attrs]]
+   [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
@@ -60,12 +60,11 @@
         editor-instance (when (features/active-feature? @st/state "text-editor/v2")
                           (mf/deref refs/workspace-editor))
 
-        fill-values  (-> (dwt/current-text-values
-                          {:editor-state editor-state
-                           :editor-instance editor-instance
-                           :shape shape
-                           :attrs (conj txt/text-fill-attrs :fills)})
-                         (d/update-in-when [:fill-color-gradient :type] keyword))
+        fill-values  (dwt/current-text-values
+                      {:editor-state editor-state
+                       :editor-instance editor-instance
+                       :shape shape
+                       :attrs (conj txt/text-fill-attrs :fills)})
 
         fill-values (if (not (contains? fill-values :fills))
                       ;; Old fill format
@@ -76,7 +75,7 @@
 
         text-values (d/merge
                      (select-keys shape [:grow-type])
-                     (select-keys shape fill-attrs)
+                     (select-keys shape fill/fill-attrs)
                      (dwt/current-root-values
                       {:shape shape
                        :attrs txt/root-attrs})
@@ -133,7 +132,7 @@
        :type type
        :values text-values}]
 
-     [:& fill-menu
+     [:> fill/fill-menu*
       {:ids ids
        :type type
        :values fill-values}]

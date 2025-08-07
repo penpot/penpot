@@ -1,5 +1,5 @@
 use crate::shapes::{Path, Segment};
-use crate::{mem, with_current_shape, STATE};
+use crate::{mem, with_current_shape_mut, STATE};
 
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
 
@@ -79,7 +79,7 @@ impl From<Vec<RawSegmentData>> for Path {
 
 #[no_mangle]
 pub extern "C" fn set_shape_path_content() {
-    with_current_shape!(state, |shape: &mut Shape| {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
 
         let segments = bytes
@@ -112,7 +112,7 @@ fn extract_string(start: &mut usize, bytes: &[u8]) -> String {
 
 #[no_mangle]
 pub extern "C" fn set_shape_path_attrs(num_attrs: u32) {
-    with_current_shape!(state, |shape: &mut Shape| {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
         let bytes = mem::bytes();
         let mut start = 0;
         for _ in 0..num_attrs {

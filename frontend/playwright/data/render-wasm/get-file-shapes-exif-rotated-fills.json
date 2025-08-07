@@ -1,0 +1,779 @@
+{
+  "~:features": {
+    "~#set": [
+      "fdata/path-data",
+      "plugins/runtime",
+      "design-tokens/v1",
+      "layout/grid",
+      "styles/v2",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "render-wasm/v1",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:team-id": "~u5d1327cf-3054-8111-8005-328a160ff966",
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "Exif rotated fills",
+  "~:revn": 17,
+  "~:modified-at": "~m1750761275050",
+  "~:vern": 0,
+  "~:id": "~u27270c45-35b4-80f3-8006-63a3912bdce8",
+  "~:is-shared": false,
+  "~:migrations": {
+    "~#ordered-set": [
+      "legacy-2",
+      "legacy-3",
+      "legacy-5",
+      "legacy-6",
+      "legacy-7",
+      "legacy-8",
+      "legacy-9",
+      "legacy-10",
+      "legacy-11",
+      "legacy-12",
+      "legacy-13",
+      "legacy-14",
+      "legacy-16",
+      "legacy-17",
+      "legacy-18",
+      "legacy-19",
+      "legacy-25",
+      "legacy-26",
+      "legacy-27",
+      "legacy-28",
+      "legacy-29",
+      "legacy-31",
+      "legacy-32",
+      "legacy-33",
+      "legacy-34",
+      "legacy-36",
+      "legacy-37",
+      "legacy-38",
+      "legacy-39",
+      "legacy-40",
+      "legacy-41",
+      "legacy-42",
+      "legacy-43",
+      "legacy-44",
+      "legacy-45",
+      "legacy-46",
+      "legacy-47",
+      "legacy-48",
+      "legacy-49",
+      "legacy-50",
+      "legacy-51",
+      "legacy-52",
+      "legacy-53",
+      "legacy-54",
+      "legacy-55",
+      "legacy-56",
+      "legacy-57",
+      "legacy-59",
+      "legacy-62",
+      "legacy-65",
+      "legacy-66",
+      "legacy-67",
+      "0001-remove-tokens-from-groups",
+      "0002-normalize-bool-content",
+      "0002-clean-shape-interactions",
+      "0003-fix-root-shape",
+      "0003-convert-path-content",
+      "0004-clean-shadow-and-colors",
+      "0005-deprecate-image-type",
+      "0006-fix-old-texts-fills",
+      "0007-clear-invalid-strokes-and-fills-v2",
+      "0008-fix-library-colors-opacity",
+      "0009-add-partial-text-touched-flags"
+    ]
+  },
+  "~:version": 67,
+  "~:project-id": "~u5d1327cf-3054-8111-8005-340b8ba38a69",
+  "~:created-at": "~m1750761070908",
+  "~:data": {
+    "~:pages": [
+      "~u27270c45-35b4-80f3-8006-63a3912bdce9"
+    ],
+    "~:pages-index": {
+      "~u27270c45-35b4-80f3-8006-63a3912bdce9": {
+        "~:objects": {
+          "~u00000000-0000-0000-0000-000000000000": {
+            "~#shape": {
+              "~:y": 0,
+              "~:hide-fill-on-export": false,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:name": "Root Frame",
+              "~:width": 0.01,
+              "~:type": "~:frame",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0.01,
+                    "~:y": 0.01
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": 0,
+                    "~:y": 0.01
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:proportion-lock": false,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u00000000-0000-0000-0000-000000000000",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": 0,
+              "~:proportion": 1,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": 0,
+                  "~:y": 0,
+                  "~:width": 0.01,
+                  "~:height": 0.01,
+                  "~:x1": 0,
+                  "~:y1": 0,
+                  "~:x2": 0.01,
+                  "~:y2": 0.01
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-color": "#FFFFFF",
+                  "~:fill-opacity": 1
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 0.01,
+              "~:flip-y": null,
+              "~:shapes": [
+                "~u8ae169c2-73c6-809f-8006-63a3d429cea3",
+                "~u8ae169c2-73c6-809f-8006-63a394f96940",
+                "~u8ae169c2-73c6-809f-8006-63a3ef35c521",
+                "~u8ae169c2-73c6-809f-8006-63a40defed29"
+              ]
+            }
+          },
+          "~u8ae169c2-73c6-809f-8006-63a394f96940": {
+            "~#shape": {
+              "~:y": -119,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "Rectangle",
+              "~:width": 1044,
+              "~:type": "~:rect",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": -2211,
+                    "~:y": -119
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -1167,
+                    "~:y": -119
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -1167,
+                    "~:y": 577
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -2211,
+                    "~:y": 577
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": true,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u8ae169c2-73c6-809f-8006-63a394f96940",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [],
+              "~:x": -2211,
+              "~:proportion": 1.5,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": -2211,
+                  "~:y": -119,
+                  "~:width": 1044,
+                  "~:height": 696,
+                  "~:x1": -2211,
+                  "~:y1": -119,
+                  "~:x2": -1167,
+                  "~:y2": 577
+                }
+              },
+              "~:fills": [
+                {
+                  "~:fill-opacity": 1,
+                  "~:fill-image": {
+                    "~:id": "~u27270c45-35b4-80f3-8006-63a39cf292e7",
+                    "~:width": 1200,
+                    "~:height": 1800,
+                    "~:mtype": "image/jpeg",
+                    "~:name": "Landscape_6.jpg",
+                    "~:keep-aspect-ratio": true
+                  }
+                }
+              ],
+              "~:flip-x": null,
+              "~:height": 696,
+              "~:flip-y": null
+            }
+          },
+          "~u8ae169c2-73c6-809f-8006-63a3d429cea3": {
+            "~#shape": {
+              "~:y": -119,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:hide-in-viewer": false,
+              "~:name": "Rectangle",
+              "~:width": 1044,
+              "~:type": "~:rect",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": -1059,
+                    "~:y": -119
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -15,
+                    "~:y": -119
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -15,
+                    "~:y": 577
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -1059,
+                    "~:y": 577
+                  }
+                }
+              ],
+              "~:r2": 0,
+              "~:layout-item-h-sizing": "~:fix",
+              "~:proportion-lock": true,
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:r3": 0,
+              "~:r1": 0,
+              "~:id": "~u8ae169c2-73c6-809f-8006-63a3d429cea3",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:inner",
+                  "~:stroke-width": 200,
+                  "~:stroke-opacity": 1,
+                  "~:stroke-image": {
+                    "~:id": "~u27270c45-35b4-80f3-8006-63a3ea82557f",
+                    "~:width": 1200,
+                    "~:height": 1800,
+                    "~:mtype": "image/jpeg",
+                    "~:name": "Landscape_6.jpg",
+                    "~:keep-aspect-ratio": true
+                  }
+                }
+              ],
+              "~:x": -1059,
+              "~:proportion": 1.5,
+              "~:r4": 0,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": -1059,
+                  "~:y": -119,
+                  "~:width": 1044,
+                  "~:height": 696,
+                  "~:x1": -1059,
+                  "~:y1": -119,
+                  "~:x2": -15,
+                  "~:y2": 577
+                }
+              },
+              "~:fills": [],
+              "~:flip-x": null,
+              "~:height": 696,
+              "~:flip-y": null
+            }
+          },
+          "~u8ae169c2-73c6-809f-8006-63a3ef35c521": {
+            "~#shape": {
+              "~:y": 577,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:content": {
+                "~:type": "root",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:typography-ref-id": null,
+                            "~:text-transform": "none",
+                            "~:text-align": "left",
+                            "~:font-id": "sourcesanspro",
+                            "~:font-size": "1500",
+                            "~:font-weight": "400",
+                            "~:typography-ref-file": null,
+                            "~:text-direction": "ltr",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-opacity": 1,
+                                "~:fill-image": {
+                                  "~:id": "~u27270c45-35b4-80f3-8006-63a41d147866",
+                                  "~:width": 1200,
+                                  "~:height": 1800,
+                                  "~:mtype": "image/jpeg",
+                                  "~:name": "Landscape_6.jpg",
+                                  "~:keep-aspect-ratio": true
+                                }
+                              }
+                            ],
+                            "~:font-family": "sourcesanspro",
+                            "~:text": "X"
+                          }
+                        ],
+                        "~:typography-ref-id": null,
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "sourcesanspro",
+                        "~:key": "9nfs8",
+                        "~:font-size": "1500",
+                        "~:font-weight": "400",
+                        "~:typography-ref-file": null,
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-opacity": 1,
+                            "~:fill-image": {
+                              "~:id": "~u27270c45-35b4-80f3-8006-63a41d147866",
+                              "~:width": 1200,
+                              "~:height": 1800,
+                              "~:mtype": "image/jpeg",
+                              "~:name": "Landscape_6.jpg",
+                              "~:keep-aspect-ratio": true
+                            }
+                          }
+                        ],
+                        "~:font-family": "sourcesanspro"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "X",
+              "~:width": 770,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": -2211,
+                    "~:y": 577
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -1441,
+                    "~:y": 577
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -1441,
+                    "~:y": 2377
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -2211,
+                    "~:y": 2377
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:id": "~u8ae169c2-73c6-809f-8006-63a3ef35c521",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~#rect": {
+                    "~:y": 2448,
+                    "~:font-style": "normal",
+                    "~:text-transform": "none",
+                    "~:font-size": "1500px",
+                    "~:font-weight": "400",
+                    "~:y1": -71,
+                    "~:width": 769.046875,
+                    "~:text-decoration": "none solid rgb(0, 0, 0)",
+                    "~:letter-spacing": "normal",
+                    "~:x": -2211,
+                    "~:x1": 0,
+                    "~:y2": 1871,
+                    "~:fills": [
+                      {
+                        "~:fill-opacity": 1,
+                        "~:fill-image": {
+                          "~:id": "~u27270c45-35b4-80f3-8006-63a41d147866",
+                          "~:width": 1200,
+                          "~:height": 1800,
+                          "~:mtype": "image/jpeg",
+                          "~:name": "Landscape_6.jpg",
+                          "~:keep-aspect-ratio": true
+                        }
+                      }
+                    ],
+                    "~:x2": 769.046875,
+                    "~:direction": "ltr",
+                    "~:font-family": "sourcesanspro",
+                    "~:height": 1942,
+                    "~:text": "X"
+                  }
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:x": -2211,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": -2211,
+                  "~:y": 577,
+                  "~:width": 770,
+                  "~:height": 1800,
+                  "~:x1": -2211,
+                  "~:y1": 577,
+                  "~:x2": -1441,
+                  "~:y2": 2377
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 1800,
+              "~:flip-y": null
+            }
+          },
+          "~u8ae169c2-73c6-809f-8006-63a40defed29": {
+            "~#shape": {
+              "~:y": 577,
+              "~:transform": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:rotation": 0,
+              "~:grow-type": "~:fixed",
+              "~:content": {
+                "~:type": "root",
+                "~:children": [
+                  {
+                    "~:type": "paragraph-set",
+                    "~:children": [
+                      {
+                        "~:line-height": "1.2",
+                        "~:font-style": "normal",
+                        "~:children": [
+                          {
+                            "~:line-height": "1.2",
+                            "~:font-style": "normal",
+                            "~:text-transform": "none",
+                            "~:text-align": "left",
+                            "~:font-id": "sourcesanspro",
+                            "~:font-size": "1500",
+                            "~:font-weight": "400",
+                            "~:text-direction": "ltr",
+                            "~:font-variant-id": "regular",
+                            "~:text-decoration": "none",
+                            "~:letter-spacing": "0",
+                            "~:fills": [
+                              {
+                                "~:fill-color": "#B1B2B5",
+                                "~:fill-opacity": 1
+                              }
+                            ],
+                            "~:font-family": "sourcesanspro",
+                            "~:text": "X"
+                          }
+                        ],
+                        "~:text-transform": "none",
+                        "~:text-align": "left",
+                        "~:font-id": "sourcesanspro",
+                        "~:key": "9nfs8",
+                        "~:font-size": "1500",
+                        "~:font-weight": "400",
+                        "~:text-direction": "ltr",
+                        "~:type": "paragraph",
+                        "~:font-variant-id": "regular",
+                        "~:text-decoration": "none",
+                        "~:letter-spacing": "0",
+                        "~:fills": [
+                          {
+                            "~:fill-color": "#B1B2B5",
+                            "~:fill-opacity": 1
+                          }
+                        ],
+                        "~:font-family": "sourcesanspro"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "~:hide-in-viewer": false,
+              "~:name": "X",
+              "~:width": 770,
+              "~:type": "~:text",
+              "~:points": [
+                {
+                  "~#point": {
+                    "~:x": -1059,
+                    "~:y": 577
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -289,
+                    "~:y": 577
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -289,
+                    "~:y": 2377
+                  }
+                },
+                {
+                  "~#point": {
+                    "~:x": -1059,
+                    "~:y": 2377
+                  }
+                }
+              ],
+              "~:layout-item-h-sizing": "~:fix",
+              "~:transform-inverse": {
+                "~#matrix": {
+                  "~:a": 1,
+                  "~:b": 0,
+                  "~:c": 0,
+                  "~:d": 1,
+                  "~:e": 0,
+                  "~:f": 0
+                }
+              },
+              "~:layout-item-v-sizing": "~:fix",
+              "~:id": "~u8ae169c2-73c6-809f-8006-63a40defed29",
+              "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:position-data": [
+                {
+                  "~#rect": {
+                    "~:y": 2448,
+                    "~:font-style": "normal",
+                    "~:text-transform": "none",
+                    "~:font-size": "1500px",
+                    "~:font-weight": "400",
+                    "~:y1": -71,
+                    "~:width": 769.046875,
+                    "~:text-decoration": "none solid rgb(177, 178, 181)",
+                    "~:letter-spacing": "normal",
+                    "~:x": -1059,
+                    "~:x1": 0,
+                    "~:y2": 1871,
+                    "~:fills": [
+                      {
+                        "~:fill-color": "#B1B2B5",
+                        "~:fill-opacity": 1
+                      }
+                    ],
+                    "~:x2": 769.046875,
+                    "~:direction": "ltr",
+                    "~:font-family": "sourcesanspro",
+                    "~:height": 1942,
+                    "~:text": "X"
+                  }
+                }
+              ],
+              "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+              "~:strokes": [
+                {
+                  "~:stroke-style": "~:solid",
+                  "~:stroke-alignment": "~:outer",
+                  "~:stroke-width": 100,
+                  "~:stroke-opacity": 1,
+                  "~:stroke-image": {
+                    "~:id": "~u27270c45-35b4-80f3-8006-63a43dc4984b",
+                    "~:width": 1200,
+                    "~:height": 1800,
+                    "~:mtype": "image/jpeg",
+                    "~:name": "Landscape_6.jpg",
+                    "~:keep-aspect-ratio": true
+                  }
+                }
+              ],
+              "~:x": -1059,
+              "~:selrect": {
+                "~#rect": {
+                  "~:x": -1059,
+                  "~:y": 577,
+                  "~:width": 770,
+                  "~:height": 1800,
+                  "~:x1": -1059,
+                  "~:y1": 577,
+                  "~:x2": -289,
+                  "~:y2": 2377
+                }
+              },
+              "~:flip-x": null,
+              "~:height": 1800,
+              "~:flip-y": null
+            }
+          }
+        },
+        "~:id": "~u27270c45-35b4-80f3-8006-63a3912bdce9",
+        "~:name": "Page 1"
+      }
+    },
+    "~:id": "~u27270c45-35b4-80f3-8006-63a3912bdce8",
+    "~:options": {
+      "~:components-v2": true,
+      "~:base-font-size": "16px"
+    }
+  }
+}

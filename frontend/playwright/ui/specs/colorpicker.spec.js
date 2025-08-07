@@ -61,24 +61,28 @@ test("Create a LINEAR gradient", async ({ page }) => {
 
   const removeBtn = workspacePage.colorpicker
     .getByRole("button", { name: "Remove color" })
-    .nth(2);
+    .last();
   await removeBtn.click();
   await removeBtn.click();
 
   const inputColor1 = workspacePage.colorpicker
-    .getByPlaceholder("Mixed")
-    .nth(1);
-  await inputColor1.fill("fabada");
+    .getByRole("textbox", { name: "Color" })
+    .first();
+  await inputColor1.fill("#fabada");
 
-  const inputOpacity1 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
+  const inputOpacity1 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .first();
   await inputOpacity1.fill("100");
 
   const inputColor2 = workspacePage.colorpicker
-    .getByPlaceholder("Mixed")
-    .nth(2);
-  await inputColor2.fill("red");
+    .getByRole("textbox", { name: "Color" })
+    .last();
+  await inputColor2.fill("#ff0000");
 
-  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(2);
+  const inputOpacity2 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .last();
   await inputOpacity2.fill("40");
 
   const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(
@@ -139,20 +143,28 @@ test("Create a RADIAL gradient", async ({ page }) => {
 
   const removeBtn = workspacePage.colorpicker
     .getByRole("button", { name: "Remove color" })
-    .nth(2);
+    .last();
   await removeBtn.click();
   await removeBtn.click();
 
-  const inputColor1 = workspacePage.page.getByPlaceholder("Mixed").nth(1);
-  await inputColor1.fill("fabada");
+  const inputColor1 = workspacePage.page
+    .getByRole("textbox", { name: "Color" })
+    .first();
+  await inputColor1.fill("#fabada");
 
-  const inputOpacity1 = workspacePage.colorpicker.getByPlaceholder("--").nth(1);
+  const inputOpacity1 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .first();
   await inputOpacity1.fill("100");
 
-  const inputColor2 = workspacePage.page.getByPlaceholder("Mixed").nth(2);
-  await inputColor2.fill("red");
+  const inputColor2 = workspacePage.page
+    .getByRole("textbox", { name: "Color" })
+    .last();
+  await inputColor2.fill("#ff0000");
 
-  const inputOpacity2 = workspacePage.colorpicker.getByPlaceholder("--").nth(2);
+  const inputOpacity2 = workspacePage.colorpicker
+    .getByTestId("opacity-input")
+    .last();
   await inputOpacity2.fill("100");
 
   const inputOpacityGlobal = workspacePage.colorpicker.getByTestId(

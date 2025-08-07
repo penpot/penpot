@@ -1703,13 +1703,12 @@ msgstr "Decoración de texto"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Ninguna"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Tachar"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Subrayar"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Tachar"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:151
 msgid "inspect.attributes.typography.text-transform"
@@ -1724,7 +1723,7 @@ msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Ninguna"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:430
-msgid "inspect.attributes.typography.text-transform.titlecase"
+msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Primera en mayúscula"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:157
@@ -4307,29 +4306,10 @@ msgstr ""
 "El plan Professional está diseñado para equipos de hasta 8 editores "
 "(propietario, administrador y editor)."
 
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"El plan Unlimited (de prueba) está diseñado para equipos de más de 8 "
-"editores (propietario, administrador y editor)."
-
 #: src/app/main/ui/dashboard/subscription.cljs:160
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
-"¡Parece que tu equipo ha crecido! Tu plan incluye %s asientos, pero ahora "
-"estás usando más que eso."
-
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr ""
-"Desbloquea el acceso completo para siempre. Contacta con el propietario del "
-"equipo: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "Desbloquea el acceso completo para siempre. [Suscríbete ahora.](%s)"
+"¡Parece que tu equipo ha crecido! Tu plan incluye %s asientos, pero ahora estás usando %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown
@@ -4344,28 +4324,28 @@ msgstr ""
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Consigue más editores, más almacenamiento y más versiones guardadas "
-"automáticamente con el plan Unlimited o Enterprise. [Suscríbete ahora.](%s)"
+"automáticamente con el plan Unlimited o Enterprise. [Suscríbete ahora.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:176
 #, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr "Por favor, mejóralo para adaptarlo a tu uso. [Suscríbete ahora.](%s)"
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr "Por favor, mejóralo para adaptarlo a tu uso. [Suscríbete ahora.|target:self](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr "Por favor, mejóralo para adaptarlo a tu uso. Contacta con el "
+"propietario del equipo: %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:80
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Plan Enterprise"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "Seguridad avanzada, registros de actividad, asistencia dedicada y mucho más."
-
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgid "subscription.dashboard.power-up.professional.bottom"
 msgstr ""
-"Consigue editores y almacenamiento adicionales, copias de seguridad de "
-"archivos y mucho más con el Plan Unlimited[Mejóralo](%s)"
+"Consigue editores y almacenamiento adicionales, recuperación de "
+"archivos y mucho más con el Plan Unlimited[Mejóralo|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4381,7 +4361,7 @@ msgstr "Suscríbete"
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
 "¿Disfrutas de la prueba? Desbloquea el acceso completo para "
-"siempre.[Suscríbete](%s)"
+"siempre.[Suscríbete|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4394,16 +4374,19 @@ msgstr ""
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Plan Unlimited (Prueba)"
 
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Plan Enterprise (Prueba)"
+
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
-msgstr "Plan ilimitado"
+msgstr "Plan Unlimited"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
-"Obtenga seguridad avanzada, registros de actividad, asistencia dedicada y "
-"mucho más. Echa un ojo al[Plan Enterprise](%s)"
+"Consigue editores adicionales, copias de seguridad, almacenamiento ilimitado y mucho más. "
+"[Echa un ojo al Plan Enterprise|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4453,21 +4436,16 @@ msgstr "Enterprise"
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (prueba)"
 
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "Enterprise de prueba"
-
 #: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Registros de actividad"
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr "Almacenamiento ilimitado y versiones de autoguardado de 90 días y recuperación de archivos"
 
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Seguridad avanzada"
+msgid "subscription.settings.enterprise.autosave"
+msgstr "Versiones guardadas automáticamente cada 90 días y recuperación de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Apoyo específico"
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Factura mensual limitada"
 
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
@@ -4509,7 +4487,7 @@ msgstr "Aplica %s a tus equipos"
 
 #: src/app/main/ui/settings/subscription.cljs:282
 msgid "subscription.settings.member-since"
-msgstr "Miembro de penpot desde %s"
+msgstr "Miembro de penpot desde: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:285
 msgid "subscription.settings.other-plans"
@@ -4532,8 +4510,8 @@ msgid "subscription.settings.professional.projects-files"
 msgstr "Proyectos, archivos y borradores ilimitados"
 
 #: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días"
+msgid "subscription.settings.professional.storage-autosave"
+msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días y recuperación de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
@@ -4542,6 +4520,9 @@ msgstr "Equipos ilimitados de hasta 8 redactores"
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Tu suscripción"
+
+msgid "subscription.settings.editors"
+msgstr "(x %s editores)"
 
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.start-trial"
@@ -4567,15 +4548,10 @@ msgstr "Eres %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:278
 msgid "subscription.settings.support-us-since"
-msgstr "Nos has estado apoyando con este plan desde %s"
+msgstr "Nos has estado apoyando con este plan desde: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.try-it-free"
-msgstr "Pruébalo gratis durante 14 días"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
 msgstr "Pruébalo gratis durante 14 días"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
@@ -4586,19 +4562,15 @@ msgstr "Unlimited"
 msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited (prueba)"
 
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "Unlimited de prueba"
-
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Factura mensual limitada"
 
 #: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
+msgid "subscription.settings.unlimited.storage-autosave"
 msgstr ""
-"25 GB de almacenamiento y 30 días de autoguardado de versiones y copias de "
-"seguridad de archivos"
+"25 GB de almacenamiento y 30 días de autoguardado de versiones y recuperación "
+"de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -5507,7 +5479,39 @@ msgstr "Desvinculado"
 msgid "workspace.options.component.variant"
 msgstr "Variante"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:988
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr "Este componente tiene variantes en conflicto. Comprueba que cada variante tenga un conjunto único de propiedades y valores."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Ir al componente principal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Localizar variantes duplicadas"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Algunas variantes tienen propiedades y valores idénticos"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.adjust"
+msgstr "Ajusta los valores para que puedan ser encontradas."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "Estas variantes tienen propiedades y valores idénticos."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "Esta variante tiene propiedades y valores idénticos a los de otra variante."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Algunas de estas variantes tienen propiedades y valores idénticos."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.malformed.group.locate"
 msgstr "Localizar variantes no válidas"
 
@@ -7349,6 +7353,10 @@ msgstr "No hay temas."
 msgid "workspace.tokens.no-themes-currently"
 msgstr "Actualmente no existen temas."
 
+#: src/app/main/ui/workspace/tokens/modals/import.cljs
+msgid "workspace.tokens.no-tokens-found"
+msgstr "No se han encontrado tokens, sets o temas en este fichero."
+
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
 msgid "workspace.tokens.num-active-sets"
 msgstr "%s sets activos"
@@ -7464,10 +7472,8 @@ msgid "workspace.tokens.tools"
 msgstr "Herramientas"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr ""
-"La importación se ha realizado correctamente pero se omitieron algunos "
-"tokens."
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "La importación se ha realizado correctamente. Algunos tokens no se incluyeron."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7476,6 +7482,10 @@ msgstr "El tipo '%s' no está soportado (%s)\n"
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:133
 msgid "workspace.tokens.value-not-valid"
 msgstr "El valor no es válido"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.tokens.more-options"
+msgstr "Click derecho para ver opciones"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61
 msgid "workspace.tokens.value-with-units"
@@ -7793,6 +7803,24 @@ msgstr "Abrir menu de versiones"
 msgid "workspace.versions.warning.subtext"
 msgstr "Si quieres aumentar este límite, contáctanos en [support@penpot.app](%s)"
 
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Si quieres aumentar este límite, "
+"[mejora tu plan|target:self](%s)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr ""
+"Si quieres aumentar este límite, escríbenos a "
+"[%s](mailto)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"Si quieres aumentar este límite, contacta con el propietario del equipo: "
+"[%s](mailto)"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:368
 msgid "workspace.versions.warning.text"
 msgstr "Los autoguardados duran %s días."
@@ -7800,3 +7828,9 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "labels.sources"
+msgstr "Recursos"
+
+msgid "labels.pinned-projects"
+msgstr "Proyectos fijados"

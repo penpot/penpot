@@ -29,18 +29,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
-  {:boolean       "boolean"
-   :border-radius "borderRadius"
-   :color         "color"
-   :dimensions    "dimension"
-   :number        "number"
-   :opacity       "opacity"
-   :other         "other"
-   :rotation      "rotation"
-   :sizing        "sizing"
-   :spacing       "spacing"
-   :string        "string"
-   :stroke-width  "strokeWidth"})
+  {:boolean        "boolean"
+   :border-radius  "borderRadius"
+   :color          "color"
+   :dimensions     "dimension"
+   :font-size      "fontSizes"
+   :letter-spacing "letterSpacing"
+   :number         "number"
+   :opacity        "opacity"
+   :other          "other"
+   :rotation       "rotation"
+   :sizing         "sizing"
+   :spacing        "spacing"
+   :string         "string"
+   :stroke-width   "strokeWidth"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
@@ -90,31 +92,50 @@
 
 (def opacity-keys (schema-keys schema:opacity))
 
-(def ^:private schema:spacing
+(def ^:private schema:spacing-gap
   [:map
    [:row-gap {:optional true} token-name-ref]
-   [:column-gap {:optional true} token-name-ref]
+   [:column-gap {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing-padding
+  [:map
    [:p1 {:optional true} token-name-ref]
    [:p2 {:optional true} token-name-ref]
    [:p3 {:optional true} token-name-ref]
-   [:p4 {:optional true} token-name-ref]
+   [:p4 {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing-margin
+  [:map
    [:m1 {:optional true} token-name-ref]
    [:m2 {:optional true} token-name-ref]
    [:m3 {:optional true} token-name-ref]
-   [:m4 {:optional true} token-name-ref]
-   [:x {:optional true} token-name-ref]
-   [:y {:optional true} token-name-ref]])
+   [:m4 {:optional true} token-name-ref]])
+
+(def ^:private schema:spacing
+  (reduce mu/union [schema:spacing-gap
+                    schema:spacing-padding
+                    schema:spacing-margin]))
+
+(def spacing-margin-keys (schema-keys schema:spacing-margin))
 
 (def spacing-keys (schema-keys schema:spacing))
 
 (def ^:private schema:dimensions
-  [:merge
-   schema:sizing
-   schema:spacing
-   schema:stroke-width
-   schema:border-radius])
+  (reduce mu/union [schema:sizing
+                    schema:spacing
+                    schema:stroke-width
+                    schema:border-radius]))
 
 (def dimensions-keys (schema-keys schema:dimensions))
+
+(def ^:private schema:axis
+  [:map
+   [:x {:optional true} token-name-ref]
+   [:y {:optional true} token-name-ref]])
+
+(def axis-keys (schema-keys schema:axis))
+
+
 
 (def ^:private schema:rotation
   [:map
@@ -122,10 +143,27 @@
 
 (def rotation-keys (schema-keys schema:rotation))
 
-(def ^:private schema:number
+(def ^:private schema:font-size
   [:map
-   [:rotation {:optional true} token-name-ref]
-   [:line-height {:optional true} token-name-ref]])
+   [:font-size {:optional true} token-name-ref]])
+
+(def font-size-keys (schema-keys schema:font-size))
+
+(def ^:private schema:letter-spacing
+  [:map
+   [:letter-spacing {:optional true} token-name-ref]])
+
+(def letter-spacing-keys (schema-keys schema:letter-spacing))
+
+(def typography-keys (set/union font-size-keys letter-spacing-keys))
+
+;; TODO: Created to extract the font-size feature from the typography feature flag.
+;; Delete this once the typography feature flag is removed.
+(def ff-typography-keys (set/difference typography-keys font-size-keys))
+
+(def ^:private schema:number
+  (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
+                    schema:rotation]))
 
 (def number-keys (schema-keys schema:number))
 
@@ -136,7 +174,9 @@
                          opacity-keys
                          spacing-keys
                          dimensions-keys
+                         axis-keys
                          rotation-keys
+                         typography-keys
                          number-keys))
 
 (def ^:private schema:tokens
@@ -150,6 +190,8 @@
    schema:spacing
    schema:rotation
    schema:number
+   schema:font-size
+   schema:letter-spacing
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -177,12 +219,15 @@
        changed-sub-attr
        #{:m1 :m2 :m3 :m4})
 
+     (font-size-keys shape-attr) #{shape-attr}
+     (letter-spacing-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
      (rotation-keys shape-attr) #{shape-attr}
-     (number-keys shape-attr) #{shape-attr})))
+     (number-keys shape-attr) #{shape-attr}
+     (axis-keys shape-attr) #{shape-attr})))
 
 (defn token-attr->shape-attr
   [token-attr]
@@ -191,6 +236,63 @@
     :stroke-color :strokes
     :stroke-width :strokes
     token-attr))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TOKEN SHAPE ATTRIBUTES
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def position-attributes #{:x :y})
+
+(def generic-attributes
+  (set/union color-keys
+             stroke-width-keys
+             rotation-keys
+             sizing-keys
+             opacity-keys
+             position-attributes))
+
+(def rect-attributes
+  (set/union generic-attributes
+             border-radius-keys))
+
+(def frame-attributes
+  (set/union rect-attributes
+             spacing-keys))
+
+(def text-attributes
+  (set/union generic-attributes
+             typography-keys
+             number-keys))
+
+(defn shape-type->attributes
+  [type]
+  (case type
+    :bool    generic-attributes
+    :circle  generic-attributes
+    :rect    rect-attributes
+    :frame   frame-attributes
+    :image   rect-attributes
+    :path    generic-attributes
+    :svg-raw generic-attributes
+    :text    text-attributes
+    nil))
+
+(defn appliable-attrs
+  "Returns intersection of shape `attributes` for `token-type`."
+  [attributes token-type]
+  (set/intersection attributes (shape-type->attributes token-type)))
+
+(defn any-appliable-attr?
+  "Checks if `token-type` supports given shape `attributes`."
+  [attributes token-type]
+  (seq (appliable-attrs attributes token-type)))
+
+;; Token attrs that are set inside content blocks of text shapes, instead
+;; at the shape level.
+(def attrs-in-text-content
+  (set/union
+   typography-keys
+   #{:fill}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS IN SHAPES
@@ -218,13 +320,5 @@
                                                    :attributes attributes})]
     (update shape :applied-tokens #(merge % applied-tokens))))
 
-(defn maybe-apply-token-to-shape
-  "When the passed `:token` is non-nil apply it to the `:applied-tokens` on a shape."
-  [{:keys [shape token _attributes] :as props}]
-  (if token
-    (apply-token-to-shape props)
-    shape))
-
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
-

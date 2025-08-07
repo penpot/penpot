@@ -1,0 +1,36 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../ds/typography.scss" as *;
+
+.sets-header-container {
+  @include use-typography("headline-small");
+  padding: var(--sp-s);
+  color: var(--title-foreground-color);
+  word-break: break-word;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-xs);
+  margin-block-start: var(--sp-s);
+}
+
+.sets-header {
+  flex: 1;
+}
+
+.sets-header-status {
+  @include use-typography("body-small");
+  text-transform: none;
+  color: var(--color-foreground-secondary);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+}
+
+.sets-header-status-text {
+  font-style: italic;
+}

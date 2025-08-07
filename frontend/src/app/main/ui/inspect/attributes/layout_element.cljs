@@ -16,7 +16,7 @@
    [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
 
-(def properties
+(def ^:private properties
   [:margin
    :max-height
    :min-height

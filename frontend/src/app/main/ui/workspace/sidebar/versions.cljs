@@ -17,6 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.autosaved-milestone :refer [autosaved-milestone*]]
@@ -27,6 +28,7 @@
    [app.util.keyboard :as kbd]
    [app.util.time :as dt]
    [cuerdas.core :as str]
+   [lambdaisland.uri :as u]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
@@ -35,11 +37,27 @@
 
 (defn get-versions-stored-days
   [team]
-  (let [subscription-name (-> team :subscription :type)]
+  (let [subscription-type (get-subscription-type (:subscription team))]
     (cond
-      (= subscription-name "unlimited") 30
-      (= subscription-name "enterprise") 90
+      (= subscription-type "unlimited") 30
+      (= subscription-type "enterprise") 90
       :else 7)))
+
+(defn get-versions-warning-subtext
+  [team]
+  (let [subscription-type   (get-subscription-type (:subscription team))
+        is-owner?           (-> team :permissions :is-owner)
+        email-owner         (:email (some #(when (:is-owner %) %) (:members team)))
+        support-email       "support@penpot.app"
+        go-to-subscription  (dm/str (u/join cfg/public-uri "#/settings/subscriptions"))]
+
+    (if (contains? cfg/flags :subscriptions)
+      (if is-owner?
+        (if (= "enterprise" subscription-type)
+          (tr "subscription.workspace.versions.warning.enterprise.subtext-owner" support-email support-email)
+          (tr "subscription.workspace.versions.warning.subtext-owner" go-to-subscription))
+        (tr "subscription.workspace.versions.warning.subtext-member" email-owner email-owner))
+      (tr "workspace.versions.warning.subtext" support-email))))
 
 (defn group-snapshots
   [data]
@@ -369,5 +387,4 @@
          [:> i18n/tr-html*
           {:tag-name "div"
            :class (stl/css :cta)
-           :content (tr "workspace.versions.warning.subtext"
-                        "mailto:support@penpot.app")}]]])]))
+           :content (get-versions-warning-subtext team)}]]])]))

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>WASM + WebGL2 Canvas</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script type="module">
+    import initWasmModule from '/js/render_wasm.js';
+    import {
+      init, addShapeSolidFill, assignCanvas, hexToU32ARGB, getRandomInt, getRandomColor,
+      getRandomFloat, useShape, setShapeChildren, setupInteraction, addShapeSolidStrokeFill,
+      set_parent
+    } from './js/lib.js';
+
+    const canvas = document.getElementById("canvas");
+    canvas.width =  window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    initWasmModule().then(Module => {
+      init(Module);
+      assignCanvas(canvas);
+      Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
+      Module._set_view(1, 0, 0);
+      Module._init_shapes_pool(10);
+      setupInteraction(canvas);
+
+      const rectUuid1 = crypto.randomUUID();
+      const rectUuid2 = crypto.randomUUID();
+      const frameUuid = crypto.randomUUID();
+
+      // Create Rect 1
+      useShape(rectUuid1);
+      set_parent(frameUuid);
+      Module._set_shape_type(3);
+      Module._set_shape_selrect(100, 100, 300, 300);
+      Module._set_shape_blur(1, 100, 40);
+      addShapeSolidFill(hexToU32ARGB("#003DF7", 1));
+
+      // Create Rect 2
+      useShape(rectUuid2);
+      set_parent(frameUuid);
+      Module._set_shape_type(3);
+      Module._set_shape_selrect(200, 200, 400, 400);
+      addShapeSolidFill(1870806498)
+
+      // Create Frame
+      useShape(frameUuid);
+      Module._set_parent(0, 0, 0, 0);
+      Module._set_shape_type(0);
+      Module._set_shape_selrect(200, 200, 450, 450);
+      Module._set_shape_corners(50, 50, 50, 50);
+      addShapeSolidFill(hexToU32ARGB("#ee0d32", 1))
+      Module._add_shape_center_stroke(25, 0,  0, 0);
+      addShapeSolidStrokeFill(hexToU32ARGB("#000000", 1));
+      Module._set_shape_blur(1, 100, 4);
+      Module._add_shape_shadow(hexToU32ARGB("#000000", .2), 4, 40, 80, 80, 2, false);
+
+      setShapeChildren([rectUuid1]);
+
+      useShape("00000000-0000-0000-0000-000000000000");
+      setShapeChildren([frameUuid]);
+
+      performance.mark('render:begin');
+      Module._render(Date.now());
+      performance.mark('render:end');
+      const { duration } = performance.measure('render', 'render:begin', 'render:end');
+      // alert(`render time: ${duration.toFixed(2)}ms`);
+    });
+    
+  </script>
+</body>
+</html>

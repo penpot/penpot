@@ -34,7 +34,13 @@ desc: Master layer basics with Penpot's user guide! Learn to create, manipulate,
 <p>Layers are displayed from the bottom to the top of the layer stack, with layers above on the stack being shown on top in the image.</p>
 
 <h2 id="hide-lock">Hide and lock layers</h2>
-<p>Click on the eye icon to change the visibility of a layer. Click on the lock icon to lock or unlock a layer. A locked layer can not be modified.</p>
+
+<h3>Hide and show layers</h3>
+<p>You can control the visibility of any layer by clicking the eye icon next to it in the Layers panel. When a layer is hidden, it will not appear on the canvas, but you can still select it in the Layers panel, move its order, or modify its properties. The eye icon always indicates whether a layer is visible or hidden, making it easy to manage complex designs.</p>
+
+<h3>Lock and unlock layers</h3>
+<p>Locking a layer helps prevent accidental changes or movement on the canvas. When a layer is locked, it cannot be moved or edited directly in the canvas area. However, you can still select a locked layer in the Layers panel and adjust its properties, such as color, effects, or name. The lock icon next to the layer’s name shows its locked status, helping you keep your design organized and protected.</p>
+
 <figure>
   <video title="Layers hide and lock" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-hide-lock.webp" height="auto">
     <source src="/img/layers/layers-hide-lock.mp4" type="video/mp4">
@@ -281,12 +287,15 @@ press <kbd>Shift/⇧</kbd> + left click over the right arrow of a group or a boa
 
 
 <h2 id="focus-mode">Focus mode</h2>
-<p>Select the elements of a page you want to work with in a specific moment hiding the rest so they don’t get in the way of your attention. This option is also useful to improve the performance in cases where the page has a large number of elements.</p>
+<p>Focus mode zooms into the elements of a page you want to work with in a specific moment, and hides the rest so that they don’t get in the way. When the page has many elements, focus mode can also improve performance.</p>
 <p>To activate focus mode:</p>
-<ol>
+<ol> 
   <li>Select one or more elements.</li>
-  <li>Right click to show the menu and select the option "Focus on" or press <kbd>F</kbd>.</li>
+  <li>Right click on the selection to show the menu and select the option “Focus on” or press <kbd>F</kbd>.</li>
 </ol>
+<p>Notice that the layer panel will now only show the focused layers. A focus mode status line will also appear at the top.</p>
+<p>To exit focus mode and return to the original viewport and selection, right click anywhere and select “Focus off” or just press <kbd>F</kbd> again. You can also click anywhere on the focus mode status line at the top of the layer panel.
+</p>
 <figure>
   <video title="Focus mode" muted="" playsinline="" controls="" width="100%" poster="/img/layers/layers-focus.webp" height="auto">
     <source src="/img/layers/layers-focus.mp4" type="video/mp4">

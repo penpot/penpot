@@ -78,9 +78,10 @@
 
 (defn decode-row
   [{:keys [features subscription] :as row}]
-  (cond-> row
-    (some? features) (assoc :features (db/decode-pgarray features #{}))
-    (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription))))
+  (when row
+    (cond-> row
+      (some? features) (assoc :features (db/decode-pgarray features #{}))
+      (some? subscription) (assoc :subscription (db/decode-transit-pgobject subscription)))))
 
 ;; FIXME: move
 
@@ -140,7 +141,7 @@
                           WHEN 'professional' THEN 'active'
                           ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
                        END,
-            '~:seats', p.props->'~:quantity'
+            '~:seats', p.props->'~:subscription'->'~:quantity'
           ) AS subscription
      FROM team_profile_rel AS tp
      JOIN team AS t ON (t.id = tp.team_id)
@@ -193,7 +194,8 @@
 
 (def ^:private sql:get-owned-teams
   "SELECT t.id, t.name,
-          (SELECT count(*) FROM team_profile_rel WHERE team_id=t.id) AS total_members
+          (SELECT count(*) FROM team_profile_rel WHERE team_id=t.id) AS total_members,
+          (SELECT count(*) FROM team_profile_rel WHERE team_id=t.id AND can_edit=true) AS total_editors
      FROM team AS t
      JOIN team_profile_rel AS tpr ON (tpr.team_id = t.id)
     WHERE t.is_default IS false
@@ -460,11 +462,12 @@
 
 ;; --- COMMAND QUERY: get-team-info
 
-(defn- get-team-info
+(defn get-team-info
   [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
-  (db/get* conn :team
-           {:id id}
-           {::sql/columns [:id :is-default]}))
+  (-> (db/get* conn :team
+               {:id id}
+               {::sql/columns [:id :is-default :features]})
+      (decode-row)))
 
 (sv/defmethod ::get-team-info
   "Retrieve minimal team info by its ID."

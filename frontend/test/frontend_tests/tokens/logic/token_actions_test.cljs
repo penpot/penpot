@@ -8,6 +8,7 @@
   (:require
    [app.common.test-helpers.compositions :as ctho]
    [app.common.test-helpers.files :as cthf]
+   [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
    [app.common.text :as txt]
    [app.common.types.tokens-lib :as ctob]
@@ -195,7 +196,7 @@
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
             events [(dwta/apply-token {:shape-ids [(:id rect-1)]
-                                       :attributes #{:color}
+                                       :attributes #{:fill}
                                        :token (toht/get-token file "color.primary")
                                        :on-update-shape dwta/update-fill})
                     (dwta/apply-token {:shape-ids [(:id rect-1)]
@@ -203,7 +204,7 @@
                                        :token (toht/get-token file "color.primary")
                                        :on-update-shape dwta/update-stroke-color})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
-                                       :attributes #{:color}
+                                       :attributes #{:fill}
                                        :token (toht/get-token file "color.secondary")
                                        :on-update-shape dwta/update-fill})
                     (dwta/apply-token {:shape-ids [(:id rect-2)]
@@ -214,25 +215,25 @@
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)
-                 token-target' (toht/get-token file' "rotation.medium")
+                 primary-target (toht/get-token file' "color.primary")
+                 secondary-target (toht/get-token file' "color.secondary")
                  rect-1' (cths/get-shape file' :rect-1)
                  rect-2' (cths/get-shape file' :rect-2)]
              (t/testing "regular color"
                (t/is (some? (:applied-tokens rect-1')))
-
-               (t/is (= (:fill (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:fill (:applied-tokens rect-1')) (:name primary-target)))
                (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
 
-               (t/is (= (:stroke (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:stroke-color (:applied-tokens rect-1')) (:name primary-target)))
                (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))
              (t/testing "color with alpha channel"
                (t/is (some? (:applied-tokens rect-2')))
 
-               (t/is (= (:fill (:applied-tokens rect-2')) (:name token-target')))
+               (t/is (= (:fill (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:fills 0 :fill-color]) "#ff0000"))
                (t/is (= (get-in rect-2' [:fills 0 :fill-opacity]) 0.5))
 
-               (t/is (= (:stroke (:applied-tokens rect-2')) (:name token-target')))
+               (t/is (= (:stroke-color (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-opacity]) 0.5))))))))))
 
@@ -270,33 +271,40 @@
   (t/testing "applies padding token to shapes with layout"
     (t/async
       done
-      (let [dimensions-token {:name "padding.sm"
-                              :value "100"
-                              :type :spacing}
+      (let [spacing-token {:name "padding.sm"
+                           :value "100"
+                           :type :spacing}
             file (-> (setup-file-with-tokens)
                      (ctho/add-frame :frame-1)
                      (ctho/add-frame :frame-2 {:layout :grid})
                      (update-in [:data :tokens-lib]
-                                #(ctob/add-token-in-set % "Set A" (ctob/make-token dimensions-token))))
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token spacing-token))))
             store (ths/setup-store file)
             frame-1 (cths/get-shape file :frame-1)
             frame-2 (cths/get-shape file :frame-2)
             events [(dwta/apply-token {:shape-ids [(:id frame-1) (:id frame-2)]
-                                       :attributes #{:padding}
+                                       :attributes #{:p1 :p2 :p3 :p4}
                                        :token (toht/get-token file "padding.sm")
                                        :on-update-shape dwta/update-layout-padding})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)
-                 token-target' (toht/get-token file' "dimensions.sm")
+                 token-target' (toht/get-token file' "padding.sm")
                  frame-1' (cths/get-shape file' :frame-1)
                  frame-2' (cths/get-shape file' :frame-2)]
              (t/testing "shape `:applied-tokens` got updated"
-               (t/is (= (:spacing (:applied-tokens frame-1')) (:name token-target')))
-               (t/is (= (:spacing (:applied-tokens frame-2')) (:name token-target'))))
+               (t/is (= (:p1 (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:p2 (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:p3 (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:p4 (:applied-tokens frame-1')) (:name token-target')))
+
+               (t/is (= (:p1 (:applied-tokens frame-2')) (:name token-target')))
+               (t/is (= (:p2 (:applied-tokens frame-2')) (:name token-target')))
+               (t/is (= (:p3 (:applied-tokens frame-2')) (:name token-target')))
+               (t/is (= (:p4 (:applied-tokens frame-2')) (:name token-target'))))
              (t/testing "shapes padding got updated"
-               (t/is (= (:layout-padding frame-2') {:padding 100})))
+               (t/is (= (:layout-padding frame-2') {:p1 100 :p2 100 :p3 100 :p4 100})))
              (t/testing "shapes without layout get ignored"
                (t/is (nil? (:layout-padding frame-1')))))))))))
 
@@ -442,9 +450,43 @@
              (t/testing "token got applied to rect with stroke and shape stroke got updated"
                (t/is (= (:stroke-width (:applied-tokens rect-with-stroke')) (:name token-target')))
                (t/is (= (get-in rect-with-stroke' [:strokes 0 :stroke-width]) 10)))
-             (t/testing "token got applied to rect without stroke but shape didnt get updated"
+             (t/testing "token got applied to rect without stroke and shape stroke got updated"
                (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
-               (t/is (empty? (:strokes rect-without-stroke')))))))))))
+               (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
+
+(t/deftest test-apply-font-size
+  (t/testing "applies font-size token and updates the text font-size"
+    (t/async
+      done
+      (let [font-size-token {:name "heading-size"
+                             :value "24"
+                             :type :font-size}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token font-size-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-size}
+                                       :token (toht/get-token file "heading-size")
+                                       :on-update-shape dwta/update-font-size})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "heading-size")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-size (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:font-size style-text-blocks) "24")))))))))
 
 (t/deftest test-apply-line-height
   (t/testing "applies line-height token and updates the text line-height"
@@ -479,6 +521,40 @@
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:line-height (:applied-tokens text-1')) (:name token-target')))
              (t/is (= (:line-height style-text-blocks) 1.5)))))))))
+
+(t/deftest test-apply-letter-spacing
+  (t/testing "applies letter-spacing token and updates the text letter-spacing"
+    (t/async
+      done
+      (let [letter-spacing-token {:name "wide-spacing"
+                                  :value "2"
+                                  :type :letter-spacing}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token letter-spacing-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:letter-spacing}
+                                       :token (toht/get-token file "wide-spacing")
+                                       :on-update-shape dwta/update-letter-spacing})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "wide-spacing")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:letter-spacing (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:letter-spacing style-text-blocks) "2")))))))))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
@@ -568,3 +644,163 @@
                (t/is (= (:r1 (:applied-tokens rect-with-other-token-1')) (:name target-token)))
                (t/is (= (:r1 (:applied-tokens rect-without-token')) (:name target-token)))
                (t/is (= (:r1 (:applied-tokens rect-with-other-token-2')) (:name target-token)))))))))))
+
+(t/deftest test-toggle-spacing-token
+  (t/testing "applies spacing token only to layouts and layout children"
+    (t/async
+      done
+      (let [spacing-token {:name "spacing.md"
+                           :value "16"
+                           :type :spacing}
+            file (-> (setup-file-with-tokens)
+                     (ctho/add-frame-with-child :frame-layout :rect-in-layout
+                                                {:frame-params {:layout :grid}})
+                     (ctho/add-rect :rect-regular)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token spacing-token))))
+            store (ths/setup-store file)
+            frame-layout (cths/get-shape file :frame-layout)
+            rect-in-layout (cths/get-shape file :rect-in-layout)
+            rect-regular (cths/get-shape file :rect-regular)
+            events [(dwta/toggle-token {:token (toht/get-token file "spacing.md")
+                                        :shapes [frame-layout rect-in-layout rect-regular]})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 frame-layout' (cths/get-shape file' :frame-layout)
+                 rect-in-layout' (cths/get-shape file' :rect-in-layout)
+                 rect-regular' (cths/get-shape file' :rect-regular)]
+
+             (t/testing "frame with layout gets all spacing attributes"
+               (t/is (= "spacing.md" (:column-gap (:applied-tokens frame-layout'))))
+               (t/is (= "spacing.md" (:row-gap (:applied-tokens frame-layout'))))
+               (t/is (= 16 (get-in frame-layout' [:layout-gap :column-gap])))
+               (t/is (= 16 (get-in frame-layout' [:layout-gap :row-gap]))))
+
+             (t/testing "shape inside layout frame gets only margin attributes"
+               (t/is (= "spacing.md" (:m1 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m2 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m3 (:applied-tokens rect-in-layout'))))
+               (t/is (= "spacing.md" (:m4 (:applied-tokens rect-in-layout'))))
+               (t/is (nil? (:column-gap (:applied-tokens rect-in-layout'))))
+               (t/is (nil? (:row-gap (:applied-tokens rect-in-layout'))))
+               (t/is (= {:m1 16, :m2 16, :m3 16, :m4 16} (get rect-in-layout' :layout-item-margin))))
+
+             (t/testing "regular shape doesn't get spacing attributes"
+               (t/is (nil? (:applied-tokens rect-regular')))))))))))
+
+(t/deftest test-detach-styles-color
+  (t/testing "applying a color token to a shape with color styles should detach the styles"
+    (t/async
+      done
+      (let [color-token {:name "color.primary"
+                         :value "red"
+                         :type :color}
+            file (setup-file-with-tokens)
+            file (-> file
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token color-token)))
+                     (cths/add-sample-library-color :color1 {:name "Test color"
+                                                             :color "#abcdef"})
+                     (cths/update-shape :rect-1 :fills
+                                        (cths/sample-fills-color :fill-color "#fabada"
+                                                                 :fill-color-ref-id (cthi/id :color1)
+                                                                 :fill-color-ref-file (:id file))))
+            store (ths/setup-store file)
+            events [(dwta/apply-token {:shape-ids [(cthi/id :rect-1)]
+                                       :attributes #{:fill}
+                                       :token (toht/get-token file "color.primary")
+                                       :on-update-shape dwta/update-fill})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file'   (ths/get-file-from-state new-state)
+                 rect-1' (cths/get-shape file' :rect-1)
+                 fills   (:fills rect-1')
+                 fill    (first fills)]
+             (t/is (nil? (:fill-color-ref-id fill)))
+             (t/is (nil? (:fill-color-ref-file fill))))))))))
+
+(t/deftest test-detach-styles-typography
+  (t/testing "applying any typography token to a shape with a typography style should detach the style"
+    (t/async
+      done
+      (let [font-size-token {:name "heading-size"
+                             :value "24"
+                             :type :font-size}
+            line-height-token {:name "big-height"
+                               :value "1.5"
+                               :type :number}
+            letter-spacing-token {:name "wide-spacing"
+                                  :value "2"
+                                  :type :letter-spacing}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(-> %
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token font-size-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token line-height-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token letter-spacing-token))))
+                     (cths/add-sample-typography :typography1 {:name "Test typography"}))
+            content {:type "root"
+                     :children [{:type "paragraph-set"
+                                 :children [{:type "paragraph"
+                                             :key "67uep"
+                                             :children [{:text "Example text"
+                                                         :typography-ref-id (cthi/id :typography1)
+                                                         :typography-ref-file (:id file)
+                                                         :line-height "1.2"
+                                                         :font-style "normal"
+                                                         :text-transform "none"
+                                                         :text-align "left"
+                                                         :font-id "sourcesanspro"
+                                                         :font-family "sourcesanspro"
+                                                         :font-size "14"
+                                                         :font-weight "400"
+                                                         :font-variant-id "regular"
+                                                         :text-decoration "none"
+                                                         :letter-spacing "0"
+                                                         :fills [{:fill-color "#000000"
+                                                                  :fill-opacity 1}]}]}]}]}
+            file (-> file
+                     (ctho/add-text :text-1 "Helo World!" :text-params {:content content})
+                     (ctho/add-text :text-2 "Helo World!" :text-params {:content content})
+                     (ctho/add-text :text-3 "Helo World!" :text-params {:content content}))
+            store (ths/setup-store file)
+            events [(dwta/apply-token {:shape-ids [(cthi/id :text-1)]
+                                       :attributes #{:font-size}
+                                       :token (toht/get-token file "heading-size")
+                                       :on-update-shape dwta/update-font-size})
+                    (dwta/apply-token {:shape-ids [(cthi/id :text-2)]
+                                       :attributes #{:line-height}
+                                       :token (toht/get-token file "big-height")
+                                       :on-update-shape dwta/update-line-height})
+                    (dwta/apply-token {:shape-ids [(cthi/id :text-3)]
+                                       :attributes #{:letter-spacing}
+                                       :token (toht/get-token file "wide-spacing")
+                                       :on-update-shape dwta/update-letter-spacing})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file'   (ths/get-file-from-state new-state)
+                 text-1' (cths/get-shape file' :text-1)
+                 text-2' (cths/get-shape file' :text-2)
+                 text-3' (cths/get-shape file' :text-3)
+                 paragraph-1 (get-in text-1' [:content :children 0 :children 0])
+                 text-node-1 (get-in paragraph-1 [:children 0])
+                 paragraph-2 (get-in text-2' [:content :children 0 :children 0])
+                 text-node-2 (get-in paragraph-2 [:children 0])
+                 paragraph-3 (get-in text-3' [:content :children 0 :children 0])
+                 text-node-3 (get-in paragraph-3 [:children 0])]
+             (t/is (nil? (:typography-ref-id paragraph-1)))
+             (t/is (nil? (:typography-ref-file paragraph-1)))
+             (t/is (nil? (:typography-ref-id text-node-1)))
+             (t/is (nil? (:typography-ref-file text-node-1)))
+             (t/is (nil? (:typography-ref-id paragraph-2)))
+             (t/is (nil? (:typography-ref-file paragraph-2)))
+             (t/is (nil? (:typography-ref-id text-node-2)))
+             (t/is (nil? (:typography-ref-file text-node-2)))
+             (t/is (nil? (:typography-ref-id paragraph-3)))
+             (t/is (nil? (:typography-ref-file paragraph-3)))
+             (t/is (nil? (:typography-ref-id text-node-3)))
+             (t/is (nil? (:typography-ref-file text-node-3))))))))))

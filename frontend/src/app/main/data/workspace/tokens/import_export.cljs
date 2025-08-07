@@ -8,7 +8,9 @@
   (:require
    [app.common.files.helpers :as cfh]
    [app.common.json :as json]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
+   [app.config :as cf]
    [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace.tokens.errors :as wte]
@@ -42,10 +44,10 @@
 
 (defn- show-unknown-types-warning [unknown-tokens]
   (let [type->tokens (group-by-value unknown-tokens)]
-    (ntf/show {:content (tr "workspace.tokens.unknown-token-type")
+    (ntf/show {:content (tr "workspace.tokens.unknown-token-type-message")
                :detail (->> (for [[token-type tokens] type->tokens]
                               (tr "workspace.tokens.unknown-token-type-section" token-type (count tokens)))
-                            (str/join "\n"))
+                            (str/join "<br>"))
                :type :toast
                :level :info})))
 
@@ -60,7 +62,17 @@
   [decoded-json file-name]
   (try
     {:tokens-lib (ctob/parse-decoded-json decoded-json file-name)
-     :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json)}
+     :unknown-tokens (ctob/get-tokens-of-unknown-type decoded-json
+                                                      ;; Filter out FF token-types
+                                                      {:process-token-type
+                                                       (fn [dtcg-token-type]
+                                                         (if (or
+                                                              (and (not (contains? cf/flags :token-units))
+                                                                   (= dtcg-token-type "number"))
+                                                              (and (not (contains? cf/flags :token-typography-types))
+                                                                   (contains? ctt/ff-typography-keys dtcg-token-type)))
+                                                           nil
+                                                           dtcg-token-type))})}
     (catch js/Error e
       (let [err (or (extract-name-error e)
                     (wte/error-ex-info :error.import/invalid-json-data decoded-json e))]

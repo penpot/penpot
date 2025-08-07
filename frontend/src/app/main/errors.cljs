@@ -102,23 +102,27 @@
                   (print-trace! error)
                   (print-data! error))))
 
-;; We receive a explicit authentication error;
-;; If the uri is for workspace, dashboard or view assign the
-;; exception for the 'Oops' page. Otherwise this explicitly clears
-;; all profile data and redirect the user to the login page. This is
-;; here and not in app.main.errors because of circular dependency.
+;; We receive a explicit authentication error; If the uri is for
+;; workspace, dashboard, viewer or settings, then assign the exception
+;; for show the error page. Otherwise this explicitly clears all
+;; profile data and redirect the user to the login page. This is here
+;; and not in app.main.errors because of circular dependency.
 (defmethod ptk/handle-error :authentication
-  [e]
-  (let [msg        (tr "errors.auth.unable-to-login")
-        uri        (.-href glob/location)
-        show-oops? (or (str/includes? uri "workspace")
-                       (str/includes? uri "dashboard")
-                       (str/includes? uri "view"))]
-    (if show-oops?
-      (st/async-emit! (rt/assign-exception e))
+  [error]
+  (let [message (tr "errors.auth.unable-to-login")
+        uri     (rt/get-current-href)
+
+        show-error?
+        (or (str/includes? uri "workspace")
+            (str/includes? uri "dashboard")
+            (str/includes? uri "view")
+            (str/includes? uri "settings"))]
+
+    (if show-error?
+      (st/async-emit! (rt/assign-exception error))
       (do
         (st/emit! (da/logout))
-        (ts/schedule 500 #(st/emit! (ntf/warn msg)))))))
+        (ts/schedule 500 #(st/emit! (ntf/warn message)))))))
 
 ;; Error that happens on an active business model validation does not
 ;; passes an validation (example: profile can't leave a team). From

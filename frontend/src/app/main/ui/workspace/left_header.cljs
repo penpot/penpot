@@ -26,8 +26,7 @@
 
 ;; --- Header Component
 
-(mf/defc left-header
-  {::mf/props :obj}
+(mf/defc left-header*
   [{:keys [file layout project page-id class]}]
   (let [profile     (mf/deref refs/profile)
         file-id     (:id file)

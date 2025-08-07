@@ -1,6 +1,7 @@
 use skia_safe::gpu::{self, gl::FramebufferInfo, gl::TextureInfo, DirectContext};
 use skia_safe::{self as skia, ISize};
 
+#[derive(Debug, Clone)]
 pub struct GpuState {
     pub context: DirectContext,
     framebuffer_info: FramebufferInfo,

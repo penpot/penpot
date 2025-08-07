@@ -7,10 +7,12 @@
 (ns app.common.logic.shapes
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.text :as ct]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
@@ -21,9 +23,12 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
+(def text-typography-attrs (set ct/text-typography-attrs))
+
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
-   of the attribute now has been given directly, and does not come from the token."
+  of the attribute now has been given directly, and does not come from the token.
+  When applying a typography asset style we also unapply any typographic tokens."
   [changes objects changed-sub-attr]
   (let [new-objects     (pcb/get-objects changes)
         mod-obj-changes (->> (:redo-changes changes)
@@ -32,29 +37,38 @@
         text-changed-attrs
         (fn [shape]
           (let [new-shape (get new-objects (:id shape))
-                attrs (ctt/get-diff-attrs (:content shape) (:content new-shape))]
+                attrs     (ctt/get-diff-attrs (:content shape) (:content new-shape))
+
+                ;; Unapply token when applying typography asset style
+                attrs     (if (seq (set/intersection text-typography-attrs attrs))
+                            (into attrs cto/typography-keys)
+                            attrs)]
             (apply set/union (map cto/shape-attr->token-attrs attrs))))
 
-        check-attr (fn [shape changes attr]
-                     (let [tokens      (get shape :applied-tokens {})
-                           token-attrs (if (or (not= (:type shape) :text) (not= attr :content))
-                                         (cto/shape-attr->token-attrs attr changed-sub-attr)
-                                         (text-changed-attrs shape))]
-                       (if (some #(contains? tokens %) token-attrs)
-                         (pcb/update-shapes changes [(:id shape)] #(cto/unapply-token-id % token-attrs))
-                         changes)))
+        check-attr
+        (fn [shape changes attr]
+          (let [shape-id    (dm/get-prop shape :id)
+                tokens      (get shape :applied-tokens {})
+                token-attrs (if (and (cfh/text-shape? shape) (= attr :content))
+                              (text-changed-attrs shape)
+                              (cto/shape-attr->token-attrs attr changed-sub-attr))]
 
-        check-shape (fn [changes mod-obj-change]
-                      (let [shape (get objects (:id mod-obj-change))
-                            xf (comp (filter #(= (:type %) :set))
-                                     (map :attr))
-                            attrs (into [] xf (:operations mod-obj-change))]
-                        (reduce (partial check-attr shape)
-                                changes
-                                attrs)))]
-    (reduce check-shape
-            changes
-            mod-obj-changes)))
+            (if (some #(contains? tokens %) token-attrs)
+              (pcb/update-shapes changes [shape-id] #(cto/unapply-token-id % token-attrs))
+              changes)))
+
+        check-shape
+        (fn [changes mod-obj-change]
+          (let [shape (get objects (:id mod-obj-change))
+                attrs (into []
+                            (comp (filter #(= (:type %) :set))
+                                  (map :attr))
+                            (:operations mod-obj-change))]
+            (reduce (partial check-attr shape)
+                    changes
+                    attrs)))]
+
+    (reduce check-shape changes mod-obj-changes)))
 
 (defn generate-update-shapes
   [changes ids update-fn objects {:keys [attrs changed-sub-attr ignore-tree ignore-touched with-objects?]}]
@@ -99,7 +113,14 @@
                                (pcb/with-library-data file))
                            ids
                            options))
-  ([changes ids {:keys [ignore-touched component-swap]}]
+  ([changes ids {:keys [ignore-touched
+                        allow-altering-copies
+                        ;; We will delete the shapes and its descendants.
+                        ;; ignore-children-fn is used to ignore some descendants
+                        ;; on the deletion process. It should receive a shape and
+                        ;; return a boolean
+                        ignore-children-fn]
+                 :or {ignore-children-fn (constantly false)}}]
    (let [objects (pcb/get-objects changes)
          data    (pcb/get-library-data changes)
          page-id (pcb/get-page-id changes)
@@ -112,11 +133,12 @@
           ;; Look for shapes that are inside a component copy, but are
           ;; not the root. In this case, they must not be deleted,
           ;; but hidden (to be able to recover them more easily).
-          ;; Unless we are doing a component swap, in which case we want
+          ;; If we want to specifically allow altering the copies, this is
+          ;; a special case, like a component swap, in which case we want
           ;; to delete the old shape
            (let [shape           (get objects shape-id)]
              (and (ctn/has-any-copy-parent? objects shape)
-                  (not component-swap))))
+                  (not allow-altering-copies))))
 
          [ids-to-delete ids-to-hide]
          (loop [ids-seq       (seq ids)
@@ -177,10 +199,15 @@
                  (d/ordered-set)
                  (concat ids-to-delete ids-to-hide))
 
-         all-children
-         (->> ids-to-delete ;; Children of deleted shapes must be also deleted.
+         ;; Descendants of deleted shapes must be also deleted,
+         ;; except the ignored ones by the function ignore-children-fn
+         descendants-to-delete
+         (->> ids-to-delete
               (reduce (fn [res id]
-                        (into res (cfh/get-children-ids objects id)))
+                        (into res (cfh/get-children-ids
+                                   objects
+                                   id
+                                   {:ignore-children-fn ignore-children-fn})))
                       [])
               (reverse)
               (into (d/ordered-set)))
@@ -200,9 +227,10 @@
 
          empty-parents
         ;; Any parent whose children are all deleted, must be deleted too.
-        ;; Unless we are during a component swap: in this case we are replacing a shape by
+        ;; If we want to specifically allow altering the copies, this is a special case,
+        ;; for example during a component swap. in this case we are replacing a shape by
         ;; other one, so must not delete empty parents.
-         (if-not component-swap
+         (if-not allow-altering-copies
            (into (d/ordered-set) (find-all-empty-parents #{}))
            #{})
 
@@ -214,7 +242,7 @@
                        (conj components (:component-id shape))
                        components)))
                  []
-                 (into ids-to-delete all-children))
+                 (into ids-to-delete descendants-to-delete))
 
 
          ids-set (set ids-to-delete)
@@ -241,7 +269,7 @@
 
          changes (-> changes
                      (generate-update-shape-flags ids-to-hide objects {:hidden true})
-                     (pcb/remove-objects all-children {:ignore-touched true})
+                     (pcb/remove-objects descendants-to-delete {:ignore-touched true})
                      (pcb/remove-objects ids-to-delete {:ignore-touched ignore-touched})
                      (pcb/remove-objects empty-parents)
                      (pcb/resize-parents all-parents)

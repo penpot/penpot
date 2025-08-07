@@ -17,14 +17,15 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 #[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
-    Target = 0b0000_0001,
-    Cache = 0b0000_0010,
-    Current = 0b0000_0100,
-    Fills = 0b0000_1000,
-    Strokes = 0b0001_0000,
-    DropShadows = 0b0010_0000,
-    InnerShadows = 0b0100_0000,
-    Debug = 0b1000_0000,
+    Target = 0b0_0000_0001,
+    Cache = 0b0_0000_0010,
+    Current = 0b0_0000_0100,
+    Fills = 0b0_0000_1000,
+    Strokes = 0b0_0001_0000,
+    DropShadows = 0b0_0010_0000,
+    InnerShadows = 0b0_0100_0000,
+    UI = 0b0_1000_0000,
+    Debug = 0b1_0000_0000,
 }
 
 pub struct Surfaces {
@@ -39,8 +40,10 @@ pub struct Surfaces {
     shape_strokes: skia::Surface,
     // used for rendering shadows
     drop_shadows: skia::Surface,
-    // used fo rendering over shadows.
+    // used for rendering over shadows.
     inner_shadows: skia::Surface,
+    // used for displaying auxiliary workspace elements
+    ui: skia::Surface,
     // for drawing debug info.
     debug: skia::Surface,
     // for drawing tiles.
@@ -74,6 +77,8 @@ impl Surfaces {
             gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
         let shape_strokes =
             gpu_state.create_surface_with_isize("shape_strokes".to_string(), extra_tile_dims);
+
+        let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height);
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
 
         let tiles = TileTextureCache::new();
@@ -85,6 +90,7 @@ impl Surfaces {
             inner_shadows,
             shape_fills,
             shape_strokes,
+            ui,
             debug,
             tiles,
             sampling_options,
@@ -198,6 +204,7 @@ impl Surfaces {
             SurfaceId::Fills => &mut self.shape_fills,
             SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,
+            SurfaceId::UI => &mut self.ui,
         }
     }
 
@@ -205,6 +212,7 @@ impl Surfaces {
         let dim = (target.width(), target.height());
         self.target = target;
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.ui = self.target.new_surface_with_dimensions(dim).unwrap();
         // The rest are tile size surfaces
     }
 
@@ -261,6 +269,10 @@ impl Surfaces {
         self.canvas(SurfaceId::Debug)
             .clear(skia::Color::TRANSPARENT)
             .reset_matrix();
+
+        self.canvas(SurfaceId::UI)
+            .clear(skia::Color::TRANSPARENT)
+            .reset_matrix();
     }
 
     pub fn cache_current_tile_texture(
@@ -295,8 +307,14 @@ impl Surfaces {
         self.tiles.remove(tile)
     }
 
-    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect) {
+    pub fn draw_cached_tile_surface(&mut self, tile: Tile, rect: skia::Rect, color: skia::Color) {
         let image = self.tiles.get(tile).unwrap();
+
+        let mut paint = skia::Paint::default();
+        paint.set_color(color);
+
+        self.target.canvas().draw_rect(rect, &paint);
+
         self.target
             .canvas()
             .draw_image_rect(&image, None, rect, &skia::Paint::default());

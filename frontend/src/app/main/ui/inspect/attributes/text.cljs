@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as txt]
-   [app.common.types.color :as types.color]
+   [app.common.types.color :as ctc]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -18,28 +18,45 @@
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
+   [app.util.code-gen.style-css-formats :refer [format-color]]
+   [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
 
-(defn has-text? [shape]
+(defn- has-text? [shape]
   (:content shape))
 
-(def file-typographies-ref
+(def ^:private file-typographies-ref
   (l/derived (l/in [:viewer :file :data :typographies]) st/state))
 
-(defn make-typographies-library-ref [file-id]
+(defn- make-typographies-library-ref [file-id]
   (let [get-library
         (fn [state]
           (get-in state [:viewer-libraries file-id :data :typographies]))]
     #(l/derived get-library st/state)))
 
-(defn copy-style-data
+(defn- copy-style-data
   [style & properties]
   (->> properties
        (map #(dm/str (d/name %) ": " (get style %) ";"))
        (str/join "\n")))
+
+(defn- format-gradient-css
+  "Converts a gradient object to a CSS string."
+  [gradient]
+  (str "background-image: " (uc/gradient->css gradient) ";"
+       "background-clip: text;"
+       "color: transparent;"))
+
+(defn- copy-color-data
+  "Converts a fill object to CSS color string in the specified format."
+  [fill format]
+  (let [color (ctc/fill->color fill)]
+    (if-let [gradient (:gradient color)]
+      (format-gradient-css gradient)
+      (format-color color {:format format}))))
 
 (mf/defc typography-block
   [{:keys [text style]}]
@@ -57,7 +74,8 @@
         file-library-workspace      (get (mf/deref refs/files) (:typography-ref-file style))
         typography-external-lib (get-in file-library-workspace [:data :typographies (:typography-ref-id style)])
 
-        color-format       (mf/use-state :hex)
+        color-format!       (mf/use-state :hex)
+        color-format* (deref color-format!)
 
         typography (or (get (or typography-library file-typographies-viewer file-typographies-workspace) (:typography-ref-id style)) typography-external-lib)]
 
@@ -65,10 +83,10 @@
      (when (:fills style)
        (for [[idx fill] (map-indexed vector (:fills style))]
          [:& color-row {:key idx
-                        :format @color-format
-                        :color (types.color/fill->color fill)
-                        :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
-                        :on-change-format #(reset! color-format %)}]))
+                        :format color-format*
+                        :color (ctc/fill->color fill)
+                        :copy-data (copy-color-data fill color-format*)
+                        :on-change-format #(reset! color-format! %)}]))
 
      (when (:typography-ref-id style)
        [:div {:class (stl/css :text-row)}
@@ -101,7 +119,7 @@
         [:div {:class (stl/css :global/attr-label)}
          (tr "inspect.attributes.typography.font-size")]
         [:div  {:class (stl/css :global/attr-value)}
-         [:> copy-button* {:data (copy-style-data style :font-size)}
+         [:> copy-button* {:data (copy-style-data (assoc style :font-size (fmt/format-pixels (:font-size style))) :font-size)}
           [:div {:class (stl/css :button-children)}
            (fmt/format-pixels (:font-size style))]]]])
 
@@ -152,7 +170,7 @@
               ;; Execution time translation strings:
               ;;   (tr "inspect.attributes.typography.text-transform.lowercase")
               ;;   (tr "inspect.attributes.typography.text-transform.none")
-              ;;   (tr "inspect.attributes.typography.text-transform.titlecase")
+              ;;   (tr "inspect.attributes.typography.text-transform.capitalize")
               ;;   (tr "inspect.attributes.typography.text-transform.uppercase")
               ;;   (tr "inspect.attributes.typography.text-transform.unset")
         [:div {:class (stl/css :global/attr-value)}

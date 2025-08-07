@@ -74,6 +74,12 @@
        (p/fmap (fn [entries]
                  (array/find #(= (.-filename ^js %) path) entries)))))
 
+(defn get-entries
+  [reader]
+  (assert (instance? zip/ZipReader reader))
+  (.getEntries reader))
+
+
 (defn read-as-text
   [entry]
   (let [writer (new zip/TextWriter)]

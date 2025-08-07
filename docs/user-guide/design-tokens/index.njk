@@ -205,6 +205,10 @@ title: 10· Design Tokens
 <h4>Y Position (dimension)</h4>
 <p>The Y property specifies the position of the element on the Y axis of the canvas.</p>
 
+<h3 id="design-tokens-font-size">Font Size</h3>
+<p>Font size tokens allow you to define and standardize font-size values across your design system. These tokens can be applied to the <strong>font-size</strong> property in text layers, ensuring consistent typography throughout your designs.</p>
+<p class="advice">Font size token values are always computed as <strong>px</strong> (pixels).</p>
+
 <h3 id="design-tokens-opacity">Opacity</h3>
 <p>Opacity tokens allow you to define the opacity of a layer, ranging from fully opaque to fully transparent.</p>
 <p>Opacity tokens can be applied to any design element that supports transparency. You can use any decimal value between 0 and 1 to set varying levels of opacity or you can use any value between 0 and 100 with <strong>`%`</strong> sign at the end of the value. For example, you can use <strong>45%</strong> which would resolve to <strong>.45</strong>.</p>
@@ -378,7 +382,15 @@ title: 10· Design Tokens
 </ol>
 
 <h3 id="design-tokens-import-options">Import Options</h3>
-<h4>Single file</h4>
+
+<h4>ZIP file</h4>
+<p>You can import tokens from a <strong>.zip</strong> file. This file can either contain a single JSON file or a folder structure with multiple files. The ZIP import option provides flexibility for organizing your tokens before importing them into Penpot.</p>
+<ul>
+  <li>If the ZIP contains a single JSON file, it will be imported as a single set of tokens.</li>
+  <li>If the ZIP contains a folder structure, each file and folder will be interpreted as separate token sets, following the same rules as the multifile import.</li>
+</ul>
+
+<h4>Single JSON file</h4>
 
 <p>You can import a JSON file comprising all tokens, token sets and token themes.</p>
 <p>When importing a single file, the first-level keys of the json file will be interpreted as the set name.</p>

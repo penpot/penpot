@@ -4,7 +4,7 @@ use indexmap::IndexSet;
 use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub struct Tile(pub i32, pub i32);
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]

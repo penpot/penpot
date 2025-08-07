@@ -10,7 +10,7 @@ cp /root/.bashrc /home/penpot/.bashrc
 cp /root/.vimrc /home/penpot/.vimrc
 cp /root/.tmux.conf /home/penpot/.tmux.conf
 
-chown -R penpot:users /home/penpot
+chown penpot:users /home/penpot
 rsync -ar --chown=penpot:users /opt/cargo/ /home/penpot/.cargo/
 
 export PATH="/home/penpot/.cargo/bin:$PATH"

@@ -113,6 +113,8 @@
   [{:keys [file layout page-id]}]
   (let [file-id           (:id file)
 
+        threads-map       (mf/deref refs/comment-threads)
+
         zoom              (mf/deref refs/selected-zoom)
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
         selected-drawtool (mf/deref refs/selected-drawing-tool)
@@ -130,6 +132,13 @@
 
         team              (mf/deref refs/team)
         permissions       (get team :permissions)
+
+        has-unread-comments?
+        (mf/with-memo [threads-map file-id]
+          (->> (vals threads-map)
+               (some #(and (= (:file-id %) file-id)
+                           (pos? (:count-unread-comments %))))
+               (boolean)))
 
         display-share-button?
         (and (not (:is-default team))
@@ -209,8 +218,11 @@
                 :class (stl/css-case :comments-btn true
                                      :selected (= selected-drawtool :comments))
                 :on-click toggle-comments
-                :data-tool "comments"}
-       i/comments]]
+                :data-tool "comments"
+                :style {:position "relative"}}
+       i/comments
+       (when ^boolean has-unread-comments?
+         [:div {:class (stl/css :unread)}])]]
 
      (when-not ^boolean read-only?
        [:div {:class (stl/css :history-section)}

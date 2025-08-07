@@ -475,9 +475,8 @@
           (dom/add-class! last-hidden-frame "sticky"))))))
 
 
-(mf/defc layers-toolbox
-  {::mf/wrap [mf/memo]
-   ::mf/wrap-props false}
+(mf/defc layers-toolbox*
+  {::mf/wrap [mf/memo]}
   [{:keys [size-parent]}]
   (let [page           (mf/deref refs/workspace-page)
         focus          (mf/deref refs/workspace-focus-selected)

@@ -1,0 +1,84 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "refactor/common-refactor.scss";
+
+.modal-overlay {
+  @extend .modal-overlay-base;
+}
+
+.modal-dialog {
+  @extend .modal-container-base;
+
+  max-width: $s-800;
+  width: 100%;
+  max-height: unset;
+}
+
+.modal-title {
+  color: var(--modal-title-foreground-color);
+  margin-bottom: $s-32;
+}
+
+.modal-content {
+  display: flex;
+  color: var(--color-foreground-secondary);
+  padding-block-end: $s-32;
+}
+
+.modal-close-btn {
+  @extend .modal-close-btn-base;
+}
+
+.rule-list {
+  margin: $s-32 0;
+}
+
+.rule-item {
+  display: flex;
+  gap: $s-16;
+  align-items: center;
+  margin-bottom: $s-16;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.rule-item-highlight {
+  color: var(--color-foreground-primary);
+  margin-inline-end: $s-4;
+}
+
+.rule-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: $s-32;
+  height: $s-32;
+  background: var(--color-background-quaternary);
+  color: var(--color-foreground-secondary);
+  border-radius: 90px;
+}
+
+.rule-item-text {
+  margin: 0;
+}
+
+.button-row {
+  display: flex;
+  justify-content: end;
+  padding-block-start: $s-8;
+}
+
+.help-text {
+  inline-size: 100%;
+}
+
+.help-image img {
+  inline-size: 374px;
+}

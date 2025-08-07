@@ -18,7 +18,12 @@
   [changes variant-id pos new-name]
   (let [data               (pcb/get-library-data changes)
         objects            (pcb/get-objects changes)
-        related-components (cfv/find-variant-components data objects variant-id)]
+        related-components (cfv/find-variant-components data objects variant-id)
+
+        props              (-> related-components last :variant-properties)
+        prop-names         (mapv :name props)
+        prop-names         (concat (subvec prop-names 0 pos) (subvec prop-names (inc pos)))
+        new-name           (ctv/update-number-in-repeated-item prop-names new-name)]
     (reduce (fn [changes component]
               (pcb/update-component
                changes (:id component)
@@ -80,6 +85,9 @@
         props              (-> related-components last :variant-properties)
         next-prop-num      (ctv/next-property-number props)
         property-name      (or property-name (str ctv/property-prefix next-prop-num))
+
+        prop-names         (mapv :name props)
+        property-name      (ctv/update-number-in-repeated-item prop-names property-name)
 
         [_ changes]
         (reduce (fn [[num changes] component]

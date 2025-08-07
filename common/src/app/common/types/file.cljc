@@ -23,9 +23,9 @@
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.plugins :as ctpg]
+   [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape-tree :as ctst]
-   [app.common.types.tokens-lib :as ctl]
+   [app.common.types.tokens-lib :refer [schema:tokens-lib]]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
@@ -61,13 +61,13 @@
   [:map-of {:gen/max 5} ::sm/uuid ctc/schema:library-color])
 
 (def schema:components
-  [:map-of {:gen/max 5} ::sm/uuid ::ctn/container])
+  [:map-of {:gen/max 5} ::sm/uuid ctn/schema:container])
 
 (def schema:typographies
-  [:map-of {:gen/max 2} ::sm/uuid ::cty/typography])
+  [:map-of {:gen/max 2} ::sm/uuid cty/schema:typography])
 
 (def schema:pages-index
-  [:map-of {:gen/max 5} ::sm/uuid ::ctp/page])
+  [:map-of {:gen/max 5} ::sm/uuid ctp/schema:page])
 
 (def schema:options
   [:map {:title "FileOptions"}
@@ -82,8 +82,8 @@
    [:colors {:optional true} schema:colors]
    [:components {:optional true} schema:components]
    [:typographies {:optional true} schema:typographies]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]
-   [:tokens-lib {:optional true} ::ctl/tokens-lib]])
+   [:plugin-data {:optional true} schema:plugin-data]
+   [:tokens-lib {:optional true} schema:tokens-lib]])
 
 (def schema:file
   "A schema for validate a file data structure; data is optional
@@ -242,6 +242,13 @@
       (cfh/make-container component-page :page))
     (cfh/make-container component :component)))
 
+(defn get-component-container-from-head
+  [instance-head libraries & {:keys [include-deleted?] :or {include-deleted? true}}]
+  (let [library-data   (-> (get-component-library libraries instance-head)
+                           :data)
+        component (ctkl/get-component library-data (:component-id instance-head) include-deleted?)]
+    (get-component-container library-data component)))
+
 (defn get-component-root
   "Retrieve the root shape of the component."
   [file-data component]
@@ -389,6 +396,47 @@
     (when (some? slot-inst)
       (or (= slot-main slot-inst)
           (= (:id shape-main) slot-inst)))))
+
+(defn- find-next-related-swap-shape-id
+  "Go up from the chain of references shapes that will eventually lead to the shape
+   with swap-slot-id as id. Returns the next shape on the chain"
+  [parent swap-slot-id libraries]
+  (let [container         (get-component-container-from-head parent libraries)
+        objects           (:objects container)
+
+        children          (cfh/get-children objects (:id parent))
+        original-shape-id (->> children
+                               (filter #(= swap-slot-id (:id %)))
+                               first
+                               :id)]
+    (if original-shape-id
+      ;; Return the children which id is the swap-slot-id
+      original-shape-id
+      ;; No children with swap-slot-id as id, go up
+      (let [referenced-shape (find-ref-shape nil container libraries parent)
+            ;; Recursive call that will get the id of the next shape on
+            ;; the chain that ends on a shape with swap-slot-id as id
+            next-shape-id    (when referenced-shape
+                               (find-next-related-swap-shape-id referenced-shape swap-slot-id libraries))]
+        ;; Return the children which shape-ref points to the next-shape-id
+        (->> children
+             (filter #(= next-shape-id (:shape-ref %)))
+             first
+             :id)))))
+
+(defn find-ref-id-for-swapped
+  "When a shape has been swapped, find the original ref-id that the shape had
+   before the swap"
+  [shape container libraries]
+  (let [swap-slot   (ctk/get-swap-slot shape)
+        objects     (:objects container)
+
+        parent      (get objects (:parent-id shape))
+        parent-head (ctn/get-head-shape objects parent)
+        parent-ref  (find-ref-shape nil container libraries parent-head)]
+
+    (when (and swap-slot parent-ref)
+      (find-next-related-swap-shape-id parent-ref swap-slot libraries))))
 
 (defn get-component-shapes
   "Retrieve all shapes of the component"

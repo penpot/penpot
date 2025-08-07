@@ -14,7 +14,7 @@ mod fonts;
 mod frames;
 mod groups;
 mod layouts;
-mod modifiers;
+pub mod modifiers;
 mod paths;
 mod rects;
 mod shadows;
@@ -43,6 +43,8 @@ pub use transform::*;
 use crate::math;
 use crate::math::{Bounds, Matrix, Point};
 use indexmap::IndexSet;
+
+use crate::state::ShapesPool;
 
 const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
@@ -157,6 +159,24 @@ impl ConstraintH {
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
+pub enum VerticalAlign {
+    Top,
+    Center,
+    Bottom,
+}
+
+impl VerticalAlign {
+    pub fn from(value: u8) -> Self {
+        match value {
+            0 => Self::Top,
+            1 => Self::Center,
+            2 => Self::Bottom,
+            _ => Self::Top,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintV {
     Top,
     Bottom,
@@ -195,6 +215,7 @@ pub struct Shape {
     pub fills: Vec<Fill>,
     pub strokes: Vec<Stroke>,
     pub blend_mode: BlendMode,
+    pub vertical_align: VerticalAlign,
     pub blur: Blur,
     pub opacity: f32,
     pub hidden: bool,
@@ -221,6 +242,7 @@ impl Shape {
             fills: Vec::with_capacity(1),
             strokes: Vec::with_capacity(1),
             blend_mode: BlendMode::default(),
+            vertical_align: VerticalAlign::Top,
             opacity: 1.,
             hidden: false,
             blur: Blur::default(),
@@ -310,6 +332,14 @@ impl Shape {
 
     pub fn set_opacity(&mut self, opacity: f32) {
         self.opacity = opacity;
+    }
+
+    pub fn set_vertical_align(&mut self, align: VerticalAlign) {
+        self.vertical_align = align;
+    }
+
+    pub fn vertical_align(&self) -> VerticalAlign {
+        self.vertical_align
     }
 
     pub fn set_constraint_h(&mut self, constraint: Option<ConstraintH>) {
@@ -424,22 +454,35 @@ impl Shape {
         padding_left: f32,
     ) {
         if let Type::Frame(data) = &mut self.shape_type {
-            let layout_data = LayoutData {
-                align_items,
-                align_content,
-                justify_items,
-                justify_content,
-                padding_top,
-                padding_right,
-                padding_bottom,
-                padding_left,
-                row_gap,
-                column_gap,
-            };
-
-            let mut grid_data = GridData::default();
-            grid_data.direction = direction;
-            data.layout = Some(Layout::GridLayout(layout_data, grid_data));
+            if let Some(Layout::GridLayout(layout_data, grid_data)) = &mut data.layout {
+                layout_data.align_items = align_items;
+                layout_data.align_content = align_content;
+                layout_data.justify_items = justify_items;
+                layout_data.justify_content = justify_content;
+                layout_data.padding_top = padding_top;
+                layout_data.padding_right = padding_right;
+                layout_data.padding_bottom = padding_bottom;
+                layout_data.padding_left = padding_left;
+                layout_data.row_gap = row_gap;
+                layout_data.column_gap = column_gap;
+                grid_data.direction = direction;
+            } else {
+                let layout_data = LayoutData {
+                    align_items,
+                    align_content,
+                    justify_items,
+                    justify_content,
+                    padding_top,
+                    padding_right,
+                    padding_bottom,
+                    padding_left,
+                    row_gap,
+                    column_gap,
+                };
+                let mut grid_data = GridData::default();
+                grid_data.direction = direction;
+                data.layout = Some(Layout::GridLayout(layout_data, grid_data));
+            }
         }
     }
 
@@ -608,7 +651,7 @@ impl Shape {
 
     pub fn visually_insignificant(&self, scale: f32) -> bool {
         let extrect = self.extrect();
-        extrect.width() * scale < MIN_VISIBLE_SIZE || extrect.height() * scale < MIN_VISIBLE_SIZE
+        extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
     pub fn should_use_antialias(&self, scale: f32) -> bool {
@@ -715,7 +758,11 @@ impl Shape {
         self.children.first()
     }
 
-    pub fn children_ids(&self) -> IndexSet<Uuid> {
+    pub fn children_ids(&self, include_hidden: bool) -> IndexSet<Uuid> {
+        if include_hidden {
+            return self.children.clone().into_iter().rev().collect();
+        }
+
         if let Type::Bool(_) = self.shape_type {
             IndexSet::<Uuid>::new()
         } else if let Type::Group(group) = self.shape_type {
@@ -734,14 +781,22 @@ impl Shape {
         }
     }
 
-    pub fn all_children_with_self(&self, shapes: &HashMap<Uuid, &mut Shape>) -> IndexSet<Uuid> {
+    pub fn all_children_with_self(
+        &self,
+        shapes: &ShapesPool,
+        include_hidden: bool,
+    ) -> IndexSet<Uuid> {
         once(self.id)
-            .chain(self.children_ids().into_iter().flat_map(|id| {
-                shapes
-                    .get(&id)
-                    .map(|s| s.all_children_with_self(shapes))
-                    .unwrap_or_default()
-            }))
+            .chain(
+                self.children_ids(include_hidden)
+                    .into_iter()
+                    .flat_map(|id| {
+                        shapes
+                            .get(&id)
+                            .map(|s| s.all_children_with_self(shapes, include_hidden))
+                            .unwrap_or_default()
+                    }),
+            )
             .collect()
     }
 
@@ -910,40 +965,46 @@ impl Shape {
     pub fn has_fills(&self) -> bool {
         !self.fills.is_empty()
     }
-}
 
-/*
-  Returns the list of children taking into account the structure modifiers
-*/
-pub fn modified_children_ids(
-    element: &Shape,
-    structure: Option<&Vec<StructureEntry>>,
-) -> IndexSet<Uuid> {
-    if let Some(structure) = structure {
-        let mut result: Vec<Uuid> = Vec::from_iter(element.children_ids().iter().copied());
-        let mut to_remove = HashSet::<&Uuid>::new();
+    pub fn has_inner_strokes(&self) -> bool {
+        self.strokes.iter().any(|s| s.kind == StrokeKind::Inner)
+    }
 
-        for st in structure {
-            match st.entry_type {
-                StructureEntryType::AddChild => {
-                    result.insert(st.index as usize, st.id);
+    /*
+      Returns the list of children taking into account the structure modifiers
+    */
+    pub fn modified_children_ids(
+        &self,
+        structure: Option<&Vec<StructureEntry>>,
+        include_hidden: bool,
+    ) -> IndexSet<Uuid> {
+        if let Some(structure) = structure {
+            let mut result: Vec<Uuid> =
+                Vec::from_iter(self.children_ids(include_hidden).iter().copied());
+            let mut to_remove = HashSet::<&Uuid>::new();
+
+            for st in structure {
+                match st.entry_type {
+                    StructureEntryType::AddChild => {
+                        result.insert(result.len() - st.index as usize, st.id);
+                    }
+                    StructureEntryType::RemoveChild => {
+                        to_remove.insert(&st.id);
+                    }
+                    _ => {}
                 }
-                StructureEntryType::RemoveChild => {
-                    to_remove.insert(&st.id);
-                }
-                _ => {}
             }
+
+            let ret: IndexSet<Uuid> = result
+                .iter()
+                .filter(|id| !to_remove.contains(id))
+                .copied()
+                .collect();
+
+            ret
+        } else {
+            self.children_ids(include_hidden)
         }
-
-        let ret: IndexSet<Uuid> = result
-            .iter()
-            .filter(|id| !to_remove.contains(id))
-            .copied()
-            .collect();
-
-        ret
-    } else {
-        element.children_ids()
     }
 }
 

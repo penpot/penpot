@@ -25,6 +25,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias rpc.doc]
    [app.setup :as-alias setup]
+   [app.worker :as wrk]
    [integrant.core :as ig]
    [promesa.exec :as px]
    [reitit.core :as r]
@@ -63,15 +64,16 @@
   (assert (sm/check schema:server-params params)))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [::handler ::router ::host ::port] :as cfg}]
+  [_ {:keys [::handler ::router ::host ::port ::wrk/executor] :as cfg}]
   (l/info :hint "starting http server" :port port :host host)
   (let [options {:http/port port
                  :http/host host
                  :http/max-body-size (::max-body-size cfg)
                  :http/max-multipart-body-size (::max-multipart-body-size cfg)
+                 :xnio/direct-buffers false
                  :xnio/io-threads (or (::io-threads cfg)
                                       (max 3 (px/get-available-processors)))
-                 :xnio/dispatch :virtual
+                 :xnio/dispatch executor
                  :ring/compat :ring2
                  :socket/backlog 4069}
 

@@ -27,14 +27,13 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon*]]
+   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon* get-subscription-type]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.object :as obj]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [cljs.spec.alpha :as s]
@@ -196,7 +195,7 @@
                         :on-edit on-edit-open
                         :on-menu-close on-menu-close}]]))
 
-(mf/defc sidebar-search
+(mf/defc sidebar-search*
   [{:keys [search-term team-id] :as props}]
   (let [search-term (or search-term "")
         focused?    (mf/use-state false)
@@ -333,10 +332,10 @@
                :alt (:name team-item)}]
 
         (if (and (contains? cf/flags :subscriptions)
-                 (or (= "unlimited" (:type (:subscription team-item))) (= "enterprise" (:type (:subscription team-item)))))
+                 (#{"unlimited" "enterprise"} (get-subscription-type (:subscription team-item))))
           [:div  {:class (stl/css :team-text-with-icon)}
            [:span {:class (stl/css :team-text) :title (:name team-item)} (:name team-item)]
-           [:> menu-team-icon* {:subscription-name (:type (:subscription team-item))}]]
+           [:> menu-team-icon* {:subscription-type (get-subscription-type (:subscription team-item))}]]
           [:span {:class (stl/css :team-text)
                   :title (:name team-item)} (:name team-item)])
         (when (= (:id team-item) (:id team))
@@ -586,8 +585,8 @@
                                 :data-testid   "delete-team"}
         (tr "dashboard.delete-team")])]))
 
-(mf/defc sidebar-team-switch
-  [{:keys [team profile] :as props}]
+(mf/defc sidebar-team-switch*
+  [{:keys [team profile]}]
   (let [teams                 (mf/deref refs/teams)
         teams-without-default (into {} (filter (fn [[_ v]] (= false (:is-default v))) teams))
         team-ids              (map #(str "teams-selector-" %) (keys teams-without-default))
@@ -605,10 +604,6 @@
                                "teams-options-leave-team"
                                (when (get-in team [:permissions :is-owner])
                                  "teams-options-delete-team")]
-
-
-        ;; _ (prn "--------------- sidebar-team-switch")
-        ;; _ (app.common.pprint/pprint teams)
 
         handle-show-team-click
         (fn [event]
@@ -654,7 +649,7 @@
         (fn []
           (reset! show-teams-ddwn? false))
         subscription          (:subscription team)
-        subscription-name     (:type subscription)]
+        subscription-type     (get-subscription-type subscription)]
 
     [:div {:class (stl/css :sidebar-team-switch)}
      [:div {:class (stl/css :switch-content)}
@@ -669,18 +664,18 @@
 
          (and (contains? cf/flags :subscriptions)
               (not (:is-default team))
-              (or (= "unlimited" subscription-name) (= "enterprise" subscription-name)))
+              (or (= "unlimited" subscription-type) (= "enterprise" subscription-type)))
          [:div {:class (stl/css :team-name)}
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
                  :alt (:name team)}]
           [:div  {:class (stl/css :team-text-with-icon)}
            [:span {:class (stl/css :team-text) :title (:name team)} (:name team)]
-           [:> menu-team-icon* {:subscription-name subscription-name}]]]
+           [:> menu-team-icon* {:subscription-type subscription-type}]]]
 
 
          (and (not (:is-default team))
-              (or (not= "unlimited" subscription-name) (not= "enterprise" subscription-name)))
+              (or (not= "unlimited" subscription-type) (not= "enterprise" subscription-type)))
          [:div {:class (stl/css :team-name)}
           [:img {:src (cf/resolve-team-photo-url team)
                  :class (stl/css :team-picture)
@@ -716,8 +711,7 @@
                                  :profile profile}]]]))
 
 (mf/defc sidebar-content*
-  {::mf/private true
-   ::mf/props :obj}
+  {::mf/private true}
   [{:keys [projects profile section team project search-term default-project] :as props}]
   (let [default-project-id
         (get default-project :id)
@@ -730,6 +724,7 @@
         drafts?     (and (= section :dashboard-files)
                          (= (:id project) default-project-id))
         container   (mf/use-ref nil)
+
         overflow*   (mf/use-state false)
         overflow?   (deref overflow*)
 
@@ -740,13 +735,14 @@
         (mf/use-fn
          (mf/deps team-id)
          (fn []
-           (st/emit! (dcm/go-to-dashboard-recent :team-id team-id)
-                     (ts/schedule-on-idle
-                      (fn []
-                        (when-let [projects-title (dom/get-element "dashboard-projects-title")]
-                          (dom/set-attribute! projects-title "tabindex" "0")
-                          (dom/focus! projects-title)
-                          (dom/set-attribute! projects-title "tabindex" "-1")))))))
+           (st/emit!
+            (dcm/go-to-dashboard-recent :team-id team-id)
+            (ts/schedule-on-idle
+             (fn []
+               (when-let [projects-title (dom/get-element "dashboard-projects-title")]
+                 (dom/set-attribute! projects-title "tabindex" "0")
+                 (dom/focus! projects-title)
+                 (dom/set-attribute! projects-title "tabindex" "-1")))))))
 
         go-fonts
         (mf/use-fn
@@ -756,14 +752,17 @@
         go-fonts-with-key
         (mf/use-fn
          (mf/deps team)
-         #(st/emit! (dcm/go-to-dashboard-fonts :team-id team-id)
-                    (ts/schedule-on-idle
-                     (fn []
-                       (let [font-title (dom/get-element "dashboard-fonts-title")]
-                         (when font-title
-                           (dom/set-attribute! font-title "tabindex" "0")
-                           (dom/focus! font-title)
-                           (dom/set-attribute! font-title "tabindex" "-1")))))))
+         (fn []
+           (st/emit!
+            (dcm/go-to-dashboard-fonts :team-id team-id)
+            (ts/schedule-on-idle
+             (fn []
+               (let [font-title (dom/get-element "dashboard-fonts-title")]
+                 (when font-title
+                   (dom/set-attribute! font-title "tabindex" "0")
+                   (dom/focus! font-title)
+                   (dom/set-attribute! font-title "tabindex" "-1"))))))))
+
         go-drafts
         (mf/use-fn
          (mf/deps team-id default-project-id)
@@ -785,39 +784,43 @@
         go-libs
         (mf/use-fn
          (mf/deps team-id)
-         #(st/emit! (dcm/go-to-dashboard-libraries :team-id team-id)))
+         (fn [] (st/emit! (dcm/go-to-dashboard-libraries :team-id team-id))))
 
         go-libs-with-key
         (mf/use-fn
          (mf/deps team-id)
-         #(st/emit! (dcm/go-to-dashboard-libraries :team-id team-id)
-                    (ts/schedule-on-idle
-                     (fn []
-                       (let [libs-title (dom/get-element "dashboard-libraries-title")]
-                         (when libs-title
-                           (dom/set-attribute! libs-title "tabindex" "0")
-                           (dom/focus! libs-title)
-                           (dom/set-attribute! libs-title "tabindex" "-1")))))))
-        pinned-projects
-        (->> projects
-             (remove :is-default)
-             (filter :is-pinned))]
+         (fn []
+           (st/emit!
+            (dcm/go-to-dashboard-libraries :team-id team-id)
+            (ts/schedule-on-idle
+             (fn []
+               (let [libs-title (dom/get-element "dashboard-libraries-title")]
+                 (when libs-title
+                   (dom/set-attribute! libs-title "tabindex" "0")
+                   (dom/focus! libs-title)
+                   (dom/set-attribute! libs-title "tabindex" "-1"))))))))
 
-    (mf/use-layout-effect
-     (mf/deps pinned-projects)
-     (fn []
-       (let [dom   (mf/ref-val container)
-             client-height (obj/get dom "clientHeight")
-             scroll-height (obj/get dom "scrollHeight")]
-         (reset! overflow* (> scroll-height client-height)))))
+        pinned-projects
+        (mf/with-memo [projects]
+          (->> projects
+               (remove :is-default)
+               (filter :is-pinned)
+               (sort-by :name)
+               (not-empty)))]
+
+    (mf/with-layout-effect [pinned-projects]
+      (let [node          (mf/ref-val container)
+            client-height (.-clientHeight ^js node)
+            scroll-height (.-scrollHeight ^js node)]
+        (reset! overflow* (> scroll-height client-height))))
 
     [:*
      [:div {:class (stl/css-case :sidebar-content true)
             :ref container}
-      [:& sidebar-team-switch {:team team :profile profile}]
+      [:> sidebar-team-switch* {:team team :profile profile}]
 
-      [:& sidebar-search {:search-term search-term
-                          :team-id (:id team)}]
+      [:> sidebar-search* {:search-term search-term
+                           :team-id (:id team)}]
 
       [:div {:class (stl/css :sidebar-content-section)}
        [:ul {:class (stl/css :sidebar-nav)}
@@ -834,9 +837,20 @@
          [:& link {:action go-drafts
                    :class (stl/css :sidebar-link)
                    :keyboard-action go-drafts-with-key}
-          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]
+          [:span {:class (stl/css :element-title)} (tr "labels.drafts")]]]]]
 
 
+      [:div {:class (stl/css :sidebar-content-section)}
+       [:div {:class (stl/css :sidebar-section-title)}
+        (tr "labels.sources")]
+       [:ul {:class (stl/css :sidebar-nav)}
+        [:li {:class (stl/css-case :sidebar-nav-item true
+                                   :current fonts?)}
+         [:& link {:action go-fonts
+                   :class (stl/css :sidebar-link)
+                   :keyboard-action go-fonts-with-key
+                   :data-testid "fonts"}
+          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]
         [:li {:class (stl/css-case :current libs?
                                    :sidebar-nav-item true)}
          [:& link {:action go-libs
@@ -846,20 +860,11 @@
           [:span {:class (stl/css :element-title)} (tr "labels.shared-libraries")]]]]]
 
 
-      [:div {:class (stl/css :sidebar-content-section)}
-       [:ul {:class (stl/css :sidebar-nav)}
-        [:li {:class (stl/css-case :sidebar-nav-item true
-                                   :current fonts?)}
-         [:& link {:action go-fonts
-                   :class (stl/css :sidebar-link)
-                   :keyboard-action go-fonts-with-key
-                   :data-testid "fonts"}
-          [:span {:class (stl/css :element-title)} (tr "labels.fonts")]]]]]
-
-
       [:div {:class (stl/css :sidebar-content-section)
              :data-testid "pinned-projects"}
-       (if (seq pinned-projects)
+       [:div {:class (stl/css :sidebar-section-title)}
+        (tr "labels.pinned-projects")]
+       (if (some? pinned-projects)
          [:ul {:class (stl/css :sidebar-nav :pinned-projects)}
           (for [item pinned-projects]
             [:& sidebar-project
@@ -874,7 +879,6 @@
      [:div {:class (stl/css-case :separator true :overflow-separator overflow?)}]]))
 
 (mf/defc profile-section*
-  {::mf/props :obj}
   [{:keys [profile team]}]
   (let [show*  (mf/use-state false)
         show   (deref show*)

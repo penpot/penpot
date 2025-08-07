@@ -80,8 +80,7 @@
                            (cb/format-code style-type)))
 
                       markup-code
-                      (-> (cg/generate-markup-code objects markup-type [shape])
-                          (cb/format-code markup-type))]
+                      (cg/generate-formatted-markup-code objects markup-type [shape])]
 
                   (update-preview-window
                    preview

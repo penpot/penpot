@@ -50,6 +50,11 @@
   []
   (unchecked-get ^js wasm/internal-module "HEAPU32"))
 
+(defn get-heap-i32
+  "Returns a Uint32Array view of the heap"
+  []
+  (unchecked-get ^js wasm/internal-module "HEAP32"))
+
 (defn get-heap-f32
   "Returns a Float32Array view of the heap"
   []

@@ -17,6 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
+   [app.util.dom.normalize-wheel :as nw]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
@@ -171,40 +172,47 @@
 (mf/defc templates-section*
   {::mf/props :obj}
   [{:keys [default-project-id profile project-id team-id]}]
-  (let [templates      (mf/deref builtin-templates)
-        templates      (mf/with-memo [templates]
-                         (filterv #(and
-                                    (not= (:id %) "welcome")
-                                    (not= (:id %) "tutorial-for-beginners")) templates))
+  (let [templates   (mf/deref builtin-templates)
+        templates   (mf/with-memo [templates]
+                      (filterv #(and
+                                 (not= (:id %) "welcome")
+                                 (not= (:id %) "tutorial-for-beginners")) templates))
 
-        route          (mf/deref refs/route)
-        route-name     (get-in route [:data :name])
-        section        (if (= route-name :dashboard-files)
-                         (if (= project-id default-project-id)
-                           "dashboard-drafts"
-                           "dashboard-project")
-                         (name route-name))
+        route       (mf/deref refs/route)
+        route-name  (get-in route [:data :name])
+        section     (if (= route-name :dashboard-files)
+                      (if (= project-id default-project-id)
+                        "dashboard-drafts"
+                        "dashboard-project")
+                      (name route-name))
 
-        collapsed*     (mf/use-state
-                        #(get storage/global ::collapsed))
-        collapsed      (deref collapsed*)
+        collapsed*  (mf/use-state
+                     #(get storage/global ::collapsed))
+        collapsed   (deref collapsed*)
 
 
 
-        can-move       (mf/use-state {:left false :right true})
+        can-move    (mf/use-state {:left false :right true})
 
-        total          (count templates)
+        total       (count templates)
 
         ;; We need space for total plus the libraries&templates link
-        content-ref    (mf/use-ref)
-
-        move-left (fn [] (dom/scroll-by! (mf/ref-val content-ref) -300 0))
-        move-right (fn [] (dom/scroll-by! (mf/ref-val content-ref) 300 0))
+        content-ref (mf/use-ref)
 
         on-toggle-collapse
         (mf/use-fn
          (fn [_event]
            (swap! collapsed* not)))
+
+        on-wheel
+        (mf/use-fn
+         (fn [^js event]
+           (let [event* (nw/normalize-wheel event)
+                 deltaY (.-spinY event*)
+                 deltaX (.-spinX event*)
+                 node (mf/ref-val content-ref)]
+             (when (> (abs deltaY) (abs deltaX))
+               (.scrollBy node #js {:left (* 300 deltaY) :mode "smooth"})))))
 
         on-scroll
         (mf/use-fn
@@ -219,16 +227,10 @@
                                :right (> scroll-available client-width)}))))
 
         on-move-left
-        (mf/use-fn #(move-left))
-
-        on-move-left-key-down
-        (mf/use-fn #(move-left))
+        (mf/use-fn #(dom/scroll-by! (mf/ref-val content-ref) -300 0))
 
         on-move-right
-        (mf/use-fn #(move-right))
-
-        on-move-right-key-down
-        (mf/use-fn #(move-right))
+        (mf/use-fn #(dom/scroll-by! (mf/ref-val content-ref) 300 0))
 
         on-import-template
         (mf/use-fn
@@ -236,7 +238,7 @@
          (fn [template _event]
            (import-template! template team-id project-id default-project-id section)))]
 
-    (mf/with-effect [content-ref templates]
+    (mf/with-effect [templates]
       (let [content (mf/ref-val content-ref)]
         (when (and (some? content) (some? templates))
           (dom/scroll-to content #js {:behavior "instant" :left 0 :top 0})
@@ -258,6 +260,7 @@
 
      [:div {:class (stl/css :content)
             :on-scroll on-scroll
+            :on-wheel on-wheel
             :ref content-ref}
 
       (for [index (range (count templates))]
@@ -279,13 +282,13 @@
        [:button {:class (stl/css :move-button :move-left)
                  :tab-index (if ^boolean collapsed "-1" "0")
                  :on-click on-move-left
-                 :on-key-down on-move-left-key-down}
+                 :on-key-down on-move-left}
         arrow-icon])
 
      (when (:right @can-move)
        [:button {:class (stl/css :move-button :move-right)
                  :tab-index (if collapsed "-1" "0")
                  :on-click on-move-right
-                 :aria-label (tr "labels.next")
-                 :on-key-down  on-move-right-key-down}
+                 :on-key-down  on-move-right
+                 :aria-label (tr "labels.next")}
         arrow-icon])]))

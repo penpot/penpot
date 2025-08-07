@@ -467,15 +467,15 @@
          row-tracks (set-flex-multi-span parent row-tracks children-map shape-cells bounds objects :row)
 
          ;; Once auto sizes have been calculated we get calculate the `fr` unit with the remainining size and adjust the size
-         free-column-space (max 0 (- bound-width (+ column-total-size-nofr column-total-gap)))
-         free-row-space    (max 0 (- bound-height (+ row-total-size-nofr row-total-gap)))
+         fr-column-space (max 0 (- bound-width (+ column-total-size-nofr column-total-gap)))
+         fr-row-space    (max 0 (- bound-height (+ row-total-size-nofr row-total-gap)))
 
          ;; Get the minimum values for fr's
          min-column-fr     (min-fr-value column-tracks)
          min-row-fr        (min-fr-value row-tracks)
 
-         column-fr         (if auto-width? min-column-fr (mth/finite (/ free-column-space column-frs) 0))
-         row-fr            (if auto-height? min-row-fr (mth/finite (/ free-row-space row-frs) 0))
+         column-fr         (if auto-width? min-column-fr (mth/finite (/ fr-column-space column-frs) 0))
+         row-fr            (if auto-height? min-row-fr (mth/finite (/ fr-row-space row-frs) 0))
 
          column-tracks     (set-fr-value column-tracks column-fr auto-width?)
          row-tracks        (set-fr-value row-tracks row-fr auto-height?)
@@ -484,13 +484,13 @@
          column-total-size (tracks-total-size column-tracks)
          row-total-size    (tracks-total-size row-tracks)
 
-         free-column-space (max 0 (if auto-width? 0 (- bound-width (+ column-total-size column-total-gap))))
-         free-row-space    (max 0 (if auto-height? 0 (- bound-height (+ row-total-size row-total-gap))))
+         auto-column-space (max 0 (if auto-width? 0 (- bound-width (+ column-total-size column-total-gap))))
+         auto-row-space    (max 0 (if auto-height? 0 (- bound-height (+ row-total-size row-total-gap))))
          column-autos      (tracks-total-autos column-tracks)
          row-autos         (tracks-total-autos row-tracks)
 
-         column-add-auto   (/ free-column-space column-autos)
-         row-add-auto      (/ free-row-space row-autos)
+         column-add-auto   (/ auto-column-space column-autos)
+         row-add-auto      (/ auto-row-space row-autos)
 
          column-tracks (cond-> column-tracks
                          (= :stretch (:layout-justify-content parent))

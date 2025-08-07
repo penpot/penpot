@@ -29,6 +29,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.foundations.assets.icon :as ic]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
+   [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
@@ -112,11 +113,14 @@
                                      :linear :linear-gradient
                                      :radial :radial-gradient)
                                    :color))
-        active-color-tab       (mf/use-state #(dc/get-active-color-tab))
+
+        active-color-tab*      (hooks/use-persisted-state ::color-tab "ramp")
+        active-color-tab       (deref active-color-tab*)
+
         drag?*                 (mf/use-state false)
         drag?                  (deref drag?*)
 
-        type                   (if (= @active-color-tab "hsva") :hsv :rgb)
+        type                   (if (= active-color-tab "hsva") :hsv :rgb)
 
         fill-image-ref         (mf/use-ref nil)
 
@@ -163,10 +167,7 @@
                                           :checked keep-aspect-ratio?})))))
 
         on-change-tab
-        (mf/use-fn
-         (fn [tab]
-           (reset! active-color-tab tab)
-           (dc/set-active-color-tab! tab)))
+        (mf/use-fn #(reset! active-color-tab* %))
 
         handle-change-mode
         (mf/use-fn
@@ -274,20 +275,15 @@
 
         handle-gradient-remove-stop
         (mf/use-fn
-         (mf/deps state)
-         (fn [stop]
-           (when (> (count (:stops state)) 2)
-             (when-let [index (d/index-of-pred (:stops state) #(= % stop))]
-               (st/emit! (dc/remove-gradient-stop index))))))
+         (fn [index]
+           (st/emit! (dc/remove-gradient-stop index))))
 
         handle-stop-edit-start
         (mf/use-fn
-         (fn []
-           (reset! should-update? false)))
+         #(reset! should-update? false))
 
         handle-stop-edit-finish
         (mf/use-fn
-         (mf/deps state)
          (fn []
            (reset! should-update? true)
 
@@ -338,50 +334,24 @@
          (fn [value]
            (st/emit! (dc/update-colorpicker-gradient-opacity (/ value 100)))))
 
-        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
+        render-wasm?
+        (features/use-feature "render-wasm/v1")
+
+        cap-stops?
+        (or ^boolean render-wasm?
+            ^boolean (contains? cfg/flags :frontend-binary-fills))
 
         tabs
-        #js [#js {:aria-label (tr "workspace.libraries.colors.rgba")
-                  :icon ic/rgba
-                  :id "ramp"
-                  :content (mf/html (if picking-color?
-                                      [:div {:class (stl/css :picker-detail-wrapper)}
-                                       [:div {:class (stl/css :center-circle)}]
-                                       [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
-                                      [:> ramp-selector*
-                                       {:color current-color
-                                        :disable-opacity disable-opacity
-                                        :on-change handle-change-color
-                                        :on-start-drag on-start-drag
-                                        :on-finish-drag on-finish-drag}]))}
-
-             #js {:aria-label "Harmony"
-                  :icon ic/rgba-complementary
-                  :id "harmony"
-                  :content (mf/html (if picking-color?
-                                      [:div {:class (stl/css :picker-detail-wrapper)}
-                                       [:div {:class (stl/css :center-circle)}]
-                                       [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
-                                      [:& harmony-selector
-                                       {:color current-color
-                                        :disable-opacity disable-opacity
-                                        :on-change handle-change-color
-                                        :on-start-drag on-start-drag
-                                        :on-finish-drag on-finish-drag}]))}
-
-             #js {:aria-label "HSVA"
-                  :icon ic/hsva
-                  :id "hsva"
-                  :content (mf/html (if picking-color?
-                                      [:div {:class (stl/css :picker-detail-wrapper)}
-                                       [:div {:class (stl/css :center-circle)}]
-                                       [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
-                                      [:& hsva-selector
-                                       {:color current-color
-                                        :disable-opacity disable-opacity
-                                        :on-change handle-change-color
-                                        :on-start-drag on-start-drag
-                                        :on-finish-drag on-finish-drag}]))}]]
+        (mf/with-memo []
+          [{:aria-label (tr "workspace.libraries.colors.rgba")
+            :icon ic/rgba
+            :id "ramp"}
+           {:aria-label "Harmony"
+            :icon ic/rgba-complementary
+            :id "harmony"}
+           {:aria-label "HSVA"
+            :icon ic/hsva
+            :id "hsva"}])]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
@@ -486,11 +456,41 @@
               :multi false
               :ref fill-image-ref
               :on-selected on-fill-image-selected}]]])
+
         [:*
          [:div {:class (stl/css :colorpicker-tabs)}
           [:> tab-switcher* {:tabs tabs
-                             :default-selected "ramp"
-                             :on-change-tab on-change-tab}]]
+                             :selected active-color-tab
+                             :on-change on-change-tab}
+           (if picking-color?
+             [:div {:class (stl/css :picker-detail-wrapper)}
+              [:div {:class (stl/css :center-circle)}]
+              [:canvas#picker-detail {:class (stl/css :picker-detail) :width 256 :height 140}]]
+
+
+             (case active-color-tab
+               "ramp"
+               [:> ramp-selector*
+                {:color current-color
+                 :disable-opacity disable-opacity
+                 :on-change handle-change-color
+                 :on-start-drag on-start-drag
+                 :on-finish-drag on-finish-drag}]
+
+               "harmony"
+               [:& harmony-selector
+                {:color current-color
+                 :disable-opacity disable-opacity
+                 :on-change handle-change-color
+                 :on-start-drag on-start-drag}]
+
+               "hsva"
+               [:& hsva-selector
+                {:color current-color
+                 :disable-opacity disable-opacity
+                 :on-change handle-change-color
+                 :on-start-drag on-start-drag
+                 :on-finish-drag on-finish-drag}]))]]
 
          [:& color-inputs
           {:type type

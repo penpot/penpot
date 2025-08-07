@@ -107,6 +107,8 @@ $grayish-red: #bfbfbf;
   --color-token-border: #{$aqua-400};
   --color-token-accent: #{$aqua-600};
   --color-token-foreground: #{$aqua-800};
+
+  --color-badge-premium: #{$orange-500};
 }
 
 :global(.default) {
@@ -148,4 +150,6 @@ $grayish-red: #bfbfbf;
   --color-token-border: #{$violet-700};
   --color-token-accent: #{$violet-600};
   --color-token-foreground: #{$violet-300};
+
+  --color-badge-premium: #{$orange-200};
 }

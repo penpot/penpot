@@ -39,7 +39,7 @@
     (t/is (= #{:text-content-attribute} diff-attr))
     (t/is (= #{:text-content-text :text-content-attribute} diff-both))
     (t/is (= #{:text-content-structure} diff-structure))
-    (t/is (= #{:text-content-structure :text-content-structure-same-attrs} diff-structure-same-attrs))))
+    (t/is (= #{:text-content-structure} diff-structure-same-attrs))))
 
 
 (t/deftest test-get-diff-attrs

@@ -269,8 +269,7 @@
           new-set-name "foo1"
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token-set set-name false (assoc prev-token-set
-                                                               :name new-set-name)))
+                      (pcb/set-token-set set-name false (ctob/rename prev-token-set new-set-name)))
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
           undo (thf/apply-undo-changes redo changes)

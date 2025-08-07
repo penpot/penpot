@@ -53,6 +53,21 @@ export default defineConfig({
         toHaveScreenshot: { maxDiffPixelRatio: 0.005 },
       },
     },
+    {
+      name: "render-wasm",
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1920, height: 1080 }, // Add custom viewport size
+        deviceScaleFactor: 2,
+      },
+      testDir: "./playwright/ui/render-wasm-specs",
+      snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
+      expect: {
+        toHaveScreenshot: {
+          maxDiffPixelRatio: 0.001,
+        },
+      },
+    },
   ],
 
   /* Run your local dev server before starting the tests */

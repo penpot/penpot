@@ -18,8 +18,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc debug-panel
-  [{:keys [class] :as props}]
+(mf/defc debug-panel*
+  [{:keys [class]}]
   (let [on-toggle-enabled
         (mf/use-fn
          (fn [event option]

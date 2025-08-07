@@ -1243,7 +1243,7 @@ msgid "inspect.attributes.typography.text-transform.none"
 msgstr "babu"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:430
-msgid "inspect.attributes.typography.text-transform.titlecase"
+msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "yadda ake rubuta batu"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:424

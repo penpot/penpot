@@ -5,6 +5,35 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.main.data.workspace.undo
+  "Undo management for the workspace.
+
+   There are **undo entries**, **undo transactions** and **undo groups**.
+   The undo stack has a maximum size of `MAX-UNDO-SIZE` (50) entries.
+
+   Undo entries:
+     - Consist of `:undo-changes`, `:redo-changes`, `:undo-group`, `:tags`
+     - Can be:
+       - `added`: pushes a new entry on top of the undo stack
+       - `stacked`: appends undo/redo changes to the last undo item under
+         `:workspace-undo :items`
+       - `accumulated`: extends the current transaction with new changes
+
+   Undo transactions:
+    - Are a way to incrementally merge incoming changes into a single
+      undo entry.
+    - Are identified by a unique id, typically a `(js/Symbol)`
+    - There is at most one current undo transaction.
+    - Have a timeout, defaulting to 20s
+    - Are _accumulated_ into the current transaction via
+      `accumulate-undo-entry`
+
+   Undo groups:
+    - Can contain multiple undo entries
+    - Undo entries in a groups must be consecutive
+
+   Undo tags:
+    - Known values: `:alt-duplication` (copy-and-move with mouse+alt)
+   "
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -29,7 +58,9 @@
   schema:undo-entry
   [:map {:title "undo-entry"}
    [:undo-changes [:vector ::cpc/change]]
-   [:redo-changes [:vector ::cpc/change]]])
+   [:redo-changes [:vector ::cpc/change]]
+   [:undo-group ::sm/uuid]
+   [:tags [:set :keyword]]])
 
 (def check-undo-entry
   (sm/check-fn schema:undo-entry))
@@ -45,6 +76,9 @@
       undo)))
 
 (defn materialize-undo
+  "Updates the state to point to a specific index in the undo stack.
+   Used to materialize the undo stack when the user selects an entry
+   in the undo history."
   [_changes index]
   (ptk/reify ::materialize-undo
     ptk/UpdateEvent
@@ -67,6 +101,8 @@
     state))
 
 (defn- stack-undo-entry
+  "Extends the current undo entry in the workspace with new changes if it
+   exists, or creates a new entry if it doesn't."
   [state {:keys [undo-changes redo-changes] :as entry}]
   (let [index (get-in state [:workspace-undo :index] -1)]
     (if (>= index 0)
@@ -78,6 +114,7 @@
       (add-undo-entry state entry))))
 
 (defn- accumulate-undo-entry
+  "Extends the current undo transaction with new changes."
   [state {:keys [undo-changes redo-changes undo-group tags]}]
   (-> state
       (update-in [:workspace-undo :transaction :undo-changes] #(into undo-changes %))
@@ -87,6 +124,11 @@
       (assoc-in [:workspace-undo :transaction :tags] tags)))
 
 (defn append-undo
+  "UpdateEvent to add an entry to the undo stack, or extend the current undo transaction
+   or last undo entry.
+   - If `stack?` is true, it will stack the entry on top of the current undo entry.
+   - If `stack?` is false, it will add a new entry to the undo stack.
+   - If there is an open transaction, it will accumulate the changes in that transaction."
   [entry stack?]
 
   (assert (check-undo-entry entry))
@@ -114,7 +156,7 @@
 (declare check-open-transactions)
 
 (defn start-undo-transaction
-  "Start a transaction, so that every changes inside are added together in a single undo entry."
+  "Start a transaction, so that changes in it are added together into a single undo entry."
   [id & {:keys [timeout] :or {timeout discard-transaction-time-millis}}]
   (ptk/reify ::start-undo-transaction
     ptk/UpdateEvent
@@ -137,7 +179,9 @@
              (rx/delay timeout))))))
 
 
-(defn discard-undo-transaction []
+(defn discard-undo-transaction
+  "Updates the state to discard any current and pending undo transaction."
+  []
   (ptk/reify ::discard-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
@@ -159,6 +203,7 @@
           state)))))
 
 (def reinitialize-undo
+  "Clears the undo stack, removing all entries and transactions."
   (ptk/reify ::reset-undo
     ptk/UpdateEvent
     (update [_ state]
@@ -215,6 +260,9 @@
 (declare ^:private assure-valid-current-page)
 
 (def undo
+  "Undo the last action, or the last action in a group.
+   If there is an open transaction, it will undo to the last transaction
+   index."
   (ptk/reify ::undo
     ptk/WatchEvent
     (watch [it state _]

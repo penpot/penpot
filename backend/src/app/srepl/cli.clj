@@ -186,7 +186,7 @@
              "canceled"
              "incomplete"
              "incomplete_expired"
-             "pass_due"
+             "past_due"
              "paused"
              "trialing"
              "unpaid"]]
@@ -205,9 +205,8 @@
    [:trial-start [:maybe ::sm/timestamp]]
    [:cancel-at [:maybe ::sm/timestamp]]
    [:canceled-at [:maybe ::sm/timestamp]]
-
-   [:current-period-end ::sm/timestamp]
-   [:current-period-start ::sm/timestamp]
+   [:current-period-end [:maybe ::sm/timestamp]]
+   [:current-period-start [:maybe ::sm/timestamp]]
    [:cancel-at-period-end :boolean]
 
    [:cancellation-details

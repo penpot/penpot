@@ -2,12 +2,11 @@ Hello {{name|abbreviate:25}}!
 
 We received a request to change your current email to {{ pending-email }}.
 
-Click to the link below to confirm the change:
+Click the link below to confirm the change.
 
 {{ public-uri }}/#/auth/verify-token?token={{token}}
 
-If you received this email by mistake, please consider changing your password
-for security reasons.
+If you did not request this change, consider changing your password for security reasons.
 
 Enjoy!
 The Penpot team.

@@ -36,6 +36,7 @@
    [app.main.data.workspace :as-alias dw]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.notifications :as-alias dwn]
+   [app.main.data.workspace.pages :as-alias dwpg]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.specialized-panel :as dwsp]
@@ -700,7 +701,7 @@
             (fn [page-id shape-id]
               (rx/merge
                (->> stream
-                    (rx/filter (ptk/type? ::dw/initialize-page))
+                    (rx/filter (ptk/type? ::dwpg/initialize-page))
                     (rx/take 1)
                     (rx/observe-on :async)
                     (rx/mapcat (fn [_] (select-and-zoom shape-id))))
@@ -975,10 +976,11 @@
             [new-shape all-parents changes]
             (-> (pcb/empty-changes it (:id page))
                 (pcb/set-undo-group undo-group)
-                (cll/generate-component-swap objects shape ldata page libraries id-new-component index target-cell keep-props-values))
+                (cll/generate-component-swap objects shape ldata page libraries id-new-component
+                                             index target-cell keep-props-values keep-touched?))
 
             changes (if keep-touched?
-                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries)
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
                       changes)]
 
         (rx/of
@@ -1093,15 +1095,24 @@
             (when (seq (:redo-changes changes))
               (rx/of (dch/commit-changes changes)))
             (when-not (empty? updated-frames)
-              (rx/merge
-               (rx/of (ptk/data-event :layout/update {:ids (map :id updated-frames) :undo-group undo-group}))
-               (->> (rx/from updated-frames)
-                    (rx/mapcat
-                     (fn [shape]
-                       (rx/of
-                        (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
-                        (when-not (= (:frame-id shape) uuid/zero)
-                          (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame"))))))))
+              (let [frames-by-page (->> updated-frames
+                                        (group-by :page-id))]
+                (rx/merge
+                 ;; Emit one layout/update event for each page
+                 (rx/from
+                  (map (fn [[page-id frames]]
+                         (ptk/data-event :layout/update
+                                         {:page-id page-id
+                                          :ids (map :id frames)
+                                          :undo-group undo-group}))
+                       frames-by-page))
+                 (->> (rx/from updated-frames)
+                      (rx/mapcat
+                       (fn [shape]
+                         (rx/of
+                          (dwt/clear-thumbnail file-id (:page-id shape) (:id shape) "frame")
+                          (when-not (= (:frame-id shape) uuid/zero)
+                            (dwt/clear-thumbnail file-id (:page-id shape) (:frame-id shape) "frame")))))))))
 
             (when (not= file-id library-id)
               ;; When we have just updated the library file, give some time for the

@@ -32,6 +32,15 @@
   cursor: pointer;
 }
 
+.title-spacing-component {
+  justify-content: flex-start;
+  gap: $s-4;
+}
+
+.variants-help-modal-button {
+  margin-inline-start: auto;
+}
+
 .icon-back {
   @include flexCenter;
   width: $s-12;
@@ -163,7 +172,6 @@
   display: flex;
   align-items: center;
   color: var(--title-foreground-color);
-  margin-right: $s-8;
 }
 
 .swappeable {
@@ -743,7 +751,7 @@
   width: $s-104;
 }
 
-.variant-error-wrapper {
+.variant-warning-wrapper {
   @include bodySmallTypography;
   border: 1px solid var(--color-background-quaternary);
   border-radius: $s-8;
@@ -753,15 +761,15 @@
   gap: $s-8;
 }
 
-.variant-error-highlight {
+.variant-warning-highlight {
   color: var(--color-foreground-primary);
 }
 
-.variant-error-darken {
+.variant-warning-darken {
   color: var(--color-foreground-secondary);
 }
 
-.variant-error-button {
+.variant-warning-button {
   @include bodySmallTypography;
   background-color: transparent;
   border: none;

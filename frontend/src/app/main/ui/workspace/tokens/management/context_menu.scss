@@ -1,0 +1,129 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../ds/typography.scss" as *;
+@import "refactor/common-refactor.scss";
+
+.token-context-menu {
+  position: absolute;
+  z-index: $z-index-4;
+}
+
+.token-context-menu[data-direction="up"] {
+  bottom: var(--bottom);
+}
+
+.token-context-menu[data-direction="down"] {
+  top: var(--top);
+}
+
+.context-list,
+.token-context-submenu {
+  @include menuShadow;
+  display: grid;
+  width: $s-240;
+  padding: $s-4;
+  border-radius: $br-8;
+  border: $s-2 solid var(--color-background-quaternary);
+  background-color: var(--color-background-tertiary);
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.token-context-submenu {
+  display: none;
+}
+
+.token-context-submenu-top {
+  bottom: 80px;
+}
+
+.token-context-submenu {
+  position: absolute;
+  padding: $s-4;
+  margin-left: $s-6;
+}
+
+.separator {
+  margin: $s-6;
+  border-block-start: $s-1 solid var(--panel-border-color);
+}
+
+.context-menu-item {
+  --context-menu-item-bg-color: none;
+  --context-menu-item-fg-color: var(--color-foreground-primary);
+  --context-menu-item-border-color: none;
+  @include use-typography("body-small");
+  display: flex;
+  align-items: center;
+  height: $s-32;
+  width: 100%;
+  padding: $s-8;
+  border-radius: $br-8;
+  color: var(--context-menu-item-fg-color);
+  background-color: var(--context-menu-item-bg-color);
+  border: $s-1 solid var(--context-menu-item-border-color);
+  cursor: pointer;
+  &:hover {
+    --context-menu-item-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus {
+    --context-menu-item-bg-color: var(--menu-background-color-focus);
+    --context-menu-item-border-color: var(--color-background-tertiary);
+  }
+
+  &[aria-selected="true"] {
+    --context-menu-item-bg-color: var(--color-background-quaternary);
+  }
+}
+
+.context-menu-item-hint-wrapper {
+  position: relative;
+}
+
+.context-menu-item-selected {
+  & .icon-wrapper {
+    color: var(--color-accent-primary);
+  }
+}
+
+.context-menu-item-unselected {
+  color: var(--color-foreground-secondary);
+
+  & .icon-wrapper {
+    color: var(--color-background-quaternary);
+  }
+
+  &:hover {
+    color: var(--color-foreground-primary);
+
+    & .icon-wrapper {
+      color: var(--color-foreground-secondary);
+    }
+  }
+}
+
+.context-menu-item-hint {
+  position: absolute;
+  background-color: var(--color-background-primary);
+  border-radius: $br-6;
+  padding: $s-4;
+  inset-inline-end: $s-4;
+  inset-block-start: $s-4;
+  color: var(--color-foreground-secondary);
+}
+
+.item-text {
+  flex-grow: 1;
+}
+
+.item-with-icon-space {
+  padding-left: $s-20;
+}
+.icon-wrapper {
+  margin-right: $s-4;
+}

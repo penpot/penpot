@@ -57,7 +57,7 @@
 }
 
 .subscription-member {
-  stroke: #fdcd79ff;
+  stroke: var(--color-badge-premium);
 }
 
 .title-section {
@@ -95,15 +95,28 @@
   stroke: var(--color-foreground-primary);
   height: var(--sp-xl);
   width: var(--sp-xl);
-  border-radius: var(--sp-xs);
-  border: $b-1 solid var(--color-foreground-primary);
+  border-radius: 6px;
+  border: 1.75px solid var(--color-foreground-primary);
+  stroke-width: 2.25px;
   padding: $s-1;
+
+  svg {
+    block-size: var(--sp-m);
+    inline-size: var(--sp-m);
+  }
 }
 
 .plan-card-title,
 .plan-price-value {
   @include t.use-typography("title-medium");
   color: var(--color-foreground-primary);
+}
+
+.plan-editors {
+  @include t.use-typography("body-medium");
+  align-self: end;
+  color: var(--color-foreground-primary);
+  margin-block-end: 2px;
 }
 
 .plan-price-period {
@@ -126,11 +139,12 @@
 }
 
 .cta-button {
-  @include t.use-typography("body-small");
+  @include t.use-typography("body-medium");
   @include buttonStyle;
   color: var(--color-accent-tertiary);
   display: flex;
   margin-block-start: var(--sp-m);
+  text-align: left;
 }
 
 .cta-button svg {
@@ -237,10 +251,12 @@
   list-style-type: disc;
   margin-inline-start: var(--sp-xl);
   margin-block: var(--sp-xxl);
+  max-height: $s-216;
+  overflow-y: auto;
 }
 
-.input-wrapper {
-  @extend .input-element;
+.input-field {
+  --input-icon-padding: var(--sp-s);
   width: $s-80;
 }
 

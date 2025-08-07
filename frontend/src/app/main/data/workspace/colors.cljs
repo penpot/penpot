@@ -109,19 +109,27 @@
               [fill]
               (assoc fills position fill)))))
 
+(defn transform-fill*
+  "A lower-level companion function for `transform-fill`"
+  [state ids  transform options]
+  (let [page-id (or (get options :page-id)
+                    (get state :current-page-id))
+        objects (dsh/lookup-page-objects state page-id)
+
+        [text-ids shape-ids]
+        (split-text-shapes objects ids)]
+
+    (rx/concat
+     (->> (rx/from text-ids)
+          (rx/map #(dwt/update-text-with-function % transform options)))
+     (rx/of (dwsh/update-shapes shape-ids transform options)))))
+
 (defn transform-fill
   "A low level function that creates a shape fill transformations stream"
   ([state ids color transform]
    (transform-fill state ids color transform nil))
   ([state ids color transform options]
-   (let [page-id (or (get options :page-id)
-                     (get state :current-page-id))
-         objects (dsh/lookup-page-objects state page-id)
-
-         [text-ids shape-ids]
-         (split-text-shapes objects ids)
-
-         fill
+   (let [fill
          (cond-> {}
            (contains? color :color)
            (assoc :fill-color (:color color))
@@ -147,12 +155,10 @@
            :always
            (types.fill/check-fill))
 
-         transform-attrs #(transform % fill)]
+         transform-attrs
+         #(transform % fill)]
 
-     (rx/concat
-      (->> (rx/from text-ids)
-           (rx/map #(dwt/update-text-with-function % transform-attrs options)))
-      (rx/of (dwsh/update-shapes shape-ids transform-attrs options))))))
+     (transform-fill* state ids transform-attrs options))))
 
 (defn swap-attrs [shape attr index new-index]
   (let [first (get-in shape [attr index])
@@ -228,12 +234,40 @@
             (transform-fill state ids color change-fn options)
             (rx/of (dwu/commit-undo-transaction undo-id)))))))))
 
-(defn remove-fill
-  ([ids color position] (remove-fill ids color position nil))
-  ([ids color position options]
+(defn detach-fill
+  ([ids position] (detach-fill ids position nil))
+  ([ids position options]
 
-   (assert (types.color/check-color color)
-           "expected a valid color struct")
+   (assert (number? position)
+           "expected a valid number for position")
+   (assert (every? uuid? ids)
+           "expected a valid coll of uuid's")
+
+   (ptk/reify ::detach-fill
+     ptk/WatchEvent
+     (watch [_ state _]
+       (let [detach-fn
+             (fn [values index]
+               (update values index dissoc :fill-color-ref-id :fill-color-ref-file))
+
+             change-fn
+             ;; The `node` can be a shape or a text content node
+             (fn [node]
+               (update node :fills detach-fn position))
+
+             undo-id
+             (js/Symbol)]
+
+         (rx/concat
+          (rx/of (dwu/start-undo-transaction undo-id))
+          (transform-fill* state ids change-fn options)
+          (rx/of (dwu/commit-undo-transaction undo-id))))))))
+
+(defn remove-fill
+  ([ids position] (remove-fill ids position nil))
+  ([ids position options]
+   (assert (number? position)
+           "expected a valid number for position")
    (assert (every? uuid? ids)
            "expected a valid coll of uuid's")
 
@@ -242,37 +276,38 @@
      (watch [_ state _]
        (let [remove-fill-by-index
              (fn [values index]
-               (->> (d/enumerate values)
-                    (filterv (fn [[idx _]] (not= idx index)))
-                    (mapv second)))
+               (into []
+                     (comp
+                      (map-indexed (fn [i o] (when (not= i index) o)))
+                      (filter some?))
+                     values))
 
              change-fn
-             (fn [shape _] (update shape :fills remove-fill-by-index position))
+             ;; The `node` can be a shape or a text content node
+             (fn [node]
+               (update node :fills remove-fill-by-index position))
 
              undo-id
              (js/Symbol)]
 
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
-          (transform-fill state ids color change-fn options)
+          (transform-fill* state ids change-fn options)
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn remove-all-fills
-  ([ids color] (remove-all-fills ids color nil))
-  ([ids color options]
-
-   (assert (types.color/check-color color) "expected a valid color struct")
+  ([ids] (remove-all-fills ids nil))
+  ([ids options]
    (assert (every? uuid? ids) "expected a valid coll of uuid's")
-
 
    (ptk/reify ::remove-all-fills
      ptk/WatchEvent
      (watch [_ state _]
-       (let [change-fn (fn [shape _] (assoc shape :fills []))
+       (let [change-fn (fn [node] (assoc node :fills []))
              undo-id   (js/Symbol)]
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
-          (transform-fill state ids color change-fn options)
+          (transform-fill* state ids change-fn options)
           (rx/of (dwu/commit-undo-transaction undo-id))))))))
 
 (defn change-hide-fill-on-export
@@ -743,7 +778,8 @@
   [{:keys [type current-color stops gradient opacity] :as state}]
   (cond
     (= type :color)
-    (clear-color-components current-color)
+    (-> (clear-color-components current-color)
+        (dissoc :offset))
 
     (= type :image)
     (clear-image-components current-color)
@@ -1044,7 +1080,11 @@
               (fn [state]
                 (-> state
                     (assoc :type :color)
-                    (dissoc :editing-stop :stops :gradient)))))))
+                    (dissoc :editing-stop :stops :gradient)))))
+
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (rx/of (update-colorpicker-color {} false)))))
 
 (defn activate-colorpicker-gradient
   [type]
@@ -1112,12 +1152,3 @@
                          :position :right})
                (ptk/event ::ev/event {::ev/name "add-asset-to-library"
                                       :asset-type "color"}))))))
-
-(defn get-active-color-tab
-  []
-  (let [tab (::tab storage/user)]
-    (or tab :ramp)))
-
-(defn set-active-color-tab!
-  [tab]
-  (swap! storage/user assoc ::tab tab))

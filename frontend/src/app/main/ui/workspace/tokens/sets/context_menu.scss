@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../../ds/typography.scss" as t;
+@import "refactor/common-refactor.scss";
+
+.token-set-context-menu {
+  position: absolute;
+  z-index: $z-index-4;
+}
+
+.context-list {
+  @include menuShadow;
+  display: grid;
+  width: $s-240;
+  padding: $s-4;
+  border-radius: $br-8;
+  border: $s-2 solid var(--panel-border-color);
+  background-color: var(--menu-background-color);
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.context-menu-item {
+  @include t.use-typography("body-small");
+  color: var(--menu-foreground-color);
+  display: flex;
+  align-items: center;
+  height: $s-28;
+  width: 100%;
+  padding: $s-6;
+  border-radius: $br-8;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--menu-background-color-hover);
+  }
+}

@@ -49,6 +49,8 @@
             objects (-> (dsh/get-page data page-id)
                         (get :objects))
 
+            updated-properties   (ctv/update-number-in-repeated-prop-names updated-properties)
+
             properties-to-remove (ctv/find-properties-to-remove previous-properties updated-properties)
             properties-to-add    (ctv/find-properties-to-add previous-properties updated-properties)
             properties-to-update (ctv/find-properties-to-update previous-properties updated-properties)
@@ -177,7 +179,8 @@
 
 
 (defn remove-empty-properties
-  "Remove a property for all components when its value is empty for all of them"
+  "Remove every empty property for all components when their respective values are empty
+   for all of them"
   [variant-id]
   (ptk/reify ::remove-empty-properties
     ptk/WatchEvent
@@ -189,25 +192,29 @@
 
             variant-components (cfv/find-variant-components data objects variant-id)
 
-            properties-empty   (->> variant-components
-                                    (mapcat :variant-properties)
-                                    (group-by :name)
-                                    (mapv (fn [[_ v]]
-                                            (->> v (mapv :value) (remove empty?))))
-                                    (mapv empty?))
+            properties-empty-pos (->> variant-components
+                                      (mapcat :variant-properties)
+                                      (group-by :name)
+                                      (map-indexed
+                                       (fn [i [_ v]]
+                                         [i (->> v
+                                                 (map :value)
+                                                 (remove empty?)
+                                                 empty?)]))
+                                      (reverse))
 
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-library-data data)
                         (pcb/with-objects objects))
 
             changes (reduce
-                     (fn [changes [idx property-empty?]]
+                     (fn [changes [pos property-empty?]]
                        (if property-empty?
                          (-> changes
-                             (clvp/generate-remove-property variant-id idx))
+                             (clvp/generate-remove-property variant-id pos))
                          changes))
                      changes
-                     (map-indexed vector properties-empty))
+                     properties-empty-pos)
 
             undo-id (js/Symbol)]
 

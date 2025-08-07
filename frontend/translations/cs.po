@@ -1573,7 +1573,7 @@ msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Žádná"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:430
-msgid "inspect.attributes.typography.text-transform.titlecase"
+msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "První písmena velká"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:157
@@ -1610,7 +1610,7 @@ msgstr "Kruh"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:130
 msgid "inspect.tabs.code.selected.component"
-msgstr "Komponent"
+msgstr "Komponenta"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:131
 msgid "inspect.tabs.code.selected.curve"
@@ -2286,7 +2286,7 @@ msgstr "Nahrávání…"
 
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:246
 msgid "labels.view-only"
-msgstr "POUZE ZOBRAZIT"
+msgstr "Jen pro čtení"
 
 #: src/app/main/ui/dashboard/team.cljs:130, src/app/main/ui/dashboard/team.cljs:312, src/app/main/ui/dashboard/team.cljs:573, src/app/main/ui/dashboard/team.cljs:609, src/app/main/ui/onboarding/team_choice.cljs:56
 msgid "labels.viewer"
@@ -4195,7 +4195,7 @@ msgstr "Komponenty"
 
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:524
 msgid "workspace.assets.components.add-component"
-msgstr "Přidat komponent"
+msgstr "Přidat komponentu"
 
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:125
 msgid "workspace.assets.create-group"
@@ -4824,7 +4824,7 @@ msgstr "Oříznout obsah"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:766, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:771, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:927
 msgid "workspace.options.component"
-msgstr "Komponent"
+msgstr "Komponenta"
 
 #: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:192
 msgid "workspace.options.component.annotation"
@@ -4848,7 +4848,7 @@ msgstr "Hlavní"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:580
 msgid "workspace.options.component.swap"
-msgstr "Vyměnit komponent"
+msgstr "Vyměnit komponentu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:624
 msgid "workspace.options.component.swap.empty"
@@ -6121,7 +6121,7 @@ msgstr "Výběr na tabuli"
 
 #: src/app/main/ui/workspace/context_menu.cljs:573
 msgid "workspace.shape.menu.create-component"
-msgstr "Vytvořit komponent"
+msgstr "Vytvořit komponentu"
 
 #: src/app/main/ui/workspace/context_menu.cljs:577
 msgid "workspace.shape.menu.create-multiple-components"
@@ -6250,7 +6250,7 @@ msgstr "Obnovit"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:489
 msgid "workspace.shape.menu.restore-main"
-msgstr "Obnovit hlavní komponent"
+msgstr "Obnovit hlavní komponentu"
 
 #: src/app/main/ui/workspace/context_menu.cljs:252
 msgid "workspace.shape.menu.select-layer"
@@ -6266,7 +6266,7 @@ msgstr "Zobrazit v panelu položek"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:492, src/app/main/ui/workspace/sidebar/assets/components.cljs:576
 msgid "workspace.shape.menu.show-main"
-msgstr "Zobrazit hlavní komponent"
+msgstr "Zobrazit hlavní komponentu"
 
 #: src/app/main/ui/workspace/context_menu.cljs:303
 msgid "workspace.shape.menu.thumbnail-remove"
@@ -6303,7 +6303,7 @@ msgstr "Aktualizovat hlavní komponenty"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:495
 msgid "workspace.shape.menu.update-main"
-msgstr "Aktualizovat hlavní komponent"
+msgstr "Aktualizovat hlavní komponentu"
 
 #: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:51
 msgid "workspace.sidebar.collapse"
@@ -6700,7 +6700,7 @@ msgstr "položka barvy"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:125
 msgid "workspace.undo.entry.single.component"
-msgstr "komponent"
+msgstr "komponenta"
 
 #: src/app/main/ui/workspace/sidebar/history.cljs:126
 msgid "workspace.undo.entry.single.curve"

@@ -1248,6 +1248,9 @@ msgstr "The email «%s» has many permanent bounce reports."
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "The email «%s» has been reported as spam or permanently bounce."
 
+msgid "errors.email-does-not-match-invitation"
+msgstr "Email does not match the invitation."
+
 #: src/app/main/errors.cljs:241
 msgid "errors.feature-mismatch"
 msgstr ""
@@ -1682,13 +1685,12 @@ msgstr "Text Decoration"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "None"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Strikethrough"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Underline"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Strikethrough"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:151
 msgid "inspect.attributes.typography.text-transform"
@@ -1703,8 +1705,8 @@ msgid "inspect.attributes.typography.text-transform.none"
 msgstr "None"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:430
-msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "Title Case"
+msgid "inspect.attributes.typography.text-transform.capitalize"
+msgstr "Capitalize"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:157
 msgid "inspect.attributes.typography.text-transform.unset"
@@ -2649,7 +2651,7 @@ msgstr "Big nudge"
 
 #: src/app/main/ui/settings/change_email.cljs:109
 msgid "modals.change-email.confirm-email"
-msgstr "Verify new email"
+msgstr "Confirm new email"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2917,9 +2919,7 @@ msgstr "Emails, comma separated"
 
 #: src/app/main/ui/dashboard/team.cljs:228
 msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Some emails are from current team members. Their invitations will not be "
-"sent."
+msgstr "Some members are already on the team. We'll invite the rest."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -4281,27 +4281,10 @@ msgstr ""
 "The Professional plan is designed for teams of up to 8 editors (owner, "
 "admin, and editor)."
 
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"The Unlimited (trial) plan is designed for teams of more than 8 editors "
-"(owner, admin, and editor)."
-
 #: src/app/main/ui/dashboard/subscription.cljs:160
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
-"Looks like your team has grown! Your plan includes %s seats, but you're now "
-"using more than that."
-
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr "Unlock full access forever. Contact with the team owner: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "Unlock full access forever. [Subscribe now.](%s)"
+"Looks like your team has grown! Your plan includes %s seats, but you're now using %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown
@@ -4315,28 +4298,27 @@ msgstr ""
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Get more editors, more storage, and more autosaved versions with the "
-"Unlimited or Enterprise plan. [Subscribe now.](%s)"
+"Unlimited or Enterprise plan. [Subscribe now.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:176
 #, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr "Please upgrade to match your usage. [Subscribe now.](%s)"
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr "Please upgrade to match your usage. [Subscribe now.|target:self](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr "Please upgrade to match your usage. Contact with the team owner: %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:80
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Enterprise plan"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "Advanced security, activity logs, dedicated support and more."
-
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgid "subscription.dashboard.power-up.professional.bottom"
 msgstr ""
-"Get extra editors and storage, file backup and more with the Unlimited "
-"plan[Power up](%s)"
+"Get extra editors and storage, file recovery and more with the Unlimited "
+"plan. [Power up|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4350,7 +4332,7 @@ msgstr "Subscribe"
 #: src/app/main/ui/dashboard/subscription.cljs:68
 #, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
-msgstr "Enjoying your trial? Unlock full access forever.[Subscribe](%s)"
+msgstr "Enjoying your trial? Unlock full access forever.[Subscribe|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4365,12 +4347,15 @@ msgstr "Unlimited plan (trial)"
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Unlimited plan"
 
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Enterprise plan (trial)"
+
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
-"Get advanced security, activity logs, dedicated support and more. Take a "
-"look to the[Enterprise plan.](%s)"
+"Get extra editors, more backup, unlimited storage and more. "
+"[Take a look to the Enterprise plan.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4423,21 +4408,16 @@ msgstr "Enterprise"
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (trial)"
 
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "Enterprise trial"
-
 #: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Activity logs"
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr "Unlimited storage and 90-day autosave versions and file recovery"
 
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Advanced security"
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90-day autosave versions and file recovery"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Dedicated support"
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Capped monthly bill"
 
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
@@ -4479,7 +4459,7 @@ msgstr "Apply %s to your teams"
 
 #: src/app/main/ui/settings/subscription.cljs:282
 msgid "subscription.settings.member-since"
-msgstr "Penpot member since %s"
+msgstr "Penpot member since: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
 msgid "subscription.settings.more-information"
@@ -4506,8 +4486,8 @@ msgid "subscription.settings.professional.projects-files"
 msgstr "Unlimited projects, files and drafts"
 
 #: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10GB of storage and 7-day autosave versions"
+msgid "subscription.settings.professional.storage-autosave"
+msgstr "10GB of storage and 7-day autosave versions and file recovery"
 
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
@@ -4516,6 +4496,9 @@ msgstr "Unlimited teams of up to 8 editors"
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Your subscription"
+
+msgid "subscription.settings.editors"
+msgstr "(x %s editors)"
 
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.start-trial"
@@ -4542,15 +4525,10 @@ msgstr "You are %s!"
 #: src/app/main/ui/settings/subscription.cljs:278
 #, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "You've been supporting us with this plan since %s"
+msgstr "You've been supporting us with this plan since: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.try-it-free"
-msgstr "Try it free for 14 days"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
 msgstr "Try it free for 14 days"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
@@ -4561,17 +4539,13 @@ msgstr "Unlimited"
 msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited (trial)"
 
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "Unlimited trial"
-
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Capped monthly bill"
 
 #: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr "25GB of storage and 30-day autosave versions and file backup"
+msgid "subscription.settings.unlimited.storage-autosave"
+msgstr "25GB of storage and 30-day autosave versions and file recovery"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -5483,7 +5457,39 @@ msgstr "Unlinked"
 msgid "workspace.options.component.variant"
 msgstr "Variant"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:988
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Locate duplicated variants"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr "This component has conflicting variants. Make sure each variation has a unique set of property values."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Go to main component"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Some variants have identical properties and values"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.adjust"
+msgstr "Adjust the values so they can be retrieved."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "These variants have identical properties and values."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "This variant has identical properties and values to another variant."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Some of these variants have identical properties and values."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.malformed.group.locate"
 msgstr "Locate invalid variants"
 
@@ -5510,6 +5516,30 @@ msgstr "[property]=[value], [property]=[value]"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:338
 msgid "workspace.options.component.variant.malformed.structure.title"
 msgstr "Try using the following structure:"
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "How variants stay connected"
+
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr "To keep changes when switching between variants, Penpot connects layers using these rules:"
+
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "Same name"
+
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "Same type"
+
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr "Rectangle, ellipsis, paths and boolean operations count as same type"
+
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "Same hierachy level"
+
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "Goups, boards and layouts are considered equivalent"
+
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr "Changing any of these (e.g., renaming or moving a layer) breaks the connection, but reverting the change will restore it."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
@@ -7125,6 +7155,22 @@ msgstr "Choose file"
 msgid "workspace.tokens.choose-folder"
 msgstr "Choose folder"
 
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:251
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Import %s"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:245
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP file"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:246
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Single JSON file"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:247
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Folder"
+
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:245
 msgid "workspace.tokens.color"
 msgstr "Color"
@@ -7230,6 +7276,10 @@ msgstr "Token Set grouping is not supported yet."
 #: src/app/main/data/workspace/tokens/errors.cljs:28, src/app/main/data/workspace/tokens/errors.cljs:33
 msgid "workspace.tokens.import-error"
 msgstr "Import Error:"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs
+msgid "workspace.tokens.no-token-files-found"
+msgstr "No tokens, sets, or themes were found in this file."
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:99
 msgid "workspace.tokens.import-multiple-files"
@@ -7485,8 +7535,8 @@ msgid "workspace.tokens.tools"
 msgstr "Tools"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr "The import was successful, but some tokens were skipped. "
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "Import was successful. Some tokens were not included."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7495,6 +7545,10 @@ msgstr "Type '%s' is not supported (%s)\n"
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:133
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.tokens.more-options"
+msgstr "Right click to see options"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61
 msgid "workspace.tokens.value-with-units"
@@ -7814,6 +7868,24 @@ msgstr ""
 "If you'd like to increase this limit, write to us at "
 "[support@penpot.app](%s)"
 
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"If you'd like to increase this limit, "
+"[upgrade your plan|target:self](%s)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr ""
+"If you'd like to increase this limit, write to us at "
+"[%s](mailto)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"If you'd like to increase this limit, contact with the team owner: "
+"[%s](mailto)"
+
 #: src/app/main/ui/workspace/sidebar/versions.cljs:368
 msgid "workspace.versions.warning.text"
 msgstr "Autosaved versions will be kept for %s days."
@@ -7821,3 +7893,9 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "labels.sources"
+msgstr "Sources"
+
+msgid "labels.pinned-projects"
+msgstr "Pinned Projects"

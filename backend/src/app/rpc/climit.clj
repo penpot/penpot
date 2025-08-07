@@ -178,12 +178,12 @@
         (measure metrics mlabels stats nil)
         (log "enqueued" req-id stats limit-id limit-label limit-params nil))
 
-      (px/invoke! limiter (fn []
-                            (let [elapsed (tpoint)
-                                  stats   (pbh/get-stats limiter)]
-                              (measure metrics mlabels stats elapsed)
-                              (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
-                              (handler))))
+      (pbh/invoke! limiter (fn []
+                             (let [elapsed (tpoint)
+                                   stats   (pbh/get-stats limiter)]
+                               (measure metrics mlabels stats elapsed)
+                               (log "acquired" req-id stats limit-id limit-label limit-params elapsed)
+                               (handler))))
 
       (catch ExceptionInfo cause
         (let [{:keys [type code]} (ex-data cause)]

@@ -8,6 +8,7 @@
 
 // INPUT
 .input-wrapper {
+  --input-icon-padding: var(--sp-l);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -108,7 +109,7 @@
   align-items: center;
   justify-content: center;
   position: absolute;
-  right: $s-16;
+  right: var(--input-icon-padding);
   top: calc(50% - $s-8);
   svg {
     width: $s-12;

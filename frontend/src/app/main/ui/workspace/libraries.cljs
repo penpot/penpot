@@ -565,7 +565,7 @@
 (mf/defc libraries-dialog
   {::mf/register modal/components
    ::mf/register-as :libraries-dialog}
-  [{:keys [starting-tab file-id] :as props :or {starting-tab :libraries}}]
+  [{:keys [starting-tab file-id]}]
   (let [files   (mf/deref refs/files)
         file    (get files file-id)
         shared? (:is-shared file)
@@ -593,27 +593,23 @@
         close-dialog
         (mf/use-fn
          (fn [_]
-           (modal/hide!)
-           (modal/disallow-click-outside!)))
+           (modal/hide!)))
 
-        libraries-tab
-        (mf/html [:> libraries-tab*
-                  {:is-shared shared?
-                   :linked-libraries linked-libraries
-                   :shared-libraries shared-libraries}])
+        selected-tab*
+        (mf/use-state #(d/nilv starting-tab "libraries"))
 
-        updates-tab
-        (mf/html [:> updates-tab*
-                  {:file-id file-id
-                   :libraries linked-libraries}])
+        selected-tab
+        (deref selected-tab*)
+
+        on-change-tab
+        (mf/use-fn #(reset! selected-tab* %))
 
         tabs
-        #js [#js {:label (tr "workspace.libraries.libraries")
-                  :id "libraries"
-                  :content libraries-tab}
-             #js {:label (tr "workspace.libraries.updates")
-                  :id "updates"
-                  :content updates-tab}]]
+        (mf/with-memo []
+          [{:label (tr "workspace.libraries.libraries")
+            :id "libraries"}
+           {:label (tr "workspace.libraries.updates")
+            :id "updates"}])]
 
     (mf/with-effect []
       (st/emit! (dtm/fetch-shared-files)))
@@ -631,7 +627,19 @@
        (tr "workspace.libraries.libraries")]
 
       [:> tab-switcher* {:tabs tabs
-                         :default-selected (dm/str starting-tab)}]]]))
+                         :selected selected-tab
+                         :on-change on-change-tab}
+       (case selected-tab
+         "libraries"
+         [:> libraries-tab*
+          {:is-shared shared?
+           :linked-libraries linked-libraries
+           :shared-libraries shared-libraries}]
+
+         "updates"
+         [:> updates-tab*
+          {:file-id file-id
+           :libraries linked-libraries}])]]]))
 
 (mf/defc v2-info-dialog
   {::mf/register modal/components

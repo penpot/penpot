@@ -71,4 +71,5 @@
          [:div {:on-click on-toggle-detail}
           (tr "workspace.notification-pill.detail")]]
         (when show-detail
-          [:div {:class (stl/css :error-detail-content)} detail])])]))
+          [:div {:class (stl/css :error-detail-content)
+                 :dangerouslySetInnerHTML #js {:__html detail}}])])]))

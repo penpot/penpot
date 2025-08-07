@@ -103,15 +103,15 @@
 
         (obj/set! attrs "strokeWidth" width)
 
-        (when (some? gradient)
+        (if (some? gradient)
           (let [gradient-id (dm/str "stroke-color-gradient-" render-id "-" index)]
-            (obj/set! attrs "stroke" (str/ffmt "url(#%)" gradient-id))))
+            (obj/set! attrs "stroke" (str/ffmt "url(#%)" gradient-id)))
 
-        (when-not (some? gradient)
           (when (some? color)
-            (obj/set! attrs "stroke" color))
-          (when (some? opacity)
-            (obj/set! attrs "strokeOpacity" opacity)))
+            (obj/set! attrs "stroke" color)))
+
+        (when (some? opacity)
+          (obj/set! attrs "strokeOpacity" opacity))
 
         (when (not= style :svg)
           (obj/set! attrs "strokeDasharray" (calculate-dasharray style width)))

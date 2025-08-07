@@ -32,6 +32,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.text :as cttx]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -80,7 +81,7 @@
         (update :migrations set/union diff)
         (vary-meta assoc ::migrated (not-empty diff)))))
 
-(defn- generate-migrations-from-version
+(defn generate-migrations-from-version
   "A function that generates new format migration from the old,
   version based migration system"
   [version]
@@ -1527,6 +1528,31 @@
                               colors
                               colors))))
 
+(defmethod migrate-data "0009-add-partial-text-touched-flags"
+  [data _]
+  (letfn [(update-object [page object]
+            (if (and (cfh/text-shape? object)
+                     (ctk/in-component-copy? object))
+              (let [file            {:id (:id data) :data data}
+                    libs            (when (:libs data)
+                                      (deref (:libs data)))
+                    ref-shape       (ctf/find-ref-shape file page libs object
+                                                        {:include-deleted? true :with-context? true})
+                    partial-touched (when ref-shape
+                                      (cttx/get-diff-type (:content object) (:content ref-shape)))]
+                (if (seq partial-touched)
+                  (update object :touched (fn [touched]
+                                            (reduce #(ctk/set-touched-group %1 %2)
+                                                    touched
+                                                    partial-touched)))
+                  object))
+              object))
+
+          (update-page [page]
+            (d/update-when page :objects d/update-vals (partial update-object page)))]
+
+    (update data :pages-index d/update-vals update-page)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1591,4 +1617,5 @@
          "0006-fix-old-texts-fills"
          "0007-clear-invalid-strokes-and-fills-v2"
          "0008-fix-library-colors-v4"
-         "0009-clean-library-colors"]))
+         "0009-clean-library-colors"
+         #_"0009-add-partial-text-touched-flags"]))

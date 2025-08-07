@@ -555,6 +555,11 @@
             (assoc :workspace-focus-selected focus))))))
 
 (defn toggle-focus-mode
+  "Zoom in on and center viewport on selection; 
+   hide all other layers in viewport and layer panel.
+
+   When in focus mode, exit restoring previous viewport and selection. 
+  "
   []
   (ptk/reify ::toggle-focus-mode
     ev/Event
@@ -562,14 +567,22 @@
 
     ptk/UpdateEvent
     (update [_ state]
-      (let [selected (dsh/lookup-selected state)]
-        (cond-> state
-          (and (empty? (:workspace-focus-selected state))
-               (d/not-empty? selected))
-          (assoc :workspace-focus-selected selected)
+      (let [selected (dsh/lookup-selected state)
+            have-selection? (d/not-empty? selected)
+            in-mode? (d/not-empty? (:workspace-focus-selected state))]
 
-          (d/not-empty? (:workspace-focus-selected state))
-          (dissoc :workspace-focus-selected))))
+        (if in-mode?
+          ;; Exit focus, restoring previous viewport, selection, etc
+          (-> state
+              (assoc :workspace-local (:workspace-pre-focus state))
+              (dissoc :workspace-focus-selected)
+              (dissoc :workspace-pre-focus))
+          (if have-selection?
+            ;; Enter focus and save viewport, selection, etc
+            (-> state
+                (assoc :workspace-focus-selected selected)
+                (assoc :workspace-pre-focus (:workspace-local state)))
+            state))))
 
     ptk/WatchEvent
     (watch [_ state stream]
@@ -584,6 +597,7 @@
                 (rx/map (comp set keys))
                 (rx/buffer 2 1)
                 (rx/merge-map
+                ;; While focus is active, update it with any new and deleted shapes 
                  (fn [[old-keys new-keys]]
                    (let [removed (set/difference old-keys new-keys)
                          added (set/difference new-keys old-keys)]

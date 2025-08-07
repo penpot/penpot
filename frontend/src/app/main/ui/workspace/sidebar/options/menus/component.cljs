@@ -37,6 +37,7 @@
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
+   [app.main.ui.workspace.sidebar.options.menus.variants-help-modal]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -237,20 +238,52 @@
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
 
-(defn- get-variant-error-message
-  "Generate error message depending on the selected variants"
-  [errors]
+(defn- get-variant-malformed-warning-message
+  "Receive a list of booleans, one for each selected variant, indicating if that variant
+   is malformed, and generate a warning message accordingly"
+  [malformed-map]
   (cond
-    (and (= (count errors) 1) (some? (first errors)))
+    (and (= (count malformed-map) 1) (some? (first malformed-map)))
     (tr "workspace.options.component.variant.malformed.single.one")
 
-    (and (seq errors) (every? some? errors))
+    (and (seq malformed-map) (every? some? malformed-map))
     (tr "workspace.options.component.variant.malformed.single.all")
 
-    (and (seq errors) (some some? errors))
+    (and (seq malformed-map) (some some? malformed-map))
     (tr "workspace.options.component.variant.malformed.single.some")
 
     :else nil))
+
+
+(defn- get-variant-duplicated-warning-message
+  "Receive a list of booleans, one for each selected variant, indicating if that variant
+   is duplicated, and generate a warning message accordingly"
+  [duplicated-map]
+  (cond
+    (and (= (count duplicated-map) 1) (some? (first duplicated-map)))
+    (tr "workspace.options.component.variant.duplicated.single.one")
+
+    (and (seq duplicated-map) (every? some? duplicated-map))
+    (tr "workspace.options.component.variant.duplicated.single.all")
+
+    (and (seq duplicated-map) (some some? duplicated-map))
+    (tr "workspace.options.component.variant.duplicated.single.some")
+
+    :else nil))
+
+
+(defn- get-component-ids-with-duplicated-variant-props-and-values
+  "Get a list of component ids whose property names and values are duplicated"
+  [components]
+  (let [duplicated-props (->> components
+                              (map :variant-properties)
+                              frequencies
+                              (filter #(> (val %) 1))
+                              keys
+                              set)]
+    (->> components
+         (filter #(duplicated-props (:variant-properties %)))
+         (map :main-instance-id))))
 
 
 (defn- get-variant-options
@@ -259,8 +292,8 @@
   (->> (filter #(= (:name %) prop-name) prop-vals)
        first
        :value
-       (map (fn [val] {:id val
-                       :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
+       (mapv (fn [val] {:id val
+                        :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
 
 
 (mf/defc component-variant-main-instance*
@@ -278,11 +311,19 @@
                          (ctv/compare-properties properties-map false)
                          (first properties-map))
 
+        malformed-map   (mapv :variant-error shapes)
+        malformed-msg   (get-variant-malformed-warning-message malformed-map)
+
+        duplicated-ids  (->> (cfv/find-variant-components data objects variant-id)
+                             get-component-ids-with-duplicated-variant-props-and-values
+                             set)
+        duplicated-map  (->> components
+                             (mapv :main-instance-id)
+                             (mapv duplicated-ids))
+        duplicated-msg  (get-variant-duplicated-warning-message duplicated-map)
+
         prop-vals       (mf/with-memo [data objects variant-id]
                           (cfv/extract-properties-values data objects variant-id))
-
-        variant-errors     (mapv :variant-error shapes)
-        variant-error-msg  (get-variant-error-message variant-errors)
 
         get-options
         (mf/use-fn
@@ -325,22 +366,29 @@
             [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
                            :placeholder (if mixed-value? (tr "settings.multiple") "--")
                            :default-selected (if mixed-value? "" (:value prop))
-                           :options (clj->js (get-options (:name prop)))
+                           :options (get-options (:name prop))
                            :empty-to-end true
                            :max-length ctv/property-max-length
                            :on-change (partial update-property-value pos)}])]])]
 
-     (when variant-error-msg
-       [:div {:class (stl/css :variant-error-wrapper)}
+     (if malformed-msg
+       [:div {:class (stl/css :variant-warning-wrapper)}
         [:> icon* {:icon-id "msg-neutral"
-                   :class (stl/css :variant-error-darken)}]
-        [:div {:class (stl/css :variant-error-highlight)}
-         (str variant-error-msg " " (tr "workspace.options.component.variant.malformed.structure.title"))]
-        [:div {:class (stl/css :variant-error-darken)}
-         (tr "workspace.options.component.variant.malformed.structure.example")]])]))
+                   :class (stl/css :variant-warning-darken)}]
+        [:div {:class (stl/css :variant-warning-highlight)}
+         (str malformed-msg " " (tr "workspace.options.component.variant.malformed.structure.title"))]
+        [:div {:class (stl/css :variant-warning-darken)}
+         (tr "workspace.options.component.variant.malformed.structure.example")]]
+
+       (when duplicated-msg
+         [:div {:class (stl/css :variant-warning-wrapper)}
+          [:> icon* {:icon-id "msg-neutral"
+                     :class (stl/css :variant-warning-darken)}]
+          [:div {:class (stl/css :variant-warning-highlight)}
+           (str duplicated-msg " " "Adjust the values so they can be retrieved.")]]))]))
 
 
-(mf/defc component-variant*
+(mf/defc component-variant-copy*
   [{:keys [component shape data]}]
   (let [component-id (:id component)
         properties   (:variant-properties component)
@@ -349,6 +397,10 @@
                          (get :objects))
 
         variant-components (cfv/find-variant-components data objects variant-id)
+
+        duplicated-ids     (->> (cfv/find-variant-components data objects variant-id)
+                                get-component-ids-with-duplicated-variant-props-and-values)
+        duplicated?        (d/not-empty? duplicated-ids)
 
         prop-vals          (mf/with-memo [data objects variant-id]
                              (cfv/extract-properties-values data objects variant-id))
@@ -359,6 +411,11 @@
          (fn [prop-name]
            (get-variant-options prop-name prop-vals)))
 
+        select-shapes-with-duplicated
+        (mf/use-fn
+         (mf/deps duplicated-ids)
+         #(st/emit! (dw/select-shapes (into (d/ordered-set) duplicated-ids))))
+
         switch-component
         (mf/use-fn
          (mf/deps shape)
@@ -368,21 +425,33 @@
                                     (update pos assoc :value val))
                    valid-comps  (->> variant-components
                                      (remove #(= (:id %) component-id))
-                                     (filter #(= (dm/get-in % [:variant-properties pos :value]) val)))
+                                     (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
+                                     (reverse))
                    nearest-comp (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)]
                (when nearest-comp
                  (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)))))))]
 
-    [:div {:class (stl/css :variant-property-list)}
-     (for [[pos prop] (map vector (range) properties)]
-       [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
-        [:*
-         [:span {:class (stl/css :variant-property-name)}
-          (:name prop)]
-         [:> select* {:default-selected (:value prop)
-                      :options (clj->js (get-options (:name prop)))
-                      :empty-to-end true
-                      :on-change (partial switch-component pos)}]]])]))
+    [:*
+     [:div {:class (stl/css :variant-property-list)}
+      (for [[pos prop] (map vector (range) properties)]
+        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
+         [:*
+          [:span {:class (stl/css :variant-property-name)}
+           (:name prop)]
+          [:> select* {:default-selected (:value prop)
+                       :options (get-options (:name prop))
+                       :empty-to-end true
+                       :on-change (partial switch-component pos)}]]])]
+
+     (when duplicated?
+       [:div {:class (stl/css :variant-warning-wrapper)}
+        [:> icon* {:icon-id "msg-neutral"
+                   :class (stl/css :variant-warning-darken)}]
+        [:div {:class (stl/css :variant-warning-highlight)}
+         (tr "workspace.options.component.variant.duplicated.copy.title")]
+        [:button {:class (stl/css :variant-warning-button)
+                  :on-click select-shapes-with-duplicated}
+         (tr "workspace.options.component.variant.duplicated.copy.locate")]])]))
 
 
 (mf/defc component-swap-item
@@ -831,9 +900,9 @@
                      (not (:deleted component))
                      (not swap-opened?)
                      (not multi))
-            [:> component-variant* {:component component
-                                    :shape shape
-                                    :data data}])
+            [:> component-variant-copy* {:component component
+                                         :shape shape
+                                         :data data}])
 
           (when (and is-variant? main-instance? same-variant? (not swap-opened?))
             [:> component-variant-main-instance* {:components components
@@ -860,20 +929,22 @@
                                (get :objects))
 
         variants           (mapv #(get objects %) (:shapes shape))
+        variant-id         (:variant-id (first variants))
 
-        object-error-ids   (->> variants
+        malformed-ids      (->> variants
                                 (filterv #(some? (:variant-error %)))
                                 (mapv :id))
-        variant-error?     (d/not-empty? object-error-ids)
+        malformed?         (d/not-empty? malformed-ids)
 
-        variant-id         (:variant-id (first variants))
+        duplicated-ids     (->> (cfv/find-variant-components data objects variant-id)
+                                get-component-ids-with-duplicated-variant-props-and-values)
+        duplicated?        (d/not-empty? duplicated-ids)
 
         properties         (mf/with-memo [data objects variant-id]
                              (cfv/extract-properties-values data objects (:id shape)))
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
-
 
         menu-entries       [{:title (tr "workspace.shape.menu.add-variant-property")
                              :action #(st/emit! (dwv/add-new-property variant-id))}
@@ -892,6 +963,12 @@
         (mf/use-fn
          (mf/deps menu-open*)
          #(reset! menu-open* false))
+
+        on-click-variant-title-help
+        (mf/use-fn
+         (fn []
+           (modal/show! {:type :variants-help-modal})
+           (modal/allow-click-outside!)))
 
         update-property-name
         (mf/use-fn
@@ -913,10 +990,15 @@
              (when (> (count properties) 1)
                (st/emit! (dwv/remove-property variant-id pos))))))
 
-        select-shape-with-error
+        select-shapes-with-malformed
         (mf/use-fn
-         (mf/deps object-error-ids)
-         #(st/emit! (dw/select-shapes (into (d/ordered-set) object-error-ids))))]
+         (mf/deps malformed-ids)
+         #(st/emit! (dw/select-shapes (into (d/ordered-set) malformed-ids))))
+
+        select-shapes-with-duplicated
+        (mf/use-fn
+         (mf/deps duplicated-ids)
+         #(st/emit! (dw/select-shapes (into (d/ordered-set) duplicated-ids))))]
 
     (when (seq shapes)
       [:div {:class (stl/css :element-set)}
@@ -926,8 +1008,15 @@
         [:& title-bar {:collapsable  false
                        :title        (tr "workspace.options.component")
                        :class        (stl/css :title-spacing-component)}
+
          [:span {:class (stl/css :copy-text)}
-          (tr "workspace.options.component.main")]]]
+          (tr "workspace.options.component.main")]
+
+         [:div {:class (stl/css :variants-help-modal-button)}
+          [:> icon-button* {:variant "ghost"
+                            :aria-label (tr "workspace.options.component.variants-help-modal.title")
+                            :on-click on-click-variant-title-help
+                            :icon "help"}]]]]
 
        [:div {:class (stl/css :element-content)}
         [:div {:class (stl/css-case :component-wrapper true
@@ -977,12 +1066,22 @@
                                   :icon "remove"
                                   :disabled (<= (count properties) 1)}]]))])
 
-        (when variant-error?
-          [:div {:class (stl/css :variant-error-wrapper)}
+        (if malformed?
+          [:div {:class (stl/css :variant-warning-wrapper)}
            [:> icon* {:icon-id "msg-neutral"
-                      :class (stl/css :variant-error-darken)}]
-           [:div {:class (stl/css :variant-error-highlight)}
+                      :class (stl/css :variant-warning-darken)}]
+           [:div {:class (stl/css :variant-warning-highlight)}
             (tr "workspace.options.component.variant.malformed.group.title")]
-           [:button {:class (stl/css :variant-error-button)
-                     :on-click select-shape-with-error}
-            (tr "workspace.options.component.variant.malformed.group.locate")]])]])))
+           [:button {:class (stl/css :variant-warning-button)
+                     :on-click select-shapes-with-malformed}
+            (tr "workspace.options.component.variant.malformed.group.locate")]]
+
+          (when duplicated?
+            [:div {:class (stl/css :variant-warning-wrapper)}
+             [:> icon* {:icon-id "msg-neutral"
+                        :class (stl/css :variant-warning-darken)}]
+             [:div {:class (stl/css :variant-warning-highlight)}
+              (tr "workspace.options.component.variant.duplicated.group.title")]
+             [:button {:class (stl/css :variant-warning-button)
+                       :on-click select-shapes-with-duplicated}
+              (tr "workspace.options.component.variant.duplicated.group.locate")]]))]])))

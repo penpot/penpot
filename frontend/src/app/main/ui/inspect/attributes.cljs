@@ -22,17 +22,18 @@
    [app.main.ui.inspect.attributes.svg :refer [svg-panel]]
    [app.main.ui.inspect.attributes.text :refer [text-panel]]
    [app.main.ui.inspect.attributes.variant :refer [variant-panel*]]
+   [app.main.ui.inspect.attributes.visibility :refer [visibility-panel*]]
    [app.main.ui.inspect.exports :refer [exports]]
    [rumext.v2 :as mf]))
 
 (def type->options
   {:multiple [:fill :stroke :text :shadow :blur :layout-element]
-   :frame    [:geometry :fill :stroke :shadow :blur :layout :layout-element]
-   :group    [:geometry :svg :layout-element]
-   :rect     [:geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :circle   [:geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :path     [:geometry :fill :stroke :shadow :blur :svg :layout-element]
-   :text     [:geometry :text :shadow :blur :stroke :layout-element]
+   :frame    [:visibility :geometry :fill :stroke :shadow :blur :layout :layout-element]
+   :group    [:visibility :geometry :svg :layout-element]
+   :rect     [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :circle   [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :path     [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
+   :text     [:visibility :geometry :text :shadow :blur :stroke :layout-element]
    :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
 
 (mf/defc attributes
@@ -67,6 +68,7 @@
              :stroke           stroke-panel
              :shadow           shadow-panel
              :blur             blur-panel
+             :visibility       visibility-panel*
              :text             text-panel
              :svg              svg-panel
              :variant          variant-panel*)

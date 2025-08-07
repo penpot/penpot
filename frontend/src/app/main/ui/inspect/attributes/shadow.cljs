@@ -13,21 +13,28 @@
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
+   [app.util.code-gen.style-css-formats :refer [format-color]]
    [app.util.i18n :refer [tr]]
-   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(defn has-shadow? [shape]
+(defn- has-shadow? [shape]
   (:shadow shape))
 
-(defn shape-copy-data [shape]
-  (str/join ", " (map css/shadow->css (:shadow shape))))
-
-(defn shadow-copy-data [shadow]
+(defn- shadow-copy-data [shadow]
   (css/shadow->css shadow))
 
+(defn- copy-color-data
+  "Converts a fill object to CSS color string in the specified format."
+  [color format]
+  (format-color color {:format format}))
+
 (mf/defc shadow-block [{:keys [shadow]}]
-  (let [color-format (mf/use-state :hex)]
+  (let [color-format (mf/use-state :hex)
+        color-format* (deref color-format)
+        on-change-format
+        (mf/use-fn
+         (fn [format]
+           (reset! color-format format)))]
     [:div {:class (stl/css :attributes-shadow-block)}
      [:div {:class (stl/css :shadow-row)}
       [:div {:class (stl/css :global/attr-label)} (->> shadow :style d/name (str "workspace.options.shadow-options.") (tr))]
@@ -46,7 +53,8 @@
 
      [:& color-row {:color (:color shadow)
                     :format @color-format
-                    :on-change-format #(reset! color-format %)}]]))
+                    :copy-data (copy-color-data (:color shadow) color-format*)
+                    :on-change-format on-change-format}]]))
 
 (mf/defc shadow-panel [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-shadow?))]

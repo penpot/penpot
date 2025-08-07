@@ -8,6 +8,7 @@
   (:require
    ["react-dom/server" :as rds]
    [app.main.render :as render]
+   [app.util.code-beautify :as cb]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -24,3 +25,8 @@
   (->> shapes
        (map #(generate-svg objects %))
        (str/join "\n")))
+
+(defn generate-formatted-markup
+  [objects shapes]
+  (let [markup (generate-markup objects shapes)]
+    (cb/format-code markup "svg")))

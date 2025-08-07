@@ -49,21 +49,33 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
    [app.main.ui.ds.foundations.assets.icon :as i]))
 ```
 
-```clj
-[:> tab_switcher*       
-    {:tabs [{ :label "Code"
-              :id "tab-code"
-              :icon i/fill-content
-              :content [:p Lorem Ipsum ]}
-            { :label "Design"
-              :id "tab-design"
-              :icon i/pentool
-              :content [:p Dolor sit amet ]}
-            { :label "Menu"
-              :id "tab-menu"
-              :icon i/mask
-              :content [:p Consectetur adipiscing elit ]} 
-            ]}]
+```clojure
+(let [selected-tab* (mf/use-state "code")
+      selected-tab  (deref selected-tab*)
+      on-change-tab (mf/use-fn #(reset! selected-tab* %))
+      tabs          (mf/with-memo []
+                      [{:label "Code"
+                        :id "code"
+                        :icon i/fill-content}
+                       {:label "Design"
+                        :id "design"
+                        :icon i/pentool}
+                       {:label "Menu"
+                        :id "menu"
+                        :icon i/mask}])]
+  [:> tab_switcher* {:tabs tabs
+                     :selected selected-tab
+                     :on-change on-change-tab}
+   (case selected-tab
+     "code"
+     [:p "Lorem Ipsum"]
+
+     "design"
+     [:p "Dolor sit amet"]
+
+     "menu"
+     [:p "Consectetur adipiscing elit"])])
+
 ```
 
 <Canvas of={TabSwitcher.WithIconsAndText} />

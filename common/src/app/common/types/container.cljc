@@ -15,9 +15,10 @@
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.pages-list :as ctpl]
-   [app.common.types.plugins :as ctpg]
+   [app.common.types.plugins :refer [schema:plugin-data]]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as cttx]
    [app.common.types.token :as ctt]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
@@ -29,21 +30,22 @@
 (def valid-container-types
   #{:page :component})
 
-(sm/register!
- ^{::sm/type ::container}
- [:map
-  [:id ::sm/uuid]
-  [:type {:optional true}
-   [::sm/one-of valid-container-types]]
-  [:name :string]
-  [:path {:optional true} [:maybe :string]]
-  [:modified-at {:optional true} ::sm/inst]
-  [:objects {:optional true}
-   [:map-of {:gen/max 10} ::sm/uuid :map]]
-  [:plugin-data {:optional true} ::ctpg/plugin-data]])
+(def schema:container
+  (sm/register!
+   ^{::sm/type ::container}
+   [:map
+    [:id ::sm/uuid]
+    [:type {:optional true}
+     [::sm/one-of valid-container-types]]
+    [:name :string]
+    [:path {:optional true} [:maybe :string]]
+    [:modified-at {:optional true} ::sm/inst]
+    [:objects {:optional true}
+     [:map-of {:gen/max 10} ::sm/uuid :map]]
+    [:plugin-data {:optional true} schema:plugin-data]]))
 
 (def check-container
-  (sm/check-fn ::container))
+  (sm/check-fn schema:container))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -293,15 +295,14 @@
   ([page component library-data position]
    (make-component-instance page component library-data position {}))
   ([page component library-data position
-    {:keys [main-instance? force-id force-frame-id keep-ids?]
-     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false}}]
+    {:keys [main-instance? force-id force-frame-id keep-ids? force-parent-id]
+     :or {main-instance? false force-id nil force-frame-id nil keep-ids? false force-parent-id nil}}]
    (let [component-page  (ctpl/get-page library-data (:main-instance-page component))
 
          component-shape (-> (get-shape component-page (:main-instance-id component))
                              (assoc :parent-id nil) ;; On v2 we force parent-id to nil in order to behave like v1
                              (assoc :frame-id uuid/zero)
                              (remove-swap-keep-attrs))
-
 
          orig-pos        (gpt/point (:x component-shape) (:y component-shape))
          delta           (gpt/subtract position orig-pos)
@@ -367,7 +368,7 @@
 
          [new-shape new-shapes _]
          (ctst/clone-shape component-shape
-                           frame-id
+                           (or force-parent-id frame-id)
                            (:objects component-page)
                            :update-new-shape update-new-shape
                            :force-id force-id
@@ -517,15 +518,31 @@
 ;; --- SHAPE UPDATE
 
 (defn- get-token-groups
+  "Get the sync attrs groups that are affected by changes in applied tokens.
+
+   If any token has been applied or unapplied in the shape, calculate the corresponding
+   attributes and get the groups. If some of the attributes are to be applied in the
+   content nodes of a text shape, also return the content groups (only for attributes,
+   so the text is not touched)."
   [shape new-applied-tokens]
-  (let [old-applied-tokens  (d/nilv (:applied-tokens shape) #{})
-        changed-token-attrs (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
-                                    ctt/all-keys)
-        changed-groups      (into #{}
-                                  (comp (map ctt/token-attr->shape-attr)
-                                        (map #(get ctk/sync-attrs %))
-                                        (filter some?))
-                                  changed-token-attrs)]
+  (let [old-applied-tokens     (d/nilv (:applied-tokens shape) #{})
+        changed-token-attrs    (filter #(not= (get old-applied-tokens %) (get new-applied-tokens %))
+                                       ctt/all-keys)
+        text-shape?            (= (:type shape) :text)
+        attrs-in-text-content? (some #(ctt/attrs-in-text-content %)
+                                     changed-token-attrs)
+
+        changed-groups         (into #{}
+                                     (comp (map ctt/token-attr->shape-attr)
+                                           (map #(get ctk/sync-attrs %))
+                                           (filter some?))
+                                     changed-token-attrs)
+
+        changed-groups      (if (and text-shape?
+                                     (d/not-empty? changed-groups)
+                                     attrs-in-text-content?)
+                              (conj changed-groups :content-group :text-content-attribute)
+                              changed-groups)]
     changed-groups))
 
 (defn set-shape-attr
@@ -569,13 +586,16 @@
              (not equal?)
              (not (and ignore-geometry is-geometry?)))
 
+        content-diff-type (when (and (= (:type shape) :text) (= attr :content))
+                            (cttx/get-diff-type (:content shape) val))
+
         token-groups (if (= attr :applied-tokens)
                        (get-token-groups shape val)
                        #{})
 
         groups (cond-> token-groups
                  (and group (not equal?))
-                 (set/union #{group}))]
+                 (set/union #{group} content-diff-type))]
     (cond-> shape
       ;; Depending on the origin of the attribute change, we need or not to
       ;; set the "touched" flag for the group the attribute belongs to.

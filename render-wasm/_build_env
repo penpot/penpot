@@ -35,7 +35,7 @@ EMCC_CFLAGS="--no-entry \
     -sMAX_WEBGL_VERSION=2 \
     -sMODULARIZE=1 \
     -sEXPORT_NAME=createRustSkiaModule \
-    -sEXPORTED_RUNTIME_METHODS=GL,stringToUTF8 \
+    -sEXPORTED_RUNTIME_METHODS=GL,stringToUTF8,HEAPU8,HEAP32,HEAPU32,HEAPF32 \
     -sEXPORT_ES6=1"
 
 export EM_CACHE="/tmp/emsdk_cache";

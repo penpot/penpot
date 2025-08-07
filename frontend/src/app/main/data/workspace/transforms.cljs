@@ -36,7 +36,9 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
    [app.main.snap :as snap]
+   [app.main.store :as st]
    [app.main.streams :as ms]
+   [app.render-wasm.api :as wasm.api]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -216,16 +218,23 @@
                                   (gpt/add resize-origin displacement)
                                   resize-origin)
 
+                  ;; Determine resize direction for grow-type logic
+                  resize-direction (cond
+                                     (or (= handler :left) (= handler :right)) :horizontal
+                                     (or (= handler :top) (= handler :bottom)) :vertical
+                                     :else nil)
+
+                  ;; Calculate new grow-type for text layers
+                  new-grow-type (when (cfh/text-shape? shape)
+                                  (dwm/next-grow-type (dm/get-prop shape :grow-type) resize-direction))
+
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
                   change-width?
                   (not (mth/close? (dm/get-prop scalev :x) 1))
 
                   change-height?
-                  (not (mth/close? (dm/get-prop scalev :y) 1))
-
-                  auto-width-text?  (and (cfh/text-shape? shape) (= :auto-width (dm/get-prop shape :grow-type)))
-                  auto-height-text? (and (cfh/text-shape? shape) (= :auto-height (dm/get-prop shape :grow-type)))]
+                  (not (mth/close? (dm/get-prop scalev :y) 1))]
 
               (cond-> (ctm/empty)
                 (some? displacement)
@@ -240,11 +249,9 @@
                 ^boolean change-height?
                 (ctm/change-property :layout-item-v-sizing :fix)
 
-                (and auto-width-text? (or change-width? change-height?))
-                (ctm/change-property :grow-type :fixed)
-
-                (and auto-height-text? change-height?)
-                (ctm/change-property :grow-type :fixed)
+                ;; Set grow-type if it should change
+                (and new-grow-type (not= new-grow-type (dm/get-prop shape :grow-type)))
+                (ctm/change-property :grow-type new-grow-type)
 
                 ^boolean scale-text
                 (ctm/scale-content (dm/get-prop scalev :x)))))
@@ -602,6 +609,15 @@
            (rx/take 1)
            (rx/map #(start-move from-position))))))
 
+(defn get-drop-cell
+  [target-frame objects position]
+  (if (features/active-feature? @st/state "render-wasm/v1")
+    (do
+      (wasm.api/use-shape target-frame)
+      (let [cell (wasm.api/get-grid-coords position)]
+        (when (not= cell [-1 -1]) cell)))
+    (gslg/get-drop-cell target-frame objects position)))
+
 (defn set-ghost-displacement
   [move-vector]
   (ptk/reify ::set-ghost-displacement
@@ -621,7 +637,8 @@
 
      ptk/WatchEvent
      (watch [_ state stream]
-       (let [page-id (:current-page-id state)
+       (let [prev-cell-data (volatile! nil)
+             page-id (:current-page-id state)
              objects (dsh/lookup-page-objects state page-id)
              selected (dsh/lookup-selected state {:omit-blocked? true})
              ids     (if (nil? ids) selected ids)
@@ -685,7 +702,7 @@
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))
-                               cell-data        (when (and grid-layout? (not mod?)) (gslg/get-drop-cell target-frame objects position))]
+                               cell-data        (when (and grid-layout? (not mod?)) (get-drop-cell target-frame objects position))]
                            (array move-vector target-frame drop-index cell-data))))
 
                       (rx/take-until stopper))
@@ -693,9 +710,15 @@
                  modifiers-stream
                  (->> move-stream
                       (rx/with-latest-from array/conj ms/mouse-position-shift)
+                      (rx/tap
+                       (fn [[_ _ _ cell-data _]]
+                         (when (some? cell-data)
+                           (vreset! prev-cell-data cell-data))))
+
                       (rx/map
                        (fn [[move-vector target-frame drop-index cell-data shift?]]
-                         (let [x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
+                         (let [cell-data (or cell-data @prev-cell-data)
+                               x-disp? (> (mth/abs (:x move-vector)) (mth/abs (:y move-vector)))
                                [move-vector snap-ignore-axis]
                                (cond
                                  (and shift? x-disp?)

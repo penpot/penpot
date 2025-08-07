@@ -59,6 +59,14 @@
            on-unmount children is-selected icon disabled value]}]
   (let [submenu-ref (mf/use-ref nil)
         hovering?   (mf/use-ref false)
+
+        on-click'
+        (mf/use-fn
+         (mf/deps on-click)
+         (fn [event]
+           (st/emit! dw/hide-context-menu)
+           (when on-click (on-click event))))
+
         on-pointer-enter
         (mf/use-fn
          (fn []
@@ -96,7 +104,7 @@
             :disabled disabled
             :data-value value
             :ref set-dom-node
-            :on-click on-click
+            :on-click on-click'
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
        [:span
@@ -110,7 +118,7 @@
             :disabled disabled
             :ref set-dom-node
             :data-value value
-            :on-click on-click
+            :on-click on-click'
             :on-pointer-enter on-pointer-enter
             :on-pointer-leave on-pointer-leave}
        [:span {:class (stl/css :title)} title]

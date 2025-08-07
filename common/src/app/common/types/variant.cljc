@@ -139,7 +139,6 @@
                      (< (count (first %)) property-max-length)
                      (< (count (second %)) property-max-length)))))
 
-
 (defn find-properties-to-remove
   "Compares two property maps to find which properties should be removed"
   [prev-props upd-props]
@@ -159,6 +158,46 @@
   [prev-props upd-props]
   (let [prev-names (set (map :name prev-props))]
     (filterv #(not (contains? prev-names (:name %))) upd-props)))
+
+
+(defn- split-base-name-and-number
+  "Extract the number in parentheses from an item, if present, and return both the base name and the number"
+  [item]
+  (let [pattern-num-parens #"\(\d+\)$"
+        pattern-num        #"\d+"
+        base (-> item (str/replace pattern-num-parens "") (str/trim))
+        num  (some->> item (re-find pattern-num-parens) (re-find pattern-num) (d/parse-integer))]
+    [base (d/nilv num 0)]))
+
+(defn- group-numbers-by-base-name
+  "Return a map with a set of numbers associated to each base name"
+  [items]
+  (reduce (fn [acc item]
+            (let [[base num] (split-base-name-and-number item)]
+              (update acc base (fnil conj #{}) num)))
+          {}
+          items))
+
+(defn update-number-in-repeated-item
+  "Add, keep or update a number in parentheses for a given item, if necessary, depending on the items
+   already present in a list, to avoid repetitions"
+  [items item]
+  (let [names      (group-numbers-by-base-name items)
+        [base num] (split-base-name-and-number item)
+        nums-taken (get names base #{})]
+    (loop [n num]
+      (if (nums-taken n)
+        (recur (inc n))
+        (str base (when (pos? n) (str " (" n ")")))))))
+
+(defn update-number-in-repeated-prop-names
+  "Add, keep or update a number for each prop name depending on the previous ones"
+  [props]
+  (->> props
+       (reduce (fn [acc prop]
+                 (conj acc {:name (update-number-in-repeated-item (mapv :name acc) (:name prop))
+                            :value (:value prop)}))
+               [])))
 
 
 (defn find-index-for-property-name

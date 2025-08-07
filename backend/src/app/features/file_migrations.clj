@@ -37,3 +37,9 @@
                          {::db/return-keys false
                           ::sql/on-conflict-do-nothing true})
         (db/get-update-count))))
+
+(defn reset-migrations!
+  "Replace file migrations"
+  [conn {:keys [id] :as file}]
+  (db/delete! conn :file-migration {:file-id id})
+  (upsert-migrations! conn file))

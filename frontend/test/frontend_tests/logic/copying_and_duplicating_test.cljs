@@ -11,6 +11,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
+   [app.common.types.component :as ctk]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.colors :as dc]
@@ -394,3 +395,60 @@
              (t/is (= (count-shapes file' "rect-simple-1" "#111111") 10))
              (t/is (= (count-shapes file' "rect-simple-1" "#222222") 4))
              (t/is (= (count-shapes file' "rect-simple-1" "#333333") 0)))))))))
+
+(t/deftest duplicate-page-integrity-frame-group-component
+  ;; This test covers the bug fixed in 2.9.0: duplicating a page with a mainInstance inside a group
+  ;; must preserve parent/child referential integrity (parent-id and :shapes).
+  ;;
+  ;; Structure created:
+  ;;   Page
+  ;;     └─ Group ("group-1")
+  ;;         └─ Main component ("frame-1")
+  ;;             └─ Shape ("shape-1")
+  ;;   The frame is also promoted to a component (main).
+  ;;
+  ;; The test checks:
+  ;;   - The group, frame, and shape exist in the duplicated page.
+  ;;   - The parent/child relationships are correct (group:shapes contains frame, frame:shapes contains shape, etc).
+  ;;   - The duplicated page contains an instance of the component whose main is in the original page.
+  (t/async done
+    (with-redefs [uuid/next cthi/next-uuid]
+      (let [file (-> (cthf/sample-file :file1 :page-label :page-1)
+                     (ctho/add-group :group-1 {:name "group-1"})
+                     (ctho/add-frame :frame-1 :parent-label :group-1 {:name "frame-1"})
+                     (cths/add-sample-shape :shape-1 :parent-label :frame-1 {:name "shape-1"})
+                     (cthc/make-component :component-1 :frame-1))
+            page-id (cthf/current-page-id file)
+            store (ths/setup-store file)
+            events [(app.main.data.workspace.pages/duplicate-page page-id)]]
+        (ths/run-store
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 pages-vec (get-in file' [:data :pages])
+                 pages-index (get-in file' [:data :pages-index])
+                 new-page-id (first (remove #(= page-id %) pages-vec))
+                 new-page (get pages-index new-page-id)
+                 new-objects (:objects new-page)
+                 group (some #(when (= (:name %) "group-1") %) (vals new-objects))
+                 frame (some #(when (= (:name %) "frame-1") %) (vals new-objects))
+                 shape (some #(when (= (:name %) "shape-1") %) (vals new-objects))
+                 component-ids (map :component-id (filter :component-root (vals new-objects)))]
+
+             (t/is group "Group exists in duplicated page")
+             (t/is frame "Frame exists in duplicated page")
+             (t/is shape "Shape exists in duplicated page")
+             (t/is (some #(= (:id frame) %) (:shapes group)) "Group's :shapes contains frame's id")
+             (t/is (some #(= (:id shape) %) (:shapes frame)) "Frame's :shapes contains shape's id")
+             (t/is (= (:parent-id frame) (:id group)) "Frame's parent is group")
+             (t/is (= (:parent-id shape) (:id frame)) "Shape's parent is frame")
+
+             ;; Check the duplicated page must contain an instance of the component whose main is in the original page
+             (let [original-page (get pages-index page-id)
+                   original-main (some #(when (:component-root %) %) (vals (:objects original-page)))
+                   instance (some #(when (:component-root %) %) (vals (:objects new-page)))
+                   component-id (:component-id original-main)]
+               (t/is (ctk/instance-of? instance (:id file) component-id)
+                     (str "Duplicated page contains an instance of the original main component (component-id: " component-id ")")))
+
+             (done))))))))

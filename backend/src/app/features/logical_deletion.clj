@@ -10,18 +10,19 @@
    [app.config :as cf]
    [app.util.time :as dt]))
 
+(def ^:private canceled-status
+  #{"canceled" "unpaid"})
+
 (defn get-deletion-delay
   "Calculate the next deleted-at for a resource (file, team, etc) in function
   of team settings"
   [team]
-  (if-let [subscription (get team :subscription)]
+  (if-let [{:keys [type status]} (get team :subscription)]
     (cond
-      (and (= (:type subscription) "unlimited")
-           (= (:status subscription) "active"))
+      (and (= "unlimited" type) (not (contains? canceled-status status)))
       (dt/duration {:days 30})
 
-      (and (= (:type subscription) "enterprise")
-           (= (:status subscription) "active"))
+      (and (= "enterprise" type) (not (contains? canceled-status status)))
       (dt/duration {:days 90})
 
       :else

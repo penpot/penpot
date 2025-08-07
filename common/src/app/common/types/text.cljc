@@ -83,21 +83,12 @@
    compare them, and returns a set with the type of differences.
    The possibilities are
      :text-content-text
-     :text-content-attribute,
-     :text-content-structure
-     :text-content-structure-same-attrs."
+     :text-content-attribute
+     :text-content-structure"
   [a b]
-  (let [diff-type (compare-text-content a b
-                                        {:text-cb      (fn [acc] (conj acc :text-content-text))
-                                         :attribute-cb (fn [acc _] (conj acc :text-content-attribute))})]
-    (if-not (contains? diff-type :text-content-structure)
-      diff-type
-      (let [;; get attrs of the first paragraph of the first paragraph-set
-            attrs (get-first-paragraph-text-attrs a)]
-        (if (and (equal-attrs? a attrs)
-                 (equal-attrs? b attrs))
-          #{:text-content-structure :text-content-structure-same-attrs}
-          diff-type)))))
+  (compare-text-content a b
+                        {:text-cb      (fn [acc] (conj acc :text-content-text))
+                         :attribute-cb (fn [acc _] (conj acc :text-content-attribute))}))
 
 (defn get-diff-attrs
   "Given two content text structures, conformed by maps and vectors,
@@ -127,7 +118,8 @@
    entries"
   [a b]
   (cond
-    (not= (type a) (type b))
+    (and (not= (type a) (type b))
+         (not (and (map? a) (map? b)))) ;; Sometimes they are both maps but of different subtypes
     false
 
     (map? a)
@@ -148,7 +140,7 @@
   (cond
     (map? origin)
     (into {}
-          (for [k (keys origin) :when (not= k :key)] ;; We ignore :key because it is a draft artifact
+          (for [k (keys destiny) :when (not= k :key)] ;; We ignore :key because it is a draft artifact
             (cond
               (= :children k)
               [k (vec (map #(copy-text-keys %1 %2) (get origin k) (get destiny k)))]

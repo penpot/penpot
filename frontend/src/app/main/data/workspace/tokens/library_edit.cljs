@@ -175,7 +175,7 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data       (dsh/lookup-file-data state)
-            name       (ctob/normalize-set-name name (:name token-set))
+            name       (ctob/normalize-set-name name (ctob/get-name token-set))
             tokens-lib (get data :tokens-lib)]
 
         (if (ctob/get-set tokens-lib name)
@@ -185,7 +185,7 @@
                             :timeout 9000}))
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/rename-token-set (:name token-set) name))]
+                            (pcb/rename-token-set (ctob/get-name token-set) name))]
             (rx/of (set-selected-token-set-name name)
                    (dch/commit-changes changes))))))))
 
@@ -202,7 +202,7 @@
         (when-let [set (ctob/duplicate-set name tokens-lib {:suffix suffix})]
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token-set (:name set) is-group set))]
+                            (pcb/set-token-set (ctob/get-name set) is-group set))]
             (rx/of (set-selected-token-set-name name)
                    (dch/commit-changes changes))))))))
 
@@ -343,14 +343,15 @@
       (watch [it state _]
         (if-let [token-set (lookup-token-set state)]
           (let [data    (dsh/lookup-file-data state)
+                token-type (:type token)
                 changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token (:name token-set)
+                            (pcb/set-token (ctob/get-name token-set)
                                            (:name token)
                                            token))]
 
             (rx/of (dch/commit-changes changes)
-                   (ptk/data-event ::ev/event {::ev/name "create-token"})))
+                   (ptk/data-event ::ev/event {::ev/name "create-token" :type token-type})))
 
           (rx/of (create-token-with-set token)))))))
 
@@ -367,14 +368,15 @@
             token'    (->> (merge token params)
                            (into {})
                            (ctob/make-token))
-
+            token-type (:type token)
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-library-data data)
-                          (pcb/set-token (:name token-set)
+                          (pcb/set-token (ctob/get-name token-set)
                                          (:name token)
                                          token'))]
 
-        (rx/of (dch/commit-changes changes))))))
+        (rx/of (dch/commit-changes changes)
+               (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type}))))))
 
 (defn delete-token
   [set-name token-name]

@@ -117,6 +117,7 @@
     ;; Only for developtment.
     :tiered-file-data-storage
     :token-units
+    :token-typography-types
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.
@@ -149,7 +150,8 @@
    :enable-onboarding
    :enable-dashboard-templates-section
    :enable-google-fonts-provider
-   :enable-component-thumbnails])
+   :enable-component-thumbnails
+   :enable-render-wasm-dpr])
 
 (defn parse
   [& flags]

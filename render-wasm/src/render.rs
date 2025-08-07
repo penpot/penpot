@@ -3,14 +3,16 @@ mod debug;
 mod fills;
 mod fonts;
 mod gpu_state;
+pub mod grid_layout;
 mod images;
 mod options;
 mod shadows;
 mod strokes;
 mod surfaces;
 mod text;
+mod ui;
 
-use skia_safe::{self as skia, Matrix, RRect, Rect};
+use skia_safe::{self as skia, Matrix, Rect};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
@@ -19,7 +21,8 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{modified_children_ids, Corners, Shape, StrokeKind, StructureEntry, Type};
+use crate::shapes::{Corners, Fill, Shape, SolidColor, StructureEntry, Type};
+use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -47,6 +50,10 @@ pub struct NodeRenderState {
 }
 
 impl NodeRenderState {
+    pub fn is_root(&self) -> bool {
+        self.id.is_nil()
+    }
+
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
@@ -75,6 +82,73 @@ impl NodeRenderState {
     }
 }
 
+/// Represents the "focus mode" state used during rendering.
+///
+/// Focus mode allows selectively highlighting or isolating specific shapes (UUIDs)
+/// during the render pass. It maintains a list of shapes to focus and tracks
+/// whether the current rendering context is inside a focused element.
+///
+/// # Focus Propagation
+/// If a shape is in focus, all its nested content
+/// is also considered to be in focus for the duration of the render traversal. Focus
+/// state propagates *downward* through the tree while rendering.
+///
+/// # Usage
+/// - `set_shapes(...)` to activate focus mode for specific elements and their anidated content.
+/// - `clear()` to disable focus mode.
+/// - `reset()` should be called at the beginning of the render loop.
+/// - `enter(...)` / `exit(...)` should be called when entering and leaving shape
+///   render contexts.
+/// - `is_active()` returns whether the current shape is being rendered in focus.
+pub struct FocusMode {
+    shapes: Vec<Uuid>,
+    active: bool,
+}
+
+impl FocusMode {
+    pub fn new() -> Self {
+        FocusMode {
+            shapes: Vec::new(),
+            active: false,
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.shapes.clear();
+        self.active = false;
+    }
+
+    pub fn set_shapes(&mut self, shapes: Vec<Uuid>) {
+        self.shapes = shapes;
+    }
+
+    /// Returns `true` if the given shape ID should be focused.
+    /// If the `shapes` list is empty, focus applies to all shapes.
+    pub fn should_focus(&self, id: &Uuid) -> bool {
+        self.shapes.is_empty() || self.shapes.contains(id)
+    }
+
+    pub fn enter(&mut self, id: &Uuid) {
+        if !self.active && self.should_focus(id) {
+            self.active = true;
+        }
+    }
+
+    pub fn exit(&mut self, id: &Uuid) {
+        if self.active && self.should_focus(id) {
+            self.active = false;
+        }
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.active
+    }
+
+    pub fn reset(&mut self) {
+        self.active = false;
+    }
+}
+
 pub(crate) struct RenderState {
     gpu_state: GpuState,
     pub options: RenderOptions,
@@ -97,6 +171,13 @@ pub(crate) struct RenderState {
     pub tile_viewbox: tiles::TileViewbox,
     pub tiles: tiles::TileHashMap,
     pub pending_tiles: PendingTiles,
+    // nested_fills maintains a stack of group  fills that apply to nested shapes
+    // without their own fill definitions. This is necessary because in SVG, a group's `fill`
+    // can affect its child elements if they don't specify one themselves. If the planned
+    // migration to remove group-level fills is completed, this code should be removed.
+    pub nested_fills: Vec<Vec<Fill>>,
+    pub show_grid: Option<Uuid>,
+    pub focus_mode: FocusMode,
 }
 
 pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
@@ -140,14 +221,14 @@ impl RenderState {
         let tiles = tiles::TileHashMap::new();
 
         RenderState {
-            gpu_state,
+            gpu_state: gpu_state.clone(),
             options: RenderOptions::default(),
             surfaces,
             fonts,
             viewbox,
             cached_viewbox: Viewbox::new(0., 0.),
             cached_target_snapshot: None,
-            images: ImageStore::new(),
+            images: ImageStore::new(gpu_state.context.clone()),
             background_color: skia::Color::TRANSPARENT,
             render_request_id: None,
             render_in_progress: false,
@@ -162,6 +243,9 @@ impl RenderState {
                 1.0,
             ),
             pending_tiles: PendingTiles::new_empty(),
+            nested_fills: vec![],
+            show_grid: None,
+            focus_mode: FocusMode::new(),
         }
     }
 
@@ -174,10 +258,10 @@ impl RenderState {
     }
 
     pub fn add_image(&mut self, id: Uuid, image_data: &[u8]) -> Result<(), String> {
-        self.images.add(id, image_data, &mut self.gpu_state.context)
+        self.images.add(id, image_data)
     }
 
-    pub fn has_image(&mut self, id: &Uuid) -> bool {
+    pub fn has_image(&self, id: &Uuid) -> bool {
         self.images.contains(id)
     }
 
@@ -192,6 +276,7 @@ impl RenderState {
                 self.viewbox.width.floor() as i32,
                 self.viewbox.height.floor() as i32,
             );
+            self.fonts.set_scale_debug_font(dpr);
         }
     }
 
@@ -217,6 +302,14 @@ impl RenderState {
         self.surfaces.reset(self.background_color);
     }
 
+    pub fn get_canvas_at(&mut self, surface_id: SurfaceId) -> &skia::Canvas {
+        self.surfaces.canvas(surface_id)
+    }
+
+    pub fn restore_canvas(&mut self, surface_id: SurfaceId) {
+        self.surfaces.canvas(surface_id).restore();
+    }
+
     pub fn apply_render_to_final_canvas(&mut self, rect: skia::Rect) {
         let tile_rect = self.get_current_aligned_tile_bounds();
         self.surfaces.cache_current_tile_texture(
@@ -225,8 +318,11 @@ impl RenderState {
             &tile_rect,
         );
 
-        self.surfaces
-            .draw_cached_tile_surface(self.current_tile.unwrap(), rect);
+        self.surfaces.draw_cached_tile_surface(
+            self.current_tile.unwrap(),
+            rect,
+            self.background_color,
+        );
 
         if self.options.is_debug_visible() {
             debug::render_workspace_current_tile(
@@ -289,12 +385,19 @@ impl RenderState {
         });
     }
 
+    pub fn clear_focus_mode(&mut self) {
+        self.focus_mode.clear();
+    }
+
+    pub fn set_focus_mode(&mut self, shapes: Vec<Uuid>) {
+        self.focus_mode.set_shapes(shapes);
+    }
+
     pub fn render_shape(
         &mut self,
         shape: &Shape,
         modifiers: Option<&Matrix>,
         scale_content: Option<&f32>,
-        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
         let shape = if let Some(scale_content) = scale_content {
             &shape.scale_content(*scale_content)
@@ -311,43 +414,6 @@ impl RenderState {
         });
 
         let antialias = shape.should_use_antialias(self.get_scale());
-
-        // set clipping
-        if let Some((bounds, corners, transform)) = clip_bounds {
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas().concat(&transform);
-            });
-
-            if let Some(corners) = corners {
-                let rrect = RRect::new_rect_radii(bounds, &corners);
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas()
-                        .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
-                });
-            } else {
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas()
-                        .clip_rect(bounds, skia::ClipOp::Intersect, antialias);
-                });
-            }
-
-            // This renders a red line around clipped
-            // shapes (frames).
-            if self.options.is_debug_visible() {
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-                paint.set_stroke_width(4.);
-                self.surfaces
-                    .canvas(SurfaceId::Fills)
-                    .draw_rect(bounds, &paint);
-            }
-
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas()
-                    .concat(&transform.invert().unwrap_or(Matrix::default()));
-            });
-        }
 
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
@@ -394,37 +460,44 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let paragraphs = text_content.get_skia_paragraphs(self.fonts.font_collection());
+                let mut paragraphs = text_content.get_skia_paragraphs();
 
-                shadows::render_text_drop_shadows(self, &shape, &paragraphs, antialias);
-                text::render(self, &shape, &paragraphs, None, None);
+                shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
+                text::render(self, &shape, &mut paragraphs, None);
 
-                for stroke in shape.strokes().rev() {
-                    let stroke_paragraphs = text_content.get_skia_stroke_paragraphs(
-                        stroke,
-                        &shape.selrect(),
-                        self.fonts.font_collection(),
-                    );
-                    shadows::render_text_drop_shadows(self, &shape, &stroke_paragraphs, antialias);
-                    if stroke.kind == StrokeKind::Inner {
-                        // Inner strokes must be rendered on the Fills surface because their blend modes
-                        // (e.g., SrcATop, DstOver) rely on the text fill already being present underneath.
-                        // Rendering them on a separate surface would break this blending and result in incorrect visuals as
-                        // black color background.
-                        text::render(self, &shape, &stroke_paragraphs, None, None);
-                    } else {
-                        text::render(
-                            self,
-                            &shape,
-                            &stroke_paragraphs,
-                            Some(SurfaceId::Strokes),
-                            None,
-                        );
-                    }
-                    shadows::render_text_inner_shadows(self, &shape, &stroke_paragraphs, antialias);
+                if shape.has_inner_strokes() {
+                    // Inner strokes paints need the text fill to apply correctly their blend modes
+                    // (e.g., SrcATop, DstOver)
+                    text::render(self, &shape, &mut paragraphs, Some(SurfaceId::Strokes));
                 }
 
-                shadows::render_text_inner_shadows(self, &shape, &paragraphs, antialias);
+                for stroke in shape.strokes().rev() {
+                    let mut stroke_paragraphs =
+                        text_content.get_skia_stroke_paragraphs(stroke, &shape.selrect());
+                    shadows::render_text_drop_shadows(
+                        self,
+                        &shape,
+                        &mut stroke_paragraphs,
+                        antialias,
+                    );
+                    strokes::render(
+                        self,
+                        &shape,
+                        stroke,
+                        None,
+                        None,
+                        Some(&mut stroke_paragraphs),
+                        antialias,
+                    );
+                    shadows::render_text_inner_shadows(
+                        self,
+                        &shape,
+                        &mut stroke_paragraphs,
+                        antialias,
+                    );
+                }
+
+                shadows::render_text_inner_shadows(self, &shape, &mut paragraphs, antialias);
             }
             _ => {
                 let surface_ids = SurfaceId::Strokes as u32
@@ -435,13 +508,30 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
-                for fill in shape.fills().rev() {
-                    fills::render(self, &shape, fill, antialias);
+                let has_fill_none = matches!(
+                    shape.svg_attrs.get("fill").map(String::as_str),
+                    Some("none")
+                );
+
+                if shape.fills.is_empty()
+                    && !matches!(shape.shape_type, Type::Group(_))
+                    && !has_fill_none
+                {
+                    if let Some(fills_to_render) = self.nested_fills.last() {
+                        let fills_to_render = fills_to_render.clone();
+                        for fill in fills_to_render.iter() {
+                            fills::render(self, &shape, fill, antialias);
+                        }
+                    }
+                } else {
+                    for fill in shape.fills().rev() {
+                        fills::render(self, &shape, fill, antialias);
+                    }
                 }
 
                 for stroke in shape.strokes().rev() {
                     shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
-                    strokes::render(self, &shape, stroke, None, None, antialias);
+                    strokes::render(self, &shape, stroke, None, None, None, antialias);
                     shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
 
@@ -449,7 +539,6 @@ impl RenderState {
                 shadows::render_fill_drop_shadows(self, &shape, antialias);
             }
         };
-
         self.apply_drawing_to_render_canvas(Some(&shape));
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
@@ -475,7 +564,12 @@ impl RenderState {
         }
     }
 
-    pub fn render_from_cache(&mut self) {
+    pub fn render_from_cache(
+        &mut self,
+        shapes: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    ) {
         let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -484,10 +578,7 @@ impl RenderState {
             // Scale and translate the target according to the cached data
             let navigate_zoom = self.viewbox.zoom / self.cached_viewbox.zoom;
 
-            canvas.scale((
-                navigate_zoom * self.options.dpr(),
-                navigate_zoom * self.options.dpr(),
-            ));
+            canvas.scale((navigate_zoom, navigate_zoom));
 
             let TileRect(start_tile_x, start_tile_y, _, _) =
                 tiles::get_tiles_for_viewbox_with_interest(
@@ -495,8 +586,8 @@ impl RenderState {
                     VIEWPORT_INTEREST_AREA_THRESHOLD,
                     scale,
                 );
-            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom;
-            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom;
+            let offset_x = self.viewbox.area.left * self.cached_viewbox.zoom * self.options.dpr();
+            let offset_y = self.viewbox.area.top * self.cached_viewbox.zoom * self.options.dpr();
 
             canvas.translate((
                 (start_tile_x as f32 * tiles::TILE_SIZE) - offset_x,
@@ -506,13 +597,17 @@ impl RenderState {
             canvas.clear(self.background_color);
             canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
+
+            ui::render(self, shapes, modifiers, structure);
+            debug::render_wasm_label(self);
+
             self.flush_and_submit();
         }
     }
 
     pub fn start_render_loop(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -520,6 +615,8 @@ impl RenderState {
     ) -> Result<(), String> {
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
+
+        self.focus_mode.reset();
 
         performance::begin_measure!("render");
         performance::begin_measure!("start_render_loop");
@@ -565,7 +662,7 @@ impl RenderState {
 
     pub fn process_animation_frame(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -593,12 +690,15 @@ impl RenderState {
             && performance::get_time() - timestamp > MAX_BLOCKING_TIME_MS
     }
 
-    pub fn render_shape_enter(&mut self, element: &mut Shape, mask: bool) {
+    #[inline]
+    pub fn render_shape_enter(&mut self, element: &Shape, mask: bool) {
         // Masked groups needs two rendering passes, the first one rendering
         // the content and the second one rendering the mask so we need to do
         // an extra save_layer to keep all the masked group separate from
         // other already drawn elements.
         if let Type::Group(group) = element.shape_type {
+            let fills = &element.fills;
+            self.nested_fills.push(fills.to_vec());
             if group.masked {
                 let paint = skia::Paint::default();
                 let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -632,9 +732,18 @@ impl RenderState {
         self.surfaces
             .canvas(SurfaceId::Current)
             .save_layer(&layer_rec);
+
+        self.focus_mode.enter(&element.id);
     }
 
-    pub fn render_shape_exit(&mut self, element: &mut Shape, visited_mask: bool) {
+    #[inline]
+    pub fn render_shape_exit(
+        &mut self,
+        element: &Shape,
+        visited_mask: bool,
+        modifiers: Option<&Matrix>,
+        scale_content: Option<&f32>,
+    ) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -644,8 +753,71 @@ impl RenderState {
                     self.surfaces.canvas(SurfaceId::Current).restore();
                 }
             }
+        } else {
+            // !visited_mask
+            if let Type::Group(group) = element.shape_type {
+                // When we're dealing with masked groups we need to
+                // do a separate extra step to draw the mask (the last
+                // element of a masked group) and blend (using
+                // the blend mode 'destination-in') the content
+                // of the group and the mask.
+                if group.masked {
+                    self.pending_nodes.push(NodeRenderState {
+                        id: element.id,
+                        visited_children: true,
+                        clip_bounds: None,
+                        visited_mask: true,
+                        mask: false,
+                    });
+                    if let Some(&mask_id) = element.mask_id() {
+                        self.pending_nodes.push(NodeRenderState {
+                            id: mask_id,
+                            visited_children: false,
+                            clip_bounds: None,
+                            visited_mask: false,
+                            mask: true,
+                        });
+                    }
+                }
+            }
+        }
+        if let Type::Group(_) = element.shape_type {
+            self.nested_fills.pop();
+        }
+
+        // Detect clipping and apply it properly
+        if let Type::Frame(_) = &element.shape_type {
+            if element.clip() {
+                let mut layer_paint = skia::Paint::default();
+                layer_paint.set_blend_mode(skia::BlendMode::DstIn);
+                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .save_layer(&layer_rec);
+
+                // We clip only the fills content
+                let mut element_fills: Cow<Shape> = Cow::Borrowed(element);
+                element_fills.to_mut().clear_strokes();
+                element_fills.to_mut().clear_shadows();
+                // We use the white color as the mask selection one
+                element_fills
+                    .to_mut()
+                    .set_fills([Fill::Solid(SolidColor(skia::Color::WHITE))].to_vec());
+                self.render_shape(&element_fills, modifiers, scale_content);
+
+                self.surfaces.canvas(SurfaceId::Current).restore();
+
+                // Now we paint the strokes - in clipped content strokes are drawn over the contained elements
+                let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
+                element_strokes.to_mut().clear_fills();
+                element_strokes.to_mut().clear_shadows();
+                self.render_shape(&element_strokes, modifiers, scale_content);
+
+                // TODO: drop shadows. With thos approach actually drop shadows for frames with clipped content are lost.
+            }
         }
         self.surfaces.canvas(SurfaceId::Current).restore();
+        self.focus_mode.exit(&element.id);
     }
 
     pub fn get_current_tile_bounds(&mut self) -> Rect {
@@ -686,7 +858,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial_uncached(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -698,13 +870,13 @@ impl RenderState {
             let NodeRenderState {
                 id: node_id,
                 visited_children,
-                clip_bounds,
+                clip_bounds: _,
                 visited_mask,
                 mask,
             } = node_render_state;
 
             is_empty = false;
-            let element = tree.get_mut(&node_id).ok_or(
+            let element = tree.get(&node_id).ok_or(
                 "Error: Element with root_id {node_render_state.id} not found in the tree."
                     .to_string(),
             )?;
@@ -716,38 +888,16 @@ impl RenderState {
             }
 
             if visited_children {
-                if !visited_mask {
-                    if let Type::Group(group) = element.shape_type {
-                        // When we're dealing with masked groups we need to
-                        // do a separate extra step to draw the mask (the last
-                        // element of a masked group) and blend (using
-                        // the blend mode 'destination-in') the content
-                        // of the group and the mask.
-                        if group.masked {
-                            self.pending_nodes.push(NodeRenderState {
-                                id: node_id,
-                                visited_children: true,
-                                clip_bounds: None,
-                                visited_mask: true,
-                                mask: false,
-                            });
-                            if let Some(&mask_id) = element.mask_id() {
-                                self.pending_nodes.push(NodeRenderState {
-                                    id: mask_id,
-                                    visited_children: false,
-                                    clip_bounds: None,
-                                    visited_mask: false,
-                                    mask: true,
-                                });
-                            }
-                        }
-                    }
-                }
-                self.render_shape_exit(element, visited_mask);
+                self.render_shape_exit(
+                    element,
+                    visited_mask,
+                    modifiers.get(&node_id),
+                    scale_content.get(&element.id),
+                );
                 continue;
             }
 
-            if !node_render_state.id.is_nil() {
+            if !node_render_state.is_root() {
                 let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
                 if let Some(modifier) = modifiers.get(&node_id) {
@@ -768,14 +918,13 @@ impl RenderState {
             }
 
             self.render_shape_enter(element, mask);
-            if !node_render_state.id.is_nil() {
+            if !node_render_state.is_root() && self.focus_mode.is_active() {
                 self.render_shape(
                     element,
                     modifiers.get(&element.id),
                     scale_content.get(&element.id),
-                    clip_bounds,
                 );
-            } else {
+            } else if visited_children {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
 
@@ -792,7 +941,8 @@ impl RenderState {
                 let children_clip_bounds =
                     node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
 
-                let mut children_ids = modified_children_ids(element, structure.get(&element.id));
+                let mut children_ids =
+                    element.modified_children_ids(structure.get(&element.id), false);
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
@@ -825,7 +975,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -837,8 +987,11 @@ impl RenderState {
                 if self.surfaces.has_cached_tile_surface(current_tile) {
                     performance::begin_measure!("render_shape_tree::cached");
                     let tile_rect = self.get_current_tile_bounds();
-                    self.surfaces
-                        .draw_cached_tile_surface(current_tile, tile_rect);
+                    self.surfaces.draw_cached_tile_surface(
+                        current_tile,
+                        tile_rect,
+                        self.background_color,
+                    );
                     performance::end_measure!("render_shape_tree::cached");
 
                     if self.options.is_debug_visible() {
@@ -875,6 +1028,7 @@ impl RenderState {
                 }
             }
 
+            // println!("clear current {:?}", self.current_tile);
             self.surfaces
                 .canvas(SurfaceId::Current)
                 .clear(self.background_color);
@@ -882,7 +1036,7 @@ impl RenderState {
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
             };
-            let root_ids = modified_children_ids(root, structure.get(&root.id));
+            let root_ids = root.modified_children_ids(structure.get(&root.id), false);
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
@@ -925,6 +1079,7 @@ impl RenderState {
             debug::render(self);
         }
 
+        ui::render(self, tree, modifiers, structure);
         debug::render_wasm_label(self);
 
         Ok(())
@@ -962,7 +1117,7 @@ impl RenderState {
 
     pub fn rebuild_tiles_shallow(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -971,7 +1126,7 @@ impl RenderState {
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
-            if let Some(shape) = tree.get_mut(&shape_id) {
+            if let Some(shape) = tree.get(&shape_id) {
                 let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
@@ -980,7 +1135,7 @@ impl RenderState {
                     self.update_tile_for(&shape);
                 } else {
                     // We only need to rebuild tiles from the first level.
-                    let children = modified_children_ids(&shape, structure.get(&shape.id));
+                    let children = shape.modified_children_ids(structure.get(&shape.id), false);
                     for child_id in children.iter() {
                         nodes.push(*child_id);
                     }
@@ -992,7 +1147,7 @@ impl RenderState {
 
     pub fn rebuild_tiles(
         &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
+        tree: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -1001,7 +1156,7 @@ impl RenderState {
         self.surfaces.remove_cached_tiles();
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
-            if let Some(shape) = tree.get_mut(&shape_id) {
+            if let Some(shape) = tree.get(&shape_id) {
                 let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
                     if let Some(modifier) = modifiers.get(&shape_id) {
@@ -1010,7 +1165,7 @@ impl RenderState {
                     self.update_tile_for(&shape);
                 }
 
-                let children = modified_children_ids(&shape, structure.get(&shape.id));
+                let children = shape.modified_children_ids(structure.get(&shape.id), false);
                 for child_id in children.iter() {
                     nodes.push(*child_id);
                 }
@@ -1019,13 +1174,9 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles");
     }
 
-    pub fn rebuild_modifier_tiles(
-        &mut self,
-        tree: &mut HashMap<Uuid, &mut Shape>,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
+    pub fn rebuild_modifier_tiles(&mut self, tree: &ShapesPool, modifiers: &HashMap<Uuid, Matrix>) {
         for (uuid, matrix) in modifiers {
-            if let Some(shape) = tree.get_mut(uuid) {
+            if let Some(shape) = tree.get(uuid) {
                 let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 shape.to_mut().apply_transform(matrix);
                 self.update_tile_for(&shape);
