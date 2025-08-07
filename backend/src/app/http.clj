@@ -17,6 +17,7 @@
    [app.http.awsns :as-alias awsns]
    [app.http.debug :as-alias debug]
    [app.http.errors :as errors]
+   [app.http.management :as mgmt]
    [app.http.middleware :as mw]
    [app.http.session :as session]
    [app.http.websocket :as-alias ws]
@@ -143,6 +144,7 @@
    [::debug/routes schema:routes]
    [::mtx/routes schema:routes]
    [::awsns/routes schema:routes]
+   [::mgmt/routes schema:routes]
    ::session/manager
    ::setup/props
    ::db/pool])
@@ -169,6 +171,9 @@
 
      ["/webhooks"
       (::awsns/routes cfg)]
+
+     ["/management"
+      (::mgmt/routes cfg)]
 
      (::ws/routes cfg)
 
