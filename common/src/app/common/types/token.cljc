@@ -37,8 +37,6 @@
    :font-family     "fontFamilies"
    :font-size       "fontSizes"
    :letter-spacing  "letterSpacing"
-   :text-case       "textCase"
-   :text-decoration "textDecoration"
    :number          "number"
    :opacity         "opacity"
    :other           "other"
@@ -46,7 +44,9 @@
    :sizing          "sizing"
    :spacing         "spacing"
    :string          "string"
-   :stroke-width    "strokeWidth"})
+   :stroke-width    "borderWidth"
+   :text-case       "textCase"
+   :text-decoration "textDecoration"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
