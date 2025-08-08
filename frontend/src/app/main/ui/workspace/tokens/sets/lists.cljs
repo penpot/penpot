@@ -59,7 +59,7 @@
       :type "text"
       :on-blur on-submit
       :on-key-down on-key-down
-      :maxlength "256"
+      :max-length "256"
       :auto-focus true
       :placeholder (tr "workspace.tokens.set-edit-placeholder")
       :default-value default-value}]))
@@ -210,7 +210,7 @@
 
 (mf/defc sets-tree-set*
   [{:keys [id set label tree-depth tree-path tree-index is-selected is-active is-draggable is-editing
-           on-select on-drop on-toggle on-start-edition on-reset-edition on-edit-submit]}]
+           on-select on-drop on-toggle on-start-edition on-reset-edition on-edit-submit is-new]}]
 
   (let [set-name  (ctob/get-name set)
         can-edit? (mf/use-ctx ctx/can-edit?)
@@ -239,7 +239,11 @@
                          :path tree-path})))))
 
         on-double-click
-        (mf/use-fn (mf/deps id) #(on-start-edition id))
+        (mf/use-fn
+         (mf/deps id is-new)
+         (fn []
+           (when-not is-new
+             (on-start-edition id))))
 
         on-checkbox-click
         (mf/use-fn
@@ -392,7 +396,7 @@
           :is-editing true
           :is-active true
           :is-selected true
-
+          :is-new true
           :tree-path path
           :tree-depth depth
           :tree-index index
@@ -416,6 +420,7 @@
           :tree-path path
           :tree-depth depth
           :tree-index index
+          :is-new false
           :tree-parent-path parent-path
           :on-toggle on-toggle-set
           :edition-id edition-id

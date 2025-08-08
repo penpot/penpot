@@ -28,6 +28,8 @@
 - Add the ability to show login dialog on profile settings [Github #6871](https://github.com/penpot/penpot/pull/6871)
 - Improve the application of tokens with object specific tokens [Taiga #10209](https://tree.taiga.io/project/penpot/us/10209)
 - Add info to apply-token event [Taiga #11710](https://tree.taiga.io/project/penpot/task/11710)
+- Fix double click on set name input [Taiga #11747](https://tree.taiga.io/project/penpot/issue/11747)
+
 
 ### :bug: Bugs fixed
 
