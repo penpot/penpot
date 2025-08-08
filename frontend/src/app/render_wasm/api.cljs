@@ -1078,17 +1078,17 @@
 (defn calculate-bool
   [bool-type ids]
   (let [num-ids (count ids)
-        offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-ids))
-        heap (mem/get-heap-u32)]
+        offset  (mem/alloc-bytes-32 (* CHILD-ENTRY-SIZE num-ids))
+        heap    (mem/get-heap-u32)]
 
-    (loop [entries (seq ids)
-           current-offset  offset]
-      (when-not (empty? entries)
-        (let [id (first entries)]
-          (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-          (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE))))))
 
-  (let [offset (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
+    (reduce (fn [offset id]
+              (sr/heapu32-set-uuid id heap offset)
+              (+ offset CHILD-ENTRY-SIZE))
+            offset
+            (rseq ids)))
+
+  (let [offset  (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
         heapu32 (mem/get-heap-u32)
         heapu8 (mem/get-heap-u8)
 

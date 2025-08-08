@@ -28,17 +28,6 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(defn update-bool-shape
-  [shape objects]
-  (let [content
-        (if (features/active-feature? @st/state "render-wasm/v1")
-          (wasm.api/calculate-bool (:bool-type shape) (reverse (:shapes shape)))
-          (path/calc-bool-content shape objects))]
-    (-> shape
-        (path/update-geometry content))))
-
-(set! path/update-bool-shape* update-bool-shape)
-
 (defn- create-bool-shape
   [id type name shapes objects]
   (let [shape-id
@@ -65,7 +54,7 @@
         (-> shape
             (merge (select-keys head path/bool-style-properties))
             (cts/setup-shape)
-            (update-bool-shape objects))]
+            (path/update-bool-shape objects))]
 
     [shape (cph/get-position-on-parent objects (:id head))]))
 
@@ -81,7 +70,7 @@
         (assoc :type :bool)
         (assoc :bool-type type)
         (merge (select-keys head bool/style-properties))
-        (update-bool-shape objects))))
+        (path/update-bool-shape objects))))
 
 (defn create-bool
   [type & {:keys [ids force-shape-id]}]
