@@ -58,6 +58,7 @@
 - Fix export button width on inspect tab [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
 - Fix stroke width token application [Taiga #11724](https://tree.taiga.io/project/penpot/issue/11724)
 - Fix number token application on shape [Taiga #11331](https://tree.taiga.io/project/penpot/task/11331)
+- Fix auto height is fixed in the HTML inspect tab for text elements [Taiga #11680](https://tree.taiga.io/project/penpot/task/11680)
 
 ## 2.8.1
 
