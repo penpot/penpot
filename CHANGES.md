@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2.9.1
+
+### :bug: Bugs fixed
+
+- Fix double click on set name input [Taiga #11747](https://tree.taiga.io/project/penpot/issue/11747)
+
 ## 2.9.0 (Unreleased)
 
 ### :rocket: Epics and highlights
