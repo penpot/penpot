@@ -393,7 +393,7 @@
     LIMIT ?
       FOR UPDATE")
 
-(defn migrate-file-to-storage
+(defn migrate-files-to-storage
   "Migrate the current existing files to store data in new storage
   tables."
   [system & {:keys [chunk-size] :or {chunk-size 500}}]
@@ -426,7 +426,7 @@
     LIMIT ?
       FOR UPDATE")
 
-(defn rollback-file-from-storage
+(defn rollback-files-from-storage
   "Migrate back to the file table storage."
   [system & {:keys [chunk-size] :or {chunk-size 500}}]
   (db/tx-run! system
@@ -483,7 +483,7 @@
     LIMIT ?
       FOR UPDATE")
 
-(defn rollback-file-from-storage
+(defn rollback-snapshots-from-storage
   "Migrate back to the file table storage."
   [system & {:keys [chunk-size] :or {chunk-size 500}}]
   (db/tx-run! system
