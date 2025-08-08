@@ -820,39 +820,6 @@
                                     choices))]
                {:pred pred}))})
 
-;; (register!
-;;  {:type ::inst
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int :min 0 :max 100000)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-
-;;    :decode/string tm/parse-inst
-;;    :encode/string tm/format-inst
-;;    :decode/json tm/parse-inst
-;;    :encode/json tm/format-inst
-;;    ::oapi/type "string"
-;;    ::oapi/format "iso"}})
-
-;; (register!
-;;  {:type ::timestamp
-;;   :pred tm/instant?
-;;   :type-properties
-;;   {:title "inst"
-;;    :description "Satisfies Inst protocol, the same as ::inst but encodes to epoch"
-;;    :error/message "should be an instant"
-;;    :gen/gen (->> (sg/small-int)
-;;                  (sg/fmap (fn [v] (tm/parse-inst v))))
-;;    :decode/string tm/parse-inst
-;;    :encode/string inst-ms
-;;    :decode/json tm/parse-inst
-;;    :encode/json inst-ms
-;;    ::oapi/type "string"
-;;    ::oapi/format "number"}})
-
 (register!
  {:type ::fn
   :pred fn?})
