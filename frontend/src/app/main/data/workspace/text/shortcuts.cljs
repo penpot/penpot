@@ -117,7 +117,8 @@
   (let [state-map    (if (features/active-feature? @st/state "text-editor/v2")
                        (deref refs/workspace-v2-editor-state)
                        (deref refs/workspace-editor-state))
-        editor-state  (get state-map (:id shape))
+        editor-state  (when-not (features/active-feature? @st/state "text-editor/v2")
+                        (get state-map (:id shape)))
         editor-instance (when (features/active-feature? @st/state "text-editor/v2")
                           (deref refs/workspace-editor))]
     (d/merge
