@@ -414,8 +414,8 @@
                                        :file-id id
                                        :id id}
                                       {::db/return-keys false}))
-                        (db/plan conn [sql:get-unmigrated-files]))))))
-
+                        (db/plan conn [sql:get-unmigrated-files]
+                                 {:fetch-size 1}))))))
 
 (def sql:get-migrated-files
   "SELECT f.id, f.data,
@@ -435,7 +435,9 @@
                         (l/dbg :hint "rollback file" :file-id (str id) :index index)
                         (db/update! conn :file {:data data} {:id id} ::db/return-keys false)
                         (db/delete! conn :file-data {:id id} ::db/return-keys false))
-                      (db/plan conn [sql:get-migrated-files])))))
+                      (db/plan conn [sql:get-migrated-files]
+                                 {:fetch-size 1})))))
+
 
 
 
