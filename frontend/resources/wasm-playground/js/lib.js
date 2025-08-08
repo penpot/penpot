@@ -27,12 +27,12 @@ export function assignCanvas(canvas) {
   context.getExtension("WEBGL_debug_renderer_info");
 
   Module._init(canvas.width, canvas.height);
-  Module._set_render_options(0, 1);
+  Module._set_render_options(1, 1);
 }
 
 export function hexToU32ARGB(hex, opacity = 1) {
   const rgb = parseInt(hex.slice(1), 16);
-  const a = Math.floor(opacity * 0xFF);
+  const a = Math.floor(opacity * 0xff);
   const argb = (a << 24) | rgb;
   return argb >>> 0;
 }
@@ -42,9 +42,9 @@ export function getRandomInt(min, max) {
 }
 
 export function getRandomColor() {
-  const r = getRandomInt(0, 256).toString(16).padStart(2, '0');
-  const g = getRandomInt(0, 256).toString(16).padStart(2, '0');
-  const b = getRandomInt(0, 256).toString(16).padStart(2, '0');
+  const r = getRandomInt(0, 256).toString(16).padStart(2, "0");
+  const g = getRandomInt(0, 256).toString(16).padStart(2, "0");
+  const b = getRandomInt(0, 256).toString(16).padStart(2, "0");
   return `#${r}${g}${b}`;
 }
 
@@ -103,12 +103,12 @@ export function addShapeSolidStrokeFill(argb) {
 
 function serializePathAttrs(svgAttrs) {
   return Object.entries(svgAttrs).reduce((acc, [key, value]) => {
-    return acc + key + '\0' + value + '\0';
-  }, '');
+    return acc + key + "\0" + value + "\0";
+  }, "");
 }
 
-export function draw_star(x, y, width, height) {
-  const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE 
+export function drawStar(x, y, width, height) {
+  const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE
   const ptr = allocBytes(len * 28);
   const heap = getHeapU32();
   const dv = new DataView(heap.buffer);
@@ -120,7 +120,7 @@ export function draw_star(x, y, width, height) {
 
   const star = [];
   for (let i = 0; i < 10; i++) {
-    const angle = Math.PI / 5 * i - Math.PI / 2;
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
     const r = i % 2 === 0 ? outerRadius : innerRadius;
     const px = cx + r * Math.cos(angle);
     const py = cy + r * Math.sin(angle);
@@ -149,7 +149,7 @@ export function draw_star(x, y, width, height) {
   Module._set_shape_path_content();
 
   const str = serializePathAttrs({
-    "fill": "none",
+    fill: "none",
     "stroke-linecap": "round",
     "stroke-linejoin": "round",
   });
@@ -158,7 +158,6 @@ export function draw_star(x, y, width, height) {
   Module.stringToUTF8(str, offset, size);
   Module._set_shape_path_attrs(3);
 }
-  
 
 export function setShapeChildren(shapeIds) {
   const offset = allocBytes(shapeIds.length * 16);
@@ -176,7 +175,7 @@ export function useShape(id) {
   Module._use_shape(...buffer);
 }
 
-export function set_parent(id) {
+export function setParent(id) {
   const buffer = getU32(id);
   Module._set_parent(...buffer);
 }
@@ -227,8 +226,12 @@ export function setupInteraction(canvas) {
     }
   });
 
-  canvas.addEventListener("mouseup", () => { isPanning = false; });
-  canvas.addEventListener("mouseout", () => { isPanning = false; });
+  canvas.addEventListener("mouseup", () => {
+    isPanning = false;
+  });
+  canvas.addEventListener("mouseout", () => {
+    isPanning = false;
+  });
 }
 
 export function addTextShape(x, y, fontSize, text) {
@@ -312,4 +315,57 @@ export function addTextShape(x, y, fontSize, text) {
 
   // Call the WebAssembly function
   Module._set_shape_text_content();
+}
+
+export function setup(options) {
+  init(options.instance)
+  assignCanvas(options.canvas)
+  Module._set_canvas_background(hexToU32ARGB(options?.backgroundColor ?? "#FABADA", 1));
+  Module._set_view(options?.zoom ?? 1, options?.x ?? 0, options?.y ?? 0);
+  Module._init_shapes_pool(options.shapes + 1);
+  setupInteraction(options.canvas);
+}
+
+function getShapeType(type) {
+  switch (type) {
+    default:
+    case "rect": return 3;
+  }
+}
+
+export function addShape(init) {
+  const uuid = init?.id ?? crypto.randomUUID()
+  useShape(uuid);
+  setParent(init?.parent ?? "00000000-0000-0000-0000-000000000000");
+
+  Module._set_shape_type(getShapeType(init?.type));
+  if (init.selrect) {
+    Module._set_shape_selrect(
+      init.selrect.x,
+      init.selrect.y,
+      init.selrect.x + init.selrect.width,
+      init.selrect.y + init.selrect.height,
+    );
+  }
+
+  if (Array.isArray(init?.fills)) {
+    for (const fill of init.fills) {
+      const argb = hexToU32ARGB(fill.color, fill.opacity);
+      addShapeSolidFill(argb);
+    }
+  }
+
+  if (Array.isArray(init?.strokes)) {
+    for (const stroke of init.strokes) {
+      Module._add_shape_center_stroke(stroke.width, 0, 0, 0);
+      const argb = hexToU32ARGB(stroke.color, stroke.opacity);
+      addShapeSolidStrokeFill(argb);
+    }
+  }
+
+  if (Array.isArray(init?.children)) {
+    setShapeChildren(init.children);
+  }
+
+  return uuid
 }

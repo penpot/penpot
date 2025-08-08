@@ -26,6 +26,7 @@ pub enum SurfaceId {
     InnerShadows = 0b0_0100_0000,
     UI = 0b0_1000_0000,
     Debug = 0b1_0000_0000,
+    Full = 0b10_0000_0000,
 }
 
 pub struct Surfaces {
@@ -46,6 +47,8 @@ pub struct Surfaces {
     ui: skia::Surface,
     // for drawing debug info.
     debug: skia::Surface,
+    // for slicing a full render.
+    full: skia::Surface,
     // for drawing tiles.
     tiles: TileTextureCache,
     sampling_options: skia::SamplingOptions,
@@ -80,6 +83,7 @@ impl Surfaces {
 
         let ui = gpu_state.create_surface_with_dimensions("ui".to_string(), width, height);
         let debug = gpu_state.create_surface_with_dimensions("debug".to_string(), width, height);
+        let full = gpu_state.create_surface_with_dimensions("full".to_string(), width, height);
 
         let tiles = TileTextureCache::new();
         Surfaces {
@@ -92,6 +96,7 @@ impl Surfaces {
             shape_strokes,
             ui,
             debug,
+            full,
             tiles,
             sampling_options,
             margins,
@@ -172,6 +177,9 @@ impl Surfaces {
         if ids & SurfaceId::Debug as u32 != 0 {
             f(self.get_mut(SurfaceId::Debug));
         }
+        if ids & SurfaceId::Full as u32 != 0 {
+            f(self.get_mut(SurfaceId::Full));
+        }
         performance::begin_measure!("apply_mut::flags");
     }
 
@@ -205,6 +213,7 @@ impl Surfaces {
             SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,
             SurfaceId::UI => &mut self.ui,
+            SurfaceId::Full => &mut self.full,
         }
     }
 
@@ -213,6 +222,7 @@ impl Surfaces {
         self.target = target;
         self.debug = self.target.new_surface_with_dimensions(dim).unwrap();
         self.ui = self.target.new_surface_with_dimensions(dim).unwrap();
+        self.full = self.target.new_surface_with_dimensions(dim).unwrap();
         // The rest are tile size surfaces
     }
 
