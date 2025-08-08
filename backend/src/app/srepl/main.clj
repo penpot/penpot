@@ -833,6 +833,19 @@
                     (with-open [reader (io/reader path)]
                       (process-data! system deleted-at (line-seq reader))))))))
 
+
+(defn process-chunks
+  "A generic function that executes the specified proc iterativelly
+  until 0 results is returned"
+  [cfg proc-fn & params]
+  (loop [total 0]
+    (let [result (apply proc-fn cfg params)]
+      (if (pos? result)
+        (do
+          (l/trc :hint "chunk processed" :size result :total total)
+          (recur (+ total result)))
+        total))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CASCADE FIXING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
