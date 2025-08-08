@@ -385,40 +385,39 @@
 ;; SCRIPTS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sql:get-unmigrated-files
-  "SELECT f.id, f.data
+(def ^:private sql:get-unmigrated-files
+  "SELECT f.id, f.data, f.created_at, f.modified_at
      FROM file AS f
     WHERE f.data IS NOT NULL
     ORDER BY f.modified_at ASC
     LIMIT ?
       FOR UPDATE")
 
-(defn migrate-to-storage
+(defn migrate-file-to-storage
   "Migrate the current existing files to store data in new storage
   tables."
-  [system & {:keys [chunk-size] :or {chunk-size 5000}}]
-  (let [timestamp (ct/now)]
-    (db/tx-run! system
-                (fn [{:keys [::db/conn]}]
-                  (reduce (fn [total {:keys [id data index]}]
-                            (l/dbg :hint "migrating file" :file-id (str id))
-                            (db/update! conn :file {:data nil} {:id id} ::db/return-keys false)
-                            (db/insert! conn :file-data
-                                        {:backend "db"
-                                         :metadata nil
-                                         :type "main"
-                                         :data data
-                                         :created-at timestamp
-                                         :modified-at timestamp
-                                         :file-id id
-                                         :id id}
-                                        {::db/return-keys false})
-                            (inc total))
-                          0
-                          (db/plan conn [sql:get-unmigrated-files chunk-size]
-                                   {:fetch-size 1}))))))
+  [system & {:keys [chunk-size] :or {chunk-size 500}}]
+  (db/tx-run! system
+              (fn [{:keys [::db/conn]}]
+                (reduce (fn [total {:keys [id data index created-at modified-at]}]
+                          (l/dbg :hint "migrating file" :file-id (str id))
+                          (db/update! conn :file {:data nil} {:id id} ::db/return-keys false)
+                          (db/insert! conn :file-data
+                                      {:backend "db"
+                                       :metadata nil
+                                       :type "main"
+                                       :data data
+                                       :created-at created-at
+                                       :modified-at modified-at
+                                       :file-id id
+                                       :id id}
+                                      {::db/return-keys false})
+                          (inc total))
+                        0
+                        (db/plan conn [sql:get-unmigrated-files chunk-size]
+                                 {:fetch-size 1})))))
 
-(def sql:get-migrated-files
+(def ^:private sql:get-migrated-files
   "SELECT f.id, f.data
      FROM file_data AS f
     WHERE f.data IS NOT NULL
@@ -427,16 +426,73 @@
     LIMIT ?
       FOR UPDATE")
 
-(defn rollback-from-storage
+(defn rollback-file-from-storage
   "Migrate back to the file table storage."
-  [system & {:keys [chunk-size] :or {chunk-size 5000}}]
+  [system & {:keys [chunk-size] :or {chunk-size 500}}]
   (db/tx-run! system
               (fn [{:keys [::db/conn]}]
-                (reduce (fn [total {:keys [id data index]}]
-                          (l/dbg :hint "rollback file" :file-id (str id) :index index)
+                (reduce (fn [total {:keys [id data]}]
+                          (l/dbg :hint "rollback file" :file-id (str id))
                           (db/update! conn :file {:data data} {:id id} ::db/return-keys false)
                           (db/delete! conn :file-data {:id id} ::db/return-keys false)
                           (inc total))
                         0
-                        (db/plan conn [sql:get-migrated-files]
+                        (db/plan conn [sql:get-migrated-files chunk-size]
+                                 {:fetch-size 1})))))
+
+(def ^:private sql:get-unmigrated-snapshots
+  "SELECT fc.id, fc.data, fc.file_id, fc.created_at, fc.updated_at AS modified_at
+     FROM file_change AS fc
+    WHERE fc.data IS NOT NULL
+      AND f.label IS NOT NULL
+    ORDER BY f.id ASC
+    LIMIT ?
+      FOR UPDATE")
+
+(defn migrate-snapshots-to-storage
+  "Migrate the current existing files to store data in new storage
+  tables."
+  [system & {:keys [chunk-size] :or {chunk-size 500}}]
+  (db/tx-run! system
+              (fn [{:keys [::db/conn]}]
+                (reduce (fn [total {:keys [id file-id data created-at modified-at]}]
+                          (l/dbg :hint "migrating file" :file-id (str id))
+                          (db/update! conn :file-change {:data nil} {:id id :file-id file-id} ::db/return-keys false)
+                          (db/insert! conn :file-data
+                                      {:backend "db"
+                                       :metadata nil
+                                       :type "snapshot"
+                                       :data data
+                                       :created-at created-at
+                                       :modified-at modified-at
+                                       :file-id file-id
+                                       :id id}
+                                      {::db/return-keys false})
+                          (inc total))
+                        0
+                        (db/plan conn [sql:get-unmigrated-snapshots chunk-size]
+                                 {:fetch-size 1})))))
+
+(def ^:private sql:get-migrated-snapshots
+  "SELECT f.id, f.data, f.file_id
+     FROM file_data AS f
+    WHERE f.data IS NOT NULL
+      AND f.type = 'snapshot'
+      AND f.id != f.file_id
+    ORDER BY f.id ASC
+    LIMIT ?
+      FOR UPDATE")
+
+(defn rollback-file-from-storage
+  "Migrate back to the file table storage."
+  [system & {:keys [chunk-size] :or {chunk-size 500}}]
+  (db/tx-run! system
+              (fn [{:keys [::db/conn]}]
+                (reduce (fn [total {:keys [id file-id data]}]
+                          (l/dbg :hint "rollback snapshot" :file-id (str id))
+                          (db/update! conn :file-change {:data data} {:id id :file-id file-id} ::db/return-keys false)
+                          (db/delete! conn :file-data {:id id :file-id file-id} ::db/return-keys false)
+                          (inc total))
+                        0
+                        (db/plan conn [sql:get-migrated-snapshots chunk-size]
                                  {:fetch-size 1})))))
