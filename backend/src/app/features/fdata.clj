@@ -391,7 +391,8 @@
      FROM file AS f
     WHERE f.data IS NOT NULL
    WINDOW w AS (order by f.modified_at ASC)
-    ORDER BY f.modified_at ASC")
+    ORDER BY f.modified_at ASC
+     LIMIT 100000")
 
 (defn migrate-to-storage
   "Migrate the current existing files to store data in new storage
