@@ -105,8 +105,7 @@ impl State {
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = tiles::Tile(x, y);
-                    self.render_state.surfaces.remove_cached_tile_surface(tile);
-                    self.render_state.tiles.remove_shape_at(tile, id);
+                    self.render_state.remove_cached_tile_shape(tile, id);
                 }
             }
         }

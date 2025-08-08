@@ -890,6 +890,20 @@ impl RenderState {
         )
     }
 
+    pub fn get_aligned_tile_bounds(&mut self, tile: tiles::Tile) -> Rect {
+        let scale = self.get_scale();
+        let start_tile_x =
+            (self.viewbox.area.left * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
+        let start_tile_y =
+            (self.viewbox.area.top * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
+        Rect::from_xywh(
+            (tile.0 as f32 * tiles::TILE_SIZE) - start_tile_x,
+            (tile.1 as f32 * tiles::TILE_SIZE) - start_tile_y,
+            tiles::TILE_SIZE,
+            tiles::TILE_SIZE,
+        )
+    }
+
     // Returns the bounds of the current tile relative to the viewbox,
     // aligned to the nearest tile grid origin.
     //
@@ -899,18 +913,7 @@ impl RenderState {
     // with the global tile grid, which is useful for rendering tiles in a
     /// consistent and predictable layout.
     pub fn get_current_aligned_tile_bounds(&mut self) -> Rect {
-        let tiles::Tile(tile_x, tile_y) = self.current_tile.unwrap();
-        let scale = self.get_scale();
-        let start_tile_x =
-            (self.viewbox.area.left * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
-        let start_tile_y =
-            (self.viewbox.area.top * scale / tiles::TILE_SIZE).floor() * tiles::TILE_SIZE;
-        Rect::from_xywh(
-            (tile_x as f32 * tiles::TILE_SIZE) - start_tile_x,
-            (tile_y as f32 * tiles::TILE_SIZE) - start_tile_y,
-            tiles::TILE_SIZE,
-            tiles::TILE_SIZE,
-        )
+        self.get_aligned_tile_bounds(self.current_tile.unwrap())
     }
 
     pub fn render_shape_tree_partial_uncached(
@@ -1174,27 +1177,30 @@ impl RenderState {
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree, modifiers);
+        let old_tiles: HashSet<tiles::Tile> = self
+            .tiles
+            .get_tiles_of(shape.id)
+            .map_or(HashSet::new(), |tiles| tiles.iter().cloned().collect());
         let new_tiles: HashSet<tiles::Tile> = (rsx..=rex)
             .flat_map(|x| (rsy..=rey).map(move |y| tiles::Tile(x, y)))
             .collect();
 
-        // Update tiles where the shape was
-        if let Some(tiles) = self.tiles.get_tiles_of(shape.id) {
-            for tile in tiles.iter() {
-                self.surfaces.remove_cached_tile_surface(*tile);
-            }
-            // Remove shape from tiles not used
-            let diff: HashSet<_> = tiles.difference(&new_tiles).cloned().collect();
-            for tile in diff.iter() {
-                self.tiles.remove_shape_at(*tile, shape.id);
-            }
+        // First, remove the shape from all tiles where it was previously located
+        for tile in old_tiles {
+            self.remove_cached_tile_shape(tile, shape.id);
         }
 
-        // Update tiles matching the actual selrect
+        // Then, add the shape to the new tiles
         for tile in new_tiles {
             self.tiles.add_shape_at(tile, shape.id);
-            self.surfaces.remove_cached_tile_surface(tile);
         }
+    }
+
+    pub fn remove_cached_tile_shape(&mut self, tile: tiles::Tile, id: Uuid) {
+        let rect = self.get_aligned_tile_bounds(tile);
+        self.surfaces
+            .remove_cached_tile_surface(tile, rect, self.background_color);
+        self.tiles.remove_shape_at(tile, id);
     }
 
     pub fn rebuild_tiles_shallow(
@@ -1205,7 +1211,7 @@ impl RenderState {
     ) {
         performance::begin_measure!("rebuild_tiles_shallow");
         self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles();
+        self.surfaces.remove_cached_tiles(self.background_color);
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
@@ -1235,7 +1241,7 @@ impl RenderState {
     ) {
         performance::begin_measure!("rebuild_tiles");
         self.tiles.invalidate();
-        self.surfaces.remove_cached_tiles();
+        self.surfaces.remove_cached_tiles(self.background_color);
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
