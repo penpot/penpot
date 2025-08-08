@@ -185,7 +185,7 @@
   [:map {:title "PartialFile"}
    [:id ::sm/uuid]
    [:revn {:min 0} ::sm/int]
-   [:page :any]])
+   [:page [:map-of :keyword ::sm/any]]])
 
 (sv/defmethod ::get-file-data-for-thumbnail
   "Retrieves the data for generate the thumbnail of the file. Used

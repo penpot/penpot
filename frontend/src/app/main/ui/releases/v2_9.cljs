@@ -74,42 +74,12 @@
           [:& c/navigation-bullets
            {:slide slide
             :navigate navigate
-            :total 3}]
+            :total 2}]
 
           [:button {:on-click next
                     :class (stl/css :next-btn)} "Continue"]]]]]]
 
      1
-     [:div {:class (stl/css-case :modal-overlay true)}
-      [:div.animated {:class klass}
-       [:div {:class (stl/css :modal-container)}
-        [:img {:src "images/features/2.9-overrides.gif"
-               :class (stl/css :start-image)
-               :border "0"
-               :alt "Component text overrides"}]
-
-        [:div {:class (stl/css :modal-content)}
-         [:div {:class (stl/css :modal-header)}
-          [:h1 {:class (stl/css :modal-title)}
-           "Component text overrides"]]
-
-         [:div {:class (stl/css :feature)}
-          [:p {:class (stl/css :feature-content)}
-           "You can now edit the text content independently from its properties—such as color, effects, font size, or weight—allowing you to update the wording while preserving the styling."]
-
-          [:p {:class (stl/css :feature-content)}
-           "This change (inspired by community feedback) greatly improves consistency, predictability, and control when working with texts in components."]]
-
-         [:div {:class (stl/css :navigation)}
-          [:& c/navigation-bullets
-           {:slide slide
-            :navigate navigate
-            :total 3}]
-
-          [:button {:on-click next
-                    :class (stl/css :next-btn)} "Continue"]]]]]]
-
-     2
      [:div {:class (stl/css-case :modal-overlay true)}
       [:div.animated {:class klass}
        [:div {:class (stl/css :modal-container)}
@@ -135,7 +105,7 @@
           [:& c/navigation-bullets
            {:slide slide
             :navigate navigate
-            :total 3}]
+            :total 2}]
 
           [:button {:on-click finish
                     :class (stl/css :next-btn)} "Let's go"]]]]]])))
