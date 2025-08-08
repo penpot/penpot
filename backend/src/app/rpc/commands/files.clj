@@ -252,8 +252,6 @@
                    (assoc :permissions perms)
                    (check-version!))]
 
-      ;; (app.common.pprint/pprint file)
-
       (-> (cfeat/get-team-enabled-features cf/flags team)
           (cfeat/check-client-features! (:features params))
           (cfeat/check-file-features! (:features file)))
