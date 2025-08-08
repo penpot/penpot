@@ -303,7 +303,16 @@ impl Surfaces {
         self.tiles.has(tile)
     }
 
-    pub fn remove_cached_tile_surface(&mut self, tile: Tile) -> bool {
+    pub fn remove_cached_tile_surface(
+        &mut self,
+        tile: Tile,
+        rect: skia::Rect,
+        color: skia::Color,
+    ) -> bool {
+        // Clear the specific tile area in the cache surface with color
+        let mut paint = skia::Paint::default();
+        paint.set_color(color);
+        self.cache.canvas().draw_rect(rect, &paint);
         self.tiles.remove(tile)
     }
 
