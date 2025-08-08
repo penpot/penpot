@@ -21,6 +21,9 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.selection :as dws]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.features :as features]
+   [app.main.store :as st]
+   [app.render-wasm.api :as wasm.api]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))

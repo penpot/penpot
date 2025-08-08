@@ -6,14 +6,23 @@
 
 (ns app.main.data.workspace.path.shapes-to-path
   (:require
+   [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cph]
    [app.common.types.container :as ctn]
    [app.common.types.path :as path]
+   [app.common.types.text :as txt]
    [app.main.data.changes :as dch]
    [app.main.data.helpers :as dsh]
+   [app.main.features :as features]
+   [app.render-wasm.api :as wasm.api]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+(def ^:private dissoc-attrs
+  [:x :y :width :height
+   :rx :ry :r1 :r2 :r3 :r4
+   :metadata])
 
 (defn convert-selected-to-path
   ([]
@@ -22,21 +31,53 @@
    (ptk/reify ::convert-selected-to-path
      ptk/WatchEvent
      (watch [it state _]
-       (let [page-id  (:current-page-id state)
-             objects  (dsh/lookup-page-objects state)
-             selected (->> (or ids (dsh/lookup-selected state))
-                           (remove #(ctn/has-any-copy-parent? objects (get objects %))))
+       (if (features/active-feature? state "render-wasm/v1")
+         (let [page-id  (:current-page-id state)
+               objects  (dsh/lookup-page-objects state)
+               selected
+               (->> (or ids (dsh/lookup-selected state))
+                    (remove #(ctn/has-any-copy-parent? objects (get objects %))))
 
-             children-ids
-             (into #{}
-                   (mapcat #(cph/get-children-ids objects %))
-                   selected)
+               children-ids
+               (into #{}
+                     (mapcat #(cph/get-children-ids objects %))
+                     selected)
 
-             changes
-             (-> (pcb/empty-changes it page-id)
-                 (pcb/with-objects objects)
-                 ;; FIXME: use with-objects? true
-                 (pcb/update-shapes selected #(path/convert-to-path % objects))
-                 (pcb/remove-objects children-ids))]
+               changes
+               (-> (pcb/empty-changes it page-id)
+                   (pcb/with-objects objects)
+                   (pcb/update-shapes
+                    selected
+                    (fn [shape]
+                      (let [content (wasm.api/shape-to-path (:id shape))]
+                        (-> shape
+                            (assoc :type :path)
+                            (cond-> (cph/text-shape? shape)
+                              (assoc :fills
+                                     (->> (txt/node-seq txt/is-text-node? (:content shape))
+                                          (map :fills)
+                                          (first))))
+                            (cond-> (cph/image-shape? shape)
+                              (assoc :fill-image (get shape :metadata)))
+                            (d/without-keys dissoc-attrs)
+                            (path/update-geometry content)))))
+                   (pcb/remove-objects children-ids))]
+           (rx/of (dch/commit-changes changes)))
 
-         (rx/of (dch/commit-changes changes)))))))
+         (let [page-id  (:current-page-id state)
+               objects  (dsh/lookup-page-objects state)
+               selected (->> (or ids (dsh/lookup-selected state))
+                             (remove #(ctn/has-any-copy-parent? objects (get objects %))))
+
+               children-ids
+               (into #{}
+                     (mapcat #(cph/get-children-ids objects %))
+                     selected)
+
+               changes
+               (-> (pcb/empty-changes it page-id)
+                   (pcb/with-objects objects)
+                   (pcb/update-shapes selected path/convert-to-path {:with-objects? true})
+                   (pcb/remove-objects children-ids))]
+
+           (rx/of (dch/commit-changes changes))))))))

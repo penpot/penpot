@@ -40,6 +40,7 @@ macro_rules! with_state_mut {
     }};
 }
 
+#[macro_export]
 macro_rules! with_state {
     ($state:ident, $block:block) => {{
         let $state = unsafe {
@@ -505,7 +506,7 @@ pub extern "C" fn set_structure_modifiers() {
                     let Some(shape) = state.shapes.get(&entry.id) else {
                         continue;
                     };
-                    for id in shape.all_children_with_self(&state.shapes, true) {
+                    for id in shape.all_children(&state.shapes, true, true) {
                         state.scale_content.insert(id, entry.value);
                     }
                 }

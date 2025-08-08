@@ -11,6 +11,7 @@
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.path.shapes-to-path :as dwps]
    [app.main.data.workspace.shortcuts :as sc]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
@@ -36,8 +37,15 @@
         (and (= (count selected) 1)
              (not (contains? #{:group :bool} (:type (first selected)))))
 
-        disabled-bool-btns (or (empty? selected) has-invalid-shapes? first-not-group-like?)
-        disabled-flatten   (or (empty? selected) has-invalid-shapes?)
+        disabled-bool-btns
+        (if (features/active-feature? @st/state "render-wasm/v1")
+          false
+          (or (empty? selected) has-invalid-shapes? first-not-group-like?))
+
+        disabled-flatten
+        (if (features/active-feature? @st/state "render-wasm/v1")
+          false
+          (or (empty? selected) has-invalid-shapes?))
 
         set-bool
         (mf/use-fn

@@ -18,9 +18,11 @@ pub mod modifiers;
 mod paths;
 mod rects;
 mod shadows;
+mod shape_to_path;
 mod strokes;
 mod svgraw;
 mod text;
+pub mod text_paths;
 mod transform;
 
 pub use blurs::*;
@@ -35,6 +37,7 @@ pub use modifiers::*;
 pub use paths::*;
 pub use rects::*;
 pub use shadows::*;
+pub use shape_to_path::*;
 pub use strokes::*;
 pub use svgraw::*;
 pub use text::*;
@@ -791,23 +794,27 @@ impl Shape {
         }
     }
 
-    pub fn all_children_with_self(
+    pub fn all_children(
         &self,
         shapes: &ShapesPool,
         include_hidden: bool,
+        include_self: bool,
     ) -> IndexSet<Uuid> {
-        once(self.id)
-            .chain(
-                self.children_ids(include_hidden)
-                    .into_iter()
-                    .flat_map(|id| {
-                        shapes
-                            .get(&id)
-                            .map(|s| s.all_children_with_self(shapes, include_hidden))
-                            .unwrap_or_default()
-                    }),
-            )
-            .collect()
+        let all_children = self
+            .children_ids(include_hidden)
+            .into_iter()
+            .flat_map(|id| {
+                shapes
+                    .get(&id)
+                    .map(|s| s.all_children(shapes, include_hidden, true))
+                    .unwrap_or_default()
+            });
+
+        if include_self {
+            once(self.id).chain(all_children).collect()
+        } else {
+            all_children.collect()
+        }
     }
 
     pub fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {
@@ -928,6 +935,17 @@ impl Shape {
                 path.transform(transform);
             }
         }
+        if let Type::Text(text) = &mut self.shape_type {
+            text.transform(transform);
+        }
+    }
+
+    pub fn transformed(&self, transform: Option<&Matrix>) -> Self {
+        let mut shape = self.clone();
+        if let Some(transform) = transform {
+            shape.apply_transform(transform);
+        }
+        shape
     }
 
     pub fn is_absolute(&self) -> bool {

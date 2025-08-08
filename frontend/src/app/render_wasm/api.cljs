@@ -54,6 +54,7 @@
 (def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
 (def GRID-LAYOUT-COLUMN-ENTRY-SIZE 5)
 (def GRID-LAYOUT-CELL-ENTRY-SIZE 37)
+(def RAW-SEGMENT-SIZE 28)
 
 (defn modifier-get-entries-size
   "Returns the list of a modifier list in bytes"
@@ -714,6 +715,7 @@
         opacity      (dm/get-prop shape :opacity)
         hidden       (dm/get-prop shape :hidden)
         content      (dm/get-prop shape :content)
+        bool-type    (dm/get-prop shape :bool-type)
         grow-type    (dm/get-prop shape :grow-type)
         blur         (dm/get-prop shape :blur)
         corners      (when (some? (dm/get-prop shape :r1))
@@ -740,6 +742,8 @@
       (set-masked masked))
     (when (some? blur)
       (set-shape-blur blur))
+    (when (= type :bool)
+      (set-shape-bool-type bool-type))
     (when (and (some? content)
                (or (= type :path)
                    (= type :bool)))
@@ -1052,6 +1056,51 @@
         column  (aget heapi32 (mem/ptr8->ptr32 (+ offset 4)))]
     (h/call wasm/internal-module "_free_bytes")
     [row column]))
+
+(defn shape-to-path
+  [id]
+  (use-shape id)
+  (let [offset (h/call wasm/internal-module "_current_to_path")
+
+        heapu32 (mem/get-heap-u32)
+        heapu8 (mem/get-heap-u8)
+
+        len (aget heapu32 (mem/ptr8->ptr32 offset))
+        from-offset (+ offset 4)
+        to-offset   (+ offset 4 (* len RAW-SEGMENT-SIZE))
+
+        data (js/Uint8Array. (.slice heapu8 from-offset to-offset))
+
+        content (path/from-bytes data)]
+    (h/call wasm/internal-module "_free_bytes")
+    content))
+
+(defn calculate-bool
+  [bool-type ids]
+  (let [num-ids (count ids)
+        offset  (mem/alloc-bytes-32 (* CHILD-ENTRY-SIZE num-ids))
+        heap    (mem/get-heap-u32)]
+
+
+    (reduce (fn [offset id]
+              (sr/heapu32-set-uuid id heap offset)
+              (+ offset CHILD-ENTRY-SIZE))
+            offset
+            (rseq ids)))
+
+  (let [offset  (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
+        heapu32 (mem/get-heap-u32)
+        heapu8 (mem/get-heap-u8)
+
+        len (aget heapu32 (mem/ptr8->ptr32 offset))
+        from-offset (+ offset 4)
+        to-offset   (+ offset 4 (* len RAW-SEGMENT-SIZE))
+
+        data (js/Uint8Array. (.slice heapu8 from-offset to-offset))
+
+        content (path/from-bytes data)]
+    (h/call wasm/internal-module "_free_bytes")
+    content))
 
 (defonce module
   (delay

@@ -1,6 +1,11 @@
 use crate::shapes::text::TextContent;
-use skia_safe::{self as skia, textlayout::ParagraphBuilder, Path, Paint};
+use skia_safe::{
+    self as skia, textlayout::Paragraph as SkiaParagraph, textlayout::ParagraphBuilder,
+    FontMetrics, Point, Rect, TextBlob,
+};
 use std::ops::Deref;
+
+use crate::{with_state_mut, STATE};
 
 pub struct TextPaths(TextContent);
 
@@ -11,11 +16,10 @@ impl TextPaths {
     pub fn new(content: TextContent) -> Self {
         Self(content)
     }
-        
-    pub fn get_skia_paragraphs(&self) -> Vec<ParagraphBuilder> {
-        let mut paragraphs = self.to_paragraphs();
-        self.collect_paragraphs(&mut paragraphs);
-        paragraphs
+
+    pub fn get_skia_paragraphs(&self) -> Vec<Vec<ParagraphBuilder>> {
+        let paragraphs = self.to_paragraphs();
+        self.collect_paragraphs(paragraphs)
     }
 
     pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
@@ -23,64 +27,67 @@ impl TextPaths {
 
         let mut offset_y = self.bounds.y();
         let mut paragraphs = self.get_skia_paragraphs();
-        for paragraph_builder in paragraphs.iter_mut() {
-            // 1. Get paragraph and set the width layout
-            let mut skia_paragraph = paragraph_builder.build();
-            let text = paragraph_builder.get_text();
-            let paragraph_width = self.bounds.width();
-            skia_paragraph.layout(paragraph_width);
 
-            let mut line_offset_y = offset_y;
+        for paragraphs in paragraphs.iter_mut() {
+            for paragraph_builder in paragraphs.iter_mut() {
+                // 1. Get paragraph and set the width layout
+                let mut skia_paragraph = paragraph_builder.build();
+                let text = paragraph_builder.get_text();
+                let paragraph_width = self.bounds.width();
+                skia_paragraph.layout(paragraph_width);
 
-            // 2. Iterate through each line in the paragraph
-            for line_metrics in skia_paragraph.get_line_metrics() {
-                let line_baseline = line_metrics.baseline as f32;
-                let start = line_metrics.start_index;
-                let end = line_metrics.end_index;
+                let mut line_offset_y = offset_y;
 
-                // 3. Get styles present in line for each text leaf
-                let style_metrics = line_metrics.get_style_metrics(start..end);
+                // 2. Iterate through each line in the paragraph
+                for line_metrics in skia_paragraph.get_line_metrics() {
+                    let line_baseline = line_metrics.baseline as f32;
+                    let start = line_metrics.start_index;
+                    let end = line_metrics.end_index;
 
-                let mut offset_x = 0.0;
+                    // 3. Get styles present in line for each text leaf
+                    let style_metrics = line_metrics.get_style_metrics(start..end);
 
-                for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
-                    let end_index = style_metrics.get(i + 1).map_or(end, |next| next.0);
+                    let mut offset_x = 0.0;
 
-                    let start_byte = text
-                        .char_indices()
-                        .nth(*start_index)
-                        .map(|(i, _)| i)
-                        .unwrap_or(0);
-                    let end_byte = text
-                        .char_indices()
-                        .nth(end_index)
-                        .map(|(i, _)| i)
-                        .unwrap_or(text.len());
+                    for (i, (start_index, style_metric)) in style_metrics.iter().enumerate() {
+                        let end_index = style_metrics.get(i + 1).map_or(end, |next| next.0);
 
-                    let leaf_text = &text[start_byte..end_byte];
+                        let start_byte = text
+                            .char_indices()
+                            .nth(*start_index)
+                            .map(|(i, _)| i)
+                            .unwrap_or(0);
+                        let end_byte = text
+                            .char_indices()
+                            .nth(end_index)
+                            .map(|(i, _)| i)
+                            .unwrap_or(text.len());
 
-                    let font = skia_paragraph.get_font_at(*start_index);
+                        let leaf_text = &text[start_byte..end_byte];
 
-                    let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
-                    let blob_offset_y = line_offset_y;
+                        let font = skia_paragraph.get_font_at(*start_index);
 
-                    // 4. Get the path for each text leaf
-                    if let Some((text_path, paint)) = self.generate_text_path(
-                        leaf_text,
-                        &font,
-                        blob_offset_x,
-                        blob_offset_y,
-                        style_metric,
-                        antialias,
-                    ) {
-                        let text_width = font.measure_text(leaf_text, None).0;
-                        offset_x += text_width;
-                        paths.push((text_path, paint));
+                        let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
+                        let blob_offset_y = line_offset_y;
+
+                        // 4. Get the path for each text leaf
+                        if let Some((text_path, paint)) = self.generate_text_path(
+                            leaf_text,
+                            &font,
+                            blob_offset_x,
+                            blob_offset_y,
+                            style_metric,
+                            antialias,
+                        ) {
+                            let text_width = font.measure_text(leaf_text, None).0;
+                            offset_x += text_width;
+                            paths.push((text_path, paint));
+                        }
                     }
+                    line_offset_y = offset_y + line_baseline;
                 }
-                line_offset_y = offset_y + line_baseline;
+                offset_y += skia_paragraph.height();
             }
-            offset_y += skia_paragraph.height();
         }
         paths
     }
@@ -163,7 +170,6 @@ impl TextPaths {
             _ => None,
         }
     }
-
 
     fn get_text_blob_path(
         leaf_text: &str,
