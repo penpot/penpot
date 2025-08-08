@@ -226,9 +226,9 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 
 #[no_mangle]
 pub extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
+    with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        shape.set_parent(id);
+        state.set_parent_for_current_shape(id);
     });
 }
 
