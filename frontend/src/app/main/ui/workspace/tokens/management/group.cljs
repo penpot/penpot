@@ -32,6 +32,7 @@
     :letter-spacing "text-letterspacing"
     :text-case "text-mixed"
     :text-decoration "text-underlined"
+    :font-weight "text-font-weight"
     :opacity "percentage"
     :number "number"
     :rotation "rotation"

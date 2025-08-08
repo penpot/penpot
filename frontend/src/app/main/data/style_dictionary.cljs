@@ -193,6 +193,23 @@
       :else
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-text-decoration value)]})))
 
+(defn- parse-sd-token-font-weight-value
+  "Parses `value` of a font-weight `sd-token` into a map like `{:value \"700\"}` or `{:value \"700 Italic\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`."
+  [value]
+  (let [valid-font-weight (ctt/valid-font-weight-variant value)
+        references (seq (ctob/find-token-value-references value))]
+    (cond
+      valid-font-weight
+      {:value value}
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-font-weight value)]})))
+
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
   The `get-origin-token` argument should be a function that takes an
@@ -237,6 +254,7 @@
                                 :stroke-width (parse-sd-token-stroke-width-value value has-references?)
                                 :text-case (parse-sd-token-text-case-value value)
                                 :text-decoration (parse-sd-token-text-decoration-value value)
+                                :font-weight (parse-sd-token-font-weight-value value)
                                 :number (parse-sd-token-number-value value)
                                 (parse-sd-token-general-value value))
            output-token (cond (:errors parsed-token-value)

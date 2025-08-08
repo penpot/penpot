@@ -660,6 +660,40 @@
              (t/is (= (:text-decoration (:applied-tokens text-1')) (:name token-target')))
              (t/is (= (:text-decoration style-text-blocks) "underline")))))))))
 
+(t/deftest test-apply-font-weight
+  (t/testing "applies font-weight token and updates the font weight"
+    (t/async
+      done
+      (let [font-weight-token {:name "font-weight"
+                               :value "regular"
+                               :type :font-weight}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token font-weight-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-weight}
+                                       :token (toht/get-token file "font-weight")
+                                       :on-update-shape dwta/update-font-weight})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "font-weight")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-weight (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:font-weight style-text-blocks) "400")))))))))
+
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"
     (t/async

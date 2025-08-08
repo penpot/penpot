@@ -80,6 +80,10 @@
    {:error/code :error.style-dictionary/invalid-token-value-text-decoration
     :error/fn #(tr "workspace.tokens.invalid-text-decoration-token-value" %)}
 
+   :error.style-dictionary/invalid-token-value-font-weight
+   {:error/code :error.style-dictionary/invalid-token-value-font-weight
+    :error/fn #(tr "workspace.tokens.invalid-font-weight-token-value" %)}
+
    :error/unknown
    {:error/code :error/unknown
     :error/fn #(tr "labels.unknown-error")}})

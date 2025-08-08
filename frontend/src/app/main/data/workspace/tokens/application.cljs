@@ -326,6 +326,33 @@
      (st/emit! (ptk/data-event :expand-text-more-options))
      (update-text-decoration value shape-ids attributes page-id))))
 
+(defn- generate-font-weight-text-shape-update
+  [font-variant shape-ids page-id]
+  (let [update-node? (fn [node]
+                       (or (txt/is-text-node? node)
+                           (txt/is-paragraph-node? node)))
+        update-fn (fn [node _]
+                    (let [font (fonts/get-font-data (:font-id node))
+                          font-variant-id (or
+                                           (fonts/find-variant font font-variant)
+                                           ;; When variant with matching weight but not with matching style (italic) is found, use that one
+                                           (fonts/find-variant font (dissoc font-variant :style)))]
+                      (if font-variant-id
+                        (-> node
+                            (d/txt-merge (assoc font-variant :font-variant-id (:id font-variant-id)))
+                            (cty/remove-typography-from-node))
+                        node)))]
+    (dwsh/update-shapes shape-ids
+                        #(txt/update-text-content % update-node? update-fn nil)
+                        {:ignore-touched true
+                         :page-id page-id})))
+
+(defn update-font-weight
+  ([value shape-ids attributes] (update-font-weight value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (when-let [font-variant (ctt/valid-font-weight-variant value)]
+     (generate-font-weight-text-shape-update font-variant shape-ids page-id))))
+
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
 (defn apply-token
@@ -502,6 +529,14 @@
     :modal {:key :tokens/text-case
             :fields [{:label "Text Case"
                       :key :text-case}]}}
+
+   :font-weight
+   {:title "Font Weight"
+    :attributes ctt/font-weight-keys
+    :on-update-shape update-font-weight
+    :modal {:key :tokens/font-weight
+            :fields [{:label "Font Weight"
+                      :key :font-weight}]}}
 
    :text-decoration
    {:title "Text Decoration"
