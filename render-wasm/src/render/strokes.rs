@@ -9,19 +9,6 @@ use super::{RenderState, SurfaceId};
 use crate::render::text::{self};
 use crate::render::{get_dest_rect, get_source_rect};
 
-/// Composes blur and shadow filters, returning a combined filter if both are present,
-/// or the individual filter if only one is present, or None if neither is present.
-fn compose_filters(blur: Option<&ImageFilter>, shadow: Option<&ImageFilter>) -> Option<ImageFilter> {
-    match (blur, shadow) {
-        (Some(blur_filter), Some(shadow_filter)) => {
-            ImageFilter::compose(blur_filter, shadow_filter)
-        }
-        (Some(blur_filter), None) => Some(blur_filter.clone()),
-        (None, Some(shadow_filter)) => Some(shadow_filter.clone()),
-        (None, None) => None,
-    }
-}
-
 // FIXME: See if we can simplify these arguments
 #[allow(clippy::too_many_arguments)]
 fn draw_stroke_on_rect(
@@ -33,7 +20,6 @@ fn draw_stroke_on_rect(
     svg_attrs: &HashMap<String, String>,
     scale: f32,
     shadow: Option<&ImageFilter>,
-    blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
     // Draw the different kind of strokes for a rect is straightforward, we just need apply a stroke to:
@@ -43,9 +29,9 @@ fn draw_stroke_on_rect(
     let stroke_rect = stroke.outer_rect(rect);
     let mut paint = stroke.to_paint(selrect, svg_attrs, scale, antialias);
 
-    // Apply both blur and shadow filters if present, composing them if necessary.
-    let filter = compose_filters(blur, shadow);
-    paint.set_image_filter(filter);
+    if let Some(filter) = shadow {
+        paint.set_image_filter(filter.clone());
+    }
 
     match corners {
         Some(radii) => {
@@ -69,7 +55,6 @@ fn draw_stroke_on_circle(
     svg_attrs: &HashMap<String, String>,
     scale: f32,
     shadow: Option<&ImageFilter>,
-    blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
     // Draw the different kind of strokes for an oval is straightforward, we just need apply a stroke to:
@@ -79,9 +64,9 @@ fn draw_stroke_on_circle(
     let stroke_rect = stroke.outer_rect(rect);
     let mut paint = stroke.to_paint(selrect, svg_attrs, scale, antialias);
 
-    // Apply both blur and shadow filters if present, composing them if necessary.
-    let filter = compose_filters(blur, shadow);
-    paint.set_image_filter(filter);
+    if let Some(filter) = shadow {
+        paint.set_image_filter(filter.clone());
+    }
 
     canvas.draw_oval(stroke_rect, &paint);
 }
@@ -90,17 +75,11 @@ fn draw_outer_stroke_path(
     canvas: &skia::Canvas,
     path: &skia::Path,
     paint: &skia::Paint,
-    blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
     let mut outer_paint = skia::Paint::default();
     outer_paint.set_blend_mode(skia::BlendMode::SrcOver);
     outer_paint.set_anti_alias(antialias);
-
-    if let Some(filter) = blur {
-        outer_paint.set_image_filter(filter.clone());
-    }
-
     let layer_rec = skia::canvas::SaveLayerRec::default().paint(&outer_paint);
     canvas.save_layer(&layer_rec);
     canvas.draw_path(path, paint);
@@ -108,7 +87,6 @@ fn draw_outer_stroke_path(
     let mut clear_paint = skia::Paint::default();
     clear_paint.set_blend_mode(skia::BlendMode::Clear);
     clear_paint.set_anti_alias(antialias);
-
     canvas.draw_path(path, &clear_paint);
 
     canvas.restore();
@@ -119,17 +97,9 @@ fn draw_inner_stroke_path(
     canvas: &skia::Canvas,
     path: &skia::Path,
     paint: &skia::Paint,
-    blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
-    let mut inner_paint = skia::Paint::default();
-    inner_paint.set_anti_alias(antialias);
-    if let Some(filter) = blur {
-        inner_paint.set_image_filter(filter.clone());
-    }
-
-    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&inner_paint);
-    canvas.save_layer(&layer_rec);
+    canvas.save();
     canvas.clip_path(path, skia::ClipOp::Intersect, antialias);
     canvas.draw_path(path, paint);
     canvas.restore();
@@ -147,7 +117,6 @@ pub fn draw_stroke_on_path(
     svg_attrs: &HashMap<String, String>,
     scale: f32,
     shadow: Option<&ImageFilter>,
-    blur: Option<&ImageFilter>,
     antialias: bool,
 ) {
     let mut skia_path = path.to_skia_path();
@@ -158,18 +127,19 @@ pub fn draw_stroke_on_path(
     let mut paint: skia_safe::Handle<_> =
         stroke.to_stroked_paint(is_open, selrect, svg_attrs, scale, antialias);
 
-    let filter = compose_filters(blur, shadow);
-    paint.set_image_filter(filter);
+    if let Some(filter) = shadow {
+        paint.set_image_filter(filter.clone());
+    }
 
     match stroke.render_kind(is_open) {
         StrokeKind::Inner => {
-            draw_inner_stroke_path(canvas, &skia_path, &paint, blur, antialias);
+            draw_inner_stroke_path(canvas, &skia_path, &paint, antialias);
         }
         StrokeKind::Center => {
             canvas.draw_path(&skia_path, &paint);
         }
         StrokeKind::Outer => {
-            draw_outer_stroke_path(canvas, &skia_path, &paint, blur, antialias);
+            draw_outer_stroke_path(canvas, &skia_path, &paint, antialias);
         }
     }
 
@@ -418,7 +388,6 @@ fn draw_image_stroke_in_container(
                 svg_attrs,
                 scale,
                 None,
-                None,
                 antialias,
             );
         }
@@ -429,7 +398,6 @@ fn draw_image_stroke_in_container(
             &outer_rect,
             svg_attrs,
             scale,
-            None,
             None,
             antialias,
         ),
@@ -549,14 +517,12 @@ pub fn render(
                     svg_attrs,
                     scale,
                     shadow,
-                    shape.image_filter(1.).as_ref(),
                     antialias,
                 );
             }
             Type::Circle => draw_stroke_on_circle(
-                canvas, stroke, &selrect, &selrect, svg_attrs, scale, shadow, shape.image_filter(1.).as_ref(), antialias,
+                canvas, stroke, &selrect, &selrect, svg_attrs, scale, shadow, antialias,
             ),
-            //TODO: Add blur and shadow to text
             Type::Text(_) => {
                 text::render(
                     render_state,
@@ -577,7 +543,6 @@ pub fn render(
                         svg_attrs,
                         scale,
                         shadow,
-                        shape.image_filter(1.).as_ref(),
                         antialias,
                     );
                 }
@@ -607,7 +572,6 @@ pub fn render_text_paths(
     let mut paint: skia_safe::Handle<_> =
         stroke.to_text_stroked_paint(false, selrect, svg_attrs, scale, antialias);
 
-    //TODO: Add blur and shadow to text
     if let Some(filter) = shadow {
         paint.set_image_filter(filter.clone());
     }
@@ -615,8 +579,7 @@ pub fn render_text_paths(
     match stroke.render_kind(false) {
         StrokeKind::Inner => {
             for (path, _) in paths {
-                //TODO: Add blur and shadow to text
-                draw_inner_stroke_path(canvas, path, &paint, None, antialias);
+                draw_inner_stroke_path(canvas, path, &paint, antialias);
             }
         }
         StrokeKind::Center => {
@@ -626,8 +589,7 @@ pub fn render_text_paths(
         }
         StrokeKind::Outer => {
             for (path, _) in paths {
-                //TODO: Add blur and shadow to text
-                draw_outer_stroke_path(canvas, path, &paint, None, antialias);
+                draw_outer_stroke_path(canvas, path, &paint, antialias);
             }
         }
     }
