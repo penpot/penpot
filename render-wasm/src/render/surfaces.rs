@@ -24,8 +24,9 @@ pub enum SurfaceId {
     Strokes = 0b0_0001_0000,
     DropShadows = 0b0_0010_0000,
     InnerShadows = 0b0_0100_0000,
-    UI = 0b0_1000_0000,
-    Debug = 0b1_0000_0000,
+    Blurs = 0b0_1000_0000,
+    UI = 0b1_0000_0000,
+    Debug = 0b10_0000_0000,
 }
 
 pub struct Surfaces {
@@ -42,6 +43,8 @@ pub struct Surfaces {
     drop_shadows: skia::Surface,
     // used for rendering over shadows.
     inner_shadows: skia::Surface,
+    // used for rendering blurs
+    blurs: skia::Surface,
     // used for displaying auxiliary workspace elements
     ui: skia::Surface,
     // for drawing debug info.
@@ -73,6 +76,8 @@ impl Surfaces {
             gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
         let inner_shadows =
             gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
+        let blurs =
+            gpu_state.create_surface_with_isize("blurs".to_string(), extra_tile_dims);
         let shape_fills =
             gpu_state.create_surface_with_isize("shape_fills".to_string(), extra_tile_dims);
         let shape_strokes =
@@ -88,6 +93,7 @@ impl Surfaces {
             current,
             drop_shadows,
             inner_shadows,
+            blurs,
             shape_fills,
             shape_strokes,
             ui,
@@ -180,6 +186,7 @@ impl Surfaces {
             -render_area.left() + self.margins.width as f32 / scale,
             -render_area.top() + self.margins.height as f32 / scale,
         );
+        
         self.apply_mut(
             SurfaceId::Fills as u32
                 | SurfaceId::Strokes as u32
@@ -201,6 +208,7 @@ impl Surfaces {
             SurfaceId::Current => &mut self.current,
             SurfaceId::DropShadows => &mut self.drop_shadows,
             SurfaceId::InnerShadows => &mut self.inner_shadows,
+            SurfaceId::Blurs => &mut self.blurs,
             SurfaceId::Fills => &mut self.shape_fills,
             SurfaceId::Strokes => &mut self.shape_strokes,
             SurfaceId::Debug => &mut self.debug,

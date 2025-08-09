@@ -1,8 +1,8 @@
-use skia_safe::{self as skia, Paint, RRect};
+use skia_safe::{self as skia, image_filters, Paint, RRect};
 
 use super::{RenderState, SurfaceId};
 use crate::render::get_source_rect;
-use crate::shapes::{Fill, Frame, ImageFill, Rect, Shape, Type};
+use crate::shapes::{BlurType, Fill, Frame, ImageFill, Rect, Shape, Type};
 
 fn draw_image_fill(
     render_state: &mut RenderState,
@@ -84,26 +84,29 @@ fn draw_image_fill(
  * This SHOULD be the only public function in this module.
  */
 pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill, antialias: bool) {
-    let paint = &fill.to_paint(&shape.selrect, antialias);
+    let mut paint = fill.to_paint(&shape.selrect, antialias);
+    if let Some(image_filter) = shape.image_filter(1.) {
+        paint.set_image_filter(image_filter);
+    }
 
     match (fill, &shape.shape_type) {
         (Fill::Image(image_fill), _) => {
-            draw_image_fill(render_state, shape, image_fill, paint, antialias);
+            draw_image_fill(render_state, shape, image_fill, &paint, antialias);
         }
         (_, Type::Rect(_) | Type::Frame(_)) => {
             render_state
                 .surfaces
-                .draw_rect_to(SurfaceId::Fills, shape, paint);
+                .draw_rect_to(SurfaceId::Fills, shape, &paint);
         }
         (_, Type::Circle) => {
             render_state
                 .surfaces
-                .draw_circle_to(SurfaceId::Fills, shape, paint);
+                .draw_circle_to(SurfaceId::Fills, shape, &paint);
         }
         (_, Type::Path(_)) | (_, Type::Bool(_)) => {
             render_state
                 .surfaces
-                .draw_path_to(SurfaceId::Fills, shape, paint);
+                .draw_path_to(SurfaceId::Fills, shape, &paint);
         }
         (_, Type::Group(_)) => {
             // Groups can have fills but they propagate them to their children

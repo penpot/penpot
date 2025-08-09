@@ -1,4 +1,5 @@
 mod blend;
+mod blurs;
 mod debug;
 mod fills;
 mod fonts;
@@ -21,7 +22,7 @@ use options::RenderOptions;
 use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Corners, Fill, Shape, SolidColor, StructureEntry, Type};
+use crate::shapes::{BlurType, Corners, Fill, Shape, SolidColor, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
@@ -29,6 +30,7 @@ use crate::view::Viewbox;
 use crate::wapi;
 
 pub use blend::BlendMode;
+pub use blurs::*;
 pub use fonts::*;
 pub use images::*;
 
@@ -377,10 +379,19 @@ impl RenderState {
                 Some(&skia::Paint::default()),
             );
         }
+
+        // Draw blurs after everything else
+        self.surfaces.draw_into(
+            SurfaceId::Blurs,
+            SurfaceId::Current,
+            Some(&skia::Paint::default()),
+        );
+
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::DropShadows as u32
-            | SurfaceId::InnerShadows as u32;
+            | SurfaceId::InnerShadows as u32
+            | SurfaceId::Blurs as u32;
 
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
@@ -410,7 +421,8 @@ impl RenderState {
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::DropShadows as u32
-            | SurfaceId::InnerShadows as u32;
+            | SurfaceId::InnerShadows as u32
+            | SurfaceId::Blurs as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().save();
         });
@@ -456,7 +468,8 @@ impl RenderState {
                 let surface_ids = SurfaceId::Strokes as u32
                     | SurfaceId::Fills as u32
                     | SurfaceId::DropShadows as u32
-                    | SurfaceId::InnerShadows as u32;
+                    | SurfaceId::InnerShadows as u32
+                    | SurfaceId::Blurs as u32;
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
@@ -466,6 +479,7 @@ impl RenderState {
 
                 if !shape.has_visible_strokes() {
                     shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
+                    render_text_blurs(self, &shape, &mut paragraphs, antialias);
                 }
 
                 text::render(self, &shape, &mut paragraphs, None, None);
@@ -491,6 +505,12 @@ impl RenderState {
                         &mut stroke_paragraphs,
                         antialias,
                     );
+                    render_text_blurs(
+                        self,
+                        &shape,
+                        &mut stroke_paragraphs,
+                        antialias,
+                    );
                     strokes::render(
                         self,
                         &shape,
@@ -510,12 +530,14 @@ impl RenderState {
                 }
 
                 shadows::render_text_inner_shadows(self, &shape, &mut paragraphs, antialias);
+                render_text_blurs(self, &shape, &mut paragraphs, antialias);
             }
             _ => {
                 let surface_ids = SurfaceId::Strokes as u32
                     | SurfaceId::Fills as u32
                     | SurfaceId::DropShadows as u32
-                    | SurfaceId::InnerShadows as u32;
+                    | SurfaceId::InnerShadows as u32
+                    | SurfaceId::Blurs as u32;
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
@@ -541,8 +563,12 @@ impl RenderState {
                     }
                 }
 
+                // Render blurs for fills
+                // render_fill_blurs(self, &shape, antialias);
+
                 for stroke in shape.visible_strokes().rev() {
                     shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
+                    // render_stroke_blurs(self, &shape, stroke, antialias);
                     strokes::render(self, &shape, stroke, None, None, None, antialias, None);
                     shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
                 }
@@ -736,9 +762,9 @@ impl RenderState {
                 .save_layer(&mask_rec);
         }
 
-        if let Some(image_filter) = element.image_filter(self.get_scale()) {
-            paint.set_image_filter(image_filter);
-        }
+        // if let Some(image_filter) = element.image_filter(self.get_scale()) {
+        //     paint.set_image_filter(image_filter);
+        // }
 
         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
         self.surfaces
