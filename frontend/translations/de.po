@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-07-30 06:11+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
@@ -1649,10 +1649,6 @@ msgstr "Textdekoration"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Keine"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Durchgestrichen"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Unterstrichen"
@@ -2563,6 +2559,7 @@ msgid "modals.big-nudge"
 msgstr "Maximal"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Neue E-Mail-Adresse verifizieren"
 
@@ -2835,6 +2832,7 @@ msgid "modals.invite-member.emails"
 msgstr "E-Mails, durch Komma getrennt"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Einige E-Mails stammen von aktuellen Teammitgliedern. Ihre Einladungen "
@@ -7253,6 +7251,7 @@ msgid "workspace.options.component.variant.malformed.single.one"
 msgstr "Diese Variante hat einen ungültigen Namen."
 
 #: src/app/main/ui/settings/subscription.cljs:282
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpot-Mitglied seit %s"
 
@@ -7264,19 +7263,9 @@ msgstr "Unbegrenzte Anzahl von Projekte, Dateien und Entwürfen"
 msgid "subscription.settings.section-plan"
 msgstr "Ihr Abonnement"
 
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "Teste es kostenlos für 14 Tage"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:776
 msgid "workspace.options.component.variant"
 msgstr "Variante"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "Schalten Sie den vollen Zugang für immer frei. [Jetzt abonnieren.] (%s)"
 
 #: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
 msgid "subscription.settings.more-information"
@@ -7293,10 +7282,6 @@ msgstr "Sie sind %s!"
 #: src/app/main/ui/dashboard/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:52, src/app/main/ui/settings/subscription.cljs:245
 msgid "subscription.settings.unlimited-trial"
 msgstr "Unbegrenzt (Testversion)"
-
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "Unbegrenzte Testversion"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"

@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-07-11 05:04+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/hi/"
 ">\n"
@@ -1684,10 +1684,6 @@ msgstr "पाठ सजावट"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "कोई नहीं"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "पंक्ति रेखांकित (स्ट्राइकथ्रू)"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "रेखांकित (अंडरलाइन)"
@@ -1703,10 +1699,6 @@ msgstr "छोटे अक्षर"
 #: src/app/main/ui/inspect/attributes/text.cljs:154
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "कोई नहीं"
-
-#: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:430
-msgid "inspect.attributes.typography.text-transform.titlecase"
-msgstr "टाइटल केस"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:157
 msgid "inspect.attributes.typography.text-transform.unset"
@@ -2657,6 +2649,7 @@ msgid "modals.big-nudge"
 msgstr "बड़ा धक्का"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "नया ईमेल सत्यापित करें"
 
@@ -2924,6 +2917,7 @@ msgid "modals.invite-member.emails"
 msgstr "ईमेल, अल्पविराम से अलग किए गए"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr "कुछ ईमेल वर्तमान टीम के सदस्यों के हैं। उनकी निमंत्रण नहीं भेजी जाएगी।"
 
@@ -4844,27 +4838,12 @@ msgstr ""
 "प्रोफेशनल प्लान टीमों के लिए डिज़ाइन किया गया है, जिसमें अधिकतम 8 संपादक (मालिक, एडमि"
 "न, और संपादक) शामिल हो सकते हैं।"
 
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"अनलिमिटेड (ट्रायल) प्लान टीमों के लिए डिज़ाइन किया गया है, जिसमें 8 से अधिक संपादक (मालि"
-"क, एडमिन, और संपादक) शामिल हो सकते हैं।"
-
 #: src/app/main/ui/dashboard/subscription.cljs:160
+#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "ऐसा लगता है कि आपकी टीम बढ़ गई है! आपके प्लान में %s सीटें शामिल हैं, लेकिन आप अब उससे अधि"
 "क सीटें उपयोग कर रहे हैं।"
-
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr "पूरी पहुँच हमेशा के लिए अनलॉक करें। टीम के मालिक से संपर्क करें: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "पूरी पहुँच हमेशा के लिए अनलॉक करें। [अभी सदस्यता लें।](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown
@@ -4874,32 +4853,15 @@ msgstr ""
 "प्राप्त करें। टीम के मालिक से संपर्क करें: %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "असीमित या एंटरप्राइज प्लान के साथ अधिक संपादक, अधिक संग्रहण, और अधिक ऑटोसेव्ड संस्करण "
 "प्राप्त करें। [अभी सदस्यता लें।](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr "कृपया अपने उपयोग के अनुसार अपग्रेड करें। [अभी सदस्यता लें।](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:80
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "एंटरप्राइज प्लान"
-
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "उन्नत सुरक्षा, गतिविधि लॉग, समर्पित समर्थन और भी बहुत कुछ।"
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"असीमित प्लान के साथ अतिरिक्त संपादक और संग्रहण, फ़ाइल बैकअप और भी बहुत कुछ पाएं। "
-"[पावर अप करें](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4911,7 +4873,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "सदस्यता लें"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
 "क्या आप अपनी ट्रायल का आनंद ले रहे हैं? पूरी पहुँच हमेशा के लिए अनलॉक करें। [सदस्यता लें](%s)"
@@ -4929,13 +4891,6 @@ msgstr "अनलिमिटेड प्लान (परीक्षण)"
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "अनलिमिटेड प्लान"
-
-#: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr ""
-"उन्नत सुरक्षा, गतिविधि लॉग, समर्पित समर्थन और भी बहुत कुछ प्राप्त करें। "
-"[एंटरप्राइज प्लान देखें।](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4984,22 +4939,6 @@ msgstr "उद्यम"
 msgid "subscription.settings.enterprise-trial"
 msgstr "एंटरप्राइज़ (परीक्षण)"
 
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "उद्यम परीक्षण"
-
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "गतिविधि लॉग"
-
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "उन्नत सुरक्षा"
-
-#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "समर्पित समर्थन"
-
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
 msgstr "अपनी सदस्यता प्रबंधित करें"
@@ -5027,6 +4966,7 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(अभी कोई भुगतान नहीं किया जाएगा)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 प्रति संपादक/महीना x %s"
 
@@ -5039,6 +4979,7 @@ msgid "subscription.settings.management.dialog.title"
 msgstr "%s को अपनी टीमों पर लागू करें"
 
 #: src/app/main/ui/settings/subscription.cljs:282
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "%s से Penpot सदस्य"
 
@@ -5065,10 +5006,6 @@ msgstr "प्रोफेशनल"
 #: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
 msgid "subscription.settings.professional.projects-files"
 msgstr "असीमित परियोजनाएँ, फ़ाइलें और ड्राफ्ट"
-
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10GB संग्रहण और 7 दिन तक के ऑटोसेव संस्करण"
 
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
@@ -5100,17 +5037,13 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "आप %s हैं!"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "आप इस योजना के साथ %s से हमारा समर्थन कर रहे हैं"
 
 #: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.try-it-free"
 msgstr "14 दिनों का मुफ्त परीक्षण करें"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "14 दिनों तक निशुल्क उपयोग करें"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -5120,17 +5053,9 @@ msgstr "असीमित"
 msgid "subscription.settings.unlimited-trial"
 msgstr "असीमित (परीक्षण)"
 
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "असीमित परीक्षण"
-
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "मासिक बिल की सीमा"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr "25GB संग्रहण, 30 दिनों तक के ऑटोसेव संस्करण और फ़ाइल बैकअप"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -5557,11 +5482,6 @@ msgstr "निर्यात"
 #, unused
 msgid "workspace.options.export-multiple"
 msgstr "निर्यात चयन"
-
-#: src/app/main/ui/settings/subscription.cljs:82, src/app/main/ui/settings/subscription.cljs:115, src/app/main/ui/settings/subscription.cljs:127
-#, unused
-msgid "subscription.settings.benefits.all-professiona-benefits"
-msgstr " "
 
 #: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:249
 msgid "workspace.options.export-object"
@@ -7278,6 +7198,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "आयात त्रुटि: JSON में अमान्य टोकन डेटा।"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "आयात त्रुटि: JSON में अमान्य टोकन नाम।"
 
@@ -7490,10 +7411,6 @@ msgstr "टोकन - %s"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.tokens.tools"
 msgstr "औजार"
-
-#: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr "आयात सफल रहा, लेकिन कुछ टोकन छोड़ दिए गए। "
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"

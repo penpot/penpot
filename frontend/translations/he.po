@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-17 06:01+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.12.1\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1646,10 +1646,6 @@ msgstr "עיטור טקסט"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "ללא"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "קו חוצה"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "קו תחתי"
@@ -2615,6 +2611,7 @@ msgid "modals.big-nudge"
 msgstr "הינד גדול"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "אימות כתובת דוא״ל חדשה"
 
@@ -2883,6 +2880,7 @@ msgid "modals.invite-member.emails"
 msgstr "כתובות דוא״ל, מופרדות בפסיקים"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr "חלק מכתובות הדוא״ל הן של חברי צוות נוכחיים. ההזמנות לא תישלחנה אליהם."
 
@@ -4237,18 +4235,6 @@ msgstr "התמקדות על הנבחר"
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "תוכנית מסחרית"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "אבטחה מתקדמת, יומני פעילות, תמיכה ייעודית ועוד."
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"אפשר לקבל הרשאות לעורכים נוספים ואחסון, גיבוי קבצים ועוד עם התוכנית הבלתי "
-"מוגבלת[להשתדרג](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "תוכנית מקצועית"
@@ -4259,7 +4245,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "הרשמה"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "הניסיון מצליח עד כה? אפשר לקבל גישה מלאה לתמיד.[הרשמה](%s)"
 
@@ -4275,13 +4261,6 @@ msgstr "תוכנית לא מוגבלת (ניסיון)"
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "תוכנית לא מוגבלת"
-
-#: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr ""
-"קבלת אבטחה מתקדמת, יומני פעילות, תמיכה ייעודית ועוד. מוטב לקרוא עוד על "
-"[התוכנית המסחרית.](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4309,23 +4288,12 @@ msgstr "כל יתרונות התוכנית הבלתי מוגבלת וגם:"
 msgid "subscription.settings.enterprise"
 msgstr "מסחרי"
 
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "יומני פעילות"
-
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "אבטחה מתקדמת"
-
-#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "תמיכה ייעודית"
-
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
 msgstr "ניהול המינוי שלך"
 
 #: src/app/main/ui/settings/subscription.cljs:282
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "חברות ב־Penpot מאז %s"
 
@@ -4349,10 +4317,6 @@ msgstr "מקצועי"
 msgid "subscription.settings.professional.projects-files"
 msgstr "אין הגבלה על מיזמים, קבצים וטיוטות"
 
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10 ג״ב של אחסון ו־7 ימים של גרסאות שמורות אוטומטית"
-
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
 msgstr "אין הגבלה על צוותים של עד 8 עורכים"
@@ -4362,13 +4326,9 @@ msgid "subscription.settings.section-plan"
 msgstr "המינוי שלך"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "תמכת בנו עם התוכנית הזאת מאז %s"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "אפשר להתנסות בחינם למשך 14 ימים"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -4381,10 +4341,6 @@ msgstr "ללא הגבלה (התנסות)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "חשבון חודשי מוגבל"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr "25 ג״ב של אחסון ו־30 יום של גרסאות שמורות אוטומטית וגיבוי קבצים"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -7013,6 +6969,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "שגיאת ייבוא: נתוני אסימון שגויים ב־JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "שגיאת ייבוא: שם אסימון שגוי ב־JSON."
 
@@ -7222,10 +7179,6 @@ msgstr "אסימונים -  %s"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.tokens.tools"
 msgstr "כלים"
-
-#: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr "הייבוא הצליח אבל חלק מהאסימונים נפסחו. "
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7564,6 +7517,7 @@ msgid "workspace.tokens.export.single-file"
 msgstr "קובץ בודד"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
+#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "נראה שהצוות שלך גדל! התוכנית שלך כוללת %s מושבים אבל כרגע יש יותר מושבים "
@@ -7616,33 +7570,12 @@ msgstr "צבע"
 msgid "labels.empty"
 msgstr "ריקה"
 
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr "פתיחת גישה מלאה לעד. נא ליצור קשר עם בעלי הצוות: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "פתיחת גישה מלאה לעד. [להירשם כעת.](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:154
 msgid "subscription.dashboard.cta.professional-plan-designed"
 msgstr "התוכנית המקצועית תוכננה לצוותים של עד 8 עורכים (בעלים, מנהלים ועורכים)."
 
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr "נא לשדרג כדי שהתוכנית תתאים לנפח השימוש שלך. [הרשמה כעת.](%s)"
-
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"התוכנית הלא מוגבלת (ניסיונית) תוכננה לצוותים של יותר מ־8 עורכים (בעלים, "
-"מנהלים ועורכים)."
-
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "אפשר להרחיב את כמות העורכים, האחסון ולשמור יותר גרסאות שנשמרו אוטומטית עם "
@@ -7664,10 +7597,6 @@ msgstr "שדרוג"
 msgid "subscription.settings.enterprise-trial"
 msgstr "תאגידית (ניסיונית)"
 
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "ניסיון תאגידי"
-
 #: src/app/main/ui/settings/subscription.cljs:106
 msgid "subscription.settings.management.dialog.members"
 msgstr " (%s עורכים)"
@@ -7688,6 +7617,7 @@ msgstr ""
 "הגיבויים והגרסאות."
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 לעורך/ת לחודש × %s"
 
@@ -7714,10 +7644,6 @@ msgstr "מאחלים לך הנאה מהתוכנית שלך!"
 #: src/app/main/ui/dashboard/subscription.cljs:133, src/app/main/ui/workspace/main_menu.cljs:928
 msgid "subscription.workspace.header.menu.option.power-up"
 msgstr "שדרוג התוכנית"
-
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "ניסיון ללא הגבלה"
 
 #: src/app/main/ui/settings/subscription.cljs:166
 msgid "subscription.settings.sucess.dialog.title"

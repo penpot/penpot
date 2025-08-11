@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-13 07:01+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1695,10 +1695,6 @@ msgstr "Decorazioni testo"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Nessuno"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Barrato"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Sottolineato"
@@ -2665,6 +2661,7 @@ msgid "modals.big-nudge"
 msgstr "Grande scatto"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Verificare il nuovo indirizzo e-mail"
 
@@ -2935,6 +2932,7 @@ msgid "modals.invite-member.emails"
 msgstr "Email, separate da virgole"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Alcune email appartengono a membri attuali del team. I loro inviti non "
@@ -4300,20 +4298,6 @@ msgstr "Zoom su selezione"
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Piano Enterprise"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr ""
-"Sicurezza avanzata, registro delle attività, supporto dedicato e altro "
-"ancora."
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"Ottieni editor e spazio di archiviazione aggiuntivi, backup dei file e altro "
-"ancora con il piano Unlimited[Potenzia ora](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Piano Professional"
@@ -4324,7 +4308,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Iscriviti"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
 "Ti sta piacendo la prova? Sblocca l’accesso completo per sempre.[Abbonati]"
@@ -4344,13 +4328,6 @@ msgstr "Piano Unlimited (versione di prova)"
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Piano Unlimited"
-
-#: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr ""
-"Ottieni sicurezza avanzata, log delle attività, supporto dedicato e molto "
-"altro. Dai un’occhiata al [piano Enterprise](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4380,23 +4357,12 @@ msgstr "Tutti i vantaggi del piano Unlimited e:"
 msgid "subscription.settings.enterprise"
 msgstr "Enterprise"
 
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Registri delle attività"
-
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Sicurezza avanzata"
-
-#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Supporto dedicato"
-
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
 msgstr "Gestisci il tuo abbonamento"
 
 #: src/app/main/ui/settings/subscription.cljs:282
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Membro Penpot dal %s"
 
@@ -4420,12 +4386,6 @@ msgstr "Professional"
 msgid "subscription.settings.professional.projects-files"
 msgstr "Progetti, file e bozze illimitati"
 
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr ""
-"10GB di spazio di archiviazione e versioni salvate automaticamente per 7 "
-"giorni"
-
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
 msgstr "Team illimitati fino ad 8 editor"
@@ -4435,13 +4395,9 @@ msgid "subscription.settings.section-plan"
 msgstr "Il tuo abbonamento"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Ci supporti con questo piano dal %s"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "Provalo gratuitamente per 14 giorno"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -4454,12 +4410,6 @@ msgstr "Unlimited (prova)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Fattura mensile con tetto massimo"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr ""
-"25GB di spazio di archiviazione, versioni salvate automaticamente per 30 "
-"giorni e backup dei file"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -7100,6 +7050,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "Errore di importazione: Dati del token non validi nel JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Errore di importazione: nome token non valido nel JSON."
 
@@ -7313,11 +7264,6 @@ msgstr "TOKEN -  %s"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.tokens.tools"
 msgstr "Strumenti"
-
-#: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr ""
-"L’importazione è andata a buon fine, ma alcuni token sono stati saltati. "
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7710,10 +7656,6 @@ msgstr "Potenzia il tuo piano"
 msgid "workspace.header.menu.toggle-system-theme"
 msgstr "Passa al tema di sistema"
 
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "Unlimited di prova"
-
 #: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.subscribe"
 msgstr "Abbonati"
@@ -7734,34 +7676,19 @@ msgstr "Tema di sistema"
 msgid "inspect.attributes.color"
 msgstr "Colore"
 
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"Il piano Unlimited (versione di prova) è pensato per i team con più di 8 "
-"editor (proprietario, amministratore ed editor)."
-
 #: src/app/main/ui/dashboard/subscription.cljs:160
+#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "Sembra che il tuo team sia cresciuto! Il tuo piano include %s postazioni, ma "
 "ne stai utilizzando di più."
 
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "Sblocca l'accesso completo per sempre. [Abbonati ora.] (%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Ottieni più editor, più spazio di archiviazione e più versione salvate "
 "automaticamente con il piano Unlimited o Enterprise. [Abbonati ora.](%s)"
-
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr "Esegui l’upgrade per adeguarti al tuo utilizzo. [Abbonati ora.](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
@@ -7782,10 +7709,6 @@ msgstr "Aggiungi un metodo di pagamento per continuare dopo il periodo di prova"
 #: src/app/main/ui/settings/subscription.cljs:53
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (versione di prova)"
-
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "Enterprise di prova"
 
 #: src/app/main/ui/settings/subscription.cljs:102
 msgid "subscription.settings.management.dialog.choose-this-plan"
@@ -7812,6 +7735,7 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Non verrà effettuato nessun pagamento in questo momento)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 per editor/mese x %s"
 
@@ -7912,9 +7836,3 @@ msgstr "Valore non valido: le unità non sono consentite."
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:985
 msgid "workspace.options.component.variant.malformed.group.title"
 msgstr "Alcune varianti hanno nomi non validi"
-
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr ""
-"Sblocca l'accesso completo per sempre. Contatta il proprietario del team: %s"

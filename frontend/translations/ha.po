@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-03-20 13:42+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Hausa "
-"<https://hosted.weblate.org/projects/penpot/frontend/ha/>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"Language-Team: Hausa <https://hosted.weblate.org/projects/penpot/frontend/ha/"
+">\n"
 "Language: ha\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.11-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1222,10 +1222,6 @@ msgstr "kwalliyar rubutu"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "babu"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "zana layi tsakiyar rubutu"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "jan layi"
@@ -1868,6 +1864,7 @@ msgid "modals.big-nudge"
 msgstr "jan hankali"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "tantance sabon imel"
 
@@ -2136,6 +2133,7 @@ msgid "modals.invite-member.emails"
 msgstr "imel, rabawar waqafi"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "waxansu imel daga membobin qungiyar na yanzu. ba za a aikawa da gayyatarsu "

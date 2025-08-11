@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-07-01 12:02+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -1695,10 +1695,6 @@ msgstr "Оформлення тексту"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Немає"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Закреслений"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Підкреслений"
@@ -2672,6 +2668,7 @@ msgid "modals.big-nudge"
 msgstr "Великий зсув"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Підтвердьте нову електрону адресу"
 
@@ -2950,6 +2947,7 @@ msgid "modals.invite-member.emails"
 msgstr "Електроні адреси, розділені комами"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Деякі електроні адреси належать поточним учасникам команди. Запрошення не "
@@ -4327,18 +4325,6 @@ msgstr "Збільшити до обраного"
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Корпоративний план"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "Поліпшена безпека, журнал активності, виділена підтримка та більше."
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"Отримайте додаткові редактори та сховище, резервне копіювання файлів та "
-"більше з Планом Безлімітний. [Підсилюйтесь](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Професійний план"
@@ -4349,7 +4335,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Підписатись"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
 "Насолоджуєтесь пробним періодом? Отримайте повний доступ назавжди. "
@@ -4369,13 +4355,6 @@ msgstr "Безлімітний план (пробний)"
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Безлімітний план"
-
-#: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr ""
-"Отримайте поліпшену безпеку, журнал активності, виділену підтримку та "
-"більше. Зверніть увагу на [План Корпоративний.](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4403,23 +4382,12 @@ msgstr "Усі переваги безлімітного плану та:"
 msgid "subscription.settings.enterprise"
 msgstr "Корпоративний"
 
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Журнал активності"
-
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Поліпшена безпека"
-
-#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Виділена підтримка"
-
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
 msgstr "Керувати підписками"
 
 #: src/app/main/ui/settings/subscription.cljs:282
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Учасник Penpot з %s"
 
@@ -4443,10 +4411,6 @@ msgstr "Професійний"
 msgid "subscription.settings.professional.projects-files"
 msgstr "Проєкти, файли та чернетки без обмежень"
 
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10 ГБ сховища та версії з автозбереженнями на 7 днів"
-
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
 msgstr "Безліч команд по 8 редакторів кожна"
@@ -4456,13 +4420,9 @@ msgid "subscription.settings.section-plan"
 msgstr "Ваша підписка"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Ви підтримуєте нас за цим планом з %s"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "Спробуйте 14 днів безкоштовно"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -4475,10 +4435,6 @@ msgstr "Безлімітний (пробний)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Місячний рахунок з граничною сумою"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr "25 ГБ сховища, версії з автозбереженнями на 30 днів та резервні копії файлів"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -7113,6 +7069,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "Помилка імпорту: Помилкові дани токену в JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Помилка імпорту: Помилкове імʼя токену в JSON."
 
@@ -7324,10 +7281,6 @@ msgstr "ТОКЕНИ -  %s"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.tokens.tools"
 msgstr "Інструменти"
-
-#: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr "Імпорт успішний, проте деякі токени було пропущено. "
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7666,7 +7619,7 @@ msgstr ""
 "адміністратор та редактор)."
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Отримайте більше редакторів, місця для сховища та більше автозбережених "
@@ -7684,20 +7637,11 @@ msgid "labels.empty"
 msgstr "Порожньо"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
+#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "Схоже, Ваша команда підросла! План розрахований на %s \"стільців\", проте "
 "учасників більше ніж \"стільців\"."
-
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr "Розблокуйте повний доступ назавжди. Звʼяжіться з власником команди: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "Розблокуйте повний доступ назавжди [Оформіть підписку зараз.](%s)"
 
 #: src/app/main/ui/settings/subscription.cljs:253
 msgid "subscription.settings.add-payment-to-continue"
@@ -7765,10 +7709,6 @@ msgstr "Оберіть потрібну кількість редакторів 
 msgid "subscription.settings.subscribe"
 msgstr "Оформити підписку"
 
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "Безлімітний, пробний період"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:245
 msgid "workspace.options.component.variant.malformed.single.one"
 msgstr "Цей варіант має помилкове імʼя."
@@ -7796,6 +7736,7 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Платіж не буде зроблено)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 на редактора/місяці x %s"
 
@@ -7815,12 +7756,6 @@ msgstr "Деякі варіанти мають помилкові імена"
 msgid "workspace.options.component.variant.malformed.single.some"
 msgstr "Деякі з цих варіантів мають помилкові імена."
 
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"План Безлімітний (пробний) створений для команд понад 8 редакторів (власник, "
-"адміністратор та редактор)."
-
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
@@ -7829,13 +7764,6 @@ msgstr ""
 "версій з Планом Безлімітний чи Корпоративний. Звʼяжіться з власником команди:"
 " %s"
 
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr ""
-"Вам варто поліпшити план, який відповідатиме Вашим потребам. "
-"[Оформіть підписку зараз.](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:102
 msgid "subscription.dashboard.team-plan"
 msgstr "План команди"
@@ -7843,10 +7771,6 @@ msgstr "План команди"
 #: src/app/main/ui/dashboard/sidebar.cljs:1000
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Підсилити"
-
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "Корпоративний пробний період"
 
 #: src/app/main/ui/workspace/main_menu.cljs:285
 msgid "workspace.header.menu.toggle-system-theme"

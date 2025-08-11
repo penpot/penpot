@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-07-08 06:01+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -1695,10 +1695,6 @@ msgstr "Tekst decoratie"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Geen"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Doorhalen"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Onderstrepen"
@@ -2668,6 +2664,7 @@ msgid "modals.big-nudge"
 msgstr "Grote verschuiving"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Nieuw e-mailadres verifiëren"
 
@@ -2940,10 +2937,11 @@ msgid "modals.invite-member.emails"
 msgstr "E-mailadressen, kommagescheiden"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
-"Sommige e-mailadressen zijn van bestaande teamleden. Zij krijgen geen "
-"nieuwe uitnodigingen."
+"Sommige e-mailadressen zijn van bestaande teamleden. Zij krijgen geen nieuwe "
+"uitnodigingen."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -4317,20 +4315,6 @@ msgstr "Zoomen naar selectie"
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Enterprise-abonnement"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr ""
-"Geavanceerde beveiliging, activiteitenlogboeken, toegewijde ondersteuning "
-"en meer."
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"Extra teamleden en opslagruimte, back-up van bestanden en meer met het "
-"Unlimited-abonnement [Power up](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Professional-abonnement"
@@ -4341,7 +4325,7 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Abonneren"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
 "Bevalt de proefperiode? Kies voor altijd volledige toegang. [Abonneren](%s)"
@@ -4360,13 +4344,6 @@ msgstr "Onbeperkt abonnement (proefversie)"
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Onbeperkt abonnement"
-
-#: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr ""
-"Profiteer van geavanceerde beveiliging, activiteitenlogboeken, speciale "
-"ondersteuning en meer. Kijk eens naar het [Enterprise-abonnement.](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4396,23 +4373,12 @@ msgstr "Alle voordelen van het Unlimited-abonnement en:"
 msgid "subscription.settings.enterprise"
 msgstr "Enterprise"
 
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Activiteitenlogboeken"
-
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Geavanceerde beveiliging"
-
-#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Toegewijde ondersteuning"
-
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
 msgstr "Beheer uw abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:282
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpot lid sinds %s"
 
@@ -4436,10 +4402,6 @@ msgstr "Professioneel"
 msgid "subscription.settings.professional.projects-files"
 msgstr "Onbeperkt aantal projecten, bestanden en concepten"
 
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10 GB opslagruimte en 7-daagse autosave-versies"
-
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
 msgstr "Onbeperkt aantal teams van maximaal 8 editors"
@@ -4449,13 +4411,9 @@ msgid "subscription.settings.section-plan"
 msgstr "Uw abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:278
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Je steunt ons al sinds %s met dit abonnement"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "Probeer het 14 dagen gratis"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -4468,10 +4426,6 @@ msgstr "Onbeperkt (proefperiode)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Gemaximeerde maandelijkse rekening"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr "25 GB opslagruimte en 30 dagen autosave-versies en bestandsback-up"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -7106,6 +7060,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "Fout bij importeren: Ongeldige tokengegevens in JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Importfout: Ongeldige tokennaam in JSON."
 
@@ -7319,10 +7274,6 @@ msgstr "TOKENS -  %s"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.tokens.tools"
 msgstr "Hulpmiddelen"
-
-#: src/app/main/data/workspace/tokens/import_export.cljs:45
-msgid "workspace.tokens.unknown-token-type"
-msgstr "De import was succesvol, maar sommige tokens zijn overgeslagen. "
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7669,25 +7620,11 @@ msgid "inspect.attributes.color"
 msgstr "Kleur"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
+#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "Het lijkt erop dat je team is gegroeid! Je abonnement is voor %s personen, "
 "maar nu bent nu met meer."
-
-#: src/app/main/ui/dashboard/subscription.cljs:174
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
-msgstr "Voor onbeperkte toegang, neem contact op met de teameigenaar: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:171
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
-msgstr "Voor onbeperkte toegang. [Abonneer je nu.] (%s)"
-
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
-msgstr "Upgrade naar je gebruik. [Abonneer je nu.](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
@@ -7705,10 +7642,6 @@ msgstr "Tandje erbij"
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (proefperiode)"
 
-#: src/app/main/ui/settings/subscription.cljs:228
-msgid "subscription.settings.enterprise-trial-modal"
-msgstr "Enterprise proefperiode"
-
 #: src/app/main/ui/settings/subscription.cljs:106
 msgid "subscription.settings.management.dialog.members"
 msgstr " (%s teamleden)"
@@ -7718,6 +7651,7 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Er wordt nu geen betaling gedaan)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 per teamlid/maand x %s"
 
@@ -7736,10 +7670,6 @@ msgstr "Veel plezier met je abonnement!"
 #: src/app/main/ui/settings/subscription.cljs:166
 msgid "subscription.settings.sucess.dialog.title"
 msgstr "Je bent %s!"
-
-#: src/app/main/ui/settings/subscription.cljs:227
-msgid "subscription.settings.unlimited-trial-modal"
-msgstr "Onbeperkte proefperiode"
 
 #: src/app/main/ui/dashboard/subscription.cljs:133, src/app/main/ui/workspace/main_menu.cljs:928
 msgid "subscription.workspace.header.menu.option.power-up"
@@ -7838,7 +7768,7 @@ msgid "subscription.settings.more-information"
 msgstr "Meer informatie"
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Grotere teams, meer opslagruimte en meer automatisch opgeslagen versies met "
@@ -7847,12 +7777,6 @@ msgstr ""
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.start-trial"
 msgstr "Start gratis proefperiode"
-
-#: src/app/main/ui/dashboard/subscription.cljs:157
-msgid "subscription.dashboard.cta.trial-plan-designed"
-msgstr ""
-"Het onbeperkte (proef)abonnement is ontworpen voor teams van meer dan 8 "
-"leden (eigenaar, beheerder en redacteur)."
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
 #, markdown

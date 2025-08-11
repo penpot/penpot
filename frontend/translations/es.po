@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-21 08:44+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2672,6 +2672,7 @@ msgid "modals.big-nudge"
 msgstr "Máximo"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Verificar el nuevo correo"
 
@@ -2940,6 +2941,7 @@ msgid "modals.invite-member.emails"
 msgstr "Emails, separados por coma"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Algunas direcciones de correo ya se encuentran entre los miembros. Estas "
@@ -7320,6 +7322,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "Error al importar: Datos de token no válidos en JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Error al importar: Nombre de token no válido en JSON."
 
@@ -7381,10 +7384,6 @@ msgstr "No hay temas."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:49
 msgid "workspace.tokens.no-themes-currently"
 msgstr "Actualmente no existen temas."
-
-#: src/app/main/ui/workspace/tokens/modals/import.cljs
-msgid "workspace.tokens.no-tokens-found"
-msgstr "No se han encontrado tokens, sets o temas en este fichero."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
 msgid "workspace.tokens.num-active-sets"
