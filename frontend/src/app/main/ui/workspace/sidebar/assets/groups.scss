@@ -6,6 +6,28 @@
 
 @import "refactor/common-refactor.scss";
 
+.group-title-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+
+  &:hover {
+    cursor: pointer;
+
+    .title-menu {
+      display: block;
+    }
+  }
+}
+
+.group-title-wrapper > :first-child {
+  flex: 1 1 auto;
+}
+
+.title-menu {
+  display: none;
+}
+
 .group-title {
   padding-left: $s-4;
 }
@@ -39,6 +61,7 @@
   @include uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
+
 .modal-close-btn {
   @extend .modal-close-btn-base;
 }
@@ -47,20 +70,24 @@
   @include bodySmallTypography;
   margin-bottom: $s-24;
 }
+
 .input-wrapper {
   @extend .input-with-label;
   @include bodySmallTypography;
   margin-bottom: $s-8;
 }
+
 .action-buttons {
   @extend .modal-action-btns;
 }
+
 .cancel-button {
   @extend .modal-cancel-btn;
 }
 
 .accept-btn {
   @extend .modal-accept-btn;
+
   &.danger {
     @extend .modal-danger-btn;
   }

@@ -176,7 +176,7 @@
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
-           selected-full is-local count-variants]}]
+           selected-full is-local count-variants on-group-combine-variants]}]
 
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -190,6 +190,12 @@
                          (into #{}
                                (comp (map :path) (d/nilv ""))
                                selected-full))
+
+        components     (not-empty (get groups "" []))
+        can-combine?   (and is-local
+                            (> (count components) 1)
+                            (not-any? ctc/is-variant? components)
+                            (apply = (map :main-instance-page components)))
         on-drag-enter
         (mf/use-fn
          (mf/deps dragging* prefix selected-paths is-local drag-data*)
@@ -221,47 +227,48 @@
        :section :components
        :path prefix
        :group-open? group-open?
+       :can-combine? can-combine?
        :on-rename on-rename-group
-       :on-ungroup on-ungroup}]
+       :on-ungroup on-ungroup
+       :on-group-combine-variants on-group-combine-variants}]
 
      (when group-open?
        [:*
-        (let [components (not-empty (get groups "" []))]
-          [:div {:class-name (stl/css-case :asset-grid listing-thumbs?
-                                           :asset-enum (not listing-thumbs?))
-                 :on-drag-enter on-drag-enter
-                 :on-drag-leave on-drag-leave
-                 :on-drag-over dom/prevent-default
-                 :on-drop on-drop}
+        [:div {:class-name (stl/css-case :asset-grid listing-thumbs?
+                                         :asset-enum (not listing-thumbs?))
+               :on-drag-enter on-drag-enter
+               :on-drag-leave on-drag-leave
+               :on-drag-over dom/prevent-default
+               :on-drop on-drop}
 
-           (when ^boolean dragging?
-             [:div {:class (stl/css :grid-placeholder)} "\u00A0"])
+         (when ^boolean dragging?
+           [:div {:class (stl/css :grid-placeholder)} "\u00A0"])
 
 
-           (when (and (empty? components)
-                      (some? groups)
-                      is-local)
-             [:div {:class (stl/css-case :drop-space true
-                                         :drop-space-small (not dragging?))}])
+         (when (and (empty? components)
+                    (some? groups)
+                    is-local)
+           [:div {:class (stl/css-case :drop-space true
+                                       :drop-space-small (not dragging?))}])
 
-           (for [component components]
-             [:& components-item
-              {:component component
-               :key (dm/str "component-" (:id component))
-               :renaming renaming
-               :listing-thumbs? listing-thumbs?
-               :file-id file-id
-               :selected selected
-               :selected-full selected-full
-               :selected-paths selected-paths
-               :on-asset-click on-asset-click
-               :on-context-menu on-context-menu
-               :on-drag-start on-drag-start
-               :on-group on-group
-               :do-rename do-rename
-               :cancel-rename cancel-rename
-               :is-local is-local
-               :num-variants (count-variants (:variant-id component))}])])
+         (for [component components]
+           [:& components-item
+            {:component component
+             :key (dm/str "component-" (:id component))
+             :renaming renaming
+             :listing-thumbs? listing-thumbs?
+             :file-id file-id
+             :selected selected
+             :selected-full selected-full
+             :selected-paths selected-paths
+             :on-asset-click on-asset-click
+             :on-context-menu on-context-menu
+             :on-drag-start on-drag-start
+             :on-group on-group
+             :do-rename do-rename
+             :cancel-rename cancel-rename
+             :is-local is-local
+             :num-variants (count-variants (:variant-id component))}])]
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
@@ -281,6 +288,7 @@
                                   :on-rename-group on-rename-group
                                   :on-ungroup on-ungroup
                                   :on-context-menu on-context-menu
+                                  :on-group-combine-variants on-group-combine-variants
                                   :selected-full selected-full
                                   :is-local is-local
                                   :count-variants count-variants}]))])]))
@@ -469,6 +477,19 @@
                         (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
+        on-group-combine-variants
+        (mf/use-fn
+         (mf/deps components)
+         (fn [path]
+           (on-clear-selection)
+           (let [comps   (->> components
+                              (filter #(str/starts-with? (:path %) path)))
+                 ids     (into #{} (map :main-instance-id comps))
+                 page-id (->> comps first :main-instance-page)]
+
+             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))
+
+
         on-drag-start
         (mf/use-fn
          (mf/deps file-id)
@@ -564,6 +585,7 @@
                               :on-rename-group on-rename-group
                               :on-group on-group
                               :on-ungroup on-ungroup
+                              :on-group-combine-variants on-group-combine-variants
                               :on-context-menu on-context-menu
                               :selected-full selected-full
                               :is-local ^boolean is-local

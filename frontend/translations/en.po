@@ -4929,6 +4929,10 @@ msgstr "Text Transform"
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
 
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:83
+msgid "workspace.assets.component-group-options"
+msgstr "Component group options"
+
 #: src/app/main/ui/workspace/context_menu.cljs:769
 msgid "workspace.context-menu.grid-cells.area"
 msgstr "Create area"
