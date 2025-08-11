@@ -51,7 +51,7 @@
                                        (obj/set! internal-state "canvas" new-canvas)
                                        new-canvas))))))))
 
-(defn process-pointer-move [viewport-node canvas canvas-image-data zoom-view-context client-x client-y use-dpr?]
+(defn process-pointer-move [viewport-node canvas canvas-image-data zoom-view-context client-x client-y]
   (when-let [image-data (mf/ref-val canvas-image-data)]
     (when-let [zoom-view-node (dom/get-element "picker-detail")]
       (when-not (mf/ref-val zoom-view-context)
@@ -59,15 +59,12 @@
       (let [canvas-width 260
             canvas-height 140
             {brx :left bry :top} (dom/get-bounding-rect viewport-node)
+
             x (mth/floor (- client-x brx))
             y (mth/floor (- client-y bry))
 
-            dpr (if use-dpr? wasm.api/dpr 1)
-            canvas-x (* x dpr)
-            canvas-y (* y dpr)
-
             zoom-context (mf/ref-val zoom-view-context)
-            offset (* (+ (* canvas-y (unchecked-get image-data "width")) canvas-x) 4)
+            offset (* (+ (* y (unchecked-get image-data "width")) x) 4)
             rgba (unchecked-get image-data "data")
 
             r (obj/get rgba (+ 0 offset))
@@ -75,8 +72,8 @@
             b (obj/get rgba (+ 2 offset))
             a (obj/get rgba (+ 3 offset))
 
-            sx (- canvas-x 32)
-            sy (if (cfg/check-browser? :safari) canvas-y (- canvas-y 17))
+            sx (- x 32)
+            sy (if (cfg/check-browser? :safari) y (- y 17))
             sw 65
             sh 35
             dx 0
@@ -87,7 +84,10 @@
           (obj/set! zoom-context "imageSmoothingEnabled" false))
         (.clearRect zoom-context 0 0 canvas-width canvas-height)
         (.drawImage zoom-context canvas sx sy sw sh dx dy dw dh)
-        (st/emit! (dwc/pick-color [r g b a]))))))
+        (js/requestAnimationFrame
+         (fn []
+           (st/emit! (dwc/pick-color [r g b a]))))))))
+
 
 (mf/defc pixel-overlay
   {::mf/wrap-props false}
@@ -169,7 +169,7 @@
         (mf/use-callback
          (mf/deps viewport-node)
          (fn [event]
-           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context (.-clientX event) (.-clientY event) false)))]
+           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context (.-clientX event) (.-clientY event))))]
 
     (when (obj/get canvas-context "imageSmoothingEnabled")
       (obj/set! canvas-context "imageSmoothingEnabled" false))
@@ -205,7 +205,7 @@
      (fn []
        (when canvas-ready
          (let [{:keys [x y]} @initial-mouse-pos]
-           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context x y false)))))
+           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context x y)))))
 
     [:div {:id "pixel-overlay"
            :tab-index 0
@@ -215,15 +215,55 @@
            :on-pointer-move handle-pointer-move-picker
            :on-mouse-enter handle-mouse-enter}]))
 
+
+(defn process-pointer-move-wasm [viewport-node canvas canvas-image-data zoom-view-context client-x client-y]
+  (when-let [image-data (mf/ref-val canvas-image-data)]
+    (when-let [zoom-view-node (dom/get-element "picker-detail")]
+      (when-not (mf/ref-val zoom-view-context)
+        (mf/set-ref-val! zoom-view-context (.getContext zoom-view-node "2d")))
+      (let [zoom-view-width 260
+            zoom-view-height 140
+            {brx :left bry :top} (dom/get-bounding-rect viewport-node)
+            x (mth/floor (- client-x brx))
+            y (mth/floor (- client-y bry))
+
+            canvas-x (* x wasm.api/dpr)
+            canvas-y (* y wasm.api/dpr)
+
+            zoom-context (mf/ref-val zoom-view-context)
+            ;; the image-data we have is an array of pixels, starting from the
+            ;; bottom-left corner; so we need to calculate the offset accordingly
+            inverted-y (- (.-height image-data) canvas-y)
+            offset (* (+ (* inverted-y (.-width image-data)) canvas-x) 4)
+            rgba (.-data image-data)
+
+            r (obj/get rgba (+ 0 offset))
+            g (obj/get rgba (+ 1 offset))
+            b (obj/get rgba (+ 2 offset))
+            a (obj/get rgba (+ 3 offset))
+
+            sx (- canvas-x 32)
+            sy (if (cfg/check-browser? :safari) canvas-y (- canvas-y 17))
+            sw 65
+            sh 35]
+        (when (obj/get zoom-context "imageSmoothingEnabled")
+          (obj/set! zoom-context "imageSmoothingEnabled" false))
+        (.clearRect zoom-context 0 0 zoom-view-width zoom-view-height)
+        (.drawImage zoom-context canvas sx sy sw sh 0 0 zoom-view-width zoom-view-height)
+        ;; FIXME: this is throttled to avoid getting stuck in an inifinite react
+        ;; update loop. We should fix the global state instead.
+        (js/requestAnimationFrame
+         (fn []
+           (st/emit! (dwc/pick-color [r g b a]))))))))
+
 (mf/defc pixel-overlay-wasm*
   {::mf/wrap-props false}
-  [{:keys [viewport-ref canvas-ref] :rest props}]
+  [{:keys [viewport-ref canvas-ref]}]
   (let [viewport-node     (mf/ref-val viewport-ref)
         canvas            (mf/ref-val canvas-ref)
-        canvas-context    (when (some? canvas) (.getContext canvas "webgl2" #js {:willReadFrequently true}))
+        canvas-context    (mf/use-ref nil)
         canvas-image-data (mf/use-ref nil)
         zoom-view-context (mf/use-ref nil)
-        canvas-ready?     (some? (mf/ref-val canvas-image-data))
         initial-mouse-pos (mf/use-state {:x 0 :y 0})
         update-str        (rx/subject)
 
@@ -257,9 +297,9 @@
         (mf/use-callback
          (mf/deps canvas-context)
          (fn []
-           (when (some? canvas-context)
-             (let [width (unchecked-get canvas "width")
-                   height (unchecked-get canvas "height")
+           (when-let [canvas-context (mf/ref-val canvas-context)]
+             (let [width (.-width canvas)
+                   height (.-height canvas)
                    buffer (js/Uint8ClampedArray. (* width height  4))
                    _ (.readPixels canvas-context 0 0 width height (.-RGBA canvas-context) (.-UNSIGNED_BYTE canvas-context) buffer)
                    image-data (js/ImageData. buffer width height)]
@@ -282,7 +322,13 @@
         (mf/use-callback
          (mf/deps viewport-node)
          (fn [event]
-           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context (.-clientX event) (.-clientY event) true)))]
+           (process-pointer-move-wasm viewport-node canvas canvas-image-data zoom-view-context (.-clientX event) (.-clientY event))))]
+
+    (mf/use-effect
+     (mf/deps canvas)
+     (fn []
+       (let [context (.getContext canvas "webgl2" #js {:willReadFrequently true, :preserveDrawingBuffer true})]
+         (mf/set-ref-val! canvas-context context))))
 
     (mf/use-effect
      (fn []
@@ -298,16 +344,16 @@
 
     (mf/use-effect
      (fn []
-       (handle-canvas-changed nil)
+       (handle-canvas-changed)
        (let [_ (js/document.addEventListener "wasm:render" handle-canvas-changed)]
          #(js/document.removeEventListener "wasm:render" handle-canvas-changed))))
 
     (mf/use-effect
-     (mf/deps viewport-node canvas-ready?)
+     (mf/deps viewport-node canvas canvas-image-data zoom-view-context)
      (fn []
-       (when canvas-ready?
+       (when (some? canvas)
          (let [{:keys [x y]} @initial-mouse-pos]
-           (process-pointer-move viewport-node canvas canvas-image-data zoom-view-context x y true)))))
+           (process-pointer-move-wasm viewport-node canvas canvas-image-data zoom-view-context x y)))))
 
     [:div {:id "pixel-overlay"
            :tab-index 0
