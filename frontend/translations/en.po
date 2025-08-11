@@ -7622,6 +7622,10 @@ msgstr "Right click to see options"
 msgid "workspace.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
 
+#: src/app/main/data/workspace/tokens/errors.cljs:61
+msgid "workspace.tokens.value-with-percent"
+msgstr "Invalid value: % is not allowed."
+
 #: src/app/main/ui/workspace/tokens/form.cljs:555
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name."

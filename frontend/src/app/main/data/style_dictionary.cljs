@@ -133,7 +133,6 @@
 
           :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
 
-
 (defn- parse-sd-token-stroke-width-value
   "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
@@ -157,6 +156,15 @@
       (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-stroke-width value)])
 
       :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
+
+(defn- parse-sd-token-letter-spacing-value
+  "Parses `value` of a text-case `sd-token` into a map like `{:value \"1\"}`.
+  If the `value` is not parseable and/or has missing references returns a map with `:errors`."
+  [value]
+  (let [parsed-value (parse-sd-token-general-value value)]
+    (if (= (:unit parsed-value) "%")
+      {:errors [(wte/error-with-value :error.style-dictionary/value-with-percent value)]}
+      parsed-value)))
 
 (defn- parse-sd-token-text-case-value
   "Parses `value` of a text-case `sd-token` into a map like `{:value \"uppercase\"}`.
@@ -253,6 +261,7 @@
                                 :opacity (parse-sd-token-opacity-value value has-references?)
                                 :stroke-width (parse-sd-token-stroke-width-value value has-references?)
                                 :text-case (parse-sd-token-text-case-value value)
+                                :letter-spacing (parse-sd-token-letter-spacing-value value)
                                 :text-decoration (parse-sd-token-text-decoration-value value)
                                 :font-weight (parse-sd-token-font-weight-value value)
                                 :number (parse-sd-token-number-value value)
