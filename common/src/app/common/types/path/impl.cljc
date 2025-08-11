@@ -29,6 +29,7 @@
 #?(:clj (set! *warn-on-reflection* true))
 
 (def ^:const SEGMENT-U8-SIZE 28)
+(def ^:const SEGMENT-U32-SIZE (/ SEGMENT-U8-SIZE 4))
 
 (defprotocol IPathData
   (-write-to [_ buffer offset] "write the content to the specified buffer")

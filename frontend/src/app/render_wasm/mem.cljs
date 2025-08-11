@@ -15,10 +15,12 @@
   ;; Divides the value by 4
   (bit-shift-right value 2))
 
-(defn get-list-size
-  "Returns the size of a list in bytes"
-  [list list-item-size]
-  (* list-item-size (count list)))
+(defn get-alloc-size
+  "Calculate allocation size for a sequential collection of identical
+  objects of the specified size."
+  [coll item-size]
+  (assert (counted? coll) "`coll` should be constant time countable")
+  (* item-size (count coll)))
 
 (defn alloc
   "Allocates an arbitrary amount of bytes (aligned to 4 bytes).
@@ -61,5 +63,11 @@
 (defn slice
   "Returns a copy of a portion of a typed array into a new typed array
   object selected from start to end."
-  [heap start end]
-  (.slice ^js heap start end))
+  [heap offset size]
+  (.slice ^js heap offset (+ offset size)))
+
+(defn view
+  "Returns a new typed array on the same ArrayBuffer store and with the
+  same element types as for this typed array."
+  [heap offset size]
+  (.subarray ^js heap offset (+ offset size)))

@@ -5,25 +5,44 @@
 ;; Copyright (c) KALEIDOS INC
 (ns app.render-wasm.deserializers
   (:require
+   [app.common.data :as d]
    [app.common.geom.matrix :as gmt]
+   [app.common.geom.point :as gpt]
    [app.common.uuid :as uuid]))
 
-(defn heap32->entry
+(defn read-modifier-entry
   [heapu32 heapf32 offset]
   (let [id1 (aget heapu32 (+ offset 0))
         id2 (aget heapu32 (+ offset 1))
         id3 (aget heapu32 (+ offset 2))
         id4 (aget heapu32 (+ offset 3))
 
-        a (aget heapf32 (+ offset 4))
-        b (aget heapf32 (+ offset 5))
-        c (aget heapf32 (+ offset 6))
-        d (aget heapf32 (+ offset 7))
-        e (aget heapf32 (+ offset 8))
-        f (aget heapf32 (+ offset 9))
+        a   (aget heapf32 (+ offset 4))
+        b   (aget heapf32 (+ offset 5))
+        c   (aget heapf32 (+ offset 6))
+        d   (aget heapf32 (+ offset 7))
+        e   (aget heapf32 (+ offset 8))
+        f   (aget heapf32 (+ offset 9))]
 
-        id (uuid/from-unsigned-parts id1 id2 id3 id4)]
+    (d/vec2 (uuid/from-unsigned-parts id1 id2 id3 id4)
+            (gmt/matrix a b c d e f))))
 
-    {:id id
+
+(defn read-selection-rect
+  [heapf32 offset]
+  (let [width  (aget heapf32 (+ offset 0))
+        height (aget heapf32 (+ offset 1))
+        cx     (aget heapf32 (+ offset 2))
+        cy     (aget heapf32 (+ offset 3))
+        a      (aget heapf32 (+ offset 4))
+        b      (aget heapf32 (+ offset 5))
+        c      (aget heapf32 (+ offset 6))
+        d      (aget heapf32 (+ offset 7))
+        e      (aget heapf32 (+ offset 8))
+        f      (aget heapf32 (+ offset 9))]
+    {:width width
+     :height height
+     :center (gpt/point cx cy)
      :transform (gmt/matrix a b c d e f)}))
+
 
