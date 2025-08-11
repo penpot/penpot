@@ -49,7 +49,10 @@
 ;; All of these entries are in bytes so we need to adjust
 ;; these values to work with TypedArrays of 32 bits.
 ;;
-(def UUID-BYTE-SIZE 16)
+(def ^:const UUID-BYTE-SIZE 16)
+(def ^:const UUID-U32-SIZE (/ UUID-BYTE-SIZE 4))
+
+
 (def MODIFIER-ENTRY-SIZE 40)
 (def MODIFIER-ENTRY-TRANSFORM-OFFSET 16)
 (def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
@@ -171,25 +174,25 @@
   (h/call wasm/internal-module "_set_shape_rotation" rotation))
 
 (defn set-shape-children
-  [shape-ids]
-  (let [num-shapes (count shape-ids)]
+  [children]
+  (let [heap   (mem/get-heap-u32)
+        length (count children)]
     (perf/begin-measure "set-shape-children")
-    (when (> num-shapes 0)
-      (let [offset (mem/alloc-bytes (* UUID-BYTE-SIZE num-shapes))
-            heap (mem/get-heap-u32)]
-
-        (loop [entries (seq shape-ids)
-               current-offset  offset]
-          (when-not (empty? entries)
-            (let [id (first entries)]
-              (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-              (recur (rest entries) (+ current-offset UUID-BYTE-SIZE)))))))
+    (when (pos? length)
+      (let [offset (mem/alloc-bytes-32 (* UUID-BYTE-SIZE length))]
+        (reduce (fn [offset id]
+                  (sr/heapu32-set-uuid id heap offset)
+                  (+ offset UUID-U32-SIZE))
+                offset
+                children)))
 
     (let [result (h/call wasm/internal-module "_set_children")]
       (perf/end-measure "set-shape-children")
       result)))
 
-(defn- get-string-length [string] (+ (count string) 1))
+(defn- get-string-length
+  [string]
+  (+ (count string) 1))
 
 (defn- fetch-image
   [shape-id image-id]
@@ -1081,7 +1084,7 @@
 
     (reduce (fn [offset id]
               (sr/heapu32-set-uuid id heap offset)
-              (+ offset (/ UUID-BYTE-SIZE 4)))
+              (+ offset UUID-U32-SIZE))
             offset
             (rseq ids)))
 
