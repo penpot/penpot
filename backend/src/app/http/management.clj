@@ -11,8 +11,6 @@
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
    [app.db :as db]
-   [app.http.errors :as errors]
-   [app.http.middleware :as mw]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
