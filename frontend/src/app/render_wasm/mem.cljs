@@ -60,6 +60,10 @@
   []
   (unchecked-get ^js wasm/internal-module "HEAPF32"))
 
+(defn free
+  []
+  (h/call wasm/internal-module "_free_bytes"))
+
 (defn slice
   "Returns a copy of a portion of a typed array into a new typed array
   object selected from start to end."

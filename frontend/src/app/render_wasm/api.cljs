@@ -678,7 +678,7 @@
          width (aget heapf32 (mem/ptr8->ptr32 offset))
          height (aget heapf32 (mem/ptr8->ptr32 (+ offset 4)))
          max-width (aget heapf32 (mem/ptr8->ptr32 (+ offset 8)))]
-     (h/call wasm/internal-module "_free_bytes")
+     (mem/free)
      {:width width :height height :max-width max-width})))
 
 (defn set-view-box
@@ -881,7 +881,7 @@
             result
             (->> (range 0 len)
                  (mapv #(dr/heap32->entry heapu32 heapf32 (mem/ptr8->ptr32 (+ result-offset 4 (* % MODIFIER-ENTRY-SIZE))))))]
-        (h/call wasm/internal-module "_free_bytes")
+        (mem/free)
 
         result))))
 
@@ -915,7 +915,7 @@
             f (aget heapf32 (mem/ptr8->ptr32 (+ offset 36)))
             transform (gmt/matrix a b c d e f)]
 
-        (h/call wasm/internal-module "_free_bytes")
+        (mem/free)
         (request-render "set-modifiers")
 
         {:width width
@@ -949,7 +949,7 @@
             e (aget heapf32 (mem/ptr8->ptr32 (+ offset 32)))
             f (aget heapf32 (mem/ptr8->ptr32 (+ offset 36)))
             transform (gmt/matrix a b c d e f)]
-        (h/call wasm/internal-module "_free_bytes")
+        (mem/free)
         {:width width
          :height height
          :center (gpt/point cx cy)
@@ -1058,7 +1058,7 @@
         heapi32 (mem/get-heap-i32)
         row     (aget heapi32 (mem/ptr8->ptr32 (+ offset 0)))
         column  (aget heapi32 (mem/ptr8->ptr32 (+ offset 4)))]
-    (h/call wasm/internal-module "_free_bytes")
+    (mem/free)
     [row column]))
 
 (defn shape-to-path
@@ -1073,7 +1073,7 @@
                            (+ offset 1)
                            (+ offset 1 (* length (/ path.impl/SEGMENT-BYTE-SIZE 4))))
         content (path/from-bytes data)]
-    (h/call wasm/internal-module "_free_bytes")
+    (mem/free)
     content))
 
 (defn calculate-bool
@@ -1097,7 +1097,7 @@
                            (+ offset 1)
                            (+ offset 1 (* length (/ path.impl/SEGMENT-BYTE-SIZE 4))))
         content (path/from-bytes data)]
-    (h/call wasm/internal-module "_free_bytes")
+    (mem/free)
     content))
 
 (defonce module
