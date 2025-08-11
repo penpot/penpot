@@ -24,8 +24,15 @@ fn draw_image_fill(
     let src_rect = get_source_rect(size, container, image_fill);
     let dest_rect = container;
 
+    let mut image_paint = skia::Paint::default();
+    image_paint.set_anti_alias(antialias);
+    if let Some(filter) = shape.image_filter(1.) {
+        image_paint.set_image_filter(filter.clone());
+    }
+
+    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&image_paint);
     // Save the current canvas state
-    canvas.save();
+    canvas.save_layer(&layer_rec);
 
     // Set the clipping rectangle to the container bounds
     match &shape.shape_type {
@@ -84,26 +91,29 @@ fn draw_image_fill(
  * This SHOULD be the only public function in this module.
  */
 pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill, antialias: bool) {
-    let paint = &fill.to_paint(&shape.selrect, antialias);
+    let mut paint = fill.to_paint(&shape.selrect, antialias);
+    if let Some(image_filter) = shape.image_filter(1.) {
+        paint.set_image_filter(image_filter);
+    }
 
     match (fill, &shape.shape_type) {
         (Fill::Image(image_fill), _) => {
-            draw_image_fill(render_state, shape, image_fill, paint, antialias);
+            draw_image_fill(render_state, shape, image_fill, &paint, antialias);
         }
         (_, Type::Rect(_) | Type::Frame(_)) => {
             render_state
                 .surfaces
-                .draw_rect_to(SurfaceId::Fills, shape, paint);
+                .draw_rect_to(SurfaceId::Fills, shape, &paint);
         }
         (_, Type::Circle) => {
             render_state
                 .surfaces
-                .draw_circle_to(SurfaceId::Fills, shape, paint);
+                .draw_circle_to(SurfaceId::Fills, shape, &paint);
         }
         (_, Type::Path(_)) | (_, Type::Bool(_)) => {
             render_state
                 .surfaces
-                .draw_path_to(SurfaceId::Fills, shape, paint);
+                .draw_path_to(SurfaceId::Fills, shape, &paint);
         }
         (_, Type::Group(_)) => {
             // Groups can have fills but they propagate them to their children

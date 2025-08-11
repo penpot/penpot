@@ -20,7 +20,7 @@ fn render_fill_drop_shadow(
     shadow: &Shadow,
     antialias: bool,
 ) {
-    let paint = &shadow.get_drop_shadow_paint(antialias);
+    let paint = &shadow.get_drop_shadow_paint(antialias, shape.image_filter(1.).as_ref());
     render_shadow_paint(render_state, shape, paint, SurfaceId::DropShadows);
 }
 
@@ -38,7 +38,7 @@ fn render_fill_inner_shadow(
     shadow: &Shadow,
     antialias: bool,
 ) {
-    let paint = &shadow.get_inner_shadow_paint(antialias);
+    let paint = &shadow.get_inner_shadow_paint(antialias, shape.image_filter(1.).as_ref());
     render_shadow_paint(render_state, shape, paint, SurfaceId::InnerShadows);
 }
 
@@ -129,7 +129,7 @@ pub fn render_text_drop_shadow(
     paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
 ) {
-    let paint = shadow.get_drop_shadow_paint(antialias);
+    let paint = shadow.get_drop_shadow_paint(antialias, shape.image_filter(1.).as_ref());
 
     text::render(
         render_state,
@@ -158,7 +158,7 @@ pub fn render_text_inner_shadow(
     paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
 ) {
-    let paint = shadow.get_inner_shadow_paint(antialias);
+    let paint = shadow.get_inner_shadow_paint(antialias, shape.image_filter(1.).as_ref());
 
     text::render(
         render_state,

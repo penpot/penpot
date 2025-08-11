@@ -18,7 +18,7 @@ impl TextPaths {
     }
 
     pub fn get_skia_paragraphs(&self) -> Vec<Vec<ParagraphBuilder>> {
-        let paragraphs = self.to_paragraphs();
+        let paragraphs = self.to_paragraphs(None);
         self.collect_paragraphs(paragraphs)
     }
 

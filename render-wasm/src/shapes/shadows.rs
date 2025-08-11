@@ -1,6 +1,7 @@
 use skia_safe::{self as skia, image_filters, ImageFilter, Paint};
 
 use super::Color;
+use crate::render::filters::compose_filters;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ShadowStyle {
@@ -62,13 +63,16 @@ impl Shadow {
         self.hidden
     }
 
-    pub fn get_drop_shadow_paint(&self, antialias: bool) -> Paint {
+    pub fn get_drop_shadow_paint(
+        &self,
+        antialias: bool,
+        blur_filter: Option<&ImageFilter>,
+    ) -> Paint {
         let mut paint = Paint::default();
-        let image_filter = self.get_drop_shadow_filter();
-
-        paint.set_image_filter(image_filter);
+        let shadow_filter = self.get_drop_shadow_filter();
+        let filter = compose_filters(blur_filter, shadow_filter.as_ref());
+        paint.set_image_filter(filter);
         paint.set_anti_alias(antialias);
-
         paint
     }
 
@@ -89,14 +93,16 @@ impl Shadow {
         filter
     }
 
-    pub fn get_inner_shadow_paint(&self, antialias: bool) -> Paint {
+    pub fn get_inner_shadow_paint(
+        &self,
+        antialias: bool,
+        blur_filter: Option<&ImageFilter>,
+    ) -> Paint {
         let mut paint = Paint::default();
-
-        let image_filter = self.get_inner_shadow_filter();
-
-        paint.set_image_filter(image_filter);
+        let shadow_filter = self.get_inner_shadow_filter();
+        let filter = compose_filters(blur_filter, shadow_filter.as_ref());
+        paint.set_image_filter(filter);
         paint.set_anti_alias(antialias);
-
         paint
     }
 
