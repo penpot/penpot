@@ -15,6 +15,7 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.fills.impl :as types.fills.impl]
    [app.common.types.path :as path]
+   [app.common.types.path.impl :as path.impl]
    [app.common.types.shape.layout :as ctl]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -48,7 +49,7 @@
 ;; All of these entries are in bytes so we need to adjust
 ;; these values to work with TypedArrays of 32 bits.
 ;;
-(def CHILD-ENTRY-SIZE 16)
+(def UUID-BYTE-SIZE 16)
 (def MODIFIER-ENTRY-SIZE 40)
 (def MODIFIER-ENTRY-TRANSFORM-OFFSET 16)
 (def GRID-LAYOUT-ROW-ENTRY-SIZE 5)
@@ -174,7 +175,7 @@
   (let [num-shapes (count shape-ids)]
     (perf/begin-measure "set-shape-children")
     (when (> num-shapes 0)
-      (let [offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-shapes))
+      (let [offset (mem/alloc-bytes (* UUID-BYTE-SIZE num-shapes))
             heap (mem/get-heap-u32)]
 
         (loop [entries (seq shape-ids)
@@ -182,7 +183,7 @@
           (when-not (empty? entries)
             (let [id (first entries)]
               (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-              (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE)))))))
+              (recur (rest entries) (+ current-offset UUID-BYTE-SIZE)))))))
 
     (let [result (h/call wasm/internal-module "_set_children")]
       (perf/end-measure "set-shape-children")
@@ -1060,17 +1061,14 @@
 (defn shape-to-path
   [id]
   (use-shape id)
-  (let [offset (h/call wasm/internal-module "_current_to_path")
-
+  (let [offset  (h/call wasm/internal-module "_current_to_path")
+        offset  (mem/ptr8->ptr32 offset)
         heapu32 (mem/get-heap-u32)
-        heapu8 (mem/get-heap-u8)
 
-        len (aget heapu32 (mem/ptr8->ptr32 offset))
-        from-offset (+ offset 4)
-        to-offset   (+ offset 4 (* len RAW-SEGMENT-SIZE))
-
-        data (js/Uint8Array. (.slice heapu8 from-offset to-offset))
-
+        length  (aget heapu32 offset)
+        data    (mem/slice heapu32
+                           (+ offset 1)
+                           (+ offset 1 (* length (/ path.impl/SEGMENT-BYTE-SIZE 4))))
         content (path/from-bytes data)]
     (h/call wasm/internal-module "_free_bytes")
     content))
@@ -1078,26 +1076,23 @@
 (defn calculate-bool
   [bool-type ids]
   (let [num-ids (count ids)
-        offset (mem/alloc-bytes (* CHILD-ENTRY-SIZE num-ids))
-        heap (mem/get-heap-u32)]
+        offset  (mem/alloc-bytes-32 (* UUID-BYTE-SIZE num-ids))
+        heap    (mem/get-heap-u32)]
 
-    (loop [entries (seq ids)
-           current-offset  offset]
-      (when-not (empty? entries)
-        (let [id (first entries)]
-          (sr/heapu32-set-uuid id heap (mem/ptr8->ptr32 current-offset))
-          (recur (rest entries) (+ current-offset CHILD-ENTRY-SIZE))))))
+    (reduce (fn [offset id]
+              (sr/heapu32-set-uuid id heap offset)
+              (+ offset (/ UUID-BYTE-SIZE 4)))
+            offset
+            (rseq ids)))
 
-  (let [offset (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
+  (let [offset  (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
+        offset  (mem/ptr8->ptr32 offset)
         heapu32 (mem/get-heap-u32)
-        heapu8 (mem/get-heap-u8)
 
-        len (aget heapu32 (mem/ptr8->ptr32 offset))
-        from-offset (+ offset 4)
-        to-offset   (+ offset 4 (* len RAW-SEGMENT-SIZE))
-
-        data (js/Uint8Array. (.slice heapu8 from-offset to-offset))
-
+        length  (aget heapu32 offset)
+        data    (mem/slice heapu32
+                           (+ offset 1)
+                           (+ offset 1 (* length (/ path.impl/SEGMENT-BYTE-SIZE 4))))
         content (path/from-bytes data)]
     (h/call wasm/internal-module "_free_bytes")
     content))

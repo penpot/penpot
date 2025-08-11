@@ -609,6 +609,9 @@
        (instance? js/Uint8Array buffer)
        (from-bytes (.-buffer buffer))
 
+       (instance? js/Uint32Array buffer)
+       (from-bytes (.-buffer buffer))
+
        (instance? js/Int8Array buffer)
        (from-bytes (.-buffer buffer))
 

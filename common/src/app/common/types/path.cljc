@@ -216,23 +216,26 @@
                  :content (vec contents)
                  :cause cause)))))
 
+(def wasm:calc-bool-content
+  "A overwrite point for setup a WASM version of the `calc-bool-content*` function"
+  nil)
+
 (defn calc-bool-content
   "Calculate the boolean content from shape and objects. Returns a
   packed PathData instance"
   [shape objects]
-  (-> (calc-bool-content* shape objects)
-      (impl/path-data)))
-
-(def update-bool-shape* nil)
+  (let [content (if (fn? wasm:calc-bool-content)
+                  (wasm:calc-bool-content (get shape :bool-type)
+                                          (get shape :shapes))
+                  (calc-bool-content* shape objects))]
+    (impl/path-data content)))
 
 (defn update-bool-shape
   "Calculates the selrect+points for the boolean shape"
   [shape objects]
-  (if update-bool-shape*
-    (update-bool-shape* shape objects)
-    (let [content (calc-bool-content shape objects)
-          shape   (assoc shape :content content)]
-      (update-geometry shape))))
+  (let [content (calc-bool-content shape objects)
+        shape   (assoc shape :content content)]
+    (update-geometry shape)))
 
 (defn shape-with-open-path?
   [shape]

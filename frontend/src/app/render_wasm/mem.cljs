@@ -59,3 +59,9 @@
   "Returns a Float32Array view of the heap"
   []
   (unchecked-get ^js wasm/internal-module "HEAPF32"))
+
+(defn slice
+  "Returns a copy of a portion of a typed array into a new typed array
+  object selected from start to end."
+  [heap start end]
+  (.slice ^js heap start end))
