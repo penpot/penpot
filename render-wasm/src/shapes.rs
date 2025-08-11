@@ -2,6 +2,7 @@ use skia_safe::{self as skia};
 
 use crate::render::BlendMode;
 use crate::uuid::Uuid;
+use std::borrow::Cow;
 use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet};
 use std::iter::once;
@@ -274,7 +275,7 @@ impl Shape {
         result
     }
 
-    fn invalidate_extrect(&mut self) {
+    pub fn invalidate_extrect(&mut self) {
         self.extrect = OnceCell::new();
     }
 
@@ -652,8 +653,13 @@ impl Shape {
         self.selrect.width()
     }
 
-    pub fn visually_insignificant(&self, scale: f32) -> bool {
-        let extrect = self.extrect();
+    pub fn visually_insignificant(
+        &self,
+        scale: f32,
+        shapes_pool: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> bool {
+        let extrect = self.extrect(shapes_pool, modifiers);
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
@@ -688,11 +694,21 @@ impl Shape {
         self.selrect
     }
 
-    pub fn extrect(&self) -> math::Rect {
-        *self.extrect.get_or_init(|| self.calculate_extrect())
+    pub fn extrect(
+        &self,
+        shapes_pool: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> math::Rect {
+        *self
+            .extrect
+            .get_or_init(|| self.calculate_extrect(shapes_pool, modifiers))
     }
 
-    pub fn calculate_extrect(&self) -> math::Rect {
+    pub fn calculate_extrect(
+        &self,
+        shapes_pool: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> math::Rect {
         let mut max_stroke: f32 = 0.;
         let is_open = if let Type::Path(p) = &self.shape_type {
             p.is_open()
@@ -753,6 +769,26 @@ impl Shape {
             rect.bottom += self.blur.value;
         }
 
+        // For frames without clipping, extend the bounding rectangle to include all nested shapes
+        // This ensures that frames properly encompass their content when clip_content is false
+        if let Type::Frame(_) = &self.shape_type {
+            if !self.clip_content {
+                for child_id in self.children_ids(false) {
+                    if let Some(child_shape) = shapes_pool.get(&child_id) {
+                        // Create a copy of the child shape to apply any transformations
+                        let mut transformed_element: Cow<Shape> = Cow::Borrowed(child_shape);
+                        if let Some(modifier) = modifiers.get(&child_id) {
+                            transformed_element.to_mut().apply_transform(modifier);
+                        }
+
+                        // Get the child's extended rectangle and join it with the frame's rectangle
+                        let child_extrect = transformed_element.extrect(shapes_pool, modifiers);
+                        rect.join(child_extrect);
+                    }
+                }
+            }
+        }
+
         rect
     }
 
@@ -808,6 +844,44 @@ impl Shape {
                     }),
             )
             .collect()
+    }
+
+    /// Returns all ancestor shapes of this shape, traversing up the parent hierarchy
+    ///
+    /// This function walks up the parent chain starting from this shape's parent,
+    /// collecting all ancestor IDs. It stops when it reaches a nil UUID or when
+    /// an ancestor is hidden (unless include_hidden is true).
+    ///
+    /// # Arguments
+    /// * `shapes` - The shapes pool containing all shapes
+    /// * `include_hidden` - Whether to include hidden ancestors in the result
+    ///
+    /// # Returns
+    /// A set of ancestor UUIDs in traversal order (closest ancestor first)
+    pub fn all_ancestors(&self, shapes: &ShapesPool, include_hidden: bool) -> IndexSet<Uuid> {
+        let mut ancestors = IndexSet::new();
+        let mut current_id = self.id;
+
+        // Traverse upwards using parent_id
+        while let Some(parent_id) = shapes.get(&current_id).and_then(|s| s.parent_id) {
+            // If the parent_id is the zero UUID, there are no more ancestors
+            if parent_id == Uuid::nil() {
+                break;
+            }
+
+            // Check if the ancestor is hidden
+            if let Some(parent) = shapes.get(&parent_id) {
+                if !include_hidden && parent.hidden() {
+                    break;
+                }
+                ancestors.insert(parent_id);
+                current_id = parent_id;
+            } else {
+                break;
+            }
+        }
+
+        ancestors
     }
 
     pub fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {
