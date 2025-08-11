@@ -1,6 +1,7 @@
 mod blend;
 mod debug;
 mod fills;
+pub mod filters;
 mod fonts;
 mod gpu_state;
 pub mod grid_layout;
@@ -21,7 +22,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Corners, Fill, Shape, SolidColor, StructureEntry, Type};
+use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, SolidColor, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
@@ -179,6 +180,7 @@ pub(crate) struct RenderState {
     // can affect its child elements if they don't specify one themselves. If the planned
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
+    pub nested_blurs: Vec<Option<Blur>>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
 }
@@ -269,6 +271,7 @@ impl RenderState {
             ),
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
+            nested_blurs: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
         }
@@ -451,6 +454,23 @@ impl RenderState {
             shape.to_mut().apply_transform(shape_modifiers);
         }
 
+        let mut nested_blur_value = 0.;
+        for nested_blur in self.nested_blurs.iter().flatten() {
+            if !nested_blur.hidden && nested_blur.blur_type == BlurType::Layer {
+                nested_blur_value += nested_blur.value.powf(2.);
+            }
+        }
+
+        if !shape.blur.hidden && shape.blur.blur_type == BlurType::Layer {
+            nested_blur_value += shape.blur.value.powf(2.);
+        }
+
+        if nested_blur_value > 0. {
+            shape
+                .to_mut()
+                .set_blur(BlurType::Layer as u8, false, nested_blur_value.sqrt());
+        }
+
         let center = shape.center();
         let mut matrix = shape.transform;
         matrix.post_translate(center);
@@ -491,7 +511,10 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let mut paragraphs = text_content.get_skia_paragraphs();
+                let mut paragraphs = text_content.get_skia_paragraphs(
+                    shape.image_filter(1.).as_ref(),
+                    shape.mask_filter(1.).as_ref(),
+                );
 
                 if !shape.has_visible_strokes() {
                     shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
@@ -500,8 +523,12 @@ impl RenderState {
                 text::render(self, &shape, &mut paragraphs, None, None);
 
                 for stroke in shape.visible_strokes().rev() {
-                    let mut stroke_paragraphs =
-                        text_content.get_skia_stroke_paragraphs(stroke, &shape.selrect());
+                    let mut stroke_paragraphs = text_content.get_skia_stroke_paragraphs(
+                        stroke,
+                        &shape.selrect(),
+                        shape.image_filter(1.).as_ref(),
+                        shape.mask_filter(1.).as_ref(),
+                    );
                     shadows::render_text_drop_shadows(
                         self,
                         &shape,
@@ -751,6 +778,13 @@ impl RenderState {
             }
         }
 
+        match element.shape_type {
+            Type::Frame(_) | Type::Group(_) => {
+                self.nested_blurs.push(Some(element.blur));
+            }
+            _ => {}
+        }
+
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
@@ -765,10 +799,6 @@ impl RenderState {
             self.surfaces
                 .canvas(SurfaceId::Current)
                 .save_layer(&mask_rec);
-        }
-
-        if let Some(image_filter) = element.image_filter(self.get_scale()) {
-            paint.set_image_filter(image_filter);
         }
 
         let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
@@ -828,6 +858,13 @@ impl RenderState {
         }
         if let Type::Group(_) = element.shape_type {
             self.nested_fills.pop();
+        }
+
+        match element.shape_type {
+            Type::Frame(_) | Type::Group(_) => {
+                self.nested_blurs.pop();
+            }
+            _ => {}
         }
 
         // Detect clipping and apply it properly

@@ -923,6 +923,21 @@ impl Shape {
         }
     }
 
+    pub fn mask_filter(&self, scale: f32) -> Option<skia::MaskFilter> {
+        if !self.blur.hidden {
+            match self.blur.blur_type {
+                BlurType::None => None,
+                BlurType::Layer => skia::MaskFilter::blur(
+                    skia::BlurStyle::Normal,
+                    self.blur.value * scale,
+                    Some(true),
+                ),
+            }
+        } else {
+            None
+        }
+    }
+
     pub fn is_recursive(&self) -> bool {
         matches!(
             self.shape_type,
