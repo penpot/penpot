@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-08-12 08:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -2611,9 +2611,8 @@ msgid "modals.big-nudge"
 msgstr "הינד גדול"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
-msgstr "אימות כתובת דוא״ל חדשה"
+msgstr "אישור כתובת דוא״ל חדשה"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2880,9 +2879,8 @@ msgid "modals.invite-member.emails"
 msgstr "כתובות דוא״ל, מופרדות בפסיקים"
 
 #: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr "חלק מכתובות הדוא״ל הן של חברי צוות נוכחיים. ההזמנות לא תישלחנה אליהם."
+msgstr "חלק מהחברים כבר נמצאים בצוות. נזמין את השאר."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -4245,9 +4243,9 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "הרשמה"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
-msgstr "הניסיון מצליח עד כה? אפשר לקבל גישה מלאה לתמיד.[הרשמה](%s)"
+msgstr "הניסיון מצליח עד כה? אפשר לקבל גישה מלאה לתמיד.[הרשמה|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4293,9 +4291,8 @@ msgid "subscription.settings.manage-your-subscription"
 msgstr "ניהול המינוי שלך"
 
 #: src/app/main/ui/settings/subscription.cljs:282
-#, fuzzy
 msgid "subscription.settings.member-since"
-msgstr "חברות ב־Penpot מאז %s"
+msgstr "חברות ב־Penpot מאז: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:285
 msgid "subscription.settings.other-plans"
@@ -4326,9 +4323,8 @@ msgid "subscription.settings.section-plan"
 msgstr "המינוי שלך"
 
 #: src/app/main/ui/settings/subscription.cljs:278
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "תמכת בנו עם התוכנית הזאת מאז %s"
+msgstr "תמכת בנו עם התוכנית הזאת מאז: %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -6935,7 +6931,8 @@ msgstr "בריבוי קבצים, שם / נתיב הקובץ הם השמות המ
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:98
 msgid "workspace.tokens.import-single-file"
-msgstr "בקובץ JSON בודד, המפתחות ברמה העליונה חייבים להיות שמות הסדרה של האסימונים."
+msgstr ""
+"בקובץ JSON יחיד, המפתחות ברמה העליונה חייבים להיות שמות הסדרה של האסימונים."
 
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:95
 msgid "workspace.tokens.import-tokens"
@@ -6969,7 +6966,6 @@ msgid "workspace.tokens.invalid-json"
 msgstr "שגיאת ייבוא: נתוני אסימון שגויים ב־JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "שגיאת ייבוא: שם אסימון שגוי ב־JSON."
 
@@ -7517,11 +7513,8 @@ msgid "workspace.tokens.export.single-file"
 msgstr "קובץ בודד"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
-#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"נראה שהצוות שלך גדל! התוכנית שלך כוללת %s מושבים אבל כרגע יש יותר מושבים "
-"מנוצלים מהכמות המרבית."
+msgstr "נראה שהצוות שלך גדל! התוכנית שלך כוללת %s מושבים אבל כרגע מנוצלים %s"
 
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:120
 msgid "workspace.tokens.export.multiple-files"
@@ -7575,11 +7568,11 @@ msgid "subscription.dashboard.cta.professional-plan-designed"
 msgstr "התוכנית המקצועית תוכננה לצוותים של עד 8 עורכים (בעלים, מנהלים ועורכים)."
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "אפשר להרחיב את כמות העורכים, האחסון ולשמור יותר גרסאות שנשמרו אוטומטית עם "
-"התוכנית המוגבלת או התאגידית. [הרשמה כעת.](%s)"
+"התוכנית המוגבלת או התאגידית. [הרשמה כעת.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:102
 msgid "subscription.dashboard.team-plan"
@@ -7617,9 +7610,8 @@ msgstr ""
 "הגיבויים והגרסאות."
 
 #: src/app/main/ui/settings/subscription.cljs:124
-#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "$7 לעורך/ת לחודש × %s"
+msgstr "**$%s** לחודש"
 
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
@@ -7712,3 +7704,217 @@ msgstr "ייצוא"
 #: src/app/main/data/workspace/tokens/errors.cljs:61
 msgid "workspace.tokens.value-with-units"
 msgstr "ערך שגוי: אסור יחידות."
+
+msgid "errors.email-does-not-match-invitation"
+msgstr "כתובת הדוא״ל לא תואמת את ההזמנה."
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "הגרסה הזאת נעולה ואחרים לא יכולים למחוק אותה"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "רק יוצר או יוצרת הגרסה יכולים לנעול אותה"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "רק יוצר או יוצרת הגרסה יכולים לשחרר את הנעילה שלה"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "הגרסה הזאת כבר נעולה"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "קו חוצה"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "נעילה"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "שחרור נעילה"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr ""
+"נא לשדרג כדי שתהיה התאמה לצורכי השימוש שלך. [הרשמה כעת.|target:self](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr ""
+"נא לשדרג כדי שתהיה התאמה לצורכי השימוש שלך. נא ליצור קשר עם בעלי הצוות: %s"
+
+#: src/app/main/ui/dashboard/subscription.cljs:60
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom"
+msgstr ""
+"קבלת עורכים ואחסון נוספים, שחזור קבצים ועוד בתוכנית הבלתי מוגבלת. "
+"[להשתדרג|target:self](%s)"
+
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "תוכנית מסחרית (ניסיון)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:799
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "נא למלא עיצוב טקסט: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:247
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "תיקייה"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:246
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "קובץ JSON יחיד"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:245
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "קובץ ZIP"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:251
+msgid "workspace.tokens.import-button-prefix"
+msgstr "ייבוא %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "להגוון חייב להיות מאפיין אחד לפחות"
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "הרכיבים צריכים להיות באותו העמוד"
+
+#: src/app/main/ui/workspace/context_menu.cljs:385
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "שילוב כהגוון"
+
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "אחסון נתונים בדפדפן."
+
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "קבוצות, לוחות ופריסות נחשבים לשווי ערך."
+
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "יש את אותה רמת ההיררכיה"
+
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr "מרובע, אליפסה, נתיבים ופעולות בוליאניות נחשבים לאותו הסוג."
+
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "הם מאותו הסוג"
+
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "חולקים את אותו השם."
+
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr "כדי לשמור על שינויים כשמחליפים בין הגוונים, Penpot מחברת שכבות שהן:"
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "איך הגוונים נשארים מחוברים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "לחלק מההגוונים האלה יש מאפיינים וערכים זהים."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "להגוון הזה יש מאפיינים וערכים זהים להגוון אחר."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "להגוונים האלה יש מאפיינים וערכים זהים."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.adjust"
+msgstr "כיוון הערכים כדי שאפשר יהיה למשוך אותם."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "לחלק מההגוונים יש מאפיינים וערכים זהים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "מעבר לרכיב הראשי"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"לרכיב הזה יש הגוונים סותרים. נא לוודא שלכל אחד מההגוונים יש סדרה ייחודית של "
+"ערכי מאפיינים."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "איתור הגוונים כפולים"
+
+#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
+msgid "subscription.settings.unlimited.storage-autosave"
+msgstr "25 ג״ב אחסון ו־30 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
+
+msgid "subscription.settings.editors"
+msgstr "(× %s עורכים)"
+
+#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
+msgid "subscription.settings.professional.storage-autosave"
+msgstr "10 ג״ב אחסון ו־7 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
+
+#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "חשבונית חודשית מוגבלת"
+
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
+
+#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr "אחסון בלתי מוגבל ו־90 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
+
+msgid "labels.pinned-projects"
+msgstr "מיזמים נעוצים"
+
+msgid "labels.sources"
+msgstr "מקורות"
+
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "גרסה נעולה - רק היוצר או היוצרת יכולים לשנות אותה"
+
+msgid "workspace.versions.locked-by-other"
+msgstr "הגרסה הזאת ננעלה על ידי %s ואי אפשר לשנות אותה"
+
+msgid "workspace.versions.locked-by-you"
+msgstr "הגרסה הזאת ננעלה על ידיך"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs
+msgid "workspace.tokens.no-token-files-found"
+msgstr "לא נמצאו אסימונים, סדרות או ערכות עיצוב בקובץ הזה."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:560
+msgid "workspace.tokens.token-font-family-value"
+msgstr "משפחת גופנים"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:689
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "משפחת גופנים או רשימת גופנים מופרדת בפסיקים (,)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:688
+msgid "workspace.tokens.token-font-family-select"
+msgstr "בחירת משפחת גופנים"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:45
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "הייבוא הצליח. חלק מהאסימונים לא נכללו."
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.tokens.more-options"
+msgstr "אפשר לראות את האפשרויות בלחיצה על כפתור העכבר הימני"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"כדי להגדיר את מסגרת המגבלה הזאת, נא [לשדרג את התוכנית שלך|target:self](%s)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "כדי להגדיל את מסגרת המגבלה, נא לכתוב לנו אל [%s](mailto)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr "כדי להגדיל את מסגרת המגבלה, נא ליצור קשר עם בעלי הצוות: [%s](mailto)"
