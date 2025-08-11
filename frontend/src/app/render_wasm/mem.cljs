@@ -9,36 +9,30 @@
    [app.render-wasm.helpers :as h]
    [app.render-wasm.wasm :as wasm]))
 
-(defn ptr8->ptr32
-  "Returns a 32-bit (4-byte aligned) pointer of an 8-bit pointer"
+(defn ->offset-32
+  "Convert a 8-bit (1 byte) offset to a 32-bit (4 bytes) offset"
   [value]
   ;; Divides the value by 4
   (bit-shift-right value 2))
-
-(defn ptr32->ptr8
-  "Returns a 8-bit pointer of a 32-bit (4-byte aligned) pointer"
-  [value]
-  ;; Multiplies by 4
-  (bit-shift-left value 2))
 
 (defn get-list-size
   "Returns the size of a list in bytes"
   [list list-item-size]
   (* list-item-size (count list)))
 
-(defn alloc-bytes
-  "Allocates an arbitrary amount of bytes"
+(defn alloc
+  "Allocates an arbitrary amount of bytes (aligned to 4 bytes).
+  Returns an offset of 8 bits (1 byte) size."
   [size]
   (when (= size 0)
     (js/console.trace "Tried to allocate 0 bytes"))
   (h/call wasm/internal-module "_alloc_bytes" size))
 
-(defn alloc-bytes-32
-  "Allocates a 4-byte aligned amount of bytes"
+(defn alloc->offset-32
+  "Allocates an arbitrary amount of bytes (aligned to 4 bytes).
+  Returns an offset of 32 bits (4 bytes) size."
   [size]
-  (when (= size 0)
-    (js/console.trace "Tried to allocate 0 bytes"))
-  (ptr8->ptr32 (h/call wasm/internal-module "_alloc_bytes" size)))
+  (-> (alloc size) (->offset-32)))
 
 (defn get-heap-u8
   "Returns a Uint8Array view of the heap"

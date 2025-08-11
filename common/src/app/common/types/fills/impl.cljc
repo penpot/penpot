@@ -20,15 +20,15 @@
 (def ^:const MAX-GRADIENT-STOPS 16)
 (def ^:const MAX-FILLS 8)
 
-(def ^:const GRADIENT-STOP-SIZE 8)
-(def ^:const GRADIENT-BYTE-SIZE 156)
-(def ^:const SOLID-BYTE-SIZE 4)
-(def ^:const IMAGE-BYTE-SIZE 36)
-(def ^:const METADATA-BYTE-SIZE 36)
-(def ^:const FILL-BYTE-SIZE
-  (+ 4 (mth/max GRADIENT-BYTE-SIZE
-                IMAGE-BYTE-SIZE
-                SOLID-BYTE-SIZE)))
+(def ^:const GRADIENT-STOP-U8-SIZE 8)
+(def ^:const GRADIENT-U8-SIZE 156)
+(def ^:const SOLID-U8-SIZE 4)
+(def ^:const IMAGE-U8-SIZE 36)
+(def ^:const METADATA-U8-SIZE 36)
+(def ^:const FILL-U8-SIZE
+  (+ 4 (mth/max GRADIENT-U8-SIZE
+                IMAGE-U8-SIZE
+                SOLID-U8-SIZE)))
 
 (def ^:private xf:take-stops
   (take MAX-GRADIENT-STOPS))
@@ -78,7 +78,7 @@
   (buf/write-int  buffer (+ offset 4)
                   (-> (hex->rgb color)
                       (rgb->rgba opacity)))
-  (+ offset FILL-BYTE-SIZE))
+  (+ offset FILL-U8-SIZE))
 
 (defn write-gradient-fill
   [offset buffer opacity gradient]
@@ -114,8 +114,8 @@
           (buf/write-int   buffer (+ offset' 0) color)
           (buf/write-float buffer (+ offset' 4) (:offset stop))
           (recur (rest stops)
-                 (+ offset' GRADIENT-STOP-SIZE)))
-        (+ offset FILL-BYTE-SIZE)))))
+                 (+ offset' GRADIENT-STOP-U8-SIZE)))
+        (+ offset FILL-U8-SIZE)))))
 
 (defn write-image-fill
   [offset buffer opacity image]
@@ -132,7 +132,7 @@
     (buf/write-short buffer (+ offset 22) 0) ;; 2-byte padding (reserved for future use)
     (buf/write-int   buffer (+ offset 24) image-width)
     (buf/write-int   buffer (+ offset 28) image-height)
-    (+ offset FILL-BYTE-SIZE)))
+    (+ offset FILL-U8-SIZE)))
 
 (defn- write-metadata
   [offset buffer fill]
@@ -169,8 +169,8 @@
 (defn- read-fill
   "Read segment from binary buffer at specified index"
   [dbuffer mbuffer index]
-  (let [doffset (+ 4 (* index FILL-BYTE-SIZE))
-        moffset (* index METADATA-BYTE-SIZE)
+  (let [doffset (+ 4 (* index FILL-U8-SIZE))
+        moffset (* index METADATA-U8-SIZE)
         type    (buf/read-byte dbuffer doffset)
         refs?   (buf/read-bool mbuffer (+ moffset 0))
         fill    (case type
@@ -195,7 +195,7 @@
                                        result []]
                                   (if (< index stops)
                                     (recur (inc index)
-                                           (conj result (read-stop dbuffer (+ doffset 32 (* GRADIENT-STOP-SIZE index)))))
+                                           (conj result (read-stop dbuffer (+ doffset 32 (* GRADIENT-STOP-U8-SIZE index)))))
                                     result))]
 
                     {:fill-opacity opacity
@@ -410,8 +410,8 @@
   [fills]
   (let [fills   (into [] xf:take-fills fills)
         total   (count fills)
-        dbuffer (buf/allocate (+ 4 (* MAX-FILLS FILL-BYTE-SIZE)))
-        mbuffer (buf/allocate (* total METADATA-BYTE-SIZE))]
+        dbuffer (buf/allocate (+ 4 (* MAX-FILLS FILL-U8-SIZE)))
+        mbuffer (buf/allocate (* total METADATA-U8-SIZE))]
 
     (buf/write-byte dbuffer 0 total)
 
@@ -419,8 +419,8 @@
            image-ids #{}]
       (if (< index total)
         (let [fill     (nth fills index)
-              doffset  (+ 4 (* index FILL-BYTE-SIZE))
-              moffset  (* index METADATA-BYTE-SIZE)
+              doffset  (+ 4 (* index FILL-U8-SIZE))
+              moffset  (* index METADATA-U8-SIZE)
               opacity  (get fill :fill-opacity 1)]
 
           (if-let [color (get fill :fill-color)]
