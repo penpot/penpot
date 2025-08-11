@@ -150,7 +150,16 @@
                           :class (stl/css :input-field)}]]
            [:div {:class (stl/css :editors-cost)}
             [:span {:class (stl/css :modal-text-small)}
-             (tr "subscription.settings.management.dialog.price-month" (or (get-in @form [:clean-data :min-members]) 0))]
+             (when (> (get-in @form [:clean-data :min-members]) 25)
+               [:> i18n/tr-html*
+                {:class (stl/css :modal-text-cap)
+                 :tag-name "span"
+                 :content (tr "subscription.settings.management.dialog.price-month" "175")}])
+             [:> i18n/tr-html*
+              {:class (stl/css-case :text-strikethrough (> (get-in @form [:clean-data :min-members]) 25))
+               :tag-name "span"
+               :content (tr "subscription.settings.management.dialog.price-month"
+                            (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
             [:span {:class (stl/css :modal-text-small)}
              (tr "subscription.settings.management.dialog.payment-explanation")]]]
 

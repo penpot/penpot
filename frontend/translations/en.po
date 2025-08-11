@@ -4465,8 +4465,10 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(No payment will be made now)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, markdown
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "$7 per editor/month x %s"
+msgstr ""
+"**$%s** per month"
 
 #: src/app/main/ui/settings/subscription.cljs:112
 msgid "subscription.settings.management.dialog.select-editors"

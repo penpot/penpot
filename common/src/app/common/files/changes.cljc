@@ -419,7 +419,14 @@
       [:type [:= :set-token-set]]
       [:set-name :string]
       [:group? :boolean]
-      [:token-set [:maybe [:fn ctob/token-set?]]]]]
+
+      ;; FIXME: we should not pass private types as part of changes
+      ;; protocol, the changes protocol should reflect a
+      ;; method/protocol for perform surgical operations on file data,
+      ;; this has nothing todo with internal types of a file data
+      ;; structure.
+      [:token-set {:gen/gen (sg/generator ctob/schema:token-set)}
+       [:maybe [:fn ctob/token-set?]]]]]
 
     [:set-token
      [:map {:title "SetTokenChange"}
