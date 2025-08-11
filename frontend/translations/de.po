@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-09 09:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-07-30 06:11+0000\n"
+"Last-Translator: Stas Haas <stas@girafic.de>\n"
 "Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
 "de/>\n"
 "Language: de\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -7115,3 +7115,215 @@ msgstr "Automatisch gespeicherte Versionen werden für %s Tage aufbewahrt."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klicken Sie, um den Pfad zu schließen"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:57
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "Zu Bibliotheken und Vorlagen"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:59
+msgid "dashboard.empty-project.add-library"
+msgstr "Eine Bibliothek oder Vorlage hinzufügen"
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "Dunkel- und Hell-Modus"
+
+#: src/app/main/ui/settings/options.cljs:69
+msgid "dashboard.select-ui-theme.light"
+msgstr "Penpot Hell"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
+msgid "labels.empty"
+msgstr "Leer"
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot Dunkel (Standard)"
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "System-Theme"
+
+#: src/app/main/ui/components/color_input.cljs:36
+msgid "inspect.attributes.color"
+msgstr "Farbe"
+
+#: src/app/main/ui/dashboard/import.cljs:490
+msgid "dashboard.import.import-error.message2"
+msgstr "Dateien mit Fehlern werden nicht hochgeladen."
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+#, unused
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "Abonnieren"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:61
+msgid "dashboard.empty-project.explore"
+msgstr "Entdecken Sie einige, die Sie hinzufügen können"
+
+#: src/app/main/ui/comments.cljs:581
+msgid "labels.mention"
+msgstr "Erwähnung"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.start"
+msgstr "Beginnen Sie mit dem Erschaffen erstaunlicher Dinge"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:264
+msgid "errors.token-set-exists-on-drop"
+msgstr ""
+"Das Ablegen kann nicht abgeschlossen werden, da ein Set mit demselben Namen "
+"bereits im Pfad existiert."
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:76, src/app/main/data/workspace/tokens/library_edit.cljs:98
+msgid "errors.token-theme-already-exists"
+msgstr "Theme-Option mit demselben Namen existiert"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "Unbekanntes Set kann nicht dupliziert werden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:444, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:450
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "Innenabstand links"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:414, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:420
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "Innenabstand rechts"
+
+#: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.try-it-free"
+msgstr "Teste es kostenlos für 14 Tage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:405
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "Innenabstand oben"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:988
+msgid "workspace.options.component.variant.malformed.group.locate"
+msgstr "Ungültige Varianten finden"
+
+#: src/app/main/ui/settings/subscription.cljs:145
+msgid "subscription.settings.start-trial"
+msgstr "Kostenlose Testversion starten"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:173
+msgid "workspace.assets.components.num-variants"
+msgstr "%s Varianten"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:429, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "Innenabstand unten"
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:67, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:72
+msgid "workspace.notification-pill.detail"
+msgstr "Details"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:248
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "Diese Varianten haben ungültige Namen."
+
+#: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.subscribe"
+msgstr "Abonnieren"
+
+#: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
+msgid "subscription.settings.unlimited"
+msgstr "Unbegrenzt"
+
+#: src/app/main/ui/workspace/main_menu.cljs:285
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "Zum System-Theme wechseln"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:354, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:361
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "Innenabstand horizontal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:346
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "Innenabstand vertikal"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:985
+msgid "workspace.options.component.variant.malformed.group.title"
+msgstr "Einige Varianten haben ungültige Namen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:245
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "Diese Variante hat einen ungültigen Namen."
+
+#: src/app/main/ui/settings/subscription.cljs:282
+msgid "subscription.settings.member-since"
+msgstr "Penpot-Mitglied seit %s"
+
+#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
+msgid "subscription.settings.professional.projects-files"
+msgstr "Unbegrenzte Anzahl von Projekte, Dateien und Entwürfen"
+
+#: src/app/main/ui/settings/subscription.cljs:235
+msgid "subscription.settings.section-plan"
+msgstr "Ihr Abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:119
+#, unused
+msgid "subscription.settings.ulimited.try-it-free"
+msgstr "Teste es kostenlos für 14 Tage"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:776
+msgid "workspace.options.component.variant"
+msgstr "Variante"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
+msgstr "Schalten Sie den vollen Zugang für immer frei. [Jetzt abonnieren.] (%s)"
+
+#: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
+msgid "subscription.settings.more-information"
+msgstr "Mehr Informationen"
+
+#: src/app/main/ui/settings/subscription.cljs:168
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "Viel Spaß mit Ihrem Abonnement!"
+
+#: src/app/main/ui/settings/subscription.cljs:166
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "Sie sind %s!"
+
+#: src/app/main/ui/dashboard/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:52, src/app/main/ui/settings/subscription.cljs:245
+msgid "subscription.settings.unlimited-trial"
+msgstr "Unbegrenzt (Testversion)"
+
+#: src/app/main/ui/settings/subscription.cljs:227
+msgid "subscription.settings.unlimited-trial-modal"
+msgstr "Unbegrenzte Testversion"
+
+#: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+msgid "subscription.settings.unlimited.bill"
+msgstr "Monatliche Rechnung mit Kostenobergrenze"
+
+#: src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.management.dialog.members"
+msgstr " (%s Redakteure)"
+
+#: src/app/main/ui/dashboard/templates.cljs:257
+msgid "dashboard.libraries-and-templates.description"
+msgstr ""
+"Hier finden Sie einige Bibliotheken und Vorlagen, die Sie zu Ihrem Projekt "
+"hinzufügen können"
+
+#: src/app/main/ui/settings/subscription.cljs:289, src/app/main/ui/settings/subscription.cljs:302
+msgid "subscription.settings.price-editor-month"
+msgstr "Redakteur pro Monat"
+
+#: src/app/main/ui/settings/subscription.cljs:316
+msgid "subscription.settings.price-organization-month"
+msgstr "Organisation pro Monat"
+
+#: src/app/main/ui/dashboard/subscription.cljs:105, src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:238, src/app/main/ui/settings/subscription.cljs:287
+msgid "subscription.settings.professional"
+msgstr "Professionell"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:45, src/app/main/ui/workspace/tokens/modals/themes.cljs:94
+msgid "workspace.tokens.themes-list"
+msgstr "Liste der Themes"

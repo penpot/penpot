@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-09 09:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-07-08 06:01+0000\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4325,11 +4325,11 @@ msgstr ""
 "en meer."
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
-"Krijg extra editors en opslagruimte, back-up van bestanden en meer met het "
-"**Unlimited-abonnement**"
+"Extra teamleden en opslagruimte, back-up van bestanden en meer met het "
+"Unlimited-abonnement [Power up](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4341,9 +4341,10 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Abonneren"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
-msgstr "Bevalt de proefperiode? Kies voor altijd volledige toegang."
+msgstr ""
+"Bevalt de proefperiode? Kies voor altijd volledige toegang. [Abonneren](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4361,11 +4362,11 @@ msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Onbeperkt abonnement"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-description"
 msgstr ""
 "Profiteer van geavanceerde beveiliging, activiteitenlogboeken, speciale "
-"ondersteuning en meer met **Enterprise-abonnement**"
+"ondersteuning en meer. Kijk eens naar het [Enterprise-abonnement.](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4448,9 +4449,8 @@ msgid "subscription.settings.section-plan"
 msgstr "Uw abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:278
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "Je steunt ons sinds %s"
+msgstr "Je steunt ons al sinds %s met dit abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:119
 #, unused
@@ -5467,9 +5467,8 @@ msgid "workspace.options.fill"
 msgstr "Vullen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
-#, fuzzy
 msgid "workspace.options.fill.add-fill"
-msgstr "Vulkleur toevoegen"
+msgstr "Vulling toevoegen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:172
 msgid "workspace.options.fill.remove-fill"
@@ -7198,7 +7197,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "De dekking moet tussen 0 en 100% of 0 en 1 zijn (bijv. 50% of 0,5)."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:124
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Oorspronkelijke waarde: %s"
 
@@ -7220,7 +7218,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Referentie fouten: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/form.cljs:219, src/app/main/ui/workspace/tokens/form.cljs:223, src/app/main/ui/workspace/tokens/token_pill.cljs:125
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Opgeloste waarde: %s"
 
@@ -7288,7 +7285,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Lijst met thema's"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:574, src/app/main/ui/workspace/tokens/form.cljs:575
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beschrijving"
 
@@ -7325,9 +7321,8 @@ msgid "workspace.tokens.tools"
 msgstr "Hulpmiddelen"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:45
-#, fuzzy
 msgid "workspace.tokens.unknown-token-type"
-msgstr "Overgeslagen tokens"
+msgstr "De import was succesvol, maar sommige tokens zijn overgeslagen. "
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7660,3 +7655,241 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/settings/options.cljs:69
+msgid "dashboard.select-ui-theme.light"
+msgstr "Penpot Licht"
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "Systeemthema"
+
+#: src/app/main/ui/components/color_input.cljs:36
+msgid "inspect.attributes.color"
+msgstr "Kleur"
+
+#: src/app/main/ui/dashboard/subscription.cljs:160
+msgid "subscription.dashboard.cta.unlimited-many-editors"
+msgstr ""
+"Het lijkt erop dat je team is gegroeid! Je abonnement is voor %s personen, "
+"maar nu bent nu met meer."
+
+#: src/app/main/ui/dashboard/subscription.cljs:174
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-member"
+msgstr "Voor onbeperkte toegang, neem contact op met de teameigenaar: %s"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-full-access-owner"
+msgstr "Voor onbeperkte toegang. [Abonneer je nu.] (%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner-more-seats"
+msgstr "Upgrade naar je gebruik. [Abonneer je nu.](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "Jouw abonnement:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:102
+msgid "subscription.dashboard.team-plan"
+msgstr "Team-abonnement"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1000
+msgid "subscription.dashboard.upgrade-plan.power-up"
+msgstr "Tandje erbij"
+
+#: src/app/main/ui/settings/subscription.cljs:53
+msgid "subscription.settings.enterprise-trial"
+msgstr "Enterprise (proefperiode)"
+
+#: src/app/main/ui/settings/subscription.cljs:228
+msgid "subscription.settings.enterprise-trial-modal"
+msgstr "Enterprise proefperiode"
+
+#: src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.management.dialog.members"
+msgstr " (%s teamleden)"
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr "(Er wordt nu geen betaling gedaan)"
+
+#: src/app/main/ui/settings/subscription.cljs:124
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "$7 per teamlid/maand x %s"
+
+#: src/app/main/ui/settings/subscription.cljs:97
+msgid "subscription.settings.management.dialog.title"
+msgstr "%s toepassen op je teams"
+
+#: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.subscribe"
+msgstr "Neem een abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:168
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "Veel plezier met je abonnement!"
+
+#: src/app/main/ui/settings/subscription.cljs:166
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "Je bent %s!"
+
+#: src/app/main/ui/settings/subscription.cljs:227
+msgid "subscription.settings.unlimited-trial-modal"
+msgstr "Onbeperkte proefperiode"
+
+#: src/app/main/ui/dashboard/subscription.cljs:133, src/app/main/ui/workspace/main_menu.cljs:928
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Tandje erbij voor je abonnement"
+
+#: src/app/main/ui/workspace/main_menu.cljs:285
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "Systeemthema inschakelen"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:988
+msgid "workspace.options.component.variant.malformed.group.locate"
+msgstr "Ongeldige varianten localiseren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:985
+msgid "workspace.options.component.variant.malformed.group.title"
+msgstr "Sommigen varianten hebben een ongeldige naam"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:248
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "Deze varianten hebben een ongeldige naam."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:245
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "Deze variant heeft een ongeldige naam."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:251
+msgid "workspace.options.component.variant.malformed.single.some"
+msgstr "Sommige van deze varianten hebben een ongeldige naam."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:340
+msgid "workspace.options.component.variant.malformed.structure.example"
+msgstr "[eigenschap]=[waarde], [eigenschap]=[waarde]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:338
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "Gebruik de volgende structuur:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:370
+msgid "workspace.options.size.unlock"
+msgstr "Vrije verhoudingen"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:126
+msgid "workspace.tokens.export-tokens"
+msgstr "Tokens exporteren"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:120
+msgid "workspace.tokens.export.multiple-files"
+msgstr "Meerdere bestanden"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:36
+msgid "workspace.tokens.export.no-tokens-themes-sets"
+msgstr "Er zijn geen tokens, thema's of verzamelingen om te exporteren."
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:33
+msgid "workspace.tokens.export.preview"
+msgstr "Voorbeeld:"
+
+#: src/app/main/ui/settings/subscription.cljs:112
+msgid "subscription.settings.management.dialog.select-editors"
+msgstr "Selecteer het aantal teamleden (seats) dat je nodig hebt:"
+
+#: src/app/main/ui/settings/subscription.cljs:253
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "Voeg een betaalmethode toe om door te gaan na de proefperiode"
+
+#: src/app/main/ui/dashboard/subscription.cljs:154
+msgid "subscription.dashboard.cta.professional-plan-designed"
+msgstr ""
+"Het Professional-abonnement is ontworpen voor teams van maximaal 8 leden ("
+"eigenaar, beheerder en redacteur)."
+
+#: src/app/main/ui/settings/subscription.cljs:167
+msgid "subscription.settings.success.dialog.description"
+msgstr ""
+"Je kunt je abonnement op elk gewenst moment aanpassen via de pagina "
+"'Abonnement' in je accountgegevens."
+
+#: src/app/main/ui/settings/subscription.cljs:102
+msgid "subscription.settings.management.dialog.choose-this-plan"
+msgstr "Je kiest dit abonnement voor:"
+
+#: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.try-it-free"
+msgstr "Probeer het 14 dagen gratis"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
+msgid "labels.empty"
+msgstr "Leeg"
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot Donker (standaard)"
+
+#: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
+msgid "subscription.settings.more-information"
+msgstr "Meer informatie"
+
+#: src/app/main/ui/dashboard/subscription.cljs:165
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
+msgstr ""
+"Grotere teams, meer opslagruimte en meer automatisch opgeslagen versies met "
+"het Unlimited- of Enterprise-abonnement. [Abonneer je nu.](%s)"
+
+#: src/app/main/ui/settings/subscription.cljs:145
+msgid "subscription.settings.start-trial"
+msgstr "Start gratis proefperiode"
+
+#: src/app/main/ui/dashboard/subscription.cljs:157
+msgid "subscription.dashboard.cta.trial-plan-designed"
+msgstr ""
+"Het onbeperkte (proef)abonnement is ontworpen voor teams van meer dan 8 "
+"leden (eigenaar, beheerder en redacteur)."
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
+msgstr ""
+"Grotere teams, meer opslagruimte en meer automatisch opgeslagen versies met "
+"het Unlimited- of Enterprise-abonnement. Neem contact op met de teameigenaar:"
+" %s"
+
+#: src/app/main/ui/settings/subscription.cljs:132
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr ""
+"Let op: overstappen naar een lager abonnement betekent minder opslagruimte "
+"en kortere back-ups en versiegeschiedenis."
+
+#: src/app/main/ui/settings/subscription.cljs:108
+msgid "subscription.settings.management.dialog.no-teams"
+msgstr ""
+"Dit abonnement is van toepassing op alle toekomstige teams die je maakt of "
+"waarvan je de eigenaar bent."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:370
+msgid "workspace.options.size.lock"
+msgstr "Vaste verhoudingen"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:132
+msgid "workspace.tokens.add-token"
+msgstr "Token toevoegen: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:47
+msgid "workspace.tokens.export"
+msgstr "Exporteren"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:117
+msgid "workspace.tokens.export.single-file"
+msgstr "Enkel bestand"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61
+msgid "workspace.tokens.value-with-units"
+msgstr "Ongeldige waarde: Eenheden zijn niet toegestaan."
