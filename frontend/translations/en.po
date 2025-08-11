@@ -5557,7 +5557,7 @@ msgid "workspace.options.component.variants-help-modal.rule3"
 msgstr "Have the same hierachy level"
 
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
-msgstr "Goups, boards and layouts are considered equivalent."
+msgstr "Groups, boards and layouts are considered equivalent."
 
 msgid "workspace.options.component.variants-help-modal.outro"
 msgstr "Changing any of these (e.g., renaming or grouping a layer) breaks the connection, but reverting the change will restore it."
