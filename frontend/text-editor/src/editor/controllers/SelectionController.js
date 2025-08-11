@@ -1382,13 +1382,10 @@ export class SelectionController extends EventTarget {
    */
   insertParagraph() {
     if (this.isParagraphEnd) {
-      console.log('a')
       return this.insertParagraphAfter();
     } else if (this.isParagraphStart) {
-      console.log('b')
       return this.insertParagraphBefore();
     }
-    console.log('c')
     return this.splitParagraph();
   }
 
@@ -1402,16 +1399,18 @@ export class SelectionController extends EventTarget {
 
     this.removeSelected();
 
-    const newParagraph = splitParagraph(
-      currentParagraph,
-      currentInline,
-      this.focusOffset,
-    );
-    currentParagraph.after(newParagraph);
-
-    this.#mutations.update(currentParagraph);
-    this.#mutations.add(newParagraph);
-
+    if (currentParagraph && currentInline) {
+      const newParagraph = splitParagraph(
+        currentParagraph,
+        currentInline,
+        this.focusOffset,
+      );
+      currentParagraph.after(newParagraph);
+      this.#mutations.update(currentParagraph);
+      this.#mutations.add(newParagraph);
+    } else {
+      console.log(this.#focusNode)
+    }
     // FIXME: Missing collapse?
   }
 

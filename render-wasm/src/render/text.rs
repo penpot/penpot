@@ -53,6 +53,7 @@ pub fn render(
                 continue;
             }
 
+            // Performs the text layout.
             skia_paragraph.layout(shape.bounds().width());
 
             let paragraph_height = skia_paragraph.height();

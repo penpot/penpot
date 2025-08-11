@@ -141,6 +141,7 @@
           heap (mem/get-heap-u8)]
       (.set heap (js/Uint8Array. buffer) metadata-offset)))
 
+  (prn "set_shape_text_content")
   (h/call wasm/internal-module "_set_shape_text_content"))
 
 (def ^:private emoji-pattern #"[\uD83C-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]")

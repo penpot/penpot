@@ -11,6 +11,7 @@ pub extern "C" fn clear_shape_text() {
     });
 }
 
+// TODO: We should modify text content in a smarter way.
 #[no_mangle]
 pub extern "C" fn set_shape_text_content() {
     let bytes = mem::bytes();
