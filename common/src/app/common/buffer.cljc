@@ -110,6 +110,13 @@
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.putInt ~target ~offset (unchecked-int ~value)))))
 
+(defmacro write-u32
+  [target offset value]
+  (if (:ns &env)
+    `(.setUint32 ~target ~offset ~value true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.putInt ~target ~offset (unchecked-int ~value)))))
+
 (defmacro write-i32
   "Idiomatic alias for `write-int`"
   [target offset value]
