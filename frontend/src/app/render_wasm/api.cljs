@@ -390,11 +390,11 @@
         row-gap    (get gap :row-gap 0)
         column-gap (get gap :column-gap 0)
 
-        align-items     (-> (get shape :layout-align-items :start) sr/translate-layout-align-items)
-        align-content   (-> (get shape :layout-align-content :stretch) sr/translate-layout-align-content)
-        justify-items   (-> (get shape :layout-justify-items :start) sr/translate-layout-justify-items)
-        justify-content (-> (get shape :layout-justify-content :stretch) sr/translate-layout-justify-content)
-        wrap-type       (-> (get shape :layout-wrap-type :nowrap) sr/translate-layout-wrap-type)
+        align-items     (-> (get shape :layout-align-items) sr/translate-layout-align-items)
+        align-content   (-> (get shape :layout-align-content) sr/translate-layout-align-content)
+        justify-items   (-> (get shape :layout-justify-items) sr/translate-layout-justify-items)
+        justify-content (-> (get shape :layout-justify-content) sr/translate-layout-justify-content)
+        wrap-type       (-> (get shape :layout-wrap-type) sr/translate-layout-wrap-type)
 
         padding         (get shape :layout-padding)
         padding-top     (get padding :p1 0)
@@ -425,10 +425,10 @@
         row-gap    (get gap :row-gap 0)
         column-gap (get gap :column-gap 0)
 
-        align-items     (-> (get shape :layout-align-items :start) sr/translate-layout-align-items)
-        align-content   (-> (get shape :layout-align-content :stretch) sr/translate-layout-align-content)
-        justify-items   (-> (get shape :layout-justify-items :start) sr/translate-layout-justify-items)
-        justify-content (-> (get shape :layout-justify-content :stretch) sr/translate-layout-justify-content)
+        align-items     (-> (get shape :layout-align-items) sr/translate-layout-align-items)
+        align-content   (-> (get shape :layout-align-content) sr/translate-layout-align-content)
+        justify-items   (-> (get shape :layout-justify-items) sr/translate-layout-justify-items)
+        justify-content (-> (get shape :layout-justify-content) sr/translate-layout-justify-content)
 
         padding         (get shape :layout-padding)
         padding-top     (get padding :p1 0)

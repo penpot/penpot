@@ -212,7 +212,8 @@
     :start   0
     :end     1
     :center  2
-    :stretch 3))
+    :stretch 3
+    0))
 
 (defn translate-layout-align-content
   [align-content]
@@ -223,7 +224,8 @@
     :space-between 3
     :space-around  4
     :space-evenly  5
-    :stretch       6))
+    :stretch       6
+    6))
 
 (defn translate-layout-justify-items
   [justify-items]
@@ -231,7 +233,8 @@
     :start   0
     :end     1
     :center  2
-    :stretch 3))
+    :stretch 3
+    0))
 
 (defn translate-layout-justify-content
   [justify-content]
@@ -242,13 +245,15 @@
     :space-between 3
     :space-around  4
     :space-evenly  5
-    :stretch       6))
+    :stretch       6
+    6))
 
 (defn translate-layout-wrap-type
   [wrap-type]
   (case wrap-type
     :wrap   0
-    :nowrap 1))
+    :nowrap 1
+    1))
 
 (defn translate-grid-track-type
   [type]
