@@ -8,6 +8,7 @@
   "A WASM based render API"
   (:require
    ["react-dom/server" :as rds]
+   [app.common.buffer :as buf]
    [app.common.data :as d :refer [not-empty?]]
    [app.common.data.macros :as dm]
    [app.common.types.fills :as types.fills]
@@ -451,18 +452,22 @@
 
 (defn set-grid-layout-rows
   [entries]
-  (let [size   (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
-        offset (mem/alloc size)
-        heap   (-> (mem/get-heap-u8)
-                   (mem/view offset size))]
+  (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
+        offset  (mem/alloc size)
+        heapu8  (mem/get-heap-u8)
+        buffer  (buf/wrap heapu8)]
 
-    (loop [entries (seq entries)
-           current-offset  0]
-      (when-not (empty? entries)
-        (let [{:keys [type value]} (first entries)]
-          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
-          (.set heap (sr/f32->u8 value) (+ current-offset 1))
-          (recur (rest entries) (+ current-offset GRID-LAYOUT-ROW-U8-SIZE)))))
+    (reduce (fn [offset {:keys [type value]}]
+              ;; NOTE: because the not well alligned nature of grid
+              ;; row data structure, we use buffer/dataview way for
+              ;; write data instead of the used to way of secuentally
+              ;; write chaining the offset.
+              (buf/write-byte buffer (+ offset 0) (sr/translate-grid-track-type type))
+              (buf/write-float buffer (+ offset 1) value)
+              (+ offset GRID-LAYOUT-ROW-U8-SIZE))
+            offset
+            entries)
+
     (h/call wasm/internal-module "_set_grid_rows")))
 
 (defn set-grid-layout-columns
