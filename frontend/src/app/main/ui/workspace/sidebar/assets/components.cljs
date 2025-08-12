@@ -234,8 +234,8 @@
 
      (when group-open?
        [:*
-        [:div {:class-name (stl/css-case :asset-grid listing-thumbs?
-                                         :asset-enum (not listing-thumbs?))
+        [:div {:class (stl/css-case :asset-grid listing-thumbs?
+                                    :asset-enum (not listing-thumbs?))
                :on-drag-enter on-drag-enter
                :on-drag-leave on-drag-leave
                :on-drag-over dom/prevent-default
@@ -435,7 +435,7 @@
 
         rename-group
         (mf/use-fn
-         (mf/deps components)
+         (mf/deps components on-clear-selection)
          (fn [path last-path]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -466,7 +466,7 @@
 
         on-ungroup
         (mf/use-fn
-         (mf/deps components)
+         (mf/deps components on-clear-selection)
          (fn [path]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -479,7 +479,7 @@
 
         on-group-combine-variants
         (mf/use-fn
-         (mf/deps components)
+         (mf/deps components on-clear-selection)
          (fn [path]
            (on-clear-selection)
            (let [comps   (->> components
