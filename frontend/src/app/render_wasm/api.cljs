@@ -208,7 +208,7 @@
 (defn- process-fill-image
   [shape-id fill]
   (when-let [image (:fill-image fill)]
-    (let [id (dm/get-prop image :id)
+    (let [id (get image :id)
           buffer (uuid/get-u32 id)
           cached-image? (h/call wasm/internal-module "_is_image_cached"
                                 (aget buffer 0)
@@ -283,7 +283,7 @@
                 (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
-              (let [image-id      (dm/get-prop image :id)
+              (let [image-id      (get image :id)
                     buffer        (uuid/get-u32 image-id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
                 (types.fills.impl/write-image-fill offset dview opacity image)
@@ -378,8 +378,11 @@
     (h/call wasm/internal-module "_set_shape_blur" type hidden value)))
 
 (defn set-shape-corners
-  [corners]
-  (let [[r1 r2 r3 r4] corners]
+  [shape]
+  (let [r1 (get shape :r1)
+        r2 (get shape :r2)
+        r3 (get shape :r3)
+        r4 (get shape :r4)]
     (h/call wasm/internal-module "_set_shape_corners"
             (d/nilv r1 0)
             (d/nilv r2 0)
@@ -704,37 +707,34 @@
   [objects shape]
   (perf/begin-measure "set-object")
   (let [id           (dm/get-prop shape :id)
-        parent-id    (dm/get-prop shape :parent-id)
         type         (dm/get-prop shape :type)
-        masked       (dm/get-prop shape :masked-group)
-        selrect      (dm/get-prop shape :selrect)
-        constraint-h (dm/get-prop shape :constraints-h)
-        constraint-v (dm/get-prop shape :constraints-v)
+
+        parent-id    (get shape :parent-id)
+        masked       (get shape :masked-group)
+        selrect      (get shape :selrect)
+        constraint-h (get shape :constraints-h)
+        constraint-v (get shape :constraints-v)
         clip-content (if (= type :frame)
-                       (not (dm/get-prop shape :show-content))
+                       (not (get shape :show-content))
                        false)
-        rotation     (dm/get-prop shape :rotation)
-        transform    (dm/get-prop shape :transform)
+        rotation     (get shape :rotation)
+        transform    (get shape :transform)
 
         ;; Groups from imported SVG's can have their own fills
-        fills        (dm/get-prop shape :fills)
+        fills        (get shape :fills)
 
         strokes      (if (= type :group)
-                       [] (dm/get-prop shape :strokes))
-        children     (dm/get-prop shape :shapes)
-        blend-mode   (dm/get-prop shape :blend-mode)
-        opacity      (dm/get-prop shape :opacity)
-        hidden       (dm/get-prop shape :hidden)
-        content      (dm/get-prop shape :content)
-        bool-type    (dm/get-prop shape :bool-type)
-        grow-type    (dm/get-prop shape :grow-type)
-        blur         (dm/get-prop shape :blur)
-        svg-attrs    (dm/get-prop shape :svg-attrs)
-        shadows      (dm/get-prop shape :shadow)
-        r1           (dm/get-prop shape :r1)
-        r2           (dm/get-prop shape :r2)
-        r3           (dm/get-prop shape :r3)
-        r4           (dm/get-prop shape :r4)]
+                       [] (get shape :strokes))
+        children     (get shape :shapes)
+        blend-mode   (get shape :blend-mode)
+        opacity      (get shape :opacity)
+        hidden       (get shape :hidden)
+        content      (get shape :content)
+        bool-type    (get shape :bool-type)
+        grow-type    (get shape :grow-type)
+        blur         (get shape :blur)
+        svg-attrs    (get shape :svg-attrs)
+        shadows      (get shape :shadow)]
 
     (use-shape id)
     (set-parent-id parent-id)
@@ -748,7 +748,7 @@
     (set-shape-opacity opacity)
     (set-shape-hidden hidden)
     (set-shape-children children)
-    (set-shape-corners [r1 r2 r3 r4])
+    (set-shape-corners shape)
     (when (and (= type :group) masked)
       (set-masked masked))
     (when (some? blur)
