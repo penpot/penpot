@@ -102,14 +102,14 @@
                                       (and remove-italic? (not bold?)) ;; it is italic, set it to regular
                                       (choose-regular)))
 
-        new-weight                (when new-variant
+        new-variant               (when new-variant
                                     (->> (:variants font)
                                          (filter #(= (:id %) new-variant))
-                                         first
-                                         :weight))]
+                                         first))]
     (when new-variant
-      {:font-variant-id new-variant,
-       :font-weight new-weight})))
+      {:font-variant-id (:id new-variant)
+       :font-weight (:weight new-variant)
+       :font-style (:style new-variant)})))
 
 
 (defn calculate-text-values
@@ -117,7 +117,8 @@
   (let [state-map    (if (features/active-feature? @st/state "text-editor/v2")
                        (deref refs/workspace-v2-editor-state)
                        (deref refs/workspace-editor-state))
-        editor-state  (get state-map (:id shape))
+        editor-state  (when-not (features/active-feature? @st/state "text-editor/v2")
+                        (get state-map (:id shape)))
         editor-instance (when (features/active-feature? @st/state "text-editor/v2")
                           (deref refs/workspace-editor))]
     (d/merge
@@ -206,7 +207,10 @@
                          (not-empty))
 
         ;; Check if we're actually editing text content (not just selecting text shapes)
-        editing-text? (some? (deref refs/workspace-editor))
+        ;; Handle both text-editor/v1 and text-editor/v2
+        editing-text? (if (features/active-feature? @st/state "text-editor/v2")
+                        (some? (deref refs/workspace-v2-editor-state))
+                        (some? (deref refs/workspace-editor)))
 
         props       (if (> (count text-shapes) 1)
                       (blend-props text-shapes props)
