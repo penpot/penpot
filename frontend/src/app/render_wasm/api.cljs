@@ -334,7 +334,7 @@
 
 (defn set-shape-vertical-align
   [vertical-align]
-  (h/call wasm/internal-module "_set_shape_vertical_align" (sr/serialize-vertical-align vertical-align)))
+  (h/call wasm/internal-module "_set_shape_vertical_align" (sr/translate-vertical-align vertical-align)))
 
 (defn set-shape-opacity
   [opacity]
@@ -646,31 +646,39 @@
 (defn set-shape-text-content
   [shape-id content]
   (h/call wasm/internal-module "_clear_shape_text")
-  (set-shape-vertical-align (dm/get-prop content :vertical-align))
+  (set-shape-vertical-align (get content :vertical-align))
 
-  (let [paragraph-set (first (dm/get-prop content :children))
-        paragraphs (dm/get-prop paragraph-set :children)
-        fonts (fonts/get-content-fonts content)
-        emoji? (atom false)
-        languages (atom #{})]
+  (let [paragraph-set (first (get content :children))
+        paragraphs    (get paragraph-set :children)
+        fonts         (fonts/get-content-fonts content)
+        total         (count paragraphs)]
 
-    (loop [index 0]
-      (when (< index (count paragraphs))
+    (loop [index  0
+           emoji? false
+           langs  #{}]
+
+      (if (< index total)
         (let [paragraph (nth paragraphs index)
-              leaves (dm/get-prop paragraph :children)]
-          (when (seq leaves)
-            (let [text (apply str (map :text leaves))]
-              (when (and (not @emoji?) (t/contains-emoji? text))
-                (reset! emoji? true))
-              (swap! languages into (t/get-languages text))
-              (t/write-shape-text leaves paragraph text))
-            (recur (inc index))))))
+              leaves    (get paragraph :children)]
+          (if (empty? (seq leaves))
+            (recur (inc index)
+                   emoji?
+                   langs)
 
-    (let [updated-fonts
-          (-> fonts
-              (cond-> @emoji? (f/add-emoji-font))
-              (f/add-noto-fonts @languages))]
-      (f/store-fonts shape-id updated-fonts))))
+            (let [text   (apply str (map :text leaves))
+                  emoji? (if emoji? emoji? (t/contains-emoji? text))
+                  langs  (t/collect-used-languages langs text)]
+
+              (t/write-shape-text leaves paragraph text)
+              (recur (inc index)
+                     emoji?
+                     langs))))
+
+        (let [updated-fonts
+              (-> fonts
+                  (cond-> ^boolean emoji? (f/add-emoji-font))
+                  (f/add-noto-fonts langs))]
+          (f/store-fonts shape-id updated-fonts))))))
 
 (defn set-shape-text
   [shape-id content]
