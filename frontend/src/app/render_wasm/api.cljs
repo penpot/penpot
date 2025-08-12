@@ -26,6 +26,7 @@
    [app.render-wasm.deserializers :as dr]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
+   [app.render-wasm.mem.heap32 :as mem.h32]
    [app.render-wasm.performance :as perf]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.serializers.color :as sr-clr]
@@ -156,7 +157,7 @@
           size   (mem/get-alloc-size children UUID-U8-SIZE)
           offset (mem/alloc->offset-32 size)]
       (reduce (fn [offset id]
-                (sr/write-uuid offset heap id))
+                (mem.h32/write-uuid offset heap id))
               offset
               children)
 
@@ -458,10 +459,11 @@
         buffer  (buf/wrap heapu8)]
 
     (reduce (fn [offset {:keys [type value]}]
-              ;; NOTE: because the not well alligned nature of grid
-              ;; row data structure, we use buffer/dataview way for
-              ;; write data instead of the used to way of secuentally
-              ;; write chaining the offset.
+              ;; NOTE: because of the nature of the grid row data
+              ;; structure memory layout we can't use fully 32 bits
+              ;; alligned writes, so for heteregeneus writes we use
+              ;; the buffer abstraction (DataView) for perform
+              ;; surgical writes.
               (buf/write-byte buffer (+ offset 0) (sr/translate-grid-track-type type))
               (buf/write-float buffer (+ offset 1) value)
               (+ offset GRID-LAYOUT-ROW-U8-SIZE))
@@ -804,7 +806,7 @@
           offset (mem/alloc->offset-32 size)]
 
       (reduce (fn [offset id]
-                (sr/write-uuid offset heap id))
+                (mem.h32/write-uuid offset heap id))
               offset
               entries)
 
@@ -823,11 +825,11 @@
 
       (reduce (fn [offset {:keys [type parent id index value]}]
                 (-> offset
-                    (sr/write-u32 heapu32 (sr/translate-structure-modifier-type type))
-                    (sr/write-u32 heapu32 (d/nilv index 0))
-                    (sr/write-uuid heapu32 parent)
-                    (sr/write-uuid heapu32 id)
-                    (sr/write-f32 heapf32 value)))
+                    (mem.h32/write-u32 heapu32 (sr/translate-structure-modifier-type type))
+                    (mem.h32/write-u32 heapu32 (d/nilv index 0))
+                    (mem.h32/write-uuid heapu32 parent)
+                    (mem.h32/write-uuid heapu32 id)
+                    (mem.h32/write-f32 heapf32 value)))
               offset
               entries)
 
@@ -843,8 +845,8 @@
 
       (reduce (fn [offset [id transform]]
                 (-> offset
-                    (sr/write-uuid heapu32 id)
-                    (sr/write-matrix heapf32 transform)))
+                    (mem.h32/write-uuid heapu32 id)
+                    (mem.h32/write-matrix heapf32 transform)))
               offset
               entries)
 
@@ -873,7 +875,7 @@
           heapf32 (mem/get-heap-f32)]
 
       (reduce (fn [offset id]
-                (sr/write-uuid offset heapu32 id))
+                (mem.h32/write-uuid offset heapu32 id))
               offset
               entries)
 
@@ -907,8 +909,8 @@
 
         (reduce (fn [offset [id transform]]
                   (-> offset
-                      (sr/write-uuid heapu32 id)
-                      (sr/write-matrix heapf32 transform)))
+                      (mem.h32/write-uuid heapu32 id)
+                      (mem.h32/write-matrix heapf32 transform)))
                 offset
                 modifiers)
 
@@ -1020,7 +1022,7 @@
         offset (mem/alloc->offset-32 size)]
 
     (reduce (fn [offset id]
-              (sr/write-uuid offset heap id))
+              (mem.h32/write-uuid offset heap id))
             offset
             (rseq ids))
 
