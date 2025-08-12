@@ -152,20 +152,19 @@
 
 (defn set-shape-children
   [children]
-
+  (perf/begin-measure "set-shape-children")
   (when-not ^boolean (empty? children)
-    (perf/begin-measure "set-shape-children")
     (let [heap   (mem/get-heap-u32)
           size   (mem/get-alloc-size children UUID-U8-SIZE)
           offset (mem/alloc->offset-32 size)]
       (reduce (fn [offset id]
                 (mem.h32/write-uuid offset heap id))
               offset
-              children)
+              children)))
 
-      (let [result (h/call wasm/internal-module "_set_children")]
-        (perf/end-measure "set-shape-children")
-        result))))
+  (let [result (h/call wasm/internal-module "_set_children")]
+    (perf/end-measure "set-shape-children")
+    result))
 
 (defn- get-string-length
   [string]
