@@ -309,7 +309,7 @@
                             (ted/export-content))]
             (wasm.api/use-shape edition)
             (wasm.api/set-shape-text-content edition content)
-            (let [dimension (wasm.api/text-dimensions)]
+            (let [dimension (wasm.api/get-text-dimensions)]
               (st/emit! (dwt/resize-text-editor edition dimension))
               (wasm.api/clear-drawing-cache)
               (wasm.api/request-render "content"))))))

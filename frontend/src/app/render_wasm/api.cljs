@@ -645,6 +645,7 @@
         fonts (fonts/get-content-fonts content)
         emoji? (atom false)
         languages (atom #{})]
+
     (loop [index 0]
       (when (< index (count paragraphs))
         (let [paragraph (nth paragraphs index)
@@ -673,16 +674,17 @@
   [grow-type]
   (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
 
-(defn text-dimensions
+(defn get-text-dimensions
   ([id]
    (use-shape id)
-   (text-dimensions))
+   (get-text-dimensions))
   ([]
-   (let [offset (h/call wasm/internal-module "_get_text_dimensions")
-         heapf32 (mem/get-heap-f32)
-         width (aget heapf32 (mem/->offset-32 offset))
-         height (aget heapf32 (mem/->offset-32 (+ offset 4)))
-         max-width (aget heapf32 (mem/->offset-32 (+ offset 8)))]
+   (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
+                       (mem/->offset-32))
+         heapf32   (mem/get-heap-f32)
+         width     (aget heapf32 (+ offset 0))
+         height    (aget heapf32 (+ offset 1))
+         max-width (aget heapf32 (+ offset 2))]
      (mem/free)
      {:width width :height height :max-width max-width})))
 
@@ -775,7 +777,6 @@
                             (set-shape-strokes id strokes)))]
       (perf/end-measure "set-object")
       pending)))
-
 
 (defn process-pending
   [pending]
