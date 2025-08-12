@@ -469,9 +469,11 @@
               ;; alligned writes, so for heteregeneus writes we use
               ;; the buffer abstraction (DataView) for perform
               ;; surgical writes.
-              (mem/write-u8 dview (+ offset 0) (sr/translate-grid-track-type type))
-              (mem/write-f32 dview (+ offset 1) value)
-              (+ offset GRID-LAYOUT-ROW-U8-SIZE))
+              (-> offset
+                  (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (mem/write-f32 dview value)
+                  (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
+
             offset
             entries)
 
@@ -489,9 +491,12 @@
               ;; alligned writes, so for heteregeneus writes we use
               ;; the buffer abstraction (DataView) for perform
               ;; surgical writes.
-              (mem/write-u8 dview (+ offset 0) (sr/translate-grid-track-type type))
-              (mem/write-f32 dview (+ offset 1) value)
-              (+ offset GRID-LAYOUT-COLUMN-U8-SIZE))
+              (-> offset
+                  (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (mem/write-f32 dview value)
+                  (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
+
+
             offset
             entries)
 
@@ -504,42 +509,42 @@
         dview   (mem/get-data-view)]
 
     (reduce-kv (fn [offset _ cell]
-                 ;; row: [u8; 4],
-                 (mem/write-i32 dview (+ offset 0) (get cell :row))
-
-                 ;; row_span: [u8; 4],
-                 (mem/write-i32 dview (+ offset 4) (get cell :row-span))
-
-                 ;; column: [u8; 4],
-                 (mem/write-i32 dview (+ offset 8) (get cell :column))
-
-                 ;; column_span: [u8; 4],
-                 (mem/write-i32 dview (+ offset 12) (get cell :column-span))
-
-                 ;; has_align_self: u8,
-                 (mem/write-bool dview (+ offset 16) (some? (get cell :align-self)))
-
-                 ;; align_self: u8,
-                 (mem/write-u8 dview (+ offset 17) (get cell :align-self))
-
-                 ;; has_justify_self: u8,
-                 (mem/write-bool dview (+ offset 18) (get cell :justify-self))
-
-                 ;; justify_self: u8,
-                 (mem/write-u8 dview (+ offset 19) (sr/translate-justify-self (get cell :justify-self)))
-
                  (let [shape-id  (-> (get cell :shapes) first)]
-                   ;; has_shape_id: u8,
-                   ;; (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
-                   (mem/write-u8 dview (+ offset 20) (some? shape-id))
+                   (-> offset
+                       ;; row: [u8; 4],
+                       (mem/write-i32 dview (get cell :row))
 
-                   ;; shape_id_a: [u8; 4],
-                   ;; shape_id_b: [u8; 4],
-                   ;; shape_id_c: [u8; 4],
-                   ;; shape_id_d: [u8; 4],
-                   (mem/write-uuid dview (+ offset 21) (d/nilv shape-id uuid/zero)))
+                       ;; row_span: [u8; 4],
+                       (mem/write-i32 dview (get cell :row-span))
 
-                 (+ offset GRID-LAYOUT-CELL-U8-SIZE))
+                       ;; column: [u8; 4],
+                       (mem/write-i32 dview (get cell :column))
+
+                       ;; column_span: [u8; 4],
+                       (mem/write-i32 dview (get cell :column-span))
+
+                       ;; has_align_self: u8,
+                       (mem/write-bool dview (some? (get cell :align-self)))
+
+                       ;; align_self: u8,
+                       (mem/write-u8 dview (get cell :align-self))
+
+                       ;; has_justify_self: u8,
+                       (mem/write-bool dview (get cell :justify-self))
+
+                       ;; justify_self: u8,
+                       (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
+
+                       ;; has_shape_id: u8,
+                       ;; (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
+                       (mem/write-u8 dview (some? shape-id))
+
+                       ;; shape_id_a: [u8; 4],
+                       ;; shape_id_b: [u8; 4],
+                       ;; shape_id_c: [u8; 4],
+                       ;; shape_id_d: [u8; 4],
+                       (mem/write-uuid dview (d/nilv shape-id uuid/zero))
+                       (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
                offset
                cells)
