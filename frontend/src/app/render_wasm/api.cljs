@@ -383,22 +383,24 @@
 
 (defn set-flex-layout
   [shape]
-  (let [dir (-> (or (dm/get-prop shape :layout-flex-dir) :row) sr/translate-layout-flex-dir)
-        gap (dm/get-prop shape :layout-gap)
-        row-gap (or (dm/get-prop gap :row-gap) 0)
-        column-gap (or (dm/get-prop gap :column-gap) 0)
+  (let [dir        (-> (get shape :layout-flex-dir :row)
+                       (sr/translate-layout-flex-dir))
+        gap        (get shape :layout-gap)
+        row-gap    (get gap :row-gap 0)
+        column-gap (get gap :column-gap 0)
 
-        align-items (-> (or (dm/get-prop shape :layout-align-items) :start) sr/translate-layout-align-items)
-        align-content (-> (or (dm/get-prop shape :layout-align-content) :stretch) sr/translate-layout-align-content)
-        justify-items (-> (or (dm/get-prop shape :layout-justify-items) :start) sr/translate-layout-justify-items)
-        justify-content (-> (or (dm/get-prop shape :layout-justify-content) :stretch) sr/translate-layout-justify-content)
-        wrap-type (-> (or (dm/get-prop shape :layout-wrap-type) :nowrap) sr/translate-layout-wrap-type)
+        align-items     (-> (get shape :layout-align-items :start) sr/translate-layout-align-items)
+        align-content   (-> (get shape :layout-align-content :stretch) sr/translate-layout-align-content)
+        justify-items   (-> (get shape :layout-justify-items :start) sr/translate-layout-justify-items)
+        justify-content (-> (get shape :layout-justify-content :stretch) sr/translate-layout-justify-content)
+        wrap-type       (-> (get shape :layout-wrap-type :nowrap) sr/translate-layout-wrap-type)
 
-        padding (dm/get-prop shape :layout-padding)
-        padding-top (or (dm/get-prop padding :p1) 0)
-        padding-right (or (dm/get-prop padding :p2) 0)
-        padding-bottom (or (dm/get-prop padding :p3) 0)
-        padding-left (or (dm/get-prop padding :p4) 0)]
+        padding         (get shape :layout-padding)
+        padding-top     (get padding :p1 0)
+        padding-right   (get padding :p2 0)
+        padding-bottom  (get padding :p3 0)
+        padding-left    (get padding :p4 0)]
+
     (h/call wasm/internal-module
             "_set_flex_layout_data"
             dir
