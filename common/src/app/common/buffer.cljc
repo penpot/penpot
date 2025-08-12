@@ -127,6 +127,18 @@
          (finally
            (.order ~target ByteOrder/LITTLE_ENDIAN))))))
 
+(defn wrap
+  [data]
+  #?(:clj (let [buffer (ByteBuffer/wrap ^bytes data)]
+            (.order buffer ByteOrder/LITTLE_ENDIAN))
+     :cljs
+     (cond
+       (instance? js/Uint8Array data)
+       (new js/DataView (.-buffer ^js data))
+
+       :else
+       (throw (js/Error. "unexpected type")))))
+
 (defn allocate
   [size]
   #?(:clj (let [buffer (ByteBuffer/allocate (int size))]
