@@ -1952,7 +1952,7 @@
               skip-operations?
               (or
                ;; If the attribute is not valid for the destiny, don't copy it
-               (not (cts/is-allowed-attr? attr (:type current-shape)))
+               (not (cts/is-allowed-switch-keep-attr? attr (:type current-shape)))
 
                ;; If the values are already equal, don't copy them
                (= (get previous-shape attr) (get current-shape attr))

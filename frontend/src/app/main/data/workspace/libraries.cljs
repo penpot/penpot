@@ -984,7 +984,9 @@
             (if keep-touched?
               (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
               [changes []])
-            all-parents (into all-parents parents-of-swapped)]
+            all-parents (-> all-parents
+                            (into parents-of-swapped)
+                            (conj (:id new-shape)))]
 
         (rx/of
          (dwu/start-undo-transaction undo-id)

@@ -413,8 +413,7 @@
   (or (some :fill-image fills)
       (some :stroke-image strokes)))
 
-;; Valid attributes
-
+;; Valid attributes for keeping on a switch
 (def ^:private allowed-shape-attrs
   #{:page-id :component-id :component-file :component-root :main-instance
     :remote-synced :shape-ref :touched :blocked :collapsed :locked
@@ -424,17 +423,23 @@
     :plugin-data})
 
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
-(def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform :transform-inverse :parent-id :frame-id})
+(def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform
+                                          :transform-inverse :parent-id :frame-id})
 (def ^:private allowed-bool-attrs #{:shapes :bool-type :content})
 (def ^:private allowed-group-attrs #{:shapes})
-(def ^:private allowed-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer})
+(def ^:private allowed-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer
+                                     :layout :layout-flex-dir :layout-gap-type :layout-gap
+                                     :layout-align-items :layout-justify-content :layout-align-content
+                                     :layout-wrap-type :layout-padding-type :layout-padding
+                                     :layout-grid-dir :layout-justify-items :layout-grid-columns
+                                     :layout-grid-rows})
 (def ^:private allowed-image-attrs #{:metadata})
 (def ^:private allowed-svg-attrs #{:content})
 (def ^:private allowed-path-attrs #{:content})
 (def ^:private allowed-text-attrs #{:content})
 (def ^:private allowed-generic-attrs (set/union allowed-shape-attrs allowed-shape-geom-attrs allowed-shape-base-attrs))
 
-(defn is-allowed-attr?
+(defn is-allowed-switch-keep-attr?
   [attr type]
   (case type
     :group   (or (contains? allowed-group-attrs attr)
