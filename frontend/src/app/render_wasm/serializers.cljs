@@ -6,7 +6,6 @@
 
 (ns app.render-wasm.serializers
   (:require
-   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 
@@ -54,31 +53,6 @@
         (uuid/get-u32 as-uuid)))
     (catch :default _e
       [uuid/zero])))
-
-(defn heapu32-set-u32
-  [value heap offset]
-  (aset heap offset value))
-
-(defn heapu32-set-uuid
-  [id heap offset]
-  (let [buffer (uuid/get-u32 id)]
-    (.set heap buffer offset)
-    buffer))
-
-(defn heapf32-set-matrix
-  [matrix heap offset]
-  (let [a (dm/get-prop matrix :a)
-        b (dm/get-prop matrix :b)
-        c (dm/get-prop matrix :c)
-        d (dm/get-prop matrix :d)
-        e (dm/get-prop matrix :e)
-        f (dm/get-prop matrix :f)]
-    (aset heap (+ offset 0) a)
-    (aset heap (+ offset 1) b)
-    (aset heap (+ offset 2) c)
-    (aset heap (+ offset 3) d)
-    (aset heap (+ offset 4) e)
-    (aset heap (+ offset 5) f)))
 
 (defn translate-shape-type
   [type]
@@ -197,7 +171,8 @@
     :start   0
     :end     1
     :center  2
-    :stretch 3))
+    :stretch 3
+    0))
 
 (defn translate-layout-align-content
   [align-content]
@@ -208,7 +183,8 @@
     :space-between 3
     :space-around  4
     :space-evenly  5
-    :stretch       6))
+    :stretch       6
+    6))
 
 (defn translate-layout-justify-items
   [justify-items]
@@ -216,7 +192,8 @@
     :start   0
     :end     1
     :center  2
-    :stretch 3))
+    :stretch 3
+    0))
 
 (defn translate-layout-justify-content
   [justify-content]
@@ -227,13 +204,15 @@
     :space-between 3
     :space-around  4
     :space-evenly  5
-    :stretch       6))
+    :stretch       6
+    6))
 
 (defn translate-layout-wrap-type
   [wrap-type]
   (case wrap-type
     :wrap   0
-    :nowrap 1))
+    :nowrap 1
+    1))
 
 (defn translate-grid-track-type
   [type]
