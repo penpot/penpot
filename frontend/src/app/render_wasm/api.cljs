@@ -489,7 +489,7 @@
 (defn set-grid-layout-cells
   [cells]
   (let [entries (vals cells)
-        size    (mem/get-alloc-size entries GRID-LAYOUT-CELL-U8-SIZE)
+        size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
         offset  (mem/alloc size)
         heap    (-> (mem/get-heap-u8)
                     (mem/view offset size))]
