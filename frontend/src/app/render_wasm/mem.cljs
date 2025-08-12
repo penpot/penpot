@@ -81,9 +81,24 @@
 (defn write-u8
   "Write unsigned int8. Expects a DataView instance"
   [target offset value]
-  (buf/write-byte target offset value))
+  (buf/write-u8 target offset value))
 
 (defn write-f32
   "Write float32. Expects a DataView instance"
   [target offset value]
-  (buf/write-float target offset value))
+  (buf/write-f32 target offset value))
+
+(defn write-i32
+  "Write int32. Expects a DataView instance"
+  [target offset value]
+  (buf/write-i32 target offset value))
+
+(defn write-bool
+  "Write int32. Expects a DataView instance"
+  [target offset value]
+  (buf/write-bool target offset value))
+
+(defn write-uuid
+  "Write uuid. Expects a DataView instance"
+  [target offset value]
+  (buf/write-uuid target offset value))

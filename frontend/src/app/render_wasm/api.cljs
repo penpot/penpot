@@ -496,51 +496,50 @@
 
 (defn set-grid-layout-cells
   [cells]
-  (let [entries (vals cells)
-        size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
+  (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
         offset  (mem/alloc size)
-        heap    (-> (mem/get-heap-u8)
-                    (mem/view offset size))]
+        dview   (mem/get-data-view)]
 
-    (loop [entries (seq entries)
-           current-offset  0]
-      (when-not (empty? entries)
-        (let [cell (first entries)]
+    (reduce-kv (fn [offset _ cell]
+                 ;; row: [u8; 4],
+                 (mem/write-i32 dview (+ offset 0) (get cell :row))
 
-          ;; row: [u8; 4],
-          (.set heap (sr/i32->u8 (:row cell)) (+ current-offset 0))
+                 ;; row_span: [u8; 4],
+                 (mem/write-i32 dview (+ offset 4) (get cell :row-span))
 
-          ;; row_span: [u8; 4],
-          (.set heap (sr/i32->u8 (:row-span cell)) (+ current-offset 4))
+                 ;; column: [u8; 4],
+                 (mem/write-i32 dview (+ offset 8) (get cell :column))
 
-          ;; column: [u8; 4],
-          (.set heap (sr/i32->u8 (:column cell)) (+ current-offset 8))
+                 ;; column_span: [u8; 4],
+                 (mem/write-i32 dview (+ offset 12) (get cell :column-span))
 
-          ;; column_span: [u8; 4],
-          (.set heap (sr/i32->u8 (:column-span cell)) (+ current-offset 12))
+                 ;; has_align_self: u8,
+                 (mem/write-bool dview (+ offset 16) (some? (get cell :align-self)))
 
-          ;; has_align_self: u8,
-          (.set heap (sr/bool->u8 (some? (:align-self cell))) (+ current-offset 16))
+                 ;; align_self: u8,
+                 (mem/write-u8 dview (+ offset 17) (get cell :align-self))
 
-          ;; align_self: u8,
-          (.set heap (sr/u8 (sr/translate-align-self (:align-self cell))) (+ current-offset 17))
+                 ;; has_justify_self: u8,
+                 (mem/write-bool dview (+ offset 18) (get cell :justify-self))
 
-          ;; has_justify_self: u8,
-          (.set heap (sr/bool->u8 (some? (:justify-self cell))) (+ current-offset 18))
+                 ;; justify_self: u8,
+                 (mem/write-u8 dview (+ offset 19) (sr/translate-justify-self (get cell :justify-self)))
 
-          ;; justify_self: u8,
-          (.set heap (sr/u8 (sr/translate-justify-self (:justify-self cell))) (+ current-offset 19))
+                 (let [shape-id  (-> (get cell :shapes) first)]
+                   ;; has_shape_id: u8,
+                   ;; (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
+                   (mem/write-u8 dview (+ offset 20) (some? shape-id))
 
-          ;; has_shape_id: u8,
-          (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
+                   ;; shape_id_a: [u8; 4],
+                   ;; shape_id_b: [u8; 4],
+                   ;; shape_id_c: [u8; 4],
+                   ;; shape_id_d: [u8; 4],
+                   (mem/write-uuid dview (+ offset 21) (d/nilv shape-id uuid/zero)))
 
-          ;; shape_id_a: [u8; 4],
-          ;; shape_id_b: [u8; 4],
-          ;; shape_id_c: [u8; 4],
-          ;; shape_id_d: [u8; 4],
-          (.set heap (sr/uuid->u8 (or (-> cell :shapes first) uuid/zero)) (+ current-offset 21))
+                 (+ offset GRID-LAYOUT-CELL-U8-SIZE))
 
-          (recur (rest entries) (+ current-offset GRID-LAYOUT-CELL-U8-SIZE)))))
+               offset
+               cells)
 
     (h/call wasm/internal-module "_set_grid_cells")))
 
