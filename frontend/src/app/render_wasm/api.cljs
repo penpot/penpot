@@ -8,7 +8,6 @@
   "A WASM based render API"
   (:require
    ["react-dom/server" :as rds]
-   [app.common.buffer :as buf]
    [app.common.data :as d :refer [not-empty?]]
    [app.common.data.macros :as dm]
    [app.common.types.fills :as types.fills]
@@ -455,8 +454,7 @@
   [entries]
   (let [size    (mem/get-alloc-size entries GRID-LAYOUT-ROW-U8-SIZE)
         offset  (mem/alloc size)
-        heapu8  (mem/get-heap-u8)
-        buffer  (buf/wrap heapu8)]
+        dview   (mem/get-data-view)]
 
     (reduce (fn [offset {:keys [type value]}]
               ;; NOTE: because of the nature of the grid row data
@@ -464,8 +462,8 @@
               ;; alligned writes, so for heteregeneus writes we use
               ;; the buffer abstraction (DataView) for perform
               ;; surgical writes.
-              (buf/write-byte buffer (+ offset 0) (sr/translate-grid-track-type type))
-              (buf/write-float buffer (+ offset 1) value)
+              (mem/write-u8 dview (+ offset 0) (sr/translate-grid-track-type type))
+              (mem/write-f32 dview (+ offset 1) value)
               (+ offset GRID-LAYOUT-ROW-U8-SIZE))
             offset
             entries)
@@ -476,16 +474,20 @@
   [entries]
   (let [size   (mem/get-alloc-size entries GRID-LAYOUT-COLUMN-U8-SIZE)
         offset (mem/alloc size)
-        heap   (-> (mem/get-heap-u8)
-                   (mem/view offset size))]
+        dview  (mem/get-data-view)]
 
-    (loop [entries (seq entries)
-           current-offset  0]
-      (when-not (empty? entries)
-        (let [{:keys [type value]} (first entries)]
-          (.set heap (sr/u8 (sr/translate-grid-track-type type)) (+ current-offset 0))
-          (.set heap (sr/f32->u8 value) (+ current-offset 1))
-          (recur (rest entries) (+ current-offset GRID-LAYOUT-COLUMN-U8-SIZE)))))
+    (reduce (fn [offset {:keys [type value]}]
+              ;; NOTE: because of the nature of the grid column data
+              ;; structure memory layout we can't use fully 32 bits
+              ;; alligned writes, so for heteregeneus writes we use
+              ;; the buffer abstraction (DataView) for perform
+              ;; surgical writes.
+              (mem/write-u8 dview (+ offset 0) (sr/translate-grid-track-type type))
+              (mem/write-f32 dview (+ offset 1) value)
+              (+ offset GRID-LAYOUT-COLUMN-U8-SIZE))
+            offset
+            entries)
+
     (h/call wasm/internal-module "_set_grid_columns")))
 
 (defn set-grid-layout-cells

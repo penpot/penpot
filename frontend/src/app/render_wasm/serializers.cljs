@@ -6,7 +6,6 @@
 
 (ns app.render-wasm.serializers
   (:require
-   [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
 

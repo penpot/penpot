@@ -6,6 +6,7 @@
 
 (ns app.render-wasm.mem
   (:require
+   [app.common.buffer :as buf]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.wasm :as wasm]))
 
@@ -71,3 +72,18 @@
   same element types as for this typed array."
   [heap offset size]
   (.subarray ^js heap offset (+ offset size)))
+
+(defn get-data-view
+  "Returns a heap wrapped in a DataView for surgical write operations"
+  []
+  (buf/wrap (get-heap-u8)))
+
+(defn write-u8
+  "Write unsigned int8. Expects a DataView instance"
+  [target offset value]
+  (buf/write-byte target offset value))
+
+(defn write-f32
+  "Write float32. Expects a DataView instance"
+  [target offset value]
+  (buf/write-float target offset value))
