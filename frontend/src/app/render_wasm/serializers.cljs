@@ -227,7 +227,8 @@
   (case value
     :fill 0
     :fix  1
-    :auto 2))
+    :auto 2
+    1))
 
 (defn translate-align-self
   [value]

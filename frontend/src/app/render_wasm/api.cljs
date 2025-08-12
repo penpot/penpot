@@ -546,32 +546,32 @@
 (defn set-grid-layout
   [shape]
   (set-grid-layout-data shape)
-  (set-grid-layout-rows (:layout-grid-rows shape))
-  (set-grid-layout-columns (:layout-grid-columns shape))
-  (set-grid-layout-cells (:layout-grid-cells shape)))
+  (set-grid-layout-rows (get shape :layout-grid-rows))
+  (set-grid-layout-columns (get shape :layout-grid-columns))
+  (set-grid-layout-cells (get shape :layout-grid-cells)))
 
 (defn set-layout-child
   [shape]
-  (let [margins (dm/get-prop shape :layout-item-margin)
-        margin-top (or (dm/get-prop margins :m1) 0)
-        margin-right (or (dm/get-prop margins :m2) 0)
-        margin-bottom (or (dm/get-prop margins :m3) 0)
-        margin-left (or (dm/get-prop margins :m4) 0)
+  (let [margins       (get shape :layout-item-margin)
+        margin-top    (get margins :m1 0)
+        margin-right  (get margins :m2 0)
+        margin-bottom (get margins :m3 0)
+        margin-left   (get margins :m4 0)
 
-        h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :fix) sr/translate-layout-sizing)
-        v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :fix) sr/translate-layout-sizing)
-        align-self (-> (dm/get-prop shape :layout-item-align-self) sr/translate-align-self)
+        h-sizing      (-> (get shape :layout-item-h-sizing) sr/translate-layout-sizing)
+        v-sizing      (-> (get shape :layout-item-v-sizing) sr/translate-layout-sizing)
+        align-self    (-> (get shape :layout-item-align-self) sr/translate-align-self)
 
-        max-h (dm/get-prop shape :layout-item-max-h)
-        has-max-h (some? max-h)
-        min-h (dm/get-prop shape :layout-item-min-h)
-        has-min-h (some? min-h)
-        max-w (dm/get-prop shape :layout-item-max-w)
-        has-max-w (some? max-w)
-        min-w (dm/get-prop shape :layout-item-min-w)
-        has-min-w (some? min-w)
-        is-absolute (boolean (dm/get-prop shape :layout-item-absolute))
-        z-index (-> (dm/get-prop shape :layout-item-z-index) (or 0))]
+        max-h         (get shape :layout-item-max-h)
+        has-max-h     (some? max-h)
+        min-h         (get shape :layout-item-min-h)
+        has-min-h     (some? min-h)
+        max-w         (get shape :layout-item-max-w)
+        has-max-w     (some? max-w)
+        min-w         (get shape :layout-item-min-w)
+        has-min-w     (some? min-w)
+        is-absolute   (boolean (get shape :layout-item-absolute))
+        z-index       (get shape :layout-item-z-index)]
     (h/call wasm/internal-module
             "_set_layout_child_data"
             margin-top
@@ -581,17 +581,17 @@
             h-sizing
             v-sizing
             has-max-h
-            (or max-h 0)
+            (d/nilv max-h 0)
             has-min-h
-            (or min-h 0)
+            (d/nilv min-h 0)
             has-max-w
-            (or max-w 0)
+            (d/nilv max-w 0)
             has-min-w
-            (or min-w 0)
+            (d/nilv min-w 0)
             (some? align-self)
-            (or align-self 0)
+            (d/nilv align-self 0)
             is-absolute
-            z-index)))
+            (d/nilv z-index))))
 
 (defn clear-layout
   []
