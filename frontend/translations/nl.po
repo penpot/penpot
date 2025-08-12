@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-08-12 08:02+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -1422,7 +1422,7 @@ msgstr "Het lid dat je probeert toe te wijzen, bestaat niet."
 msgid "errors.team-leave.owner-cant-leave"
 msgstr ""
 "Eigenaar kan het team niet verlaten, je moet de rol van eigenaar eerst "
-"opnieuw toewijzen."
+"overdragen."
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:152, src/app/main/data/workspace/tokens/library_edit.cljs:182
 msgid "errors.token-set-already-exists"
@@ -2001,7 +2001,7 @@ msgstr "Concepten"
 
 #: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:63
 msgid "labels.duplicate"
-msgstr "Duplicaat"
+msgstr "Dupliceren"
 
 #: src/app/main/ui/comments.cljs:1001, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:991, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:216, src/app/main/ui/workspace/tokens/sidebar.cljs:200
 msgid "labels.edit"
@@ -2664,9 +2664,8 @@ msgid "modals.big-nudge"
 msgstr "Grote verschuiving"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
-msgstr "Nieuw e-mailadres verifiëren"
+msgstr "Nieuw e-mailadres bevestigen"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2937,11 +2936,8 @@ msgid "modals.invite-member.emails"
 msgstr "E-mailadressen, kommagescheiden"
 
 #: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Sommige e-mailadressen zijn van bestaande teamleden. Zij krijgen geen nieuwe "
-"uitnodigingen."
+msgstr "Sommige leden zijn al lid van het team. We nodigen de rest wel uit."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -2967,13 +2963,13 @@ msgstr "Weet je zeker dat je het %s team wilt verlaten?"
 msgid "modals.leave-and-reassign.forbidden"
 msgstr ""
 "Je kunt het team niet verlaten als er geen ander lid is om tot eigenaar te "
-"promoveren. Misschien wil je het team verwijderen."
+"promoveren. Je zou het team kunnen verwijderen."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:50
 msgid "modals.leave-and-reassign.hint1"
 msgstr ""
 "Jij bent de eigenaar van dit team. Selecteer een ander lid om tot eigenaar "
-"te promoveren voordat je vertrekt."
+"te maken voordat je vertrekt."
 
 #: src/app/main/ui/dashboard/change_owner.cljs:73
 msgid "modals.leave-and-reassign.promote-and-leave"
@@ -4325,10 +4321,11 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Abonneren"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
-"Bevalt de proefperiode? Kies voor altijd volledige toegang. [Abonneren](%s)"
+"Bevalt de proefperiode? Kies voor altijd volledige toegang. "
+"[Abonneren|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4339,11 +4336,11 @@ msgstr ""
 
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
-msgstr "Onbeperkt abonnement (proefversie)"
+msgstr "Unlimited-abonnement (proefversie)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
-msgstr "Onbeperkt abonnement"
+msgstr "Unlimited-abonnement"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4378,9 +4375,8 @@ msgid "subscription.settings.manage-your-subscription"
 msgstr "Beheer uw abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:282
-#, fuzzy
 msgid "subscription.settings.member-since"
-msgstr "Penpot lid sinds %s"
+msgstr "Lid van Penpot sinds: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:285
 msgid "subscription.settings.other-plans"
@@ -4411,17 +4407,16 @@ msgid "subscription.settings.section-plan"
 msgstr "Uw abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:278
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "Je steunt ons al sinds %s met dit abonnement"
+msgstr "Je hebt ons gesteund met dit abonnement sinds: %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
-msgstr "Onbeperkt"
+msgstr "Unlimited"
 
 #: src/app/main/ui/dashboard/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:52, src/app/main/ui/settings/subscription.cljs:245
 msgid "subscription.settings.unlimited-trial"
-msgstr "Onbeperkt (proefperiode)"
+msgstr "Unlimited (proef)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
@@ -4429,7 +4424,7 @@ msgstr "Gemaximeerde maandelijkse rekening"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
-msgstr "Onbeperkt aantal teams, ongeacht de grootte van je team"
+msgstr "Onbeperkte teams, ongeacht de grootte"
 
 #: src/app/main/ui/dashboard/files.cljs:179
 msgid "title.dashboard.files"
@@ -7060,7 +7055,6 @@ msgid "workspace.tokens.invalid-json"
 msgstr "Fout bij importeren: Ongeldige tokengegevens in JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
-#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Importfout: Ongeldige tokennaam in JSON."
 
@@ -7281,7 +7275,7 @@ msgstr "Typ '%s' wordt niet ondersteund (%s)\n"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:133
 msgid "workspace.tokens.value-not-valid"
-msgstr "Ongeldige waarde"
+msgstr "De waarde is niet geldig"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:555
 msgid "workspace.tokens.warning-name-change"
@@ -7620,11 +7614,10 @@ msgid "inspect.attributes.color"
 msgstr "Kleur"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
-#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "Het lijkt erop dat je team is gegroeid! Je abonnement is voor %s personen, "
-"maar nu bent nu met meer."
+"maar je bent nu met %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
@@ -7651,9 +7644,8 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Er wordt nu geen betaling gedaan)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
-#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "$7 per teamlid/maand x %s"
+msgstr "**$%s** per maand"
 
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.management.dialog.title"
@@ -7768,11 +7760,12 @@ msgid "subscription.settings.more-information"
 msgstr "Meer informatie"
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Grotere teams, meer opslagruimte en meer automatisch opgeslagen versies met "
-"het Unlimited- of Enterprise-abonnement. [Abonneer je nu.](%s)"
+"het Unlimited- of Enterprise-abonnement. [Neem een abonnement.|target:self]"
+"(%s)"
 
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.start-trial"
@@ -7817,3 +7810,269 @@ msgstr "Enkel bestand"
 #: src/app/main/data/workspace/tokens/errors.cljs:61
 msgid "workspace.tokens.value-with-units"
 msgstr "Ongeldige waarde: Eenheden zijn niet toegestaan."
+
+msgid "errors.email-does-not-match-invitation"
+msgstr "E-mail komt niet overeen met de uitnodiging."
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "Deze versie is vergrendeld en kan niet door anderen worden verwijderd"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Alleen de maker van de versie kan het vergrendelen"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Alleen de maker van de versie kan het ontgrendelen"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Deze versie is al vergrendeld"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Doorstrepen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "Vergrendelen"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "Ontgrendelen"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr ""
+"Upgrade alstublieft om het gebruik aan te passen."
+"[Neem een abonnement.|target:self](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr ""
+"Upgrade alstublieft om het gebruik aan te passen. Neem contact op met de "
+"teameigenaar: %s"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"Als je deze limiet wilt verhogen, neem dan contact op met de teameigenaar: "
+"[%s](mailto)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:60
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom"
+msgstr ""
+"Krijg extra editors en opslag, bestandsherstel en meer met het Unlimited-"
+"abonnement. [Power-up|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:74
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Krijg extra editors, meer back-up, onbeperkte opslag en meer. "
+"[Kijk eens naar het Enterprise-abonnement.|target:self](%s)"
+
+#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr ""
+"Onbeperkte opslag en 90-dagen automatisch opslaan van versies en "
+"bestandsherstel"
+
+#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
+msgid "subscription.settings.unlimited.storage-autosave"
+msgstr ""
+"25 GB opslag en 30 dagen automatische opslag van versies en bestandsherstel"
+
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Enterprise-abonnement (proef)"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Als je deze limiet wilt verhogen, [pas dan je abonnement aan|target:self](%s)"
+
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90-dagen automatische opslag van versies en bestandsherstel"
+
+#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Gemaximeerde maandelijkse rekening"
+
+#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
+msgid "subscription.settings.professional.storage-autosave"
+msgstr ""
+"10GB aan opslag en 7-dagen automatische opslag van versies en bestandsherstel"
+
+msgid "subscription.settings.editors"
+msgstr "(x %s editors)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Gedupliceerde varianten lokaliseren"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Dit onderdeel kent conflicterende varianten. Zorg ervoor dat elke variatie "
+"een unieke set eigenschapswaarden heeft."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Ga naar het hoofdonderdeel"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Sommige varianten hebben identieke eigenschappen en waarden"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.adjust"
+msgstr "Pas de waarden aan zodat ze kunnen worden opgehaald."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "Deze varianten hebben identieke eigenschappen en waarden."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"Deze variant heeft identieke eigenschappen en waarden als een andere variant."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Sommige van deze varianten hebben identieke eigenschappen en waarden."
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Hoe varianten verbonden blijven"
+
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"Om veranderingen te behouden bij het schakelen tussen varianten, verbindt "
+"Penpot lagen die:"
+
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "Dezelfde naam delen."
+
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "Van hetzelfde type zijn"
+
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Rechthoek, ellips, paden en Booleaanse bewerkingen tellen als hetzelfde type."
+
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "Hetzelfde hiërarchische niveau hebben"
+
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "Groepen, borden en lay-outs worden als gelijkwaardig beschouwd."
+
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"Het wijzigen van een van deze (bijvoorbeeld het hernoemen of groeperen van "
+"een laag) verbreekt de verbinding, maar het terugdraaien van de wijziging "
+"zal deze herstellen."
+
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "Gegevens opslaan in de browser."
+
+#: src/app/main/ui/workspace/context_menu.cljs:385
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combineren als varianten"
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Componenten moeten op dezelfde pagina staan"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "Variant moet ten minste één eigenschap hebben"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:251
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Importeren: %s"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:245
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP-bestand"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:246
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Enkel JSON-bestand"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:247
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Map"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"Ongeldige tokenwaarde: alleen none, Uppercase, Lowercase of Capitalize zijn "
+"toegestaan"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "Voer in: none | uppercase | lowercase | capitalize of {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:799
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Voer tekstdecoratie in: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Ongeldige gewichtswaarde lettertype: gebruik numerieke waarden (100-950) of "
+"standaardtermen (thin, light, regular, bold, etc.) optioneel gevolgd door "
+"'Italic'"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Voer in: 400, Bold, 700 Italic, of {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:81
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Ongeldige tokenwaarde: alleen none, underline en strike-through zijn "
+"toegestaan"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs
+msgid "workspace.tokens.no-token-files-found"
+msgstr "Er zijn geen tokens, verzamelingen of thema's gevonden in dit bestand."
+
+#: src/app/main/ui/workspace/tokens/form.cljs:560
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Lettertypefamilie"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:689
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Lettertypefamilie of lijst met lettertypen gescheiden door komma (,)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:688
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Lettertypefamilie selecteren"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:45
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "Importeren was succesvol. Sommige tokens zijn niet inbegrepen."
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.tokens.more-options"
+msgstr "Klik met de rechtermuisknop om opties te zien"
+
+msgid "workspace.versions.locked-by-other"
+msgstr "Deze versie is vergrendeld door %s en kan niet worden gewijzigd"
+
+msgid "workspace.versions.locked-by-you"
+msgstr "Deze versie is door jou vergrendeld"
+
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Vergrendelde versie - alleen de maker kan deze wijzigen"
+
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "Als je deze limiet wilt verhogen, schrijf ons dan op [%s](mailto)"
+
+msgid "labels.sources"
+msgstr "Bronnen"
+
+msgid "labels.pinned-projects"
+msgstr "Vastgemaakte projecten"
