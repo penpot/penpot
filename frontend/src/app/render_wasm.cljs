@@ -7,6 +7,7 @@
 (ns app.render-wasm
   "A WASM based render API"
   (:require
+   [app.common.types.path]
    [app.common.types.shape :as shape]
    [app.render-wasm.api :as api]
    [app.render-wasm.shape :as wasm.shape]))
@@ -15,5 +16,8 @@
 
 (defn initialize
   [enabled?]
+  (if enabled?
+    (set! app.common.types.path/wasm:calc-bool-content api/calculate-bool)
+    (set! app.common.types.path/wasm:calc-bool-content nil))
   (set! app.common.types.shape/wasm-enabled? enabled?)
   (set! app.common.types.shape/wasm-create-shape wasm.shape/create-shape))

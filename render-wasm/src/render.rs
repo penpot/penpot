@@ -18,7 +18,7 @@ use std::collections::{HashMap, HashSet};
 
 use gpu_state::GpuState;
 use options::RenderOptions;
-use surfaces::{SurfaceId, Surfaces};
+pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{Corners, Fill, Shape, SolidColor, StructureEntry, Type};
@@ -27,6 +27,9 @@ use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
+
+use crate::math;
+use crate::math::bools;
 
 pub use blend::BlendMode;
 pub use fonts::*;
@@ -197,6 +200,28 @@ pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
         ((iey - isy).abs() + dy) * tile_size as i32,
     )
         .into()
+}
+
+fn is_modified_child(
+    shape: &Shape,
+    shapes: &ShapesPool,
+    modifiers: &HashMap<Uuid, Matrix>,
+) -> bool {
+    if modifiers.is_empty() {
+        return false;
+    }
+
+    let ids = shape.all_children(shapes, true, false);
+    let default = &Matrix::default();
+    let parent_modifier = modifiers.get(&shape.id).unwrap_or(default);
+
+    // Returns true if the transform of any child is different to the parent's
+    ids.iter().any(|id| {
+        !math::is_close_matrix(
+            parent_modifier,
+            modifiers.get(id).unwrap_or(&Matrix::default()),
+        )
+    })
 }
 
 impl RenderState {
@@ -397,8 +422,10 @@ impl RenderState {
 
     pub fn render_shape(
         &mut self,
+        shapes: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
-        modifiers: Option<&Matrix>,
         scale_content: Option<&f32>,
     ) {
         let shape = if let Some(scale_content) = scale_content {
@@ -420,8 +447,8 @@ impl RenderState {
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
 
-        if let Some(modifiers) = modifiers {
-            shape.to_mut().apply_transform(modifiers);
+        if let Some(shape_modifiers) = modifiers.get(&shape.id) {
+            shape.to_mut().apply_transform(shape_modifiers);
         }
 
         let center = shape.center();
@@ -431,8 +458,10 @@ impl RenderState {
 
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
-                if let Some(modifiers) = modifiers {
-                    self.surfaces.canvas(SurfaceId::Fills).concat(modifiers);
+                if let Some(shape_modifiers) = modifiers.get(&shape.id) {
+                    self.surfaces
+                        .canvas(SurfaceId::Fills)
+                        .concat(shape_modifiers);
                 }
                 self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
@@ -520,6 +549,19 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
+                let shape = if let Type::Bool(_) = &shape.shape_type {
+                    // If any child transform doesn't match the parent transform means
+                    // that the children is transformed and we need to recalculate the
+                    // boolean
+                    if is_modified_child(&shape, shapes, modifiers) {
+                        &bools::update_bool_to_path(&shape, shapes, modifiers, structure)
+                    } else {
+                        &shape
+                    }
+                } else {
+                    &shape
+                };
+
                 let has_fill_none = matches!(
                     shape.svg_attrs.get("fill").map(String::as_str),
                     Some("none")
@@ -532,23 +574,24 @@ impl RenderState {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
                         for fill in fills_to_render.iter() {
-                            fills::render(self, &shape, fill, antialias);
+                            fills::render(self, shape, fill, antialias);
                         }
                     }
                 } else {
                     for fill in shape.fills().rev() {
-                        fills::render(self, &shape, fill, antialias);
+                        fills::render(self, shape, fill, antialias);
                     }
                 }
 
                 for stroke in shape.visible_strokes().rev() {
-                    shadows::render_stroke_drop_shadows(self, &shape, stroke, antialias);
-                    strokes::render(self, &shape, stroke, None, None, None, antialias, None);
-                    shadows::render_stroke_inner_shadows(self, &shape, stroke, antialias);
+                    shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
+                    strokes::render(self, shape, stroke, None, None, None, antialias, None);
+                    shadows::render_stroke_inner_shadows(self, shape, stroke, antialias);
                 }
 
-                shadows::render_fill_inner_shadows(self, &shape, antialias);
-                shadows::render_fill_drop_shadows(self, &shape, antialias);
+                shadows::render_fill_inner_shadows(self, shape, antialias);
+                shadows::render_fill_drop_shadows(self, shape, antialias);
+                // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
         self.apply_drawing_to_render_canvas(Some(&shape));
@@ -751,9 +794,11 @@ impl RenderState {
     #[inline]
     pub fn render_shape_exit(
         &mut self,
+        tree: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         element: &Shape,
         visited_mask: bool,
-        modifiers: Option<&Matrix>,
         scale_content: Option<&f32>,
     ) {
         if visited_mask {
@@ -815,7 +860,7 @@ impl RenderState {
                 element_fills
                     .to_mut()
                     .set_fills([Fill::Solid(SolidColor(skia::Color::WHITE))].to_vec());
-                self.render_shape(&element_fills, modifiers, scale_content);
+                self.render_shape(tree, modifiers, structure, &element_fills, scale_content);
 
                 self.surfaces.canvas(SurfaceId::Current).restore();
 
@@ -823,7 +868,7 @@ impl RenderState {
                 let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
                 element_strokes.to_mut().clear_fills();
                 element_strokes.to_mut().clear_shadows();
-                self.render_shape(&element_strokes, modifiers, scale_content);
+                self.render_shape(tree, modifiers, structure, &element_strokes, scale_content);
 
                 // TODO: drop shadows. With thos approach actually drop shadows for frames with clipped content are lost.
             }
@@ -901,9 +946,11 @@ impl RenderState {
 
             if visited_children {
                 self.render_shape_exit(
+                    tree,
+                    modifiers,
+                    structure,
                     element,
                     visited_mask,
-                    modifiers.get(&node_id),
                     scale_content.get(&element.id),
                 );
                 continue;
@@ -944,8 +991,10 @@ impl RenderState {
             self.render_shape_enter(element, mask);
             if !node_render_state.is_root() && self.focus_mode.is_active() {
                 self.render_shape(
+                    tree,
+                    modifiers,
+                    structure,
                     element,
-                    modifiers.get(&element.id),
                     scale_content.get(&element.id),
                 );
             } else if visited_children {

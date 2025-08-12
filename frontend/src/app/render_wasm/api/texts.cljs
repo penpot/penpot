@@ -35,7 +35,7 @@
                 (some? image)
                 (types.fills.impl/write-image-fill offset dview opacity image))
 
-              (+ offset types.fills.impl/FILL-BYTE-SIZE)))
+              (+ offset types.fills.impl/FILL-U8-SIZE)))
           current-offset
           fills))
 
@@ -51,7 +51,7 @@
         num-leaves (count leaves)
         paragraph-attr-size 48
         total-fills (total-fills-count leaves)
-        total-fills-size (* types.fills.impl/FILL-BYTE-SIZE total-fills)
+        total-fills-size (* types.fills.impl/FILL-U8-SIZE total-fills)
         leaf-attr-size 56
         metadata-size (+ paragraph-attr-size (* num-leaves leaf-attr-size) total-fills-size)
         text-buffer (utf8->buffer text)
@@ -137,7 +137,7 @@
 
     ;; Allocate memory and set buffer
     (let [total-size (.-byteLength buffer)
-          metadata-offset (mem/alloc-bytes total-size)
+          metadata-offset (mem/alloc total-size)
           heap (mem/get-heap-u8)]
       (.set heap (js/Uint8Array. buffer) metadata-offset)))
 

@@ -1,5 +1,7 @@
 use skia_safe as skia;
 
+pub mod bools;
+
 pub type Rect = skia::Rect;
 pub type Matrix = skia::Matrix;
 pub type Vector = skia::Vector;
@@ -22,7 +24,16 @@ pub fn is_close_to(current: f32, value: f32) -> bool {
     (current - value).abs() <= THRESHOLD
 }
 
-pub fn identitish(m: Matrix) -> bool {
+pub fn is_close_matrix(m: &Matrix, other: &Matrix) -> bool {
+    is_close_to(m.scale_x(), other.scale_x())
+        && is_close_to(m.scale_y(), other.scale_y())
+        && is_close_to(m.translate_x(), other.translate_x())
+        && is_close_to(m.translate_y(), other.translate_y())
+        && is_close_to(m.skew_x(), other.skew_x())
+        && is_close_to(m.skew_y(), other.skew_y())
+}
+
+pub fn identitish(m: &Matrix) -> bool {
     is_close_to(m.scale_x(), 1.0)
         && is_close_to(m.scale_y(), 1.0)
         && is_close_to(m.translate_x(), 0.0)
@@ -326,6 +337,11 @@ impl Bounds {
 
     pub fn to_rect(self) -> Rect {
         Rect::from_ltrb(self.min_x(), self.min_y(), self.max_x(), self.max_y())
+    }
+
+    pub fn from_rect(r: &Rect) -> Self {
+        let [nw, ne, se, sw] = r.to_quad();
+        Self::new(nw, ne, se, sw)
     }
 
     pub fn min_x(&self) -> f32 {
