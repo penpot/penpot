@@ -614,22 +614,26 @@
 (defn set-shape-shadows
   [shadows]
   (h/call wasm/internal-module "_clear_shape_shadows")
-  (let [total-shadows (count shadows)]
-    (loop [index 0]
-      (when (< index total-shadows)
-        (let [shadow (nth shadows index)
-              color (dm/get-prop shadow :color)
-              blur (dm/get-prop shadow :blur)
-              rgba (sr-clr/hex->u32argb (dm/get-prop color :color) (dm/get-prop color :opacity))
-              hidden (dm/get-prop shadow :hidden)
-              x (dm/get-prop shadow :offset-x)
-              y (dm/get-prop shadow :offset-y)
-              spread (dm/get-prop shadow :spread)
-              style (dm/get-prop shadow :style)]
-          (h/call wasm/internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
-          (recur (inc index)))))))
 
-;; (declare propagate-apply)
+  (run! (fn [shadow]
+          (let [color  (get shadow :color)
+                blur   (get shadow :blur)
+                rgba   (sr-clr/hex->u32argb (get color :color)
+                                            (get color :opacity))
+                hidden (get shadow :hidden)
+                x      (get shadow :offset-x)
+                y      (get shadow :offset-y)
+                spread (get shadow :spread)
+                style  (get shadow :style)]
+            (h/call wasm/internal-module "_add_shape_shadow"
+                    rgba
+                    blur
+                    spread
+                    x
+                    y
+                    (sr/translate-shadow-style style)
+                    hidden)))
+        shadows))
 
 (defn set-shape-text-content
   [shape-id content]
