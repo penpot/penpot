@@ -102,7 +102,10 @@
 (defn- render
   [timestamp]
   (h/call wasm/internal-module "_render" timestamp)
-  (set! wasm/internal-frame-id nil))
+  (set! wasm/internal-frame-id nil)
+  ;; emit custom event
+  (let [event (js/CustomEvent. "wasm:render")]
+    (js/document.dispatchEvent ^js event)))
 
 (def debounce-render (fns/debounce render 100))
 
