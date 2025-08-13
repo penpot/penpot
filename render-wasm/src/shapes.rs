@@ -951,6 +951,7 @@ impl Shape {
     }
 
     pub fn add_paragraph(&mut self, paragraph: Paragraph) -> Result<(), String> {
+        self.invalidate_extrect();
         match self.shape_type {
             Type::Text(ref mut text) => {
                 text.add_paragraph(paragraph);
@@ -961,6 +962,7 @@ impl Shape {
     }
 
     pub fn clear_text(&mut self) {
+        self.invalidate_extrect();
         if let Type::Text(old_text_content) = &self.shape_type {
             let new_text_content = TextContent::new(self.selrect, old_text_content.grow_type());
             self.shape_type = Type::Text(new_text_content);
