@@ -172,6 +172,10 @@
         objects        (pcb/get-objects changes)
         variant-id     (:id variant-container)
 
+        num-shapes     (->> variant-container
+                            :shapes
+                            count)
+
         ;; If we are cut-pasting a variant-container, this will be null
         ;; because it hasn't any shapes yet
         first-comp-id  (->> variant-container
@@ -198,7 +202,7 @@
                                0
                                shapes)
 
-        num-new-props  (if (or (zero? num-base-props)
+        num-new-props  (if (or (zero? num-shapes)
                                (< total-props num-base-props))
                          0
                          (- total-props num-base-props))
@@ -213,7 +217,7 @@
     (reduce
      (fn [changes shape]
        (let [component (ctcl/get-component data (:component-id shape) true)]
-         (if (or (zero? num-base-props)                  ;; do nothing if there are no base props
+         (if (or (zero? num-shapes)                      ;; do nothing if there are no shapes
                  (and (= variant-id (:variant-id shape)) ;; or we are only moving the shape inside its parent (it is
                       (not (:deleted component))))       ;; the same parent and the component isn't deleted)
            changes
