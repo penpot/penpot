@@ -550,6 +550,60 @@
                  :rollback rollback?
                  :elapsed elapsed))))))
 
+(defn process!
+  "Apply a function to all files in the database"
+  [& {:keys [max-jobs
+             rollback?
+             max-chunks
+             proc-fn]
+      :or {max-chunks Long/MAX_VALUE
+           rollback? true}
+      :as opts}]
+
+  (l/dbg :hint "process:start"
+         :rollback rollback?
+         :max-jobs max-jobs
+         :max-chunks max-chunks)
+
+  (let [tpoint    (ct/tpoint)
+        max-jobs  (or max-jobs (px/get-available-processors))
+        chunks    (atom 0)
+
+        start-job
+        (fn [jid]
+          (l/dbg :hint "start job thread" :jid jid)
+          (px/sleep 1000)
+
+          (loop [total 0]
+            (let [result (-> main/system
+                             (assoc ::db/rollback rollback?)
+                             (proc-fn opts))
+                  total  (+ total result)
+                  chunks (swap! chunks inc)]
+
+              (l/dbg :hint "chunk processed" :jid jid :total total :chunk result)
+              (when  (and (pos? result)
+                          (< chunks max-chunks))
+                (recur total)))))]
+
+    (try
+      (let [jobs (->> (range max-jobs)
+                      (map (fn [jid] (px/fn->thread (partial start-job jid))))
+                      (doall))]
+        (doseq [job jobs]
+          (.join ^java.lang.Thread job)))
+
+      (catch Throwable cause
+        (l/dbg :hint "process:error" :cause cause))
+
+      (finally
+        (let [elapsed (ct/format-duration (tpoint))]
+          (l/dbg :hint "process:end"
+                 :rollback rollback?
+                 :elapsed elapsed))))))
+
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)
