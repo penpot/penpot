@@ -230,6 +230,11 @@ pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
     let mut combined_shader: Option<skia::Shader> = None;
     let mut fills_paint = skia::Paint::default();
 
+    if fills.is_empty() {
+        fills_paint.set_color(skia::Color::TRANSPARENT);
+        return fills_paint;
+    }
+
     for fill in fills {
         let shader = get_fill_shader(fill, &bounding_box);
 

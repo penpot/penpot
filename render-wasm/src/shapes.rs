@@ -1072,6 +1072,7 @@ impl Shape {
         self.visible_strokes().next().is_some()
     }
 
+    #[allow(dead_code)]
     pub fn has_visible_inner_strokes(&self) -> bool {
         self.visible_strokes().any(|s| s.kind == StrokeKind::Inner)
     }
