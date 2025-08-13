@@ -763,7 +763,7 @@
   [{:keys [shapes swap-opened?]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
 
-        libraries       (deref refs/files)
+        libraries       (mf/deref refs/files)
         current-file    (get libraries current-file-id)
 
 
