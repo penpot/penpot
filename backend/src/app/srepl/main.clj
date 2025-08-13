@@ -555,8 +555,10 @@
   [& {:keys [max-jobs
              rollback?
              max-chunks
+             chunk-size
              proc-fn]
       :or {max-chunks Long/MAX_VALUE
+           chunk-size 100
            rollback? true}
       :as opts}]
 
@@ -564,6 +566,13 @@
         max-jobs   (or max-jobs (px/get-available-processors))
         max-chunks (max max-chunks max-jobs)
         processed  (atom 0)
+
+        opts       (-> opts
+                       (assoc :chunk-size chunk-size)
+                       (dissoc :rollback?)
+                       (dissoc :proc-fn)
+                       (dissoc :max-jobs)
+                       (dissoc :max-chunks))
 
         start-job
         (fn [jid]
@@ -586,6 +595,10 @@
            :rollback rollback?
            :max-jobs max-jobs
            :max-chunks max-chunks)
+
+    (add-watch processed ::watch
+               (fn [_ _ _ v]
+                 (l/dbg :hint "total chunks processed" :chunks v :items (* chunk-size v))))
 
     (try
       (let [jobs (->> (range max-jobs)
