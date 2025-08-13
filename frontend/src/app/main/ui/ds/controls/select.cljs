@@ -102,6 +102,7 @@
         (mf/use-fn
          (mf/deps on-change)
          (fn [event]
+           (dom/stop-propagation event)
            (let [node  (dom/get-current-target event)
                  id    (dom/get-data node "id")]
              (reset! selected-id* id)
