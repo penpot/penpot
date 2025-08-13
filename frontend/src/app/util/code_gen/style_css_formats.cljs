@@ -25,6 +25,8 @@
    :background            :color
    :border                :border
    :border-radius         :string-or-size-array
+   :border-width          :border-width
+   :border-style          :border-style
    :box-shadow            :shadows
    :filter                :blur
    :gap                   :size-array
@@ -91,6 +93,14 @@
           (fmt/format-pixels width)
           (d/name style)
           (format-color color options)))
+
+(defmethod format-value :border-style
+  [_ value _options]
+  (d/name (:style value)))
+
+(defmethod format-value :border-width
+  [_ value _options]
+  (fmt/format-pixels (:width value)))
 
 (defmethod format-value :size-array
   [_ value _options]

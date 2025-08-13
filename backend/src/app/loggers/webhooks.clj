@@ -10,13 +10,13 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uri :as uri]
    [app.config :as cf]
    [app.db :as db]
    [app.http.client :as http]
    [app.loggers.audit :as audit]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.data.json :as json]
    [cuerdas.core :as str]
@@ -124,7 +124,7 @@
                               {:id (:id whook)})))
 
               (db/update! pool :webhook
-                          {:updated-at (dt/now)
+                          {:updated-at (ct/now)
                            :error-code nil
                            :error-count 0}
                           {:id (:id whook)})))
@@ -132,7 +132,7 @@
           (report-delivery! [whook req rsp err]
             (db/insert! pool :webhook-delivery
                         {:webhook-id (:id whook)
-                         :created-at (dt/now)
+                         :created-at (ct/now)
                          :error-code err
                          :req-data (db/tjson req)
                          :rsp-data (db/tjson rsp)}))]
@@ -155,7 +155,7 @@
         (let [req {:uri (:uri whook)
                    :headers {"content-type" (:mtype whook)
                              "user-agent" (str/ffmt "penpot/%" (:main cf/version))}
-                   :timeout (dt/duration "4s")
+                   :timeout (ct/duration "4s")
                    :method :post
                    :body body}]
           (try

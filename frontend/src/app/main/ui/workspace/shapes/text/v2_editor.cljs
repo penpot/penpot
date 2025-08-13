@@ -9,10 +9,12 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.text :as gst]
    [app.common.math :as mth]
-   [app.common.text :as txt]
+   [app.common.types.color :as color]
+   [app.common.types.text :as txt]
    [app.config :as cf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.texts :as dwt]
@@ -31,6 +33,11 @@
    [app.util.text.content.styles :as styles]
    [rumext.v2 :as mf]))
 
+(defn get-contrast-color [background-color]
+  (when background-color
+    (let [luminance (color/hex->lum background-color)]
+      (if (> luminance 0.5) "#000000" "#ffffff"))))
+
 (defn- gen-name
   [editor]
   (when (some? editor)
@@ -41,7 +48,7 @@
 (defn- get-fonts
   [content]
   (let [extract-fn (juxt :font-id :font-variant-id)
-        default    (extract-fn txt/default-text-attrs)]
+        default    (extract-fn txt/default-typography)]
     (->> (tree-seq map? :children content)
          (into #{default} (keep extract-fn)))))
 
@@ -54,7 +61,7 @@
 
 (defn- initialize-event-handlers
   "Internal editor events handler initializer/destructor"
-  [shape-id content selection-ref editor-ref container-ref]
+  [shape-id content selection-ref editor-ref container-ref text-color]
   (let [editor-node
         (mf/ref-val editor-ref)
 
@@ -67,7 +74,11 @@
 
         style-defaults
         (styles/get-style-defaults
-         (merge txt/default-attrs default-font))
+         (merge
+          (txt/get-default-text-attrs)
+          {:fills [{:fill-color text-color :fill-opacity 1}]}
+          txt/default-root-attrs
+          default-font))
 
         options
         #js {:styleDefaults style-defaults
@@ -116,7 +127,12 @@
         on-change
         (fn []
           (when-let [content (content/dom->cljs (dwt/get-editor-root instance))]
-            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))]
+            (st/emit! (dwt/v2-update-text-shape-content shape-id content :update-name? true))))
+
+        on-clipboard-change
+        (fn [event]
+          (let [style (.-detail event)]
+            (st/emit! (dw/set-clipboard-style style))))]
 
     (.addEventListener ^js global/document "keyup" on-key-up)
     (.addEventListener ^js instance "blur" on-blur)
@@ -124,13 +140,15 @@
     (.addEventListener ^js instance "needslayout" on-needs-layout)
     (.addEventListener ^js instance "stylechange" on-style-change)
     (.addEventListener ^js instance "change" on-change)
+    (.addEventListener ^js instance "clipboardchange" on-clipboard-change)
 
     (st/emit! (dwt/update-editor instance))
     (when (some? content)
       (dwt/set-editor-root! instance (content/cljs->dom content)))
-    (st/emit! (dwt/focus-editor))
+    (when (some? instance)
+      (st/emit! (dwt/focus-editor)))
 
-    ;; This function is called when the component is unmount
+    ;; This function is called when the component is unmounted
     (fn []
       (.removeEventListener ^js global/document "keyup" on-key-up)
       (.removeEventListener ^js instance "blur" on-blur)
@@ -138,24 +156,49 @@
       (.removeEventListener ^js instance "needslayout" on-needs-layout)
       (.removeEventListener ^js instance "stylechange" on-style-change)
       (.removeEventListener ^js instance "change" on-change)
+      (.removeEventListener ^js instance "clipboardchange" on-clipboard-change)
       (dwt/dispose! instance)
       (st/emit! (dwt/update-editor nil)))))
+
+(defn get-color-from-content [content]
+  (let [fills (->> (tree-seq map? :children content)
+                   (mapcat :fills)
+                   (filter :fill-color))]
+    (some :fill-color fills)))
+
+(defn get-default-text-color
+  "Returns the appropriate text color based on fill, frame, and background."
+  [{:keys [frame background-color]}]
+  (if (and frame (not (cfh/root? frame)) (seq (:fills frame)))
+    (let [fill-color (some #(when (:fill-color %) (:fill-color %)) (:fills frame))]
+      (if fill-color
+        (get-contrast-color fill-color)
+        (get-contrast-color background-color)))
+    (get-contrast-color background-color)))
 
 (mf/defc text-editor-html
   "Text editor (HTML)"
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
   [{:keys [shape]}]
-  (let [content       (:content shape)
-        shape-id      (dm/get-prop shape :id)
+  (let [content          (:content shape)
+        shape-id         (dm/get-prop shape :id)
+        fill-color       (get-color-from-content content)
 
         ;; This is a reference to the dom element that
         ;; should contain the TextEditor.
-        editor-ref    (mf/use-ref nil)
-
+        editor-ref       (mf/use-ref nil)
         ;; This reference is to the container
-        container-ref (mf/use-ref nil)
-        selection-ref (mf/use-ref nil)
+        container-ref    (mf/use-ref nil)
+        selection-ref    (mf/use-ref nil)
+
+        page             (mf/deref refs/workspace-page)
+        objects          (get page :objects)
+        frame            (cfh/get-frame objects shape-id)
+        background-color (:background page)
+
+        text-color       (or fill-color (get-default-text-color {:frame frame
+                                                                 :background-color background-color}) color/black)
 
         fonts
         (-> (mf/use-memo (mf/deps content) #(get-fonts content))
@@ -172,7 +215,12 @@
                                  content
                                  selection-ref
                                  editor-ref
-                                 container-ref))
+                                 container-ref
+                                 text-color))
+
+    (mf/with-effect [text-color]
+      (let [container-node (mf/ref-val container-ref)]
+        (dom/set-style! container-node "--text-editor-caret-color" text-color)))
 
     [:div
      {:class (dm/str (cur/get-dynamic "text" (:rotation shape))

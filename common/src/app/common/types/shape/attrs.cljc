@@ -6,7 +6,7 @@
 
 (ns app.common.types.shape.attrs
   (:require
-   [app.common.colors :as clr]))
+   [app.common.types.color :as clr]))
 
 (def default-color clr/gray-20)
 

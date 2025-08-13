@@ -7,10 +7,11 @@
 (ns app.main.ui.workspace.tokens.management.create.form
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as c]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.types.color :as c]
+   [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
@@ -21,9 +22,11 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.main.data.workspace.tokens.warnings :as wtw]
+   [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.button :refer [button*]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -31,6 +34,8 @@
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
+   [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
+   [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
    [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-tokens-value*]]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
@@ -94,7 +99,17 @@
 (defn valid-value? [value]
   (seq (finalize-value value)))
 
-;; Component -------------------------------------------------------------------
+;; Validation ------------------------------------------------------------------
+
+(defn validate-empty-input [value]
+  (if (sequential? value)
+    (empty? value)
+    (empty? (str/trim value))))
+
+(defn validate-self-reference? [token-name value]
+  (if (sequential? value)
+    (some #(ctob/token-value-self-reference? token-name %) value)
+    (ctob/token-value-self-reference? token-name value)))
 
 (defn validate-token-value
   "Validates token value by resolving the value `input` using `StyleDictionary`.
@@ -104,17 +119,19 @@
         ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names
         token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)]
     (cond
-      (empty? (str/trim value))
+      (validate-empty-input value)
       (rx/throw {:errors [(wte/get-error-code :error.token/empty-input)]})
 
-      (ctob/token-value-self-reference? token-name value)
+      (validate-self-reference? token-name value)
       (rx/throw {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
 
       :else
       (let [tokens' (cond-> tokens
                       ;; Remove previous token when renaming a token
                       (not= name-value (:name token)) (dissoc (:name token))
-                      :always (update token-name #(ctob/make-token (merge % {:value value
+                      :always (update token-name #(ctob/make-token (merge % {:value (cond
+                                                                                      (= (:type token) :font-family) (ctt/split-font-family value)
+                                                                                      :else value)
                                                                              :name token-name
                                                                              :type (:type token)}))))]
         (->> tokens'
@@ -156,59 +173,7 @@
 
 (defonce form-token-cache-atom (atom nil))
 
-;; FIXME: this function has confusing name
-(defn- hex->value
-  [hex]
-  (when-let [tc (tinycolor/valid-color hex)]
-    (let [hex (tinycolor/->hex-string tc)
-          alpha (tinycolor/alpha tc)
-          [r g b] (c/hex->rgb hex)
-          [h s v] (c/hex->hsv hex)]
-      {:hex hex
-       :r r :g g :b b
-       :h h :s s :v v
-       :alpha alpha})))
-
-(mf/defc ramp*
-  [{:keys [color on-change]}]
-  (let [wrapper-node-ref (mf/use-ref nil)
-        dragging-ref     (mf/use-ref false)
-
-        on-start-drag
-        (mf/use-fn #(mf/set-ref-val! dragging-ref true))
-
-        on-finish-drag
-        (mf/use-fn #(mf/set-ref-val! dragging-ref false))
-
-        internal-color*
-        (mf/use-state #(hex->value color))
-
-        internal-color
-        (deref internal-color*)
-
-        on-change'
-        (mf/use-fn
-         (mf/deps on-change)
-         (fn [{:keys [hex alpha] :as selector-color}]
-           (let [dragging? (mf/ref-val dragging-ref)]
-             (when-not (and dragging? hex)
-               (reset! internal-color* selector-color)
-               (on-change hex alpha)))))]
-    (mf/use-effect
-     (mf/deps color)
-     (fn []
-       ;; Update internal color when user changes input value
-       (when-let [color (tinycolor/valid-color color)]
-         (when-not (= (tinycolor/->hex-string color) (:hex internal-color))
-           (reset! internal-color* (hex->value color))))))
-
-    (colorpicker/use-color-picker-css-variables! wrapper-node-ref internal-color)
-    [:div {:ref wrapper-node-ref}
-     [:> ramp-selector*
-      {:color internal-color
-       :on-start-drag on-start-drag
-       :on-finish-drag on-finish-drag
-       :on-change on-change'}]]))
+;; Component -------------------------------------------------------------------
 
 (mf/defc token-value-hint
   [{:keys [result]}]
@@ -232,13 +197,11 @@
       :class (stl/css-case :resolved-value (not (or empty-message? (seq warnings) (seq errors))))
       :type type}]))
 
-(mf/defc form
-  {::mf/wrap-props false}
-  [{:keys [token token-type action selected-token-set-name on-display-colorpicker]}]
+(mf/defc form*
+  [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve custom-input-token-value custom-input-token-value-props input-value-placeholder]}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
-        is-color-token (cft/color-token? token)
         tokens-in-selected-set (mf/deref refs/workspace-all-tokens-in-selected-set)
 
         active-theme-tokens (cond-> (mf/deref refs/workspace-active-theme-sets-tokens)
@@ -246,7 +209,11 @@
                               ;; even if the name has been overriden by a token with the same name
                               ;; in another set below.
                               (and (:name token) (:value token))
-                              (assoc (:name token) token))
+                              (assoc (:name token) token)
+
+                              ;; Style dictionary resolver needs font families to be an array of strings
+                              (= :font-family (or (:type token) token-type))
+                              (update-in [(:name token) :value] ctt/split-font-family))
 
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
                                                                      :interactive? true})
@@ -260,13 +227,6 @@
                                        (-> (ctob/tokens-tree tokens-in-selected-set)
                                            ;; Allow setting editing token to it's own path
                                            (d/dissoc-in token-path))))
-        cancel-ref  (mf/use-ref nil)
-
-        on-cancel-ref
-        (mf/use-fn
-         (fn [node]
-           (mf/set-ref-val! cancel-ref node)))
-
         ;; Name
         touched-name* (mf/use-state false)
         touched-name? (deref touched-name*)
@@ -286,16 +246,13 @@
 
         on-blur-name
         (mf/use-fn
-         (mf/deps cancel-ref touched-name? warning-name-change?)
+         (mf/deps touched-name? warning-name-change?)
          (fn [e]
-           (let [node (dom/get-related-target e)
-                 on-cancel-btn (= node (mf/ref-val cancel-ref))]
-             (when-not on-cancel-btn
-               (let [value (dom/get-target-val e)
-                     errors (validate-name value)]
-                 (when touched-name?
-                   (reset! warning-name-change* true))
-                 (reset! name-errors errors))))))
+           (let [value (dom/get-target-val e)
+                 errors (validate-name value)]
+             (when touched-name?
+               (reset! warning-name-change* true))
+             (reset! name-errors errors))))
 
         on-update-name-debounced
         (mf/use-fn
@@ -321,10 +278,6 @@
                            (valid-name? @token-name-ref))
 
         ;; Value
-        color* (mf/use-state (when is-color-token (:value token)))
-        color (deref color*)
-        color-ramp-open* (mf/use-state false)
-        color-ramp-open? (deref color-ramp-open*)
         value-input-ref (mf/use-ref nil)
         value-ref (mf/use-ref (:value token))
 
@@ -333,68 +286,46 @@
 
         set-resolve-value
         (mf/use-fn
+         (mf/deps on-value-resolve)
          (fn [token-or-err]
            (let [error? (:errors token-or-err)
                  warnings? (:warnings token-or-err)
                  v (cond
                      error?
-                     token-or-err
+                     (do
+                       (when on-value-resolve (on-value-resolve nil))
+                       token-or-err)
 
                      warnings?
                      (:warnings {:warnings token-or-err})
 
                      :else
-                     (:resolved-value token-or-err))]
-             (when is-color-token (reset! color* (if error? nil v)))
+                     (cond-> (:resolved-value token-or-err)
+                       on-value-resolve on-value-resolve))]
              (reset! token-resolve-result* v))))
 
         on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
-        on-update-value (mf/use-fn
-                         (mf/deps on-update-value-debounced)
-                         (fn [e]
-                           (let [value (dom/get-target-val e)
-                                 ;; Automatically add # for hex values
-                                 value' (if (and is-color-token (tinycolor/hex-without-hash-prefix? value))
-                                          (let [hex (dm/str "#" value)]
-                                            (dom/set-value! (mf/ref-val value-input-ref) hex)
-                                            hex)
-                                          value)]
-                             (mf/set-ref-val! value-ref value')
-                             (on-update-value-debounced value'))))
-        on-update-color (mf/use-fn
-                         (mf/deps color on-update-value-debounced)
-                         (fn [hex-value alpha]
-                           (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
-                                 prev-input-color (some-> (dom/get-value (mf/ref-val value-input-ref))
-                                                          (tinycolor/valid-color))
-                                 ;; If the input is a reference we will take the format from the computed value
-                                 prev-computed-color (when-not prev-input-color
-                                                       (some-> color (tinycolor/valid-color)))
-                                 prev-format (some-> (or prev-input-color prev-computed-color)
-                                                     (tinycolor/color-format))
-                                 to-rgba? (and
-                                           (< alpha 1)
-                                           (or (= prev-format "hex") (not prev-format)))
-                                 to-hex? (and (not prev-format) (= alpha 1))
-                                 format (cond
-                                          to-rgba? "rgba"
-                                          to-hex? "hex"
-                                          prev-format prev-format
-                                          :else "hex")
-                                 color-value (-> (tinycolor/valid-color hex-value)
-                                                 (tinycolor/set-alpha (or alpha 1))
-                                                 (tinycolor/->string format))]
-                             (mf/set-ref-val! value-ref color-value)
-                             (dom/set-value! (mf/ref-val value-input-ref) color-value)
-                             (on-update-value-debounced color-value))))
-
-        on-display-colorpicker'
+        on-update-value
         (mf/use-fn
-         (mf/deps color-ramp-open? on-display-colorpicker)
-         (fn []
-           (let [open? (not color-ramp-open?)]
-             (reset! color-ramp-open* open?)
-             (on-display-colorpicker open?))))
+         (mf/deps on-update-value-debounced transform-value)
+         (fn [e]
+           (let [value (dom/get-target-val e)
+                 value' (if (fn? transform-value)
+                          (transform-value value)
+                          value)]
+             ;; Value got updated in transform, update the dom node
+             (when (not= value value')
+               (dom/set-value! (mf/ref-val value-input-ref) value'))
+             (mf/set-ref-val! value-ref value)
+             (on-update-value-debounced value))))
+
+        on-external-update-value
+        (mf/use-fn
+         (mf/deps on-update-value-debounced)
+         (fn [next-value]
+           (dom/set-value! (mf/ref-val value-input-ref) next-value)
+           (mf/set-ref-val! value-ref next-value)
+           (on-update-value-debounced next-value)))
 
         value-error? (seq (:errors token-resolve-result))
 
@@ -431,7 +362,6 @@
          (mf/deps validate-name validate-descripion token active-theme-tokens)
          (fn [e]
            (dom/prevent-default e)
-           (mf/set-ref-val! cancel-ref nil)
            ;; We have to re-validate the current form values before submitting
            ;; because the validation is asynchronous/debounced
            ;; and the user might have edited a valid form to make it invalid,
@@ -440,7 +370,11 @@
                  valid-name? (try
                                (not (:errors (validate-name final-name)))
                                (catch js/Error _ nil))
-                 final-value (finalize-value (mf/ref-val value-ref))
+                 final-value (let [value (mf/ref-val value-ref)
+                                   font-family? (= :font-family (or (:type token) token-type))]
+                               (if font-family?
+                                 (ctt/split-font-family value)
+                                 (finalize-value value)))
                  final-description @description-ref
                  valid-description? (if final-description
                                       (try
@@ -456,7 +390,7 @@
                      (fn []
                        (st/emit!
                         (if (ctob/token? token)
-                          (dwtl/update-token (:name token)
+                          (dwtl/update-token (:id token)
                                              {:name final-name
                                               :value final-value
                                               :description final-description})
@@ -474,26 +408,30 @@
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dwtl/delete-token (ctob/prefixed-set-path-string->set-name-string selected-token-set-name) (:name token)))))
+           (st/emit! (dwtl/delete-token
+                      (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
+                      (:id token)))))
 
         on-cancel
         (mf/use-fn
          (fn [e]
-           (mf/set-ref-val! cancel-ref nil)
            (dom/prevent-default e)
            (modal/hide!)))
+
         handle-key-down-delete
         (mf/use-fn
          (mf/deps on-delete-token)
          (fn [e]
            (when (k/enter? e)
              (on-delete-token e))))
+
         handle-key-down-cancel
         (mf/use-fn
          (mf/deps on-cancel)
          (fn [e]
            (when (k/enter? e)
              (on-cancel e))))
+
         handle-key-down-save
         (mf/use-fn
          (fn [e]
@@ -555,20 +493,31 @@
            {:level :warning :appearance :ghost} (tr "workspace.tokens.warning-name-change")]])]
 
       [:div {:class (stl/css :input-row)}
-       [:> input-tokens-value*
-        {:placeholder (tr "workspace.tokens.token-value-enter")
-         :label (tr "workspace.tokens.token-value")
-         :default-value (mf/ref-val value-ref)
-         :ref value-input-ref
-         :is-color-token is-color-token
-         :color color
-         :on-change on-update-value
-         :error (not (nil? (:errors token-resolve-result)))
-         :display-colorpicker on-display-colorpicker'
-         :on-blur on-update-value}]
-       (when color-ramp-open?
-         [:> ramp* {:color (some-> color (tinycolor/valid-color))
-                    :on-change on-update-color}])
+       (let [placeholder (or input-value-placeholder (tr "workspace.tokens.token-value-enter"))
+             label (tr "workspace.tokens.token-value")
+             default-value (mf/ref-val value-ref)
+             ref value-input-ref
+             error (not (nil? (:errors token-resolve-result)))
+             on-blur on-update-value]
+         (if (fn? custom-input-token-value)
+           [:> custom-input-token-value
+            {:placeholder placeholder
+             :label label
+             :default-value default-value
+             :input-ref ref
+             :error error
+             :on-blur on-blur
+             :on-update-value on-update-value
+             :on-external-update-value on-external-update-value
+             :custom-input-token-value-props custom-input-token-value-props}]
+           [:> input-tokens-value*
+            {:placeholder placeholder
+             :label label
+             :default-value default-value
+             :ref ref
+             :error error
+             :on-blur on-blur
+             :on-change on-update-value}]))
        [:& token-value-hint {:result token-resolve-result}]]
       [:div {:class (stl/css :input-row)}
        [:> input* {:label (tr "workspace.tokens.token-description")
@@ -593,7 +542,6 @@
        [:> button* {:on-click on-cancel
                     :on-key-down handle-key-down-cancel
                     :type "button"
-                    :on-ref  on-cancel-ref
                     :id "token-modal-cancel"
                     :variant "secondary"}
         (tr "labels.cancel")]
@@ -602,3 +550,268 @@
                     :variant "primary"
                     :disabled disabled?}
         (tr "labels.save")]]]]))
+
+;; FIXME: this function has confusing name
+(defn- hex->value
+  [hex]
+  (when-let [tc (tinycolor/valid-color hex)]
+    (let [hex (tinycolor/->hex-string tc)
+          alpha (tinycolor/alpha tc)
+          [r g b] (c/hex->rgb hex)
+          [h s v] (c/hex->hsv hex)]
+      {:hex hex
+       :r r :g g :b b
+       :h h :s s :v v
+       :alpha alpha})))
+
+(mf/defc ramp*
+  [{:keys [color on-change]}]
+  (let [wrapper-node-ref (mf/use-ref nil)
+        dragging-ref     (mf/use-ref false)
+
+        on-start-drag
+        (mf/use-fn #(mf/set-ref-val! dragging-ref true))
+
+        on-finish-drag
+        (mf/use-fn #(mf/set-ref-val! dragging-ref false))
+
+        internal-color*
+        (mf/use-state #(hex->value color))
+
+        internal-color
+        (deref internal-color*)
+
+        on-change'
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [{:keys [hex alpha] :as selector-color}]
+           (let [dragging? (mf/ref-val dragging-ref)]
+             (when-not (and dragging? hex)
+               (reset! internal-color* selector-color)
+               (on-change hex alpha)))))]
+    (mf/use-effect
+     (mf/deps color)
+     (fn []
+       ;; Update internal color when user changes input value
+       (when-let [color (tinycolor/valid-color color)]
+         (when-not (= (tinycolor/->hex-string color) (:hex internal-color))
+           (reset! internal-color* (hex->value color))))))
+
+    (colorpicker/use-color-picker-css-variables! wrapper-node-ref internal-color)
+    [:div {:ref wrapper-node-ref}
+     [:> ramp-selector*
+      {:color internal-color
+       :on-start-drag on-start-drag
+       :on-finish-drag on-finish-drag
+       :on-change on-change'}]]))
+
+(mf/defc color-picker*
+  [{:keys [placeholder label default-value input-ref error on-blur on-update-value on-external-update-value custom-input-token-value-props]}]
+  (let [{:keys [color on-display-colorpicker]} custom-input-token-value-props
+        color-ramp-open* (mf/use-state false)
+        color-ramp-open? (deref color-ramp-open*)
+
+        on-click-swatch
+        (mf/use-fn
+         (mf/deps color-ramp-open? on-display-colorpicker)
+         (fn []
+           (let [open? (not color-ramp-open?)]
+             (reset! color-ramp-open* open?)
+             (on-display-colorpicker open?))))
+
+        swatch
+        (mf/html
+         [:> input-token-color-bullet*
+          {:color color
+           :class (stl/css :slot-start)
+           :on-click on-click-swatch}])
+
+        on-change'
+        (mf/use-fn
+         (mf/deps color on-external-update-value)
+         (fn [hex-value alpha]
+           (let [;; StyleDictionary will always convert to hex/rgba, so we take the format from the value input field
+                 prev-input-color (some-> (dom/get-value (mf/ref-val input-ref))
+                                          (tinycolor/valid-color))
+                  ;; If the input is a reference we will take the format from the computed value
+                 prev-computed-color (when-not prev-input-color
+                                       (some-> color (tinycolor/valid-color)))
+                 prev-format (some-> (or prev-input-color prev-computed-color)
+                                     (tinycolor/color-format))
+                 to-rgba? (and
+                           (< alpha 1)
+                           (or (= prev-format "hex") (not prev-format)))
+                 to-hex? (and (not prev-format) (= alpha 1))
+                 format (cond
+                          to-rgba? "rgba"
+                          to-hex? "hex"
+                          prev-format prev-format
+                          :else "hex")
+                 color-value (-> (tinycolor/valid-color hex-value)
+                                 (tinycolor/set-alpha (or alpha 1))
+                                 (tinycolor/->string format))]
+             (on-external-update-value color-value))))]
+
+    [:*
+     [:> input-tokens-value*
+      {:placeholder placeholder
+       :label label
+       :default-value default-value
+       :ref input-ref
+       :error error
+       :on-blur on-blur
+       :on-change on-update-value
+       :slot-start swatch}]
+     (when color-ramp-open?
+       [:> ramp*
+        {:color (some-> color (tinycolor/valid-color))
+         :on-change on-change'}])]))
+
+(mf/defc color-form*
+  [{:keys [token on-display-colorpicker] :rest props}]
+  (let [color* (mf/use-state (:value token))
+        color (deref color*)
+        on-value-resolve (mf/use-fn
+                          (mf/deps color)
+                          (fn [value]
+                            (reset! color* value)
+                            value))
+
+        custom-input-token-value-props
+        (mf/use-memo
+         (mf/deps color on-display-colorpicker)
+         (fn []
+           {:color color
+            :on-display-colorpicker on-display-colorpicker}))
+
+        transform-value
+        (mf/use-fn
+         (fn [value]
+           (if (tinycolor/hex-without-hash-prefix? value)
+             (dm/str "#" value)
+             value)))]
+    [:> form*
+     (mf/spread-props props {:token token
+                             :transform-value transform-value
+                             :on-value-resolve on-value-resolve
+                             :custom-input-token-value color-picker*
+                             :custom-input-token-value-props custom-input-token-value-props})]))
+
+(mf/defc font-selector-wrapper*
+  [{:keys [font input-ref on-select-font on-close-font-selector]}]
+  (let [current-font* (mf/use-state (or font
+                                        (some-> (mf/ref-val input-ref)
+                                                (dom/get-value)
+                                                (ctt/split-font-family)
+                                                (first)
+                                                (fonts/find-font-family))))
+        current-font (deref current-font*)]
+    [:div {:class (stl/css :font-select-wrapper)}
+     [:> font-selector* {:current-font current-font
+                         :on-select on-select-font
+                         :on-close on-close-font-selector
+                         :full-size true}]]))
+
+(mf/defc font-picker*
+  [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value]}]
+  (let [font* (mf/use-state (fonts/find-font-family default-value))
+        font (deref font*)
+        set-font (mf/use-fn
+                  (mf/deps font)
+                  #(reset! font* %))
+
+        font-selector-open* (mf/use-state false)
+        font-selector-open? (deref font-selector-open*)
+
+        on-close-font-selector
+        (mf/use-fn
+         (fn []
+           (reset! font-selector-open* false)))
+
+        on-click-dropdown-button
+        (mf/use-fn
+         (mf/deps font-selector-open?)
+         (fn [e]
+           (dom/prevent-default e)
+           (reset! font-selector-open* (not font-selector-open?))))
+
+        on-select-font
+        (mf/use-fn
+         (mf/deps on-external-update-value set-font)
+         (fn [{:keys [family] :as font}]
+           (when font
+             (set-font font)
+             (on-external-update-value family))))
+
+        on-update-value'
+        (mf/use-fn
+         (mf/deps on-update-value set-font)
+         (fn [value]
+           (set-font nil)
+           (on-update-value value)))
+
+        font-selector-button
+        (mf/html
+         [:> icon-button*
+          {:on-click on-click-dropdown-button
+           :aria-label (tr "workspace.tokens.token-font-family-select")
+           :icon "arrow-down"
+           :variant "action"
+           :type "button"}])]
+    [:*
+     [:> input-tokens-value*
+      {:placeholder (tr "workspace.tokens.token-font-family-value-enter")
+       :label (tr "workspace.tokens.token-font-family-value")
+       :default-value default-value
+       :ref input-ref
+       :error error
+       :on-blur on-blur
+       :on-change on-update-value'
+       :icon "text-font-family"
+       :slot-end font-selector-button}]
+     (when font-selector-open?
+       [:> font-selector-wrapper* {:font font
+                                   :input-ref input-ref
+                                   :on-select-font on-select-font
+                                   :on-close-font-selector on-close-font-selector}])]))
+
+(mf/defc font-family-form*
+  [{:keys [token] :rest props}]
+  (let [on-value-resolve
+        (mf/use-fn
+         (fn [value]
+           (when value
+             (ctt/join-font-family value))))]
+    [:> form*
+     (mf/spread-props props {:token (when token (update token :value ctt/join-font-family))
+                             :custom-input-token-value font-picker*
+                             :on-value-resolve on-value-resolve})]))
+
+(mf/defc text-case-form*
+  [{:keys [token] :rest props}]
+  [:> form*
+   (mf/spread-props props {:token token
+                           :input-value-placeholder (tr "workspace.tokens.text-case-value-enter")})])
+
+(mf/defc text-decoration-form*
+  [{:keys [token] :rest props}]
+  [:> form*
+   (mf/spread-props props {:token token
+                           :input-value-placeholder (tr "workspace.tokens.text-decoration-value-enter")})])
+
+(mf/defc font-weight-form*
+  [{:keys [token] :rest props}]
+  [:> form*
+   (mf/spread-props props {:token token
+                           :input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})])
+
+(mf/defc form-wrapper*
+  [{:keys [token token-type] :as props}]
+  (let [token-type' (or (:type token) token-type)]
+    (case token-type'
+      :color [:> color-form* props]
+      :font-family [:> font-family-form* props]
+      :text-case [:> text-case-form* props]
+      :text-decoration [:> text-decoration-form* props]
+      :font-weight [:> font-weight-form* props]
+      [:> form* props])))

@@ -12,6 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -30,7 +31,6 @@
    [app.setup.welcome-file :refer [create-welcome-file]]
    [app.tokens :as tokens]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [cuerdas.core :as str]))
 
@@ -42,7 +42,7 @@
 
 (defn- elapsed-verify-threshold?
   [profile]
-  (let [elapsed (dt/diff (:modified-at profile) (dt/now))
+  (let [elapsed (ct/diff (:modified-at profile) (ct/now))
         verify-threshold (cf/get :email-verify-threshold)]
     (pos? (compare elapsed verify-threshold))))
 
@@ -85,7 +85,7 @@
               (ex/raise :type :validation
                         :code :wrong-credentials))
             (when-let [deleted-at (:deleted-at profile)]
-              (when (dt/is-after? (dt/now) deleted-at)
+              (when (ct/is-after? (ct/now) deleted-at)
                 (ex/raise :type :validation
                           :code :wrong-credentials)))
 
@@ -244,7 +244,7 @@
                  :backend "penpot"
                  :iss :prepared-register
                  :profile-id (:id profile)
-                 :exp (dt/in-future {:days 7})
+                 :exp (ct/in-future {:days 7})
                  :props {:newsletter-updates (or accept-newsletter-updates false)}}
 
         params (d/without-nils params)
@@ -344,7 +344,7 @@
   [{:keys [::db/conn] :as cfg} profile]
   (let [vtoken (tokens/generate (::setup/props cfg)
                                 {:iss :verify-email
-                                 :exp (dt/in-future "72h")
+                                 :exp (ct/in-future "72h")
                                  :profile-id (:id profile)
                                  :email (:email profile)})
         ;; NOTE: this token is mainly used for possible complains
@@ -352,7 +352,7 @@
         ptoken (tokens/generate (::setup/props cfg)
                                 {:iss :profile-identity
                                  :profile-id (:id profile)
-                                 :exp (dt/in-future {:days 30})})]
+                                 :exp (ct/in-future {:days 30})})]
     (eml/send! {::eml/conn conn
                 ::eml/factory eml/register
                 :public-uri (cf/get :public-uri)
@@ -466,7 +466,7 @@
 
         (when (= action "resend-email-verification")
           (db/update! conn :profile
-                      {:modified-at (dt/now)}
+                      {:modified-at (ct/now)}
                       {:id (:id profile)})
           (send-email-verification! cfg profile))
 
@@ -495,7 +495,7 @@
   (letfn [(create-recovery-token [{:keys [id] :as profile}]
             (let [token (tokens/generate (::setup/props cfg)
                                          {:iss :password-recovery
-                                          :exp (dt/in-future "15m")
+                                          :exp (ct/in-future "15m")
                                           :profile-id id})]
               (assoc profile :token token)))
 
@@ -503,7 +503,7 @@
             (let [ptoken (tokens/generate (::setup/props cfg)
                                           {:iss :profile-identity
                                            :profile-id (:id profile)
-                                           :exp (dt/in-future {:days 30})})]
+                                           :exp (ct/in-future {:days 30})})]
               (eml/send! {::eml/conn conn
                           ::eml/factory eml/password-recovery
                           :public-uri (cf/get :public-uri)
@@ -544,7 +544,7 @@
         :else
         (do
           (db/update! conn :profile
-                      {:modified-at (dt/now)}
+                      {:modified-at (ct/now)}
                       {:id (:id profile)})
           (->> profile
                (create-recovery-token)

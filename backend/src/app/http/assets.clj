@@ -9,18 +9,18 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
+   [app.common.time :as ct]
    [app.common.uri :as u]
    [app.db :as db]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [integrant.core :as ig]
    [yetti.response :as-alias yres]))
 
 (def ^:private cache-max-age
-  (dt/duration {:hours 24}))
+  (ct/duration {:hours 24}))
 
 (def ^:private signature-max-age
-  (dt/duration {:hours 24 :minutes 15}))
+  (ct/duration {:hours 24 :minutes 15}))
 
 (defn get-id
   [{:keys [path-params]}]

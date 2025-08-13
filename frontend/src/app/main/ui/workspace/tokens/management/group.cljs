@@ -27,8 +27,12 @@
     :border-radius "corner-radius"
     :color "drop"
     :boolean "boolean-difference"
+    :font-family "text-font-family"
     :font-size "text-font-size"
     :letter-spacing "text-letterspacing"
+    :text-case "text-mixed"
+    :text-decoration "text-underlined"
+    :font-weight "text-font-weight"
     :opacity "percentage"
     :number "number"
     :rotation "rotation"
@@ -63,7 +67,7 @@
                       {:type :token
                        :position (dom/get-client-position event)
                        :errors (:errors token)
-                       :token-name (:name token)}))))
+                       :token-id (:id token)}))))
 
         on-toggle-open-click
         (mf/use-fn

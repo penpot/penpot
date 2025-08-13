@@ -10,7 +10,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.test-helpers.shapes :as cths]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.workspace.tokens.application :as dwta]
    [cljs.test :as t :include-macros true]
@@ -219,19 +219,21 @@
                  secondary-target (toht/get-token file' "color.secondary")
                  rect-1' (cths/get-shape file' :rect-1)
                  rect-2' (cths/get-shape file' :rect-2)]
+
              (t/testing "regular color"
                (t/is (some? (:applied-tokens rect-1')))
                (t/is (= (:fill (:applied-tokens rect-1')) (:name primary-target)))
-               (t/is (= (get-in rect-1' [:fills 0 :fill-color]) "#ff0000"))
-
+               (t/is (= (-> rect-1' :fills (nth 0) :fill-color) "#ff0000"))
                (t/is (= (:stroke-color (:applied-tokens rect-1')) (:name primary-target)))
                (t/is (= (get-in rect-1' [:strokes 0 :stroke-color]) "#ff0000")))
+
              (t/testing "color with alpha channel"
                (t/is (some? (:applied-tokens rect-2')))
 
                (t/is (= (:fill (:applied-tokens rect-2')) (:name secondary-target)))
-               (t/is (= (get-in rect-2' [:fills 0 :fill-color]) "#ff0000"))
-               (t/is (= (get-in rect-2' [:fills 0 :fill-opacity]) 0.5))
+               (let [fills (get rect-2' :fills)]
+                 (t/is (= (-> fills (nth 0) :fill-color) "#ff0000"))
+                 (t/is (= (-> fills (nth 0) :fill-opacity) 0.5)))
 
                (t/is (= (:stroke-color (:applied-tokens rect-2')) (:name secondary-target)))
                (t/is (= (get-in rect-2' [:strokes 0 :stroke-color]) "#ff0000"))
@@ -555,6 +557,142 @@
              (t/is (some? (:applied-tokens text-1')))
              (t/is (= (:letter-spacing (:applied-tokens text-1')) (:name token-target')))
              (t/is (= (:letter-spacing style-text-blocks) "2")))))))))
+
+(t/deftest test-apply-font-family
+  (t/testing "applies font-family token and updates the text font-family"
+    (t/async
+      done
+      (let [font-family-token {:name "primary-font"
+                               :value "Arial"
+                               :type :font-family}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token font-family-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-family}
+                                       :token (toht/get-token file "primary-font")
+                                       :on-update-shape dwta/update-font-family})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "primary-font")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-family (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:font-family style-text-blocks) (:font-id txt/default-text-attrs))))))))))
+
+(t/deftest test-apply-text-case
+  (t/testing "applies text-case token and updates the text transform"
+    (t/async
+      done
+      (let [text-case-token {:name "uppercase-case"
+                             :value "uppercase"
+                             :type :text-case}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token text-case-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:text-case}
+                                       :token (toht/get-token file "uppercase-case")
+                                       :on-update-shape dwta/update-text-case})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "uppercase-case")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:text-case (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:text-transform style-text-blocks) "uppercase")))))))))
+
+(t/deftest test-apply-text-decoration
+  (t/testing "applies text-decoration token and updates the text decoration"
+    (t/async
+      done
+      (let [text-decoration-token {:name "underline-decoration"
+                                   :value "underline"
+                                   :type :text-decoration}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token text-decoration-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:text-decoration}
+                                       :token (toht/get-token file "underline-decoration")
+                                       :on-update-shape dwta/update-text-decoration})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "underline-decoration")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:text-decoration (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:text-decoration style-text-blocks) "underline")))))))))
+
+(t/deftest test-apply-font-weight
+  (t/testing "applies font-weight token and updates the font weight"
+    (t/async
+      done
+      (let [font-weight-token {:name "font-weight"
+                               :value "regular"
+                               :type :font-weight}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token-in-set % "Set A" (ctob/make-token font-weight-token))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-weight}
+                                       :token (toht/get-token file "font-weight")
+                                       :on-update-shape dwta/update-font-weight})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "font-weight")
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-weight (:applied-tokens text-1')) (:name token-target')))
+             (t/is (= (:font-weight style-text-blocks) "400")))))))))
 
 (t/deftest test-toggle-token-none
   (t/testing "should apply token to all selected items, where no item has the token applied"

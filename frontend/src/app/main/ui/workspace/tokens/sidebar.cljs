@@ -11,7 +11,7 @@
    [app.config :as cf]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
    [app.main.ui.components.title-bar :refer [title-bar]]
    [app.main.ui.context :as ctx]
@@ -123,9 +123,10 @@
                   :icon "import-export"
                   :variant "secondary"}
       (tr "workspace.tokens.tools")]
-     [:& dropdown-menu {:show show-menu?
-                        :on-close close-menu
-                        :list-class (stl/css :import-export-menu)}
+     [:> dropdown-menu* {:show show-menu?
+                         :on-close close-menu
+                         :id "tokens-menu"
+                         :class (stl/css :import-export-menu)}
       (when can-edit?
         [:> dropdown-menu-item* {:class (stl/css :import-export-menu-item)
                                  :on-click on-modal-show}

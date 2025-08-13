@@ -7,12 +7,11 @@
 (ns app.plugins.library
   "RPC for plugins runtime."
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as clr]
    [app.common.types.file :as ctf]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
@@ -91,7 +90,7 @@
      :set
      (fn [self value]
        (cond
-         (or (not (string? value)) (not (cc/valid-hex-color? value)))
+         (or (not (string? value)) (not (clr/valid-hex-color? value)))
          (u/display-not-valid :color value)
 
          (not (r/check-permission plugin-id "library:write"))
@@ -126,7 +125,7 @@
      (fn [self value]
        (let [value (parser/parse-gradient value)]
          (cond
-           (not (sm/validate ctc/schema:gradient value))
+           (not (sm/validate clr/schema:gradient value))
            (u/display-not-valid :gradient value)
 
            (not (r/check-permission plugin-id "library:write"))
@@ -144,7 +143,7 @@
      (fn [self value]
        (let [value (parser/parse-image-data value)]
          (cond
-           (not (sm/validate ctc/schema:image value))
+           (not (sm/validate clr/schema:image value))
            (u/display-not-valid :image value)
 
            (not (r/check-permission plugin-id "library:write"))

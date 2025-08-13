@@ -1,0 +1,110 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@import "../../../../ds/_sizes.scss";
+@import "refactor/common-refactor.scss";
+
+.presets {
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  gap: var(--sp-xs);
+  grid-column: 1 / -1;
+}
+
+.presets-wrapper {
+  @extend .asset-element;
+  position: relative;
+  grid-column: span 6;
+  display: flex;
+  height: $s-32;
+  padding: $s-8;
+  border-radius: $br-8;
+
+  .collapsed-icon {
+    @include flexCenter;
+    cursor: pointer;
+    svg {
+      @extend .button-icon-small;
+      stroke: var(--icon-foreground);
+      transform: rotate(90deg);
+    }
+  }
+
+  &:hover {
+    .collapsed-icon svg {
+      stroke: var(--input-foreground-color-active);
+    }
+  }
+}
+
+.radio-buttons {
+  grid-column: span 2;
+}
+
+.select-name {
+  @include bodySmallTypography;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-grow: 1;
+  cursor: pointer;
+}
+
+.custom-select-dropdown {
+  @extend .dropdown-wrapper;
+  margin-top: $s-2;
+  max-height: 70vh;
+  width: $s-252;
+  .dropdown-element {
+    @extend .dropdown-element-base;
+    .name-wrapper {
+      display: flex;
+      gap: $s-8;
+      flex-grow: 1;
+      .preset-name {
+        color: var(--menu-foreground-color-rest);
+      }
+      .preset-size {
+        color: var(--menu-foreground-color-rest);
+      }
+    }
+
+    .check-icon {
+      @include flexCenter;
+      svg {
+        @extend .button-icon-small;
+        stroke: var(--icon-foreground);
+      }
+    }
+
+    &.disabled {
+      pointer-events: none;
+      cursor: default;
+      .preset-name {
+        color: var(--menu-foreground-color);
+      }
+    }
+
+    &.match {
+      .name-wrapper .preset-name {
+        color: var(--menu-foreground-color-hover);
+      }
+      .check-icon svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+
+    &:hover {
+      background-color: var(--menu-background-color-hover);
+      .name-wrapper .preset-name {
+        color: var(--menu-foreground-color-hover);
+      }
+      .check-icon svg {
+        stroke: var(--menu-foreground-color-hover);
+      }
+    }
+  }
+}

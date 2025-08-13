@@ -66,7 +66,7 @@
                           :font-family family
                           :font-style (d/nilv (obj/get variant "fontStyle") (:style default-variant))
                           :font-variant-id (d/nilv (obj/get variant "fontVariantId") (:id default-variant))
-                          :font-weight (d/nilv (obj/get variant "fontWeight") (:wegith default-variant))}]
+                          :font-weight (d/nilv (obj/get variant "fontWeight") (:weight default-variant))}]
               (st/emit! (dwt/update-attrs id values)))))
 
         :applyToRange

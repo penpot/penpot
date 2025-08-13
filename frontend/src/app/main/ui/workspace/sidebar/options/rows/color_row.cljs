@@ -7,10 +7,9 @@
 (ns app.main.ui.workspace.sidebar.options.rows.color-row
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.color :as types.color]
+   [app.common.types.color :as clr]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
@@ -116,7 +115,7 @@
            (let [color (-> color
                            (assoc :color value)
                            (dissoc :gradient)
-                           (select-keys types.color/color-attrs))]
+                           (select-keys clr/color-attrs))]
              (st/emit! (dwc/add-recent-color color)
                        (on-change color index)))))
 
@@ -127,7 +126,7 @@
            (let [color (-> color
                            (assoc :opacity (/ value 100))
                            (dissoc :ref-id :ref-file)
-                           (select-keys types.color/color-attrs))]
+                           (select-keys clr/color-attrs))]
              (st/emit! (dwc/add-recent-color color)
                        (on-change color index)))))
 
@@ -256,7 +255,7 @@
          [:span {:class (stl/css :color-input-wrapper)}
           [:> color-input* {:value (if multiple-colors?
                                      ""
-                                     (-> color :color cc/remove-hash))
+                                     (-> color :color clr/remove-hash))
                             :placeholder (tr "settings.multiple")
                             :data-index index
                             :class (stl/css :color-input)

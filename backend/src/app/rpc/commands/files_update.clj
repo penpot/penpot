@@ -15,6 +15,7 @@
    [app.common.files.validate :as val]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -36,7 +37,6 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.set :as set]
    [promesa.exec :as px]))
@@ -123,7 +123,7 @@
                 [:update-file/global]]
 
    ::webhooks/event? true
-   ::webhooks/batch-timeout (dt/duration "2m")
+   ::webhooks/batch-timeout (ct/duration "2m")
    ::webhooks/batch-key (webhooks/key-fn ::rpc/profile-id :id)
 
    ::sm/params schema:update-file
@@ -156,9 +156,9 @@
                                        (assoc :file file)
                                        (assoc :changes changes))
 
-                          cfg      (assoc cfg ::timestamp (dt/now))
+                          cfg      (assoc cfg ::timestamp (ct/now))
 
-                          tpoint   (dt/tpoint)]
+                          tpoint   (ct/tpoint)]
 
 
                       (when (not= (:vern params)
@@ -199,7 +199,7 @@
                                                     (errors/request->context))]
                         (-> (update-file* cfg params)
                             (rph/with-defer #(let [elapsed (tpoint)]
-                                               (l/trace :hint "update-file" :time (dt/format-duration elapsed))))))))))
+                                               (l/trace :hint "update-file" :time (ct/format-duration elapsed))))))))))
 
 (defn- update-file*
   "Internal function, part of the update-file process, that encapsulates
@@ -244,8 +244,8 @@
                    :created-at timestamp
                    :updated-at timestamp
                    :deleted-at (if (::snapshot-data file)
-                                 (dt/plus timestamp (ldel/get-deletion-delay team))
-                                 (dt/plus timestamp (dt/duration {:hours 1})))
+                                 (ct/plus timestamp (ldel/get-deletion-delay team))
+                                 (ct/plus timestamp (ct/duration {:hours 1})))
                    :file-id (:id file)
                    :revn (:revn file)
                    :version (:version file)
@@ -306,7 +306,7 @@
   [{:keys [::db/conn ::timestamp]} file]
   (let [;; The timestamp can be nil because this function is also
         ;; intended to be used outside of this module
-        modified-at (or timestamp (dt/now))]
+        modified-at (or timestamp (ct/now))]
 
     (db/update! conn :project
                 {:modified-at modified-at}
@@ -360,7 +360,7 @@
           ;; TODO: reuse operations if file is migrated
           ;; TODO: move encoding to a separated thread
           file (if (take-snapshot? file)
-                 (let [tpoint   (dt/tpoint)
+                 (let [tpoint   (ct/tpoint)
                        snapshot (-> (:data file)
                                     (feat.fdata/process-pointers deref)
                                     (feat.fdata/process-objects (partial into {}))
@@ -372,7 +372,7 @@
                           :file-id (str (:id file))
                           :revn (:revn file)
                           :label label
-                          :elapsed (dt/format-duration elapsed))
+                          :elapsed (ct/format-duration elapsed))
 
                    (-> file
                        (assoc ::snapshot-data snapshot)
@@ -452,11 +452,11 @@
   (when (contains? cf/flags :auto-file-snapshot)
     (let [freq    (or (cf/get :auto-file-snapshot-every) 20)
           timeout (or (cf/get :auto-file-snapshot-timeout)
-                      (dt/duration {:hours 1}))]
+                      (ct/duration {:hours 1}))]
 
       (or (= 1 freq)
           (zero? (mod revn freq))
-          (> (inst-ms (dt/diff modified-at (dt/now)))
+          (> (inst-ms (ct/diff modified-at (ct/now)))
              (inst-ms timeout))))))
 
 (def ^:private sql:lagged-changes
@@ -496,5 +496,5 @@
                            :file-id (:id file)
                            :session-id session-id
                            :revn (:revn file)
-                           :modified-at (dt/now)
+                           :modified-at (ct/now)
                            :changes lchanges}))))

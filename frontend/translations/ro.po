@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-27 09:01+0000\n"
-"Last-Translator: laurentiucotet <cotetlaurentiu@gmail.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
 "20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1439,10 +1439,6 @@ msgstr "Decorare Text"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Niciunul"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Barat"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Subliniat"
@@ -2074,6 +2070,7 @@ msgid "modals.big-nudge"
 msgstr "Ghiont mare"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Verifică-ți adresa de e-mail"
 
@@ -2350,6 +2347,7 @@ msgid "modals.invite-member.emails"
 msgstr "E-mailuri, separate prin virgulă"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Unele e-mailuri provin de la membri actuali ai echipei. Invitațiile lor nu "

@@ -40,6 +40,7 @@ macro_rules! with_state_mut {
     }};
 }
 
+#[macro_export]
 macro_rules! with_state {
     ($state:ident, $block:block) => {{
         let $state = unsafe {
@@ -115,6 +116,7 @@ pub extern "C" fn set_canvas_background(raw_color: u32) {
     with_state_mut!(state, {
         let color = skia::Color::new(raw_color);
         state.set_background_color(color);
+        state.rebuild_tiles();
     });
 }
 
@@ -225,9 +227,9 @@ pub extern "C" fn use_shape(a: u32, b: u32, c: u32, d: u32) {
 
 #[no_mangle]
 pub extern "C" fn set_parent(a: u32, b: u32, c: u32, d: u32) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
+    with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
-        shape.set_parent(id);
+        state.set_parent_for_current_shape(id);
     });
 }
 
@@ -504,7 +506,7 @@ pub extern "C" fn set_structure_modifiers() {
                     let Some(shape) = state.shapes.get(&entry.id) else {
                         continue;
                     };
-                    for id in shape.all_children_with_self(&state.shapes, true) {
+                    for id in shape.all_children(&state.shapes, true, true) {
                         state.scale_content.insert(id, entry.value);
                     }
                 }

@@ -1,5 +1,7 @@
 use crate::{shapes::ImageFill, utils::uuid_from_u32_quartet};
 
+const FLAG_KEEP_ASPECT_RATIO: u8 = 1 << 0;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 #[repr(C)]
 #[repr(align(4))]
@@ -8,7 +10,9 @@ pub struct RawImageFillData {
     b: u32,
     c: u32,
     d: u32,
-    opacity: f32,
+    opacity: u8,
+    flags: u8,
+    // 16-bit padding here, reserved for future use
     width: i32,
     height: i32,
 }
@@ -16,9 +20,14 @@ pub struct RawImageFillData {
 impl From<RawImageFillData> for ImageFill {
     fn from(value: RawImageFillData) -> Self {
         let id = uuid_from_u32_quartet(value.a, value.b, value.c, value.d);
-        let opacity = (value.opacity * 255.).floor() as u8;
+        let keep_aspect_ratio = value.flags & FLAG_KEEP_ASPECT_RATIO != 0;
 
-        // TODO: read keep_aspect_ratio from RawImageFillData when implemented
-        Self::new(id, opacity, value.width, value.height, true)
+        Self::new(
+            id,
+            value.opacity,
+            value.width,
+            value.height,
+            keep_aspect_ratio,
+        )
     }
 }

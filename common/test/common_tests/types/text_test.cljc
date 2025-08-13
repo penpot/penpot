@@ -7,26 +7,36 @@
 (ns common-tests.types.text-test
   (:require
 
-   [app.common.text :as txt]
    [app.common.types.shape :as cts]
    [app.common.types.text :as cttx]
    [clojure.test :as t :include-macros true]))
 
-(def content-base (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                      (txt/change-text "hello world")
-                      (assoc :position-data nil)
-                      :content))
+(def content-base
+  (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
+      (get :content)
+      (cttx/change-text "hello world")))
 
-(def content-changed-text (assoc-in content-base [:children 0 :children 0 :children 0 :text] "changed"))
-(def content-changed-attr (assoc-in content-base [:children 0 :children 0 :children 0 :font-size] "32"))
-(def content-changed-both (-> content-base
-                              (assoc-in [:children 0 :children 0 :children 0 :text] "changed")
-                              (assoc-in  [:children 0 :children 0 :children 0 :font-size] "32")))
-(def line (get-in content-base [:children 0 :children 0 :children 0]))
-(def content-changed-structure (update-in content-base [:children 0 :children 0 :children]
-                                          #(conj % (assoc line :font-weight "700"))))
-(def content-changed-structure-same-attrs (update-in content-base [:children 0 :children 0 :children]
-                                                     #(conj % line)))
+(def content-changed-text
+  (assoc-in content-base [:children 0 :children 0 :children 0 :text] "changed"))
+
+(def content-changed-attr
+  (assoc-in content-base [:children 0 :children 0 :children 0 :font-size] "32"))
+
+(def content-changed-both
+  (-> content-base
+      (assoc-in [:children 0 :children 0 :children 0 :text] "changed")
+      (assoc-in  [:children 0 :children 0 :children 0 :font-size] "32")))
+
+(def line
+  (get-in content-base [:children 0 :children 0 :children 0]))
+
+(def content-changed-structure
+  (update-in content-base [:children 0 :children 0 :children]
+             #(conj % (assoc line :font-weight "700"))))
+
+
+(def content-changed-structure-same-attrs
+  (update-in content-base [:children 0 :children 0 :children] #(conj % line)))
 
 (t/deftest test-get-diff-type
   (let [diff-text                 (cttx/get-diff-type content-base content-changed-text)

@@ -13,6 +13,7 @@
    [app.common.features :as cfeat]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.db :as db]
    [app.http.sse :as sse]
@@ -26,7 +27,6 @@
    [app.rpc.doc :as-alias doc]
    [app.tasks.file-gc]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [promesa.exec :as px]
    [yetti.response :as yres]))
@@ -114,7 +114,7 @@
                  3 (px/invoke! executor (partial bf.v3/import-files! cfg)))]
 
     (db/update! pool :project
-                {:modified-at (dt/now)}
+                {:modified-at (ct/now)}
                 {:id project-id}
                 {::db/return-keys false})
 
@@ -125,21 +125,35 @@
    [:name [:or [:string {:max 250}]
            [:map-of ::sm/uuid [:string {:max 250}]]]]
    [:project-id ::sm/uuid]
+   [:file-id {:optional true} ::sm/uuid]
    [:version {:optional true} ::sm/int]
    [:file ::media/upload]])
 
 (sv/defmethod ::import-binfile
-  "Import a penpot file in a binary format."
+  "Import a penpot file in a binary format. If `file-id` is provided,
+  an in-place import will be performed instead of creating a new file.
+
+  The in-place imports are only supported for binfile-v3 and when a
+  .penpot file only contains one penpot file.
+  "
   {::doc/added "1.15"
+   ::doc/changes ["1.20" "Add file-id param for in-place import"
+                  "1.20" "Set default version to 3"]
+
    ::webhooks/event? true
    ::sse/stream? true
    ::sm/params schema:import-binfile}
-  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version file] :as params}]
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id version file-id file] :as params}]
   (projects/check-edition-permissions! pool profile-id project-id)
-  (let [version  (or version 1)
+  (let [version  (or version 3)
         params   (-> params
                      (assoc :profile-id profile-id)
                      (assoc :version version))
+
+        cfg      (cond-> cfg
+                   (uuid? file-id)
+                   (assoc ::bfc/file-id file-id))
+
         manifest (case (int version)
                    1 nil
                    3 (bf.v3/get-manifest (:path file)))]
@@ -147,5 +161,6 @@
     (with-meta
       (sse/response (partial import-binfile cfg params))
       {::audit/props {:file nil
+                      :file-id file-id
                       :generated-by (:generated-by manifest)
                       :referer (:referer manifest)}})))

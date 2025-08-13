@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-06-17 08:07+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Basque "
-"<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
+"Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
+"eu/>\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.6-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1164,10 +1164,6 @@ msgstr "Testuaren apainketa"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Bat ere ez"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Marratu"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Azpimarratu"
@@ -1734,6 +1730,7 @@ msgid "modals.big-nudge"
 msgstr "Gehienekoa"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Egiaztatu posta elektroniko berria"
 
@@ -1940,8 +1937,10 @@ msgid "modals.invite-member.emails"
 msgstr "Posta elektronikoak, komarekin banatuta"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr "Eposta helbide batzuk jada taldekideenak dira. Ez da gonbidapenik bidaliko."
+msgstr ""
+"Eposta helbide batzuk jada taldekideenak dira. Ez da gonbidapenik bidaliko."
 
 #: src/app/main/ui/dashboard/team.cljs:217
 msgid "modals.invite-team-member.title"

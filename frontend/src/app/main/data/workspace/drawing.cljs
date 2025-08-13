@@ -8,6 +8,7 @@
   "Drawing interactions."
   (:require
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.uuid :as uuid]
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing.box :as box]
@@ -99,6 +100,38 @@
          :path (path/handle-drawing)
          :curve (curve/handle-drawing)
          (box/handle-drawing type))))))
+
+(defn change-orientation
+  [orientation]
+
+  (assert
+   (contains? #{:horizontal :vertical} orientation)
+   "expected valid orientation")
+
+  (ptk/reify ::change-orientation
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [{:keys [width height]}
+            (get state :workspace-drawing)
+
+            width'
+            (if (= orientation :vertical)
+              (mth/min width height)
+              (mth/max width height))
+
+            height'
+            (if (= orientation :vertical)
+              (mth/max width height)
+              (mth/min width height))]
+
+        (update state :workspace-drawing assoc :width width' :height height')))))
+
+(defn set-default-size
+  [width height]
+  (ptk/reify ::change-preset
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-drawing assoc :width width :height height))))
 
 
 

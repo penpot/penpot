@@ -7,7 +7,7 @@
 (ns app.main.data.workspace.fix-deleted-fonts
   (:require
    [app.common.files.helpers :as cfh]
-   [app.common.text :as txt]
+   [app.common.types.text :as txt]
    [app.main.data.changes :as dwc]
    [app.main.data.helpers :as dsh]
    [app.main.fonts :as fonts]

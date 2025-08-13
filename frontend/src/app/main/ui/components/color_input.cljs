@@ -6,8 +6,8 @@
 
 (ns app.main.ui.components.color-input
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
+   [app.common.types.color :as cc]
    [app.main.ui.hooks :as hooks]
    [app.util.dom :as dom]
    [app.util.globals :as globals]

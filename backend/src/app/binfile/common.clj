@@ -15,29 +15,32 @@
    [app.common.files.migrations :as fmg]
    [app.common.files.validate :as fval]
    [app.common.logging :as l]
+   [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
-   [app.features.fdata :as feat.fdata]
-   [app.features.file-migrations :as feat.fmigr]
+   [app.features.fdata :as fdata]
+   [app.features.file-migrations :as fmigr]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [datoteka.io :as io]))
+   [datoteka.io :as io]
+   [promesa.exec :as px]))
 
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic *state* nil)
 (def ^:dynamic *options* nil)
+(def ^:dynamic *reference-file* nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFAULTS
@@ -53,17 +56,12 @@
   (* 1024 1024 100))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (declare get-resolved-file-libraries)
+(declare update-file!)
 
 (def file-attrs
-  #{:id
-    :name
-    :migrations
-    :features
-    :project-id
-    :is-shared
-    :version
-    :data})
+  (sm/keys ctf/schema:file))
 
 (defn parse-file-format
   [template]
@@ -151,22 +149,33 @@
       changes  (assoc :changes (blob/decode changes))
       data     (assoc :data (blob/decode data)))))
 
+(def sql:get-minimal-file
+  "SELECT f.id,
+          f.revn,
+          f.modified_at,
+          f.deleted_at
+     FROM file AS f
+    WHERE f.id = ?")
+
+(defn get-minimal-file
+  [cfg id & {:as opts}]
+  (db/get-with-sql cfg [sql:get-minimal-file id] opts))
 
 (defn decode-file
   "A general purpose file decoding function that resolves all external
   pointers, run migrations and return plain vanilla file map"
   [cfg {:keys [id] :as file} & {:keys [migrate?] :or {migrate? true}}]
-  (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+  (binding [pmap/*load-fn* (partial fdata/load-pointer cfg id)]
     (let [file (->> file
-                    (feat.fmigr/resolve-applied-migrations cfg)
-                    (feat.fdata/resolve-file-data cfg))
+                    (fmigr/resolve-applied-migrations cfg)
+                    (fdata/resolve-file-data cfg))
           libs (delay (get-resolved-file-libraries cfg file))]
 
       (-> file
           (update :features db/decode-pgarray #{})
           (update :data blob/decode)
-          (update :data feat.fdata/process-pointers deref)
-          (update :data feat.fdata/process-objects (partial into {}))
+          (update :data fdata/process-pointers deref)
+          (update :data fdata/process-objects (partial into {}))
           (update :data assoc :id id)
           (cond-> migrate? (fmg/migrate-file libs))))))
 
@@ -421,6 +430,27 @@
     (db/exec-one! conn ["SET LOCAL idle_in_transaction_session_timeout = 0"])
     (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])))
 
+(defn invalidate-thumbnails
+  [cfg file-id]
+  (let [storage (sto/resolve cfg)
+
+        sql-1
+        (str "update file_tagged_object_thumbnail "
+             "   set deleted_at = now() "
+             " where file_id=? returning media_id")
+
+        sql-2
+        (str "update file_thumbnail "
+             "   set deleted_at = now() "
+             " where file_id=? returning media_id")]
+
+    (run! #(sto/touch-object! storage %)
+          (sequence
+           (keep :media-id)
+           (concat
+            (db/exec! cfg [sql-1 file-id])
+            (db/exec! cfg [sql-2 file-id]))))))
+
 (defn process-file
   [cfg {:keys [id] :as file}]
   (let [libs (delay (get-resolved-file-libraries cfg file))]
@@ -445,77 +475,78 @@
         (vary-meta dissoc ::fmg/migrated))))
 
 (defn encode-file
-  [{:keys [::db/conn] :as cfg} {:keys [id features] :as file}]
-  (let [file (if (contains? features "fdata/objects-map")
-               (feat.fdata/enable-objects-map file)
+  [{:keys [::wrk/executor] :as cfg} {:keys [id features] :as file}]
+  (let [file (if (and (contains? features "fdata/objects-map")
+                      (:data file))
+               (fdata/enable-objects-map file)
                file)
 
-        file (if (contains? features "fdata/pointer-map")
-               (binding [pmap/*tracked* (pmap/create-tracked)]
-                 (let [file (feat.fdata/enable-pointer-map file)]
-                   (feat.fdata/persist-pointers! cfg id)
+        file (if (and (contains? features "fdata/pointer-map")
+                      (:data file))
+
+               (binding [pmap/*tracked* (pmap/create-tracked :inherit true)]
+                 (let [file (fdata/enable-pointer-map file)]
+                   (fdata/persist-pointers! cfg id)
                    file))
                file)]
 
     (-> file
-        (update :features db/encode-pgarray conn "text")
-        (update :data blob/encode))))
+        (d/update-when :features into-array)
+        (d/update-when :data (fn [data] (px/invoke! executor #(blob/encode data)))))))
 
-(defn get-params-from-file
+(defn- file->params
   [file]
-  (let [params {:has-media-trimmed (:has-media-trimmed file)
-                :ignore-sync-until (:ignore-sync-until file)
-                :project-id (:project-id file)
-                :features (:features file)
-                :name (:name file)
-                :is-shared (:is-shared file)
-                :version (:version file)
-                :data (:data file)
-                :id (:id file)
-                :deleted-at (:deleted-at file)
-                :created-at (:created-at file)
-                :modified-at (:modified-at file)
-                :revn (:revn file)
-                :vern (:vern file)}]
-
-    (-> (d/without-nils params)
-        (assoc :data-backend nil)
-        (assoc :data-ref-id nil))))
+  (-> (select-keys file file-attrs)
+      (dissoc :team-id)
+      (dissoc :migrations)))
 
 (defn insert-file!
-  "Insert a new file into the database table"
+  "Insert a new file into the database table. Expectes a not-encoded file.
+  Returns nil."
   [{:keys [::db/conn] :as cfg} file & {:as opts}]
-  (feat.fmigr/upsert-migrations! conn file)
-  (let [params (-> (encode-file cfg file)
-                   (get-params-from-file))]
-    (db/insert! conn :file params opts)))
+
+  (when (:migrations file)
+    (fmigr/upsert-migrations! conn file))
+
+  (let [file (encode-file cfg file)]
+    (db/insert! conn :file
+                (file->params file)
+                {::db/return-keys false})
+    nil))
 
 (defn update-file!
-  "Update an existing file on the database."
-  [{:keys [::db/conn ::sto/storage] :as cfg} {:keys [id] :as file} & {:as opts}]
-  (let [file   (encode-file cfg file)
-        params (-> (get-params-from-file file)
-                   (dissoc :id))]
+  "Update an existing file on the database. Expects not encoded file."
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file} & {:as opts}]
 
-    ;; If file was already offloaded, we touch the underlying storage
-    ;; object for properly trigger storage-gc-touched task
-    (when (feat.fdata/offloaded? file)
-      (some->> (:data-ref-id file) (sto/touch-object! storage)))
+  (if (::reset-migrations opts false)
+    (fmigr/reset-migrations! conn file)
+    (fmigr/upsert-migrations! conn file))
 
-    (feat.fmigr/upsert-migrations! conn file)
-    (db/update! conn :file params {:id id} opts)))
+  (let [file
+        (encode-file cfg file)
+
+        params
+        (file->params (dissoc file :id))]
+
+    (db/update! conn :file params
+                {:id id}
+                {::db/return-keys false})
+
+    nil))
 
 (defn save-file!
   "Applies all the final validations and perist the file, binfile
-  specific, should not be used outside of binfile domain"
-  [{:keys [::timestamp] :as cfg} file & {:as opts}]
+  specific, should not be used outside of binfile domain.
 
-  (assert (dt/instant? timestamp) "expected valid timestamp")
+  Returns nil"
+  [{:keys [::timestamp] :as cfg} file & {:as opts}]
+  (assert (ct/inst? timestamp) "expected valid timestamp")
 
   (let [file (-> file
                  (assoc :created-at timestamp)
                  (assoc :modified-at timestamp)
-                 (assoc :ignore-sync-until (dt/plus timestamp (dt/duration {:seconds 5})))
+                 (cond-> (not (::overwrite cfg))
+                   (assoc :ignore-sync-until (ct/plus timestamp (ct/duration {:seconds 5}))))
                  (update :features
                          (fn [features]
                            (-> (::features cfg #{})
@@ -532,8 +563,9 @@
         (when (ex/exception? result)
           (l/error :hint "file schema validation error" :cause result))))
 
-    (insert-file! cfg file opts)))
-
+    (if (::overwrite cfg)
+      (update-file! cfg file (assoc opts ::reset-migrations true))
+      (insert-file! cfg file opts))))
 
 (def ^:private sql:get-file-libraries
   "WITH RECURSIVE libs AS (
@@ -558,7 +590,8 @@
           l.revn,
           l.vern,
           l.synced_at,
-          l.is_shared
+          l.is_shared,
+          l.version
      FROM libs AS l
     INNER JOIN project AS p ON (p.id = l.project_id)
     WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
@@ -573,6 +606,8 @@
          (map decode-row))
         (db/exec! conn [sql:get-file-libraries file-id])))
 
+;; FIXME: this will use a lot of memory if file uses too many big
+;; libraries, we should load required libraries on demand
 (defn get-resolved-file-libraries
   "A helper for preload file libraries"
   [{:keys [::db/conn] :as cfg} file]

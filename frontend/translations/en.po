@@ -1380,6 +1380,22 @@ msgstr "Password should at least be 8 characters"
 msgid "errors.paste-data-validation"
 msgstr "Invalid data in clipboard"
 
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "This version is locked and cannot be deleted by others"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Only the version creator can lock it"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Only the version creator can unlock it"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "This version is already locked"
+
 #: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
 msgid "errors.profile-blocked"
 msgstr "The profile is blocked"
@@ -2133,6 +2149,10 @@ msgstr "Libraries & Templates"
 msgid "labels.loading"
 msgstr "Loading…"
 
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "Lock"
+
 #: src/app/main/ui/viewer/header.cljs:208
 msgid "labels.log-or-sign"
 msgstr "Log in or sign up"
@@ -2452,6 +2472,10 @@ msgstr "Tutorials"
 #: src/app/main/data/workspace/tokens/errors.cljs:73
 msgid "labels.unknown-error"
 msgstr "Unknown error"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "Unlock"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:264
 msgid "labels.unpublish-multi-files"
@@ -4441,8 +4465,10 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(No payment will be made now)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, markdown
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "$7 per editor/month x %s"
+msgstr ""
+"**$%s** per month"
 
 #: src/app/main/ui/settings/subscription.cljs:112
 msgid "subscription.settings.management.dialog.select-editors"
@@ -4902,6 +4928,10 @@ msgstr "Text Transform"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:65
 msgid "workspace.assets.ungroup"
 msgstr "Ungroup"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:83
+msgid "workspace.assets.component-group-options"
+msgstr "Component group options"
 
 #: src/app/main/ui/workspace/context_menu.cljs:769
 msgid "workspace.context-menu.grid-cells.area"
@@ -5516,25 +5546,25 @@ msgid "workspace.options.component.variants-help-modal.title"
 msgstr "How variants stay connected"
 
 msgid "workspace.options.component.variants-help-modal.intro"
-msgstr "To keep changes when switching between variants, Penpot connects layers using these rules:"
+msgstr "To keep changes when switching between variants, Penpot connects layers that:"
 
 msgid "workspace.options.component.variants-help-modal.rule1"
-msgstr "Same name"
+msgstr "Share the same name."
 
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "Same type"
+msgstr "Are the same type"
 
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
-msgstr "Rectangle, ellipsis, paths and boolean operations count as same type"
+msgstr "Rectangle, ellipsis, paths and boolean operations count as same type."
 
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "Same hierachy level"
+msgstr "Have the same hierachy level"
 
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
-msgstr "Goups, boards and layouts are considered equivalent"
+msgstr "Groups, boards and layouts are considered equivalent."
 
 msgid "workspace.options.component.variants-help-modal.outro"
-msgstr "Changing any of these (e.g., renaming or moving a layer) breaks the connection, but reverting the change will restore it."
+msgstr "Changing any of these (e.g., renaming or grouping a layer) breaks the connection, but reverting the change will restore it."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"
@@ -6843,6 +6873,13 @@ msgstr "Create annotation"
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Selection to board"
 
+#: src/app/main/ui/workspace/context_menu.cljs:385
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combine as variants"
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Components need to be in the same page"
+
 #: src/app/main/ui/workspace/context_menu.cljs:573
 msgid "workspace.shape.menu.create-component"
 msgstr "Create component"
@@ -6967,6 +7004,10 @@ msgstr "Remove layout"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
 msgid "workspace.shape.menu.remove-variant-property"
 msgstr "Remove property"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "Variant should have at least one property"
 
 #: src/app/main/ui/workspace/context_menu.cljs:318
 msgid "workspace.shape.menu.rename"
@@ -7241,6 +7282,30 @@ msgstr "Multiple files"
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:36
 msgid "workspace.tokens.export.no-tokens-themes-sets"
 msgstr "There are no tokens, themes or sets to export."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "Enter: none | uppercase | lowercase | capitalize or {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr "Invalid token value: only none, Uppercase, Lowercase or Capitalize are accepted"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:799
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Enter text decoration: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr "Invalid font weight value: use numeric values (100-950) or standard names (thin, light, regular, bold, etc.) optionally followed by 'Italic'"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Enter: 400, Bold, 700 Italic, or {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:81
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr "Invalid token value: only none, underline and strike-through are accepted"
 
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
@@ -7517,9 +7582,21 @@ msgstr "Could not resolve reference token with the name: %s"
 msgid "workspace.tokens.token-value"
 msgstr "Value"
 
+#: src/app/main/ui/workspace/tokens/form.cljs:560
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Font family"
+
 #: src/app/main/ui/workspace/tokens/form.cljs:559
 msgid "workspace.tokens.token-value-enter"
 msgstr "Enter a value or alias with {alias}"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:689
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Font family or list of fonts separated by comma (,)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:688
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Select font family"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:336
 msgid "workspace.tokens.tokens-section-title"
@@ -7548,6 +7625,10 @@ msgstr "Right click to see options"
 #: src/app/main/data/workspace/tokens/errors.cljs:61
 msgid "workspace.tokens.value-with-units"
 msgstr "Invalid value: Units are not allowed."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61
+msgid "workspace.tokens.value-with-percent"
+msgstr "Invalid value: % is not allowed."
 
 #: src/app/main/ui/workspace/tokens/form.cljs:555
 msgid "workspace.tokens.warning-name-change"
@@ -7855,6 +7936,15 @@ msgstr "History"
 #: src/app/main/ui/ds/product/autosaved_milestone.cljs:66, src/app/main/ui/ds/product/user_milestone.cljs:73
 msgid "workspace.versions.version-menu"
 msgstr "Open version menu"
+
+msgid "workspace.versions.locked-by-other"
+msgstr "This version is locked by %s and cannot be modified"
+
+msgid "workspace.versions.locked-by-you"
+msgstr "This version is locked by you"
+
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Locked version - only the creator can modify it"
 
 #: src/app/main/ui/workspace/sidebar/versions.cljs:372
 #, markdown

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-09 09:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1683,10 +1683,6 @@ msgstr "Teksta noformējums"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Nav"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Pārsvītrojums"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Pasvītrojums"
@@ -2654,6 +2650,7 @@ msgid "modals.big-nudge"
 msgstr "Liela nobīde"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Pārbaudīt jauno e-pastu"
 
@@ -2928,10 +2925,11 @@ msgid "modals.invite-member.emails"
 msgstr "E-pasta ziņojumi, atdalīti ar komatiem"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
-"Dažas no e-pasta adresēm ir pašreizējiem komandas dalībniekiem. "
-"Uzaicinājumi viņiem netiks nosūtīti."
+"Dažas no e-pasta adresēm ir pašreizējiem komandas dalībniekiem. Uzaicinājumi "
+"viņiem netiks nosūtīti."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -4306,18 +4304,6 @@ msgstr "Tālummainīt uz atlasi"
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Plāns uzņēmējdarbībai"
 
-#: src/app/main/ui/dashboard/subscription.cljs:77
-#, unused
-msgid "subscription.dashboard.power-up.enterprise.description"
-msgstr "Papildu drošība, darbību žurnāli, mērķēts atbalsts un vēl."
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, fuzzy, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"Iegūsti papildu redaktorus un krātuvi, datņu rezerves kopēšanu un vēl ar **"
-"neierobežoto plānu**"
-
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
 msgstr "Profesionālais plāns"
@@ -4330,7 +4316,8 @@ msgstr "Abonēt"
 #: src/app/main/ui/dashboard/subscription.cljs:68
 #, fuzzy, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
-msgstr "Patīk izmēģinājuma laiks? Atslēdz nepārtrauktu pilnu piekļuvi!"
+msgstr ""
+"Patīk izmēģinājuma laiks? Atslēdz nepārtrauktu pilnu piekļuvi! [Abonēt](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4346,13 +4333,6 @@ msgstr "Neierobežots plāns (izmēģinājums)"
 #: src/app/main/ui/dashboard/subscription.cljs:73
 msgid "subscription.dashboard.power-up.unlimited-plan"
 msgstr "Neierobežots plāns"
-
-#: src/app/main/ui/dashboard/subscription.cljs:74
-#, fuzzy, markdown
-msgid "subscription.dashboard.power-up.unlimited.bottom-description"
-msgstr ""
-"Iegūsti izvērstu drošību, darbību žurnālus, mērķētu atbalstu un vēl ar **"
-"uzņēmējdarbības plānu**"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4382,23 +4362,12 @@ msgstr "Visas neierobežotā plāna priekšrocības un:"
 msgid "subscription.settings.enterprise"
 msgstr "Uzņēmējdarbība"
 
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.logs"
-msgstr "Darbību žurnāli"
-
-#: src/app/main/ui/settings/subscription.cljs:270, src/app/main/ui/settings/subscription.cljs:319
-msgid "subscription.settings.enterprise.security"
-msgstr "Papildu drošība"
-
-#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
-msgid "subscription.settings.enterprise.support"
-msgstr "Mērķēts atbalsts"
-
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
 msgstr "Pārvaldīt savu abonementu"
 
 #: src/app/main/ui/settings/subscription.cljs:282
+#, fuzzy
 msgid "subscription.settings.member-since"
 msgstr "Penpot dalībnieks kopš %s"
 
@@ -4422,10 +4391,6 @@ msgstr "Profesionāls"
 msgid "subscription.settings.professional.projects-files"
 msgstr "Neierobežoti projekti, datnes un uzmetumi"
 
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage"
-msgstr "10 GB krātuves un 7 dienu automātiskās saglabāšanas versijas"
-
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors"
 msgstr "Neierobežotas komandas līdz 8 dalībniekiem"
@@ -4437,12 +4402,7 @@ msgstr "Tavs abonements"
 #: src/app/main/ui/settings/subscription.cljs:278
 #, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "Tu atbalsti mūs kopš %s"
-
-#: src/app/main/ui/settings/subscription.cljs:119
-#, unused
-msgid "subscription.settings.ulimited.try-it-free"
-msgstr "Izmēģināt 14 dienas"
+msgstr "Tu atbalsti mūs ar šo plānu kopš %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -4455,12 +4415,6 @@ msgstr "Neierobežots (izmēģinājuma)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Ierobežots ikmēneša rēķins"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage"
-msgstr ""
-"25GB krātuves un 30 dienu automātiskās saglabāšanas versijas un datņu "
-"rezerves kopēšana"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
 msgid "subscription.settings.unlimited.teams"
@@ -5457,9 +5411,8 @@ msgid "workspace.options.fill"
 msgstr "Aizpildīšana"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
-#, fuzzy
 msgid "workspace.options.fill.add-fill"
-msgstr "Pievienot aizpildījuma krāsu"
+msgstr "Pievienot aizpildījumu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:172
 msgid "workspace.options.fill.remove-fill"
@@ -7095,6 +7048,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "Ievietošanas kļūda: JSON satur nederīgus tekstvienību datus."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Ievietošanas kļūda: nederīgs tekstvienības nosaukums JSON."
 
@@ -7186,7 +7140,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:124
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Sākotnējā vērtība: %s"
 
@@ -7208,7 +7161,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Atsauču kļūdas: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/form.cljs:219, src/app/main/ui/workspace/tokens/form.cljs:223, src/app/main/ui/workspace/tokens/token_pill.cljs:125
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Atrisinātā vērtība: %s"
 
@@ -7274,7 +7226,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Izskatu saraksts"
 
 #: src/app/main/ui/workspace/tokens/form.cljs:574, src/app/main/ui/workspace/tokens/form.cljs:575
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Apraksts"
 
@@ -7309,11 +7260,6 @@ msgstr "TEKSTVIENĪBAS -  %s"
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:405
 msgid "workspace.tokens.tools"
 msgstr "Rīki"
-
-#: src/app/main/data/workspace/tokens/import_export.cljs:45
-#, fuzzy
-msgid "workspace.tokens.unknown-token-type"
-msgstr "Izlaistās tekstvienības"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7646,3 +7592,213 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+#: src/app/main/ui/dashboard/subscription.cljs:165
+#, fuzzy, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
+msgstr ""
+"Iegūsti vairāk redaktoru, krātuves un automātiski saglabātu versiju ar "
+"neierobežoto vai uzņēmējdarbības plānu! [Abonēt tagad.](%s)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
+msgid "labels.empty"
+msgstr "Tukšs"
+
+#: src/app/main/ui/workspace/main_menu.cljs:285
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "Pārslēgties uz sistēmas izskatu"
+
+#: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.subscribe"
+msgstr "Abonēt"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:120
+msgid "workspace.tokens.export.multiple-files"
+msgstr "Vairākas datnes"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:338
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "Jāmēģina izmantot šāda uzbūve:"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61
+msgid "workspace.tokens.value-with-units"
+msgstr "Nederīga vērtība: mērvienības nav atļautas."
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:132
+msgid "workspace.tokens.add-token"
+msgstr "Pievienot tekstvienību: %s"
+
+#: src/app/main/ui/components/color_input.cljs:36
+msgid "inspect.attributes.color"
+msgstr "Krāsa"
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot tumšs (noklusējuma)"
+
+#: src/app/main/ui/settings/options.cljs:69
+msgid "dashboard.select-ui-theme.light"
+msgstr "Penpot gaišs"
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "Sistēmas izskats"
+
+#: src/app/main/ui/dashboard/subscription.cljs:160
+#, fuzzy
+msgid "subscription.dashboard.cta.unlimited-many-editors"
+msgstr ""
+"Izskatās, ka Tava komanda ir palielinājusies. Tavā plānā ir iekļautas %s "
+"vietas, bet Tu tagad izmanto vairāk."
+
+#: src/app/main/ui/dashboard/subscription.cljs:154
+msgid "subscription.dashboard.cta.professional-plan-designed"
+msgstr ""
+"Lietpratēju plāns ir paredzēts komandām līdz 8 dalībniekiem (īpašnieks, "
+"pārvaldītājs un redaktors)."
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
+msgstr ""
+"Iegūsti vairāk redaktoru, krātuves un automātiski saglabātu versiju ar "
+"neierobežoto vai uzņēmējdarbības plānu! Sazinies ar komandas īpašnieku: %s"
+
+#: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "Tavs abonements:"
+
+#: src/app/main/ui/dashboard/subscription.cljs:102
+msgid "subscription.dashboard.team-plan"
+msgstr "Komandas plāns"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1000
+msgid "subscription.dashboard.upgrade-plan.power-up"
+msgstr "Iedarbināt"
+
+#: src/app/main/ui/settings/subscription.cljs:253
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "Pievieno maksājumu veidu, lai turpinātu pēc sava izmēģinājuma laika"
+
+#: src/app/main/ui/settings/subscription.cljs:53
+msgid "subscription.settings.enterprise-trial"
+msgstr "Uzņēmējdarbībai (izmēģinājuma)"
+
+#: src/app/main/ui/settings/subscription.cljs:102
+msgid "subscription.settings.management.dialog.choose-this-plan"
+msgstr "Tu izvēlies šo plānu:"
+
+#: src/app/main/ui/settings/subscription.cljs:132
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr ""
+"Uzmanību: pārslēgšanās uz zemāku plānu nozīmē mazāk krātuves un īsāku "
+"rezerves kopiju un versiju vēsturi."
+
+#: src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.management.dialog.members"
+msgstr " (%s redaktori)"
+
+#: src/app/main/ui/settings/subscription.cljs:108
+msgid "subscription.settings.management.dialog.no-teams"
+msgstr ""
+"Šis plāns attieksies uz visām komandām, kuras turpmāk izveidosi vai kuras "
+"Tev turpmāk piederēs."
+
+#: src/app/main/ui/settings/subscription.cljs:126
+msgid "subscription.settings.management.dialog.payment-explanation"
+msgstr "(Tagad netiks veikts maksājums)"
+
+#: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "%s par redaktoru mēnesī × %s"
+
+#: src/app/main/ui/settings/subscription.cljs:112
+msgid "subscription.settings.management.dialog.select-editors"
+msgstr "Atlasi redaktoru (vietu) skaitu, kas būs nepieciešams:"
+
+#: src/app/main/ui/settings/subscription.cljs:97
+msgid "subscription.settings.management.dialog.title"
+msgstr "Pielietot %s savām komandām"
+
+#: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
+msgid "subscription.settings.more-information"
+msgstr "Vairāk informācijas"
+
+#: src/app/main/ui/settings/subscription.cljs:145
+msgid "subscription.settings.start-trial"
+msgstr "Uzsākt bezmaksas izmēģinājumu"
+
+#: src/app/main/ui/settings/subscription.cljs:167
+msgid "subscription.settings.success.dialog.description"
+msgstr ""
+"Tu vari labot savu abonementu jebkurā laikā sava konta informācijas lapā "
+"\"Abonements\"."
+
+#: src/app/main/ui/settings/subscription.cljs:168
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "Izbaudi savu plānu!"
+
+#: src/app/main/ui/settings/subscription.cljs:166
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "Tu esi %s."
+
+#: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.try-it-free"
+msgstr "Izmēģini 14 dienas bez maksas"
+
+#: src/app/main/ui/dashboard/subscription.cljs:133, src/app/main/ui/workspace/main_menu.cljs:928
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "Iedarbini savu plānu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:988
+msgid "workspace.options.component.variant.malformed.group.locate"
+msgstr "Atrast nederīgus variantus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:985
+msgid "workspace.options.component.variant.malformed.group.title"
+msgstr "Dažiem variantiem ir nederīgi nosaukumi"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:248
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "Šiem variantiem ir nederīgi nosaukumi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:245
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "Šim variantam ir nederīgs nosaukums."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:251
+msgid "workspace.options.component.variant.malformed.single.some"
+msgstr "Dažiem no šiem variantiem ir nederīgi nosaukumi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:340
+msgid "workspace.options.component.variant.malformed.structure.example"
+msgstr "[īpašība]=[vērtība], [īpašība]=[vērtība]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:370
+msgid "workspace.options.size.lock"
+msgstr "Paturēt malu attiecību"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:370
+msgid "workspace.options.size.unlock"
+msgstr "Nepaturēt malu attiecību"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:47
+msgid "workspace.tokens.export"
+msgstr "Izgūt"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:126
+msgid "workspace.tokens.export-tokens"
+msgstr "Izgūt tekstvienības"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:36
+msgid "workspace.tokens.export.no-tokens-themes-sets"
+msgstr "Šeit nav tekstvienību, izskatu vai kopu, ko izgūt."
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:33
+msgid "workspace.tokens.export.preview"
+msgstr "Priekšskatījums:"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:117
+msgid "workspace.tokens.export.single-file"
+msgstr "Viena datne"

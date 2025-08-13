@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## 2.10.0 (Unreleased)
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features & Enhancements
+- Add defaults for artboard drawing [Taiga #494](https://tree.taiga.io/project/penpot/us/494?milestone=465047)
+- Continuous display of distances between elements when moving a layer with the keyboard [Taiga #1780](https://tree.taiga.io/project/penpot/us/1780)
+
+### :bug: Bugs fixed
+
+- Display strokes information in inspect tab [Taiga #11154](https://tree.taiga.io/project/penpot/issue/11154)
+- Fix problem with booleans selection [Taiga #11627](https://tree.taiga.io/project/penpot/issue/11627)
+- Fix missing font when copy&paste a chunk of text [Taiga #11522](https://tree.taiga.io/project/penpot/issue/11522)
+- Fix bad swap slot after two swaps [Taiga #11659](https://tree.taiga.io/project/penpot/issue/11659)
+- Fix missing package for the `penpot_exporter` Docker image [GitHub #7205](https://github.com/penpot/penpot/issues/7025)
+- Fix issue where multiple dropdown menus could be opened simultaneously on the dashboard page [Taiga #11500](https://tree.taiga.io/project/penpot/issue/11500)
+- Fix font size/variant not updated when editing a text [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11552)
+- Fix issue where Alt + arrow keys shortcut interferes with letter-spacing when moving text layers [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11771)
+- Fix consistency issues on how font variants are visualized [Taiga #11499](https://tree.taiga.io/project/penpot/us/11499)
+
 ## 2.9.0 (Unreleased)
 
 ### :rocket: Epics and highlights
@@ -58,6 +82,7 @@
 - Fix export button width on inspect tab [Taiga #11394](https://tree.taiga.io/project/penpot/issue/11394)
 - Fix stroke width token application [Taiga #11724](https://tree.taiga.io/project/penpot/issue/11724)
 - Fix number token application on shape [Taiga #11331](https://tree.taiga.io/project/penpot/task/11331)
+- Fix auto height is fixed in the HTML inspect tab for text elements [Taiga #11680](https://tree.taiga.io/project/penpot/task/11680)
 
 ## 2.8.1
 

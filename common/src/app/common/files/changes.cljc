@@ -21,6 +21,7 @@
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
    [app.common.types.grid :as ctg]
+   [app.common.types.library :as ctl]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.path :as path]
@@ -431,7 +432,7 @@
      [:map {:title "SetTokenChange"}
       [:type [:= :set-token]]
       [:set-name :string]
-      [:token-name :string]
+      [:token-id ::sm/uuid]
       [:token [:maybe ctob/schema:token-attrs]]]]
 
     [:set-base-font-size
@@ -934,15 +935,15 @@
 
 (defmethod process-change :add-color
   [data {:keys [color]}]
-  (ctc/add-color data color))
+  (ctl/add-color data color))
 
 (defmethod process-change :mod-color
   [data {:keys [color]}]
-  (ctc/set-color data color))
+  (ctl/set-color data color))
 
 (defmethod process-change :del-color
   [data {:keys [id]}]
-  (ctc/delete-color data id))
+  (ctl/delete-color data id))
 
 ;; DEPRECATED: remove before 2.3
 (defmethod process-change :add-recent-color
@@ -1007,20 +1008,20 @@
   (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :set-token
-  [data {:keys [set-name token-name token]}]
+  [data {:keys [set-name token-id token]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
                 (not token)
-                (ctob/delete-token-from-set lib' set-name token-name)
+                (ctob/delete-token-from-set lib' set-name token-id)
 
-                (not (ctob/get-token-in-set lib' set-name token-name))
+                (not (ctob/get-token-in-set lib' set-name token-id))
                 (ctob/add-token-in-set lib' set-name (ctob/make-token token))
 
                 :else
-                (ctob/update-token-in-set lib' set-name token-name (fn [prev-token]
-                                                                     (ctob/make-token (merge prev-token token)))))))))
+                (ctob/update-token-in-set lib' set-name token-id (fn [prev-token]
+                                                                   (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :set-token-set
   [data {:keys [set-name group? token-set]}]

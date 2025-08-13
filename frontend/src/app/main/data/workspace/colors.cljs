@@ -6,19 +6,18 @@
 
 (ns app.main.data.workspace.colors
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.schema :as sm]
-   [app.common.text :as txt]
-   [app.common.types.color :as types.color]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.color :as clr]
+   [app.common.types.fills :as types.fills]
+   [app.common.types.library :as ctl]
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :refer [check-shadow]]
+   [app.common.types.text :as txt]
    [app.config :as cfg]
    [app.main.broadcast :as mbc]
-   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
    [app.main.data.workspace.layout :as layout]
@@ -103,11 +102,7 @@
 
 (defn assoc-shape-fill
   [shape position fill]
-  (update shape :fills
-          (fn [fills]
-            (if (nil? fills)
-              [fill]
-              (assoc fills position fill)))))
+  (update shape :fills types.fills/assoc position fill))
 
 (defn transform-fill*
   "A lower-level companion function for `transform-fill`"
@@ -153,7 +148,7 @@
            (d/without-nils)
 
            :always
-           (types.fill/check-fill))
+           (types.fills/check-fill))
 
          transform-attrs
          #(transform % fill)]
@@ -167,17 +162,28 @@
         (assoc-in [attr index] second)
         (assoc-in [attr new-index] first))))
 
+(defn- swap-fills-index
+  [fills index new-index]
+  (let [first  (get fills index)
+        second (get fills new-index)]
+    (-> fills
+        (assoc index second)
+        (assoc new-index first))))
+
 (defn reorder-fills
   [ids index new-index]
   (ptk/reify ::reorder-fills
     ptk/WatchEvent
     (watch [_ state _]
-      (let [objects   (dsh/lookup-page-objects state)
+      (let [objects
+            (dsh/lookup-page-objects state)
 
-            is-text?  #(= :text (:type (get objects %)))
-            text-ids  (filter is-text? ids)
-            shape-ids (remove is-text? ids)
-            transform-attrs #(swap-attrs % :fills index new-index)]
+            [text-ids shape-ids]
+            (dsh/split-text-shapes objects ids)
+
+            transform-attrs
+            (fn [object]
+              (update object :fills types.fills/update swap-fills-index index new-index))]
 
         (rx/concat
          (rx/from (map #(dwt/update-text-with-function % transform-attrs) text-ids))
@@ -190,7 +196,7 @@
    (assert (every? uuid? ids) "expect a coll of uuids for `ids`")
    (assert (number? position) "expect a number for position")
 
-   (let [color (types.color/check-color color)]
+   (let [color (clr/check-color color)]
      (ptk/reify ::change-fill
        ptk/WatchEvent
        (watch [_ state _]
@@ -207,7 +213,7 @@
    (ptk/reify ::change-fill-and-clear
      ptk/WatchEvent
      (watch [_ state _]
-       (let [change-fn (fn [shape attrs] (assoc shape :fills [attrs]))
+       (let [change-fn (fn [shape attrs] (assoc shape :fills (types.fills/create attrs)))
              undo-id   (js/Symbol)]
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
@@ -219,14 +225,13 @@
   ([ids color options]
 
    (assert  (every? uuid? ids) "expected a valid coll of uuid's")
-   (let [color (types.color/check-color color)]
+   (let [color (clr/check-color color)]
      (ptk/reify ::add-fill
        ptk/WatchEvent
        (watch [_ state _]
          (let [change-fn
                (fn [shape attrs]
-                 (-> shape
-                     (update :fills #(into [attrs] %))))
+                 (update shape :fills types.fills/prepend attrs))
                undo-id
                (js/Symbol)]
            (rx/concat
@@ -247,13 +252,13 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [detach-fn
-             (fn [values index]
-               (update values index dissoc :fill-color-ref-id :fill-color-ref-file))
+             (fn [fills index]
+               (update fills index dissoc :fill-color-ref-id :fill-color-ref-file))
 
              change-fn
              ;; The `node` can be a shape or a text content node
              (fn [node]
-               (update node :fills detach-fn position))
+               (update node :fills types.fills/update detach-fn position))
 
              undo-id
              (js/Symbol)]
@@ -275,17 +280,17 @@
      ptk/WatchEvent
      (watch [_ state _]
        (let [remove-fill-by-index
-             (fn [values index]
+             (fn [fills index]
                (into []
                      (comp
                       (map-indexed (fn [i o] (when (not= i index) o)))
                       (filter some?))
-                     values))
+                     fills))
 
              change-fn
              ;; The `node` can be a shape or a text content node
              (fn [node]
-               (update node :fills remove-fill-by-index position))
+               (update node :fills types.fills/update remove-fill-by-index position))
 
              undo-id
              (js/Symbol)]
@@ -303,7 +308,7 @@
    (ptk/reify ::remove-all-fills
      ptk/WatchEvent
      (watch [_ state _]
-       (let [change-fn (fn [node] (assoc node :fills []))
+       (let [change-fn (fn [node] (assoc node :fills (types.fills/create)))
              undo-id   (js/Symbol)]
          (rx/concat
           (rx/of (dwu/start-undo-transaction undo-id))
@@ -560,7 +565,7 @@
               (assoc-in [:workspace-global :picking-color?] true)
               (assoc ::md/modal {:id (random-uuid)
                                  :type :colorpicker
-                                 :props {:data {:color cc/black
+                                 :props {:data {:color clr/black
                                                 :opacity 1}
                                          :disable-opacity false
                                          :disable-gradient false
@@ -576,16 +581,26 @@
     :fill-color-ref-file (:ref-file color)
     :fill-color-gradient (:gradient color)}))
 
-(defn change-text-color
+(defn- change-text-color
   [old-color new-color index node]
-  (let [fills (map #(dissoc % :fill-color-ref-id :fill-color-ref-file) (:fills node))
-        parsed-color (-> (color-att->text old-color)
-                         (dissoc :fill-color-ref-id :fill-color-ref-file))
-        parsed-new-color (color-att->text new-color)
-        has-color? (d/index-of fills parsed-color)]
-    (cond-> node
-      (some? has-color?)
-      (assoc-in [:fills index] parsed-new-color))))
+  (update node :fills types.fills/update
+          (fn [fills]
+            (let [fills'
+                  (map #(dissoc % :fill-color-ref-id :fill-color-ref-file) fills)
+
+                  parsed-color
+                  (-> (color-att->text old-color)
+                      (dissoc :fill-color-ref-id :fill-color-ref-file))
+
+                  parsed-new-color
+                  (color-att->text new-color)
+
+                  has-color?
+                  (d/index-of fills' parsed-color)]
+
+              (cond-> fills
+                (some? has-color?)
+                (assoc index parsed-new-color))))))
 
 (def ^:private schema:change-color-operation
   [:map
@@ -601,17 +616,9 @@
 
 (defn change-color-in-selected
   [operations new-color old-color]
-
-  (assert (check-change-color-operations operations)
-          "expected valid color operations")
-
-  (assert
-   (types.color/check-color new-color)
-   "expected valid color structure")
-
-  (assert
-   (types.color/check-color old-color)
-   "expected valid color structure")
+  (assert (check-change-color-operations operations))
+  (assert (clr/check-color new-color))
+  (assert (clr/check-color old-color))
 
   (ptk/reify ::change-color-in-selected
     ptk/WatchEvent
@@ -632,7 +639,7 @@
 
 (defn apply-color-from-palette
   [color stroke?]
-  (let [color (types.color/check-color color)]
+  (let [color (clr/check-color color)]
     (ptk/reify ::apply-color-from-palette
       ptk/WatchEvent
       (watch [_ state _]
@@ -667,7 +674,7 @@
 
 (defn apply-color-from-colorpicker
   [color]
-  (let [color (types.color/check-color color)]
+  (let [color (clr/check-color color)]
     (ptk/reify ::apply-color-from-colorpicker
       ptk/UpdateEvent
       (update [_ state]
@@ -708,7 +715,7 @@
 
 (defn add-recent-color
   [color]
-  (let [color (types.color/check-color color)]
+  (let [color (clr/check-color color)]
     (ptk/reify ::add-recent-color
       ptk/UpdateEvent
       (update [_ state]
@@ -728,11 +735,11 @@
 
 (defn apply-color-from-assets
   [file-id color stroke?]
-  (let [color (types.color/check-library-color color)]
+  (let [color (clr/check-library-color color)]
     (ptk/reify ::apply-color-from-asserts
       ptk/WatchEvent
       (watch [_ _ _]
-        (let [color (types.color/library-color->color color file-id)]
+        (let [color (clr/library-color->color color file-id)]
           (rx/of (apply-color-from-palette color stroke?)
                  (add-recent-color color)))))))
 
@@ -742,9 +749,9 @@
 
 (defn split-color-components
   [{:keys [color opacity] :as data}]
-  (let [value (if (cc/valid-hex-color? color) color cc/black)
-        [r g b] (cc/hex->rgb value)
-        [h s v] (cc/hex->hsv value)]
+  (let [value (if (clr/valid-hex-color? color) color clr/black)
+        [r g b] (clr/hex->rgb value)
+        [h s v] (clr/hex->hsv value)]
     (merge data
            {:hex (or value "000000")
             :alpha (or opacity 1)
@@ -893,11 +900,11 @@
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
                 (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fill/MAX-GRADIENT-STOPS))]
+                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
-                    (if (cc/uniform-spread? stops)
+                    (if (clr/uniform-spread? stops)
                       ;; Add to uniform
-                      (let [stops (->> (cc/uniform-spread (first stops) (last stops) (inc (count stops)))
+                      (let [stops (->> (clr/uniform-spread (first stops) (last stops) (inc (count stops)))
                                        (mapv split-color-components))]
                         (-> state
                             (assoc :current-color (get stops editing-stop))
@@ -918,7 +925,7 @@
                             half-point-offset
                             (+ from-offset (/ (- to-offset from-offset) 2))
 
-                            new-stop (-> (cc/interpolate-gradient stops half-point-offset)
+                            new-stop (-> (clr/interpolate-gradient stops half-point-offset)
                                          (split-color-components))
 
                             stops (conj stops new-stop)
@@ -938,18 +945,24 @@
       (update state :colorpicker
               (fn [state]
                 (let [stops (:stops state)
-                      cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-                      can-add-stop? (or (not cap-stops?) (< (count stops) types.fill/MAX-GRADIENT-STOPS))]
-                  (if can-add-stop? (let [new-stop (-> (cc/interpolate-gradient stops offset)
-                                                       (split-color-components))
-                                          stops (conj stops new-stop)
-                                          stops (into [] (sort-by :offset stops))
-                                          editing-stop (d/index-of-pred stops #(= new-stop %))]
-                                      (-> state
-                                          (assoc :editing-stop editing-stop)
-                                          (assoc :current-color (get stops editing-stop))
-                                          (assoc :stops stops)))
-                      state)))))))
+                      cap-stops?
+                      (or (features/active-feature? state "render-wasm/v1")
+                          (contains? cfg/flags :frontend-binary-fills))
+
+                      can-add-stop?
+                      (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
+
+                  (if can-add-stop?
+                    (let [new-stop (-> (clr/interpolate-gradient stops offset)
+                                       (split-color-components))
+                          stops (conj stops new-stop)
+                          stops (into [] (sort-by :offset stops))
+                          editing-stop (d/index-of-pred stops #(= new-stop %))]
+                      (-> state
+                          (assoc :editing-stop editing-stop)
+                          (assoc :current-color (get stops editing-stop))
+                          (assoc :stops stops)))
+                    state)))))))
 
 (defn update-colorpicker-stops
   [stops]
@@ -963,7 +976,7 @@
                                      (contains? cfg/flags :frontend-binary-fills))
                       stops (mapv split-color-components
                                   (if cap-stops?
-                                    (take types.fill/MAX-GRADIENT-STOPS stops)
+                                    (take types.fills/MAX-GRADIENT-STOPS stops)
                                     stops))]
                   (-> state
                       (assoc :current-color (get stops stop))
@@ -1120,35 +1133,114 @@
                     (assoc :type :image)
                     (dissoc :editing-stop :stops :gradient)))))))
 
-(defn select-color
-  [position add-color]
-  ;; FIXME: revisit
-  (ptk/reify ::select-color
-    ptk/WatchEvent
-    (watch [_ state _]
-      (let [selected   (dsh/lookup-selected state)
-            shapes     (dsh/lookup-shapes state selected)
-            shape      (first shapes)
-            fills      (if (cfh/text-shape? shape)
-                         (:fills (dwt/current-text-values
-                                  {:editor-state (dm/get-in state [:workspace-editor-state (:id shape)])
-                                   :shape shape
-                                   :attrs (conj txt/text-fill-attrs :fills)}))
-                         (:fills shape))
-            fill       (first fills)
-            single?    (and (= 1 (count selected))
-                            (= 1 (count fills)))
-            data       (if single?
-                         (d/without-nils {:color (:fill-color fill)
-                                          :opacity (:fill-opacity fill)
-                                          :gradient (:fill-color-gradient fill)})
-                         {:color "#406280"
-                          :opacity 1})]
-        (rx/of (md/show :colorpicker
-                        {:x (:x position)
-                         :y (:y position)
-                         :on-accept add-color
-                         :data data
-                         :position :right})
-               (ptk/event ::ev/event {::ev/name "add-asset-to-library"
-                                      :asset-type "color"}))))))
+(defn- stroke->color-att
+  [stroke file-id libraries]
+  (let [ref-file   (:stroke-color-ref-file stroke)
+        ref-id     (:stroke-color-ref-id stroke)
+
+        colors     (-> libraries
+                       (get ref-file)
+                       (get :data)
+                       (ctl/get-colors))
+
+        is-shared? (contains? colors ref-id)
+        has-color? (or (:stroke-color stroke)
+                       (:stroke-color-gradient stroke))
+        attrs      (cond-> (clr/stroke->color stroke)
+                     (not (or is-shared? (= ref-file file-id)))
+                     (dissoc :ref-id :ref-file))]
+
+    (when has-color?
+      {:attrs attrs
+       :prop :stroke
+       :shape-id (:shape-id stroke)
+       :index (:index stroke)})))
+
+(defn- shadow->color-att
+  [shadow file-id libraries]
+  (let [color    (get shadow :color)
+        ref-file (get color :ref-file)
+        ref-id   (get color :ref-id)
+        colors   (-> libraries
+                     (get ref-id)
+                     (get :data)
+                     (ctl/get-colors))
+        shared?  (contains? colors ref-id)
+        attrs    (cond-> (clr/shadow->color shadow)
+                   (not (or shared? (= ref-file file-id)))
+                   (dissoc :ref-file :ref-id))]
+    {:attrs attrs
+     :prop :shadow
+     :shape-id (:shape-id shadow)
+     :index (:index shadow)}))
+
+(defn- text->color-att
+  [fill file-id libraries]
+  (let [ref-file (:fill-color-ref-file fill)
+        ref-id   (:fill-color-ref-id fill)
+        colors   (-> libraries
+                     (get ref-id)
+                     (get :data)
+                     (ctl/get-colors))
+
+        shared?  (contains? colors ref-id)
+        attrs    (cond-> (types.fills/fill->color fill)
+                   (not (or shared? (= ref-file file-id)))
+                   (dissoc :ref-file :ref-id))]
+
+    {:attrs attrs
+     :prop :content
+     :shape-id (:shape-id fill)
+     :index (:index fill)}))
+
+(defn- extract-text-colors
+  [text file-id libraries]
+  (let [treat-node
+        (fn [node shape-id]
+          (map-indexed #(assoc %2 :shape-id shape-id :index %1) node))]
+    (->> (txt/node-seq txt/is-text-node? (:content text))
+         (map :fills)
+         (mapcat #(treat-node % (:id text)))
+         (map #(text->color-att % file-id libraries)))))
+
+(defn- fill->color-att
+  [fill file-id libraries]
+  (let [ref-file   (:fill-color-ref-file fill)
+        ref-id     (:fill-color-ref-id fill)
+
+        colors     (-> libraries
+                       (get ref-id)
+                       (get :data)
+                       (ctl/get-colors))
+        shared?    (contains? colors ref-id)
+        has-color? (or (:fill-color fill)
+                       (:fill-color-gradient fill))
+        attrs      (cond-> (types.fills/fill->color fill)
+                     (not (or shared? (= ref-file file-id)))
+                     (dissoc :ref-file :ref-id))]
+
+    (when has-color?
+      {:attrs attrs
+       :prop :fill
+       :shape-id (:shape-id fill)
+       :index (:index fill)})))
+
+(defn extract-all-colors
+  [shapes file-id libraries]
+  (reduce
+   (fn [result shape]
+     (let [fill-obj   (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:fills shape))
+           stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))
+           shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))]
+       (if (= :text (:type shape))
+         (-> result
+             (into (keep #(stroke->color-att % file-id libraries)) stroke-obj)
+             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)
+             (into (extract-text-colors shape file-id libraries)))
+
+         (-> result
+             (into (keep #(fill->color-att % file-id libraries)) fill-obj)
+             (into (keep #(stroke->color-att % file-id libraries)) stroke-obj)
+             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)))))
+   []
+   shapes))

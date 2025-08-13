@@ -199,6 +199,20 @@
   @include t.use-typography("body-small");
 }
 
+.modal-text-cap {
+  margin-inline-end: var(--sp-s);
+}
+
+.text-strikethrough {
+  text-decoration: line-through;
+}
+
+.modal-text-small strong,
+.text-strikethrough strong,
+.modal-text-cap strong {
+  font-weight: $fw700;
+}
+
 .modal-content,
 .modal-end {
   color: var(--color-foreground-secondary);

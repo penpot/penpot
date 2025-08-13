@@ -16,6 +16,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
+   [app.common.time :as ct]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.uri :as uri]
@@ -37,7 +38,6 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [cuerdas.core :as str]
    [promesa.exec :as px]))
@@ -52,7 +52,7 @@
 ;; --- HELPERS
 
 (def long-cache-duration
-  (dt/duration {:days 7}))
+  (ct/duration {:days 7}))
 
 (defn decode-row
   [{:keys [data changes features] :as row}]
@@ -187,10 +187,10 @@
    [:name [:string {:max 250}]]
    [:revn [::sm/int {:min 0}]]
    [:vern [::sm/int {:min 0}]]
-   [:modified-at ::dt/instant]
+   [:modified-at ::ct/inst]
    [:is-shared ::sm/boolean]
    [:project-id ::sm/uuid]
-   [:created-at ::dt/instant]
+   [:created-at ::ct/inst]
    [:data {:optional true} ::sm/any]])
 
 (def schema:permissions-mixin
@@ -304,7 +304,7 @@
 (defn get-file-etag
   [{:keys [::rpc/profile-id]} {:keys [modified-at revn vern permissions]}]
   (str profile-id "/" revn "/" vern "/" (hash fmg/available-migrations) "/"
-       (dt/format-instant modified-at :iso)
+       (ct/format-inst modified-at :iso)
        "/"
        (uri/map->query-string permissions)))
 
@@ -356,7 +356,7 @@
   [:map {:title "FileFragment"}
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
-   [:created-at ::dt/instant]
+   [:created-at ::ct/inst]
    [:content any?]])
 
 (def schema:get-file-fragment
@@ -770,7 +770,7 @@
   [conn {:keys [id name]}]
   (db/update! conn :file
               {:name name
-               :modified-at (dt/now)}
+               :modified-at (ct/now)}
               {:id id}
               {::db/return-keys true}))
 
@@ -783,8 +783,8 @@
     [:id ::sm/uuid]
     [:project-id ::sm/uuid]
     [:name [:string {:max 250}]]
-    [:created-at ::dt/instant]
-    [:modified-at ::dt/instant]]
+    [:created-at ::ct/inst]
+    [:modified-at ::ct/inst]]
 
    ::sm/params
    [:map {:title "RenameFileParams"}
@@ -795,8 +795,8 @@
    [:map {:title "SimplifiedFile"}
     [:id ::sm/uuid]
     [:name [:string {:max 250}]]
-    [:created-at ::dt/instant]
-    [:modified-at ::dt/instant]]
+    [:created-at ::ct/inst]
+    [:modified-at ::ct/inst]]
 
    ::db/transaction true}
   [{:keys [::db/conn] :as cfg} {:keys [::rpc/profile-id id] :as params}]
@@ -839,7 +839,7 @@
       (db/update! cfg :file
                   {:revn (inc (:revn file))
                    :data (blob/encode (:data file))
-                   :modified-at (dt/now)
+                   :modified-at (ct/now)
                    :has-media-trimmed false}
                   {:id file-id})
 
@@ -900,7 +900,7 @@
                  (db/delete! conn :file-library-rel {:library-file-id id})
                  (db/update! conn :file
                              {:is-shared false
-                              :modified-at (dt/now)}
+                              :modified-at (ct/now)}
                              {:id id})
                  (select-keys file [:id :name :is-shared]))
 
@@ -909,7 +909,7 @@
                (let [file (assoc file :is-shared true)]
                  (db/update! conn :file
                              {:is-shared true
-                              :modified-at (dt/now)}
+                              :modified-at (ct/now)}
                              {:id id})
                  file)
 
@@ -945,7 +945,7 @@
   [conn team file-id]
   (let [delay (ldel/get-deletion-delay team)
         file  (db/update! conn :file
-                          {:deleted-at (dt/in-future delay)}
+                          {:deleted-at (ct/in-future delay)}
                           {:id file-id}
                           {::db/return-keys [:id :name :is-shared :deleted-at
                                              :project-id :created-at :modified-at]})]
@@ -1043,7 +1043,7 @@
 (defn update-sync
   [conn {:keys [file-id library-id] :as params}]
   (db/update! conn :file-library-rel
-              {:synced-at (dt/now)}
+              {:synced-at (ct/now)}
               {:file-id file-id
                :library-file-id library-id}
               {::db/return-keys true}))
@@ -1068,14 +1068,14 @@
   [conn {:keys [file-id date] :as params}]
   (db/update! conn :file
               {:ignore-sync-until date
-               :modified-at (dt/now)}
+               :modified-at (ct/now)}
               {:id file-id}
               {::db/return-keys true}))
 
 (def ^:private schema:ignore-file-library-sync-status
   [:map {:title "ignore-file-library-sync-status"}
    [:file-id ::sm/uuid]
-   [:date ::dt/instant]])
+   [:date ::ct/inst]])
 
 ;; TODO: improve naming
 (sv/defmethod ::ignore-file-library-sync-status

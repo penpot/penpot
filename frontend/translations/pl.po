@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-11-16 13:00+0000\n"
-"Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Polish "
-"<https://hosted.weblate.org/projects/penpot/frontend/pl/>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: Radek Sawicki <radek@sqrc.pl>\n"
+"Language-Team: Polish <https://hosted.weblate.org/projects/penpot/frontend/"
+"pl/>\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && "
-"(n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.9-dev\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2);\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1147,10 +1147,6 @@ msgstr "Dekoracja tekstu"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Brak"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Przekreślenie"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Podkreślenie"
@@ -1720,6 +1716,7 @@ msgid "modals.big-nudge"
 msgstr "Duże przesunięcie"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Zweryfikuj nowy email"
 

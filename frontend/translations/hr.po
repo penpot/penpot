@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-09 09:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: al0cam <benjaminsikac@gmail.com>\n"
 "Language-Team: Croatian <https://hosted.weblate.org/projects/penpot/frontend/"
 "hr/>\n"
 "Language: hr\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1525,10 +1525,6 @@ msgstr "Dekoracija teksta"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Nikakav"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Precrtano"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Podcrtano"
@@ -2348,6 +2344,7 @@ msgid "modals.big-nudge"
 msgstr "Big nudge"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Potvrdite novi e-mail"
 
@@ -2626,6 +2623,7 @@ msgid "modals.invite-member.emails"
 msgstr "E-mail, odvojeno zarezom"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Neke e-adrese su od trenutačnih članova tima. Njima pozivnice neće biti "
@@ -4918,9 +4916,8 @@ msgid "workspace.options.fill"
 msgstr "Ispuni"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
-#, fuzzy
 msgid "workspace.options.fill.add-fill"
-msgstr "Dodajte boju ispune"
+msgstr "Dodajte ispunu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:172
 msgid "workspace.options.fill.remove-fill"
@@ -4932,7 +4929,7 @@ msgstr "Promijenite veličinu ploče da odgovara sadržaju"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:182
 msgid "workspace.options.flows.add-flow-start"
-msgstr "Dodaj početak flowa"
+msgstr "Dodaj početak toka"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:178
 msgid "workspace.options.flows.flow"
@@ -4957,7 +4954,7 @@ msgstr "Auto"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:159
 msgid "workspace.options.grid.column"
-msgstr "Kolumne"
+msgstr "Stupci"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 #, unused
@@ -4971,7 +4968,7 @@ msgstr "Boja"
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs
 #, unused
 msgid "workspace.options.grid.params.columns"
-msgstr "Kolumne"
+msgstr "Stupci"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:263
 msgid "workspace.options.grid.params.gutter"
@@ -6848,3 +6845,31 @@ msgstr "Automatski spremljene verzije čuvat će se %s dana."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pritisni da zatvoriš path"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:97
+msgid "dashboard.success-delete-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Tvoja datoteka je uspješno izbrisana"
+msgstr[1] "Tvoje datoteke su uspješno izbrisane"
+msgstr[2] "Tvoje datoteke su uspješno izbrisane"
+
+#: src/app/main/ui/delete_shared.cljs:53
+msgid "modals.unpublish-shared-confirm.accept"
+msgid_plural "modals.unpublish-shared-confirm.accept"
+msgstr[0] "Poništi objavu"
+msgstr[1] "Poništi objave"
+msgstr[2] "Poništi objave"
+
+#: src/app/main/ui/dashboard/file_menu.cljs:92
+msgid "dashboard.success-duplicate-file"
+msgid_plural "dashboard.success-delete-file"
+msgstr[0] "Tvoja datoteka je uspješno duplicirana"
+msgstr[1] "Tvoje datoteke su uspješno duplicirane"
+msgstr[2] "Tvoje datoteke su uspješno duplicirane"
+
+#: src/app/main/ui/dashboard/import.cljs:475
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "Datoteka je uspješno uvezena."
+msgstr[1] "%s datoteke su uspješno uvezene."
+msgstr[2] "%s datoteke su uspješno uvezene."

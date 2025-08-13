@@ -7,8 +7,8 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.text
   (:require
    [app.common.data :as d]
-   [app.common.text :as txt]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.text :as txt]
    [app.main.data.workspace.texts :as dwt]
    [app.main.features :as features]
    [app.main.refs :as refs]

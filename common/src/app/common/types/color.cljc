@@ -5,15 +5,16 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.types.color
+  (:refer-clojure :exclude [test])
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.math :as mth]
    [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.schema.openapi :as-alias oapi]
-   [app.common.text :as txt]
-   [app.common.time :as dt]
+   [app.common.time :as ct]
    [app.common.types.plugins :as ctpg]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -136,7 +137,7 @@
    [:name ::sm/text]
    [:path {:optional true} :string]
    [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
-   [:modified-at {:optional true} ::sm/inst]
+   [:modified-at {:optional true} ::ct/inst]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:library-color
@@ -163,11 +164,183 @@
 (def check-color
   (sm/check-fn schema:color :hint "expected valid color"))
 
+;: FIXME: maybe declare it under types.library ?
 (def check-library-color
   (sm/check-fn schema:library-color :hint "expected valid color"))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; HELPERS
+;; CONSTANTS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(def ^:const black "#000000")
+(def ^:const default-layout "#DE4762")
+(def ^:const gray-20 "#B1B2B5")
+(def ^:const info "#59B9E2")
+(def ^:const test "#fabada")
+(def ^:const white "#FFFFFF")
+(def ^:const warning "#FC8802")
+
+;; new-css-system colors
+(def ^:const new-primary "#7efff5")
+(def ^:const new-danger "#ff3277")
+(def ^:const new-warning "#fe4811")
+(def ^:const new-primary-light "#6911d4")
+(def ^:const background-quaternary "#2e3434")
+(def ^:const background-quaternary-light "#eef0f2")
+(def ^:const canvas "#E8E9EA")
+
+(def names
+  {"aliceblue" "#f0f8ff"
+   "antiquewhite" "#faebd7"
+   "aqua" "#00ffff"
+   "aquamarine" "#7fffd4"
+   "azure" "#f0ffff"
+   "beige" "#f5f5dc"
+   "bisque" "#ffe4c4"
+   "black" "#000000"
+   "blanchedalmond" "#ffebcd"
+   "blue" "#0000ff"
+   "blueviolet" "#8a2be2"
+   "brown" "#a52a2a"
+   "burlywood" "#deb887"
+   "cadetblue" "#5f9ea0"
+   "chartreuse" "#7fff00"
+   "chocolate" "#d2691e"
+   "coral" "#ff7f50"
+   "cornflowerblue" "#6495ed"
+   "cornsilk" "#fff8dc"
+   "crimson" "#dc143c"
+   "cyan" "#00ffff"
+   "darkblue" "#00008b"
+   "darkcyan" "#008b8b"
+   "darkgoldenrod" "#b8860b"
+   "darkgray" "#a9a9a9"
+   "darkgreen" "#006400"
+   "darkgrey" "#a9a9a9"
+   "darkkhaki" "#bdb76b"
+   "darkmagenta" "#8b008b"
+   "darkolivegreen" "#556b2f"
+   "darkorange" "#ff8c00"
+   "darkorchid" "#9932cc"
+   "darkred" "#8b0000"
+   "darksalmon" "#e9967a"
+   "darkseagreen" "#8fbc8f"
+   "darkslateblue" "#483d8b"
+   "darkslategray" "#2f4f4f"
+   "darkslategrey" "#2f4f4f"
+   "darkturquoise" "#00ced1"
+   "darkviolet" "#9400d3"
+   "deeppink" "#ff1493"
+   "deepskyblue" "#00bfff"
+   "dimgray" "#696969"
+   "dimgrey" "#696969"
+   "dodgerblue" "#1e90ff"
+   "firebrick" "#b22222"
+   "floralwhite" "#fffaf0"
+   "forestgreen" "#228b22"
+   "fuchsia" "#ff00ff"
+   "gainsboro" "#dcdcdc"
+   "ghostwhite" "#f8f8ff"
+   "gold" "#ffd700"
+   "goldenrod" "#daa520"
+   "gray" "#808080"
+   "green" "#008000"
+   "greenyellow" "#adff2f"
+   "grey" "#808080"
+   "honeydew" "#f0fff0"
+   "hotpink" "#ff69b4"
+   "indianred" "#cd5c5c"
+   "indigo" "#4b0082"
+   "ivory" "#fffff0"
+   "khaki" "#f0e68c"
+   "lavender" "#e6e6fa"
+   "lavenderblush" "#fff0f5"
+   "lawngreen" "#7cfc00"
+   "lemonchiffon" "#fffacd"
+   "lightblue" "#add8e6"
+   "lightcoral" "#f08080"
+   "lightcyan" "#e0ffff"
+   "lightgoldenrodyellow" "#fafad2"
+   "lightgray" "#d3d3d3"
+   "lightgreen" "#90ee90"
+   "lightgrey" "#d3d3d3"
+   "lightpink" "#ffb6c1"
+   "lightsalmon" "#ffa07a"
+   "lightseagreen" "#20b2aa"
+   "lightskyblue" "#87cefa"
+   "lightslategray" "#778899"
+   "lightslategrey" "#778899"
+   "lightsteelblue" "#b0c4de"
+   "lightyellow" "#ffffe0"
+   "lime" "#00ff00"
+   "limegreen" "#32cd32"
+   "linen" "#faf0e6"
+   "magenta" "#ff00ff"
+   "maroon" "#800000"
+   "mediumaquamarine" "#66cdaa"
+   "mediumblue" "#0000cd"
+   "mediumorchid" "#ba55d3"
+   "mediumpurple" "#9370db"
+   "mediumseagreen" "#3cb371"
+   "mediumslateblue" "#7b68ee"
+   "mediumspringgreen" "#00fa9a"
+   "mediumturquoise" "#48d1cc"
+   "mediumvioletred" "#c71585"
+   "midnightblue" "#191970"
+   "mintcream" "#f5fffa"
+   "mistyrose" "#ffe4e1"
+   "moccasin" "#ffe4b5"
+   "navajowhite" "#ffdead"
+   "navy" "#000080"
+   "oldlace" "#fdf5e6"
+   "olive" "#808000"
+   "olivedrab" "#6b8e23"
+   "orange" "#ffa500"
+   "orangered" "#ff4500"
+   "orchid" "#da70d6"
+   "palegoldenrod" "#eee8aa"
+   "palegreen" "#98fb98"
+   "paleturquoise" "#afeeee"
+   "palevioletred" "#db7093"
+   "papayawhip" "#ffefd5"
+   "peachpuff" "#ffdab9"
+   "peru" "#cd853f"
+   "pink" "#ffc0cb"
+   "plum" "#dda0dd"
+   "powderblue" "#b0e0e6"
+   "purple" "#800080"
+   "red" "#ff0000"
+   "rosybrown" "#bc8f8f"
+   "royalblue" "#4169e1"
+   "saddlebrown" "#8b4513"
+   "salmon" "#fa8072"
+   "sandybrown" "#f4a460"
+   "seagreen" "#2e8b57"
+   "seashell" "#fff5ee"
+   "sienna" "#a0522d"
+   "silver" "#c0c0c0"
+   "skyblue" "#87ceeb"
+   "slateblue" "#6a5acd"
+   "slategray" "#708090"
+   "slategrey" "#708090"
+   "snow" "#fffafa"
+   "springgreen" "#00ff7f"
+   "steelblue" "#4682b4"
+   "tan" "#d2b48c"
+   "teal" "#008080"
+   "thistle" "#d8bfd8"
+   "tomato" "#ff6347"
+   "turquoise" "#40e0d0"
+   "violet" "#ee82ee"
+   "wheat" "#f5deb3"
+   "white" "#ffffff"
+   "whitesmoke" "#f5f5f5"
+   "yellow" "#ffff00"
+   "yellowgreen" "#9acd32"})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS (FIXME: this helpers are not in the correct place)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn library-color->color
@@ -181,42 +354,6 @@
                  :path (get lcolor :path)
                  :name (get lcolor :name))))
 
-;; --- fill
-
-(defn fill->color
-  [fill]
-  (d/without-nils
-   {:color (:fill-color fill)
-    :opacity (:fill-opacity fill)
-    :gradient (:fill-color-gradient fill)
-    :image (:fill-image fill)
-    :ref-id (:fill-color-ref-id fill)
-    :ref-file (:fill-color-ref-file fill)}))
-
-(defn set-fill-color
-  [shape position color opacity gradient image]
-  (update-in shape [:fills position]
-             (fn [fill]
-               (d/without-nils (assoc fill
-                                      :fill-color color
-                                      :fill-opacity opacity
-                                      :fill-color-gradient gradient
-                                      :fill-image image)))))
-
-(defn attach-fill-color
-  [shape position ref-id ref-file]
-  (d/update-in-when shape [:fills position]
-                    (fn [fill]
-                      (-> fill
-                          (assoc :fill-color-ref-file ref-file)
-                          (assoc :fill-color-ref-id ref-id)))))
-
-(defn detach-fill-color
-  [shape position]
-  (d/update-in-when shape [:fills position] dissoc :fill-color-ref-id :fill-color-ref-file))
-
-;; stroke
-
 (defn stroke->color
   [stroke]
   (d/without-nils
@@ -227,58 +364,9 @@
     :ref-id (:stroke-color-ref-id stroke)
     :ref-file (:stroke-color-ref-file stroke)}))
 
-(defn set-stroke-color
-  [shape position color opacity gradient image]
-  (d/update-in-when shape [:strokes position]
-                    (fn [stroke]
-                      (-> stroke
-                          (assoc :stroke-color color)
-                          (assoc :stroke-opacity opacity)
-                          (assoc :stroke-color-gradient gradient)
-                          (assoc :stroke-image image)
-                          (d/without-nils)))))
-
-(defn attach-stroke-color
-  [shape position ref-id ref-file]
-  (d/update-in-when shape [:strokes position]
-                    (fn [stroke]
-                      (-> stroke
-                          (assoc :stroke-color-ref-id ref-id)
-                          (assoc :stroke-color-ref-file ref-file)))))
-
-(defn detach-stroke-color
-  [shape position]
-  (d/update-in-when shape [:strokes position] dissoc :stroke-color-ref-id :stroke-color-ref-file))
-
-;; shadow
-
 (defn shadow->color
   [shadow]
   (:color shadow))
-
-(defn set-shadow-color
-  [shape position color opacity gradient]
-  (d/update-in-when shape [:shadow position :color]
-                    (fn [shadow-color]
-                      (-> shadow-color
-                          (assoc :color color)
-                          (assoc :opacity opacity)
-                          (assoc :gradient gradient)
-                          (d/without-nils)))))
-
-(defn attach-shadow-color
-  [shape position ref-id ref-file]
-  (d/update-in-when shape [:shadow position :color]
-                    (fn [color]
-                      (-> color
-                          (assoc :ref-id ref-id)
-                          (assoc :ref-file ref-file)))))
-
-(defn detach-shadow-color
-  [shape position]
-  (d/update-in-when shape [:shadow position :color] dissoc :ref-id :ref-file))
-
-;; grid
 
 ;: FIXME: revisit colors...... WTF
 (defn grid->color
@@ -291,291 +379,374 @@
       :ref-id (-> color :id)
       :ref-file (-> color :file-id)})))
 
-(defn set-grid-color
-  [shape position color opacity gradient]
-  (d/update-in-when shape [:grids position :params :color]
-                    (fn [grid-color]
-                      (-> grid-color
-                          (assoc :color color)
-                          (assoc :opacity opacity)
-                          (assoc :gradient gradient)
-                          (d/without-nils)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn attach-grid-color
-  [shape position ref-id ref-file]
-  (d/update-in-when shape [:grids position :params :color]
-                    (fn [color]
-                      (-> color
-                          (assoc :ref-id ref-id)
-                          (assoc :ref-file ref-file)))))
+(def ^:private hex-color-re
+  #"\#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})")
 
-(defn detach-grid-color
-  [shape position]
-  (d/update-in-when shape [:grids position :params :color] dissoc :ref-id :ref-file))
+(def ^:private rgb-color-re
+  #"(?:|rgb)\((\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\)")
 
-;; --- Helpers for all colors in a shape
-
-(defn get-text-node-colors
-  "Get all colors used by a node of a text shape"
-  [node]
-  (concat (map fill->color (:fills node))
-          (map stroke->color (:strokes node))))
-
-(defn get-all-colors
-  "Get all colors used by a shape, in any section."
-  [shape]
-  (concat (map fill->color (:fills shape))
-          (map stroke->color (:strokes shape))
-          (map shadow->color (:shadow shape))
-          (when (= (:type shape) :frame)
-            (map grid->color (:grids shape)))
-          (when (= (:type shape) :text)
-            (reduce (fn [colors node]
-                      (concat colors (get-text-node-colors node)))
-                    ()
-                    (txt/node-seq (:content shape))))))
-
-(defn uses-library-colors?
-  "Check if the shape uses any color in the given library."
-  [shape library-id]
-  (let [all-colors (get-all-colors shape)]
-    (some #(and (some? (:ref-id %))
-                (= (:ref-file %) library-id))
-          all-colors)))
-
-(defn uses-library-color?
-  "Check if the shape uses the given library color."
-  [shape library-id color-id]
-  (let [all-colors (get-all-colors shape)]
-    (some #(and (= (:ref-id %) color-id)
-                (= (:ref-file %) library-id))
-          all-colors)))
-
-(defn- process-shape-colors
-  "Execute an update function on all colors of a shape."
-  [shape process-fn]
-  (let [process-fill (fn [shape [position fill]]
-                       (process-fn shape
-                                   position
-                                   (fill->color fill)
-                                   set-fill-color
-                                   attach-fill-color
-                                   detach-fill-color))
-
-        process-stroke (fn [shape [position stroke]]
-                         (process-fn shape
-                                     position
-                                     (stroke->color stroke)
-                                     set-stroke-color
-                                     attach-stroke-color
-                                     detach-stroke-color))
-
-        process-shadow (fn [shape [position shadow]]
-                         (process-fn shape
-                                     position
-                                     (shadow->color shadow)
-                                     set-shadow-color
-                                     attach-shadow-color
-                                     detach-shadow-color))
-
-        process-grid (fn [shape [position grid]]
-                       (process-fn shape
-                                   position
-                                   (grid->color grid)
-                                   set-grid-color
-                                   attach-grid-color
-                                   detach-grid-color))
-
-        process-text-node (fn [node]
-                            (as-> node $
-                              (reduce process-fill $ (d/enumerate (:fills $)))
-                              (reduce process-stroke $ (d/enumerate (:strokes $)))))
-
-        process-text (fn [shape]
-                       (let [content     (:content shape)
-                             new-content (txt/transform-nodes process-text-node content)]
-                         (if (not= content new-content)
-                           (assoc shape :content new-content)
-                           shape)))]
-
-    (as-> shape $
-      (reduce process-fill $ (d/enumerate (:fills $)))
-      (reduce process-stroke $ (d/enumerate (:strokes $)))
-      (reduce process-shadow $ (d/enumerate (:shadow $)))
-      (reduce process-grid $ (d/enumerate (:grids $)))
-      (process-text $))))
-
-(defn remap-colors
-  "Change the shape so that any use of the given color now points to
-  the given library."
-  [shape library-id color]
-  (letfn [(remap-color [shape position shape-color _ attach-fn _]
-            (if (= (:ref-id shape-color) (:id color))
-              (attach-fn shape
-                         position
-                         (:id color)
-                         library-id)
-              shape))]
-
-    (process-shape-colors shape remap-color)))
-
-(defn sync-shape-colors
-  "Look for usage of any color of the given library inside the shape,
-  and, in this case, copy the library color into the shape."
-  [shape library-id library-colors]
-  (letfn [(sync-color [shape position shape-color set-fn _ detach-fn]
-            (if (= (:ref-file shape-color) library-id)
-              (let [library-color (get library-colors (:ref-id shape-color))]
-                (if (some? library-color)
-                  (set-fn shape
-                          position
-                          (:color library-color)
-                          (:opacity library-color)
-                          (:gradient library-color)
-                          (:image library-color))
-                  (detach-fn shape position)))
-              shape))]
-
-    (process-shape-colors shape sync-color)))
-
-(defn- stroke->color-att
-  [stroke file-id libraries]
-  (let [ref-file      (:stroke-color-ref-file stroke)
-        ref-id        (:stroke-color-ref-id stroke)
-        shared-colors (dm/get-in libraries [ref-file :data :colors])
-        is-shared?    (contains? shared-colors ref-id)
-        has-color?    (or (:stroke-color stroke)
-                          (:stroke-color-gradient stroke))
-        attrs         (cond-> (stroke->color stroke)
-                        (not (or is-shared? (= ref-file file-id)))
-                        (dissoc :ref-id :ref-file))]
-    (when has-color?
-      {:attrs attrs
-       :prop :stroke
-       :shape-id (:shape-id stroke)
-       :index (:index stroke)})))
-
-(defn- shadow->color-att
-  [shadow file-id libraries]
-  (let [color         (get shadow :color)
-        ref-file      (get color :ref-file)
-        ref-id        (get color :ref-id)
-        shared-colors (dm/get-in libraries [ref-file :data :colors])
-        is-shared?    (contains? shared-colors ref-id)
-        attrs         (cond-> (shadow->color shadow)
-                        (not (or is-shared? (= ref-file file-id)))
-                        (dissoc :ref-file :ref-id))]
-    {:attrs attrs
-     :prop :shadow
-     :shape-id (:shape-id shadow)
-     :index (:index shadow)}))
-
-(defn- text->color-att
-  [fill file-id libraries]
-  (let [ref-file      (:fill-color-ref-file fill)
-        ref-id        (:fill-color-ref-id fill)
-        shared-colors (dm/get-in libraries [ref-file :data :colors])
-        is-shared?    (contains? shared-colors ref-id)
-        attrs         (cond-> (fill->color fill)
-                        (not (or is-shared? (= ref-file file-id)))
-                        (dissoc :ref-file :ref-id))]
-
-    {:attrs attrs
-     :prop :content
-     :shape-id (:shape-id fill)
-     :index (:index fill)}))
-
-(defn- treat-node
-  [node shape-id]
-  (map-indexed #(assoc %2 :shape-id shape-id :index %1) node))
-
-(defn- extract-text-colors
-  [text file-id libraries]
-  (->> (txt/node-seq txt/is-text-node? (:content text))
-       (map :fills)
-       (mapcat #(treat-node % (:id text)))
-       (map #(text->color-att % file-id libraries))))
-
-(defn- fill->color-att
-  [fill file-id libraries]
-  (let [ref-file      (:fill-color-ref-file fill)
-        ref-id        (:fill-color-ref-id fill)
-        shared-colors (dm/get-in libraries [ref-file :data :colors])
-        is-shared?    (contains? shared-colors ref-id)
-        has-color?    (or (:fill-color fill)
-                          (:fill-color-gradient fill))
-        attrs         (cond-> (fill->color fill)
-                        (not (or is-shared? (= ref-file file-id)))
-                        (dissoc :ref-file :ref-id))]
-
-    (when has-color?
-      {:attrs attrs
-       :prop :fill
-       :shape-id (:shape-id fill)
-       :index (:index fill)})))
-
-(defn extract-all-colors
-  [shapes file-id libraries]
-  (reduce
-   (fn [result shape]
-     (let [fill-obj   (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:fills shape))
-           stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))
-           shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))]
-       (if (= :text (:type shape))
-         (-> result
-             (into (map #(stroke->color-att % file-id libraries)) stroke-obj)
-             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)
-             (into (extract-text-colors shape file-id libraries)))
-
-         (-> result
-             (into (map #(fill->color-att % file-id libraries)) fill-obj)
-             (into (map #(stroke->color-att % file-id libraries)) stroke-obj)
-             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)))))
-   []
-   shapes))
-
-(defn colors-seq
-  [file-data]
-  (vals (:colors file-data)))
-
-(defn- touch
+(defn valid-hex-color?
   [color]
-  (assoc color :modified-at (dt/now)))
+  (and (string? color)
+       (some? (re-matches hex-color-re color))))
 
-(defn add-color
-  [file-data color]
-  (update file-data :colors assoc (:id color) (touch color)))
+(defn parse-rgb
+  [color]
+  (let [result (re-matches rgb-color-re color)]
+    (when (some? result)
+      (let [r (parse-long (nth result 1))
+            g (parse-long (nth result 2))
+            b (parse-long (nth result 3))]
+        (when (and (<= 0 r 255) (<= 0 g 255) (<= 0 b 255))
+          [r g b])))))
 
-(defn get-color
-  [file-data color-id]
-  (get-in file-data [:colors color-id]))
+(defn valid-rgb-color?
+  [color]
+  (if (string? color)
+    (let [result (parse-rgb color)]
+      (some? result))
+    false))
 
-(defn get-ref-color
-  [library-data color]
-  (when (= (:ref-file color) (:id library-data))
-    (get-color library-data (:ref-id color))))
+(defn- normalize-hex
+  [color]
+  (if (= (count color) 4)  ; of the form #RGB
+    (-> color
+        (str/replace #"\#(.)(.)(.)" "#$1$1$2$2$3$3")
+        (str/lower))
+    (str/lower color)))
 
-(defn set-color
-  [file-data color]
-  (d/assoc-in-when file-data [:colors (:id color)] (touch color)))
+(defn rgb->str
+  [[r g b a]]
+  (if (some? a)
+    (str/ffmt "rgba(%,%,%,%)" r g b a)
+    (str/ffmt "rgb(%,%,%)" r g b)))
 
-(defn update-color
-  [file-data color-id f & args]
-  (d/update-in-when file-data [:colors color-id] #(-> (apply f % args)
-                                                      (touch))))
+(defn rgb->hsv
+  [[red green blue]]
+  (let [max (d/max red green blue)
+        min (d/min red green blue)
+        val max]
+    (if (= min max)
+      [0 0 val]
+      (let [delta (- max min)
+            sat   (/ delta max)
+            hue   (if (= red max)
+                    (/ (- green blue) delta)
+                    (if (= green max)
+                      (+ 2 (/ (- blue red) delta))
+                      (+ 4 (/ (- red green) delta))))
+            hue   (* 60 hue)
+            hue   (if (< hue 0)
+                    (+ hue 360)
+                    hue)
+            hue   (if (> hue 360)
+                    (- hue 360)
+                    hue)]
+        [hue sat val]))))
 
-(defn delete-color
-  [file-data color-id]
-  (update file-data :colors dissoc color-id))
+(defn hsv->rgb
+  [[h s brightness]]
+  (if (= s 0)
+    [brightness brightness brightness]
+    (let [sextant    (int (mth/floor (/ h 60)))
+          remainder  (- (/ h 60) sextant)
+          brightness (d/nilv brightness 0)
+          val1       (int (* brightness (- 1 s)))
+          val2       (int (* brightness (- 1 (* s remainder))))
+          val3       (int (* brightness (- 1 (* s (- 1 remainder)))))]
+      (case sextant
+        1 [val2 brightness val1]
+        2 [val1 brightness val3]
+        3 [val1 val2 brightness]
+        4 [val3 val1 brightness]
+        5 [brightness val1 val2]
+        6 [brightness val3 val1]
+        0 [brightness val3 val1]))))
 
-(defn used-colors-changed-since
-  "Find all usages of any color in the library by the given shape, of colors
-   that have ben modified after the date."
-  [shape library since-date]
-  (->> (get-all-colors shape)
-       (keep #(get-ref-color (:data library) %))
-       (remove #(< (:modified-at %) since-date))  ;; Note that :modified-at may be nil
-       (map (fn [color] {:shape-id (:id shape)
-                         :asset-id (:id color)
-                         :asset-type :color}))))
+(defn hex->rgb
+  [color]
+  (try
+    (let [rgb #?(:clj (Integer/parseInt (subs color 1) 16)
+                 :cljs (js/parseInt (subs color 1) 16))
+          r   (bit-shift-right rgb 16)
+          g   (bit-and (bit-shift-right rgb 8) 255)
+          b   (bit-and rgb 255)]
+      [r g b])
+    (catch #?(:clj Throwable :cljs :default) _cause
+      [0 0 0])))
 
+(defn hex->lum
+  [color]
+  (let [[r g b] (hex->rgb color)]
+    (mth/sqrt (+ (* 0.241 r)
+                 (* 0.691 g)
+                 (* 0.068 b)))))
+
+(defn- int->hex
+  "Convert integer to hex string"
+  [v]
+  #?(:clj  (Integer/toHexString v)
+     :cljs (.toString v 16)))
+
+(defn rgb->hex
+  [[r g b]]
+  (let [r (int r)
+        g (int g)
+        b (int b)]
+    (if (or (not= r (bit-and r 255))
+            (not= g (bit-and g 255))
+            (not= b (bit-and b 255)))
+      (throw (ex-info "not valid rgb" {:r r :g g :b b}))
+      (let [rgb (bit-or (bit-shift-left r 16)
+                        (bit-shift-left g 8) b)]
+        (if (< r 16)
+          (dm/str "#" (subs (int->hex (bit-or 0x1000000 rgb)) 1))
+          (dm/str "#" (int->hex rgb)))))))
+
+(defn rgb->hsl
+  [[r g b]]
+  (let [norm-r (/ r 255.0)
+        norm-g (/ g 255.0)
+        norm-b (/ b 255.0)
+        max    (d/max norm-r norm-g norm-b)
+        min    (d/min norm-r norm-g norm-b)
+        l      (/ (+ max min) 2.0)
+        h      (if (= max min) 0
+                   (if (= max norm-r)
+                     (* 60 (/ (- norm-g norm-b) (- max min)))
+                     (if (= max norm-g)
+                       (+ 120 (* 60 (/ (- norm-b norm-r) (- max min))))
+                       (+ 240 (* 60 (/ (- norm-r norm-g) (- max min)))))))
+        s      (if (and (> l 0) (<= l 0.5))
+                 (/ (- max min) (* 2 l))
+                 (/ (- max min) (- 2 (* 2 l))))]
+    [(mod (+ h 360) 360) s l]))
+
+(defn hex->hsv
+  [v]
+  (-> v hex->rgb rgb->hsv))
+
+(defn hex->rgba
+  [data opacity]
+  (-> (hex->rgb data)
+      (conj opacity)))
+
+(defn hex->hsl [hex]
+  (try
+    (-> hex hex->rgb rgb->hsl)
+    (catch #?(:clj Throwable :cljs :default) _e
+      [0 0 0])))
+
+(defn hex->hsla
+  [data opacity]
+  (-> (hex->hsl data)
+      (conj opacity)))
+
+(defn format-hsla
+  [[h s l a]]
+  (let [precision 2
+        rounded-h (int h)
+        rounded-s (d/format-number (* 100 s) precision)
+        rounded-l (d/format-number (* 100 l) precision)
+        rounded-a (d/format-number a precision)]
+    (str/concat "" rounded-h ", " rounded-s "%, " rounded-l "%, " rounded-a)))
+
+(defn format-rgba
+  [[r g b a]]
+  (let [precision 2
+        rounded-a (d/format-number a precision)]
+    (str/ffmt "%, %, %, %" r g b rounded-a)))
+
+(defn- hue->rgb
+  "Helper for hsl->rgb"
+  [v1 v2 vh]
+  (let [vh (if (< vh 0)
+             (+ vh 1)
+             (if (> vh 1)
+               (- vh 1)
+               vh))]
+    (cond
+      (< (* 6 vh) 1) (+ v1 (* (- v2 v1) 6 vh))
+      (< (* 2 vh) 1) v2
+      (< (* 3 vh) 2) (+ v1 (* (- v2 v1) (- (/ 2 3) vh) 6))
+      :else v1)))
+
+(defn hsl->rgb
+  [[h s l]]
+  (if (= s 0)
+    (let [o (* l 255)]
+      [o o o])
+    (let [norm-h (/ h 360.0)
+          temp2  (if (< l 0.5)
+                   (* l (+ 1 s))
+                   (- (+ l s)
+                      (* s l)))
+          temp1  (- (* l 2) temp2)]
+
+      [(mth/round (* 255 (hue->rgb temp1 temp2 (+ norm-h (/ 1 3)))))
+       (mth/round (* 255 (hue->rgb temp1 temp2 norm-h)))
+       (mth/round (* 255 (hue->rgb temp1 temp2 (- norm-h (/ 1 3)))))])))
+
+(defn hsl->hex
+  [v]
+  (-> v hsl->rgb rgb->hex))
+
+(defn hsl->hsv
+  [hsl]
+  (-> hsl hsl->rgb rgb->hsv))
+
+(defn hsv->hex
+  [hsv]
+  (-> hsv hsv->rgb rgb->hex))
+
+(defn hsv->hsl
+  [hsv]
+  (-> hsv hsv->hex hex->hsl))
+
+(defn expand-hex
+  [v]
+  (cond
+    (re-matches #"^[0-9A-Fa-f]$" v)
+    (dm/str v v v v v v)
+
+    (re-matches #"^[0-9A-Fa-f]{2}$" v)
+    (dm/str v v v)
+
+    (re-matches #"^[0-9A-Fa-f]{3}$" v)
+    (let [a (nth v 0)
+          b (nth v 1)
+          c (nth v 2)]
+      (dm/str a a b b c c))
+
+    :else
+    v))
+
+(defn prepend-hash
+  [color]
+  (if (= "#" (subs color 0 1))
+    color
+    (dm/str "#" color)))
+
+(defn remove-hash
+  [color]
+  (if (str/starts-with? color "#")
+    (subs color 1)
+    color))
+
+(defn color-string?
+  [color]
+  (and (string? color)
+       (or (valid-hex-color? color)
+           (valid-rgb-color? color)
+           (contains? names color))))
+
+(defn parse
+  [color]
+  (when (string? color)
+    (if (or (valid-hex-color? color)
+            (valid-hex-color? (dm/str "#" color)))
+      (normalize-hex color)
+      (or (some-> (parse-rgb color) (rgb->hex))
+          (get names (str/lower color))))))
+
+(def color-names
+  (into [] (keys names)))
+
+(def empty-color
+  (into {} (map #(vector % nil)) [:color :id :file-id :gradient :opacity]))
+
+(defn next-rgb
+  "Given a color in rgb returns the next color"
+  [[r g b]]
+  (cond
+    (and (= 255 r) (= 255 g) (= 255 b))
+    (throw (ex-info "cannot get next color" {:r r :g g :b b}))
+
+    (and (= 255 g) (= 255 b))
+    [(inc r) 0 0]
+
+    (= 255 b)
+    [r (inc g) 0]
+
+    :else
+    [r g (inc b)]))
+
+(defn reduce-range
+  [value range]
+  (/ (mth/floor (* value range)) range))
+
+(defn sort-colors
+  [a b]
+  (let [[ah _ av] (hex->hsv (:color a))
+        [bh _ bv] (hex->hsv (:color b))
+        ah (reduce-range (/ ah 60) 8)
+        bh (reduce-range (/ bh 60) 8)
+        av (/ av 255)
+        bv (/ bv 255)
+        a (+ (* ah 100) (* av 10))
+        b (+ (* bh 100) (* bv 10))]
+    (compare a b)))
+
+(defn interpolate-color
+  [c1 c2 offset]
+  (cond
+    (<= offset (:offset c1)) (assoc c1 :offset offset)
+    (>= offset (:offset c2)) (assoc c2 :offset offset)
+
+    :else
+    (let [tr-offset (/ (- offset (:offset c1)) (- (:offset c2) (:offset c1)))
+          [r1 g1 b1] (hex->rgb (:color c1))
+          [r2 g2 b2] (hex->rgb (:color c2))
+          a1 (:opacity c1)
+          a2 (:opacity c2)
+          r (+ r1 (* (- r2 r1) tr-offset))
+          g (+ g1 (* (- g2 g1) tr-offset))
+          b (+ b1 (* (- b2 b1) tr-offset))
+          a (+ a1 (* (- a2 a1) tr-offset))]
+      {:color (rgb->hex [r g b])
+       :opacity a
+       :r r
+       :g g
+       :b b
+       :alpha a
+       :offset offset})))
+
+(defn- offset-spread
+  [from to num]
+  (->> (range 0 num)
+       (map #(mth/precision (+ from (* (/ (- to from) (dec num)) %)) 2))))
+
+(defn uniform-spread?
+  "Checks if the gradient stops are spread uniformly"
+  [stops]
+  (let [cs          (count stops)
+        from        (first stops)
+        to          (last stops)
+        expect-vals (offset-spread (:offset from) (:offset to) cs)
+
+        calculate-expected
+        (fn [expected-offset stop]
+          (and (mth/close? (:offset stop) expected-offset)
+               (let [ec (interpolate-color from to expected-offset)]
+                 (and (= (:color ec) (:color stop))
+                      (= (:opacity ec) (:opacity stop))))))]
+    (->> (map calculate-expected expect-vals stops)
+         (every? true?))))
+
+(defn uniform-spread
+  "Assign an uniform spread to the offset values for the gradient"
+  [from to num-stops]
+  (->> (offset-spread (:offset from) (:offset to) num-stops)
+       (mapv (fn [offset]
+               (interpolate-color from to offset)))))
+
+(defn interpolate-gradient
+  [stops offset]
+  (let [idx   (d/index-of-pred stops #(<= offset (:offset %)))
+        start (if (= idx 0) (first stops) (get stops (dec idx)))
+        end   (if (nil? idx) (last stops) (get stops idx))]
+    (interpolate-color start end offset)))

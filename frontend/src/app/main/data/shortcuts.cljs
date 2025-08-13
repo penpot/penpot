@@ -142,7 +142,7 @@
   [key cb]
   (fn [event]
     (log/debug :msg (str "Shortcut" key))
-    (when (aget event "preventDefault")
+    (when (unchecked-get event "preventDefault")
       (.preventDefault event))
     (cb event)))
 

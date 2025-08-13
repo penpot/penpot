@@ -12,6 +12,7 @@
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.pprint :as pp]
    [app.common.transit :as t]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
@@ -195,6 +196,14 @@
   (let [objects (dsh/lookup-page-objects @st/state)
         result  (->> (get-selected @st/state) (map #(get objects %)))]
     (logjs "selected" result)
+    nil))
+
+
+(defn ^:export dump-selected-edn
+  []
+  (let [objects (dsh/lookup-page-objects @st/state)
+        result  (->> (get-selected @st/state) (map #(get objects %)))]
+    (pp/pprint result {:length 30 :level 30})
     nil))
 
 (defn ^:export preview-selected

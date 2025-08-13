@@ -6,7 +6,6 @@
 
 (ns app.plugins.shape
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -16,11 +15,11 @@
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.svg.path :as svg.path]
-   [app.common.text :as txt]
+   [app.common.types.color :as clr]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.fills :as types.fills]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segm]
@@ -31,6 +30,7 @@
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace :as dw]
@@ -709,7 +709,7 @@
                     id    (:id shape)
                     value (parser/parse-fills value)]
                 (cond
-                  (not (sm/validate [:vector types.fill/schema:fill] value))
+                  (not (sm/validate [:vector types.fills/schema:fill] value))
                   (u/display-not-valid :fills value)
 
                   (cfh/text-shape? shape)
@@ -933,7 +933,7 @@
 
                  :else
                  (let [child-id (obj/get child "$id")]
-                   (st/emit! (dw/relocate-shapes #{child-id} id 0))))))
+                   (st/emit! (dwsh/relocate-shapes #{child-id} id 0))))))
 
            :insertChild
            (fn [index child]
@@ -953,7 +953,7 @@
 
                  :else
                  (let [child-id (obj/get child "$id")]
-                   (st/emit! (dw/relocate-shapes #{child-id} id index))))))
+                   (st/emit! (dwsh/relocate-shapes #{child-id} id index))))))
 
            ;; Only for frames
            :addFlexLayout

@@ -16,21 +16,23 @@
    [app.common.geom.shapes.tree-seq :as gsts]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.common.text :as ct]
+   [app.common.time :as ct]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
+   [app.common.types.library :as ctlb]
    [app.common.types.page :as ctp]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.plugins :refer [schema:plugin-data]]
+   [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
+   [app.common.types.text :as txt]
    [app.common.types.tokens-lib :refer [schema:tokens-lib]]
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; CONSTANTS
@@ -46,8 +48,8 @@
   "A schema that represents the file media object"
   [:map {:title "FileMedia"}
    [:id ::sm/uuid]
-   [:created-at {:optional true} ::sm/inst]
-   [:deleted-at {:optional true} ::sm/inst]
+   [:created-at {:optional true} ::ct/inst]
+   [:deleted-at {:optional true} ::ct/inst]
    [:name :string]
    [:width ::sm/safe-int]
    [:height ::sm/safe-int]
@@ -91,13 +93,15 @@
   [:map {:title "file"}
    [:id ::sm/uuid]
    [:name :string]
-   [:revn {:optional true} :int]
+   [:revn :int]
    [:vern {:optional true} :int]
-   [:created-at {:optional true} ::sm/inst]
-   [:modified-at {:optional true} ::sm/inst]
-   [:deleted-at {:optional true} ::sm/inst]
+   [:created-at ::ct/inst]
+   [:modified-at ::ct/inst]
+   [:deleted-at {:optional true} ::ct/inst]
    [:project-id {:optional true} ::sm/uuid]
+   [:team-id {:optional true} ::sm/uuid]
    [:is-shared {:optional true} ::sm/boolean]
+   [:has-media-trimmed {:optional true} ::sm/boolean]
    [:data {:optional true} schema:data]
    [:version :int]
    [:features ::cfeat/features]
@@ -143,35 +147,51 @@
        (update :options merge {:components-v2 true
                                :base-font-size BASE-FONT-SIZE})))))
 
+;; FIXME: we can't handle the "default" migrations for avoid providing
+;; them all the time the file is created because we can't import file
+;; migrations because of circular import issue; We need to split the
+;; list of migrations and impl of migrations in separate namespaces
+
+;; FIXME: refactor
+
 (defn make-file
   [{:keys [id project-id name revn is-shared features migrations
-           ignore-sync-until modified-at deleted-at]
-    :or {is-shared false revn 0}}
+           ignore-sync-until created-at modified-at deleted-at]
+    :as params}
 
-   & {:keys [create-page page-id]
-      :or {create-page true}}]
+   & {:keys [create-page with-data page-id]
+      :or {create-page true with-data true}}]
 
-  (let [id       (or id (uuid/next))
-        data     (if create-page
-                   (if page-id
-                     (make-file-data id page-id)
-                     (make-file-data id))
-                   (make-file-data id nil))
+  (let [id          (or id (uuid/next))
+        created-at  (or created-at (ct/now))
+        modified-at (or modified-at created-at)
+        features    (d/nilv features #{})
 
-        file     (d/without-nils
-                  {:id id
-                   :project-id project-id
-                   :name name
-                   :revn revn
-                   :vern 0
-                   :is-shared is-shared
-                   :version version
-                   :data data
-                   :features features
-                   :migrations migrations
-                   :ignore-sync-until ignore-sync-until
-                   :modified-at modified-at
-                   :deleted-at deleted-at})]
+        data
+        (when with-data
+          (if create-page
+            (if page-id
+              (make-file-data id page-id)
+              (make-file-data id))
+            (make-file-data id nil)))
+
+        file
+        (d/without-nils
+         {:id id
+          :project-id project-id
+          :name name
+          :revn (d/nilv revn 0)
+          :vern 0
+          :is-shared (d/nilv is-shared false)
+          :version (:version params version)
+          :data data
+          :features features
+          :migrations migrations
+          :ignore-sync-until ignore-sync-until
+          :has-media-trimmed false
+          :created-at created-at
+          :modified-at modified-at
+          :deleted-at deleted-at})]
 
     (check-file file)))
 
@@ -521,7 +541,7 @@
 
 (defmethod uses-asset? :color
   [_ shape library-id color]
-  (ctc/uses-library-color? shape library-id (:id color)))
+  (cts/uses-library-color? shape library-id (:id color)))
 
 (defmethod uses-asset? :typography
   [_ shape library-id typography]
@@ -533,10 +553,10 @@
 
   Returns a list ((asset ((container shapes) (container shapes)...))...)"
   [file-data library-data asset-type]
-  (let [assets-seq (case asset-type
-                     :component  (ctkl/components-seq library-data)
-                     :color      (ctc/colors-seq library-data)
-                     :typography (ctyl/typographies-seq library-data))
+  (let [assets (case asset-type
+                 :component  (ctkl/components-seq library-data)
+                 :color      (vals (ctlb/get-colors library-data))
+                 :typography (ctyl/typographies-seq library-data))
 
         find-usages-in-container
         (fn [container asset]
@@ -553,7 +573,7 @@
               (let [instances (find-asset-usages file-data asset)]
                 (when (d/not-empty? instances)
                   [[asset instances]])))
-            assets-seq)))
+            assets)))
 
 (defn used-in?
   "Checks if a specific asset is used in a given file (by any shape in its pages or in
@@ -574,7 +594,7 @@
   (letfn [(used-assets-shape [shape]
             (concat
              (ctkl/used-components-changed-since shape library since-date)
-             (ctc/used-colors-changed-since shape library since-date)
+             (ctlb/used-colors-changed-since shape library since-date)
              (ctyl/used-typographies-changed-since shape library since-date)))
 
           (used-assets-container [container]
@@ -693,11 +713,12 @@
 
     (add-component-grid file-data (sort-by #(:name (first %)) used-components))))
 
+;: FIXME: this can be moved to library
 (defn- absorb-colors
   [file-data used-colors]
   (let [absorb-color
         (fn [file-data [color usages]]
-          (let [remap-shape #(ctc/remap-colors % (:id file-data) color)
+          (let [remap-shape #(cts/remap-colors % (:id file-data) color)
 
                 remap-shapes
                 (fn [file-data [container shapes]]
@@ -710,7 +731,7 @@
                                              %
                                              shapes)))]
             (as-> file-data $
-              (ctc/add-color $ color)
+              (ctlb/add-color $ color)
               (reduce remap-shapes $ usages))))]
 
     (reduce absorb-color
@@ -1046,7 +1067,7 @@
   (let [detach-text
         (fn [content]
           (->> content
-               (ct/transform-nodes
+               (txt/transform-nodes
                 #(cond-> %
                    (not= file-id (:fill-color-ref-file %))
                    (dissoc :fill-color-ref-id :fill-color-ref-file)

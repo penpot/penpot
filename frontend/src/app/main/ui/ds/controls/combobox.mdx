@@ -11,23 +11,27 @@ import * as ComboboxStories from "./combobox.stories";
 
 # Combobox
 
-Combobox lets users choose one option from an options menu or enter a custom value that is not listed in the menu. It combines the functionality of a dropdown menu and an input field, allowing for both selection and free-form input.
+The `combobox*` component lets users choose one option from an options menu or enter a custom value that is not listed in the menu. It combines the functionality of a dropdown menu and an input field, allowing for both selection and free-form input.
 
 ## Variants
 
-**Text**: We will use this variant when there are enough space and icons don't add any useful context.
+We will use the text-only variant when there are enough space and icons don't add any useful context.
 
 <Canvas of={ComboboxStories.Default} />
 
-**Icon and text**: We will use this variant when there are enough space and icons add any useful context.
+We will use the icon and text variant when there are enough space and icons add any useful context.
 
 <Canvas of={ComboboxStories.WithIcons} />
+
+If we consider that empty options have a special meaning, we can move them to the end of the list, to a section separate from the rest.
+
+<Canvas of={ComboboxStories.EmptyToEnd} />
 
 ## Technical notes
 
 ### Icons
 
-Each option of `combobox*` may accept an `icon`, which must contain an [icon ID](../foundations/assets/icon.mdx).
+Each option of `combobox*` accepts an optional `icon`, which must contain an [icon ID](../foundations/assets/icon.mdx).
 These are available in the `app.main.ds.foundations.assets.icon` namespace.
 
 ```clj
@@ -48,8 +52,6 @@ These are available in the `app.main.ds.foundations.assets.icon` namespace.
                  :id "option-menu" }
                ]}]
 ```
-
-<Canvas of={ComboboxStories.WithIcons} />
 
 ## Usage guidelines (design)
 

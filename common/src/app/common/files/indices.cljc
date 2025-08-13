@@ -30,16 +30,14 @@
                 get-clip-parents
                 (fn [shape]
                   (cond-> []
-                    (and (= :frame (:type shape))
-                         (not (:show-content shape))
-                         (not= uuid/zero (:id shape)))
+                    (or (and (= :frame (:type shape))
+                             (not (:show-content shape))
+                             (not= uuid/zero (:id shape)))
+                        (cfh/bool-shape? shape))
                     (conj shape)
 
                     (:masked-group shape)
-                    (conj (get objects (->> shape :shapes first)))
-
-                    (= :bool (:type shape))
-                    (conj shape)))]
+                    (conj (get objects (->> shape :shapes first)))))]
 
             (into []
                   (comp (map lookup-object)

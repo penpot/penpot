@@ -578,6 +578,6 @@ __Since version 2.0.0__
 [2]: /technical-guide/getting-started#configure-penpot-with-docker
 [3]: /technical-guide/developer/common#dev-environment
 [4]: https://github.com/penpot/penpot/blob/main/docker/images/files/nginx.conf
-[5]: /technical-guide/getting-started/#using-the-cli-for-administrative-tasks
+[5]: /technical-guide/getting-started/docker#using-the-cli-for-administrative-tasks
 [6]: /technical-guide/integration/#webhooks
 [7]: /technical-guide/integration/#access-tokens

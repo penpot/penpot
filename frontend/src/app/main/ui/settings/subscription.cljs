@@ -3,6 +3,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.main.data.auth :as da]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -15,7 +16,6 @@
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
@@ -150,7 +150,16 @@
                           :class (stl/css :input-field)}]]
            [:div {:class (stl/css :editors-cost)}
             [:span {:class (stl/css :modal-text-small)}
-             (tr "subscription.settings.management.dialog.price-month" (or (get-in @form [:clean-data :min-members]) 0))]
+             (when (> (get-in @form [:clean-data :min-members]) 25)
+               [:> i18n/tr-html*
+                {:class (stl/css :modal-text-cap)
+                 :tag-name "span"
+                 :content (tr "subscription.settings.management.dialog.price-month" "175")}])
+             [:> i18n/tr-html*
+              {:class (stl/css-case :text-strikethrough (> (get-in @form [:clean-data :min-members]) 25))
+               :tag-name "span"
+               :content (tr "subscription.settings.management.dialog.price-month"
+                            (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
             [:span {:class (stl/css :modal-text-small)}
              (tr "subscription.settings.management.dialog.payment-explanation")]]]
 
@@ -223,8 +232,6 @@
         teams*         (mf/use-state nil)
         teams          (deref teams*)
 
-        locale         (mf/deref i18n/locale)
-
         params-subscription
         (-> route :params :query :subscription)
 
@@ -249,10 +256,10 @@
         (= (:status subscription) "trialing")
 
         member-since
-        (dt/format-date-locale-short (:created-at profile) {:locale locale})
+        (ct/format-inst (:created-at profile) "d MMMM, yyyy")
 
         subscribed-since
-        (dt/format-date-locale-short (:start-date subscription) {:locale locale})
+        (ct/format-inst (:start-date profile) "d MMMM, yyyy")
 
         go-to-pricing-page
         (mf/use-fn

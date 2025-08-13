@@ -6,11 +6,11 @@
 
 (ns backend-tests.bounce-handling-test
   (:require
+   [app.common.time :as ct]
    [app.db :as db]
    [app.email :as email]
    [app.http.awsns :as awsns]
    [app.tokens :as tokens]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
@@ -250,7 +250,7 @@
 
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)]
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (ct/in-past {:days 8})})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
 
@@ -268,8 +268,8 @@
                                :profile-complaint-threshold 2})}]
     (let [profile (th/create-profile* 1)
           pool    (:app.db/pool th/*system*)]
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
-      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (dt/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (ct/in-past {:days 8})})
+      (th/create-complaint-for pool {:type :bounce :id (:id profile) :created-at (ct/in-past {:days 8})})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :bounce :id (:id profile)})
       (th/create-complaint-for pool {:type :complaint :id (:id profile)})

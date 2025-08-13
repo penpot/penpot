@@ -7,7 +7,6 @@
 (ns app.common.types.shape
   (:require
    #?(:clj [app.common.fressian :as fres])
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.geom.matrix :as gmt]
@@ -18,10 +17,9 @@
    [app.common.record :as cr]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
-   [app.common.text :as txt]
    [app.common.transit :as t]
-   [app.common.types.color :as types.color]
-   [app.common.types.fill :refer [schema:fill]]
+   [app.common.types.color :as clr]
+   [app.common.types.fills :refer [schema:fill fill->color]]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
    [app.common.types.path.segment :as path.segment]
@@ -33,6 +31,7 @@
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctsx]
+   [app.common.types.text :as txt]
    [app.common.types.token :as cto]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -148,9 +147,9 @@
     [::sm/one-of stroke-caps]]
    [:stroke-cap-end {:optional true}
     [::sm/one-of stroke-caps]]
-   [:stroke-color {:optional true} types.color/schema:hex-color]
-   [:stroke-color-gradient {:optional true} types.color/schema:gradient]
-   [:stroke-image {:optional true} types.color/schema:image]])
+   [:stroke-color {:optional true} clr/schema:hex-color]
+   [:stroke-color-gradient {:optional true} clr/schema:gradient]
+   [:stroke-image {:optional true} clr/schema:image]])
 
 (def stroke-attrs
   "A set of attrs that corresponds to stroke data type"
@@ -414,26 +413,33 @@
   (or (some :fill-image fills)
       (some :stroke-image strokes)))
 
-;; Valid attributes
+;; Valid attributes for keeping on a switch
+(def ^:private allowed-shape-attrs
+  #{:page-id :component-id :component-file :component-root :main-instance
+    :remote-synced :shape-ref :touched :blocked :collapsed :locked
+    :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
+    :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
+    :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
+    :plugin-data})
 
-(def ^:private allowed-shape-attrs #{:page-id :component-id :component-file :component-root :main-instance
-                                     :remote-synced :shape-ref :touched :blocked :collapsed :locked
-                                     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
-                                     :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
-                                     :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
-                                     :plugin-data})
 (def ^:private allowed-shape-geom-attrs #{:x :y :width :height})
-(def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform :transform-inverse :parent-id :frame-id})
+(def ^:private allowed-shape-base-attrs #{:id :name :type :selrect :points :transform
+                                          :transform-inverse :parent-id :frame-id})
 (def ^:private allowed-bool-attrs #{:shapes :bool-type :content})
 (def ^:private allowed-group-attrs #{:shapes})
-(def ^:private allowed-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer})
+(def ^:private allowed-frame-attrs #{:shapes :hide-fill-on-export :show-content :hide-in-viewer
+                                     :layout :layout-flex-dir :layout-gap-type :layout-gap
+                                     :layout-align-items :layout-justify-content :layout-align-content
+                                     :layout-wrap-type :layout-padding-type :layout-padding
+                                     :layout-grid-dir :layout-justify-items :layout-grid-columns
+                                     :layout-grid-rows})
 (def ^:private allowed-image-attrs #{:metadata})
 (def ^:private allowed-svg-attrs #{:content})
 (def ^:private allowed-path-attrs #{:content})
 (def ^:private allowed-text-attrs #{:content})
 (def ^:private allowed-generic-attrs (set/union allowed-shape-attrs allowed-shape-geom-attrs allowed-shape-base-attrs))
 
-(defn is-allowed-attr?
+(defn is-allowed-switch-keep-attr?
   [attr type]
   (case type
     :group   (or (contains? allowed-group-attrs attr)
@@ -755,3 +761,201 @@
         (d/patch-object (select-keys props basic-extract-props))
         (cond-> (cfh/text-shape? shape) (patch-text-props props))
         (cond-> (cfh/frame-shape? shape) (patch-layout-props props)))))
+
+
+
+(defn- set-fill-color
+  [shape position color opacity gradient image]
+  (update-in shape [:fills position]
+             (fn [fill]
+               (d/without-nils (assoc fill
+                                      :fill-color color
+                                      :fill-opacity opacity
+                                      :fill-color-gradient gradient
+                                      :fill-image image)))))
+
+
+(defn- attach-fill-color
+  [shape position ref-id ref-file]
+  (d/update-in-when shape [:fills position]
+                    (fn [fill]
+                      (-> fill
+                          (assoc :fill-color-ref-file ref-file)
+                          (assoc :fill-color-ref-id ref-id)))))
+
+(defn- detach-fill-color
+  [shape position]
+  (d/update-in-when shape [:fills position] dissoc :fill-color-ref-id :fill-color-ref-file))
+
+
+(defn- set-stroke-color
+  [shape position color opacity gradient image]
+  (d/update-in-when shape [:strokes position]
+                    (fn [stroke]
+                      (-> stroke
+                          (assoc :stroke-color color)
+                          (assoc :stroke-opacity opacity)
+                          (assoc :stroke-color-gradient gradient)
+                          (assoc :stroke-image image)
+                          (d/without-nils)))))
+
+(defn- attach-stroke-color
+  [shape position ref-id ref-file]
+  (d/update-in-when shape [:strokes position]
+                    (fn [stroke]
+                      (-> stroke
+                          (assoc :stroke-color-ref-id ref-id)
+                          (assoc :stroke-color-ref-file ref-file)))))
+
+(defn- detach-stroke-color
+  [shape position]
+  (d/update-in-when shape [:strokes position] dissoc :stroke-color-ref-id :stroke-color-ref-file))
+
+(defn- set-shadow-color
+  [shape position color opacity gradient]
+  (d/update-in-when shape [:shadow position :color]
+                    (fn [shadow-color]
+                      (-> shadow-color
+                          (assoc :color color)
+                          (assoc :opacity opacity)
+                          (assoc :gradient gradient)
+                          (d/without-nils)))))
+
+(defn- attach-shadow-color
+  [shape position ref-id ref-file]
+  (d/update-in-when shape [:shadow position :color]
+                    (fn [color]
+                      (-> color
+                          (assoc :ref-id ref-id)
+                          (assoc :ref-file ref-file)))))
+
+(defn- detach-shadow-color
+  [shape position]
+  (d/update-in-when shape [:shadow position :color] dissoc :ref-id :ref-file))
+
+(defn- set-grid-color
+  [shape position color opacity gradient]
+  (d/update-in-when shape [:grids position :params :color]
+                    (fn [grid-color]
+                      (-> grid-color
+                          (assoc :color color)
+                          (assoc :opacity opacity)
+                          (assoc :gradient gradient)
+                          (d/without-nils)))))
+
+(defn- attach-grid-color
+  [shape position ref-id ref-file]
+  (d/update-in-when shape [:grids position :params :color]
+                    (fn [color]
+                      (-> color
+                          (assoc :ref-id ref-id)
+                          (assoc :ref-file ref-file)))))
+
+(defn- detach-grid-color
+  [shape position]
+  (d/update-in-when shape [:grids position :params :color] dissoc :ref-id :ref-file))
+
+(defn process-shape-colors
+  "Execute an update function on all colors of a shape."
+  [shape process-fn]
+  (let [process-fill (fn [shape [position fill]]
+                       (process-fn shape
+                                   position
+                                   (fill->color fill)
+                                   set-fill-color
+                                   attach-fill-color
+                                   detach-fill-color))
+
+        process-stroke (fn [shape [position stroke]]
+                         (process-fn shape
+                                     position
+                                     (clr/stroke->color stroke)
+                                     set-stroke-color
+                                     attach-stroke-color
+                                     detach-stroke-color))
+
+        process-shadow (fn [shape [position shadow]]
+                         (process-fn shape
+                                     position
+                                     (clr/shadow->color shadow)
+                                     set-shadow-color
+                                     attach-shadow-color
+                                     detach-shadow-color))
+
+        process-grid (fn [shape [position grid]]
+                       (process-fn shape
+                                   position
+                                   (clr/grid->color grid)
+                                   set-grid-color
+                                   attach-grid-color
+                                   detach-grid-color))
+
+        process-text-node (fn [node]
+                            (as-> node $
+                              (reduce process-fill $ (d/enumerate (:fills $)))
+                              (reduce process-stroke $ (d/enumerate (:strokes $)))))
+
+        process-text (fn [shape]
+                       (let [content     (:content shape)
+                             new-content (txt/transform-nodes process-text-node content)]
+                         (if (not= content new-content)
+                           (assoc shape :content new-content)
+                           shape)))]
+
+    (as-> shape $
+      (reduce process-fill $ (d/enumerate (:fills $)))
+      (reduce process-stroke $ (d/enumerate (:strokes $)))
+      (reduce process-shadow $ (d/enumerate (:shadow $)))
+      (reduce process-grid $ (d/enumerate (:grids $)))
+      (process-text $))))
+
+(defn- get-text-node-colors
+  "Get all colors used by a node of a text shape"
+  [node]
+  (concat (map fill->color (:fills node))
+          (map clr/stroke->color (:strokes node))))
+
+(defn get-all-colors
+  "Get all colors used by a shape, in any section."
+  [shape]
+  ;; FIXME: all this functions should be really in color?
+  (concat (map fill->color (:fills shape))
+          (map clr/stroke->color (:strokes shape))
+          (map clr/shadow->color (:shadow shape))
+          (when (= (:type shape) :frame)
+            (map clr/grid->color (:grids shape)))
+          (when (= (:type shape) :text)
+            (reduce (fn [colors node]
+                      (concat colors (get-text-node-colors node)))
+                    ()
+                    (txt/node-seq (:content shape))))))
+
+(defn uses-library-color?
+  "Check if the shape uses the given library color."
+  [shape library-id color-id]
+  (let [all-colors (get-all-colors shape)]
+    (some #(and (= (:ref-id %) color-id)
+                (= (:ref-file %) library-id))
+          all-colors)))
+
+(defn uses-library-colors?
+  "Check if the shape uses any color in the given library."
+  [shape library-id]
+  (let [all-colors (get-all-colors shape)]
+    (some #(and (some? (:ref-id %))
+                (= (:ref-file %) library-id))
+          all-colors)))
+
+(defn remap-colors
+  "Change the shape so that any use of the given color now points to
+  the given library."
+  [shape library-id color]
+  (letfn [(remap-color [shape position shape-color _ attach-fn _]
+            (if (= (:ref-id shape-color) (:id color))
+              (attach-fn shape
+                         position
+                         (:id color)
+                         library-id)
+              shape))]
+
+    (process-shape-colors shape remap-color)))

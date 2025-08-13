@@ -23,7 +23,7 @@
   white-space: pre-wrap;
   overflow-wrap: break-word;
 
-  caret-color: black;
+  caret-color: var(--text-editor-caret-color);
 
   color: transparent;
 
@@ -38,7 +38,7 @@
     line-break: auto;
     line-height: inherit;
     overflow-wrap: initial;
-    caret-color: rgb(0, 0, 0);
+    caret-color: var(--text-editor-caret-color);
   }
 
   [data-itype="root"] {

@@ -19,7 +19,6 @@
    [app.common.geom.shapes.grid-layout :as gslg]
    [app.common.logic.libraries :as cll]
    [app.common.schema :as sm]
-   [app.common.text :as txt]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.container :as ctn]
@@ -28,6 +27,7 @@
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.shape.text :as types.text]
+   [app.common.types.text :as txt]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -42,6 +42,7 @@
    [app.main.data.workspace.texts :as dwtxt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.errors]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.streams :as ms]
@@ -925,7 +926,7 @@
   (let [paragraphs (->> (str/lines text)
                         (map str/trim)
                         (mapv #(hash-map :type "paragraph"
-                                         :children [(merge txt/default-text-attrs {:text %})])))]
+                                         :children [(merge (txt/get-default-text-attrs) {:text %})])))]
     ;; if text is composed only by line breaks paragraphs is an empty list and should be nil
     (when (d/not-empty? paragraphs)
       {:type "root"
@@ -950,7 +951,8 @@
   (ptk/reify ::paste-html-text
     ptk/WatchEvent
     (watch [_ state  _]
-      (let [root    (dwtxt/create-root-from-html html)
+      (let [style   (deref refs/workspace-clipboard-style)
+            root    (dwtxt/create-root-from-html html style)
             content (tc/dom->cljs root)]
         (when (types.text/valid-content? content)
           (let [id     (uuid/next)

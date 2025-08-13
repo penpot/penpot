@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.viewport.gradients
   "Gradients handlers and renders"
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.geom.matrix :as gmt]
@@ -15,7 +14,8 @@
    [app.common.geom.shapes :as gsh]
    [app.common.geom.shapes.points :as gsp]
    [app.common.math :as mth]
-   [app.common.types.fill :as types.fill]
+   [app.common.types.color :as cc]
+   [app.common.types.fills :as types.fills]
    [app.config :as cfg]
    [app.main.data.workspace.colors :as dc]
    [app.main.features :as features]
@@ -135,7 +135,7 @@
         handler-state (mf/use-state {:display? false :offset 0 :hover nil})
 
         cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-        can-add-stop? (if cap-stops? (< (count stops) types.fill/MAX-GRADIENT-STOPS) true)
+        can-add-stop? (if cap-stops? (< (count stops) types.fills/MAX-GRADIENT-STOPS) true)
 
         endpoint-on-pointer-down
         (fn [position event]
@@ -527,7 +527,7 @@
         gradient     (:gradient state)
         cap-stops?   (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
         stops        (if cap-stops?
-                       (vec (take types.fill/MAX-GRADIENT-STOPS (:stops state)))
+                       (vec (take types.fills/MAX-GRADIENT-STOPS (:stops state)))
                        (:stops state))
         editing-stop (:editing-stop state)]
 

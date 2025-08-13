@@ -6,12 +6,12 @@
 
 (ns app.plugins.page
   (:require
-   [app.common.colors :as cc]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.spec :as us]
+   [app.common.types.color :as cc]
    [app.common.uuid :as uuid]
    [app.main.data.comments :as dc]
    [app.main.data.common :as dcm]

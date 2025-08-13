@@ -32,6 +32,11 @@
   overflow: hidden;
   cursor: pointer;
 
+  .variant-mark {
+    background-color: var(--color-background-tertiary);
+    border-radius: $br-8;
+  }
+
   .cell-name {
     @include bodySmallTypography;
     @include textEllipsis;
@@ -122,7 +127,7 @@
   align-items: center;
   column-gap: $s-8;
   height: $s-44;
-
+  padding-right: $s-4;
   padding: $s-2;
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
@@ -159,6 +164,7 @@
 
 .enum-item-with-mark {
   grid-template-columns: auto 1fr $s-24;
+  padding-right: $s-4;
 }
 
 .item-name {
@@ -222,11 +228,6 @@
   border-radius: $s-8;
   background-color: var(--assets-item-background-color-drag);
   border: $s-2 solid var(--assets-item-border-color-drag);
-}
-
-.variant-mark {
-  background-color: var(--color-background-tertiary);
-  border-radius: $br-8;
 }
 
 .variant-mark-cell {

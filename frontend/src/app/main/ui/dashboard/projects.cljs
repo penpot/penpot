@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.geom.point :as gpt]
+   [app.common.time :as ct]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
    [app.main.data.event :as ev]
@@ -26,7 +27,6 @@
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [app.util.storage :as storage]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
@@ -103,9 +103,7 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [project is-first team files can-edit]}]
-  (let [locale     (mf/deref i18n/locale)
-
-        project-id (get project :id)
+  (let [project-id (get project :id)
         team-id    (get team :id)
 
         file-count (or (:count project) 0)
@@ -240,7 +238,7 @@
          [:span {:class (stl/css :info)} (str (tr "labels.num-of-files" (i18n/c file-count)))]
 
          (let [time (-> (:modified-at project)
-                        (dt/timeago {:locale locale}))]
+                        (ct/timeago))]
            [:span {:class (stl/css :recent-files-row-title-info)} (str ", " time)])]
 
         [:div {:class (stl/css-case :project-actions true
@@ -273,7 +271,7 @@
             :left (+ 24 (:x (:menu-pos @local)))
             :top (:y (:menu-pos @local))
             :on-edit on-edit-open
-            :on-menu-close on-menu-close
+            :on-close on-menu-close
             :on-import on-import}])]]]
 
      [:div {:class (stl/css :grid-container) :ref rowref}

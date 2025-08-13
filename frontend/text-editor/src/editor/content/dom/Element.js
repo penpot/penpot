@@ -37,12 +37,12 @@ export function createElement(tag, options) {
   const element = document.createElement(tag);
   if (options?.attributes) {
     Object.entries(options.attributes).forEach(([name, value]) =>
-      element.setAttribute(name, value)
+      element.setAttribute(name, value),
     );
   }
   if (options?.data) {
     Object.entries(options.data).forEach(
-      ([name, value]) => (element.dataset[name] = value)
+      ([name, value]) => (element.dataset[name] = value),
     );
   }
   if (options?.styles && options?.allowedStyles) {

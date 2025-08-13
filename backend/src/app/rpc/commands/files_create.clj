@@ -9,6 +9,7 @@
    [app.binfile.common :as bfc]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.config :as cf]
    [app.db :as db]
@@ -22,13 +23,13 @@
    [app.rpc.quotes :as quotes]
    [app.util.pointer-map :as pmap]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [clojure.set :as set]))
 
 (defn create-file-role!
   [conn {:keys [file-id profile-id role]}]
   (let [params {:file-id file-id
                 :profile-id profile-id}]
+
     (->> (perms/assign-role-flags params role)
          (db/insert! conn :file-profile-rel))))
 
@@ -51,18 +52,18 @@
                                :is-shared is-shared
                                :features features
                                :ignore-sync-until ignore-sync-until
-                               :modified-at modified-at
+                               :created-at modified-at
                                :deleted-at deleted-at}
                               {:create-page create-page
-                               :page-id page-id})
-          file (-> (bfc/insert-file! cfg file)
-                   (bfc/decode-row))]
+                               :page-id page-id})]
+
+      (bfc/insert-file! cfg file)
 
       (->> (assoc params :file-id (:id file) :role :owner)
            (create-file-role! conn))
 
       (db/update! conn :project
-                  {:modified-at (dt/now)}
+                  {:modified-at (ct/now)}
                   {:id project-id})
 
       file)))

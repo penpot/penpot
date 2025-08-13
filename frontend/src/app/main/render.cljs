@@ -13,7 +13,6 @@
 
   (:require
    ["react-dom/server" :as rds]
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -23,6 +22,7 @@
    [app.common.geom.shapes.bounds :as gsb]
    [app.common.logging :as l]
    [app.common.math :as mth]
+   [app.common.types.color :as clr]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.modifiers :as ctm]

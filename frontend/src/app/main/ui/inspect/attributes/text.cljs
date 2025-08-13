@@ -10,7 +10,8 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.text :as txt]
-   [app.common.types.color :as ctc]
+   [app.common.types.fills :as types.fills]
+   [app.common.types.text :as types.text]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -18,8 +19,6 @@
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
-   [app.util.code-gen.style-css-formats :refer [format-color]]
-   [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [okulary.core :as l]
@@ -43,21 +42,6 @@
        (map #(dm/str (d/name %) ": " (get style %) ";"))
        (str/join "\n")))
 
-(defn- format-gradient-css
-  "Converts a gradient object to a CSS string."
-  [gradient]
-  (str "background-image: " (uc/gradient->css gradient) ";"
-       "background-clip: text;"
-       "color: transparent;"))
-
-(defn- copy-color-data
-  "Converts a fill object to CSS color string in the specified format."
-  [fill format]
-  (let [color (ctc/fill->color fill)]
-    (if-let [gradient (:gradient color)]
-      (format-gradient-css gradient)
-      (format-color color {:format format}))))
-
 (mf/defc typography-block
   [{:keys [text style]}]
   (let [typography-library-ref
@@ -74,8 +58,8 @@
         file-library-workspace      (get (mf/deref refs/files) (:typography-ref-file style))
         typography-external-lib (get-in file-library-workspace [:data :typographies (:typography-ref-id style)])
 
-        color-format!       (mf/use-state :hex)
-        color-format* (deref color-format!)
+        color-format*       (mf/use-state :hex)
+        color-format        (deref color-format*)
 
         typography (or (get (or typography-library file-typographies-viewer file-typographies-workspace) (:typography-ref-id style)) typography-external-lib)]
 
@@ -83,10 +67,10 @@
      (when (:fills style)
        (for [[idx fill] (map-indexed vector (:fills style))]
          [:& color-row {:key idx
-                        :format color-format*
-                        :color (ctc/fill->color fill)
-                        :copy-data (copy-color-data fill color-format*)
-                        :on-change-format #(reset! color-format! %)}]))
+                        :format color-format
+                        :color (types.fills/fill->color fill)
+                        :copy-data (copy-style-data fill :fill-color :fill-color-gradient)
+                        :on-change-format #(reset! color-format* %)}]))
 
      (when (:typography-ref-id style)
        [:div {:class (stl/css :text-row)}
@@ -191,7 +175,7 @@
   (let [style-text-blocks (->> (:content shape)
                                (txt/content->text+styles)
                                (remove (fn [[_ text]] (str/empty? (str/trim text))))
-                               (mapv (fn [[style text]] (vector (merge txt/default-text-attrs style) text))))]
+                               (mapv (fn [[style text]] (vector (merge (types.text/get-default-text-attrs) style) text))))]
 
     (for [[idx [full-style text]] (map-indexed vector style-text-blocks)]
       [:& typography-block {:key idx

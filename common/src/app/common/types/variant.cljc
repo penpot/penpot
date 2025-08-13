@@ -52,7 +52,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def property-prefix "Property")
+(def property-prefix "Property ")
 (def property-regex (re-pattern (str property-prefix "(\\d+)")))
 (def property-max-length 60)
 (def value-prefix "Value ")

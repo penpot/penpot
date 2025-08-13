@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-09 09:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: william chen <william.fromtw@gmail.com>\n"
 "Language-Team: Chinese (Traditional Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hant/>\n"
 "Language: zh_Hant\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1489,10 +1489,6 @@ msgstr "文字修飾"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "無"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "刪除線"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "底線"
@@ -2295,6 +2291,7 @@ msgid "modals.big-nudge"
 msgstr "大距離微調"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "驗證新電子郵件"
 
@@ -2545,6 +2542,7 @@ msgid "modals.invite-member.emails"
 msgstr "電子郵件，以逗號分隔"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr "有些電子郵件來自現任團隊成員。他們的邀請將不會被發送。"
 

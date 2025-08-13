@@ -73,7 +73,7 @@
                (if (ctv/valid-properties-formula? name)
                  (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties (ctv/properties-formula->map name))
                            (dwv/remove-empty-properties variant-id)
-                           (dwv/update-error component-id nil))
+                           (dwv/update-error component-id))
                  (st/emit! (dwv/update-properties-names-and-values component-id variant-id variant-properties {})
                            (dwv/remove-empty-properties variant-id)
                            (dwv/update-error component-id name)))

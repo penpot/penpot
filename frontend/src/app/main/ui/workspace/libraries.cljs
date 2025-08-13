@@ -9,9 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.color :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
+   [app.common.types.library :as ctl]
    [app.common.types.typographies-list :as ctyl]
    [app.common.uuid :as uuid]
    [app.main.data.dashboard :as dd]
@@ -407,7 +407,7 @@
                           (sort-by #(str/lower (:name %)))
                           (truncate :components))
         colors       (->> color-ids
-                          (map #(ctc/get-color (:data library) %))
+                          (map #(ctl/get-color (:data library) %))
                           (sort-by #(str/lower (:name %)))
                           (truncate :colors))
         typographies (->> typography-ids

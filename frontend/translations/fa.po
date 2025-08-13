@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-05 19:09+0000\n"
-"Last-Translator: Nima K <nimiossa@gmail.com>\n"
-"Language-Team: Persian "
-"<https://hosted.weblate.org/projects/penpot/frontend/fa/>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: Ahmad HosseinBor <123hozeifeh@gmail.com>\n"
+"Language-Team: Persian <https://hosted.weblate.org/projects/penpot/frontend/"
+"fa/>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1659,6 +1659,7 @@ msgid "modals.add-shared-confirm.message"
 msgstr "افزودن «%s» به عنوان کتابخانه مشترک"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "تایید ایمیل جدید"
 

@@ -13,7 +13,7 @@ export PENPOT_FLAGS="\
        enable-login-with-ldap \
        enable-transit-readable-response \
        enable-demo-users \
-       enable-feature-fdata-pointer-map \
+       disable-feature-fdata-pointer-map \
        enable-feature-fdata-objects-map \
        disable-secure-session-cookies \
        enable-rpc-climit \
@@ -21,11 +21,11 @@ export PENPOT_FLAGS="\
        enable-quotes \
        enable-file-snapshot \
        enable-access-tokens \
-       enable-tiered-file-data-storage \
+       disable-tiered-file-data-storage \
        enable-file-validation \
        enable-file-schema-validation \
        enable-subscriptions \
-       enable-subscriptions-old ";
+       disable-subscriptions-old";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-05-21 08:44+0000\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Spanish "
-"<https://hosted.weblate.org/projects/penpot/frontend/es/>\n"
+"Language-Team: Spanish <https://hosted.weblate.org/projects/penpot/frontend/"
+"es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2672,6 +2672,7 @@ msgid "modals.big-nudge"
 msgstr "Máximo"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Verificar el nuevo correo"
 
@@ -2940,6 +2941,7 @@ msgid "modals.invite-member.emails"
 msgstr "Emails, separados por coma"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Algunas direcciones de correo ya se encuentran entre los miembros. Estas "
@@ -3605,7 +3607,7 @@ msgstr "Ir al login"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:227
 msgid "settings.detach"
-msgstr "Desacoplar"
+msgstr "Desvincular"
 
 #: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:91, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:946, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:360, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:349, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:360, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:379, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:390, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:406, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:312, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:385, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:402, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:251, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
 msgid "settings.multiple"
@@ -3824,7 +3826,7 @@ msgstr "Borrar nodo"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:101
 msgid "shortcuts.detach-component"
-msgstr "Desacoplar instancia"
+msgstr "Desvincular componente"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:102
 msgid "shortcuts.draw-curve"
@@ -4474,8 +4476,10 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Ahora no se efectuará ningún pago)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, markdown
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "$7 por editor/mes x %s"
+msgstr ""
+"**$%s** por mes"
 
 #: src/app/main/ui/settings/subscription.cljs:112
 msgid "subscription.settings.management.dialog.select-editors"
@@ -4934,6 +4938,9 @@ msgstr "Transformar texto"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:65
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
+
+msgid "workspace.assets.component-group-options"
+msgstr "Opciones del grupo de componentes"
 
 #: src/app/main/ui/workspace/context_menu.cljs:769
 msgid "workspace.context-menu.grid-cells.area"
@@ -6850,6 +6857,13 @@ msgstr "Crear una nota"
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Tablero de selección"
 
+#: src/app/main/ui/workspace/context_menu.cljs:385
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combinar como variantes"
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Los componentes tienen que estar en la misma página"
+
 #: src/app/main/ui/workspace/context_menu.cljs:573
 msgid "workspace.shape.menu.create-component"
 msgstr "Crear componente"
@@ -6872,11 +6886,11 @@ msgstr "Eliminar inicio de flujo"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:479
 msgid "workspace.shape.menu.detach-instance"
-msgstr "Desacoplar instancia"
+msgstr "Desvincular instancia"
 
 #: src/app/main/ui/workspace/sidebar/assets/common.cljs:478
 msgid "workspace.shape.menu.detach-instances-in-bulk"
-msgstr "Desacoplar instancias"
+msgstr "Desvincular instancias"
 
 #: src/app/main/ui/workspace/context_menu.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:78
 msgid "workspace.shape.menu.difference"
@@ -6974,6 +6988,10 @@ msgstr "Eliminar layout"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
 msgid "workspace.shape.menu.remove-variant-property"
 msgstr "Eliminar propiedad"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "La variante debe tener al menos una propiedad"
 
 #: src/app/main/ui/workspace/context_menu.cljs:318
 msgid "workspace.shape.menu.rename"
@@ -7221,6 +7239,22 @@ msgstr "Múltiples ficheros"
 msgid "workspace.tokens.export.no-tokens-themes-sets"
 msgstr "No existen tokens, temas o sets para exportar."
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "Introduce: none | uppercase | lowercase | capitalize o {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:799
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Introduce text decoration: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr "Valor de peso de fuente inválido: usa valores numéricos (100-950) o nombres estándar (thin, light, regular, bold, etc.) opcionalmente seguidos de 'Italic'"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:602
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Introduce: 400, Bold, 700 Italic, o {alias}"
+
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:33
 msgid "workspace.tokens.export.preview"
 msgstr "Previsualizar:"
@@ -7291,6 +7325,7 @@ msgid "workspace.tokens.invalid-json"
 msgstr "Error al importar: Datos de token no válidos en JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
+#, fuzzy
 msgid "workspace.tokens.invalid-json-token-name"
 msgstr "Error al importar: Nombre de token no válido en JSON."
 
@@ -7352,10 +7387,6 @@ msgstr "No hay temas."
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:49
 msgid "workspace.tokens.no-themes-currently"
 msgstr "Actualmente no existen temas."
-
-#: src/app/main/ui/workspace/tokens/modals/import.cljs
-msgid "workspace.tokens.no-tokens-found"
-msgstr "No se han encontrado tokens, sets o temas en este fichero."
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:148
 msgid "workspace.tokens.num-active-sets"

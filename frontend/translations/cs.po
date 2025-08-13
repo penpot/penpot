@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-06-09 09:13+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
 ">\n"
 "Language: cs\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=((n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2);\n"
-"X-Generator: Weblate 5.12-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -1552,10 +1552,6 @@ msgstr "Dekorace textu"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Žádná"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Přeškrtnutí"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Podtržení"
@@ -2377,6 +2373,7 @@ msgid "modals.big-nudge"
 msgstr "Velké posunutí"
 
 #: src/app/main/ui/settings/change_email.cljs:109
+#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Ověřit nový e-mail"
 
@@ -2653,6 +2650,7 @@ msgid "modals.invite-member.emails"
 msgstr "E-maily oddělené čárkou"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Některé e-maily jsou od současných členů týmu. Jejich pozvánky nebudou "

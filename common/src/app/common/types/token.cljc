@@ -10,6 +10,7 @@
    [app.common.schema :as sm]
    [clojure.data :as data]
    [clojure.set :as set]
+   [cuerdas.core :as str]
    [malli.util :as mu]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -29,20 +30,24 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def token-type->dtcg-token-type
-  {:boolean        "boolean"
-   :border-radius  "borderRadius"
-   :color          "color"
-   :dimensions     "dimension"
-   :font-size      "fontSizes"
-   :letter-spacing "letterSpacing"
-   :number         "number"
-   :opacity        "opacity"
-   :other          "other"
-   :rotation       "rotation"
-   :sizing         "sizing"
-   :spacing        "spacing"
-   :string         "string"
-   :stroke-width   "strokeWidth"})
+  {:boolean         "boolean"
+   :border-radius   "borderRadius"
+   :color           "color"
+   :dimensions      "dimension"
+   :font-family     "fontFamilies"
+   :font-size       "fontSizes"
+   :letter-spacing  "letterSpacing"
+   :number          "number"
+   :opacity         "opacity"
+   :other           "other"
+   :rotation        "rotation"
+   :sizing          "sizing"
+   :spacing         "spacing"
+   :string          "string"
+   :stroke-width    "borderWidth"
+   :text-case       "textCase"
+   :text-decoration "textDecoration"
+   :font-weight     "fontWeights"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
@@ -155,7 +160,37 @@
 
 (def letter-spacing-keys (schema-keys schema:letter-spacing))
 
-(def typography-keys (set/union font-size-keys letter-spacing-keys))
+(def ^:private schema:font-family
+  [:map
+   [:font-family {:optional true} token-name-ref]])
+
+(def font-family-keys (schema-keys schema:font-family))
+
+(def ^:private schema:text-case
+  [:map
+   [:text-case {:optional true} token-name-ref]])
+
+(def text-case-keys (schema-keys schema:text-case))
+
+(def ^:private schema:font-weight
+  [:map
+   [:font-weight {:optional true} token-name-ref]])
+
+(def font-weight-keys (schema-keys schema:font-weight))
+
+(def ^:private schema:text-decoration
+  [:map
+   [:text-decoration {:optional true} token-name-ref]])
+
+(def text-decoration-keys (schema-keys schema:text-decoration))
+
+(def typography-keys (set/union font-size-keys
+                                letter-spacing-keys
+                                font-family-keys
+                                font-weight-keys
+                                text-case-keys
+                                text-decoration-keys
+                                font-weight-keys))
 
 ;; TODO: Created to extract the font-size feature from the typography feature flag.
 ;; Delete this once the typography feature flag is removed.
@@ -192,6 +227,9 @@
    schema:number
    schema:font-size
    schema:letter-spacing
+   schema:font-family
+   schema:text-case
+   schema:text-decoration
    schema:dimensions])
 
 (defn shape-attr->token-attrs
@@ -221,6 +259,10 @@
 
      (font-size-keys shape-attr) #{shape-attr}
      (letter-spacing-keys shape-attr) #{shape-attr}
+     (font-family-keys shape-attr) #{shape-attr}
+     (text-case-keys shape-attr) #{shape-attr}
+     (text-decoration-keys shape-attr) #{shape-attr}
+     (font-weight-keys shape-attr) #{shape-attr}
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
@@ -322,3 +364,62 @@
 
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; TYPOGRAPHY
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn split-font-family
+  "Splits font family `value` string from into vector of font families.
+
+  Doesn't handle possible edge-case of font-families with `,` in their font family name."
+  [font-value]
+  (let [families (str/split font-value ",")
+        xform (comp
+               (map str/trim)
+               (remove str/empty?))]
+    (into [] xform families)))
+
+(defn join-font-family
+  "Joins font family `value` into a string to be edited with a single input."
+  [font-families]
+  (str/join ", " font-families))
+
+(def text-decoration-values #{"none" "underline" "strike-through"})
+
+(defn valid-text-decoration [value]
+  (let [normalized-value (str/lower (str/trim value))]
+    (when (contains? text-decoration-values normalized-value)
+      normalized-value)))
+
+(def font-weight-aliases
+  {"100" #{"thin" "hairline"},
+   "200" #{"ultra light" "extralight" "extraleicht" "extra-light" "ultra-light" "ultralight" "extra light"},
+   "300" #{"light" "leicht"},
+   "400" #{"book" "normal" "buch" "regular"},
+   "500" #{"kräftig" "medium" "kraeftig"},
+   "600" #{"demi-bold" "halbfett" "demibold" "demi bold" "semibold" "semi bold" "semi-bold"},
+   "700" #{"dreiviertelfett" "bold"},
+   "800" #{"extrabold" "fett" "extra-bold" "ultrabold" "ultra-bold" "extra bold" "ultra bold"},
+   "900" #{"heavy" "black" "extrafett"},
+   "950" #{"extra-black" "extra black" "ultra-black" "ultra black"}})
+
+(def font-weight-values (into #{} (keys font-weight-aliases)))
+
+(def font-weight-map
+  "A map of font-weight aliases that map to their number equivalent used by penpot fonts per `:weight`."
+  (->> font-weight-aliases
+       (reduce (fn [acc [k vs]]
+                 (into acc (zipmap vs (repeat k)))) {})))
+
+(defn valid-font-weight-variant
+  "Converts font-weight token value to a map like `{:weight \"100\" :style \"italic\"}`.
+  Converts a weight alias like `regular` to a number, needs to be a regular number.
+  Adds `italic` style when found in the `value` string."
+  [value]
+  (let [[weight style] (->> (str/split value #"\s+")
+                            (map str/lower))
+        weight (get font-weight-map weight weight)]
+    (when (font-weight-values weight)
+      (cond-> {:weight weight}
+        (= style "italic") (assoc :style "italic")))))

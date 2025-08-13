@@ -17,7 +17,7 @@ const debug = searchParams.has("debug")
   : [];
 
 const textEditorSelectionImposterElement = document.getElementById(
-  "text-editor-selection-imposter"
+  "text-editor-selection-imposter",
 );
 
 const textEditorElement = document.querySelector(".text-editor-content");
@@ -25,18 +25,18 @@ const textEditor = new TextEditor(textEditorElement, {
   styleDefaults: {
     "font-family": "sourcesanspro",
     "font-size": "14",
-    "font-weight": "400",
+    "font-weight": "500",
     "font-style": "normal",
     "line-height": "1.2",
     "letter-spacing": "0",
-    "direction": "ltr",
+    direction: "ltr",
     "text-align": "left",
     "text-transform": "none",
     "text-decoration": "none",
     "--typography-ref-id": '["~#\'",null]',
     "--typography-ref-file": '["~#\'",null]',
     "--font-id": '["~#\'","sourcesanspro"]',
-    "--fills": '[["^ ","~:fill-color","#000000","~:fill-opacity",1]]'
+    "--fills": '[["^ ","~:fill-color","#000000","~:fill-opacity",1]]',
   },
   selectionImposterElement: textEditorSelectionImposterElement,
   debug: new SelectionControllerDebug({
@@ -87,7 +87,7 @@ function onDirectionChange(e) {
   }
   if (e.target.checked) {
     textEditor.applyStylesToSelection({
-      "direction": e.target.value
+      direction: e.target.value,
     });
   }
 }
@@ -101,7 +101,7 @@ function onTextAlignChange(e) {
   }
   if (e.target.checked) {
     textEditor.applyStylesToSelection({
-      "text-align": e.target.value
+      "text-align": e.target.value,
     });
   }
 }
@@ -143,18 +143,18 @@ lineHeightElement.addEventListener("change", (e) => {
     console.log(e);
   }
   textEditor.applyStylesToSelection({
-    "line-height": e.target.value
-  })
-})
+    "line-height": e.target.value,
+  });
+});
 
 letterSpacingElement.addEventListener("change", (e) => {
   if (debug.includes("events")) {
     console.log(e);
   }
   textEditor.applyStylesToSelection({
-    "letter-spacing": e.target.value
-  })
-})
+    "letter-spacing": e.target.value,
+  });
+});
 
 fontStyleElement.addEventListener("change", (e) => {
   if (debug.includes("events")) {

@@ -17,7 +17,6 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.storage :as sto]
-   [app.util.time :as dt]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
    [cuerdas.core :as str]))
@@ -40,7 +39,7 @@
     (t/is (nil? (:error out)))
     (:result out)))
 
-(t/deftest generic-ops
+(t/deftest snapshots-crud
   (let [profile (th/create-profile* 1 {:is-active true})
         team-id (:default-team-id profile)
         proj-id (:default-project-id profile)
@@ -133,3 +132,85 @@
               (t/is (= (:type data) :validation))
               (t/is (= (:code data) :system-snapshots-cant-be-deleted)))))))))
 
+(t/deftest snapshots-locking
+  (let [profile-1 (th/create-profile* 1 {:is-active true})
+        profile-2 (th/create-profile* 2 {:is-active true})
+
+        team
+        (th/create-team* 1 {:profile-id (:id profile-1)})
+
+        project
+        (th/create-project* 1 {:profile-id (:id profile-1)
+                               :team-id (:id team)})
+
+        file
+        (th/create-file* 1 {:profile-id (:id profile-1)
+                            :project-id (:id project)
+                            :is-shared false})
+
+        snapshot
+        (let [params {::th/type :create-file-snapshot
+                      ::rpc/profile-id (:id profile-1)
+                      :file-id (:id file)
+                      :label "label1"}
+              out    (th/command! params)]
+          ;; (th/print-result! out)
+
+          (t/is (nil? (:error out)))
+          (:result out))]
+
+    ;; Add the secont profile to the team
+    (th/create-team-role* {:team-id (:id team)
+                           :profile-id (:id profile-2)
+                           :role :admin})
+
+    (t/testing "lock snapshot"
+      (let [params {::th/type :lock-file-snapshot
+                    ::rpc/profile-id (:id profile-1)
+                    :file-id (:id file)
+                    :id (:id snapshot)}
+            out    (th/command! params)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))
+
+        (let [snapshot (th/db-get :file-change {:id (:id snapshot)})]
+          (t/is (= (:id profile-1) (:locked-by snapshot))))))
+
+    (t/testing "delete locked snapshot"
+      (let [params {::th/type :delete-file-snapshot
+                    ::rpc/profile-id (:id profile-2)
+                    :file-id (:id file)
+                    :id (:id snapshot)}
+            out    (th/command! params)]
+
+        ;; (th/print-result! out)
+        (let [error (:error out)
+              data  (ex-data error)]
+          (t/is (th/ex-info? error))
+          (t/is (= (:type data) :validation))
+          (t/is (= (:code data) :snapshot-is-locked)))))
+
+    (t/testing "unlock snapshot"
+      (let [params {::th/type :unlock-file-snapshot
+                    ::rpc/profile-id (:id profile-1)
+                    :file-id (:id file)
+                    :id (:id snapshot)}
+            out    (th/command! params)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))
+
+        (let [snapshot (th/db-get :file-change {:id (:id snapshot)})]
+          (t/is (= nil (:locked-by snapshot))))))
+
+    (t/testing "delete locked snapshot"
+      (let [params {::th/type :delete-file-snapshot
+                    ::rpc/profile-id (:id profile-2)
+                    :file-id (:id file)
+                    :id (:id snapshot)}
+            out    (th/command! params)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out)))))))

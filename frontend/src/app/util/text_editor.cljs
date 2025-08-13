@@ -8,7 +8,7 @@
   "Draft related abstraction functions."
   (:require
    ["@penpot/draft-js" :as impl]
-   [app.common.text :as txt]))
+   [app.common.text :as legacy.txt]))
 
 ;; --- CONVERSION
 
@@ -33,14 +33,14 @@
 
 (defn import-content
   [content]
-  (-> content txt/convert-to-draft clj->js impl/convertFromRaw))
+  (-> content legacy.txt/convert-to-draft clj->js impl/convertFromRaw))
 
 (defn export-content
   [content]
   (-> content
       (impl/convertToRaw)
       (js->clj :keywordize-keys true)
-      (txt/convert-from-draft)))
+      (legacy.txt/convert-from-draft)))
 
 (defn get-editor-current-plain-text
   [state]
@@ -81,7 +81,7 @@
   (if (impl/isCurrentEmpty state)
     (get-editor-current-block-data state)
     (-> (.getCurrentInlineStyle ^js state)
-        (txt/styles-to-attrs)
+        (legacy.txt/styles-to-attrs)
         (dissoc :text-align :text-direction))))
 
 (defn update-editor-current-block-data
@@ -96,20 +96,20 @@
             (impl/updateBlockData state block-key (clj->js attrs))
 
             (let [attrs (-> (impl/getInlineStyle state block-key 0)
-                            (txt/styles-to-attrs)
+                            (legacy.txt/styles-to-attrs)
                             (dissoc :text-align :text-direction))]
               (impl/updateBlockData state block-key (clj->js attrs)))))
 
-        state (impl/applyInlineStyle state (txt/attrs-to-styles attrs))
+        state (impl/applyInlineStyle state (legacy.txt/attrs-to-styles attrs))
         selected (impl/getSelectedBlocks state)]
     (reduce update-blocks state selected)))
 
 (defn update-editor-current-inline-styles-fn
   [state update-fn]
   (let [attrs (-> (.getCurrentInlineStyle ^js state)
-                  (txt/styles-to-attrs)
+                  (legacy.txt/styles-to-attrs)
                   (update-fn))]
-    (impl/applyInlineStyle state (txt/attrs-to-styles attrs))))
+    (impl/applyInlineStyle state (legacy.txt/attrs-to-styles attrs))))
 
 (defn editor-split-block
   [state]
@@ -148,13 +148,13 @@
                             (js->clj :keywordize-keys true))]
               (-> state
                   (impl/selectBlock bkey)
-                  (impl/applyInlineStyle (txt/attrs-to-styles attrs)))))]
+                  (impl/applyInlineStyle (legacy.txt/attrs-to-styles attrs)))))]
       (as-> state $
         (reduce redfn $ blocks)
         (impl/setSelection $ selection)))))
 
 (defn insert-text [state text attrs]
-  (let [style (txt/attrs-to-styles attrs)]
+  (let [style (legacy.txt/attrs-to-styles attrs)]
     (impl/insertText state text (clj->js attrs) (clj->js style))))
 
 (defn get-style-override [state]

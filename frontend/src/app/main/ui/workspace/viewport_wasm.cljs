@@ -7,11 +7,11 @@
 (ns app.main.ui.workspace.viewport-wasm
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.color :as clr]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
@@ -51,6 +51,7 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
+   [app.render-wasm.shape :as wasm.shape]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
@@ -280,7 +281,6 @@
                    (:x first-shape)
                    (:x selected-frame))
 
-
         offset-y (if selecting-first-level-frame?
                    (:y first-shape)
                    (:y selected-frame))
@@ -292,7 +292,6 @@
     ;;       canvas, even though we are not using `page-id` inside the hook.
     ;;       We think moving this out to a handler will make the render code
     ;;       harder to follow through.
-
     (mf/with-effect [page-id]
       (when-let [canvas (mf/ref-val canvas-ref)]
         (->> wasm.api/module
@@ -349,6 +348,9 @@
           (wasm.api/show-grid @hover-top-frame-id)
           (wasm.api/clear-grid))))
 
+    (mf/with-effect [objects]
+      (wasm.shape/set-current-page-objects! objects))
+
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
     (hooks/setup-cursor cursor alt? mod? space? panning drawing-tool path-drawing? path-editing? z? read-only?)
@@ -385,10 +387,8 @@
                                       :zoom zoom}])
 
       (when picking-color?
-        [:& pixel-overlay/pixel-overlay {:vport vport
-                                         :vbox vbox
-                                         :layout layout
-                                         :viewport-ref viewport-ref}])]
+        [:> pixel-overlay/pixel-overlay-wasm* {:viewport-ref viewport-ref
+                                               :canvas-ref canvas-ref}])]
 
      [:canvas {:id "render"
                :data-testid "canvas-wasm-shapes"

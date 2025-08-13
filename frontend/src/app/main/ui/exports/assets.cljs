@@ -9,9 +9,9 @@
   "Assets exportation common components."
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as clr]
    [app.main.data.exports.assets :as de]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]

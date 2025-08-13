@@ -267,7 +267,12 @@
 (def shape-attribute-actions-map
   (let [stroke-width (partial generic-attribute-actions #{:stroke-width} "Stroke Width")
         font-size (partial generic-attribute-actions #{:font-size} "Font Size")
+        letter-spacing (partial generic-attribute-actions #{:letter-spacing} "Letter Spacing")
+        font-family (partial generic-attribute-actions #{:font-family} "Font Family")
         line-height #(generic-attribute-actions #{:line-height} "Line Height" (assoc % :on-update-shape dwta/update-line-height))
+        text-case (partial generic-attribute-actions #{:text-case} "Text Case")
+        text-decoration (partial generic-attribute-actions #{:text-decoration} "Text Decoration")
+        font-weight (partial generic-attribute-actions #{:font-weight} "Font Weight")
         border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
                                                                            :r2 "Top Right"
                                                                            :r4 "Bottom Left"
@@ -291,6 +296,12 @@
                   (when (seq line-height) line-height))))
      :stroke-width stroke-width
      :font-size font-size
+     :font-family font-family
+     :line-height line-height
+     :letter-spacing letter-spacing
+     :text-case text-case
+     :text-decoration text-decoration
+     :font-weight font-weight
      :dimensions (fn [context-data]
                    (-> (concat
                         (when (seq (sizing-attribute-actions context-data)) [{:title "Sizing" :submenu :sizing}])
@@ -322,12 +333,12 @@
                                              :token token}))))}
      {:title (tr "workspace.tokens.duplicate")
       :no-selectable true
-      :action #(st/emit! (dwtl/duplicate-token (:name token)))}
+      :action #(st/emit! (dwtl/duplicate-token (:id token)))}
      {:title (tr "workspace.tokens.delete")
       :no-selectable true
       :action #(st/emit! (dwtl/delete-token
                           (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
-                          (:name token)))}]))
+                          (:id token)))}]))
 
 (defn- allowed-shape-attributes [shapes]
   (reduce into #{} (map #(ctt/shape-type->attributes (:type %)) shapes)))
@@ -456,8 +467,8 @@
   (let [objects  (mf/deref refs/workspace-page-objects)
         selected (mf/deref refs/selected-shapes)
 
-        token-name (:token-name mdata)
-        token (mf/deref (refs/workspace-token-in-selected-set token-name))
+        token-id (:token-id mdata)
+        token (mf/deref (refs/workspace-token-in-selected-set token-id))
         token-type (:type token)
         selected-token-set-name (mf/deref refs/selected-token-set-name)
 

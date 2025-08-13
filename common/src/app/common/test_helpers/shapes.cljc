@@ -6,18 +6,18 @@
 
 (ns app.common.test-helpers.shapes
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.files.helpers :as cfh]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
-   [app.common.text :as txt]
-   [app.common.types.color :as ctc]
+   [app.common.types.color :as clr]
    [app.common.types.container :as ctn]
+   [app.common.types.library :as ctl]
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.interactions :as ctsi]
+   [app.common.types.text :as txt]
    [app.common.types.typographies-list :as cttl]
    [app.common.types.typography :as ctt]))
 
@@ -125,7 +125,7 @@
 (defn add-sample-library-color
   [file label & {:keys [] :as params}]
   (let [color (sample-library-color label params)]
-    (update file :data ctc/add-color color)))
+    (update file :data ctl/add-color color)))
 
 (defn sample-typography
   [label & {:keys [] :as params}]

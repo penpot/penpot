@@ -99,12 +99,13 @@ impl State {
     pub fn delete_shape(&mut self, id: Uuid) {
         // We don't really do a self.shapes.remove so that redo/undo keep working
         if let Some(shape) = self.shapes.get(&id) {
-            let tiles::TileRect(rsx, rsy, rex, rey) = self.render_state.get_tiles_for_shape(shape);
+            let tiles::TileRect(rsx, rsy, rex, rey) =
+                self.render_state
+                    .get_tiles_for_shape(shape, &self.shapes, &self.modifiers);
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = tiles::Tile(x, y);
-                    self.render_state.surfaces.remove_cached_tile_surface(tile);
-                    self.render_state.tiles.remove_shape_at(tile, id);
+                    self.render_state.remove_cached_tile_shape(tile, id);
                 }
             }
         }
@@ -122,6 +123,31 @@ impl State {
         self.render_state.set_background_color(color);
     }
 
+    /// Sets the parent for the current shape and updates the parent's extended rectangle
+    ///
+    /// When a shape is assigned a new parent, the parent's extended rectangle needs to be
+    /// invalidated and recalculated to include the new child. This ensures that frames
+    /// and groups properly encompass their children.
+    pub fn set_parent_for_current_shape(&mut self, id: Uuid) {
+        let shape = {
+            let Some(shape) = self.current_shape_mut() else {
+                panic!("Invalid current shape")
+            };
+            shape.set_parent(id);
+            shape.clone()
+        };
+
+        if let Some(parent) = shape.parent_id.and_then(|id| self.shapes.get_mut(&id)) {
+            parent.invalidate_extrect();
+            parent.add_child(shape.id);
+        }
+    }
+
+    /// Sets the selection rectangle for the current shape and processes its ancestors
+    ///
+    /// When a shape's selection rectangle changes, all its ancestors need to have their
+    /// extended rectangles recalculated because the shape's bounds may have changed.
+    /// This ensures proper rendering of frames and groups containing the modified shape.
     pub fn set_selrect_for_current_shape(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         let shape = {
             let Some(shape) = self.current_shape_mut() else {
@@ -130,16 +156,14 @@ impl State {
             shape.set_selrect(left, top, right, bottom);
             shape.clone()
         };
-
-        // We don't need to update the tile for the root shape.
-        if !shape.id.is_nil() {
-            self.render_state.update_tile_for(&shape);
-        }
+        self.render_state
+            .process_shape_ancestors(&shape, &mut self.shapes, &self.modifiers);
     }
 
     pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
         if let Some(shape) = self.shapes.get(&shape_id) {
-            self.render_state.update_tile_for(shape);
+            self.render_state
+                .update_tile_for(shape, &self.shapes, &self.modifiers);
         }
     }
 
@@ -148,7 +172,8 @@ impl State {
             panic!("Invalid current shape")
         };
         if !shape.id.is_nil() {
-            self.render_state.update_tile_for(&shape.clone());
+            self.render_state
+                .update_tile_for(&shape.clone(), &self.shapes, &self.modifiers);
         }
     }
 
@@ -164,7 +189,7 @@ impl State {
 
     pub fn rebuild_modifier_tiles(&mut self) {
         self.render_state
-            .rebuild_modifier_tiles(&self.shapes, &self.modifiers);
+            .rebuild_modifier_tiles(&mut self.shapes, &self.modifiers);
     }
 
     pub fn font_collection(&self) -> &FontCollection {

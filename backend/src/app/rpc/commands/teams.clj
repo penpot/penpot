@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.types.team :as tt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -30,7 +31,6 @@
    [app.setup :as-alias setup]
    [app.storage :as sto]
    [app.util.services :as sv]
-   [app.util.time :as dt]
    [app.worker :as wrk]
    [clojure.set :as set]))
 
@@ -666,7 +666,7 @@
 
   (let [delay (ldel/get-deletion-delay team)
         team  (db/update! conn :team
-                          {:deleted-at (dt/in-future delay)}
+                          {:deleted-at (ct/in-future delay)}
                           {:id id}
                           {::db/return-keys true})]
 

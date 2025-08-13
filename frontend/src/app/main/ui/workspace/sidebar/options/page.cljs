@@ -8,8 +8,8 @@
   "Page options menu entries."
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
+   [app.common.types.color :as clr]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]

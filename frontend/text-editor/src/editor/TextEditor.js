@@ -12,7 +12,11 @@ import ChangeController from "./controllers/ChangeController.js";
 import SelectionController from "./controllers/SelectionController.js";
 import { createSelectionImposterFromClientRects } from "./selection/Imposter.js";
 import { addEventListeners, removeEventListeners } from "./Event.js";
-import { mapContentFragmentFromHTML, mapContentFragmentFromString } from "./content/dom/Content.js";
+import {
+  mapContentFragmentFromHTML,
+  mapContentFragmentFromString,
+} from "./content/dom/Content.js";
+import { resetInertElement } from "./content/dom/Style.js";
 import { createRoot, createEmptyRoot } from "./content/dom/Root.js";
 import { createParagraph } from "./content/dom/Paragraph.js";
 import { createEmptyInline, createInline } from "./content/dom/Inline.js";
@@ -173,11 +177,11 @@ export class TextEditor extends EventTarget {
     this.#selectionController = new SelectionController(
       this,
       document.getSelection(),
-      options
+      options,
     );
     this.#selectionController.addEventListener(
       "stylechange",
-      this.#onStyleChange
+      this.#onStyleChange,
     );
     addEventListeners(this.#element, this.#events, {
       capture: true,
@@ -199,7 +203,7 @@ export class TextEditor extends EventTarget {
       if (rects) {
         const rect = this.#selectionImposterElement.getBoundingClientRect();
         this.#selectionImposterElement.replaceChildren(
-          createSelectionImposterFromClientRects(rect, rects)
+          createSelectionImposterFromClientRects(rect, rects),
         );
       }
     }
@@ -258,7 +262,15 @@ export class TextEditor extends EventTarget {
    *
    * @param {ClipboardEvent} e
    */
-  #onCopy = (e) => clipboard.copy(e, this, this.#selectionController);
+  #onCopy = (e) => {
+    this.dispatchEvent(
+      new CustomEvent("clipboardchange", {
+        detail: this.currentStyle,
+      }),
+    );
+
+    clipboard.copy(e, this, this.#selectionController);
+  };
 
   /**
    * Event called before the DOM is modified.
@@ -304,7 +316,10 @@ export class TextEditor extends EventTarget {
       return;
     }
 
-    if (e.inputType === "insertCompositionText" && this.#fixInsertCompositionText) {
+    if (
+      e.inputType === "insertCompositionText" &&
+      this.#fixInsertCompositionText
+    ) {
       e.preventDefault();
       this.#fixInsertCompositionText = false;
       if (e.data) {
@@ -331,7 +346,7 @@ export class TextEditor extends EventTarget {
           type: type,
           mutations: mutations,
         },
-      })
+      }),
     );
   }
 
@@ -492,7 +507,7 @@ export class TextEditor extends EventTarget {
     this.#changeController = null;
     this.#selectionController.removeEventListener(
       "stylechange",
-      this.#onStyleChange
+      this.#onStyleChange,
     );
     this.#selectionController.dispose();
     this.#selectionController = null;
@@ -502,10 +517,11 @@ export class TextEditor extends EventTarget {
   }
 }
 
-export function createRootFromHTML(html) {
-  const fragment = mapContentFragmentFromHTML(html);
-  const root = createRoot([]);
+export function createRootFromHTML(html, style) {
+  const fragment = mapContentFragmentFromHTML(html, style);
+  const root = createRoot([], style);
   root.replaceChildren(fragment);
+  resetInertElement();
   return root;
 }
 
@@ -517,7 +533,7 @@ export function createRootFromString(string) {
 }
 
 export function isEditor(instance) {
-  return (instance instanceof TextEditor);
+  return instance instanceof TextEditor;
 }
 
 /* Convenience function based API for Text Editor */
@@ -538,7 +554,7 @@ export function setRoot(instance, root) {
 }
 
 export function create(element, options) {
-  return new TextEditor(element, {...options});
+  return new TextEditor(element, { ...options });
 }
 
 export function getCurrentStyle(instance) {

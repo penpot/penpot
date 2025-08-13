@@ -6,8 +6,8 @@
 
 (ns app.util.text.content.styles
   (:require
-   [app.common.text :as txt]
    [app.common.transit :as transit]
+   [app.common.types.text :as txt]
    [cuerdas.core :as str]))
 
 (defn encode

@@ -12,7 +12,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.logic.variant-properties :as clvp]
-   [app.common.text :as ct]
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.pages-list :as ctpl]
@@ -23,7 +22,7 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(def text-typography-attrs (set ct/text-typography-attrs))
+(def text-typography-attrs (set ctt/text-typography-attrs))
 
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value

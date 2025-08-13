@@ -10,8 +10,8 @@
    [app.common.data :as d]
    [app.common.logging :as l]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.metrics :as mtx]
-   [app.util.time :as dt]
    [app.worker :as-alias wrk]
    [integrant.core :as ig]
    [promesa.exec :as px])
@@ -55,7 +55,7 @@
 (defmethod ig/expand-key ::wrk/monitor
   [k v]
   {k (-> (d/without-nils v)
-         (assoc ::interval (dt/duration "2s")))})
+         (assoc ::interval (ct/duration "2s")))})
 
 (defmethod ig/init-key ::wrk/monitor
   [_ {:keys [::wrk/executor ::mtx/metrics ::interval ::wrk/name]}]

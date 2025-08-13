@@ -120,7 +120,45 @@
     (t/is (= (count (:variant-properties comp01')) 2))
     (t/is (= (count (:variant-properties comp02)) 1))
     (t/is (= (count (:variant-properties comp02')) 2))
-    (t/is (= (-> comp01' :variant-properties last :value) "Value 1"))))
+    (t/is (= (-> comp01' :variant-properties last :value) "Value 1"))
+    (t/is (= (-> comp02' :variant-properties last :value) "Value 2"))))
+
+
+
+(t/deftest test-add-new-property-with-the-same-value
+  (let [;; ==== Setup
+        file    (-> (thf/sample-file :file1)
+                    (thv/add-variant :v01 :c01 :m01 :c02 :m02))
+        v-id    (-> (ths/get-shape file :v01) :id)
+        page    (thf/current-page file)
+
+        comp01  (thc/get-component file :c01)
+        comp02  (thc/get-component file :c02)
+
+
+        ;; ==== Action
+        changes (-> (pcb/empty-changes nil)
+                    (pcb/with-page-id (:id page))
+                    (pcb/with-library-data (:data file))
+                    (pcb/with-objects (:objects page))
+                    (clvp/generate-add-new-property v-id {:property-value "Value 1"}))
+
+
+        file'   (thf/apply-changes file changes)
+
+
+
+        ;; ==== Get
+        comp01' (thc/get-component file' :c01)
+        comp02' (thc/get-component file' :c02)]
+
+    ;; ==== Check
+    (t/is (= (count (:variant-properties comp01)) 1))
+    (t/is (= (count (:variant-properties comp01')) 2))
+    (t/is (= (count (:variant-properties comp02)) 1))
+    (t/is (= (count (:variant-properties comp02')) 2))
+    (t/is (= (-> comp01' :variant-properties last :value) "Value 1"))
+    (t/is (= (-> comp02' :variant-properties last :value) "Value 1"))))
 
 
 
@@ -166,7 +204,7 @@
     (t/is (= (count (:variant-properties comp01')) 1))
     (t/is (= (count (:variant-properties comp02)) 2))
     (t/is (= (count (:variant-properties comp02')) 1))
-    (t/is (= (-> comp01' :variant-properties first :name) "Property2"))))
+    (t/is (= (-> comp01' :variant-properties first :name) "Property 2"))))
 
 (t/deftest test-update-property-value
   (let [;; ==== Setup

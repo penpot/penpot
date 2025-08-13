@@ -48,10 +48,7 @@ function isContentFragmentFromDocumentInline(document) {
  * @returns {DocumentFragment}
  */
 export function mapContentFragmentFromDocument(document, root, styleDefaults) {
-  const nodeIterator = document.createNodeIterator(
-    root,
-    NodeFilter.SHOW_TEXT
-  );
+  const nodeIterator = document.createNodeIterator(root, NodeFilter.SHOW_TEXT);
   const fragment = document.createDocumentFragment();
 
   let currentParagraph = null;
@@ -78,6 +75,8 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
     if (!fontSize) console.warn("font-size", fontSize);
     const fontFamily = inline.style.getPropertyValue("font-family");
     if (!fontFamily) console.warn("font-family", fontFamily);
+    const fontWeight = inline.style.getPropertyValue("font-weight");
+    if (!fontWeight) console.warn("font-weight", fontWeight);
     currentParagraph.appendChild(inline);
 
     currentNode = nodeIterator.nextNode();
@@ -110,7 +109,7 @@ export function mapContentFragmentFromHTML(html, styleDefaults) {
   return mapContentFragmentFromDocument(
     htmlDocument,
     htmlDocument.documentElement,
-    styleDefaults
+    styleDefaults,
   );
 }
 
@@ -129,9 +128,10 @@ export function mapContentFragmentFromString(string, styleDefaults) {
       fragment.appendChild(createEmptyParagraph(styleDefaults));
     } else {
       fragment.appendChild(
-        createParagraph([
-          createInline(new Text(line), styleDefaults)
-        ], styleDefaults)
+        createParagraph(
+          [createInline(new Text(line), styleDefaults)],
+          styleDefaults,
+        ),
       );
     }
   }

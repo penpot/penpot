@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2024-08-11 20:09+0000\n"
-"Last-Translator: Alhassan Atama <Komputarist@gmail.com>\n"
-"Language-Team: Igbo "
-"<https://hosted.weblate.org/projects/penpot/frontend/ig/>\n"
+"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"Language-Team: Igbo <https://hosted.weblate.org/projects/penpot/frontend/ig/>"
+"\n"
 "Language: ig\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.7-dev\n"
+"X-Generator: Weblate 5.13-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
@@ -1074,10 +1074,6 @@ msgstr "Nkwazi ederede"
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Ncha ncha"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:141
-msgid "inspect.attributes.typography.text-decoration.strikethrough"
-msgstr "Kụọgafee"
-
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "N'okpuru"
@@ -1825,6 +1821,7 @@ msgid "modals.invite-member.emails"
 msgstr "Ozi-n gasị,  Rịkọm e kewara"
 
 #: src/app/main/ui/dashboard/team.cljs:228
+#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
 msgstr "Ụfọdụ ozi n sitere na ndị  ugbu a A gaghị e ịga akwụkwọ ozi mkpọta ha"
 

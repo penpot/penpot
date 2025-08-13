@@ -17,12 +17,13 @@
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
-   [app.common.logic.shapes :as cls]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
+   [app.common.types.fills :as types.fills]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
+   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
@@ -37,7 +38,6 @@
    [app.main.data.project :as dpj]
    [app.main.data.workspace.bool :as dwb]
    [app.main.data.workspace.clipboard :as dwcp]
-   [app.main.data.workspace.collapse :as dwco]
    [app.main.data.workspace.colors :as dwcl]
    [app.main.data.workspace.comments :as dwcm]
    [app.main.data.workspace.common :as dwc]
@@ -80,6 +80,7 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
+   [clojure.walk :as walk]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
@@ -133,10 +134,30 @@
                                         (rx/of [k v])))))))
        (rx/reduce conj {})))
 
+
+(defn process-fills
+  "A function responsible to analyze the file data or shape for references
+  and apply lookup-index on it."
+  [data]
+  (letfn [(process-map-form [form]
+            (let [fills (get form :fills)]
+              (if (vector? fills)
+                (assoc form :fills (types.fills/from-plain fills))
+                form)))
+
+          (process-form [form]
+            (if (map? form)
+              (process-map-form form)
+              form))]
+    (if (contains? cf/flags :frontend-binary-fills)
+      (walk/postwalk process-form data)
+      data)))
+
 (defn- resolve-file
   [file]
   (->> (fpmap/resolve-file file)
        (rx/map :data)
+       (rx/map process-fills)
        (rx/mapcat
         (fn [{:keys [pages-index] :as data}]
           (->> (rx/from (seq pages-index))
@@ -660,52 +681,13 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
-(defn relocate-shapes
-  [ids parent-id to-index & [ignore-parents?]]
-  (dm/assert! (every? uuid? ids))
-  (dm/assert! (set? ids))
-  (dm/assert! (uuid? parent-id))
-  (dm/assert! (number? to-index))
-
-  (ptk/reify ::relocate-shapes
-    ptk/WatchEvent
-    (watch [it state _]
-      (let [page-id  (:current-page-id state)
-            objects  (dsh/lookup-page-objects state page-id)
-            data     (dsh/lookup-file-data state)
-
-            ;; Ignore any shape whose parent is also intended to be moved
-            ids      (cfh/clean-loops objects ids)
-
-            ;; If we try to move a parent into a child we remove it
-            ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
-
-            all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
-
-            changes (-> (pcb/empty-changes it)
-                        (pcb/with-page-id page-id)
-                        (pcb/with-objects objects)
-                        (pcb/with-library-data data)
-                        (cls/generate-relocate
-                         parent-id
-                         to-index
-                         ids
-                         :ignore-parents? ignore-parents?))
-            undo-id (js/Symbol)]
-
-        (rx/of (dwu/start-undo-transaction undo-id)
-               (dch/commit-changes changes)
-               (dwco/expand-collapse parent-id)
-               (ptk/data-event :layout/update {:ids (concat all-parents ids)})
-               (dwu/commit-undo-transaction undo-id))))))
-
 (defn relocate-selected-shapes
   [parent-id to-index]
   (ptk/reify ::relocate-selected-shapes
     ptk/WatchEvent
     (watch [_ state _]
       (let [selected (dsh/lookup-selected state)]
-        (rx/of (relocate-shapes selected parent-id to-index))))))
+        (rx/of (dwsh/relocate-shapes selected parent-id to-index))))))
 
 (defn start-editing-selected
   []
@@ -1146,7 +1128,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [orphans (set (into [] (keys (find-orphan-shapes state))))]
-        (rx/of (relocate-shapes orphans uuid/zero 0 true))))))
+        (rx/of (dwsh/relocate-shapes orphans uuid/zero 0 true))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sitemap
@@ -1271,6 +1253,13 @@
                            copies)]
         (js/console.log "Copies no ref" (count copies-no-ref) (clj->js copies-no-ref))
         (js/console.log "Childs no ref" (count childs-no-ref) (clj->js childs-no-ref))))))
+
+(defn set-clipboard-style
+  [style]
+  (ptk/reify ::set-clipboard-style
+    ptk/UpdateEvent
+    (update [_ state]
+      (assoc-in state [:workspace-global :clipboard-style] style))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exports

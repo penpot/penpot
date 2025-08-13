@@ -17,9 +17,9 @@
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
-   [app.common.text :as txt]
    [app.common.types.container :as ctn]
-   [app.common.types.shape :as cts]))
+   [app.common.types.shape :as cts]
+   [app.common.types.text :as txt]))
 
 ;; ----- File building
 
@@ -35,7 +35,7 @@
 (defn add-text
   [file text-label content & {:keys [text-params] :as text}]
   (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0})
-                  (txt/change-text content))]
+                  (update :content txt/change-text content))]
     (ths/add-sample-shape file text-label
                           (merge shape
                                  text-params))))
@@ -74,7 +74,7 @@
 (defn add-frame-with-text
   [file frame-label child-label text & {:keys [frame-params child-params]}]
   (let [shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                  (txt/change-text text)
+                  (update :content txt/change-text text)
                   (assoc :position-data nil
                          :parent-label frame-label))]
     (-> file
@@ -300,9 +300,9 @@
                                      {}
                                      (true? keep-touched?))
 
-        changes (if keep-touched?
-                  (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries (:data file))
-                  changes)
+        [changes _] (if keep-touched?
+                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries (:data file))
+                      [changes nil])
 
 
         file' (thf/apply-changes file changes)]

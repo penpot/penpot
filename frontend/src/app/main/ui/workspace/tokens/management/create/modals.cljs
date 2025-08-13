@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon  :as i]
-   [app.main.ui.workspace.tokens.management.create.form :refer [form]]
+   [app.main.ui.workspace.tokens.management.create.form :refer [form-wrapper*]]
    [app.util.i18n :refer [tr]]
    [okulary.core :as l]
    [rumext.v2 :as mf]))
@@ -88,11 +88,11 @@
                        :icon i/close
                        :variant "action"
                        :aria-label (tr "labels.close")}]
-     [:& form {:token token
-               :action action
-               :selected-token-set-name selected-token-set-name
-               :token-type token-type
-               :on-display-colorpicker update-modal-size}]]))
+     [:> form-wrapper* {:token token
+                        :action action
+                        :selected-token-set-name selected-token-set-name
+                        :token-type token-type
+                        :on-display-colorpicker update-modal-size}]]))
 
 ;; Modals ----------------------------------------------------------------------
 
@@ -189,5 +189,29 @@
 (mf/defc letter-spacing-modal
   {::mf/register modal/components
    ::mf/register-as :tokens/letter-spacing}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc font-familiy-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/font-family}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc text-case-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/text-case}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc text-decoration-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/text-decoration}
+  [properties]
+  [:& token-update-create-modal properties])
+
+(mf/defc font-weight-modal
+  {::mf/register modal/components
+   ::mf/register-as :tokens/font-weight}
   [properties]
   [:& token-update-create-modal properties])

@@ -14,6 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
@@ -21,7 +22,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc asset-group-title
-  [{:keys [file-id section path group-open? on-rename on-ungroup]}]
+  [{:keys [file-id section path group-open? on-rename on-ungroup on-group-combine-variants can-combine?]}]
   (when-not (empty? path)
     (let [[other-path last-path truncated] (cfh/compact-path path 35 true)
           menu-state     (mf/use-state cmm/initial-context-menu-state)
@@ -38,33 +39,50 @@
           (mf/use-fn
            (fn [event]
              (dom/prevent-default event)
+             (dom/stop-propagation event)
              (let [pos (dom/get-client-position event)]
                (swap! menu-state cmm/open-context-menu pos))))
 
           on-close-menu
           (mf/use-fn #(swap! menu-state cmm/close-context-menu))]
-      [:div {:class (stl/css :group-title)
-             :on-context-menu on-context-menu}
-       [:& title-bar {:collapsable    true
-                      :collapsed      (not group-open?)
-                      :all-clickable  true
-                      :on-collapsed   on-fold-group
-                      :title          (mf/html [:* (when-not (empty? other-path)
-                                                     [:span {:class (stl/css :pre-path)
-                                                             :title (when truncated path)}
-                                                      other-path "\u00A0\u2022\u00A0"])
-                                                [:span {:class (stl/css :path)
-                                                        :title (when truncated path)}
-                                                 last-path]])}]
-       [:& cmm/assets-context-menu
-        {:on-close on-close-menu
-         :state @menu-state
-         :options [{:name    (tr "workspace.assets.rename")
-                    :id      "assets-rename-group"
-                    :handler #(on-rename % path last-path)}
-                   {:name    (tr "workspace.assets.ungroup")
-                    :id      "assets-ungroup-group"
-                    :handler  #(on-ungroup path)}]}]])))
+      [:div {:class (stl/css :group-title-wrapper)}
+       [:div {:class (stl/css :group-title)
+              :on-context-menu on-context-menu}
+        [:& title-bar {:collapsable    true
+                       :collapsed      (not group-open?)
+                       :all-clickable  true
+                       :on-collapsed   on-fold-group
+                       :title          (mf/html [:* (when-not (empty? other-path)
+                                                      [:span {:class (stl/css :pre-path)
+                                                              :title (when truncated path)}
+                                                       other-path "\u00A0\u2022\u00A0"])
+                                                 [:span {:class (stl/css :path)
+                                                         :title (when truncated path)}
+                                                  last-path]
+                                                 #_[:span {:class (stl/css :title-menu)
+                                                           :on-click on-context-menu}
+                                                    "aaa"]])}]
+
+        [:& cmm/assets-context-menu
+         {:on-close on-close-menu
+          :state @menu-state
+          :options (cond-> [{:name    (tr "workspace.assets.rename")
+                             :id      "assets-rename-group"
+                             :handler #(on-rename % path last-path)}
+                            {:name    (tr "workspace.assets.ungroup")
+                             :id      "assets-ungroup-group"
+                             :handler  #(on-ungroup path)}]
+                     can-combine?
+                     (conj
+                      {:name    (tr "workspace.shape.menu.combine-as-variants")
+                       :id      "assets-combine-as-variants"
+                       :handler  #(on-group-combine-variants path)}))}]]
+
+       [:div {:class (stl/css :title-menu)}
+        [:> icon-button* {:variant "ghost"
+                          :aria-label (tr "workspace.assets.component-group-options")
+                          :on-click on-context-menu
+                          :icon "menu"}]]])))
 
 (defn group-assets
   "Convert a list of assets in a nested structure like this:

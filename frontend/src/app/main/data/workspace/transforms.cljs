@@ -395,7 +395,7 @@
                  (gm/set-objects-modifiers objects))]
 
          (if (features/active-feature? state "render-wasm/v1")
-           (rx/of (dwm/apply-wasm-modifiers modif-tree))
+           (rx/of (dwm/apply-wasm-modifiers modif-tree {:ignore-snap-pixel true}))
            (rx/of (dwm/apply-modifiers* objects modif-tree nil options))))))))
 
 (defn change-orientation
@@ -551,9 +551,7 @@
 
 (defn start-move-selected
   "Enter mouse move mode, until mouse button is released."
-  ([]
-   (start-move-selected nil false))
-
+  ([] (start-move-selected nil false))
   ([id shift?]
    (ptk/reify ::start-move-selected
      ptk/WatchEvent
@@ -947,13 +945,13 @@
                          (rx/take-until stopper))]
                 (rx/concat
                  (rx/merge
-                  (rx/of (nudge-selected-shapes direction shift?))
                   (->> modif-stream
                        (rx/map #(dwm/set-wasm-modifiers % {:ignore-snap-pixel true})))
 
                   (->> modif-stream
                        (rx/last)
-                       (rx/map #(dwm/apply-wasm-modifiers % {:ignore-snap-pixel true}))))
+                       (rx/map #(dwm/apply-wasm-modifiers % {:ignore-snap-pixel true})))
+                  (rx/of (nudge-selected-shapes direction shift?)))
                  (rx/of (finish-transform))))
 
               (rx/concat
@@ -972,8 +970,9 @@
 (defn move-selected
   "Move shapes a fixed increment in one direction, from a keyboard action."
   [direction shift?]
-  (dm/assert! (contains? valid-directions direction))
-  (dm/assert! (boolean? shift?))
+
+  (assert (contains? valid-directions direction))
+  (assert (boolean? shift?))
 
   (ptk/reify ::move-selected
     ptk/WatchEvent

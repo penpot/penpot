@@ -361,6 +361,7 @@
         main-instance?      (ctk/main-instance? shape)
 
         component-id        (:component-id shape)
+        variant-id          (:variant-id shape)
         library-id          (:component-file shape)
 
         local-component?    (= library-id current-file-id)
@@ -441,6 +442,10 @@
              (st/emit! (dwv/add-new-variant id))
              (st/emit! (dwv/transform-in-variant id))))
 
+        do-add-new-property
+        #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"
+                                                     :editing? true}))
+
         do-show-local-component
         #(st/emit! (dwl/go-to-local-component :id component-id))
 
@@ -497,5 +502,8 @@
                       (when (and variants? (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
                          :shortcut :create-component
-                         :action do-add-variant})]]
+                         :action do-add-variant})
+                      (when (and variants? same-variant? main-instance? variant-id)
+                        {:title (tr "workspace.shape.menu.add-variant-property")
+                         :action do-add-new-property})]]
     (filter (complement nil?) menu-entries)))

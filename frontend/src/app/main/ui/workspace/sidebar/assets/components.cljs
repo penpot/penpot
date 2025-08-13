@@ -176,7 +176,7 @@
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected on-asset-click
            on-drag-start do-rename cancel-rename on-rename-group on-group on-ungroup on-context-menu
-           selected-full is-local count-variants]}]
+           selected-full is-local count-variants on-group-combine-variants]}]
 
   (let [group-open?    (if (false? (get open-groups prefix)) ;; if the user has closed it specifically, respect that
                          false
@@ -190,6 +190,12 @@
                          (into #{}
                                (comp (map :path) (d/nilv ""))
                                selected-full))
+
+        components     (not-empty (get groups "" []))
+        can-combine?   (and is-local
+                            (> (count components) 1)
+                            (not-any? ctc/is-variant? components)
+                            (apply = (map :main-instance-page components)))
         on-drag-enter
         (mf/use-fn
          (mf/deps dragging* prefix selected-paths is-local drag-data*)
@@ -221,47 +227,48 @@
        :section :components
        :path prefix
        :group-open? group-open?
+       :can-combine? can-combine?
        :on-rename on-rename-group
-       :on-ungroup on-ungroup}]
+       :on-ungroup on-ungroup
+       :on-group-combine-variants on-group-combine-variants}]
 
      (when group-open?
        [:*
-        (let [components (not-empty (get groups "" []))]
-          [:div {:class-name (stl/css-case :asset-grid listing-thumbs?
-                                           :asset-enum (not listing-thumbs?))
-                 :on-drag-enter on-drag-enter
-                 :on-drag-leave on-drag-leave
-                 :on-drag-over dom/prevent-default
-                 :on-drop on-drop}
+        [:div {:class (stl/css-case :asset-grid listing-thumbs?
+                                    :asset-enum (not listing-thumbs?))
+               :on-drag-enter on-drag-enter
+               :on-drag-leave on-drag-leave
+               :on-drag-over dom/prevent-default
+               :on-drop on-drop}
 
-           (when ^boolean dragging?
-             [:div {:class (stl/css :grid-placeholder)} "\u00A0"])
+         (when ^boolean dragging?
+           [:div {:class (stl/css :grid-placeholder)} "\u00A0"])
 
 
-           (when (and (empty? components)
-                      (some? groups)
-                      is-local)
-             [:div {:class (stl/css-case :drop-space true
-                                         :drop-space-small (not dragging?))}])
+         (when (and (empty? components)
+                    (some? groups)
+                    is-local)
+           [:div {:class (stl/css-case :drop-space true
+                                       :drop-space-small (not dragging?))}])
 
-           (for [component components]
-             [:& components-item
-              {:component component
-               :key (dm/str "component-" (:id component))
-               :renaming renaming
-               :listing-thumbs? listing-thumbs?
-               :file-id file-id
-               :selected selected
-               :selected-full selected-full
-               :selected-paths selected-paths
-               :on-asset-click on-asset-click
-               :on-context-menu on-context-menu
-               :on-drag-start on-drag-start
-               :on-group on-group
-               :do-rename do-rename
-               :cancel-rename cancel-rename
-               :is-local is-local
-               :num-variants (count-variants (:variant-id component))}])])
+         (for [component components]
+           [:& components-item
+            {:component component
+             :key (dm/str "component-" (:id component))
+             :renaming renaming
+             :listing-thumbs? listing-thumbs?
+             :file-id file-id
+             :selected selected
+             :selected-full selected-full
+             :selected-paths selected-paths
+             :on-asset-click on-asset-click
+             :on-context-menu on-context-menu
+             :on-drag-start on-drag-start
+             :on-group on-group
+             :do-rename do-rename
+             :cancel-rename cancel-rename
+             :is-local is-local
+             :num-variants (count-variants (:variant-id component))}])]
 
         (for [[path-item content] groups]
           (when-not (empty? path-item)
@@ -281,6 +288,7 @@
                                   :on-rename-group on-rename-group
                                   :on-ungroup on-ungroup
                                   :on-context-menu on-context-menu
+                                  :on-group-combine-variants on-group-combine-variants
                                   :selected-full selected-full
                                   :is-local is-local
                                   :count-variants count-variants}]))])]))
@@ -317,13 +325,21 @@
                                      (seq (:colors selected))
                                      (seq (:typographies selected)))
 
-        any-variant?             (mf/with-memo [selected components current-component-id]
-                                   (let [selected-and-current (-> (d/nilv selected [])
-                                                                  (conj current-component-id)
-                                                                  set)]
-                                     (->> components
-                                          (filter #(contains? selected-and-current (:id %)))
-                                          (some ctc/is-variant?))))
+        selected-and-current     (mf/with-memo [selected components current-component-id]
+                                   (-> (d/nilv selected [])
+                                       (conj current-component-id)
+                                       set))
+
+        selected-and-current-full (mf/with-memo [selected-and-current]
+                                    (->> components
+                                         (filter #(contains? selected-and-current (:id %)))))
+
+        any-variant?             (mf/with-memo [selected-and-current]
+                                   (some ctc/is-variant? selected-and-current-full))
+
+        all-same-page?           (mf/with-memo [selected-and-current]
+                                   (let [page (:main-instance-page (first selected-and-current-full))]
+                                     (every? #(= page (:main-instance-page %)) selected-and-current-full)))
 
         groups                   (mf/with-memo [components reverse-sort?]
                                    (grp/group-assets components reverse-sort?))
@@ -419,7 +435,7 @@
 
         rename-group
         (mf/use-fn
-         (mf/deps components)
+         (mf/deps components on-clear-selection)
          (fn [path last-path]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -450,7 +466,7 @@
 
         on-ungroup
         (mf/use-fn
-         (mf/deps components)
+         (mf/deps components on-clear-selection)
          (fn [path]
            (on-clear-selection)
            (let [undo-id (js/Symbol)]
@@ -460,6 +476,19 @@
                         (filter #(str/starts-with? (:path %) path))
                         (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
+
+        on-group-combine-variants
+        (mf/use-fn
+         (mf/deps components on-clear-selection)
+         (fn [path]
+           (on-clear-selection)
+           (let [comps   (->> components
+                              (filter #(str/starts-with? (:path %) path)))
+                 ids     (into #{} (map :main-instance-id comps))
+                 page-id (->> comps first :main-instance-page)]
+
+             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))
+
 
         on-drag-start
         (mf/use-fn
@@ -497,7 +526,17 @@
                (st/emit! (dwl/go-to-component-file file-id component))))))
 
         on-asset-click
-        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))]
+        (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))
+
+        on-combine-as-variants
+        (mf/use-fn
+         (mf/deps selected-and-current-full)
+         (fn [event]
+           (dom/stop-propagation event)
+           (let [page-id (->> selected-and-current-full first :main-instance-page)
+                 ids (into #{} (map :main-instance-id selected-full))]
+
+             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))]
 
     [:& cmm/asset-section {:file-id file-id
                            :title (tr "workspace.assets.components")
@@ -546,6 +585,7 @@
                               :on-rename-group on-rename-group
                               :on-group on-group
                               :on-ungroup on-ungroup
+                              :on-group-combine-variants on-group-combine-variants
                               :on-context-menu on-context-menu
                               :selected-full selected-full
                               :is-local ^boolean is-local
@@ -575,4 +615,10 @@
                   (when (not multi-assets?)
                     {:name   (tr "workspace.shape.menu.show-main")
                      :id     "assets-show-main-component"
-                     :handler on-show-main})]}]]]))
+                     :handler on-show-main})
+                  (when (and is-local multi-components? (not any-variant?))
+                    {:name   (tr "workspace.shape.menu.combine-as-variants")
+                     :id     "assets-combine-as-variants"
+                     :title (when-not all-same-page? (tr "workspace.shape.menu.combine-as-variants-error"))
+                     :disabled (not all-same-page?)
+                     :handler on-combine-as-variants})]}]]]))

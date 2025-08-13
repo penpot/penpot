@@ -7,9 +7,9 @@
 (ns app.main.ui.workspace.sidebar.options.menus.shadow
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as clr]
    [app.common.types.shape.shadow :as ctss]
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]

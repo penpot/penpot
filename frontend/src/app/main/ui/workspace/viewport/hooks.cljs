@@ -171,19 +171,6 @@
                            (dw/decrease-zoom)
                            (dw/increase-zoom)))))))
 
-
-(defn group-empty-space?
-  "Given a group `group-id` check if `hover-ids` contains any of its children. If it doesn't means
-  we're hovering over empty space for the group "
-  [group-id objects hover-ids]
-
-  (and (contains? #{:group :bool} (get-in objects [group-id :type]))
-       ;; If there are no children in the hover-ids we're in the empty side
-       (->> hover-ids
-            (remove #(contains? #{:group :bool} (get-in objects [% :type])))
-            (some #(cfh/is-parent? objects % group-id))
-            (not))))
-
 (defn setup-hover-shapes
   [page-id move-stream objects transform selected mod? hover measure-hover hover-ids hover-top-frame-id hover-disabled? focus zoom show-measures?]
   (let [;; We use ref so we don't recreate the stream on a change
@@ -211,7 +198,7 @@
                       :page-id page-id
                       :rect rect
                       :include-frames? true
-                      :clip-children? true
+                      :clip-children? (not (mf/ref-val mod-ref))
                       :using-selrect? false})
                     ;; When the ask-buffered is canceled returns null. We filter them
                     ;; to improve the behavior
@@ -297,7 +284,7 @@
 
                grouped?
                (fn [id]
-                 (and (cfh/group-shape? objects id)
+                 (and (cfh/group-like-shape? objects id)
                       (not (cfh/mask-shape? objects id))))
 
                selected-with-parents
@@ -319,11 +306,11 @@
                  (not mod?)
                  (let [child-parent?
                        (into #{}
-                             (comp (remove #(cfh/group-like-shape? objects %))
+                             (comp (remove #(cfh/group-shape? objects %))
                                    (mapcat #(cfh/get-parent-ids objects %)))
                              ids)]
                    (filter #(or (root-frame-with-data? %)
-                                (and (contains? #{:group :bool} (dm/get-in objects [% :type]))
+                                (and (cfh/group-shape? objects %)
                                      (not (contains? child-parent? %)))))))
 
                remove-measure-xf
@@ -337,7 +324,7 @@
                              (comp (remove #(cfh/group-like-shape? objects %))
                                    (mapcat #(cfh/get-parent-ids objects %)))
                              ids)]
-                   (filter #(and (contains? #{:group :bool} (dm/get-in objects [% :type]))
+                   (filter #(and (cfh/group-shape? objects %)
                                  (not (contains? child-parent? %))))))
 
                remove-hover?

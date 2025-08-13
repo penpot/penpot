@@ -64,6 +64,10 @@
    {:error/code :error.style-dictionary/value-with-units
     :error/fn #(str (tr "workspace.tokens.value-with-units"))}
 
+   :error.style-dictionary/value-with-percent
+   {:error/code :error.style-dictionary/value-with-percent
+    :error/fn #(str (tr "workspace.tokens.value-with-percent"))}
+
    :error.style-dictionary/invalid-token-value-opacity
    {:error/code :error.style-dictionary/invalid-token-value-opacity
     :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.opacity-range")])}
@@ -71,6 +75,18 @@
    :error.style-dictionary/invalid-token-value-stroke-width
    {:error/code :error.style-dictionary/invalid-token-value-stroke-width
     :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.stroke-width-range")])}
+
+   :error.style-dictionary/invalid-token-value-text-case
+   {:error/code :error.style-dictionary/invalid-token-value-text-case
+    :error/fn #(tr "workspace.tokens.invalid-text-case-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-text-decoration
+   {:error/code :error.style-dictionary/invalid-token-value-text-decoration
+    :error/fn #(tr "workspace.tokens.invalid-text-decoration-token-value" %)}
+
+   :error.style-dictionary/invalid-token-value-font-weight
+   {:error/code :error.style-dictionary/invalid-token-value-font-weight
+    :error/fn #(tr "workspace.tokens.invalid-font-weight-token-value" %)}
 
    :error/unknown
    {:error/code :error/unknown

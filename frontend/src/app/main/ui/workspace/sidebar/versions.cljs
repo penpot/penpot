@@ -26,7 +26,6 @@
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
-   [app.util.time :as dt]
    [cuerdas.core :as str]
    [lambdaisland.uri :as u]
    [okulary.core :as l]
@@ -67,16 +66,16 @@
              (map #(assoc % :type :version)))
         (->> data
              (filterv #(= "system" (:created-by %)))
-             (group-by #(.toISODate ^js (:created-at %)))
+             (group-by #(ct/format-inst (:created-at %) :iso-date))
              (map (fn [[day entries]]
                     {:type :snapshot
-                     :created-at (ct/parse-instant day)
+                     :created-at (ct/inst day)
                      :snapshots entries}))))
        (sort-by :created-at)
        (reverse)))
 
 (mf/defc version-entry
-  [{:keys [entry profile on-restore-version on-delete-version on-rename-version editing?]}]
+  [{:keys [entry profile current-profile on-restore-version on-delete-version on-rename-version on-lock-version on-unlock-version editing?]}]
   (let [show-menu? (mf/use-state false)
 
         handle-open-menu
@@ -108,6 +107,20 @@
          (fn []
            (when on-delete-version
              (on-delete-version (:id entry)))))
+
+        handle-lock-version
+        (mf/use-callback
+         (mf/deps entry on-lock-version)
+         (fn []
+           (when on-lock-version
+             (on-lock-version (:id entry)))))
+
+        handle-unlock-version
+        (mf/use-callback
+         (mf/deps entry on-unlock-version)
+         (fn []
+           (when on-unlock-version
+             (on-unlock-version (:id entry)))))
 
         handle-name-input-focus
         (mf/use-fn
@@ -142,22 +155,44 @@
                                      :color (:color profile)}
                           :editing editing?
                           :date (:created-at entry)
+                          :locked (boolean (:locked-by entry))
                           :onOpenMenu handle-open-menu
                           :onFocusInput handle-name-input-focus
                           :onBlurInput handle-name-input-blur
                           :onKeyDownInput handle-name-input-key-down}]
 
      [:& dropdown {:show @show-menu? :on-close handle-close-menu}
-      [:ul {:class (stl/css :version-options-dropdown)}
-       [:li {:class (stl/css :menu-option)
-             :role "button"
-             :on-click handle-rename-version} (tr "labels.rename")]
-       [:li {:class (stl/css :menu-option)
-             :role "button"
-             :on-click handle-restore-version} (tr "labels.restore")]
-       [:li {:class (stl/css :menu-option)
-             :role "button"
-             :on-click handle-delete-version} (tr "labels.delete")]]]]))
+      (let [current-user-id   (:id current-profile)
+            version-creator-id (:profile-id entry)
+            locked-by-id      (:locked-by entry)
+            is-version-creator? (= current-user-id version-creator-id)
+            is-locked?         (some? locked-by-id)
+            is-locked-by-me?   (= current-user-id locked-by-id)
+            can-rename?        is-version-creator?
+            can-lock?          (and is-version-creator? (not is-locked?))
+            can-unlock?        (and is-version-creator? is-locked-by-me?)
+            can-delete?        (or (not is-locked?) (and is-locked? is-locked-by-me?))]
+        [:ul {:class (stl/css :version-options-dropdown)}
+         (when can-rename?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-rename-version} (tr "labels.rename")])
+         [:li {:class (stl/css :menu-option)
+               :role "button"
+               :on-click handle-restore-version} (tr "labels.restore")]
+         (cond
+           can-unlock?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-unlock-version} (tr "labels.unlock")]
+           can-lock?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-lock-version} (tr "labels.lock")])
+         (when can-delete?
+           [:li {:class (stl/css :menu-option)
+                 :role "button"
+                 :on-click handle-delete-version} (tr "labels.delete")])])]]))
 
 (mf/defc snapshot-entry
   [{:keys [index is-expanded entry on-toggle-expand on-pin-snapshot on-restore-snapshot]}]
@@ -204,7 +239,7 @@
     [:li {:ref entry-ref :class (stl/css :version-entry-wrap)}
      [:> autosaved-milestone*
       {:label (tr "workspace.versions.autosaved.version"
-                  (dt/format (:created-at entry) :date-full))
+                  (ct/format-inst (:created-at entry) :localized-date))
        :autosavedMessage (tr "workspace.versions.autosaved.entry" (count (:snapshots entry)))
        :snapshots (mapv :created-at (:snapshots entry))
        :versionToggled is-expanded
@@ -311,6 +346,16 @@
          (fn [id]
            (st/emit! (dwv/pin-version id))))
 
+        handle-lock-version
+        (mf/use-fn
+         (fn [id]
+           (st/emit! (dwv/lock-version id))))
+
+        handle-unlock-version
+        (mf/use-fn
+         (fn [id]
+           (st/emit! (dwv/unlock-version id))))
+
         handle-change-filter
         (mf/use-fn
          (fn [filter]
@@ -368,9 +413,12 @@
                                   :entry entry
                                   :editing? (= (:id entry) editing)
                                   :profile (get profiles (:profile-id entry))
+                                  :current-profile profile
                                   :on-rename-version handle-rename-version
                                   :on-restore-version handle-restore-version-pinned
-                                  :on-delete-version handle-delete-version}]
+                                  :on-delete-version handle-delete-version
+                                  :on-lock-version handle-lock-version
+                                  :on-unlock-version handle-unlock-version}]
 
                :snapshot
                [:& snapshot-entry {:key idx-entry

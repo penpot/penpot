@@ -404,6 +404,7 @@
   // TEXT SELECTION
   --text-editor-selection-background-color: var(--da-tertiary-70);
   --text-editor-selection-foreground-color: var(--app-white);
+  --text-editor-caret-color: var(--app-black);
 
   // NEW TEAM BUTTON
   // TODO: we should not put these functional tokens here, but rather in the components they belong to

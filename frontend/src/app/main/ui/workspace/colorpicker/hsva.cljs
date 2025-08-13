@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.colorpicker.hsva
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as cc]
+   [app.common.types.color :as cc]
    [app.main.ui.workspace.colorpicker.slider-selector :refer [slider-selector]]
    [rumext.v2 :as mf]))
 

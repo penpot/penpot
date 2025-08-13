@@ -107,7 +107,9 @@
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
   [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
-  (let [{:keys [name value type resolved-value]} token
+  (let [{:keys [name type resolved-value]} token
+        value (cond->> (:value token)
+                (= :font-family type) ctt/join-font-family)
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
         {:keys [title] :as token-props} (dwta/get-token-properties theme-token)

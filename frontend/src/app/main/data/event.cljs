@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.time :as ct]
    [app.config :as cf]
    [app.main.repo :as rp]
    [app.util.globals :as g]
@@ -17,7 +18,6 @@
    [app.util.i18n :as i18n]
    [app.util.object :as obj]
    [app.util.storage :as storage]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
    [lambdaisland.uri :as u]
@@ -33,7 +33,7 @@
 
 ;; Defines the time window within events belong to the same session.
 (def session-timeout
-  (dt/duration {:minutes 30}))
+  (ct/duration {:minutes 30}))
 
 ;; --- CONTEXT
 
@@ -233,7 +233,7 @@
                                    (update :profile-id #(or % profile-id))))))
                (rx/filter :profile-id)
                (rx/map (fn [event]
-                         (let [session* (or @session (dt/now))
+                         (let [session* (or @session (ct/now))
                                context  (-> @context
                                             (merge (:context event))
                                             (assoc :session session*)
@@ -241,7 +241,7 @@
                                             (d/without-nils))]
                            (reset! session session*)
                            (-> event
-                               (assoc :timestamp (dt/now))
+                               (assoc :timestamp (ct/now))
                                (assoc :context context)))))
 
                (rx/tap (fn [event]

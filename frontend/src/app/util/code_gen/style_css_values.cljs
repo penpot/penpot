@@ -116,13 +116,17 @@
   (let [root? (contains? (:root-shapes options) (:id shape))]
     (if (and root? (ctl/any-layout? shape))
       :fill
-      (get-shape-size shape objects :width))))
+      ;; Don't set fixed width for auto-width text shapes
+      (when-not (and (cfh/text-shape? shape) (= (:grow-type shape) :auto-width))
+        (get-shape-size shape objects :width)))))
 
 (defmethod get-value :height
   [_ shape objects options]
   (let [root? (contains? (:root-shapes options) (:id shape))]
     (when-not (and root? (ctl/any-layout? shape))
-      (get-shape-size shape objects :height))))
+      ;; Don't set fixed height for auto-height text shapes
+      (when-not (and (cfh/text-shape? shape) (= (:grow-type shape) :auto-height))
+        (get-shape-size shape objects :height)))))
 
 (defmethod get-value :flex-grow
   [_ shape _ options]
@@ -190,6 +194,16 @@
 
     (every? some? [r1 r2 r3 r4])
     [r1 r2 r3 r4]))
+
+(defmethod get-value :border-style
+  [_ stroke _ _]
+  (when-not (cgc/svg-markup? stroke)
+    (get-stroke-data stroke)))
+
+(defmethod get-value :border-width
+  [_ stroke _ _]
+  (when-not (cgc/svg-markup? stroke)
+    (get-stroke-data stroke)))
 
 (defmethod get-value :box-shadow
   [_ shape _ _]

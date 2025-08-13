@@ -8,8 +8,9 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
-   [app.common.text :as txt]
+   [app.common.time :as-alias ct]
    [app.common.types.plugins :as ctpg]
+   [app.common.types.text :as txt]
    [app.common.uuid :as uuid]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,7 +32,7 @@
     [:line-height :string]
     [:letter-spacing :string]
     [:text-transform :string]
-    [:modified-at {:optional true} ::sm/inst]
+    [:modified-at {:optional true} ::ct/inst]
     [:path {:optional true} [:maybe :string]]
     [:plugin-data {:optional true} ::ctpg/plugin-data]]))
 
@@ -59,6 +60,8 @@
        :text-transform (or text-transform "none")}
       (d/without-nils)))
 
+
+;; FIXME: this function should not be here it belongs to shape and not typography
 (defn uses-library-typographies?
   "Check if the shape uses any typography in the given library."
   [shape library-id]
@@ -70,6 +73,7 @@
              #(and (some? (:typography-ref-id %))
                    (= (:typography-ref-file %) library-id))))))
 
+;; FIXME: this function should not be here it belongs to shape and not typography
 (defn uses-library-typography?
   "Check if the shape uses the given library typography."
   [shape library-id typography-id]

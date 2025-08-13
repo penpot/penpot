@@ -17,12 +17,14 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
+   [app.common.time :as ct]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.file :as ctf]
-   [app.common.types.shape.layout :as ctl]
+   [app.common.types.library :as ctl]
+   [app.common.types.shape.layout :as ctsl]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -51,7 +53,6 @@
    [app.main.store :as st]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
-   [app.util.time :as dt]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
@@ -195,7 +196,7 @@
         (if (str/empty? new-name)
           (rx/empty)
           (let [data   (dsh/lookup-file-data state)
-                color  (-> (ctc/get-color data id)
+                color  (-> (ctl/get-color data id)
                            (assoc :name new-name)
                            (d/without-nils)
                            (ctc/check-library-color))]
@@ -962,8 +963,8 @@
             orig-shapes (when keep-touched? (cfh/get-children-with-self objects (:id shape)))
 
             ;; If the target parent is a grid layout we need to pass the target cell
-            target-cell (when (ctl/grid-layout? parent)
-                          (ctl/get-cell-by-shape-id parent (:id shape)))
+            target-cell (when (ctsl/grid-layout? parent)
+                          (ctsl/get-cell-by-shape-id parent (:id shape)))
 
             index (find-shape-index objects (:parent-id shape) (:id shape))
 
@@ -979,16 +980,23 @@
                 (cll/generate-component-swap objects shape ldata page libraries id-new-component
                                              index target-cell keep-props-values keep-touched?))
 
-            changes (if keep-touched?
-                      (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
-                      changes)]
+            [changes parents-of-swapped]
+            (if keep-touched?
+              (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
+              [changes []])
+            all-parents (-> all-parents
+                            (into parents-of-swapped)
+                            (conj (:id new-shape)))]
 
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (dws/select-shape (:id new-shape) true)
-         (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
-         (dwu/commit-undo-transaction undo-id))))))
+        (rx/merge
+         (rx/of
+          (dwu/start-undo-transaction undo-id)
+          (dch/commit-changes changes)
+          (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
+          (dwu/commit-undo-transaction undo-id)
+          (dws/deselect-all))
+         (->> (rx/of (dws/select-shape (:id new-shape) false))
+              (rx/delay 1)))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
@@ -1051,7 +1059,7 @@
      (update [_ state]
        (if (and (not= library-id (:current-file-id state))
                 (nil? asset-id))
-         (d/assoc-in-when state [:files library-id :synced-at] (dt/now))
+         (d/assoc-in-when state [:files library-id :synced-at] (ct/now))
          state))
 
      ptk/WatchEvent
@@ -1136,14 +1144,14 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [file-id (:current-file-id state)]
-        (assoc-in state [:files file-id :ignore-sync-until] (dt/now))))
+        (assoc-in state [:files file-id :ignore-sync-until] (ct/now))))
 
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id (:current-file-id state)]
         (->> (rp/cmd! :ignore-file-library-sync-status
                       {:file-id file-id
-                       :date (dt/now)})
+                       :date (ct/now)})
              (rx/ignore))))))
 
 (defn assets-need-sync
@@ -1213,7 +1221,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/update-component id #(assoc % :modified-at (dt/now))))]
+                        (pcb/update-component id #(assoc % :modified-at (ct/now))))]
         (rx/of (dch/commit-changes {:origin it
                                     :redo-changes (:redo-changes changes)
                                     :undo-changes []

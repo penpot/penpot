@@ -7,11 +7,11 @@
 (ns app.main.ui.workspace.viewport
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
+   [app.common.types.color :as clr]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
@@ -378,7 +378,7 @@
       (when (dbg/enabled? :show-export-metadata)
         [:& use/export-page {:page page}])
 
-        ;; We need a "real" background shape so layer transforms work properly in firefox
+      ;; We need a "real" background shape so layer transforms work properly in firefox
       [:rect {:width (:width vbox 0)
               :height (:height vbox 0)
               :x (:x vbox 0)
@@ -387,7 +387,7 @@
 
       [:& (mf/provider ctx/current-vbox) {:value vbox'}
        [:& (mf/provider use/include-metadata-ctx) {:value (dbg/enabled? :show-export-metadata)}
-          ;; Render root shape
+        ;; Render root shape
         [:& shapes/root-shape {:key page-id
                                :objects base-objects
                                :active-frames @active-frames}]]]]
@@ -486,6 +486,26 @@
            :frame selected-frame
            :hover-shape @measure-hover
            :zoom zoom}])
+
+       ;; Show distances during movement with ALT
+       (when (and (= transform :move) @alt? (seq selected-shapes))
+         [:& msr/measurement
+          {:bounds vbox
+           :selected-shapes selected-shapes
+           :frame selected-frame
+           :hover-shape @hover
+           :zoom zoom}])
+
+       ;; Reactive subscription to duplication relation (safe)
+       (let [state-var (mf/use-var (resolve 'app.main.store/state))
+             duplicated-info (get-in @(deref state-var) [:workspace-local :duplicated])]
+         (when (and (= transform :move) @alt? duplicated-info)
+           [:g.duplicated-distance
+            [:& msr/distance-display
+             {:from (get duplicated-info :selrect-original)
+              :to (get duplicated-info :selrect-duplicated)
+              :zoom zoom
+              :bounds vbox}]]))
 
        (when show-padding?
          [:& mfc/padding-control

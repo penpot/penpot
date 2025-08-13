@@ -30,13 +30,16 @@
 
 
 (defn extract-properties-values
+  "Get a map of properties associated to their possible values"
   [data objects variant-id]
   (->> (find-variant-components data objects variant-id)
        (mapcat :variant-properties)
        (group-by :name)
-       (map (fn [[k v]]
-              {:name k
-               :value (->> v (map :value) distinct)}))))
+       (mapv (fn [[k v]]
+               (let [mdata (reduce merge {} (map meta v))]
+                 (with-meta {:name k
+                             :value (->> v (map :value) distinct)}
+                   mdata))))))
 
 (defn get-variant-mains
   [component data]
