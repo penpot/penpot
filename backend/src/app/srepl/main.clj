@@ -560,14 +560,10 @@
            rollback? true}
       :as opts}]
 
-  (l/dbg :hint "process:start"
-         :rollback rollback?
-         :max-jobs max-jobs
-         :max-chunks max-chunks)
-
-  (let [tpoint    (ct/tpoint)
-        max-jobs  (or max-jobs (px/get-available-processors))
-        chunks    (atom 0)
+  (let [tpoint     (ct/tpoint)
+        max-jobs   (or max-jobs (px/get-available-processors))
+        max-chunks (max max-chunks max-jobs)
+        processed  (atom 0)
 
         start-job
         (fn [jid]
@@ -579,12 +575,17 @@
                              (assoc ::db/rollback rollback?)
                              (proc-fn opts))
                   total  (+ total result)
-                  chunks (swap! chunks inc)]
+                  chunks (swap! processed inc)]
 
               (l/dbg :hint "chunk processed" :jid jid :total total :chunk result)
               (when  (and (pos? result)
                           (< chunks max-chunks))
                 (recur total)))))]
+
+    (l/dbg :hint "process:start"
+           :rollback rollback?
+           :max-jobs max-jobs
+           :max-chunks max-chunks)
 
     (try
       (let [jobs (->> (range max-jobs)
