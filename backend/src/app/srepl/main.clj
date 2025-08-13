@@ -577,18 +577,16 @@
           (l/dbg :hint "start job thread" :jid jid)
           (px/sleep 1000)
 
-          (loop [total 0]
+          (loop []
             (let [result (-> main/system
                              (assoc ::db/rollback rollback?)
                              (proc-fn opts))]
-              (l/dbg :hint "chunk processed" :jid jid :total total :chunk result)
-
               (let [total (swap! processed + result)]
-                (l/dbg :hint "chunk processed" :jid jid :total total :chunk result)
+                (l/dbg :hint "chunk processed" :jid jid :total total :chunk result ::l/sync? true)
 
                 (when (and (pos? result)
                            (< total max-items))
-                  (recur total))))))]
+                  (recur))))))]
 
     (l/dbg :hint "process:start"
            :rollback rollback?
