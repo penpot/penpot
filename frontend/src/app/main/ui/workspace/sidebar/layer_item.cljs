@@ -201,8 +201,6 @@
         parent-board?     (and (cfh/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
 
-        files             (mf/deref refs/files)
-
         toggle-collapse
         (mf/use-fn
          (mf/deps expanded?)
@@ -283,12 +281,13 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id index objects expanded? selected files)
+         (mf/deps id index objects expanded? selected)
          (fn [side _data]
            (let [single? (= (count selected) 1)
                  same?   (and single? (= (first selected) id))]
              (when-not same?
-               (let [shape (get objects id)
+               (let [files (deref refs/files)
+                     shape (get objects id)
 
                      parent-id
                      (cond
