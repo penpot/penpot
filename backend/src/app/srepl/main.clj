@@ -582,14 +582,14 @@
           (loop [total 0]
             (let [result (-> main/system
                              (assoc ::db/rollback rollback?)
-                             (proc-fn opts))
-                  total  (+ total result)
-                  chunks (swap! processed inc)]
-
+                             (proc-fn opts))]
               (l/dbg :hint "chunk processed" :jid jid :total total :chunk result)
-              (when  (and (pos? result)
-                          (< chunks max-chunks))
-                (recur total)))))]
+
+              (let [total  (+ total result)
+                    chunks (swap! processed inc)]
+                (when  (and (pos? result)
+                            (< chunks max-chunks))
+                  (recur total))))))]
 
     (l/dbg :hint "process:start"
            :rollback rollback?
