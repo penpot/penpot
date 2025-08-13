@@ -200,6 +200,9 @@
         read-only?        (mf/use-ctx ctx/workspace-read-only?)
         parent-board?     (and (cfh/frame-shape? item)
                                (= uuid/zero (:parent-id item)))
+
+        files             (mf/deref refs/files)
+
         toggle-collapse
         (mf/use-fn
          (mf/deps expanded?)
@@ -280,7 +283,7 @@
 
         on-drop
         (mf/use-fn
-         (mf/deps id index objects expanded? selected)
+         (mf/deps id index objects expanded? selected files)
          (fn [side _data]
            (let [single? (= (count selected) 1)
                  same?   (and single? (= (first selected) id))]
@@ -298,7 +301,7 @@
                        :else
                        (cfh/get-parent-id objects id))
 
-                     [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected))
+                     [parent-id _] (ctn/find-valid-parent-and-frame-ids parent-id objects (map #(get objects %) selected) false files)
 
                      parent    (get objects parent-id)
 
