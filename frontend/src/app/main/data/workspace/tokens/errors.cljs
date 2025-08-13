@@ -64,6 +64,10 @@
    {:error/code :error.style-dictionary/value-with-units
     :error/fn #(str (tr "workspace.tokens.value-with-units"))}
 
+   :error.style-dictionary/value-with-percent
+   {:error/code :error.style-dictionary/value-with-percent
+    :error/fn #(str (tr "workspace.tokens.value-with-percent"))}
+
    :error.style-dictionary/invalid-token-value-opacity
    {:error/code :error.style-dictionary/invalid-token-value-opacity
     :error/fn #(str/join "\n" [(str (tr "workspace.tokens.invalid-value" %) ".") (tr "workspace.tokens.opacity-range")])}
