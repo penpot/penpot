@@ -25,8 +25,8 @@
     "~:has-media-trimmed": false,
     "~:comment-thread-seqn": 0,
     "~:name": "garden",
-    "~:revn": 26,
-    "~:modified-at": "~m1750423208667",
+    "~:revn": 103,
+    "~:modified-at": "~m1755084849387",
     "~:vern": 0,
     "~:id": "~u6bd7c17d-4f59-815e-8006-5e999f38f210",
     "~:is-shared": false,
@@ -94,7 +94,13 @@
             "0006-fix-old-texts-fills",
             "0007-clear-invalid-strokes-and-fills-v2",
             "0008-fix-library-colors-opacity",
-            "0009-add-partial-text-touched-flags"
+            "0009-add-partial-text-touched-flags",
+            "0002-normalize-bool-content-v2",
+            "0004-clean-shadow-color",
+            "0008-fix-library-colors-v4",
+            "0003-convert-path-content-v2",
+            "0009-clean-library-colors",
+            "0010-fix-swap-slots-pointing-non-existent-shapes"
         ]
     },
     "~:version": 67,
@@ -198,483 +204,16 @@
                             ]
                         }
                     },
-                    "~uef609b51-0d34-80f3-8006-5e99a0e7e241": {
-                        "~#shape": {
-                            "~:y": 224.0000021457672,
-                            "~:transform": {
-                                "~#matrix": {
-                                    "~:a": 1,
-                                    "~:b": 0,
-                                    "~:c": 0,
-                                    "~:d": 1,
-                                    "~:e": 0,
-                                    "~:f": 0
-                                }
-                            },
-                            "~:rotation": 0,
-                            "~:grow-type": "~:auto-width",
-                            "~:content": {
-                                "~:type": "root",
-                                "~:key": "24e85t84f3p",
-                                "~:children": [
-                                    {
-                                        "~:type": "paragraph-set",
-                                        "~:children": [
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "1vetvwgrfb6",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "regular",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "▫️▫️🌲▫️🌲🌲🌲▫️🌲🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "r0535lnzdr",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "regular",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "1yug53qv91w",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "🌲🐛🌲🌲▫️🌲🌲🌲🌲🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "2aqkfsbxb5i",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "22yly6s8yv3",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "🌲🌲▫️🌲▫️🌲🌲🌰🌲🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "q9ovldxs6h",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "2e29fo2vfyu",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "🌲🌲▫️🌲▫️🌲🌲▫️🌲▫️"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "1f8krcpsg8l",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "1ehkqv5vril",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "▫️▫️▫️🐌🌲🍁🌲▫️🥕🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "kikos098xa",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "2cxzm7orynt",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "🌲🌲🐰🌲▫️▫️🌲🌲🌲▫️"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "so4z3gbyhs",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "1ey304k5xqb",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "🌲🌲🌲🥕☁️🌲🐰▫️🌲🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "1orh5xhi3o3",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "8aout8mor6",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "▫️🌲▫️▫️🌲▫️🌲🌲▫️🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "lir8cs117z",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "1iqonahtkum",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "🌲▫️🌲▫️🌲▫️▫️🌲▫️🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "2urfb0xejy",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            },
-                                            {
-                                                "~:line-height": "1.2",
-                                                "~:font-style": "",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "1.2",
-                                                        "~:font-style": "",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "",
-                                                        "~:font-id": "",
-                                                        "~:key": "1e06otc9bbq",
-                                                        "~:font-size": "16",
-                                                        "~:font-weight": "",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "",
-                                                        "~:text-decoration": "",
-                                                        "~:letter-spacing": "",
-                                                        "~:fills": null,
-                                                        "~:font-family": "",
-                                                        "~:text": "▫️🌲▫️▫️🌲▫️🌲▫️🍃🌲"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "",
-                                                "~:text-align": "",
-                                                "~:font-id": "",
-                                                "~:key": "1t55y3u9pg3",
-                                                "~:font-size": "16",
-                                                "~:font-weight": "",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "",
-                                                "~:text-decoration": "",
-                                                "~:letter-spacing": "",
-                                                "~:fills": null,
-                                                "~:font-family": ""
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "~:vertical-align": ""
-                            },
-                            "~:name": "▫️▫️🌲▫️🌲🌲🌲▫️🌲🌲🌲🐛🌲🌲▫️🌲🌲🌲🌲🌲🌲🌲▫️🌲▫️🌲🌲🌰🌲🌲🌲🌲▫️🌲▫️🌲🌲▫️🌲▫️▫️▫️▫️🐌🌲🍁🌲▫️🥕🌲🌲🌲🐰🌲▫️▫️🌲🌲🌲▫️🌲🌲🌲🥕☁️🌲🐰▫️🌲🌲▫️🌲▫️▫️🌲▫️🌲🌲▫️🌲🌲▫️🌲▫️🌲▫️▫️🌲▫️🌲▫️🌲▫️▫️🌲▫️🌲▫️🍃🌲",
-                            "~:width": 200.00000894069672,
-                            "~:type": "~:text",
-                            "~:points": [
-                                {
-                                    "~#point": {
-                                        "~:x": 224.99999487400055,
-                                        "~:y": 224.0000021457672
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 425.00000381469727,
-                                        "~:y": 224.0000021457672
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 425.00000381469727,
-                                        "~:y": 414.0000021457672
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 224.99999487400055,
-                                        "~:y": 414.0000021457672
-                                    }
-                                }
-                            ],
-                            "~:transform-inverse": {
-                                "~#matrix": {
-                                    "~:a": 1,
-                                    "~:b": 0,
-                                    "~:c": 0,
-                                    "~:d": 1,
-                                    "~:e": 0,
-                                    "~:f": 0
-                                }
-                            },
-                            "~:id": "~uef609b51-0d34-80f3-8006-5e99a0e7e241",
-                            "~:parent-id": "~uef609b51-0d34-80f3-8006-5e99c014febd",
-                            "~:frame-id": "~uef609b51-0d34-80f3-8006-5e99c014febd",
-                            "~:x": 224.99999487400055,
-                            "~:selrect": {
-                                "~#rect": {
-                                    "~:x": 224.99999487400055,
-                                    "~:y": 224.0000021457672,
-                                    "~:width": 200.00000894069672,
-                                    "~:height": 190,
-                                    "~:x1": 224.99999487400055,
-                                    "~:y1": 224.0000021457672,
-                                    "~:x2": 425.00000381469727,
-                                    "~:y2": 414.0000021457672
-                                }
-                            },
-                            "~:flip-x": null,
-                            "~:height": 190,
-                            "~:flip-y": null
-                        }
-                    },
                     "~uef609b51-0d34-80f3-8006-5e99c014febd": {
                         "~#shape": {
-                            "~:y": 194.00000454845173,
+                            "~:y": 807.9999779635505,
                             "~:hide-fill-on-export": false,
                             "~:layout-gap-type": "~:multiple",
                             "~:layout-padding": {
-                                "~:p1": 18.999997597315485,
-                                "~:p2": 13.999998715849017,
-                                "~:p3": 18.999997597315485,
-                                "~:p4": 13.999998715849017
+                                "~:p1": 157.0000010969195,
+                                "~:p2": 140.0000417445085,
+                                "~:p3": 157.0000010969195,
+                                "~:p4": 140.0000417445085
                             },
                             "~:transform": {
                                 "~#matrix": {
@@ -692,38 +231,38 @@
                             "~:hide-in-viewer": false,
                             "~:name": "Garden",
                             "~:layout-align-items": "~:center",
-                            "~:width": 249.99999881089417,
+                            "~:width": 1200.0000419760077,
                             "~:layout-padding-type": "~:simple",
                             "~:type": "~:frame",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 199.99999615815156,
-                                        "~:y": 194.00000454845173
+                                        "~:x": 584.9999863274984,
+                                        "~:y": 807.9999779635506
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 449.99999496904576,
-                                        "~:y": 194.00000454845173
+                                        "~:x": 1785.000028303506,
+                                        "~:y": 807.9999779635506
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 449.99999496904576,
-                                        "~:y": 444.00000708125077
+                                        "~:x": 1785.000028303506,
+                                        "~:y": 2008.0000378047025
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 199.99999615815156,
-                                        "~:y": 444.00000708125077
+                                        "~:x": 584.9999863274984,
+                                        "~:y": 2008.0000378047025
                                     }
                                 }
                             ],
                             "~:r2": 0,
                             "~:layout-item-h-sizing": "~:fix",
-                            "~:proportion-lock": false,
+                            "~:proportion-lock": true,
                             "~:layout-gap": {
                                 "~:row-gap": 0,
                                 "~:column-gap": 0
@@ -738,6 +277,13 @@
                                     "~:f": 0
                                 }
                             },
+                            "~:exports": [
+                                {
+                                    "~:type": "~:jpeg",
+                                    "~:suffix": "",
+                                    "~:scale": 1
+                                }
+                            ],
                             "~:layout-item-v-sizing": "~:fix",
                             "~:r3": 0,
                             "~:layout-justify-content": "~:center",
@@ -748,19 +294,19 @@
                             "~:layout-align-content": "~:stretch",
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [],
-                            "~:x": 199.99999615815153,
-                            "~:proportion": 1,
+                            "~:x": 584.9999863274984,
+                            "~:proportion": 0.9999999851123806,
                             "~:r4": 0,
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 199.99999615815153,
-                                    "~:y": 194.00000454845173,
-                                    "~:width": 249.99999881089417,
-                                    "~:height": 250.00000253279904,
-                                    "~:x1": 199.99999615815153,
-                                    "~:y1": 194.00000454845173,
-                                    "~:x2": 449.9999949690457,
-                                    "~:y2": 444.00000708125077
+                                    "~:x": 584.9999863274984,
+                                    "~:y": 807.9999779635505,
+                                    "~:width": 1200.0000419760077,
+                                    "~:height": 1200.000059841152,
+                                    "~:x1": 584.9999863274984,
+                                    "~:y1": 807.9999779635505,
+                                    "~:x2": 1785.000028303506,
+                                    "~:y2": 2008.0000378047025
                                 }
                             },
                             "~:fills": [
@@ -770,11 +316,606 @@
                                 }
                             ],
                             "~:flip-x": null,
-                            "~:height": 250.00000253279904,
+                            "~:height": 1200.000059841152,
                             "~:flip-y": null,
                             "~:shapes": [
-                                "~uef609b51-0d34-80f3-8006-5e99a0e7e241"
+                                "~u335210f5-b8f2-8082-8006-a410d6e5126a"
                             ]
+                        }
+                    },
+                    "~u335210f5-b8f2-8082-8006-a410d6e5126a": {
+                        "~#shape": {
+                            "~:y": 977.99997906047,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:last-resize-direction": "~:horizontal",
+                            "~:grow-type": "~:auto-height",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "28pfxhtmun2",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "1sqht2fnl6w",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "▫️🌲▫️🌲🌲🌲▫️🌲🌲🌲"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "13j8mp5zfam",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "wtaicqfy8a",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🐛🌲🌲▫️🌲🌲🌲🌲🌲🌲"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "rpcgt7g1k",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "17pye112xae",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🌲▫️🌲▫️🌲🌲🌰🌲🌲🌲"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "brxkxtrefe",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "19uf1nvo35d",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🌲▫️🌲▫️🌲🌲▫️🌲▫️▫️"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "2cdlnm6uc1w",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "1zn6cq614r3",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "▫️▫️🐌🌲🍁🌲▫️🥕🌲🌲"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "1udwqky205w",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "1oaps9pcir2",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🌲🌲🌲▫️🌲🌲🌲🥕☁️🌲"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "1f52hf7fxz7",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "j6z3ivmr3r",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🐰▫️🌲🌲▫️🌲▫️▫️🌲▫️"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "20di8ghcg40",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "wmd6rf9do7",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🌲🌲▫️🌲🌲▫️🌲▫️🌲▫️"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "n3agxw9zjf",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "23434ojvbrm",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🌲▫️🌲▫️🌲▫️▫️🌲▫️🌲"
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "1yz6c0qs4s4",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            },
+                                            {
+                                                "~:line-height": "1.2",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "4gc8vlr86c",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": "🍃🌲🌲🌲🌲🌲🌲🌲🌲🌲"
+                                                    },
+                                                    {
+                                                        "~:line-height": "",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "gfont-public-sans",
+                                                        "~:key": "1nl5puindi6",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "Public Sans",
+                                                        "~:text": ""
+                                                    }
+                                                ],
+                                                "~:typography-ref-id": null,
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "gfont-public-sans",
+                                                "~:key": "1wrdv68vvvp",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:typography-ref-file": null,
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "none",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#000000",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "Public Sans"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 920.9378296405694,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 725.000028072007,
+                                        "~:y": 977.99997906047
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1645.9378577125763,
+                                        "~:y": 977.99997906047
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 1645.9378577125763,
+                                        "~:y": 1838.0000296134838
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 725.000028072007,
+                                        "~:y": 1838.0000296134838
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:id": "~u335210f5-b8f2-8082-8006-a410d6e5126a",
+                            "~:parent-id": "~uef609b51-0d34-80f3-8006-5e99c014febd",
+                            "~:frame-id": "~uef609b51-0d34-80f3-8006-5e99c014febd",
+                            "~:strokes": [],
+                            "~:x": 725.0000280720069,
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 725.0000280720069,
+                                    "~:y": 977.99997906047,
+                                    "~:width": 920.9378296405694,
+                                    "~:height": 860.0000505530138,
+                                    "~:x1": 725.0000280720069,
+                                    "~:y1": 977.99997906047,
+                                    "~:x2": 1645.9378577125763,
+                                    "~:y2": 1838.0000296134838
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": 860.0000505530138,
+                            "~:flip-y": null
                         }
                     }
                 },
