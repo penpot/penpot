@@ -403,7 +403,7 @@
 
         (if (>= to 1)
           result
-          (recur to result))))))
+          (recur (long to) result))))))
 
 (defn curve-split
   "Splits a curve into two at the given parametric value `t`.
