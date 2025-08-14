@@ -372,17 +372,13 @@
     (h/call wasm/internal-module "_set_shape_blur" type hidden value)))
 
 (defn set-shape-corners
-  [shape]
-  (let [r1 (dm/get-prop shape :r1)]
-    (when (some? r1)
-      (let [r2 (dm/get-prop shape :r2)
-            r3 (dm/get-prop shape :r3)
-            r4 (dm/get-prop shape :r4)]
-        (h/call wasm/internal-module "_set_shape_corners"
-                (d/nilv r1 0)
-                (d/nilv r2 0)
-                (d/nilv r3 0)
-                (d/nilv r4 0))))))
+  [corners]
+  (let [[r1 r2 r3 r4] corners]
+    (h/call wasm/internal-module "_set_shape_corners"
+            (d/nilv r1 0)
+            (d/nilv r2 0)
+            (d/nilv r3 0)
+            (d/nilv r4 0))))
 
 (defn set-flex-layout
   [shape]
@@ -705,7 +701,11 @@
         grow-type    (dm/get-prop shape :grow-type)
         blur         (dm/get-prop shape :blur)
         svg-attrs    (dm/get-prop shape :svg-attrs)
-        shadows      (dm/get-prop shape :shadow)]
+        shadows      (dm/get-prop shape :shadow)
+        r1           (dm/get-prop shape :r1)
+        r2           (dm/get-prop shape :r2)
+        r3           (dm/get-prop shape :r3)
+        r4           (dm/get-prop shape :r4)]
 
     (use-shape id)
     (set-parent-id parent-id)
@@ -719,7 +719,7 @@
     (set-shape-opacity opacity)
     (set-shape-hidden hidden)
     (set-shape-children children)
-    (set-shape-corners shape)
+    (set-shape-corners [r1 r2 r3 r4])
     (when (and (= type :group) masked)
       (set-masked masked))
     (when (some? blur)
