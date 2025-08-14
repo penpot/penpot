@@ -21,6 +21,12 @@ test.describe("Subscriptions: dashboard", () => {
 
     await DashboardPage.mockRPC(
       page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
       "get-team-info",
       "subscription/get-team-info-subscriptions.json",
     );
@@ -53,6 +59,12 @@ test.describe("Subscriptions: dashboard", () => {
       page,
       "get-profile",
       "subscription/get-profile-unlimited-subscription.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage-one-editor.json",
     );
 
     await DashboardPage.mockRPC(
@@ -91,6 +103,12 @@ test.describe("Subscriptions: dashboard", () => {
 
     await DashboardPage.mockRPC(
       page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
       "get-team-info",
       "subscription/get-team-info-subscriptions.json",
     );
@@ -121,6 +139,12 @@ test.describe("Subscriptions: dashboard", () => {
       page,
       "get-profile",
       "subscription/get-profile-enterprise-canceled-subscription.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
     );
 
     await DashboardPage.mockRPC(
@@ -157,6 +181,12 @@ test.describe("Subscriptions: team members and invitations", () => {
       page,
       "get-profile",
       "logged-in-user/get-profile-logged-in.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
     );
 
     await DashboardPage.mockRPC(
@@ -208,6 +238,12 @@ test.describe("Subscriptions: team members and invitations", () => {
 
     await DashboardPage.mockRPC(
       page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
       "get-team-info",
       "subscription/get-team-info-subscriptions.json",
     );
@@ -251,13 +287,19 @@ test.describe("Subscriptions: team members and invitations", () => {
     ).toBeVisible();
   });
 
-  test("Members tab has warning message when team has more members than subscriptions. Subscribe link is shown for owners.", async ({
+  test("Members tab has warning message when user has more seats than editors.", async ({
     page,
   }) => {
     await DashboardPage.mockRPC(
       page,
       "get-profile",
       "subscription/get-profile-unlimited-subscription.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage-one-editor.json",
     );
 
     await DashboardPage.mockRPC(
@@ -283,97 +325,7 @@ test.describe("Subscriptions: team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-team-members?team-id=*",
-      "subscription/get-team-members-subscription-owner.json",
-    );
-
-    await dashboardPage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-
-    await dashboardPage.goToSecondTeamMembersSection();
-    await expect(page.getByTestId("cta")).toBeVisible();
-    await expect(page.getByText("Subscribe now.")).toBeVisible();
-  });
-
-  test("Members tab has warning message when team has more members than subscriptions. Contact to owner is shown for members.", async ({
-    page,
-  }) => {
-    await DashboardPage.mockRPC(
-      page,
-      "get-profile",
-      "logged-in-user/get-profile-logged-in.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-team-info",
-      "subscription/get-team-info-subscriptions.json",
-    );
-
-    const dashboardPage = new DashboardPage(page);
-    await dashboardPage.setupDashboardFull();
-    await DashboardPage.mockRPC(
-      page,
-      "get-teams",
-      "subscription/get-teams-unlimited-subscription-member.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-projects?team-id=*",
-      "dashboard/get-projects-second-team.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-team-members?team-id=*",
-      "subscription/get-team-members-subscription-member.json",
-    );
-
-    await dashboardPage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-
-    await dashboardPage.goToSecondTeamMembersSection();
-    await expect(page.getByTestId("cta")).toBeVisible();
-    await expect(page.getByText("Contact with the team owner")).toBeVisible();
-  });
-
-  test("Members tab has warning message when has professional subscription and more than 8 members.", async ({
-    page,
-  }) => {
-    await DashboardPage.mockRPC(
-      page,
-      "get-profile",
-      "logged-in-user/get-profile-logged-in.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-team-info",
-      "subscription/get-team-info-subscriptions.json",
-    );
-
-    const dashboardPage = new DashboardPage(page);
-    await dashboardPage.setupDashboardFull();
-    await DashboardPage.mockRPC(
-      page,
-      "get-teams",
-      "subscription/get-teams-professional-subscription-owner.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-projects?team-id=*",
-      "dashboard/get-projects-second-team.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-team-members?team-id=*",
-      "subscription/get-team-members-more-than-8.json",
+      "subscription/get-team-members-subscription-one-member.json",
     );
 
     await dashboardPage.mockRPC(
@@ -384,19 +336,23 @@ test.describe("Subscriptions: team members and invitations", () => {
     await dashboardPage.goToSecondTeamMembersSection();
     await expect(page.getByTestId("cta")).toBeVisible();
     await expect(
-      page.getByText(
-        "The Professional plan is designed for teams of up to 8 editors (owner, admin, and editor).",
-      ),
+      page.getByText("Inviting people while on the unlimited plan"),
     ).toBeVisible();
   });
 
-  test("Invitations tab has warning message when team has more members than subscriptions", async ({
+  test("Invitations tab has warning message when user has more seats than editors.", async ({
     page,
   }) => {
     await DashboardPage.mockRPC(
       page,
       "get-profile",
       "subscription/get-profile-unlimited-subscription.json",
+    );
+
+    await DashboardPage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage-one-editor.json",
     );
 
     await DashboardPage.mockRPC(
@@ -422,13 +378,13 @@ test.describe("Subscriptions: team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-team-members?team-id=*",
-      "subscription/get-team-members-subscription-owner.json",
+      "subscription/get-team-members-subscription-one-member.json",
     );
 
     await DashboardPage.mockRPC(
       page,
       "get-team-invitations?team-id=*",
-      "dashboard/get-team-invitations-empty.json",
+      "subscription/get-team-invitations.json",
     );
 
     await dashboardPage.mockRPC(
@@ -439,64 +395,7 @@ test.describe("Subscriptions: team members and invitations", () => {
     await dashboardPage.goToSecondTeamInvitationsSection();
     await expect(page.getByTestId("cta")).toBeVisible();
     await expect(
-      page.getByText(
-        "Looks like your team has grown! Your plan includes 2 seats, but you're now using 3",
-      ),
-    ).toBeVisible();
-  });
-
-  test("Invitations tab has warning message when has professional subscription and more than 8 members.", async ({
-    page,
-  }) => {
-    await DashboardPage.mockRPC(
-      page,
-      "get-profile",
-      "subscription/get-profile-unlimited-subscription.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-team-info",
-      "subscription/get-team-info-subscriptions.json",
-    );
-
-    const dashboardPage = new DashboardPage(page);
-    await dashboardPage.setupDashboardFull();
-    await DashboardPage.mockRPC(
-      page,
-      "get-teams",
-      "subscription/get-teams-unlimited-subscription-owner.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-projects?team-id=*",
-      "dashboard/get-projects-second-team.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-team-members?team-id=*",
-      "subscription/get-team-members-more-than-8.json",
-    );
-
-    await DashboardPage.mockRPC(
-      page,
-      "get-team-invitations?team-id=*",
-      "dashboard/get-team-invitations-empty.json",
-    );
-
-    await dashboardPage.mockRPC(
-      "push-audit-events",
-      "workspace/audit-event-empty.json",
-    );
-
-    await dashboardPage.goToSecondTeamInvitationsSection();
-    await expect(page.getByTestId("cta")).toBeVisible();
-    await expect(
-      page.getByText(
-        "Looks like your team has grown! Your plan includes 2 seats, but you're now using 9",
-      ),
+      page.getByText("Inviting people while on the unlimited plan"),
     ).toBeVisible();
   });
 });

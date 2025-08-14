@@ -39,10 +39,11 @@
       "~:is-admin": true,
       "~:can-edit": true
     },
+    "~:unique-editors": 1,
     "~:subscription": {
       "~:type": "unlimited",
       "~:status": "trialing",
-      "~:seats": 2
+      "~:seats": 5
     },
     "~:name": "Second team",
     "~:modified-at": "~m1701164272671",

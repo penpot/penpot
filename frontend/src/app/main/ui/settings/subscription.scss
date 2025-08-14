@@ -63,7 +63,7 @@
 .title-section {
   @include t.use-typography("title-large");
   color: var(--color-foreground-primary);
-  margin-block-end: var(--sp-l);
+  margin-block-end: var(--sp-xxl);
 }
 
 .plan-section-title {
@@ -81,7 +81,7 @@
 .plan-card-header {
   display: flex;
   justify-content: space-between;
-  margin-block-end: var(--sp-s);
+  margin-block-end: var(--sp-m);
 }
 
 .plan-card-title-container {
@@ -135,12 +135,13 @@
 }
 
 .other-subscriptions {
-  margin-block-start: $s-36;
+  margin-block-start: $s-52;
 }
 
 .cta-button {
   @include t.use-typography("body-medium");
   @include buttonStyle;
+  align-items: center;
   color: var(--color-accent-tertiary);
   display: flex;
   margin-block-start: var(--sp-m);
@@ -153,6 +154,10 @@
   width: var(--sp-l);
   stroke: var(--color-accent-tertiary);
   margin-inline-start: var(--sp-xs);
+}
+
+.icon-dropdown svg {
+  transform: rotate(90deg);
 }
 
 .bottom-link {
@@ -168,11 +173,11 @@
   display: grid;
   grid-template-rows: auto 1fr auto;
   max-height: initial;
-  min-width: $s-520;
+  min-width: $s-548;
 }
 
 .modal-dialog.subscription-success {
-  min-width: $s-612;
+  min-width: $s-648;
 }
 
 .close-btn {
@@ -191,12 +196,8 @@
   margin-block-end: var(--sp-l);
 }
 
-.modal-text-lage {
-  @include t.use-typography("body-large");
-}
-
-.modal-text-small {
-  @include t.use-typography("body-small");
+.modal-text-medium {
+  @include t.use-typography("body-medium");
 }
 
 .modal-text-cap {
@@ -207,7 +208,7 @@
   text-decoration: line-through;
 }
 
-.modal-text-small strong,
+.modal-text-medium strong,
 .text-strikethrough strong,
 .modal-text-cap strong {
   font-weight: $fw700;
@@ -260,11 +261,21 @@
   }
 }
 
-.teams-list {
-  list-style-position: inside;
-  list-style-type: disc;
+.editors-text {
+  @include t.use-typography("body-medium");
+  margin: 0;
+}
+
+.editors-list-warning {
   margin-inline-start: var(--sp-xl);
-  margin-block: var(--sp-xxl);
+  margin-block: var(--sp-s);
+}
+
+.editors-list {
+  @include t.use-typography("body-medium");
+  list-style-position: inside;
+  list-style-type: none;
+  margin-inline-start: var(--sp-xl);
   max-height: $s-216;
   overflow-y: auto;
 }
@@ -274,11 +285,14 @@
   width: $s-80;
 }
 
-.editors-label {
-  margin-block-start: var(--sp-xxl);
+.error-message {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-error);
+  margin-block-start: $s-8;
 }
 
 .editors-wrapper {
+  align-items: center;
   display: flex;
   gap: var(--sp-xl);
   margin-block-start: var(--sp-l);
@@ -287,4 +301,17 @@
 .editors-cost {
   display: flex;
   flex-direction: column;
+}
+
+.unlimited-capped-warning {
+  @include t.use-typography("body-small");
+  background-color: var(--color-background-tertiary);
+  border-radius: var(--sp-s);
+  margin-block-start: $s-40;
+  padding-block: var(--sp-s);
+  padding-inline: var(--sp-m);
+}
+
+.show-editors-button {
+  padding-inline: 0;
 }

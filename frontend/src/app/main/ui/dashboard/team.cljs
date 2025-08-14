@@ -24,8 +24,7 @@
    [app.main.ui.dashboard.change-owner]
    [app.main.ui.dashboard.subscription :refer [team*
                                                members-cta*
-                                               show-subscription-members-main-banner?
-                                               show-subscription-members-small-banner?]]
+                                               show-subscription-members-banner?]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.icons :as i]
@@ -541,21 +540,15 @@
 
   [:*
    [:& header {:section :dashboard-team-members :team team}]
-   [:section {:class (stl/css-case
-                      :dashboard-container true
-                      :dashboard-team-members true
-                      :dashboard-top-cta (show-subscription-members-main-banner? team))}
-    (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-main-banner? team))
-      [:> members-cta* {:banner-is-expanded true :team team}])
+   [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
+
     [:> team-members*
      {:profile profile
       :team team}]
 
-    (when (and
-           (contains? cfg/flags :subscriptions)
-           (show-subscription-members-small-banner? team))
-      [:> members-cta* {:banner-is-expanded false :team team}])]])
+    (when (and (contains? cfg/flags :subscriptions)
+               (show-subscription-members-banner? team profile))
+      [:> members-cta* {:team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
@@ -803,7 +796,7 @@
 
 (mf/defc team-invitations-page*
   {::mf/props :obj}
-  [{:keys [team]}]
+  [{:keys [team profile]}]
 
   (mf/with-effect [team]
     (dom/set-html-title
@@ -818,16 +811,13 @@
   [:*
    [:& header {:section :dashboard-team-invitations
                :team team}]
-   [:section {:class (stl/css-case
-                      :dashboard-team-invitations true
-                      :dashboard-top-cta (show-subscription-members-main-banner? team))}
-    (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-main-banner? team))
-      [:> members-cta* {:banner-is-expanded true :team team}])
+   [:section {:class (stl/css :dashboard-team-invitations)}
+
     [:> invitation-section* {:team team}]
+
     (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-small-banner? team))
-      [:> members-cta* {:banner-is-expanded false :team team}])]])
+               (show-subscription-members-banner? team profile))
+      [:> members-cta* {:team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION

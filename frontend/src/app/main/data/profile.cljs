@@ -91,6 +91,16 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (->> (rp/cmd! :get-profile)
+           (rx/mapcat (fn [profile]
+                        (if (and (contains? cf/flags :subscriptions)
+                                 (is-authenticated? profile))
+                          (->> (rp/cmd! :get-subscription-usage {})
+                               (rx/map (fn [{:keys [editors]}]
+                                         (update-in profile [:props :subscription] assoc :editors editors)))
+                               (rx/catch (fn [cause]
+                                           (js/console.error "unexpected error on obtaining subscription usage" cause)
+                                           (rx/of profile))))
+                          (rx/of profile))))
            (rx/map (partial ptk/data-event ::profile-fetched))
            (rx/catch on-fetch-profile-exception)))))
 
