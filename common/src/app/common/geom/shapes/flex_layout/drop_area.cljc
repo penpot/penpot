@@ -177,7 +177,7 @@
                            (rest children)))))]
 
           (recur next-areas
-                 (+ from-idx (:num-children current-line))
+                 (+ from-idx (long (:num-children current-line)))
                  (+ (:x line-area) (:width line-area))
                  (+ (:y line-area) (:height line-area))
                  (rest lines)))))))
