@@ -1909,7 +1909,7 @@ Will return a value that matches this schema:
        (->TokensLib sets themes active-themes))))
 
 #?(:clj
-   (defn- write-tokens-lib
+   (defn- write-tokens-lib-v1-4
      [n w ^TokensLib o]
      (fres/write-tag! w n 3)
      (fres/write-object! w (.-sets o))
@@ -1917,12 +1917,60 @@ Will return a value that matches this schema:
      (fres/write-object! w (.-active-themes o))))
 
 #?(:clj
-   (defn- read-tokens-lib
+   (defn- read-tokens-lib-v1-4
      [r]
      (let [sets          (fres/read-object! r)
            themes        (fres/read-object! r)
            active-themes (fres/read-object! r)]
        (->TokensLib sets themes active-themes))))
+
+
+#?(:clj
+   (defn- read-tokens-lib-v1-5
+     [r]
+     (let [sets   (fres/read-object! r)
+           tokens (fres/read-object! r)
+           themes (fres/read-object! r)
+
+           lib   (make-tokens-lib)
+           lib   (reduce (fn [tlib set]
+                           (let [tokens (get tokens (:id set) [])
+                                 set    (make-token-set (assoc set :tokens tokens))]
+                             (add-set tlib set)))
+                         lib
+                         sets)
+           lib   (reduce (fn [tlib theme]
+                           (let [theme (make-token-theme theme)]
+                             (add-theme tlib theme)))
+                         lib
+                         themes)]
+
+       lib)))
+
+#?(:clj
+   (defn- write-tokens-lib-v1-5
+     [n w ^TokensLib o]
+     (fres/write-tag! w n 3)
+     (let [sets   (->> (get-sets o)
+                       (map datafy))
+
+           tokens (->> sets
+                       (map datafy)
+                       (map (fn [set]
+                              (d/vec2 (:id set)
+                                      (reduce-kv (fn [result k v]
+                                                   (assoc result k (datafy v)))
+                                                 (:tokens set)
+                                                 (:tokens set)))))
+                       (reduce conj {}))
+
+           sets   (mapv #(dissoc % :tokens) sets)
+           themes (->> (get-themes o)
+                       (map datafy))]
+
+       (fres/write-object! w sets)
+       (fres/write-object! w tokens)
+       (fres/write-object! w themes))))
 
 #?(:clj
    (fres/add-handlers!
@@ -1967,8 +2015,11 @@ Will return a value that matches this schema:
     {:name "penpot/tokens-lib/v1.3"
      :rfn read-tokens-lib-v1-3}
 
+    {:name "penpot/tokens-lib/v1.4"
+     :rfn read-tokens-lib-v1-4}
+
     ;; CURRENT TOKENS LIB READER & WRITTER
     {:name "penpot/tokens-lib/v1.4"
      :class TokensLib
-     :wfn write-tokens-lib
-     :rfn read-tokens-lib}))
+     :rfn read-tokens-lib-v1-5
+     :wfn write-tokens-lib-v1-5}))
