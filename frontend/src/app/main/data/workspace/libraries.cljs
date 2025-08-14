@@ -987,16 +987,12 @@
             all-parents (-> all-parents
                             (into parents-of-swapped)
                             (conj (:id new-shape)))]
-
-        (rx/merge
-         (rx/of
-          (dwu/start-undo-transaction undo-id)
-          (dch/commit-changes changes)
-          (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
-          (dwu/commit-undo-transaction undo-id)
-          (dws/deselect-all))
-         (->> (rx/of (dws/select-shape (:id new-shape) false))
-              (rx/delay 1)))))))
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
+         (dwu/commit-undo-transaction undo-id)
+         (dws/select-shape (:id new-shape) false))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
