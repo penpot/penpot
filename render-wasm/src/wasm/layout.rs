@@ -17,9 +17,23 @@ pub extern "C" fn set_shape_constraint_v(constraint: u8) {
 }
 
 #[no_mangle]
+pub extern "C" fn clear_shape_constraints() {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.clear_constraints();
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn set_shape_vertical_align(align: u8) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_vertical_align(VerticalAlign::from(align));
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn clear_shape_layout() {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.clear_layout();
     });
 }
 

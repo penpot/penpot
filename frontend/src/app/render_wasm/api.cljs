@@ -350,6 +350,12 @@
   (when constraint
     (h/call wasm/internal-module "_set_shape_constraint_v" (sr/translate-constraint-v constraint))))
 
+(defn set-shape-constraints
+  [constraint-h constraint-v]
+  (h/call wasm/internal-module "_clear_shape_constraints")
+  (set-constraints-h constraint-h)
+  (set-constraints-v constraint-v))
+
 (defn set-shape-hidden
   [hidden]
   (h/call wasm/internal-module "_set_shape_hidden" hidden))
@@ -588,6 +594,24 @@
             is-absolute
             z-index)))
 
+(defn clear-layout
+  []
+  (h/call wasm/internal-module "_clear_shape_layout"))
+
+(defn- set-shape-layout
+  [shape objects]
+  (clear-layout)
+
+  (when (or (ctl/any-layout? shape)
+            (ctl/any-layout-immediate-child? objects shape))
+    (set-layout-child shape))
+
+  (when (ctl/flex-layout? shape)
+    (set-flex-layout shape))
+
+  (when (ctl/grid-layout? shape)
+    (set-grid-layout shape)))
+
 (defn set-shape-shadows
   [shadows]
   (h/call wasm/internal-module "_clear_shape_shadows")
@@ -711,8 +735,8 @@
     (set-parent-id parent-id)
     (set-shape-type type)
     (set-shape-clip-content clip-content)
-    (set-constraints-h constraint-h)
-    (set-constraints-v constraint-v)
+    (set-shape-constraints constraint-h constraint-v)
+
     (set-shape-rotation rotation)
     (set-shape-transform transform)
     (set-shape-blend-mode blend-mode)
@@ -738,15 +762,7 @@
     (when (= type :text)
       (set-shape-grow-type grow-type))
 
-    (when (or (ctl/any-layout? shape)
-              (ctl/any-layout-immediate-child? objects shape))
-      (set-layout-child shape))
-
-    (when (ctl/flex-layout? shape)
-      (set-flex-layout shape))
-
-    (when (ctl/grid-layout? shape)
-      (set-grid-layout shape))
+    (set-shape-layout shape objects)
 
     (set-shape-selrect selrect)
 
