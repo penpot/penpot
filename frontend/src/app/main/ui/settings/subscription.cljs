@@ -54,9 +54,9 @@
                                            :on-click cta-link} cta-text])
    (when (and cta-link-trial cta-text-trial) [:button {:class (stl/css :cta-button :bottom-link)
                                                        :on-click cta-link-trial} cta-text-trial])])
-(def ^:private schema:seats-form
+(defn schema:seats-form [min-editors]
   [:map {:title "SeatsForm"}
-   [:min-members [::sm/number {:min 1 :max 9999}]]])
+   [:min-members [::sm/number {:min min-editors :max 9999}]]])
 
 (mf/defc subscribe-management-dialog
   {::mf/register modal/components
@@ -71,9 +71,10 @@
                               "professional" (tr "subscription.settings.professional")
                               "unlimited" (tr "subscription.settings.unlimited")
                               "enterprise" (tr "subscription.settings.enterprise")))
-        initial                    (mf/with-memo []
-                                     {:min-members (or (some->> teams (map :total-editors) (apply max)) 1)})
-        form                       (fm/use-form :schema schema:seats-form
+        min-editors                (or (some->> teams (map :total-editors) (apply max)) 1)
+        initial                    (mf/with-memo [min-editors]
+                                     {:min-members min-editors})
+        form                       (fm/use-form :schema (schema:seats-form min-editors)
                                                 :initial initial)
         subscribe-to-unlimited     (mf/use-fn
                                     (fn [form]
@@ -117,7 +118,7 @@
       [:div {:class (stl/css :modal-content)}
        (if (seq teams)
          [:* [:div {:class (stl/css :modal-text)}
-              (tr "subscription.settings.management.dialog.choose-this-plan")]
+              (tr "subscription.settings.management.dialog.currently-editors-title" 10)]
           [:ul {:class (stl/css :teams-list)}
            (for [team teams]
              [:li {:key (dm/str (:id team)) :class (stl/css :team-name)}
@@ -214,6 +215,8 @@
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)} (tr "subscription.settings.sucess.dialog.title" subscription-name)]
+        (when (not= subscription-name "professional")
+          [:p {:class (stl/css :modal-text-large)} (tr "subscription.settings.success.dialog.thanks" subscription-name)])
         [:p {:class (stl/css :modal-text-large)} (tr "subscription.settings.success.dialog.description")]
         [:p {:class (stl/css :modal-text-large)} (tr "subscription.settings.sucess.dialog.footer")]
 
@@ -341,18 +344,18 @@
        (case subscription-type
          "professional"
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
-                         :benefits [(tr "subscription.settings.professional.projects-files"),
-                                    (tr "subscription.settings.professional.teams-editors"),
-                                    (tr "subscription.settings.professional.storage-autosave")]}]
+                         :benefits [(tr "subscription.settings.professional.storage-benefit"),
+                                    (tr "subscription.settings.professional.autosave-benefit"),
+                                    (tr "subscription.settings.professional.teams-editors-benefit")]}]
 
          "unlimited"
          (if subscription-is-trial?
            [:> plan-card* {:card-title (tr "subscription.settings.unlimited-trial")
                            :card-title-icon i/character-u
-                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
-                           :benefits [(tr "subscription.settings.unlimited.teams"),
-                                      (tr "subscription.settings.unlimited.bill"),
-                                      (tr "subscription.settings.unlimited.storage-autosave")]
+                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits"),
+                           :benefits [(tr "subscription.settings.unlimited.storage-benefit")
+                                      (tr "subscription.settings.unlimited.autosave-benefit"),
+                                      (tr "subscription.settings.unlimited.bill")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments
                            :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
@@ -362,9 +365,9 @@
            [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
                            :card-title-icon i/character-u
                            :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
-                           :benefits [(tr "subscription.settings.unlimited.teams"),
-                                      (tr "subscription.settings.unlimited.bill"),
-                                      (tr "subscription.settings.unlimited.storage-autosave")]
+                           :benefits [(tr "subscription.settings.unlimited.storage-benefit"),
+                                      (tr "subscription.settings.unlimited.autosave-benefit"),
+                                      (tr "subscription.settings.unlimited.bill")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments
                            :editors (-> profile :props :subscription :quantity)}])
@@ -373,18 +376,18 @@
          (if subscription-is-trial?
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise-trial")
                            :card-title-icon i/character-e
-                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
-                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage"),
-                                      (tr "subscription.settings.enterprise.capped-bill"),
-                                      (tr "subscription.settings.enterprise.autosave")]
+                           :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
+                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
+                                      (tr "subscription.settings.enterprise.autosave"),
+                                      (tr "subscription.settings.enterprise.capped-bill")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments}]
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                            :card-title-icon i/character-e
-                           :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
-                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage"),
-                                      (tr "subscription.settings.enterprise.capped-bill"),
-                                      (tr "subscription.settings.enterprise.autosave")]
+                           :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
+                           :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
+                                      (tr "subscription.settings.enterprise.autosave"),
+                                      (tr "subscription.settings.enterprise.capped-bill")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
                            :cta-link go-to-payments}]))
 
@@ -406,9 +409,9 @@
          [:> plan-card* {:card-title (tr "subscription.settings.professional")
                          :price-value "$0"
                          :price-period (tr "subscription.settings.price-editor-month")
-                         :benefits [(tr "subscription.settings.professional.projects-files"),
-                                    (tr "subscription.settings.professional.teams-editors"),
-                                    (tr "subscription.settings.professional.storage-autosave")]
+                         :benefits [(tr "subscription.settings.professional.storage-benefit"),
+                                    (tr "subscription.settings.professional.autosave-benefit"),
+                                    (tr "subscription.settings.professional.teams-editors-benefit")]
                          :cta-text (tr "subscription.settings.subscribe")
                          :cta-link #(open-subscription-modal "professional")
                          :cta-text-with-icon (tr "subscription.settings.more-information")
@@ -420,9 +423,9 @@
                          :price-value "$7"
                          :price-period (tr "subscription.settings.price-editor-month")
                          :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
-                         :benefits [(tr "subscription.settings.unlimited.teams"),
-                                    (tr "subscription.settings.unlimited.bill"),
-                                    (tr "subscription.settings.unlimited.storage-autosave")]
+                         :benefits [(tr "subscription.settings.unlimited.storage-benefit"),
+                                    (tr "subscription.settings.unlimited.autosave-benefit"),
+                                    (tr "subscription.settings.unlimited.bill")]
                          :cta-text (if subscription (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "unlimited" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
@@ -434,9 +437,9 @@
                          :price-value "$950"
                          :price-period (tr "subscription.settings.price-organization-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
-                         :benefits [(tr "subscription.settings.enterprise.unlimited-storage"),
-                                    (tr "subscription.settings.enterprise.capped-bill"),
-                                    (tr "subscription.settings.enterprise.autosave")]
+                         :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
+                                    (tr "subscription.settings.enterprise.autosave"),
+                                    (tr "subscription.settings.enterprise.capped-bill")]
                          :cta-text (if subscription (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")

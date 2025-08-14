@@ -63,7 +63,7 @@
 .title-section {
   @include t.use-typography("title-large");
   color: var(--color-foreground-primary);
-  margin-block-end: var(--sp-l);
+  margin-block-end: var(--sp-xxl);
 }
 
 .plan-section-title {
@@ -81,7 +81,7 @@
 .plan-card-header {
   display: flex;
   justify-content: space-between;
-  margin-block-end: var(--sp-s);
+  margin-block-end: var(--sp-m);
 }
 
 .plan-card-title-container {
@@ -135,7 +135,7 @@
 }
 
 .other-subscriptions {
-  margin-block-start: $s-36;
+  margin-block-start: $s-52;
 }
 
 .cta-button {

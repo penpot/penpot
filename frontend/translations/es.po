@@ -4300,51 +4300,15 @@ msgstr "Incrementar zoom a objetivo"
 msgid "shortcuts.zoom-selected"
 msgstr "Zoom a selección"
 
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr ""
-"El plan Professional está diseñado para equipos de hasta 8 editores "
-"(propietario, administrador y editor)."
-
-#: src/app/main/ui/dashboard/subscription.cljs:160
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"¡Parece que tu equipo ha crecido! Tu plan incluye %s asientos, pero ahora estás usando %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"Consigue más editores, más almacenamiento y más versiones guardadas "
-"automáticamente con el plan Unlimited o Enterprise. Contacta con el "
-"propietario del equipo: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"Consigue más editores, más almacenamiento y más versiones guardadas "
-"automáticamente con el plan Unlimited o Enterprise. [Suscríbete ahora.|target:self](%s)"
-
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
-msgstr "Por favor, mejóralo para adaptarlo a tu uso. [Suscríbete ahora.|target:self](%s)"
-
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-member"
-msgstr "Por favor, mejóralo para adaptarlo a tu uso. Contacta con el "
-"propietario del equipo: %s"
-
 #: src/app/main/ui/dashboard/subscription.cljs:80
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "Plan Enterprise"
 
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
-msgid "subscription.dashboard.power-up.professional.bottom"
+msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr ""
-"Consigue editores y almacenamiento adicionales, recuperación de "
+"Consigue almacenamiento adicional, recuperación de "
 "archivos y mucho más con el Plan Unlimited[Mejóralo|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
@@ -4363,13 +4327,6 @@ msgstr ""
 "¿Disfrutas de la prueba? Desbloquea el acceso completo para "
 "siempre.[Suscríbete|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr ""
-"Editores adicionales, almacenamiento y versión autoguardada, copia de "
-"seguridad de archivos y mucho más."
-
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Plan Unlimited (Prueba)"
@@ -4385,7 +4342,7 @@ msgstr "Plan Unlimited"
 #, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
-"Consigue editores adicionales, copias de seguridad, almacenamiento ilimitado y mucho más. "
+"Consigue más copias de seguridad, almacenamiento ilimitado y mucho más. "
 "[Echa un ojo al Plan Enterprise|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
@@ -4412,6 +4369,26 @@ msgstr "Plan de equipo"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
+msgid "subscription.dashboard.professional-members-cta-title"
+msgstr ""
+"Tu plan profesional está pensado para un máximo de 8 editores "
+"(propietario, administrador y editor), pero estás utilizando %s."
+
+#, markdown
+msgid "subscription.dashboard.professional-members-cta-upgrade-owner"
+msgstr ""
+"Consigue más editores, almacenamiento y versiones guardadas automáticamente con el plan Unlimited o Enterprise. "
+"[Suscríbete ahora.|target:self](%s)"
+
+msgid "subscription.dashboard.unlimited-members-cta-title"
+msgstr ""
+"¡Parece que tu equipo ha crecido! Tu plan incluye %s puestos entre todos tus equipos, pero ahora estás utilizando %s."
+
+#, markdown
+msgid "subscription.dashboard.unlimited-members-cta-upgrade-owner"
+msgstr ""
+"Por favor, actualiza tu versión para adaptarla a tu uso. [Suscríbete ahora.|target:self](%s)"
+
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:222, src/app/main/ui/settings/subscription.cljs:231
 msgid "subscription.labels"
 msgstr "Suscripción"
@@ -4437,8 +4414,8 @@ msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (prueba)"
 
 #: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.unlimited-storage"
-msgstr "Almacenamiento ilimitado y versiones de autoguardado de 90 días y recuperación de archivos"
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "Almacenamiento ilimitado"
 
 msgid "subscription.settings.enterprise.autosave"
 msgstr "Versiones guardadas automáticamente cada 90 días y recuperación de archivos"
@@ -4452,8 +4429,8 @@ msgid "subscription.settings.manage-your-subscription"
 msgstr "Gestionar tu suscripción"
 
 #: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "Estás eligiendo este plan para:"
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgstr "Actualmente hay %s personas en tus equipos que pueden editar."
 
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
@@ -4471,7 +4448,7 @@ msgstr "Este plan se aplicará a todos los futuros equipos que crees o poseas."
 
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
-msgstr "(Ahora no se efectuará ningún pago)"
+msgstr "Se cobrar después del período de prueba. No se requiere tarjeta de crédito en este momento."
 
 #: src/app/main/ui/settings/subscription.cljs:124
 #, markdown
@@ -4508,15 +4485,15 @@ msgid "subscription.settings.professional"
 msgstr "Professional"
 
 #: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "Proyectos, archivos y borradores ilimitados"
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "Versiones con autoguardado de 7 días y recuperación de archivos"
 
 #: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage-autosave"
-msgstr "10 GB de almacenamiento y versiones de autoguardado de 7 días y recuperación de archivos"
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10 GB de almacenamiento"
 
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
+msgid "subscription.settings.professional.teams-editors-benefit"
 msgstr "Equipos ilimitados de hasta 8 redactores"
 
 #: src/app/main/ui/settings/subscription.cljs:235
@@ -4533,6 +4510,9 @@ msgstr "Comenzar prueba gratuita"
 #: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.subscribe"
 msgstr "Suscríbete"
+
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "¡Gracias por elegir el plan %s de Penpot!"
 
 #: src/app/main/ui/settings/subscription.cljs:167
 msgid "subscription.settings.success.dialog.description"
@@ -4569,14 +4549,13 @@ msgid "subscription.settings.unlimited.bill"
 msgstr "Factura mensual limitada"
 
 #: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage-autosave"
+msgid "subscription.settings.unlimited.storage-benefit"
 msgstr ""
-"25 GB de almacenamiento y 30 días de autoguardado de versiones y recuperación "
-"de archivos"
+"25 GB de almacenamiento"
 
 #: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "Equipos ilimitados, independientemente de su tamaño"
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "Versiones con autoguardado de 30 días y recuperación de archivos"
 
 #: src/app/main/ui/dashboard/subscription.cljs:133, src/app/main/ui/workspace/main_menu.cljs:928
 msgid "subscription.workspace.header.menu.option.power-up"
