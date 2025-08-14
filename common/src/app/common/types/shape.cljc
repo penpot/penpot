@@ -418,7 +418,7 @@
   #{:page-id :component-id :component-file :component-root :main-instance
     :remote-synced :shape-ref :touched :blocked :collapsed :locked
     :hidden :masked-group :fills :proportion :proportion-lock :constraints-h
-    :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :opacity :grids :exports
+    :constraints-v :fixed-scroll :r1 :r2 :r3 :r4 :rotation :opacity :grids :exports
     :strokes :blend-mode :interactions :shadow :blur :grow-type :applied-tokens
     :plugin-data})
 
