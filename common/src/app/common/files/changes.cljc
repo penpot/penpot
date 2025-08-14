@@ -195,7 +195,7 @@
      [:map {:title "AddObjChange"}
       [:type [:= :add-obj]]
       [:id ::sm/uuid]
-      [:obj :map]
+      [:obj cts/schema:shape]
       [:page-id {:optional true} ::sm/uuid]
       [:component-id {:optional true} ::sm/uuid]
       [:frame-id ::sm/uuid]
