@@ -5492,27 +5492,23 @@ msgstr "This component has conflicting variants. Make sure each variation has a 
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
 msgid "workspace.options.component.variant.duplicated.copy.locate"
-msgstr "Go to main component"
+msgstr "Locate conflicting variants"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
 msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Some variants have identical properties and values"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.duplicated.single.adjust"
-msgstr "Adjust the values so they can be retrieved."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.all"
-msgstr "These variants have identical properties and values."
+msgstr "These variants have identical properties and values. Adjust the values so they can be retrieved."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.one"
-msgstr "This variant has identical properties and values to another variant."
+msgstr "This variant has identical properties and values to another variant. Adjust the values so they can be retrieved."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.some"
-msgstr "Some of these variants have identical properties and values."
+msgstr "Some of these variants have identical properties and values. Adjust the values so they can be retrieved."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.malformed.group.locate"
@@ -5541,6 +5537,17 @@ msgstr "[property]=[value], [property]=[value]"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:338
 msgid "workspace.options.component.variant.malformed.structure.title"
 msgstr "Try using the following structure:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:475
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr "This component has variants with invalid names. Make sure every variant is following the correct structure."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:478
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Locate invalid variants"
+
+
+
 
 msgid "workspace.options.component.variants-help-modal.title"
 msgstr "How variants stay connected"

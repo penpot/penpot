@@ -5492,7 +5492,7 @@ msgstr "Este componente tiene variantes en conflicto. Comprueba que cada variant
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
 msgid "workspace.options.component.variant.duplicated.copy.locate"
-msgstr "Ir al componente principal"
+msgstr "Localizar variantes en conflicto"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.duplicated.group.locate"
@@ -5503,20 +5503,16 @@ msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Algunas variantes tienen propiedades y valores idénticos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.duplicated.single.adjust"
-msgstr "Ajusta los valores para que puedan ser encontradas."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.all"
-msgstr "Estas variantes tienen propiedades y valores idénticos."
+msgstr "Estas variantes tienen propiedades y valores idénticos. Ajusta los valores para que puedan ser encontradas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.one"
-msgstr "Esta variante tiene propiedades y valores idénticos a los de otra variante."
+msgstr "Esta variante tiene propiedades y valores idénticos a los de otra variante. Ajusta los valores para que puedan ser encontradas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.some"
-msgstr "Algunas de estas variantes tienen propiedades y valores idénticos."
+msgstr "Algunas de estas variantes tienen propiedades y valores idénticos. Ajusta los valores para que puedan ser encontradas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.malformed.group.locate"
@@ -5545,6 +5541,14 @@ msgstr "[propiedad]=[valor], [propiedad]=[valor]"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:338
 msgid "workspace.options.component.variant.malformed.structure.title"
 msgstr "Prueba a utilizar la siguiente estructura:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:475
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr "Este componente tiene variantes con nombres no válidos. Asegúrate de que cada variante siga la estructura correcta."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:478
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Localizar variantes inválidas"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:163
 msgid "workspace.options.constraints"

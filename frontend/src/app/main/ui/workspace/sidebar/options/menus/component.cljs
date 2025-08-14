@@ -273,8 +273,8 @@
     :else nil))
 
 
-(defn- get-component-ids-with-duplicated-variant-props-and-values
-  "Get a list of component ids whose property names and values are duplicated"
+(defn- get-components-with-duplicated-variant-props-and-values
+  "Get a list of components whose property names and values are duplicated"
   [components]
   (let [duplicated-props (->> components
                               (map :variant-properties)
@@ -283,8 +283,14 @@
                               keys
                               set)]
     (->> components
-         (filter #(duplicated-props (:variant-properties %)))
-         (map :main-instance-id))))
+         (filter #(duplicated-props (:variant-properties %))))))
+
+(defn- get-main-ids-with-duplicated-variant-props-and-values
+  "Get a list of component main ids whose property names and values are duplicated"
+  [components]
+  (->> components
+       get-components-with-duplicated-variant-props-and-values
+       (map :main-instance-id)))
 
 
 (defn- get-variant-options
@@ -316,7 +322,7 @@
         malformed-msg   (get-variant-malformed-warning-message malformed-map)
 
         duplicated-ids  (->> (cfv/find-variant-components data objects variant-id)
-                             get-component-ids-with-duplicated-variant-props-and-values
+                             get-main-ids-with-duplicated-variant-props-and-values
                              set)
         duplicated-map  (->> components
                              (mapv :main-instance-id)
@@ -387,25 +393,28 @@
           [:> icon* {:icon-id "msg-neutral"
                      :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
-           (str duplicated-msg " " "Adjust the values so they can be retrieved.")]]))]))
+           (str duplicated-msg)]]))]))
 
 
 (mf/defc component-variant-copy*
-  [{:keys [component shape data]}]
+  [{:keys [component shape data current-file-id]}]
   (let [component-id (:id component)
         properties   (:variant-properties component)
         variant-id   (:variant-id component)
         objects      (-> (dsh/get-page data (:main-instance-page component))
                          (get :objects))
+        variant-comps    (cfv/find-variant-components data objects variant-id)
 
-        variant-components (cfv/find-variant-components data objects variant-id)
+        duplicated-comps (->> variant-comps
+                              get-components-with-duplicated-variant-props-and-values)
 
-        duplicated-ids     (->> (cfv/find-variant-components data objects variant-id)
-                                get-component-ids-with-duplicated-variant-props-and-values)
-        duplicated?        (d/not-empty? duplicated-ids)
+        malformed-comps  (->> variant-comps
+                              (filter #(->> (:main-instance-id %)
+                                            (get objects)
+                                            :variant-error)))
 
-        prop-vals          (mf/with-memo [data objects variant-id]
-                             (cfv/extract-properties-values data objects variant-id))
+        prop-vals        (mf/with-memo [data objects variant-id]
+                           (cfv/extract-properties-values data objects variant-id))
 
         get-options
         (mf/use-fn
@@ -413,10 +422,24 @@
          (fn [prop-name]
            (get-variant-options prop-name prop-vals)))
 
-        select-shapes-with-duplicated
+        select-duplicated-comps
         (mf/use-fn
-         (mf/deps duplicated-ids)
-         #(st/emit! (dw/select-shapes (into (d/ordered-set) duplicated-ids))))
+         (mf/deps duplicated-comps)
+         #(let [ids (map :id duplicated-comps)]
+            (if (= current-file-id (:component-file shape))
+              (st/emit! (dwl/go-to-local-component {:id (first ids)
+                                                    :additional-ids (rest ids)}))
+              (st/emit! (dwl/go-to-component-file (:component-file shape)
+                                                  (first duplicated-comps))))))
+
+        select-malformed-comps
+        (mf/use-fn
+         (mf/deps current-file-id shape component component-id)
+         (fn []
+           (let [ids (map :id malformed-comps)]
+             (if (= current-file-id (:component-file shape))
+               (st/emit! (dwl/go-to-local-component :id (first ids) :additional-ids (rest ids)))
+               (st/emit! (dwl/go-to-component-file (:component-file shape) (first malformed-comps)))))))
 
         switch-component
         (mf/use-fn
@@ -425,7 +448,7 @@
            (when (not= val (dm/get-in component [:variant-properties pos :value]))
              (let [target-props (-> (:variant-properties component)
                                     (update pos assoc :value val))
-                   valid-comps  (->> variant-components
+                   valid-comps  (->> variant-comps
                                      (remove #(= (:id %) component-id))
                                      (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
                                      (reverse))
@@ -445,15 +468,25 @@
                        :empty-to-end true
                        :on-change (partial switch-component pos)}]]])]
 
-     (when duplicated?
+     (if (seq malformed-comps)
        [:div {:class (stl/css :variant-warning-wrapper)}
         [:> icon* {:icon-id "msg-neutral"
                    :class (stl/css :variant-warning-darken)}]
         [:div {:class (stl/css :variant-warning-highlight)}
-         (tr "workspace.options.component.variant.duplicated.copy.title")]
+         (tr "workspace.options.component.variant.malformed.copy")]
         [:button {:class (stl/css :variant-warning-button)
-                  :on-click select-shapes-with-duplicated}
-         (tr "workspace.options.component.variant.duplicated.copy.locate")]])]))
+                  :on-click select-malformed-comps}
+         (tr "workspace.options.component.variant.malformed.locate")]]
+
+       (when (seq duplicated-comps)
+         [:div {:class (stl/css :variant-warning-wrapper)}
+          [:> icon* {:icon-id "msg-neutral"
+                     :class (stl/css :variant-warning-darken)}]
+          [:div {:class (stl/css :variant-warning-highlight)}
+           (tr "workspace.options.component.variant.duplicated.copy.title")]
+          [:button {:class (stl/css :variant-warning-button)
+                    :on-click select-duplicated-comps}
+           (tr "workspace.options.component.variant.duplicated.copy.locate")]]))]))
 
 
 (mf/defc component-swap-item
@@ -936,7 +969,8 @@
                      (not (:deleted component))
                      (not swap-opened?)
                      (not multi))
-            [:> component-variant-copy* {:component component
+            [:> component-variant-copy* {:current-file-id current-file-id
+                                         :component component
                                          :shape shape
                                          :data data}])
 
@@ -986,7 +1020,7 @@
         malformed?         (d/not-empty? malformed-ids)
 
         duplicated-ids     (->> (cfv/find-variant-components data objects variant-id)
-                                get-component-ids-with-duplicated-variant-props-and-values)
+                                get-main-ids-with-duplicated-variant-props-and-values)
         duplicated?        (d/not-empty? duplicated-ids)
 
         properties         (mf/with-memo [data objects variant-id]
