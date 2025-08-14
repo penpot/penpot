@@ -255,10 +255,10 @@
       (if-let [pt (first pts)]
         (let [x (dm/get-prop pt :x)
               y (dm/get-prop pt :y)]
-          (recur (mth/min minx x)
-                 (mth/min miny y)
-                 (mth/max maxx x)
-                 (mth/max maxy y)
+          (recur (double (mth/min minx x))
+                 (double (mth/min miny y))
+                 (double (mth/max maxx x))
+                 (double (mth/max maxy y))
                  (rest pts)))
         (when (d/num? minx miny maxx maxy)
           (make-rect minx miny (- maxx minx) (- maxy miny)))))))
