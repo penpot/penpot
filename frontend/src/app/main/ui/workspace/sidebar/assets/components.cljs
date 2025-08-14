@@ -172,6 +172,19 @@
           [:span {:class (stl/css-case :variant-mark-cell listing-thumbs? :variant-mark true :component-icon true)
                   :title (tr "workspace.assets.components.num-variants" num-variants)} i/variant])])]))
 
+
+(defn- count-leaves
+  "Counts the total number of leaf elements in a nested map structure.
+     A leaf element is considered any element inside a vector."
+  [m]
+  (reduce-kv (fn [acc _ v]
+               (cond
+                 (map? v) (+ acc (count-leaves v))
+                 (vector? v) (+ acc (count v))
+                 :else acc))
+             0
+             m))
+
 (mf/defc components-group
   {::mf/wrap-props false}
   [{:keys [file-id prefix groups open-groups force-open? renaming listing-thumbs? selected on-asset-click
@@ -192,10 +205,11 @@
                                selected-full))
 
         components     (not-empty (get groups "" []))
-        can-combine?   (and is-local
-                            (> (count components) 1)
-                            (not-any? ctc/is-variant? components)
-                            (apply = (map :main-instance-page components)))
+        can-combine?   (mf/with-memo [is-local groups components]
+                         (and is-local
+                              (> (count-leaves groups) 1)
+                              (not-any? ctc/is-variant? components)
+                              (apply = (map :main-instance-page components))))
         on-drag-enter
         (mf/use-fn
          (mf/deps dragging* prefix selected-paths is-local drag-data*)
