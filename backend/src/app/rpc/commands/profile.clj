@@ -471,6 +471,26 @@
     (-> (rph/wrap nil)
         (rph/with-transform (session/delete-fn cfg)))))
 
+(def sql:get-subscription-editors
+  "SELECT DISTINCT
+          p.id,
+          p.fullname AS name,
+          p.email AS email
+     FROM team_profile_rel AS tpr1
+     JOIN team_profile_rel AS tpr2
+       ON (tpr1.team_id = tpr2.team_id)
+     JOIN profile AS p
+       ON (tpr2.profile_id = p.id)
+    WHERE tpr1.profile_id = ?
+      AND tpr1.is_owner IS true
+      AND tpr2.can_edit IS true")
+
+(sv/defmethod ::get-subscription-usage
+  {::doc/added "2.9"}
+  [cfg {:keys [::rpc/profile-id]}]
+  (let [editors (db/exec! cfg [sql:get-subscription-editors profile-id])]
+    {:editors editors}))
+
 ;; --- HELPERS
 
 (def sql:owned-teams
