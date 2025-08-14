@@ -393,7 +393,7 @@
       min-fr
       (let [{:keys [size type value]} (first tracks)
             min-fr (if (= type :flex) (max min-fr (/ size value)) min-fr)]
-        (recur (rest tracks) min-fr)))))
+        (recur (rest tracks) (double min-fr))))))
 
 (defn calc-layout-data
   ([parent transformed-parent-bounds children bounds objects]

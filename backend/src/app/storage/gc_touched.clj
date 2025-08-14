@@ -212,8 +212,8 @@
          deleted 0]
     (if-let [chunk (get-chunk pool)]
       (let [[nfo ndo] (db/tx-run! cfg process-chunk! chunk)]
-        (recur (+ freezed nfo)
-               (+ deleted ndo)))
+        (recur (long (+ freezed nfo))
+               (long (+ deleted ndo))))
       (do
         (l/inf :hint "task finished"
                :to-freeze freezed

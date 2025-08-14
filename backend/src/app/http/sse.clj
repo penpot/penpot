@@ -33,7 +33,7 @@
                  (println "event:" (d/name name))
                  (println "data:" (t/encode-str data {:type :json-verbose}))
                  (println))]
-      (.getBytes data "UTF-8"))
+      (.getBytes ^String data "UTF-8"))
     (catch Throwable cause
       (l/err :hint "unexpected error on encoding value on sse stream"
              :cause cause)
