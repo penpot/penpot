@@ -2,6 +2,8 @@ use skia_safe::{self as skia, Matrix};
 
 use crate::math;
 
+mod subpaths;
+
 type Point = (f32, f32);
 
 #[derive(Debug, PartialEq, Copy, Clone)]
@@ -10,6 +12,24 @@ pub enum Segment {
     LineTo(Point),
     CurveTo((Point, Point, Point)),
     Close,
+}
+
+impl Segment {
+    fn xy(&self) -> Option<Point> {
+        match self {
+            Segment::MoveTo(xy) => Some(*xy),
+            Segment::LineTo(xy) => Some(*xy),
+            Segment::CurveTo((_, _, xy)) => Some(*xy),
+            Segment::Close => None,
+        }
+    }
+
+    pub fn is_close_to(&self, other: &Segment) -> bool {
+        match (self.xy(), other.xy()) {
+            (Some(a), Some(b)) => math::are_close_points(a, b),
+            _ => false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,7 +59,6 @@ fn to_verb(v: u8) -> skia::path::Verb {
 
 impl Path {
     pub fn new(segments: Vec<Segment>) -> Self {
-        let mut open = true;
         let mut skia_path = skia::Path::new();
         let mut start = None;
 
@@ -60,7 +79,6 @@ impl Path {
                 }
                 Segment::Close => {
                     skia_path.close();
-                    open = false;
                     None
                 }
             };
@@ -70,10 +88,12 @@ impl Path {
                     && math::is_close_to(destination.1, start.1)
                 {
                     skia_path.close();
-                    open = false;
                 }
             }
         }
+
+        // TODO: handle error
+        let open = subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
 
         Self {
             segments,
