@@ -168,7 +168,7 @@
                 (gpt/point 20 65.2)
                 (gpt/point 12 -10)]
         result (grc/points->rect points)
-        expect {:x -1, :y -10, :width 21, :height 75.2}]
+        expect {:x -1.0, :y -10.0, :width 21.0, :height 75.2}]
 
     (t/is (= (:x expect) (:x result)))
     (t/is (= (:y expect) (:y result)))
