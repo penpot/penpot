@@ -59,7 +59,6 @@ fn to_verb(v: u8) -> skia::path::Verb {
 
 impl Path {
     pub fn new(segments: Vec<Segment>) -> Self {
-        // let mut open = true;
         let mut skia_path = skia::Path::new();
         let mut start = None;
 
