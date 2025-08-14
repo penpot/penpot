@@ -636,16 +636,17 @@
      ptk/WatchEvent
      (watch [_ state stream]
        (let [prev-cell-data (volatile! nil)
-             page-id (:current-page-id state)
-             objects (dsh/lookup-page-objects state page-id)
-             selected (dsh/lookup-selected state {:omit-blocked? true})
-             ids     (if (nil? ids) selected ids)
-             shapes  (into []
-                           (comp (map (d/getf objects))
-                                 (remove #(let [parent (get objects (:parent-id %))]
-                                            (and (ctk/in-component-copy? parent)
-                                                 (ctl/any-layout? parent)))))
-                           ids)
+             page-id   (:current-page-id state)
+             libraries (dsh/lookup-libraries state)
+             objects   (dsh/lookup-page-objects state page-id)
+             selected  (dsh/lookup-selected state {:omit-blocked? true})
+             ids       (if (nil? ids) selected ids)
+             shapes    (into []
+                             (comp (map (d/getf objects))
+                                   (remove #(let [parent (get objects (:parent-id %))]
+                                              (and (ctk/in-component-copy? parent)
+                                                   (ctl/any-layout? parent)))))
+                             ids)
 
              duplicate-move-started? (get-in state [:workspace-local :duplicate-move-started?] false)
 
@@ -696,7 +697,7 @@
                          (let [position         (gpt/add from-position move-vector)
                                exclude-frames   (if mod? exclude-frames exclude-frames-siblings)
                                target-frame     (ctst/top-nested-frame objects position exclude-frames)
-                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes)
+                               [target-frame _] (ctn/find-valid-parent-and-frame-ids target-frame objects shapes false libraries)
                                flex-layout?     (ctl/flex-layout? objects target-frame)
                                grid-layout?     (ctl/grid-layout? objects target-frame)
                                drop-index       (when flex-layout? (gslf/get-drop-index target-frame objects position))

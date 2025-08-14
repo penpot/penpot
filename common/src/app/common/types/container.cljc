@@ -456,7 +456,11 @@
         parent-in-component?    (in-any-component? objects parent)
         comps-nesting-loop?     (not (->> children
                                           (map #(cfh/components-nesting-loop? objects (:id %) (:id parent)))
-                                          (every? nil?)))]
+                                          (every? nil?)))
+
+        variants-nesting-loop? (not (->> children
+                                         (map #(cfh/variants-nesting-loop? objects libraries (:id %) (:id parent)))
+                                         (every? nil?)))]
     (or
       ;;We don't want to change the structure of component copies
      (ctk/in-component-copy? parent)
@@ -465,7 +469,8 @@
      (and selected-main-instance? parent-in-component?)
       ;; Avoid placing a shape as a direct or indirect child of itself,
       ;; or inside its main component if it's in a copy.
-     comps-nesting-loop?)))
+     comps-nesting-loop?
+     variants-nesting-loop?)))
 
 (defn find-valid-parent-and-frame-ids
   "Navigate trough the ancestors until find one that is valid. Returns [ parent-id frame-id ]"

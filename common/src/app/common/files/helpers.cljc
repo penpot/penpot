@@ -436,6 +436,24 @@
         parent-components   (into #{} xf-get-component-id parents)]
     (seq (set/intersection child-components parent-components))))
 
+(defn variants-nesting-loop?
+  "Check if a variants nesting loop would be created if the given shape is moved below the given parent"
+  [objects libraries shape-id parent-id]
+  (let [get-variant-id #(or (:variant-id %)
+                            (when (:is-variant-container %) (:id %))
+                            (when (:component-id %)
+                              (dm/get-in libraries [(:component-file %)
+                                                    :data
+                                                    :components
+                                                    (:component-id %)
+                                                    :variant-id])))
+        child-variant-ids  (into #{} (keep get-variant-id)
+                                 (get-children-with-self objects shape-id))
+        parent-variant-ids (into #{} (keep get-variant-id)
+                                 (get-parents-with-self objects parent-id))]
+    (seq (set/intersection child-variant-ids parent-variant-ids))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ALGORITHMS & TRANSFORMATIONS FOR SHAPES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
