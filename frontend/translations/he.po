@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-12 08:01+0000\n"
+"PO-Revision-Date: 2025-08-15 19:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -7918,3 +7918,15 @@ msgstr "כדי להגדיל את מסגרת המגבלה, נא לכתוב לנו
 #, markdown
 msgid "subscription.workspace.versions.warning.subtext-member"
 msgstr "כדי להגדיל את מסגרת המגבלה, נא ליצור קשר עם בעלי הצוות: [%s](mailto)"
+
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"שינוי של כל אחד מאלה (כלומר: שינוי שם או קיבוץ של שכבה) קוטע את החיבור, אבל "
+"החזרת השינויים תשחזר אותו."
+
+#: src/app/main/ui/dashboard/subscription.cljs:74
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"קבלת עורכים נוספים, יותר גיבויים, אחסון בלתי מוגבל ועוד. "
+"[ממליצים להסתכל על התוכנית העסקית שלנו.|target:self](%s)"
