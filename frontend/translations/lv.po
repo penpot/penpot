@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-13 10:02+0000\n"
+"PO-Revision-Date: 2025-08-15 19:02+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -7903,3 +7903,40 @@ msgstr "Dažiem variantiem ir vienādas īpašības un vērtības"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.adjust"
 msgstr "Jāpielāgo vērtības, lai tās varētu ievietot."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "Šiem variantiem ir vienādas īpašības un vērtības."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "Šim variantam ir tādas pašas īpašības un vērtības kā citam."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Dažiem no šiem variantiem ir vienādas īpašības un vērtības."
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Kā varianti paliek savienoti"
+
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"Lai paturētu izmaiņas, kad pārslēdzas starp variantiem, Penpot savieno "
+"slāņus, kuriem:"
+
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "ir tāds pats nosaukums;"
+
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "ir vienāds veids;"
+
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Taisnstūris, elipse, ceļi un Būla darbības skaitās kā viens un tas pats "
+"veids."
+
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "ir tāds pats hierarhijas līmenis."
+
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "Kopas, dēļi un izkārtojumi tiek uztverti kā līdzvērtīgi."
