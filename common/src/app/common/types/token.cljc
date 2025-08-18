@@ -48,7 +48,8 @@
    :stroke-width    "borderWidth"
    :text-case       "textCase"
    :text-decoration "textDecoration"
-   :font-weight     "fontWeights"})
+   :font-weight     "fontWeights"
+   :typography      "typography"})
 
 (def dtcg-token-type->token-type
   (set/map-invert token-type->dtcg-token-type))
@@ -180,6 +181,12 @@
 
 (def font-weight-keys (schema-keys schema:font-weight))
 
+(def ^:private schema:typography
+  [:map
+   [:typography {:optional true} token-name-ref]])
+
+(def typography-token-keys (schema-keys schema:typography))
+
 (def ^:private schema:text-decoration
   [:map
    [:text-decoration {:optional true} token-name-ref]])
@@ -192,7 +199,8 @@
                                 font-weight-keys
                                 text-case-keys
                                 text-decoration-keys
-                                font-weight-keys))
+                                font-weight-keys
+                                typography-token-keys))
 
 ;; TODO: Created to extract the font-size feature from the typography feature flag.
 ;; Delete this once the typography feature flag is removed.
@@ -215,6 +223,7 @@
                          axis-keys
                          rotation-keys
                          typography-keys
+                         typography-token-keys
                          number-keys))
 
 (def ^:private schema:tokens
@@ -260,12 +269,13 @@
        changed-sub-attr
        #{:m1 :m2 :m3 :m4})
 
-     (font-size-keys shape-attr) #{shape-attr}
-     (letter-spacing-keys shape-attr) #{shape-attr}
-     (font-family-keys shape-attr) #{shape-attr}
-     (text-case-keys shape-attr) #{shape-attr}
-     (text-decoration-keys shape-attr) #{shape-attr}
-     (font-weight-keys shape-attr) #{shape-attr}
+     (font-size-keys shape-attr)       #{shape-attr :typography}
+     (letter-spacing-keys shape-attr)  #{shape-attr :typography}
+     (font-family-keys shape-attr)     #{shape-attr :typography}
+     (text-case-keys shape-attr)       #{shape-attr :typography}
+     (text-decoration-keys shape-attr) #{shape-attr :typography}
+     (font-weight-keys shape-attr)     #{shape-attr :typography}
+
      (border-radius-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}

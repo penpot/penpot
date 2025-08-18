@@ -1,0 +1,400 @@
+{
+  "~:features": {
+    "~#set": [
+      "fdata/path-data",
+      "plugins/runtime",
+      "design-tokens/v1",
+      "layout/grid",
+      "styles/v2",
+      "fdata/pointer-map",
+      "fdata/objects-map",
+      "components/v2",
+      "fdata/shape-data-type"
+    ]
+  },
+  "~:team-id": "~ub34726bd-fd32-8122-8004-b1a4bef38917",
+  "~:permissions": {
+    "~:type": "~:membership",
+    "~:is-owner": true,
+    "~:is-admin": true,
+    "~:can-edit": true,
+    "~:can-read": true,
+    "~:is-logged": true
+  },
+  "~:has-media-trimmed": false,
+  "~:comment-thread-seqn": 0,
+  "~:name": "Typography",
+  "~:revn": 133,
+  "~:modified-at": "~m1756113434658",
+  "~:vern": 0,
+  "~:id": "~uef9b2783-804c-8017-8006-ae6f7eab52ad",
+  "~:is-shared": false,
+  "~:migrations": {
+    "~#ordered-set": []
+  },
+  "~:version": 67,
+  "~:project-id": "~u0df61468-6cbf-8067-8005-6b453ce996d0",
+  "~:created-at": "~m1755780585133",
+  "~:data": {
+    "~:pages": ["~uef9b2783-804c-8017-8006-ae6f7eab52ae"],
+    "~:pages-index": {
+      "~uef9b2783-804c-8017-8006-ae6f7eab52ae": {
+        "~#penpot/pointer": [
+          "~u021b87d4-813e-8066-8006-b36537098786",
+          {
+            "~:created-at": "~m1756113434662"
+          }
+        ]
+      }
+    },
+    "~:id": "~uef9b2783-804c-8017-8006-ae6f7eab52ad",
+    "~:options": {
+      "~:components-v2": true,
+      "~:base-font-size": "16px"
+    },
+    "~:tokens-lib": {
+      "~#penpot/tokens-lib": {
+        "~:sets": {
+          "~#ordered-map": [
+            [
+              "S-Typography",
+              {
+                "~#penpot/token-set": {
+                  "~:id": "~u7239ff52-c1d9-8014-8006-ae7ad49690e3",
+                  "~:name": "Typography",
+                  "~:description": "",
+                  "~:modified-at": "~m1755800261695",
+                  "~:tokens": {
+                    "~#ordered-map": [
+                      [
+                        "42dotSans",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u7239ff52-c1d9-8014-8006-ae7ac05000f0",
+                            "~:name": "42dotSans",
+                            "~:type": "~:font-family",
+                            "~:value": ["Aboreto"],
+                            "~:description": "",
+                            "~:modified-at": "~m1755798229771"
+                          }
+                        }
+                      ],
+                      [
+                        "Full",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u7239ff52-c1d9-8014-8006-ae7ad49690e3",
+                            "~:name": "Full",
+                            "~:type": "~:typography",
+                            "~:value": {
+                              "~:font-family": ["42dot Sans"],
+                              "~:font-size": "100",
+                              "~:font-weight": "300",
+                              "~:letter-spacing": "2",
+                              "~:text-case": "uppercase",
+                              "~:text-decoration": "underline"
+                            },
+                            "~:description": "",
+                            "~:modified-at": "~m1755800261695"
+                          }
+                        }
+                      ],
+                      [
+                        "FontSizeOnly",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb2b3f4dea3",
+                            "~:name": "FontSizeOnly",
+                            "~:type": "~:typography",
+                            "~:value": {
+                              "~:font-size": "10"
+                            },
+                            "~:description": "",
+                            "~:modified-at": "~m1755798203347"
+                          }
+                        }
+                      ],
+                      [
+                        "Empty",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb2b795ca5b",
+                            "~:name": "Empty",
+                            "~:type": "~:typography",
+                            "~:value": {},
+                            "~:description": "",
+                            "~:modified-at": "~m1755798207063"
+                          }
+                        }
+                      ],
+                      [
+                        "WithAtomicReference",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb2c2049024",
+                            "~:name": "WithAtomicReference",
+                            "~:type": "~:typography",
+                            "~:value": {
+                              "~:font-size": "{Large}",
+                              "~:font-family": ["{42dotSans}"],
+                              "~:font-weight": "{Bold}",
+                              "~:text-decoration": "{striked}",
+                              "~:text-case": "{uppercase}"
+                            },
+                            "~:description": "",
+                            "~:modified-at": "~m1755800252452"
+                          }
+                        }
+                      ],
+                      [
+                        "Bold",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb2d58dc828",
+                            "~:name": "Bold",
+                            "~:type": "~:font-weight",
+                            "~:value": "Bold",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798237751"
+                          }
+                        }
+                      ],
+                      [
+                        "Large",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb2dfd57494",
+                            "~:name": "Large",
+                            "~:type": "~:font-size",
+                            "~:value": "40",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798248277"
+                          }
+                        }
+                      ],
+                      [
+                        "Small",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb2ebc1d2e7",
+                            "~:name": "Small",
+                            "~:type": "~:font-size",
+                            "~:value": "{Large} / 2",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798260488"
+                          }
+                        }
+                      ],
+                      [
+                        "uppercase",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb2f759c415",
+                            "~:name": "uppercase",
+                            "~:type": "~:text-case",
+                            "~:value": "uppercase",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798272360"
+                          }
+                        }
+                      ],
+                      [
+                        "striked",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb305c7a666",
+                            "~:name": "striked",
+                            "~:type": "~:text-decoration",
+                            "~:value": "strike-through",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798287134"
+                          }
+                        }
+                      ],
+                      [
+                        "wide",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb39796c280",
+                            "~:name": "wide",
+                            "~:type": "~:letter-spacing",
+                            "~:value": "20",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798436443"
+                          }
+                        }
+                      ],
+                      [
+                        "none",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb857f7ff94",
+                            "~:name": "none",
+                            "~:type": "~:text-decoration",
+                            "~:value": "none",
+                            "~:description": "",
+                            "~:modified-at": "~m1755799682015"
+                          }
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            ],
+            [
+              "S-Other",
+              {
+                "~#penpot/token-set": {
+                  "~:id": "~u97915939-ccca-808f-8006-aeb3c391e0f4",
+                  "~:name": "Other",
+                  "~:description": "",
+                  "~:modified-at": "~m1755798626309",
+                  "~:tokens": {
+                    "~#ordered-map": [
+                      [
+                        "red",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb3f86a2d7e",
+                            "~:name": "red",
+                            "~:type": "~:color",
+                            "~:value": "#AA0022",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798535592"
+                          }
+                        }
+                      ],
+                      [
+                        "rounded",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb412ca40b0",
+                            "~:name": "rounded",
+                            "~:type": "~:border-radius",
+                            "~:value": "20px",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798562602"
+                          }
+                        }
+                      ],
+                      [
+                        "dimensions",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb41bd0336c",
+                            "~:name": "dimensions",
+                            "~:type": "~:dimensions",
+                            "~:value": "20",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798571840"
+                          }
+                        }
+                      ],
+                      [
+                        "number",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb4244ec6e6",
+                            "~:name": "number",
+                            "~:type": "~:number",
+                            "~:value": "30",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798580539"
+                          }
+                        }
+                      ],
+                      [
+                        "transparent",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb4300eff0d",
+                            "~:name": "transparent",
+                            "~:type": "~:opacity",
+                            "~:value": "0.5",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798592571"
+                          }
+                        }
+                      ],
+                      [
+                        "45deg",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb43d30e201",
+                            "~:name": "45deg",
+                            "~:type": "~:rotation",
+                            "~:value": "45",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798606019"
+                          }
+                        }
+                      ],
+                      [
+                        "spacing",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb44783b70f",
+                            "~:name": "spacing",
+                            "~:type": "~:spacing",
+                            "~:value": "20",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798616590"
+                          }
+                        }
+                      ],
+                      [
+                        "sizing",
+                        {
+                          "~#penpot/token": {
+                            "~:id": "~u97915939-ccca-808f-8006-aeb44e0e6903",
+                            "~:name": "sizing",
+                            "~:type": "~:sizing",
+                            "~:value": "20",
+                            "~:description": "",
+                            "~:modified-at": "~m1755798623289"
+                          }
+                        }
+                      ]
+                    ]
+                  }
+                }
+              }
+            ]
+          ]
+        },
+        "~:themes": {
+          "~#ordered-map": [
+            [
+              "",
+              {
+                "~#ordered-map": [
+                  [
+                    "__PENPOT__HIDDEN__TOKEN__THEME__",
+                    {
+                      "~#penpot/token-theme": {
+                        "~:id": "~u00000000-0000-0000-0000-000000000000",
+                        "~:name": "__PENPOT__HIDDEN__TOKEN__THEME__",
+                        "~:group": "",
+                        "~:description": "",
+                        "~:is-source": false,
+                        "~:external-id": "",
+                        "~:modified-at": "~m1755798544595",
+                        "~:sets": {
+                          "~#set": ["Typography", "Other"]
+                        }
+                      }
+                    }
+                  ]
+                ]
+              }
+            ]
+          ]
+        },
+        "~:active-themes": {
+          "~#set": ["/__PENPOT__HIDDEN__TOKEN__THEME__"]
+        }
+      }
+    }
+  }
+}

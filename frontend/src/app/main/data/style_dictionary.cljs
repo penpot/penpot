@@ -31,14 +31,21 @@
   Setup transforms from tokens-studio used to parse and resolved token values."
   (do
     (sd-transforms/register sd)
+    (.registerTransformGroup sd #js {:name "penpot"
+                                     :transforms
+                                     ;; Rebuild sd-transforms without "ts/typography/compose/shorthand" (we need to keep a typography map)
+                                     (.concat (sd-transforms/getTransforms)
+                                              #js ["ts/color/css/hexrgba"
+                                                   "ts/color/modifiers"
+                                                   "color/css"])})
     (.registerFormat sd #js {:name "custom/json"
                              :format (fn [^js res]
-                                       (.-tokens (.-dictionary res)))})
+                                       (.. res -dictionary -tokens))})
     sd))
 
 (def default-config
   {:platforms {:json
-               {:transformGroup "tokens-studio"
+               {:transformGroup "penpot"
                 ;; Required: The StyleDictionary API is focused on files even when working in the browser
                 :files [{:format "custom/json" :destination "penpot"}]}}
    :preprocessors ["tokens-studio"]
@@ -64,7 +71,6 @@
   (and (string? s)
        (re-matches #"^-?\d+(\.\d+)?(px|rem)$" s)))
 
-;; TODO: After mergin "dimension-tokens" revisit this function to check if it's still
 (defn- parse-sd-token-number-value
   "Parses `value` of a number `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
@@ -113,9 +119,9 @@
   "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
-  [value has-references?]
-
-  (let [parsed-value (cft/parse-token-value value)
+  [value]
+  (let [missing-references? (seq (ctob/find-token-value-references value))
+        parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
         references (seq (ctob/find-token-value-references value))]
     (cond (and parsed-value (not out-of-scope))
@@ -125,10 +131,10 @@
           {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
            :references references}
 
-          (and (not has-references?) out-of-scope)
+          (and (not missing-references?) out-of-scope)
           {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-opacity value)]}
 
-          (and has-references? out-of-scope parsed-value)
+          (and missing-references? out-of-scope parsed-value)
           (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-opacity value)])
 
           :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
@@ -137,8 +143,9 @@
   "Parses `value` of a dimensions `sd-token` into a map like `{:value 1 :unit \"px\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
-  [value has-references?]
-  (let [parsed-value (cft/parse-token-value value)
+  [value]
+  (let [missing-references? (seq (ctob/find-token-value-references value))
+        parsed-value (cft/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)
         references (seq (ctob/find-token-value-references value))]
     (cond
@@ -149,10 +156,10 @@
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
        :references references}
 
-      (and (not has-references?) out-of-scope)
+      (and (not missing-references?) out-of-scope)
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-stroke-width value)]}
 
-      (and has-references? out-of-scope parsed-value)
+      (and missing-references? out-of-scope parsed-value)
       (assoc parsed-value :warnings [(wtw/warning-with-value :warning.style-dictionary/invalid-referenced-token-value-stroke-width value)])
 
       :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))
@@ -218,6 +225,55 @@
       :else
       {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-font-weight value)]})))
 
+(defn- parse-sd-token-font-family-value
+  [value]
+  (let [missing-references (seq (some ctob/find-token-value-references value))]
+    (cond
+      missing-references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
+       :references missing-references}
+
+      :else
+      {:value (-> (js->clj value) (flatten))})))
+
+(defn parse-atomic-typography-value [token-type token-value]
+  (case token-type
+    :font-size (parse-sd-token-general-value token-value)
+    :font-family (parse-sd-token-font-family-value token-value)
+    :font-weight (parse-sd-token-font-weight-value token-value)
+    :letter-spacing (parse-sd-token-letter-spacing-value token-value)
+    :text-case (parse-sd-token-text-case-value token-value)
+    :text-decoration (parse-sd-token-text-decoration-value token-value)
+    nil))
+
+(defn- parse-composite-typography-value
+  [value]
+  (let [missing-references
+        (when (string? value)
+          (seq (ctob/find-token-value-references value)))]
+    (cond
+      missing-references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
+       :references missing-references}
+
+      (string? value)
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-typography value)]}
+
+      :else
+      (let [converted (js->clj value :keywordize-keys true)
+            valid-typography (reduce
+                              (fn [acc [k v]]
+                                (let [{:keys [errors value]} (parse-atomic-typography-value k v)]
+                                  (if (seq errors)
+                                    (update acc :errors concat (map #(assoc % :typography-key k) errors))
+                                    (assoc-in acc [:value k] (or value v)))))
+                              {:value {}}
+                              converted)]
+        valid-typography))))
+
+(defn collect-typography-errors [token]
+  (group-by :typography-key (:errors token)))
+
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
   The `get-origin-token` argument should be a function that takes an
@@ -254,18 +310,15 @@
    (fn [acc ^js sd-token]
      (let [origin-token (get-origin-token sd-token)
            value (.-value sd-token)
-           has-references? (str/includes? (:value origin-token) "{")
-           parsed-token-value (case (:type origin-token)
-                                :font-family {:value (-> (js->clj value) (flatten))}
-                                :color (parse-sd-token-color-value value)
-                                :opacity (parse-sd-token-opacity-value value has-references?)
-                                :stroke-width (parse-sd-token-stroke-width-value value has-references?)
-                                :text-case (parse-sd-token-text-case-value value)
-                                :letter-spacing (parse-sd-token-letter-spacing-value value)
-                                :text-decoration (parse-sd-token-text-decoration-value value)
-                                :font-weight (parse-sd-token-font-weight-value value)
-                                :number (parse-sd-token-number-value value)
-                                (parse-sd-token-general-value value))
+           parsed-token-value (or
+                               (parse-atomic-typography-value (:type origin-token) value)
+                               (case (:type origin-token)
+                                 :typography (parse-composite-typography-value value)
+                                 :color (parse-sd-token-color-value value)
+                                 :opacity (parse-sd-token-opacity-value value)
+                                 :stroke-width (parse-sd-token-stroke-width-value value)
+                                 :number (parse-sd-token-number-value value)
+                                 (parse-sd-token-general-value value)))
            output-token (cond (:errors parsed-token-value)
                               (merge origin-token parsed-token-value)
 
