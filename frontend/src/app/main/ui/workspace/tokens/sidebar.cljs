@@ -43,8 +43,8 @@
         token-sets
         (some-> tokens-lib (ctob/get-sets))
 
-        selected-token-set-name
-        (mf/deref refs/selected-token-set-name)
+        selected-token-set-id
+        (mf/deref refs/selected-token-set-id)
 
         {:keys [token-set-edition-id
                 token-set-new-path]}
@@ -61,7 +61,7 @@
         {:tokens-lib tokens-lib
          :new-path token-set-new-path
          :edition-id token-set-edition-id
-         :selected selected-token-set-name}]])))
+         :selected selected-token-set-id}]])))
 
 (mf/defc token-management-section*
   {::mf/private true}

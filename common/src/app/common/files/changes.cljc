@@ -405,31 +405,24 @@
      [:type [:= :set-tokens-lib]]
      [:tokens-lib ::sm/any]]]
 
-   [:set-token-set
-    [:map {:title "SetTokenSetChange"}
-     [:type [:= :set-token-set]]
-     [:set-name :string]
-     [:group? :boolean]
+    [:set-token-set
+     [:map {:title "SetTokenSetChange"}
+      [:type [:= :set-token-set]]
+      [:set-id ::sm/uuid]
+      [:group? :boolean]
+      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
 
-     ;; FIXME: we should not pass private types as part of changes
-     ;; protocol, the changes protocol should reflect a
-     ;; method/protocol for perform surgical operations on file data,
-     ;; this has nothing todo with internal types of a file data
-     ;; structure.
-     [:token-set {:gen/gen (sg/generator ctob/schema:token-set)}
-      [:maybe [:fn ctob/token-set?]]]]]
+    [:set-token
+     [:map {:title "SetTokenChange"}
+      [:type [:= :set-token]]
+      [:set-name :string]
+      [:token-id ::sm/uuid]
+      [:token [:maybe ctob/schema:token-attrs]]]]
 
-   [:set-token
-    [:map {:title "SetTokenChange"}
-     [:type [:= :set-token]]
-     [:set-name :string]
-     [:token-id ::sm/uuid]
-     [:token [:maybe ctob/schema:token-attrs]]]]
-
-   [:set-base-font-size
-    [:map {:title "ModBaseFontSize"}
-     [:type [:= :set-base-font-size]]
-     [:base-font-size :string]]]])
+    [:set-base-font-size
+     [:map {:title "ModBaseFontSize"}
+      [:type [:= :set-base-font-size]]
+      [:base-font-size :string]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -988,12 +981,13 @@
   [data {:keys [set-name token-id token]}]
   (update data :tokens-lib
           (fn [lib]
-            (let [lib' (ctob/ensure-tokens-lib lib)]
+            (let [lib' (ctob/ensure-tokens-lib lib)
+                  set (ctob/set-by-name lib' set-name)] ;; FIXME: remove this when set-token uses set-id
               (cond
                 (not token)
                 (ctob/delete-token-from-set lib' set-name token-id)
 
-                (not (ctob/get-token-in-set lib' set-name token-id))
+                (not (ctob/get-token-in-set lib' (ctob/get-id set) token-id))
                 (ctob/add-token-in-set lib' set-name (ctob/make-token token))
 
                 :else
@@ -1001,21 +995,22 @@
                                                                    (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [set-name group? token-set]}]
+  [data {:keys [set-id group? token-set]}]
   (update data :tokens-lib
           (fn [lib]
-            (let [lib' (ctob/ensure-tokens-lib lib)]
+            (let [lib' (ctob/ensure-tokens-lib lib)
+                  set (ctob/set-by-id lib' set-id)] ;; FIXME: remove this when set-token-set uses set-id
               (cond
                 (not token-set)
                 (if group?
-                  (ctob/delete-set-group lib' set-name)
-                  (ctob/delete-set lib' set-name))
+                  (ctob/delete-set-group lib' (ctob/get-name set)) ;; FIXME: move to a separate change
+                  (ctob/delete-set lib' (ctob/get-name set)))
 
-                (not (ctob/get-set lib' set-name))
-                (ctob/add-set lib' token-set)
+                (not (ctob/set-by-id lib' set-id))
+                (ctob/add-set lib' (ctob/make-token-set token-set))
 
                 :else
-                (ctob/update-set lib' set-name (fn [_] token-set)))))))
+                (ctob/update-set lib' (ctob/get-name set) (fn [_] (ctob/make-token-set token-set))))))))
 
 (defmethod process-change :set-token-theme
   [data {:keys [group theme-name theme]}]

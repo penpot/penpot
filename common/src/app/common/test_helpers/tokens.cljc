@@ -28,11 +28,11 @@
   (ctf/update-file-data file #(update % :tokens-lib f)))
 
 (defn get-token
-  [file set-name token-id]
+  [file set-id token-id]
   (let [tokens-lib (:tokens-lib (:data file))]
     (when tokens-lib
       (-> tokens-lib
-          (ctob/get-set set-name)
+          (ctob/get-set set-id)
           (ctob/get-token token-id)))))
 
 (defn token-data-eq?

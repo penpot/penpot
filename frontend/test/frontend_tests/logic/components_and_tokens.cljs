@@ -34,7 +34,8 @@
   (-> (cthf/sample-file :file1)
       (ctht/add-tokens-lib)
       (ctht/update-tokens-lib #(-> %
-                                   (ctob/add-set (ctob/make-token-set :name "test-token-set"))
+                                   (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                                      :name "test-token-set"))
                                    (ctob/add-theme (ctob/make-token-theme :name "test-theme"
                                                                           :sets #{"test-token-set"}))
                                    (ctob/set-active-themes #{"/test-theme"})
@@ -206,7 +207,8 @@
           store    (ths/setup-store file)
 
           ;; ==== Action
-          events [(dwtl/set-selected-token-set-name "test-token-set")
+          events [(dwtl/set-selected-token-set-id (cthi/id :test-token-set))
+                  (dwtl/set-selected-token-set-name "test-token-set")
                   (dwtl/update-token (cthi/id :test-token-1)
                                      {:name "test-token-1"
                                       :type :border-radius
@@ -321,7 +323,8 @@
           file  (-> (cthf/sample-file :file1)
                     (ctht/add-tokens-lib)
                     (ctht/update-tokens-lib #(-> %
-                                                 (ctob/add-set (ctob/make-token-set :name "test-token-set"))
+                                                 (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :test-token-set)
+                                                                                    :name "test-token-set"))
                                                  (ctob/add-theme (ctob/make-token-theme :name "test-theme"
                                                                                         :sets #{"test-token-set"}))
                                                  (ctob/set-active-themes #{"/test-theme"})
@@ -368,7 +371,8 @@
           store (ths/setup-store file)
 
          ;; ==== Action
-          events [(dwtl/set-selected-token-set-name "test-token-set")
+          events [(dwtl/set-selected-token-set-id (cthi/id :test-token-set))
+                  (dwtl/set-selected-token-set-name "test-token-set")
                   (dwtl/update-token (cthi/id :token-radius)
                                      {:name "token-radius"
                                       :value 30})
@@ -396,7 +400,6 @@
                      (fn [new-state]
                        (let [;; ==== Get
                              file'          (ths/get-file-from-state new-state)
-                             frame1'        (cths/get-shape file' :frame1)
                              c-frame1'      (cths/get-shape file' :c-frame1)
                              tokens-frame1' (:applied-tokens c-frame1')]
 
