@@ -206,17 +206,13 @@
                          (filter cfh/text-shape?)
                          (not-empty))
 
-        ;; Check if we're actually editing text content (not just selecting text shapes)
-        ;; Handle both text-editor/v1 and text-editor/v2
-        editing-text? (if (features/active-feature? @st/state "text-editor/v2")
-                        (some? (deref refs/workspace-v2-editor-state))
-                        (some? (deref refs/workspace-editor)))
-
         props       (if (> (count text-shapes) 1)
                       (blend-props text-shapes props)
                       props)]
 
-    (when (and can-edit? (not read-only?) text-shapes editing-text?)
+    (when (and can-edit?
+               (not read-only?)
+               (some? text-shapes))
       (st/emit! (dwu/start-undo-transaction undo-id))
       (run! #(update-attrs % props) text-shapes)
       (st/emit! (dwu/commit-undo-transaction undo-id)))))
