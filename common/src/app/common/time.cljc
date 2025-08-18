@@ -119,9 +119,9 @@
      [o]
      (instance? Duration o)))
 
-(defn duration
-  [ms-or-obj]
-  #?(:clj
+#?(:clj
+   (defn duration
+     [ms-or-obj]
      (cond
        (string? ms-or-obj)
        (Duration/parse (str "PT" ms-or-obj))
@@ -134,10 +134,7 @@
        (Duration/ofMillis ms-or-obj)
 
        :else
-       (obj->duration ms-or-obj))
-
-     :cljs
-     (clj->js ms-or-obj)))
+       (obj->duration ms-or-obj))))
 
 #?(:clj
    (defn parse-duration
@@ -292,7 +289,7 @@
 
 (defn plus
   [d ta]
-  (let [ta (duration ta)]
+  (let [ta #?(:clj (duration ta) :cljs ta)]
     (cond
       #?@(:clj [(duration? d) (.plus ^Duration d ^TemporalAmount ta)])
 
@@ -307,7 +304,7 @@
 
 (defn minus
   [d ta]
-  (let [^TemporalAmount ta (duration ta)]
+  (let [ta #?(:clj (duration ta) :cljs ta)]
     (cond
       #?@(:clj [(duration? d) (.minus ^Duration d ^TemporalAmount ta)])
 
