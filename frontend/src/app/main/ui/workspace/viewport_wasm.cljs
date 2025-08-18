@@ -51,7 +51,6 @@
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
    [app.render-wasm.api :as wasm.api]
-   [app.render-wasm.shape :as wasm.shape]
    [app.util.debug :as dbg]
    [app.util.text-editor :as ted]
    [beicon.v2.core :as rx]
@@ -347,9 +346,6 @@
         (if hover-grid?
           (wasm.api/show-grid @hover-top-frame-id)
           (wasm.api/clear-grid))))
-
-    (mf/with-effect [objects]
-      (wasm.shape/set-current-page-objects! objects))
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
