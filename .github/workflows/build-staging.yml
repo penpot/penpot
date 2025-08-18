@@ -2,7 +2,7 @@ name: Build and Upload Penpot STAGING Bundles
 
 on:
   schedule:
-    - cron: '0 5 * * 1-5'
+    - cron: '36 5-20 * * 1-5'
 
 jobs:
   build-staging-bundle:
