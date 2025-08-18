@@ -39,6 +39,12 @@
   gap: $s-4;
 }
 
+.nested-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: $s-12;
+}
+
 .warning-name-change-notification-wrapper {
   margin-block-start: $s-16;
 }

@@ -80,7 +80,13 @@
    :sizing "Sizing"
    :border-radius "Border Radius"
    :x "X"
-   :y "Y"})
+   :y "Y"
+   :font-size "Font Size"
+   :font-family "Font Family"
+   :font-weight "Font Weight"
+   :letter-spacing "Letter Spacing"
+   :text-case "Text Case"
+   :text-decoration "Text Decoration"})
 
 ;; Helper functions
 
@@ -104,12 +110,23 @@
                              (str/join ", " (map attribute-dictionary values)) ".")))
                  grouped-values)))
 
+(defn format-token-value [token-value]
+  (cond
+    (map? token-value)
+    (->> (map (fn [[k v]] (str "- " (category-dictionary k) ": " (format-token-value v))) token-value)
+         (str/join "\n")
+         (str "\n"))
+
+    (sequential? token-value)
+    (str/join "," token-value)
+
+    :else
+    (str token-value)))
+
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
   [is-viewer shape theme-token token half-applied no-valid-value ref-not-in-active-set]
-  (let [{:keys [name type resolved-value]} token
-        value (cond->> (:value token)
-                (= :font-family type) ctt/join-font-family)
+  (let [{:keys [name type resolved-value value]} token
         resolved-value-theme (:resolved-value theme-token)
         resolved-value (or resolved-value-theme resolved-value)
         {:keys [title] :as token-props} (dwta/get-token-properties theme-token)
@@ -125,8 +142,8 @@
         grouped-values (group-by dimensions-dictionary app-token-keys)
 
         base-title (dm/str "Token: " name "\n"
-                           (tr "workspace.tokens.original-value" value) "\n"
-                           (tr "workspace.tokens.resolved-value" resolved-value)
+                           (tr "workspace.tokens.original-value" (format-token-value value)) "\n"
+                           (tr "workspace.tokens.resolved-value" (format-token-value resolved-value))
                            (when (= (:type token) :number)
                              (dm/str "\n" (tr "workspace.tokens.more-options"))))]
 

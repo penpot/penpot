@@ -39,6 +39,7 @@
    #{:text-case} dwta/update-text-case
    #{:text-decoration} dwta/update-text-decoration
    #{:font-weight} dwta/update-font-weight
+   #{:typography} dwta/update-typography
    #{:x :y} dwta/update-shape-position
    #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
    #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
@@ -161,7 +162,10 @@
                   (collect-shapes-update-info resolved-tokens (:objects page))
 
                   actions
-                  (actionize-shapes-update-info page-id attrs)]
+                  (actionize-shapes-update-info page-id attrs)
+
+                  ;; Composed updates return observables and need to be executed differently
+                  {:keys [observable normal]} (group-by #(if (rx/observable? %) :observable :normal) actions)]
 
               (l/inf :status "PROGRESS"
                      :hint "propagate-tokens"
@@ -170,7 +174,9 @@
                      ::l/sync? true)
 
               (rx/merge
-               (rx/from actions)
+               (when (seq observable) (apply rx/merge observable))
+               (when (seq normal) (rx/concat-all (rx/of normal)))
+
                (->> (rx/from frame-ids)
                     (rx/mapcat (fn [frame-id]
                                  (rx/of (dwt/clear-thumbnail file-id page-id frame-id "frame")

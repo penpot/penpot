@@ -860,6 +860,173 @@
              (t/is (nil? (:fill-color-ref-id fill)))
              (t/is (nil? (:fill-color-ref-file fill))))))))))
 
+(t/deftest test-apply-typography-token
+  (t/testing "applies typography (composite) tokens"
+    (t/async
+      done
+      (let [font-size-token {:name "font-size-reference"
+                             :value "100px"
+                             :type :font-size}
+            font-family-token {:name "font-family-reference"
+                               :value ["Arial" "sans-serif"]
+                               :type :font-family}
+            typography-token {:name "typography.heading"
+                              :value {:font-size "24px"
+                                      :font-weight "bold"
+                                      :font-family [(:font-id txt/default-text-attrs) "Arial" "sans-serif"]
+                                      :letter-spacing "2"
+                                      :text-case "uppercase"
+                                      :text-decoration "underline"}
+                              :type :typography}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(-> %
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token font-size-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token font-family-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token typography-token)))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:typography}
+                                       :token (toht/get-token file "typography.heading")
+                                       :on-update-shape dwta/update-typography})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 text-1' (cths/get-shape file' :text-1)
+                 text-1' (def text-1' text-1')
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:typography (:applied-tokens text-1')) "typography.heading"))
+
+             (t/is (= (:font-size style-text-blocks) "24"))
+             (t/is (= (:font-weight style-text-blocks) "400"))
+             (t/is (= (:font-family style-text-blocks) "sourcesanspro"))
+             (t/is (= (:letter-spacing style-text-blocks) "2"))
+             (t/is (= (:text-transform style-text-blocks) "uppercase"))
+             (t/is (= (:text-decoration style-text-blocks) "underline")))))))))
+
+(t/deftest test-apply-reference-typography-token
+  (t/testing "applies typography (composite) tokens with references"
+    (t/async
+      done
+      (let [font-size-token {:name "fontSize"
+                             :value "100px"
+                             :type :font-size}
+            font-family-token {:name "fontFamily"
+                               :value ["Arial" "sans-serif"]
+                               :type :font-family}
+            typography-token {:name "typography"
+                              :value {:font-size "{fontSize}"
+                                      :font-family ["{fontFamily}"]}
+                              :type :typography}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(-> %
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token font-size-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token font-family-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token typography-token)))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:typography}
+                                       :token (toht/get-token file "typography")
+                                       :on-update-shape dwta/update-typography})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 text-1' (cths/get-shape file' :text-1)
+                 style-text-blocks (->> (:content text-1')
+                                        (txt/content->text+styles)
+                                        (remove (fn [[_ text]] (str/empty? (str/trim text))))
+                                        (mapv (fn [[style text]]
+                                                {:styles (merge txt/default-text-attrs style)
+                                                 :text-content text}))
+                                        (first)
+                                        (:styles))]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:typography (:applied-tokens text-1')) "typography"))
+
+             (t/is (= (:font-size style-text-blocks) "100"))
+             (t/is (= (:font-family style-text-blocks) "Arial")))))))))
+
+(t/deftest test-unapply-atomic-tokens-on-composite-apply
+  (t/testing "unapplies atomic typography tokens when applying composite token"
+    (t/async
+      done
+      (let [font-size-token {:name "fontSize"
+                             :value "100px"
+                             :type :font-size}
+            typography-token {:name "typography"
+                              :value {}
+                              :type :typography}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(-> %
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token font-size-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token typography-token)))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:typography}
+                                       :token (toht/get-token file "fontSize")})
+                    (dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:typography}
+                                       :token (toht/get-token file "typography")
+                                       :on-update-shape dwta/update-typography})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 text-1' (cths/get-shape file' :text-1)]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:typography (:applied-tokens text-1')) "typography"))
+             (t/is (nil? (:font-size (:applied-tokens text-1')))))))))))
+
+
+(t/deftest test-unapply-composite-tokens-on-atomic-apply
+  (t/testing "unapplies composite typography tokens when applying atomic token"
+    (t/async
+      done
+      (let [font-size-token {:name "fontSize"
+                             :value "100px"
+                             :type :font-size}
+            typography-token {:name "typography"
+                              :value {}
+                              :type :typography}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(-> %
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token font-size-token))
+                                     (ctob/add-token-in-set "Set A" (ctob/make-token typography-token)))))
+            store (ths/setup-store file)
+            text-1 (cths/get-shape file :text-1)
+            events [(dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:typography}
+                                       :token (toht/get-token file "typography")
+                                       :on-update-shape dwta/update-typography})
+                    (dwta/apply-token {:shape-ids [(:id text-1)]
+                                       :attributes #{:font-size}
+                                       :token (toht/get-token file "fontSize")
+                                       :on-update-shape dwta/update-font-size})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 text-1' (cths/get-shape file' :text-1)]
+             (t/is (some? (:applied-tokens text-1')))
+             (t/is (= (:font-size (:applied-tokens text-1')) "fontSize"))
+             (t/is (nil? (:typography (:applied-tokens text-1')))))))))))
+
 (t/deftest test-detach-styles-typography
   (t/testing "applying any typography token to a shape with a typography style should detach the style"
     (t/async

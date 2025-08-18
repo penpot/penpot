@@ -21,7 +21,6 @@
    [app.main.data.workspace.tokens.errors :as wte]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.data.workspace.tokens.propagation :as dwtp]
-   [app.main.data.workspace.tokens.warnings :as wtw]
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -36,11 +35,13 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
-   [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-tokens-value*]]
+   [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-tokens-value*
+                                                                              token-value-hint*]]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
+   [app.util.object :as obj]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
    [malli.core :as m]
@@ -101,53 +102,127 @@
 
 ;; Validation ------------------------------------------------------------------
 
-(defn validate-empty-input [value]
-  (if (sequential? value)
-    (empty? value)
-    (empty? (str/trim value))))
+(defn invalidate-empty-value [token-value]
+  (when (empty? (str/trim token-value))
+    (wte/get-error-code :error.token/empty-input)))
 
-(defn validate-self-reference? [token-name value]
-  (if (sequential? value)
-    (some #(ctob/token-value-self-reference? token-name %) value)
-    (ctob/token-value-self-reference? token-name value)))
+(defn invalidate-token-empty-value [token]
+  (invalidate-empty-value (:value token)))
 
-(defn validate-token-value
-  "Validates token value by resolving the value `input` using `StyleDictionary`.
-  Returns a promise of either resolved tokens or rejects with an error state."
-  [{:keys [value name-value token tokens]}]
-  (let [;; When creating a new token we dont have a token name yet,
-        ;; so we use a temporary token name that hopefully doesn't clash with any of the users token names
-        token-name (if (str/empty? name-value) "__TOKEN_STUDIO_SYSTEM.TEMP" name-value)]
-    (cond
-      (validate-empty-input value)
-      (rx/throw {:errors [(wte/get-error-code :error.token/empty-input)]})
+(defn invalidate-self-reference [token-name token-value]
+  (when (ctob/token-value-self-reference? token-name token-value)
+    (wte/get-error-code :error.token/direct-self-reference)))
 
-      (validate-self-reference? token-name value)
-      (rx/throw {:errors [(wte/get-error-code :error.token/direct-self-reference)]})
+(defn invalidate-token-self-reference [token]
+  (invalidate-self-reference (:name token) (:value token)))
 
-      :else
-      (let [tokens' (cond-> tokens
-                      ;; Remove previous token when renaming a token
-                      (not= name-value (:name token)) (dissoc (:name token))
-                      :always (update token-name #(ctob/make-token (merge % {:value (cond
-                                                                                      (= (:type token) :font-family) (ctt/split-font-family value)
-                                                                                      :else value)
-                                                                             :name token-name
-                                                                             :type (:type token)}))))]
-        (->> tokens'
-             (sd/resolve-tokens-interactive)
-             (rx/mapcat
-              (fn [resolved-tokens]
-                (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens token-name)]
-                  (cond
-                    resolved-value (rx/of resolved-token)
-                    :else (rx/throw {:errors (or errors (wte/get-error-code :error/unknown-error))}))))))))))
+(defn validate-resolve-token
+  [token prev-token tokens]
+  (let [token (cond-> token
+                ;; When creating a new token we dont have a name yet,
+                ;; but we still want to resolve the value to show in the form.
+                ;; So we use a temporary token name that hopefully doesn't clash with any of the users token names
+                (str/empty? (:name token)) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
+        tokens' (cond-> tokens
+                  ;; Remove previous token when renaming a token
+                  (not= (:name token) (:name prev-token))
+                  (dissoc (:name prev-token))
+
+                  :always
+                  (update (:name token) #(ctob/make-token (merge % prev-token token))))]
+    (->> tokens'
+         (sd/resolve-tokens-interactive)
+         (rx/mapcat
+          (fn [resolved-tokens]
+            (let [{:keys [errors resolved-value] :as resolved-token} (get resolved-tokens (:name token))]
+              (cond
+                resolved-value (rx/of resolved-token)
+                :else (rx/throw {:errors (or (seq errors)
+                                             [(wte/get-error-code :error/unknown-error)])}))))))))
+
+(defn validate-token-with [token validators]
+  (if-let [error (some (fn [validate] (validate token)) validators)]
+    (rx/throw {:errors [error]})
+    (rx/of token)))
+
+(def default-validators
+  [invalidate-token-empty-value invalidate-token-self-reference])
+
+(defn default-validate-token
+  "Validates a token by confirming a list of `validator` predicates and resolving the token using `tokens` with StyleDictionary.
+  Returns rx stream of either a valid resolved token or an errors map.
+
+  Props:
+  token-name, token-value, token-description: Values from the form inputs
+  prev-token: The existing token currently being edited
+  tokens: tokens map keyed by token-name
+          Used to look up the editing token & resolving step.
+
+  validators: A list of predicates that will be used to do simple validation on the unresolved token map.
+              The validators get the token map as input and should either return:
+                - An errors map .e.g: {:errors []}
+                - nil (valid token predicate)
+              Mostly used to do simple checks like invalidating empy token `:name`.
+              Will default to `default-validators`."
+  [{:keys [token-name token-value token-description prev-token tokens validators]
+    :or {validators default-validators}}]
+  (let [token (-> {:name token-name
+                   :value token-value
+                   :description token-description}
+                  (d/without-nils))]
+    (->> (rx/of token)
+         ;; Simple validation of the editing token
+         (rx/mapcat #(validate-token-with % validators))
+         ;; Resolving token via StyleDictionary
+         (rx/mapcat #(validate-resolve-token % prev-token tokens)))))
+
+(defn invalidate-coll-self-reference
+  "Invalidate a collection of `token-vals` for a self-refernce against `token-name`.,"
+  [token-name token-vals]
+  (when (some #(ctob/token-value-self-reference? token-name %) token-vals)
+    (wte/get-error-code :error.token/direct-self-reference)))
+
+(defn invalidate-font-family-token-self-reference [token]
+  (invalidate-coll-self-reference (:name token) (:value token)))
+
+(defn validate-font-family-token
+  [props]
+  (-> props
+      (update :token-value ctt/split-font-family)
+      (assoc :validators [(fn [token]
+                            (when (empty? (:value token))
+                              (wte/get-error-code :error.token/empty-input)))
+                          invalidate-font-family-token-self-reference])
+      (default-validate-token)))
+
+(defn invalidate-typography-token-self-reference
+  "Invalidate token when any of the attributes in token value have a self refernce."
+  [token]
+  (let [token-name (:name token)
+        token-values (:value token)]
+    (some (fn [[k v]]
+            (when-let [err (case k
+                             :font-family (invalidate-coll-self-reference token-name v)
+                             (invalidate-self-reference token-name v))]
+              (assoc err :typography-key k)))
+          token-values)))
+
+(defn validate-typography-token
+  [props]
+  (-> props
+      (update :token-value
+              (fn [v]
+                (-> (or v {})
+                    (d/update-when :font-family #(if (string? %) (ctt/split-font-family %) %)))))
+      (assoc :validators [invalidate-typography-token-self-reference])
+      (default-validate-token)))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
-  This function is debounced as the resolving might be an expensive calculation.
-  Uses a custom debouncing logic, as the resolve function is async."
-  [name-ref token tokens callback & {:keys [timeout] :or {timeout 160}}]
+   This function is debounced as the resolving might be an expensive calculation.
+   Uses a custom debouncing logic, as the resolve function is async."
+  [{:keys [timeout name-ref token tokens callback validate-token]
+    :or {timeout 160}}]
   (let [timeout-id-ref (mf/use-ref nil)
         debounced-resolver-callback
         (mf/use-fn
@@ -160,14 +235,12 @@
              (js/setTimeout
               (fn []
                 (when (not (timeout-outdated-cb?))
-                  (->> (validate-token-value {:value value
-                                              :name-value @name-ref
-                                              :token token
-                                              :tokens tokens})
+                  (->> (validate-token {:token-value value
+                                        :token-name @name-ref
+                                        :prev-token token
+                                        :tokens tokens})
                        (rx/filter #(not (timeout-outdated-cb?)))
-                       (rx/subs!
-                        callback
-                        callback))))
+                       (rx/subs! callback callback))))
               timeout))))]
     debounced-resolver-callback))
 
@@ -175,30 +248,35 @@
 
 ;; Component -------------------------------------------------------------------
 
-(mf/defc token-value-hint
-  [{:keys [result]}]
-  (let [{:keys [errors warnings resolved-value]} result
-        empty-message? (nil? result)
-
-        message (cond
-                  empty-message? (tr "workspace.tokens.resolved-value" "-")
-                  warnings (wtw/humanize-warnings warnings)
-                  errors (->> (wte/humanize-errors errors)
-                              (str/join "\n"))
-                  :else (tr "workspace.tokens.resolved-value" (or resolved-value result)))
-        type (cond
-               empty-message? "hint"
-               errors "error"
-               warnings "warning"
-               :else "hint")]
-    [:> hint-message*
-     {:id "token-value-hint"
-      :message message
-      :class (stl/css-case :resolved-value (not (or empty-message? (seq warnings) (seq errors))))
-      :type type}]))
-
 (mf/defc form*
-  [{:keys [token token-type action selected-token-set-name transform-value on-value-resolve custom-input-token-value custom-input-token-value-props input-value-placeholder]}]
+  "Form component to edit or create a token of any token type.
+
+Callback props:
+validate-token: Function to validate and resolve an editing token, see `default-validate-token`.
+on-value-resolve: Will be called when a token value is resolved
+                  Used to sync external state (like color picker)
+on-get-token-value: Custom function to get the input value from the dom
+                    (As there might be multiple inputs passed for `custom-input-token-value`)
+                    Can also be used to manipulate the value (E.g.: Auto-prepending # for hex colors)
+
+Custom component props:
+custom-input-token-value: Custom component for editing/displaying the token value
+custom-input-token-value-props: Custom props passed to the custom-input-token-value merged with the default props"
+  [{:keys [token
+           token-type
+           selected-token-set-name
+           action
+           input-value-placeholder
+
+           ;; Callbacks
+           validate-token
+           on-value-resolve
+           on-get-token-value
+
+           ;; Custom component props
+           custom-input-token-value
+           custom-input-token-value-props]
+    :or {validate-token default-validate-token}}]
   (let [create? (not (instance? ctob/Token token))
         token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
@@ -213,7 +291,10 @@
 
                               ;; Style dictionary resolver needs font families to be an array of strings
                               (= :font-family (or (:type token) token-type))
-                              (update-in [(:name token) :value] ctt/split-font-family))
+                              (update-in [(:name token) :value] ctt/split-font-family)
+
+                              (= :typography (or (:type token) token-type))
+                              (d/update-in-when [(:name token) :font-family :value] ctt/split-font-family))
 
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
                                                                      :interactive? true})
@@ -288,37 +369,32 @@
         (mf/use-fn
          (mf/deps on-value-resolve)
          (fn [token-or-err]
-           (let [error? (:errors token-or-err)
-                 warnings? (:warnings token-or-err)
-                 v (cond
-                     error?
-                     (do
-                       (when on-value-resolve (on-value-resolve nil))
-                       token-or-err)
+           (when on-value-resolve
+             (cond
+               (:errors token-or-err) (on-value-resolve nil)
+               :else (on-value-resolve (:resolved-value token-or-err))))
+           (reset! token-resolve-result* token-or-err)))
 
-                     warnings?
-                     (:warnings {:warnings token-or-err})
+        on-update-value-debounced
+        (use-debonced-resolve-callback
+         {:name-ref token-name-ref
+          :token token
+          :tokens active-theme-tokens
+          :callback set-resolve-value
+          :validate-token validate-token})
 
-                     :else
-                     (cond-> (:resolved-value token-or-err)
-                       on-value-resolve on-value-resolve))]
-             (reset! token-resolve-result* v))))
-
-        on-update-value-debounced (use-debonced-resolve-callback token-name-ref token active-theme-tokens set-resolve-value)
+        ;; Callback to update the value state via on of the inputs :on-change
         on-update-value
         (mf/use-fn
-         (mf/deps on-update-value-debounced transform-value)
+         (mf/deps on-update-value-debounced on-get-token-value)
          (fn [e]
-           (let [value (dom/get-target-val e)
-                 value' (if (fn? transform-value)
-                          (transform-value value)
-                          value)]
-             ;; Value got updated in transform, update the dom node
-             (when (not= value value')
-               (dom/set-value! (mf/ref-val value-input-ref) value'))
+           (let [value (if (fn? on-get-token-value)
+                         (on-get-token-value e (mf/ref-val value-ref))
+                         (dom/get-target-val e))]
              (mf/set-ref-val! value-ref value)
              (on-update-value-debounced value))))
 
+        ;; Calback to update the value state from the outside (e.g.: color picker)
         on-external-update-value
         (mf/use-fn
          (mf/deps on-update-value-debounced)
@@ -328,10 +404,7 @@
            (on-update-value-debounced next-value)))
 
         value-error? (seq (:errors token-resolve-result))
-
-        valid-value-field? (and
-                            (not value-error?)
-                            (valid-value? token-resolve-result))
+        valid-value-field? (not value-error?)
 
         ;; Description
         description-ref (mf/use-var (:description token))
@@ -359,7 +432,7 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps validate-name validate-descripion token active-theme-tokens)
+         (mf/deps create? validate-name validate-descripion token active-theme-tokens validate-token)
          (fn [e]
            (dom/prevent-default e)
            ;; We have to re-validate the current form values before submitting
@@ -370,11 +443,7 @@
                  valid-name? (try
                                (not (:errors (validate-name final-name)))
                                (catch js/Error _ nil))
-                 final-value (let [value (mf/ref-val value-ref)
-                                   font-family? (= :font-family (or (:type token) token-type))]
-                               (if font-family?
-                                 (ctt/split-font-family value)
-                                 (finalize-value value)))
+                 value (mf/ref-val value-ref)
                  final-description @description-ref
                  valid-description? (if final-description
                                       (try
@@ -382,22 +451,23 @@
                                         (catch js/Error _ nil))
                                       true)]
              (when (and valid-name? valid-description?)
-               (->> (validate-token-value {:value final-value
-                                           :name-value final-name
-                                           :token token
-                                           :tokens active-theme-tokens})
+               (->> (validate-token {:token-value value
+                                     :token-name final-name
+                                     :token-description final-description
+                                     :prev-token token
+                                     :tokens active-theme-tokens})
                     (rx/subs!
-                     (fn []
+                     (fn [valid-token]
                        (st/emit!
-                        (if (ctob/token? token)
-                          (dwtl/update-token (:id token)
-                                             {:name final-name
-                                              :value final-value
-                                              :description final-description})
-
+                        (if create?
                           (dwtl/create-token {:name final-name
                                               :type token-type
-                                              :value final-value
+                                              :value (:value valid-token)
+                                              :description final-description})
+
+                          (dwtl/update-token (:id token)
+                                             {:name final-name
+                                              :value (:value valid-token)
                                               :description final-description}))
                         (dwtp/propagate-workspace-tokens)
                         (modal/hide)))))))))
@@ -496,29 +566,25 @@
        (let [placeholder (or input-value-placeholder (tr "workspace.tokens.token-value-enter"))
              label (tr "workspace.tokens.token-value")
              default-value (mf/ref-val value-ref)
-             ref value-input-ref
-             error (not (nil? (:errors token-resolve-result)))
-             on-blur on-update-value]
+             ref value-input-ref]
          (if (fn? custom-input-token-value)
            [:> custom-input-token-value
             {:placeholder placeholder
              :label label
              :default-value default-value
              :input-ref ref
-             :error error
-             :on-blur on-blur
              :on-update-value on-update-value
              :on-external-update-value on-external-update-value
-             :custom-input-token-value-props custom-input-token-value-props}]
+             :custom-input-token-value-props custom-input-token-value-props
+             :token-resolve-result token-resolve-result}]
            [:> input-tokens-value*
             {:placeholder placeholder
              :label label
              :default-value default-value
              :ref ref
-             :error error
-             :on-blur on-blur
-             :on-change on-update-value}]))
-       [:& token-value-hint {:result token-resolve-result}]]
+             :on-blur on-update-value
+             :on-change on-update-value
+             :token-resolve-result token-resolve-result}]))]
       [:div {:class (stl/css :input-row)}
        [:> input* {:label (tr "workspace.tokens.token-description")
                    :placeholder (tr "workspace.tokens.token-description")
@@ -606,7 +672,7 @@
        :on-change on-change'}]]))
 
 (mf/defc color-picker*
-  [{:keys [placeholder label default-value input-ref error on-blur on-update-value on-external-update-value custom-input-token-value-props]}]
+  [{:keys [placeholder label default-value input-ref on-blur on-update-value on-external-update-value custom-input-token-value-props token-resolve-result]}]
   (let [{:keys [color on-display-colorpicker]} custom-input-token-value-props
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
@@ -658,14 +724,14 @@
        :label label
        :default-value default-value
        :ref input-ref
-       :error error
        :on-blur on-blur
        :on-change on-update-value
        :slot-start swatch}]
      (when color-ramp-open?
        [:> ramp*
         {:color (some-> color (tinycolor/valid-color))
-         :on-change on-change'}])]))
+         :on-change on-change'}])
+     [:> token-value-hint* {:result token-resolve-result}]]))
 
 (mf/defc color-form*
   [{:keys [token on-display-colorpicker] :rest props}]
@@ -684,15 +750,19 @@
            {:color color
             :on-display-colorpicker on-display-colorpicker}))
 
-        transform-value
+        on-get-token-value
         (mf/use-fn
-         (fn [value]
-           (if (tinycolor/hex-without-hash-prefix? value)
-             (dm/str "#" value)
-             value)))]
+         (fn [e]
+           (let [value (dom/get-target-val e)]
+             (if (tinycolor/hex-without-hash-prefix? value)
+               (let [hex-value (dm/str "#" value)]
+                 (dom/set-value! (dom/get-target e) hex-value)
+                 hex-value)
+               value))))]
+
     [:> form*
      (mf/spread-props props {:token token
-                             :transform-value transform-value
+                             :on-get-token-value on-get-token-value
                              :on-value-resolve on-value-resolve
                              :custom-input-token-value color-picker*
                              :custom-input-token-value-props custom-input-token-value-props})]))
@@ -713,7 +783,7 @@
                          :full-size true}]]))
 
 (mf/defc font-picker*
-  [{:keys [default-value input-ref error on-blur on-update-value on-external-update-value]}]
+  [{:keys [default-value input-ref on-blur on-update-value on-external-update-value token-resolve-result]}]
   (let [font* (mf/use-state (fonts/find-font-family default-value))
         font (deref font*)
         set-font (mf/use-fn
@@ -764,11 +834,11 @@
        :label (tr "workspace.tokens.token-font-family-value")
        :default-value default-value
        :ref input-ref
-       :error error
        :on-blur on-blur
        :on-change on-update-value'
        :icon "text-font-family"
-       :slot-end font-selector-button}]
+       :slot-end font-selector-button
+       :token-resolve-result token-resolve-result}]
      (when font-selector-open?
        [:> font-selector-wrapper* {:font font
                                    :input-ref input-ref
@@ -785,7 +855,8 @@
     [:> form*
      (mf/spread-props props {:token (when token (update token :value ctt/join-font-family))
                              :custom-input-token-value font-picker*
-                             :on-value-resolve on-value-resolve})]))
+                             :on-value-resolve on-value-resolve
+                             :validate-token validate-font-family-token})]))
 
 (mf/defc text-case-form*
   [{:keys [token] :rest props}]
@@ -805,11 +876,102 @@
    (mf/spread-props props {:token token
                            :input-value-placeholder (tr "workspace.tokens.font-weight-value-enter")})])
 
+(def ^:private typography-inputs
+  #(d/ordered-map
+    :font-size
+    {:label "Font Size"
+     :placeholder (tr "workspace.tokens.token-value-enter")}
+    :font-family
+    {:label (tr "workspace.tokens.token-font-family-value")
+     :placeholder (tr "workspace.tokens.token-font-family-value-enter")}
+    :font-weight
+    {:label "Font Weight"
+     :placeholder (tr "workspace.tokens.font-weight-value-enter")}
+    :letter-spacing
+    {:label "Letter Spacing"
+     :placeholder (tr "workspace.tokens.token-value-enter")}
+    :text-case
+    {:label "Text Case"
+     :placeholder (tr "workspace.tokens.text-case-value-enter")}
+    :text-decoration
+    {:label "Text Decoration"
+     :placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
+
+(mf/defc typography-inputs*
+  [{:keys [default-value on-blur on-update-value token-resolve-result]}]
+  (let [typography-inputs (mf/use-memo typography-inputs)
+        errors-by-key (sd/collect-typography-errors token-resolve-result)]
+    [:div {:class (stl/css :nested-input-row)}
+     (for [[k {:keys [label placeholder]}] typography-inputs]
+       (let [value (get default-value k)
+             token-resolve-result
+             (-> {:resolved-value (let [v (get-in token-resolve-result [:resolved-value k])]
+                                    (when-not (str/empty? v) v))
+                  :errors (get errors-by-key k)}
+                 (d/without-nils))
+
+             input-ref (mf/use-ref)
+
+             on-external-update-value
+             (mf/use-fn
+              (mf/deps on-update-value)
+              (fn [next-value]
+                (let [el (mf/ref-val input-ref)]
+                  (dom/set-value! el next-value)
+                  (on-update-value #js {:target el
+                                        :tokenType :font-family}))))
+
+             on-change
+             (mf/use-fn
+              ;; Passing token-type via event to prevent deep function adapting & passing of type
+              (fn [e]
+                (-> (obj/set! e "tokenType" k)
+                    (on-update-value))))]
+
+         [:div {:class (stl/css :input-row)}
+          (case k
+            :font-family
+            [:> font-picker*
+             {:key (str k)
+              :label label
+              :placeholder placeholder
+              :input-ref input-ref
+              :default-value (when value (ctt/join-font-family value))
+              :on-blur on-blur
+              :on-update-value on-change
+              :on-external-update-value on-external-update-value
+              :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}]
+            [:> input-tokens-value*
+             {:key (str k)
+              :label label
+              :placeholder placeholder
+              :default-value value
+              :on-blur on-blur
+              :on-change on-change
+              :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}])]))]))
+
+(mf/defc typography-form*
+  [{:keys [token] :rest props}]
+  (let [on-get-token-value
+        (mf/use-callback
+         (fn [e prev-value]
+           (let [token-type (obj/get e "tokenType")
+                 input-value (dom/get-target-val e)]
+             (if (empty? input-value)
+               (dissoc prev-value token-type)
+               (assoc prev-value token-type input-value)))))]
+    [:> form*
+     (mf/spread-props props {:token token
+                             :custom-input-token-value typography-inputs*
+                             :validate-token validate-typography-token
+                             :on-get-token-value on-get-token-value})]))
+
 (mf/defc form-wrapper*
   [{:keys [token token-type] :as props}]
   (let [token-type' (or (:type token) token-type)]
     (case token-type'
       :color [:> color-form* props]
+      :typography [:> typography-form* props]
       :font-family [:> font-family-form* props]
       :text-case [:> text-case-form* props]
       :text-decoration [:> text-decoration-form* props]
