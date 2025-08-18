@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-08-19 11:03+0000\n"
-"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
+"Last-Translator: IsCycleBai <iscyclebai@outlook.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -5685,4 +5685,12 @@ msgstr "好的"
 #: src/app/main/ui/auth/register.cljs:50
 #, markdown
 msgid "auth.terms-and-privacy-agreement"
-msgstr "我同意 [服务条款](%s) 与 [隐私政策](%s)。"
+msgstr "我同意 [服务条款[(%s) 与 [隐私政策](%s)。"
+
+#: src/app/main/ui/onboarding/questions.cljs:85
+msgid "labels.product-design"
+msgstr "产品或UX设计"
+
+#: src/app/main/ui/static.cljs:135
+msgid "not-found.login.free"
+msgstr "Penpot 是免费且开源的设计工具，用于设计与代码之间的协作"
