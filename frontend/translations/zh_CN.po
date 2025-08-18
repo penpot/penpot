@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-08-19 11:03+0000\n"
-"Last-Translator: IsCycleBai <iscyclebai@outlook.com>\n"
+"Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -1247,7 +1247,7 @@ msgstr "文字风格"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:111
 msgid "inspect.attributes.typography.font-weight"
-msgstr "字体重量"
+msgstr "字体粗细"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:129, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:391
 msgid "inspect.attributes.typography.letter-spacing"
