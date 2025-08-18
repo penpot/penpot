@@ -99,6 +99,8 @@
    :exports                 :exports-group
    :grids                   :grids-group
 
+   :show-content            :show-content
+
    :layout                  :layout-container
 
    :layout-align-content    :layout-align-content
