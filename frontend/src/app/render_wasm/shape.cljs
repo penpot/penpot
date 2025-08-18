@@ -11,6 +11,7 @@
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
+   [app.main.refs :as refs]
    [app.render-wasm.api :as api]
    [beicon.v2.core :as rx]
    [clojure.core :as c]
@@ -19,15 +20,12 @@
 (declare ^:private impl-assoc)
 (declare ^:private impl-conj)
 (declare ^:private impl-dissoc)
-(defonce ^:private current-page-objects {})
-
-(defn set-current-page-objects!
-  [objects]
-  (set! current-page-objects objects))
 
 (defn shape-in-current-page?
+  "Check if a shape is in the current page by looking up the current page objects"
   [shape-id]
-  (contains? current-page-objects shape-id))
+  (let [objects (deref refs/workspace-page-objects)]
+    (contains? objects shape-id)))
 
 (defn map-entry
   [k v]
