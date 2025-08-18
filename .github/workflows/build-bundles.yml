@@ -30,7 +30,7 @@ jobs:
         id: vars
         run: |
           echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "gh_branch=${{ github.base_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+          echo "gh_branch=${{ inputs.gh_ref }}" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx for multi-arch build
         uses: docker/setup-buildx-action@v3
