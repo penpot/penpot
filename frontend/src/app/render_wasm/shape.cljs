@@ -209,12 +209,14 @@
        :layout-wrap-type
        :layout-padding-type
        :layout-padding)
-      (cond
-        (ctl/grid-layout? shape)
-        (api/set-grid-layout-data shape)
+      (do
+        (api/clear-layout)
+        (cond
+          (ctl/grid-layout? shape)
+          (api/set-grid-layout-data shape)
 
-        (ctl/flex-layout? shape)
-        (api/set-flex-layout shape))
+          (ctl/flex-layout? shape)
+          (api/set-flex-layout shape)))
 
       nil)))
 

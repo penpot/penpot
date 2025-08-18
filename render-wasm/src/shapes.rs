@@ -347,6 +347,11 @@ impl Shape {
         self.vertical_align
     }
 
+    pub fn clear_constraints(&mut self) {
+        self.constraint_h = None;
+        self.constraint_v = None;
+    }
+
     pub fn set_constraint_h(&mut self, constraint: Option<ConstraintH>) {
         self.constraint_h = constraint;
     }
@@ -400,6 +405,13 @@ impl Shape {
             z_index,
             align_self,
         });
+    }
+
+    pub fn clear_layout(&mut self) {
+        self.layout_item = None;
+        if let Type::Frame(data) = &mut self.shape_type {
+            data.layout = None;
+        }
     }
 
     // FIXME: These arguments could be grouped or simplified
