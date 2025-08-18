@@ -232,8 +232,8 @@
                         (:parent-id base))
 
             ;; If the parent-id or the frame-id are component-copies, we need to get the first not copy parent
-            parent-id (:id (ctn/get-first-not-copy-parent objects parent-id))   ;; We don't want to change the structure of component copies
-            frame-id  (:id (ctn/get-first-not-copy-parent objects frame-id))
+            parent-id (:id (ctn/get-first-valid-parent objects parent-id))   ;; We don't want to change the structure of component copies
+            frame-id  (:id (ctn/get-first-valid-parent objects frame-id))
 
 
             shape     (cts/setup-shape

@@ -389,12 +389,13 @@
      [(remap-ids new-shape)
       (map remap-ids new-shapes)])))
 
-(defn get-first-not-copy-parent
-  "Go trough the parents until we find a shape that is not a copy of a component."
+(defn get-first-valid-parent
+  "Go trough the parents until we find a shape that is not a copy of a component nor
+   a variant container."
   [objects id]
   (let [shape (get objects id)]
-    (if (ctk/in-component-copy? shape)
-      (get-first-not-copy-parent objects (:parent-id shape))
+    (if (or (ctk/in-component-copy? shape) (ctk/is-variant-container? shape))
+      (get-first-valid-parent objects (:parent-id shape))
       shape)))
 
 (defn has-any-copy-parent?
