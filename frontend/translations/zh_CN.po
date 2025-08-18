@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-08-19 11:03+0000\n"
-"Last-Translator: IsCycleBai <iscyclebai@outlook.com>\n"
+"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -55,7 +55,7 @@ msgstr "登录我的账号"
 
 #: src/app/main/ui/auth/register.cljs:212, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "在这里登录"
+msgstr "在这里登录。"
 
 #: src/app/main/ui/auth/login.cljs:195
 msgid "auth.login-submit"
@@ -540,10 +540,6 @@ msgstr "文件已启用“组件v2”功能，但这个团队尚未支持该功�
 msgid "dashboard.import.import-error"
 msgstr "文件导入过程中出现未知问题，导入失败。"
 
-#: src/app/main/ui/dashboard/import.cljs:475
-msgid "dashboard.import.import-message"
-msgstr "%s 个文件导入成功。"
-
 #: src/app/main/ui/dashboard/import.cljs:470
 msgid "dashboard.import.import-warning"
 msgstr "一些包含无效对象的文档已被移除。"
@@ -717,7 +713,7 @@ msgstr "显示全部文档"
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "您的文件已被成功删除"
-msgstr[1] "您的文件已被成功删除"
+msgstr[1] "您的多个文件已被成功删除"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:61
 msgid "dashboard.success-delete-project"
@@ -727,7 +723,7 @@ msgstr "成功删除了项目"
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "您的文件已被成功复制"
-msgstr[1] "您的文件已被成功复制"
+msgstr[1] "您的多个文件已被成功复制"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:34
 msgid "dashboard.success-duplicate-project"
@@ -1976,9 +1972,8 @@ msgid "modals.big-nudge"
 msgstr "小幅微调"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
-msgstr "验证新的邮件"
+msgstr "确认新的邮件"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2233,9 +2228,8 @@ msgid "modals.invite-member.emails"
 msgstr "电子邮件，以逗号分隔"
 
 #: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr "有些电子邮件是来自当前的团队成员。他们的邀请将不会被发送。"
+msgstr "有些成员已经在团队中，我们将邀请其余成员。"
 
 #: src/app/main/ui/dashboard/team.cljs:217
 msgid "modals.invite-team-member.title"
@@ -2297,7 +2291,7 @@ msgstr[1] "你确定要移动这些共享库吗？"
 msgid "modals.move-shared-confirm.title"
 msgid_plural "modals.move-shared-confirm.title"
 msgstr[0] "移动共享库"
-msgstr[1] "移动共享库"
+msgstr[1] "移动多个共享库"
 
 #: src/app/main/ui/workspace/main_menu.cljs:272, src/app/main/ui/workspace/nudge.cljs:46
 msgid "modals.nudge-title"
@@ -5686,4 +5680,9 @@ msgstr "事件"
 
 #, unused
 msgid "labels.ok"
-msgstr "Ok"
+msgstr "好的"
+
+#: src/app/main/ui/auth/register.cljs:50
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "我同意 [服务条款](%s) 与 [隐私政策](%s)。"
