@@ -63,12 +63,26 @@
 ;; === Common
 
 (defprotocol INamedItem
-  "Protocol for items that have a name, a description and a modified date."
+  "Protocol for items that have an id, a name, a description and a modified date."
+  (get-id [_] "Get the id of the item.")
   (get-name [_] "Get the name of the item.")
   (get-description [_] "Get the description of the item.")
   (get-modified-at [_] "Get the description of the item.")
-  (rename [_ new-name] "Set the name of the item.")
+  (rename [_ new-name] "Change the name of the item.")
+  (reid [_ new-id] "Change the id of the item.")
   (set-description [_ new-description] "Set the description of the item."))
+
+;; Provide an implementation for nil type, so it works when functions are
+;; called with nil as argument.
+(extend-type nil
+  INamedItem
+  (get-id [_] nil)
+  (get-name [_] nil)
+  (get-description [_] nil)
+  (get-modified-at [_] nil)
+  (rename [_ _] nil)
+  (reid [_ _] nil)
+  (set-description [_ _] nil))
 
 ;; === Token
 
@@ -77,6 +91,9 @@
   (datafy [this] (into {} this))
 
   INamedItem
+  (get-id [_]
+    id)
+
   (get-name [_]
     name)
 
@@ -88,6 +105,9 @@
 
   (rename [this new-name]
     (assoc this :name new-name))
+
+  (reid [this new-id]
+    (assoc this :id new-id))
 
   (set-description [this new-description]
     (assoc this :description new-description)))
@@ -233,6 +253,9 @@
        (-write [this writter options] (json/-write (datafy this) writter options))])
 
   INamedItem
+  (get-id [_]
+    id)
+
   (get-name [_]
     name)
 
@@ -245,6 +268,13 @@
   (rename [_ new-name]
     (TokenSet. id
                new-name
+               description
+               (ct/now)
+               tokens))
+
+  (reid [_ new-id]
+    (TokenSet. new-id
+               name
                description
                (ct/now)
                tokens))
@@ -272,8 +302,8 @@
                  (ct/now)
                  (assoc tokens (:name token) token))))
 
-  (update-token [this id f]
-    (if-let [token (token-by-id this id)]
+  (update-token [this token-id f]
+    (if-let [token (token-by-id this token-id)]
       (let [token' (-> (make-token (f token))
                        (assoc :modified-at (ct/now)))]
         (TokenSet. id
@@ -287,15 +317,15 @@
                          (dissoc (:name token))))))
       this))
 
-  (delete-token [this id]
-    (let [token (token-by-id this id)]
+  (delete-token [this token-id]
+    (let [token (token-by-id this token-id)]
       (TokenSet. id
                  name
                  description
                  (ct/now)
                  (dissoc tokens (:name token)))))
 
-  (get-token [this id]
+  (get-token [this id]      ;; TODO: this is redundant, may be removed
     (token-by-id this id))
 
   (get-tokens [_]
@@ -527,6 +557,8 @@
     Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
     Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
     Prefixed set final name or pfname: a final name with prefix \"S-some-set\"."
+  (set-by-id [_ id] "get a set by its id")
+  (set-by-name [_ name] "get a set by its name")
   (add-set [_ token-set] "add a set to the library, at the end")
   (update-set [_ set-name f] "modify a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
@@ -598,6 +630,9 @@
   (datafy [this] (into {} this))
 
   INamedItem
+  (get-id [_]
+    id)
+
   (get-name [_]
     name)
 
@@ -609,6 +644,9 @@
 
   (rename [this new-name]
     (assoc this :name new-name))
+
+  (reid [this new-id]
+    (assoc this :id new-id))
 
   (set-description [this new-description]
     (assoc this :description new-description))
@@ -910,11 +948,11 @@
   (empty-lib? [_] "True if the lib does not contain any token, set or theme")
   (set-path-exists? [_ path] "if a set at `path` exists")
   (set-group-path-exists? [_ path] "if a set group at `path` exists")
-  (add-token-in-set [_ set-name token] "add token to a set")
-  (get-token-in-set [_ set-name token-id] "get token in a set")
-  (get-token-by-name [_ set-name token-name] "get token in a set searching by token name")
-  (update-token-in-set [_ set-name token-id f] "update a token in a set")
-  (delete-token-from-set [_ set-name token-id] "delete a token from a set")
+  (add-token-in-set [_ set-id token] "add token to a set")
+  (get-token-in-set [_ set-id token-id] "get token in a set")
+  (get-token-by-name [_ set-id token-name] "get token in a set searching by token name")
+  (update-token-in-set [_ set-id token-id f] "update a token in a set")
+  (delete-token-from-set [_ set-id token-id] "delete a token from a set")
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
   (sets-at-path-all-active? [_ group-path] "compute active state for child sets at `group-path`.
@@ -942,6 +980,14 @@ Will return a value that matches this schema:
        (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
 
   ITokenSets
+  (set-by-id [this id]
+    (some #(when (= (get-id %) id) %)  ;; TODO: this will be made in an efficient way when
+          (get-sets this)))            ;;       we refactor the tokens lib internal structure
+
+  (set-by-name [_ name]
+    (let [path (set-name->prefixed-full-path name)]
+      (get-in sets path)))
+
   (add-set [_ token-set]
     (assert (token-set? token-set) "expected valid token-set")
     (let [path (get-set-prefixed-path token-set)]
@@ -1140,9 +1186,8 @@ Will return a value that matches this schema:
   (set-count [this]
     (count (get-sets this)))
 
-  (get-set [_ set-name]
-    (let [path (set-name->prefixed-full-path set-name)]
-      (get-in sets path)))
+  (get-set [this set-id]        ;; TODO: this is redundant and should be removed
+    (set-by-id this set-id))
 
   ITokenThemes
   (add-theme [_ token-theme]
@@ -1256,14 +1301,14 @@ Will return a value that matches this schema:
   (add-token-in-set [this set-name token]
     (update-set this set-name #(add-token % token)))
 
-  (get-token-in-set [this set-name token-id]
+  (get-token-in-set [this set-id token-id]
     (some-> this
-            (get-set set-name)
+            (get-set set-id)
             (get-token token-id)))
 
-  (get-token-by-name [this set-name token-name]
+  (get-token-by-name [this set-id token-name]
     (some-> this
-            (get-set set-name)
+            (get-set set-id)
             (token-by-name token-name)))
 
   (update-token-in-set [this set-name token-id f]
@@ -1304,7 +1349,7 @@ Will return a value that matches this schema:
           all-set-names    (get-ordered-set-names this)
           active-set-names (filter theme-set-names all-set-names)
           tokens           (reduce (fn [tokens set-name]
-                                     (let [set (get-set this set-name)]
+                                     (let [set (set-by-name this set-name)]
                                        (merge tokens (get-tokens-map set))))
                                    (d/ordered-map)
                                    active-set-names)]
@@ -1391,12 +1436,18 @@ Will return a value that matches this schema:
     {:encode/json #(export-dtcg-json %)
      :decode/json #(parse-multi-set-dtcg-json %)}}))
 
-(defn duplicate-set [set-name lib & {:keys [suffix]}]
-  (let [sets (get-sets lib)
-        unames (map get-name sets)
-        copy-name (cfh/generate-unique-name set-name unames :suffix suffix)]
-    (some-> (get-set lib set-name)
-            (rename copy-name))))
+(defn duplicate-set
+  "Make a new set with a unique name, copying data from the given set in the lib."
+  [set-id lib & {:keys [suffix]}]
+  (let [sets      (get-sets lib)
+        unames    (map get-name sets)
+        set       (get-set lib set-id)
+        copy-name (when set
+                    (cfh/generate-unique-name (get-name set) unames :suffix suffix))]
+    (when set
+      (-> set
+          (rename copy-name)
+          (reid (uuid/next))))))
 
 ;; === Import / Export from JSON format
 

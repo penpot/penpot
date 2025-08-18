@@ -15,8 +15,9 @@
    [app.main.ui.workspace.tokens.sets.lists :refer [controlled-sets-list*]]
    [rumext.v2 :as mf]))
 
-(defn- on-select-token-set-click [name]
-  (st/emit! (dwtl/set-selected-token-set-name name)))
+(defn- on-select-token-set-click [id name]
+  (st/emit! (dwtl/set-selected-token-set-id id)
+            (dwtl/set-selected-token-set-name name)))
 
 (defn- on-toggle-token-set-click [name]
   (st/emit! (dwtl/toggle-token-set name)))

@@ -21,7 +21,8 @@
    [app.common.types.path :as path]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
-   [app.common.uuid :as uuid]))
+   [app.common.uuid :as uuid]
+   [clojure.datafy :refer [datafy]]))
 
 ;; Auxiliary functions to help create a set of changes (undo + redo)
 ;; TODO: this is a duplicate schema
@@ -884,7 +885,7 @@
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token (some-> (get library-data :tokens-lib)
-                           (ctob/get-set set-name)
+                           (ctob/set-by-name set-name)
                            (ctob/get-token token-id))]
     (-> changes
         (update :redo-changes conj {:type :set-token
@@ -908,48 +909,37 @@
         (apply-changes-local))))
 
 (defn rename-token-set
-  [changes name new-name]
-
+  [changes id new-name]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
         prev-token-set (some-> (get library-data :tokens-lib)
-                               (ctob/get-set name))]
+                               (ctob/get-set id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
-                                    :set-name name
-                                    :token-set (ctob/rename prev-token-set new-name)
+                                    :set-id id
+                                    :token-set (datafy (ctob/rename prev-token-set new-name))
                                     :group? false})
         (update :undo-changes conj {:type :set-token-set
-                                    :set-name new-name
-                                    :token-set prev-token-set
+                                    :set-id id
+                                    :token-set (datafy prev-token-set)
                                     :group? false})
         (apply-changes-local))))
 
 (defn set-token-set
-  [changes set-name group? token-set]
+  [changes set-id group? token-set]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
         prev-token-set (some-> (get library-data :tokens-lib)
-                               (ctob/get-set set-name))]
+                               (ctob/get-set set-id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
-                                    :set-name set-name
-                                    :token-set token-set
+                                    :set-id set-id
+                                    :token-set (datafy token-set)
                                     :group? group?})
-        (update :undo-changes conj (if prev-token-set
-                                     {:type :set-token-set
-                                      :set-name (if token-set
-                                                  ;; Undo of edit
-                                                  (ctob/get-name token-set)
-                                                  ;; Undo of delete
-                                                  set-name)
-                                      :token-set prev-token-set
-                                      :group? group?}
-                                     ;; Undo of create
-                                     {:type :set-token-set
-                                      :set-name set-name
-                                      :token-set nil
-                                      :group? group?}))
+        (update :undo-changes conj {:type :set-token-set
+                                    :set-id set-id
+                                    :token-set (datafy prev-token-set)
+                                    :group? group?})
         (apply-changes-local))))
 
 (defn add-component
