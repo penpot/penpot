@@ -464,8 +464,10 @@
       (for [[pos prop] (map vector (range) properties)]
         [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
          [:*
-          [:span {:class (stl/css :variant-property-name)}
-           (:name prop)]
+          [:div {:class (stl/css :variant-property-name-wrapper-copy)
+                 :title (:name prop)}
+           [:span {:class (stl/css :variant-property-name)}
+            (:name prop)]]
           [:> select* {:default-selected (:value prop)
                        :options (get-options (:name prop))
                        :empty-to-end true
