@@ -772,22 +772,26 @@ impl Shape {
             rect.bottom += self.blur.value;
         }
 
-        // For frames without clipping, extend the bounding rectangle to include all nested shapes
-        // This ensures that frames properly encompass their content when clip_content is false
-        if let Type::Frame(_) = &self.shape_type {
-            if !self.clip_content {
-                for child_id in self.children_ids(false) {
-                    if let Some(child_shape) = shapes_pool.get(&child_id) {
-                        // Create a copy of the child shape to apply any transformations
-                        let mut transformed_element: Cow<Shape> = Cow::Borrowed(child_shape);
-                        if let Some(modifier) = modifiers.get(&child_id) {
-                            transformed_element.to_mut().apply_transform(modifier);
-                        }
+        // For groups and frames without clipping, extend the bounding rectangle to include all nested shapes
+        // This ensures that these containers properly encompass their content
+        let include_children = match &self.shape_type {
+            Type::Group(_) => true,
+            Type::Frame(_) => !self.clip_content,
+            _ => false,
+        };
 
-                        // Get the child's extended rectangle and join it with the frame's rectangle
-                        let child_extrect = transformed_element.extrect(shapes_pool, modifiers);
-                        rect.join(child_extrect);
+        if include_children {
+            for child_id in self.children_ids(false) {
+                if let Some(child_shape) = shapes_pool.get(&child_id) {
+                    // Create a copy of the child shape to apply any transformations
+                    let mut transformed_element: Cow<Shape> = Cow::Borrowed(child_shape);
+                    if let Some(modifier) = modifiers.get(&child_id) {
+                        transformed_element.to_mut().apply_transform(modifier);
                     }
+
+                    // Get the child's extended rectangle and join it with the container's rectangle
+                    let child_extrect = transformed_element.extrect(shapes_pool, modifiers);
+                    rect.join(child_extrect);
                 }
             }
         }
