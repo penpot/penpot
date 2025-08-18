@@ -31,6 +31,7 @@
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.features :as features]
+   [app.render-wasm.shape :as wasm-shape]
    [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -416,6 +417,11 @@
 
           ;; Create variant container
            (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
+           ;; It is necessary to synchronize the shape in the WASM context before applying changes
+           ;; like remove-fills or add-stroke, since these operations require the shape to be
+           ;; available and up-to-date in the WASM renderer.
+           (when (features/active-feature? state "render-wasm/v1")
+             (wasm-shape/set-current-page-objects-from-state))
            (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
            (when flex? (dwsl/create-layout-from-id variant-id :flex))
            (dwsh/update-shapes variant-vec #(merge % cont-props))

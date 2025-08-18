@@ -11,10 +11,12 @@
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
+   [app.main.data.helpers :as dsh]
    [app.render-wasm.api :as api]
    [beicon.v2.core :as rx]
    [clojure.core :as c]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [potok.v2.core :as ptk]))
 
 (declare ^:private impl-assoc)
 (declare ^:private impl-conj)
@@ -24,6 +26,13 @@
 (defn set-current-page-objects!
   [objects]
   (set! current-page-objects objects))
+
+(defn set-current-page-objects-from-state
+  []
+  (ptk/reify ::set-current-page-objects-from-state
+    ptk/WatchEvent
+    (watch [_ state _]
+      (set-current-page-objects! (dsh/lookup-page-objects state)))))
 
 (defn shape-in-current-page?
   [shape-id]
