@@ -220,10 +220,8 @@
                     (px/sleep timeout)
                     (recur result))
                   (do
-                    (l/err :hint "unhandled exception on processing task result (retrying in some instants)"
-                           :cause cause)
-                    (px/sleep timeout)
-                    (recur result))))))]
+                    (l/err :hint "unhandled exception on processing task result"
+                           :cause cause))))))]
 
     (try
       (let [key       (str/ffmt "taskq:%" queue)
