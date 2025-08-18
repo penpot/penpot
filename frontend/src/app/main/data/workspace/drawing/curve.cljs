@@ -36,7 +36,7 @@
             position     (path.segment/get-handler-point content 0 nil)
 
             frame-id     (->> (ctst/top-nested-frame objects position)
-                              (ctn/get-first-not-copy-parent objects) ;; We don't want to change the structure of component copies
+                              (ctn/get-first-valid-parent objects) ;; We don't want to change the structure of component copies
                               :id)
 
             flex-layout? (ctl/flex-layout? objects frame-id)
