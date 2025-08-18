@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
-"Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
+"PO-Revision-Date: 2025-08-19 11:03+0000\n"
+"Last-Translator: IsCycleBai <iscyclebai@outlook.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -22,7 +22,7 @@ msgstr "请检查您的邮箱"
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
-msgstr "请检查电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
+msgstr "请检查您的邮箱，点击邮件中的链接来验证，然后开始使用Penpot。"
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
@@ -71,7 +71,7 @@ msgstr "GitHub登录"
 
 #: src/app/main/ui/auth/login.cljs:228
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab登录"
+msgstr "GitLab登录"
 
 #: src/app/main/ui/auth/login.cljs:216
 msgid "auth.login-with-google-submit"
@@ -5663,3 +5663,27 @@ msgstr "更新"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/auth/register.cljs:343
+msgid "auth.register-account-title"
+msgstr "您的昵称"
+
+#: src/app/main/ui/auth/register.cljs:124
+#, unused
+msgid "auth.register-tagline"
+msgstr "拥有一个Penpot的免费账户，您可以创建任意多的团队并与其他设计师和开发人员在任"
+"意数量的项目中协作。 "
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "最多可包含1个字符。"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+#, unused
+msgid "labels.event"
+msgstr "事件"
+
+#, unused
+msgid "labels.ok"
+msgstr "Ok"
