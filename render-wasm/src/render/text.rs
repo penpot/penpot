@@ -17,7 +17,8 @@ pub fn render(
     let container_height = shape.selrect().height();
 
     // Calculate total height for vertical alignment
-    let total_content_height = calculate_all_paragraphs_height(paragraphs, shape.bounds().width());
+    let shape_width = shape.bounds().width().ceil();
+    let total_content_height = calculate_all_paragraphs_height(paragraphs, shape_width);
     let mut global_offset_y = match shape.vertical_align() {
         VerticalAlign::Center => (container_height - total_content_height) / 2.0,
         VerticalAlign::Bottom => container_height - total_content_height,
@@ -48,7 +49,7 @@ pub fn render(
                 continue;
             }
 
-            skia_paragraph.layout(shape.bounds().width());
+            skia_paragraph.layout(shape_width);
 
             let paragraph_height = skia_paragraph.height();
             let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);
@@ -65,7 +66,6 @@ pub fn render(
                 let total_chars = line_metrics.end_index - line_metrics.start_index;
 
                 // Calculate line's actual start position considering text alignment
-                // let paragraph_width = shape.bounds().width();
                 let line_start_offset = line_metrics.left as f32;
 
                 // No text decoration for empty lines
@@ -126,7 +126,7 @@ pub fn render(
         // For stroke groups (multiple elements), increment global_offset_y once per group
         if group_len > 1 {
             let mut first_paragraph = group[0].build();
-            first_paragraph.layout(shape.bounds().width());
+            first_paragraph.layout(shape_width);
             global_offset_y += first_paragraph.height();
         } else {
             // For regular paragraphs, global_offset_y was already incremented inside the loop
