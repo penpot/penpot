@@ -11,6 +11,11 @@
 ### :sparkles: New features & Enhancements
 - Add defaults for artboard drawing [Taiga #494](https://tree.taiga.io/project/penpot/us/494?milestone=465047)
 - Continuous display of distances between elements when moving a layer with the keyboard [Taiga #1780](https://tree.taiga.io/project/penpot/us/1780)
+- New Number token - unitless values  [Taiga #10936](https://tree.taiga.io/project/penpot/us/10936)
+- New font-family token [Taiga #10937](https://tree.taiga.io/project/penpot/us/10937)
+- New text case token [Taiga #10942](https://tree.taiga.io/project/penpot/us/10942)
+- New text-decoration token [Taiga #10941](https://tree.taiga.io/project/penpot/us/10941)
+- New letter spacing token [Taiga #10940](https://tree.taiga.io/project/penpot/us/10940)
 
 ### :bug: Bugs fixed
 
