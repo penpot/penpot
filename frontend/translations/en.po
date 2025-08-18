@@ -5552,13 +5552,13 @@ msgid "workspace.options.component.variants-help-modal.rule1"
 msgstr "Share the same name."
 
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "Are the same type"
+msgstr "Are the same type."
 
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
-msgstr "Rectangle, ellipsis, paths and boolean operations count as same type."
+msgstr "Rectangle, ellipse, paths and boolean operations count as the same type."
 
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "Have the same hierachy level"
+msgstr "Have the same hierarchy level."
 
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
 msgstr "Groups, boards and layouts are considered equivalent."
