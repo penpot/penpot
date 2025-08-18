@@ -686,7 +686,10 @@
         (rx/of (rt/nav :workspace params ::rt/new-window true))))))
 
 (defn go-to-local-component
-  [& {:keys [id] :as options}]
+  ;; id is the id of the component to go
+  ;; additional-ids are ids of additional components on the same page
+  ;; that will be selected and zoomed along the main one
+  [& {:keys [id additional-ids] :as options}]
   (ptk/reify ::go-to-local-component
     ptk/WatchEvent
     (watch [_ state stream]
@@ -694,27 +697,36 @@
             data            (dsh/lookup-file-data state)
 
             select-and-zoom
-            (fn [shape-id]
-              (rx/of (dws/select-shapes (d/ordered-set shape-id))
+            (fn [ids]
+              (rx/of (dws/select-shapes ids)
                      dwz/zoom-to-selected-shape))
 
             redirect-to-page
-            (fn [page-id shape-id]
+            (fn [page-id ids]
               (rx/merge
                (->> stream
                     (rx/filter (ptk/type? ::dwpg/initialize-page))
                     (rx/take 1)
                     (rx/observe-on :async)
-                    (rx/mapcat (fn [_] (select-and-zoom shape-id))))
-               (rx/of (dcm/go-to-workspace :page-id page-id))))]
+                    (rx/mapcat (fn [_] (select-and-zoom ids))))
+               (rx/of (dcm/go-to-workspace :page-id page-id))))
+
+            get-main-instance-id
+            (fn [id page-id]
+              (let [component (dm/get-in data [:components id])]
+                (when (= (:main-instance-page component) page-id)
+                  (:main-instance-id component))))]
 
         (when-let [component (dm/get-in data [:components id])]
           (let [page-id  (:main-instance-page component)
-                shape-id (:main-instance-id component)]
+                shape-id (:main-instance-id component)
+                additional-shape-ids (keep #(get-main-instance-id % page-id)
+                                           additional-ids)
+                ids (into (d/ordered-set shape-id) additional-shape-ids)]
             (when (some? page-id)
               (if (= page-id current-page-id)
-                (select-and-zoom shape-id)
-                (redirect-to-page page-id shape-id)))))))))
+                (select-and-zoom ids)
+                (redirect-to-page page-id ids)))))))))
 
 (defn library-thumbnails-fetched
   [thumbnails]

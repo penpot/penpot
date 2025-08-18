@@ -86,7 +86,7 @@
          (fn [event]
            (dom/stop-propagation event)
            (if is-local
-             (st/emit! (dwl/go-to-local-component component-id))
+             (st/emit! (dwl/go-to-local-component :id component-id))
              (st/emit! (dwl/go-to-component-file file-id component)))))
 
         on-drop
