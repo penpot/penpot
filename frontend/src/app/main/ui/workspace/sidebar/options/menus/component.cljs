@@ -242,15 +242,15 @@
 (defn- get-variant-malformed-warning-message
   "Receive a list of booleans, one for each selected variant, indicating if that variant
    is malformed, and generate a warning message accordingly"
-  [malformed-map]
+  [malformed-list]
   (cond
-    (and (= (count malformed-map) 1) (some? (first malformed-map)))
+    (and (= (count malformed-list) 1) (some? (first malformed-list)))
     (tr "workspace.options.component.variant.malformed.single.one")
 
-    (and (seq malformed-map) (every? some? malformed-map))
+    (and (seq malformed-list) (every? some? malformed-list))
     (tr "workspace.options.component.variant.malformed.single.all")
 
-    (and (seq malformed-map) (some some? malformed-map))
+    (and (seq malformed-list) (some some? malformed-list))
     (tr "workspace.options.component.variant.malformed.single.some")
 
     :else nil))
@@ -259,15 +259,15 @@
 (defn- get-variant-duplicated-warning-message
   "Receive a list of booleans, one for each selected variant, indicating if that variant
    is duplicated, and generate a warning message accordingly"
-  [duplicated-map]
+  [duplicated-list]
   (cond
-    (and (= (count duplicated-map) 1) (some? (first duplicated-map)))
+    (and (= (count duplicated-list) 1) (some? (first duplicated-list)))
     (tr "workspace.options.component.variant.duplicated.single.one")
 
-    (and (seq duplicated-map) (every? some? duplicated-map))
+    (and (seq duplicated-list) (every? some? duplicated-list))
     (tr "workspace.options.component.variant.duplicated.single.all")
 
-    (and (seq duplicated-map) (some some? duplicated-map))
+    (and (seq duplicated-list) (some some? duplicated-list))
     (tr "workspace.options.component.variant.duplicated.single.some")
 
     :else nil))
@@ -312,22 +312,22 @@
         objects        (-> (dsh/get-page data (:main-instance-page component))
                            (get :objects))
 
-        properties-map (mapv :variant-properties components)
-        component-ids  (mapv :id components)
+        props-list     (map :variant-properties components)
+        component-ids  (map :id components)
         properties     (if (> (count component-ids) 1)
-                         (ctv/compare-properties properties-map false)
-                         (first properties-map))
+                         (ctv/compare-properties props-list false)
+                         (first props-list))
 
-        malformed-map   (mapv :variant-error shapes)
-        malformed-msg   (get-variant-malformed-warning-message malformed-map)
+        malformed-list  (map :variant-error shapes)
+        malformed-msg   (get-variant-malformed-warning-message malformed-list)
 
         duplicated-ids  (->> (cfv/find-variant-components data objects variant-id)
                              get-main-ids-with-duplicated-variant-props-and-values
                              set)
-        duplicated-map  (->> components
-                             (mapv :main-instance-id)
-                             (mapv duplicated-ids))
-        duplicated-msg  (get-variant-duplicated-warning-message duplicated-map)
+        duplicated-list (->> components
+                             (map :main-instance-id)
+                             (map duplicated-ids))
+        duplicated-msg  (get-variant-duplicated-warning-message duplicated-list)
 
         prop-vals       (mf/with-memo [data objects variant-id]
                           (cfv/extract-properties-values data objects variant-id))
@@ -403,15 +403,18 @@
         variant-id   (:variant-id component)
         objects      (-> (dsh/get-page data (:main-instance-page component))
                          (get :objects))
-        variant-comps    (cfv/find-variant-components data objects variant-id)
+        variant-comps    (mf/with-memo [data objects variant-id]
+                           (cfv/find-variant-components data objects variant-id))
 
-        duplicated-comps (->> variant-comps
-                              get-components-with-duplicated-variant-props-and-values)
+        duplicated-comps (mf/with-memo [variant-comps]
+                           (->> variant-comps
+                                get-components-with-duplicated-variant-props-and-values))
 
-        malformed-comps  (->> variant-comps
-                              (filter #(->> (:main-instance-id %)
-                                            (get objects)
-                                            :variant-error)))
+        malformed-comps  (mf/with-memo [variant-comps]
+                           (->> variant-comps
+                                (filter #(->> (:main-instance-id %)
+                                              (get objects)
+                                              :variant-error))))
 
         prop-vals        (mf/with-memo [data objects variant-id]
                            (cfv/extract-properties-values data objects variant-id))
@@ -424,7 +427,7 @@
 
         select-duplicated-comps
         (mf/use-fn
-         (mf/deps duplicated-comps)
+         (mf/deps current-file-id shape duplicated-comps)
          #(let [ids (map :id duplicated-comps)]
             (if (= current-file-id (:component-file shape))
               (st/emit! (dwl/go-to-local-component {:id (first ids)
@@ -434,7 +437,7 @@
 
         select-malformed-comps
         (mf/use-fn
-         (mf/deps current-file-id shape component component-id)
+         (mf/deps current-file-id shape malformed-comps)
          (fn []
            (let [ids (map :id malformed-comps)]
              (if (= current-file-id (:component-file shape))
@@ -443,7 +446,7 @@
 
         switch-component
         (mf/use-fn
-         (mf/deps shape)
+         (mf/deps shape component component-id variant-comps)
          (fn [pos val]
            (when (not= val (dm/get-in component [:variant-properties pos :value]))
              (let [target-props (-> (:variant-properties component)
