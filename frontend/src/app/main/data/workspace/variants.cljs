@@ -601,6 +601,10 @@
                    (dwu/start-undo-transaction undo-id)
                    (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false)
                    (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
+                   (dwsh/update-shapes selected #(-> %
+                                                     (assoc :constraints-h :left)
+                                                     (assoc :constraints-v :top)
+                                                     (assoc :fixed-scroll false)))
                    (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
                    (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
                    (dwsh/relocate-shapes #{variant-id} common-parent index)
