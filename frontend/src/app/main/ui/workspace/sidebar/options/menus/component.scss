@@ -746,24 +746,26 @@
   padding-right: var(--sp-xxs);
 }
 
-.variant-property-name {
-  color: var(--color-foreground-primary);
-  height: var(--sp-xxxl);
-  width: $s-104;
-
+.variant-property-name-wrapper-copy {
   display: flex;
   align-items: center;
   justify-content: center;
 
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  height: var(--sp-xxxl);
+  width: $s-104;
 }
 
 .variant-property-name-wrapper {
   display: flex;
   flex: 0 0 auto;
   width: $s-104;
+}
+
+.variant-property-name {
+  color: var(--color-foreground-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .variant-warning-wrapper {
