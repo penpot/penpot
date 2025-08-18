@@ -31,9 +31,11 @@
                                  component-id
                                  new-component-id
                                  {:new-shape-id new-shape-id :apply-changes-local-library? true}))]
-    (-> changes
-        (clvp/generate-update-property-value new-component-id prop-num value)
-        (pcb/change-parent (:parent-id shape) [new-shape] 0))))
+    (cond-> changes
+      (>= prop-num 0)
+      (clvp/generate-update-property-value new-component-id prop-num value)
+      :always
+      (pcb/change-parent (:parent-id shape) [new-shape] 0))))
 
 (defn- generate-path
   [path objects base-id shape]
