@@ -380,16 +380,12 @@
                            :layout-item-v-sizing :auto
                            :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
                            :layout-gap     {:row-gap 0 :column-gap 20}}
-             cont-props    (if flex?
-                             (into base-props flex-props)
-                             base-props)
-             m-base-props {:name name
+             cont-props   (if flex?
+                            (into base-props flex-props)
+                            base-props)
+             main-props   {:name name
                            :variant-id variant-id}
-             m-flex-props {:layout-item-h-sizing :fix
-                           :layout-item-v-sizing :fix}
-             main-props   (if flex?
-                            (into m-base-props m-flex-props)
-                            m-base-props)
+
              stroke-props {:stroke-alignment :inner
                            :stroke-style :solid
                            :stroke-color "#bb97d8" ;; todo use color var?
