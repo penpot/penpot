@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.tokens.library-edit
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
@@ -22,9 +23,12 @@
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
+   [clojure.datafy :refer [datafy]]
+   [clojure.test :as ct]
    [potok.v2.core :as ptk]))
 
 (declare set-selected-token-set-name)
+(declare set-selected-token-set-id)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TOKENS Getters
@@ -39,11 +43,11 @@
 
 (defn lookup-token-set
   ([state]
-   (when-let [selected (dm/get-in state [:workspace-tokens :selected-token-set-name])]
+   (when-let [selected (dm/get-in state [:workspace-tokens :selected-token-set-id])]
      (lookup-token-set state selected)))
-  ([state name]
+  ([state id]
    (some-> (get-tokens-lib state)
-           (ctob/get-set name))))
+           (ctob/get-set id))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Helpers
@@ -149,7 +153,7 @@
       (let [data       (dsh/lookup-file-data state)
             tokens-lib (get data :tokens-lib)
             set-name   (ctob/normalize-set-name set-name)]
-        (if (and tokens-lib (ctob/get-set tokens-lib set-name))
+        (if (and tokens-lib (ctob/set-by-name tokens-lib set-name))
           (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
                             :type :toast
                             :level :error
@@ -157,8 +161,9 @@
           (let [token-set (ctob/make-token-set :name set-name)
                 changes   (-> (pcb/empty-changes it)
                               (pcb/with-library-data data)
-                              (pcb/set-token-set set-name false token-set))]
+                              (pcb/set-token-set (ctob/get-id token-set) false token-set))]
             (rx/of (set-selected-token-set-name set-name)
+                   (set-selected-token-set-id (ctob/get-id token-set))
                    (dch/commit-changes changes))))))))
 
 (defn rename-token-set-group [set-group-path set-group-fname]
@@ -179,15 +184,16 @@
             name       (ctob/normalize-set-name name (ctob/get-name token-set))
             tokens-lib (get data :tokens-lib)]
 
-        (if (ctob/get-set tokens-lib name)
+        (if (ctob/set-by-name tokens-lib name)
           (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
                             :type :toast
                             :level :error
                             :timeout 9000}))
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/rename-token-set (ctob/get-name token-set) name))]
+                            (pcb/rename-token-set (ctob/get-id token-set) name))]
             (rx/of (set-selected-token-set-name name)
+                   (set-selected-token-set-id (ctob/get-id token-set))
                    (dch/commit-changes changes))))))))
 
 (defn duplicate-token-set
@@ -196,15 +202,15 @@
     ptk/WatchEvent
     (watch [it state _]
       (let [data       (dsh/lookup-file-data state)
-            name       (ctob/normalize-set-name id)
             tokens-lib (get data :tokens-lib)
             suffix     (tr "workspace.tokens.duplicate-suffix")]
 
-        (when-let [set (ctob/duplicate-set name tokens-lib {:suffix suffix})]
+        (when-let [token-set (ctob/duplicate-set id tokens-lib {:suffix suffix})]
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token-set (ctob/get-name set) is-group set))]
-            (rx/of (set-selected-token-set-name name)
+                            (pcb/set-token-set (ctob/get-id token-set) is-group token-set))]
+            (rx/of (set-selected-token-set-name (ctob/get-name token-set))
+                   (set-selected-token-set-id (ctob/get-id token-set))
                    (dch/commit-changes changes))))))))
 
 (defn toggle-token-set
@@ -250,6 +256,7 @@
   (ptk/reify ::delete-token-set-path
     ptk/WatchEvent
     (watch [it state _]
+      (prn "path" path)
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -334,7 +341,8 @@
                                      hidden-theme-with-set)
                 (pcb/update-active-token-themes #{ctob/hidden-theme-path} #{}))]
         (rx/of (dch/commit-changes changes)
-               (set-selected-token-set-name set-name))))))
+               (set-selected-token-set-name set-name)
+               (set-selected-token-set-id (ctob/get-id token-set)))))))
 
 (defn create-token
   [params]
@@ -375,7 +383,6 @@
                           (pcb/set-token (ctob/get-name token-set)
                                          id
                                          token'))]
-
         (rx/of (dch/commit-changes changes)
                (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type}))))))
 
@@ -449,12 +456,19 @@
         (update state :workspace-tokens assoc :token-set-context-menu params)
         (update state :workspace-tokens dissoc :token-set-context-menu)))))
 
-(defn set-selected-token-set-name
+(defn set-selected-token-set-name   ;; TODO: remove this when all functions use set-id
   [name]
   (ptk/reify ::set-selected-token-set-name
     ptk/UpdateEvent
     (update [_ state]
       (update state :workspace-tokens assoc :selected-token-set-name name))))
+
+(defn set-selected-token-set-id
+  [id]
+  (ptk/reify ::set-selected-token-set-id
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :workspace-tokens assoc :selected-token-set-id id))))
 
 (defn start-token-set-edition
   [edition-id]
