@@ -328,7 +328,9 @@
       [:id ::sm/uuid]
       [:name :string]
       [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
-      [:path {:optional true} :string]]]
+      [:path {:optional true} :string]
+      [:main-instance-id ::sm/uuid]
+      [:main-instance-page ::sm/uuid]]]
 
     [:mod-component
      [:map {:title "ModCompoenentChange"}
