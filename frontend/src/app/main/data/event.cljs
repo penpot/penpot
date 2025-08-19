@@ -31,9 +31,8 @@
 ;; Defines the maximum number of events that can go in a single batch.
 (def max-chunk-size 100)
 
-;; Defines the time window within events belong to the same session.
-(def session-timeout
-  (ct/duration {:minutes 30}))
+;; Defines the time window (in ms) within events belong to the same session.
+(def session-timeout (* 1000 60 30))
 
 ;; --- CONTEXT
 
@@ -248,7 +247,7 @@
                          (l/debug :hint "event enqueued")
                          (swap! buffer append-to-buffer event)))
 
-               (rx/switch-map #(rx/timer (inst-ms session-timeout)))
+               (rx/switch-map #(rx/timer session-timeout))
                (rx/take-until stopper)
                (rx/subs! (fn [_]
                            (l/debug :hint "session reinitialized")

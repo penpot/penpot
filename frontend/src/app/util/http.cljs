@@ -8,7 +8,6 @@
   "A http client with rx streams interface."
   (:require
    [app.common.data :as d]
-   [app.common.time :as ct]
    [app.common.transit :as t]
    [app.common.uri :as u]
    [app.config :as cfg]
@@ -215,4 +214,4 @@
          :uri url
          :response-type :text})
        (rx/map :body)
-       (c/with-cache {:key url :max-age (ct/duration {:hours 4})})))
+       (c/with-cache {:key url :max-age (* 1000 60 60 4)})))
