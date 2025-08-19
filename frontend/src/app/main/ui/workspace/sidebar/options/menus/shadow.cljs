@@ -20,7 +20,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as i]
@@ -321,14 +321,14 @@
                                                               (ctss/check-shadow))))))))))]
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-shadows?
-                     :collapsed    (not show-content?)
-                     :on-collapsed toggle-content
-                     :title        (case type
-                                     :multiple (tr "workspace.options.shadow-options.title.multiple")
-                                     :group (tr "workspace.options.shadow-options.title.group")
-                                     (tr "workspace.options.shadow-options.title"))
-                     :class        (stl/css-case :title-spacing-shadow (not has-shadows?))}
+      [:> title-bar* {:collapsable  has-shadows?
+                      :collapsed    (not show-content?)
+                      :on-collapsed toggle-content
+                      :title        (case type
+                                      :multiple (tr "workspace.options.shadow-options.title.multiple")
+                                      :group (tr "workspace.options.shadow-options.title.group")
+                                      (tr "workspace.options.shadow-options.title"))
+                      :class        (stl/css-case :title-spacing-shadow (not has-shadows?))}
 
        (when-not (= :multiple shadows)
          [:> icon-button* {:variant "ghost"

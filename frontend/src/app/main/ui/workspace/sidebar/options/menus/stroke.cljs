@@ -13,7 +13,7 @@
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row]]
@@ -170,11 +170,11 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-strokes?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :title        label
-                     :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
+      [:> title-bar* {:collapsable  has-strokes?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :title        label
+                      :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
        (when (not (= :multiple strokes))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.stroke.add-stroke")

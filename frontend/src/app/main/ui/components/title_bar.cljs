@@ -14,8 +14,7 @@
 (def ^:private chevron-icon
   (i/icon-xref :arrow (stl/css :chevron-icon)))
 
-(mf/defc title-bar
-  {::mf/props :obj}
+(mf/defc title-bar*
   [{:keys [class collapsable collapsed title children
            btn-children all-clickable add-icon-gap
            title-class on-collapsed on-btn-click]}]

@@ -27,7 +27,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.link-button :as lb]
    [app.main.ui.components.search-bar :refer [search-bar]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as h]
@@ -287,9 +287,9 @@
 
     [:div {:class (stl/css :libraries-content)}
      [:div {:class (stl/css :lib-section)}
-      [:& title-bar {:collapsable false
-                     :title       (tr "workspace.libraries.in-this-file")
-                     :class       (stl/css :title-spacing-lib)}]
+      [:> title-bar* {:collapsable false
+                      :title       (tr "workspace.libraries.in-this-file")
+                      :class       (stl/css :title-spacing-lib)}]
       [:div {:class (stl/css :section-list)}
 
        [:div {:class (stl/css :section-list-item)}
@@ -326,9 +326,9 @@
            detach-icon]])]]
 
      [:div {:class (stl/css :shared-section)}
-      [:& title-bar {:collapsable false
-                     :title       (tr "workspace.libraries.shared-libraries")
-                     :class       (stl/css :title-spacing-lib)}]
+      [:> title-bar* {:collapsable false
+                      :title       (tr "workspace.libraries.shared-libraries")
+                      :class       (stl/css :title-spacing-lib)}]
       [:& search-bar {:on-change change-search-term
                       :value search-term
                       :placeholder (tr "workspace.libraries.search-shared-libraries")

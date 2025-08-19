@@ -21,7 +21,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -160,9 +160,9 @@
   [{:keys [flows]}]
   (when flows
     [:div {:class (stl/css :interaction-options)}
-     [:& title-bar {:collapsable false
-                    :title       (tr "workspace.options.flows.flow-starts")
-                    :class       (stl/css :title-spacing-layout-flow)}]
+     [:> title-bar* {:collapsable false
+                     :title       (tr "workspace.options.flows.flow-starts")
+                     :class       (stl/css :title-spacing-layout-flow)}]
      (for [[id flow] flows]
        [:& flow-item {:flow flow :key (dm/str id)}])]))
 
@@ -174,9 +174,9 @@
           add-flow (mf/use-fn #(st/emit! (dwi/add-flow-selected-frame)))]
 
       [:div {:class (stl/css :element-set)}
-       [:& title-bar {:collapsable false
-                      :title       (tr "workspace.options.flows.flow")
-                      :class       (stl/css :title-spacing-layout-flow)}
+       [:> title-bar* {:collapsable false
+                       :title       (tr "workspace.options.flows.flow")
+                       :class       (stl/css :title-spacing-layout-flow)}
         (when (nil? flow)
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.flows.add-flow-start")
@@ -727,9 +727,9 @@
      [:div {:class (stl/css :interaction-options)}
       (when (and shape (not (cfh/unframed-shape? shape)))
         [:div {:class (stl/css :element-title)}
-         [:& title-bar {:collapsable false
-                        :title       (tr "workspace.options.interactions")
-                        :class       (stl/css :title-spacing-layout-interactions)}
+         [:> title-bar* {:collapsable false
+                         :title       (tr "workspace.options.interactions")
+                         :class       (stl/css :title-spacing-layout-interactions)}
 
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.interactions.add-interaction")

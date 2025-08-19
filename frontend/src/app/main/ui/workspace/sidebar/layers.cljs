@@ -17,7 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.shape-icon :as sic]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
@@ -430,10 +430,10 @@
                  i/tick])]])]
 
          [:div {:class (stl/css :tool-window-bar)}
-          [:& title-bar {:collapsable  false
-                         :title        (:name page)
-                         :on-btn-click toggle-search
-                         :btn-children i/search}]]))]))
+          [:> title-bar* {:collapsable  false
+                          :title        (:name page)
+                          :on-btn-click toggle-search
+                          :btn-children i/search}]]))]))
 
 
 (defn- on-scroll

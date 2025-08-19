@@ -15,7 +15,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
@@ -231,12 +231,12 @@
     [:div {:class (stl/css :sitemap)
            :style {:--height (dm/str height "px")}}
 
-     [:& title-bar {:collapsable   true
-                    :collapsed     collapsed
-                    :on-collapsed  on-toggle-collapsed
-                    :all-clickable true
-                    :title         (tr "workspace.sidebar.sitemap")
-                    :class         (stl/css :title-spacing-sitemap)}
+     [:> title-bar* {:collapsable   true
+                     :collapsed     collapsed
+                     :on-collapsed  on-toggle-collapsed
+                     :all-clickable true
+                     :title         (tr "workspace.sidebar.sitemap")
+                     :class         (stl/css :title-spacing-sitemap)}
 
       (if ^boolean read-only?
         (when ^boolean (:can-edit permissions)

@@ -28,7 +28,7 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.search-bar :refer [search-bar]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
@@ -901,12 +901,12 @@
            [:span {:class (stl/css :icon-back)} i/arrow]
            [:span (tr "workspace.options.component")]]
 
-          [:& title-bar {:collapsable  true
-                         :collapsed    (not open?)
-                         :on-collapsed toggle-content
-                         :title        (tr "workspace.options.component")
-                         :class        (stl/css :title-spacing-component)
-                         :title-class (stl/css-case :title-bar-variant is-variant?)}
+          [:> title-bar* {:collapsable  true
+                          :collapsed    (not open?)
+                          :on-collapsed toggle-content
+                          :title        (tr "workspace.options.component")
+                          :class        (stl/css :title-spacing-component)
+                          :title-class (stl/css-case :title-bar-variant is-variant?)}
            [:span {:class (stl/css :copy-text)}
             (if main-instance?
               (if is-variant?
@@ -1103,12 +1103,12 @@
        [:div {:class (stl/css :element-title)}
 
 
-        [:& title-bar {:collapsable  true
-                       :collapsed    (not open?)
-                       :on-collapsed toggle-content
-                       :title        (tr "workspace.options.component")
-                       :class        (stl/css :title-spacing-component)
-                       :title-class  (stl/css :title-bar-variant)}
+        [:> title-bar* {:collapsable  true
+                        :collapsed    (not open?)
+                        :on-collapsed toggle-content
+                        :title        (tr "workspace.options.component")
+                        :class        (stl/css :title-spacing-component)
+                        :title-class  (stl/css :title-bar-variant)}
 
          [:span {:class (stl/css :copy-text)}
           (tr "workspace.options.component.main")]

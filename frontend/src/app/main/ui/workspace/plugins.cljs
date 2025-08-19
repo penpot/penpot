@@ -16,7 +16,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
@@ -209,8 +209,8 @@
            (tr "workspace.plugins.plugin-list-link") i/external-link]]
 
          [:*
-          [:& title-bar {:collapsable false
-                         :title (tr "workspace.plugins.installed-plugins")}]
+          [:> title-bar* {:collapsable false
+                          :title (tr "workspace.plugins.installed-plugins")}]
 
           [:div {:class (stl/css :plugins-list)}
            (for [[idx manifest] (d/enumerate plugins-state)]
