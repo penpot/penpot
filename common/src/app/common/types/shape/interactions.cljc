@@ -175,21 +175,23 @@
    [:url :string]])
 
 (def schema:interaction
-  [:and {:title "Interaction"
-         :gen/gen (sg/one-of (sg/generator schema:navigate-interaction)
-                             (sg/generator schema:open-overlay-interaction)
-                             (sg/generator schema:close-overlay-interaction)
-                             (sg/generator schema:toggle-overlay-interaction)
-                             (sg/generator schema:prev-scren-interaction)
-                             (sg/generator schema:open-url-interaction))}
-   schema:interaction-attrs
-   [:multi {:dispatch :action-type}
-    [:navigate schema:navigate-interaction]
-    [:open-overlay schema:open-overlay-interaction]
-    [:toggle-overlay schema:toggle-overlay-interaction]
-    [:close-overlay schema:close-overlay-interaction]
-    [:prev-screen schema:prev-scren-interaction]
-    [:open-url schema:open-url-interaction]]])
+  [:schema {:title "Interaction"
+            :gen/gen (sg/one-of (sg/generator schema:navigate-interaction)
+                                (sg/generator schema:open-overlay-interaction)
+                                (sg/generator schema:close-overlay-interaction)
+                                (sg/generator schema:toggle-overlay-interaction)
+                                (sg/generator schema:prev-scren-interaction)
+                                (sg/generator schema:open-url-interaction))}
+   [:and
+    schema:interaction-attrs
+    [:multi {:dispatch :action-type}
+     ;; [:navigate schema:navigate-interaction]
+     ;; [:open-overlay schema:open-overlay-interaction]
+     ;; [:toggle-overlay schema:toggle-overlay-interaction]
+     ;; [:close-overlay schema:close-overlay-interaction]
+     ;; [:prev-screen schema:prev-scren-interaction]
+     [:open-url schema:open-url-interaction]
+     ]]])
 
 (sm/register! ::interaction schema:interaction)
 

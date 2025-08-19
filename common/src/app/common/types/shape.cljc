@@ -185,50 +185,50 @@
    [:height ::sm/safe-number]])
 
 (def schema:shape-generic-attrs
-  [:map {:title "ShapeAttrs"}
-   [:page-id {:optional true} ::sm/uuid]
-   [:component-id {:optional true}  ::sm/uuid]
-   [:component-file {:optional true} ::sm/uuid]
-   [:component-root {:optional true} :boolean]
-   [:main-instance {:optional true} :boolean]
-   [:remote-synced {:optional true} :boolean]
-   [:shape-ref {:optional true} ::sm/uuid]
-   [:touched {:optional true} [:maybe [:set :keyword]]]
-   [:blocked {:optional true} :boolean]
-   [:collapsed {:optional true} :boolean]
-   [:locked {:optional true} :boolean]
-   [:hidden {:optional true} :boolean]
-   [:masked-group {:optional true} :boolean]
-   [:fills {:optional true}
-    [:vector {:gen/max 2} schema:fill]]
-   [:proportion {:optional true} ::sm/safe-number]
-   [:proportion-lock {:optional true} :boolean]
-   [:constraints-h {:optional true}
-    [::sm/one-of horizontal-constraint-types]]
-   [:constraints-v {:optional true}
-    [::sm/one-of vertical-constraint-types]]
-   [:fixed-scroll {:optional true} :boolean]
-   [:r1 {:optional true} ::sm/safe-number]
-   [:r2 {:optional true} ::sm/safe-number]
-   [:r3 {:optional true} ::sm/safe-number]
-   [:r4 {:optional true} ::sm/safe-number]
-   [:opacity {:optional true} ::sm/safe-number]
-   [:grids {:optional true}
-    [:vector {:gen/max 2} ::ctg/grid]]
-   [:exports {:optional true}
-    [:vector {:gen/max 2} ::ctse/export]]
-   [:strokes {:optional true}
-    [:vector {:gen/max 2} schema:stroke]]
-   [:blend-mode {:optional true}
-    [::sm/one-of blend-modes]]
+  [:map {:title "ShapeGenericAttrs"}
+   ;; [:page-id {:optional true} ::sm/uuid]
+   ;; [:component-id {:optional true}  ::sm/uuid]
+   ;; [:component-file {:optional true} ::sm/uuid]
+   ;; [:component-root {:optional true} :boolean]
+   ;; [:main-instance {:optional true} :boolean]
+   ;; [:remote-synced {:optional true} :boolean]
+   ;; [:shape-ref {:optional true} ::sm/uuid]
+   ;; [:touched {:optional true} [:maybe [:set :keyword]]]
+   ;; [:blocked {:optional true} :boolean]
+   ;; [:collapsed {:optional true} :boolean]
+   ;; [:locked {:optional true} :boolean]
+   ;; [:hidden {:optional true} :boolean]
+   ;; [:masked-group {:optional true} :boolean]
+   ;; [:fills {:optional true}
+   ;;  [:vector {:gen/max 2} schema:fill]]
+   ;; [:proportion {:optional true} ::sm/safe-number]
+   ;; [:proportion-lock {:optional true} :boolean]
+   ;; [:constraints-h {:optional true}
+   ;;  [::sm/one-of horizontal-constraint-types]]
+   ;; [:constraints-v {:optional true}
+   ;;  [::sm/one-of vertical-constraint-types]]
+   ;; [:fixed-scroll {:optional true} :boolean]
+   ;; [:r1 {:optional true} ::sm/safe-number]
+   ;; [:r2 {:optional true} ::sm/safe-number]
+   ;; [:r3 {:optional true} ::sm/safe-number]
+   ;; [:r4 {:optional true} ::sm/safe-number]
+   ;; [:opacity {:optional true} ::sm/safe-number]
+   ;; [:grids {:optional true}
+   ;;  [:vector {:gen/max 2} ::ctg/grid]]
+   ;; [:exports {:optional true}
+   ;;  [:vector {:gen/max 2} ::ctse/export]]
+   ;; [:strokes {:optional true}
+   ;;  [:vector {:gen/max 2} schema:stroke]]
+   ;; [:blend-mode {:optional true}
+   ;;  [::sm/one-of blend-modes]]
    [:interactions {:optional true}
     [:vector {:gen/max 2} ::ctsi/interaction]]
-   [:shadow {:optional true}
-    [:vector {:gen/max 1} ctss/schema:shadow]]
-   [:blur {:optional true} ::ctsb/blur]
+   ;; [:shadow {:optional true}
+   ;;  [:vector {:gen/max 1} ctss/schema:shadow]]
+   ;; [:blur {:optional true} ::ctsb/blur]
    [:grow-type {:optional true}
     [::sm/one-of grow-types]]
-   [:applied-tokens {:optional true} cto/schema:applied-tokens]
+   ;; [:applied-tokens {:optional true} cto/schema:applied-tokens]
    [:plugin-data {:optional true} ::ctpg/plugin-data]])
 
 (def schema:group-attrs
@@ -305,6 +305,15 @@
                       (merge attrs1 shape attrs3)
                       (merge attrs1 shape attrs2 attrs3)))))
        (sg/fmap create-shape)))
+
+
+(def kaka
+  [:merge {:title "BoolShape"}
+   ctsl/schema:layout-child-attrs
+   schema:bool-attrs
+   schema:shape-generic-attrs
+   schema:shape-base-attrs])
+
 
 (def schema:shape-attrs
   [:multi {:dispatch :type
