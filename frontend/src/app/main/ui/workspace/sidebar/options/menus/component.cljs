@@ -433,7 +433,8 @@
               (st/emit! (dwl/go-to-local-component {:id (first ids)
                                                     :additional-ids (rest ids)}))
               (st/emit! (dwl/go-to-component-file (:component-file shape)
-                                                  (first duplicated-comps))))))
+                                                  (first duplicated-comps)
+                                                  false)))))
 
         select-malformed-comps
         (mf/use-fn
@@ -442,7 +443,7 @@
            (let [ids (map :id malformed-comps)]
              (if (= current-file-id (:component-file shape))
                (st/emit! (dwl/go-to-local-component :id (first ids) :additional-ids (rest ids)))
-               (st/emit! (dwl/go-to-component-file (:component-file shape) (first malformed-comps)))))))
+               (st/emit! (dwl/go-to-component-file (:component-file shape) (first malformed-comps) false))))))
 
         switch-component
         (mf/use-fn

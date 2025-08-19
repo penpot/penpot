@@ -375,7 +375,7 @@
                      (rx/filter (ptk/type? ::workspace-initialized))
                      (rx/observe-on :async)
                      (rx/take 1)
-                     (rx/map #(dwl/go-to-local-component :id component-id))))
+                     (rx/map #(dwl/go-to-local-component :id component-id :update-layout? (:update-layout rparams)))))
 
               (when (:board-id rparams)
                 (->> stream

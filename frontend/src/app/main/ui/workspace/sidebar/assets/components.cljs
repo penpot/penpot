@@ -87,7 +87,7 @@
            (dom/stop-propagation event)
            (if is-local
              (st/emit! (dwl/go-to-local-component :id component-id))
-             (st/emit! (dwl/go-to-component-file file-id component)))))
+             (st/emit! (dwl/go-to-component-file file-id component false)))))
 
         on-drop
         (mf/use-fn
@@ -537,7 +537,7 @@
            (if is-local
              (st/emit! (dwl/go-to-local-component :id current-component-id))
              (let [component (d/seek #(= (:id %) current-component-id) components)]
-               (st/emit! (dwl/go-to-component-file file-id component))))))
+               (st/emit! (dwl/go-to-component-file file-id component false))))))
 
         on-asset-click
         (mf/use-fn (mf/deps groups on-asset-click) (partial on-asset-click groups))
