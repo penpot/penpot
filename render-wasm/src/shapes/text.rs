@@ -529,11 +529,13 @@ impl TryFrom<&[u8]> for RawTextLeaf {
 }
 
 #[allow(dead_code)]
+#[repr(C)]
 #[derive(Debug, Clone)]
 pub struct RawTextLeafData {
     font_style: u8,
     text_decoration: u8,
     text_transform: u8,
+    byte_padding: u8,
     font_size: f32,
     font_weight: i32,
     font_id: [u32; 4],
@@ -563,6 +565,7 @@ impl From<&[u8]> for RawTextLeafData {
             font_style: text_leaf.font_style,
             text_decoration: text_leaf.text_decoration,
             text_transform: text_leaf.text_transform,
+            byte_padding: 0,
             font_size: text_leaf.font_size,
             font_weight: text_leaf.font_weight,
             font_id: text_leaf.font_id,
