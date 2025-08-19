@@ -310,7 +310,7 @@
 
         [x y width height]
         (if (features/active-feature? @st/state "render-wasm/v1")
-          (let [{:keys [max-width height]} (wasm.api/text-dimensions shape-id)
+          (let [{:keys [max-width height]} (wasm.api/get-text-dimensions shape-id)
                 {:keys [x y]} (:selrect shape)]
 
             [x y max-width height])

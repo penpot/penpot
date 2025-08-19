@@ -58,13 +58,13 @@
   ([{:keys [id points selrect] :as shape} content]
    (wasm.api/use-shape id)
    (wasm.api/set-shape-text id content)
-   (let [dimension (wasm.api/text-dimensions)
-         resize-v
-         (gpt/point
-          (/ (:width dimension) (-> selrect :width))
-          (/ (:height dimension) (-> selrect :height)))
+   (let [dimension (wasm.api/get-text-dimensions)
+         resize-v  (gpt/point
+                    (/ (:width dimension) (-> selrect :width))
+                    (/ (:height dimension) (-> selrect :height)))
 
-         origin (first points)]
+         origin    (first points)]
+
      {id
       {:modifiers
        (ctm/resize-modifiers

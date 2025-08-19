@@ -5,7 +5,8 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.buffer
-  "A collection of helpers and macros for work with byte buffers"
+  "A collection of helpers and macros for work with byte
+  buffer (ByteBuffer on JVM and DataView on JS)."
   (:refer-clojure :exclude [clone])
   (:require
    [app.common.uuid :as uuid])
@@ -81,6 +82,13 @@
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.put ~target ~offset (unchecked-byte ~value)))))
 
+(defmacro write-u8
+  [target offset value]
+  (if (:ns &env)
+    `(.setUint8 ~target ~offset ~value true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.put ~target ~offset (unchecked-byte ~value)))))
+
 (defmacro write-bool
   [target offset value]
   (if (:ns &env)
@@ -102,12 +110,29 @@
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.putInt ~target ~offset (unchecked-int ~value)))))
 
+(defmacro write-u32
+  [target offset value]
+  (if (:ns &env)
+    `(.setUint32 ~target ~offset ~value true)
+    (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
+      `(.putInt ~target ~offset (unchecked-int ~value)))))
+
+(defmacro write-i32
+  "Idiomatic alias for `write-int`"
+  [target offset value]
+  `(write-int ~target ~offset ~value))
+
 (defmacro write-float
   [target offset value]
   (if (:ns &env)
     `(.setFloat32 ~target ~offset ~value true)
     (let [target (with-meta target {:tag 'java.nio.ByteBuffer})]
       `(.putFloat ~target ~offset (unchecked-float ~value)))))
+
+(defmacro write-f32
+  "Idiomatic alias for `write-float`."
+  [target offset value]
+  `(write-float ~target ~offset ~value))
 
 (defmacro write-uuid
   [target offset value]

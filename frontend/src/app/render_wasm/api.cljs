@@ -208,7 +208,7 @@
 (defn- process-fill-image
   [shape-id fill]
   (when-let [image (:fill-image fill)]
-    (let [id (dm/get-prop image :id)
+    (let [id (get image :id)
           buffer (uuid/get-u32 id)
           cached-image? (h/call wasm/internal-module "_is_image_cached"
                                 (aget buffer 0)
@@ -283,7 +283,7 @@
                 (h/call wasm/internal-module "_add_shape_stroke_fill"))
 
               (some? image)
-              (let [image-id      (dm/get-prop image :id)
+              (let [image-id      (get image :id)
                     buffer        (uuid/get-u32 image-id)
                     cached-image? (h/call wasm/internal-module "_is_image_cached" (aget buffer 0) (aget buffer 1) (aget buffer 2) (aget buffer 3))]
                 (types.fills.impl/write-image-fill offset dview opacity image)
@@ -334,7 +334,7 @@
 
 (defn set-shape-vertical-align
   [vertical-align]
-  (h/call wasm/internal-module "_set_shape_vertical_align" (sr/serialize-vertical-align vertical-align)))
+  (h/call wasm/internal-module "_set_shape_vertical_align" (sr/translate-vertical-align vertical-align)))
 
 (defn set-shape-opacity
   [opacity]
@@ -378,8 +378,11 @@
     (h/call wasm/internal-module "_set_shape_blur" type hidden value)))
 
 (defn set-shape-corners
-  [corners]
-  (let [[r1 r2 r3 r4] corners]
+  [shape]
+  (let [r1 (get shape :r1)
+        r2 (get shape :r2)
+        r3 (get shape :r3)
+        r4 (get shape :r4)]
     (h/call wasm/internal-module "_set_shape_corners"
             (d/nilv r1 0)
             (d/nilv r2 0)
@@ -466,9 +469,11 @@
               ;; alligned writes, so for heteregeneus writes we use
               ;; the buffer abstraction (DataView) for perform
               ;; surgical writes.
-              (mem/write-u8 dview (+ offset 0) (sr/translate-grid-track-type type))
-              (mem/write-f32 dview (+ offset 1) value)
-              (+ offset GRID-LAYOUT-ROW-U8-SIZE))
+              (-> offset
+                  (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (mem/write-f32 dview value)
+                  (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
+
             offset
             entries)
 
@@ -486,9 +491,12 @@
               ;; alligned writes, so for heteregeneus writes we use
               ;; the buffer abstraction (DataView) for perform
               ;; surgical writes.
-              (mem/write-u8 dview (+ offset 0) (sr/translate-grid-track-type type))
-              (mem/write-f32 dview (+ offset 1) value)
-              (+ offset GRID-LAYOUT-COLUMN-U8-SIZE))
+              (-> offset
+                  (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (mem/write-f32 dview value)
+                  (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
+
+
             offset
             entries)
 
@@ -496,83 +504,82 @@
 
 (defn set-grid-layout-cells
   [cells]
-  (let [entries (vals cells)
-        size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
+  (let [size    (mem/get-alloc-size cells GRID-LAYOUT-CELL-U8-SIZE)
         offset  (mem/alloc size)
-        heap    (-> (mem/get-heap-u8)
-                    (mem/view offset size))]
+        dview   (mem/get-data-view)]
 
-    (loop [entries (seq entries)
-           current-offset  0]
-      (when-not (empty? entries)
-        (let [cell (first entries)]
+    (reduce-kv (fn [offset _ cell]
+                 (let [shape-id  (-> (get cell :shapes) first)]
+                   (-> offset
+                       ;; row: [u8; 4],
+                       (mem/write-i32 dview (get cell :row))
 
-          ;; row: [u8; 4],
-          (.set heap (sr/i32->u8 (:row cell)) (+ current-offset 0))
+                       ;; row_span: [u8; 4],
+                       (mem/write-i32 dview (get cell :row-span))
 
-          ;; row_span: [u8; 4],
-          (.set heap (sr/i32->u8 (:row-span cell)) (+ current-offset 4))
+                       ;; column: [u8; 4],
+                       (mem/write-i32 dview (get cell :column))
 
-          ;; column: [u8; 4],
-          (.set heap (sr/i32->u8 (:column cell)) (+ current-offset 8))
+                       ;; column_span: [u8; 4],
+                       (mem/write-i32 dview (get cell :column-span))
 
-          ;; column_span: [u8; 4],
-          (.set heap (sr/i32->u8 (:column-span cell)) (+ current-offset 12))
+                       ;; has_align_self: u8,
+                       (mem/write-bool dview (some? (get cell :align-self)))
 
-          ;; has_align_self: u8,
-          (.set heap (sr/bool->u8 (some? (:align-self cell))) (+ current-offset 16))
+                       ;; align_self: u8,
+                       (mem/write-u8 dview (get cell :align-self))
 
-          ;; align_self: u8,
-          (.set heap (sr/u8 (sr/translate-align-self (:align-self cell))) (+ current-offset 17))
+                       ;; has_justify_self: u8,
+                       (mem/write-bool dview (get cell :justify-self))
 
-          ;; has_justify_self: u8,
-          (.set heap (sr/bool->u8 (some? (:justify-self cell))) (+ current-offset 18))
+                       ;; justify_self: u8,
+                       (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
-          ;; justify_self: u8,
-          (.set heap (sr/u8 (sr/translate-justify-self (:justify-self cell))) (+ current-offset 19))
+                       ;; has_shape_id: u8,
+                       ;; (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
+                       (mem/write-u8 dview (some? shape-id))
 
-          ;; has_shape_id: u8,
-          (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
+                       ;; shape_id_a: [u8; 4],
+                       ;; shape_id_b: [u8; 4],
+                       ;; shape_id_c: [u8; 4],
+                       ;; shape_id_d: [u8; 4],
+                       (mem/write-uuid dview (d/nilv shape-id uuid/zero))
+                       (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
-          ;; shape_id_a: [u8; 4],
-          ;; shape_id_b: [u8; 4],
-          ;; shape_id_c: [u8; 4],
-          ;; shape_id_d: [u8; 4],
-          (.set heap (sr/uuid->u8 (or (-> cell :shapes first) uuid/zero)) (+ current-offset 21))
-
-          (recur (rest entries) (+ current-offset GRID-LAYOUT-CELL-U8-SIZE)))))
+               offset
+               cells)
 
     (h/call wasm/internal-module "_set_grid_cells")))
 
 (defn set-grid-layout
   [shape]
   (set-grid-layout-data shape)
-  (set-grid-layout-rows (:layout-grid-rows shape))
-  (set-grid-layout-columns (:layout-grid-columns shape))
-  (set-grid-layout-cells (:layout-grid-cells shape)))
+  (set-grid-layout-rows (get shape :layout-grid-rows))
+  (set-grid-layout-columns (get shape :layout-grid-columns))
+  (set-grid-layout-cells (get shape :layout-grid-cells)))
 
 (defn set-layout-child
   [shape]
-  (let [margins (dm/get-prop shape :layout-item-margin)
-        margin-top (or (dm/get-prop margins :m1) 0)
-        margin-right (or (dm/get-prop margins :m2) 0)
-        margin-bottom (or (dm/get-prop margins :m3) 0)
-        margin-left (or (dm/get-prop margins :m4) 0)
+  (let [margins       (get shape :layout-item-margin)
+        margin-top    (get margins :m1 0)
+        margin-right  (get margins :m2 0)
+        margin-bottom (get margins :m3 0)
+        margin-left   (get margins :m4 0)
 
-        h-sizing (-> (dm/get-prop shape :layout-item-h-sizing) (or :fix) sr/translate-layout-sizing)
-        v-sizing (-> (dm/get-prop shape :layout-item-v-sizing) (or :fix) sr/translate-layout-sizing)
-        align-self (-> (dm/get-prop shape :layout-item-align-self) sr/translate-align-self)
+        h-sizing      (-> (get shape :layout-item-h-sizing) sr/translate-layout-sizing)
+        v-sizing      (-> (get shape :layout-item-v-sizing) sr/translate-layout-sizing)
+        align-self    (-> (get shape :layout-item-align-self) sr/translate-align-self)
 
-        max-h (dm/get-prop shape :layout-item-max-h)
-        has-max-h (some? max-h)
-        min-h (dm/get-prop shape :layout-item-min-h)
-        has-min-h (some? min-h)
-        max-w (dm/get-prop shape :layout-item-max-w)
-        has-max-w (some? max-w)
-        min-w (dm/get-prop shape :layout-item-min-w)
-        has-min-w (some? min-w)
-        is-absolute (boolean (dm/get-prop shape :layout-item-absolute))
-        z-index (-> (dm/get-prop shape :layout-item-z-index) (or 0))]
+        max-h         (get shape :layout-item-max-h)
+        has-max-h     (some? max-h)
+        min-h         (get shape :layout-item-min-h)
+        has-min-h     (some? min-h)
+        max-w         (get shape :layout-item-max-w)
+        has-max-w     (some? max-w)
+        min-w         (get shape :layout-item-min-w)
+        has-min-w     (some? min-w)
+        is-absolute   (boolean (get shape :layout-item-absolute))
+        z-index       (get shape :layout-item-z-index)]
     (h/call wasm/internal-module
             "_set_layout_child_data"
             margin-top
@@ -582,17 +589,17 @@
             h-sizing
             v-sizing
             has-max-h
-            (or max-h 0)
+            (d/nilv max-h 0)
             has-min-h
-            (or min-h 0)
+            (d/nilv min-h 0)
             has-max-w
-            (or max-w 0)
+            (d/nilv max-w 0)
             has-min-w
-            (or min-w 0)
+            (d/nilv min-w 0)
             (some? align-self)
-            (or align-self 0)
+            (d/nilv align-self 0)
             is-absolute
-            z-index)))
+            (d/nilv z-index))))
 
 (defn clear-layout
   []
@@ -615,50 +622,63 @@
 (defn set-shape-shadows
   [shadows]
   (h/call wasm/internal-module "_clear_shape_shadows")
-  (let [total-shadows (count shadows)]
-    (loop [index 0]
-      (when (< index total-shadows)
-        (let [shadow (nth shadows index)
-              color (dm/get-prop shadow :color)
-              blur (dm/get-prop shadow :blur)
-              rgba (sr-clr/hex->u32argb (dm/get-prop color :color) (dm/get-prop color :opacity))
-              hidden (dm/get-prop shadow :hidden)
-              x (dm/get-prop shadow :offset-x)
-              y (dm/get-prop shadow :offset-y)
-              spread (dm/get-prop shadow :spread)
-              style (dm/get-prop shadow :style)]
-          (h/call wasm/internal-module "_add_shape_shadow" rgba blur spread x y (sr/translate-shadow-style style) hidden)
-          (recur (inc index)))))))
 
-;; (declare propagate-apply)
+  (run! (fn [shadow]
+          (let [color  (get shadow :color)
+                blur   (get shadow :blur)
+                rgba   (sr-clr/hex->u32argb (get color :color)
+                                            (get color :opacity))
+                hidden (get shadow :hidden)
+                x      (get shadow :offset-x)
+                y      (get shadow :offset-y)
+                spread (get shadow :spread)
+                style  (get shadow :style)]
+            (h/call wasm/internal-module "_add_shape_shadow"
+                    rgba
+                    blur
+                    spread
+                    x
+                    y
+                    (sr/translate-shadow-style style)
+                    hidden)))
+        shadows))
 
 (defn set-shape-text-content
   [shape-id content]
   (h/call wasm/internal-module "_clear_shape_text")
-  (set-shape-vertical-align (dm/get-prop content :vertical-align))
+  (set-shape-vertical-align (get content :vertical-align))
 
-  (let [paragraph-set (first (dm/get-prop content :children))
-        paragraphs (dm/get-prop paragraph-set :children)
-        fonts (fonts/get-content-fonts content)
-        emoji? (atom false)
-        languages (atom #{})]
-    (loop [index 0]
-      (when (< index (count paragraphs))
+  (let [paragraph-set (first (get content :children))
+        paragraphs    (get paragraph-set :children)
+        fonts         (fonts/get-content-fonts content)
+        total         (count paragraphs)]
+
+    (loop [index  0
+           emoji? false
+           langs  #{}]
+
+      (if (< index total)
         (let [paragraph (nth paragraphs index)
-              leaves (dm/get-prop paragraph :children)]
-          (when (seq leaves)
-            (let [text (apply str (map :text leaves))]
-              (when (and (not @emoji?) (t/contains-emoji? text))
-                (reset! emoji? true))
-              (swap! languages into (t/get-languages text))
-              (t/write-shape-text leaves paragraph text))
-            (recur (inc index))))))
+              leaves    (get paragraph :children)]
+          (if (empty? (seq leaves))
+            (recur (inc index)
+                   emoji?
+                   langs)
 
-    (let [updated-fonts
-          (-> fonts
-              (cond-> @emoji? (f/add-emoji-font))
-              (f/add-noto-fonts @languages))]
-      (f/store-fonts shape-id updated-fonts))))
+            (let [text   (apply str (map :text leaves))
+                  emoji? (if emoji? emoji? (t/contains-emoji? text))
+                  langs  (t/collect-used-languages langs text)]
+
+              (t/write-shape-text leaves paragraph text)
+              (recur (inc index)
+                     emoji?
+                     langs))))
+
+        (let [updated-fonts
+              (-> fonts
+                  (cond-> ^boolean emoji? (f/add-emoji-font))
+                  (f/add-noto-fonts langs))]
+          (f/store-fonts shape-id updated-fonts))))))
 
 (defn set-shape-text
   [shape-id content]
@@ -670,16 +690,17 @@
   [grow-type]
   (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
 
-(defn text-dimensions
+(defn get-text-dimensions
   ([id]
    (use-shape id)
-   (text-dimensions))
+   (get-text-dimensions))
   ([]
-   (let [offset (h/call wasm/internal-module "_get_text_dimensions")
-         heapf32 (mem/get-heap-f32)
-         width (aget heapf32 (mem/->offset-32 offset))
-         height (aget heapf32 (mem/->offset-32 (+ offset 4)))
-         max-width (aget heapf32 (mem/->offset-32 (+ offset 8)))]
+   (let [offset    (-> (h/call wasm/internal-module "_get_text_dimensions")
+                       (mem/->offset-32))
+         heapf32   (mem/get-heap-f32)
+         width     (aget heapf32 (+ offset 0))
+         height    (aget heapf32 (+ offset 1))
+         max-width (aget heapf32 (+ offset 2))]
      (mem/free)
      {:width width :height height :max-width max-width})))
 
@@ -699,37 +720,34 @@
   [objects shape]
   (perf/begin-measure "set-object")
   (let [id           (dm/get-prop shape :id)
-        parent-id    (dm/get-prop shape :parent-id)
         type         (dm/get-prop shape :type)
-        masked       (dm/get-prop shape :masked-group)
-        selrect      (dm/get-prop shape :selrect)
-        constraint-h (dm/get-prop shape :constraints-h)
-        constraint-v (dm/get-prop shape :constraints-v)
+
+        parent-id    (get shape :parent-id)
+        masked       (get shape :masked-group)
+        selrect      (get shape :selrect)
+        constraint-h (get shape :constraints-h)
+        constraint-v (get shape :constraints-v)
         clip-content (if (= type :frame)
-                       (not (dm/get-prop shape :show-content))
+                       (not (get shape :show-content))
                        false)
-        rotation     (dm/get-prop shape :rotation)
-        transform    (dm/get-prop shape :transform)
+        rotation     (get shape :rotation)
+        transform    (get shape :transform)
 
         ;; Groups from imported SVG's can have their own fills
-        fills        (dm/get-prop shape :fills)
+        fills        (get shape :fills)
 
         strokes      (if (= type :group)
-                       [] (dm/get-prop shape :strokes))
-        children     (dm/get-prop shape :shapes)
-        blend-mode   (dm/get-prop shape :blend-mode)
-        opacity      (dm/get-prop shape :opacity)
-        hidden       (dm/get-prop shape :hidden)
-        content      (dm/get-prop shape :content)
-        bool-type    (dm/get-prop shape :bool-type)
-        grow-type    (dm/get-prop shape :grow-type)
-        blur         (dm/get-prop shape :blur)
-        svg-attrs    (dm/get-prop shape :svg-attrs)
-        shadows      (dm/get-prop shape :shadow)
-        r1           (dm/get-prop shape :r1)
-        r2           (dm/get-prop shape :r2)
-        r3           (dm/get-prop shape :r3)
-        r4           (dm/get-prop shape :r4)]
+                       [] (get shape :strokes))
+        children     (get shape :shapes)
+        blend-mode   (get shape :blend-mode)
+        opacity      (get shape :opacity)
+        hidden       (get shape :hidden)
+        content      (get shape :content)
+        bool-type    (get shape :bool-type)
+        grow-type    (get shape :grow-type)
+        blur         (get shape :blur)
+        svg-attrs    (get shape :svg-attrs)
+        shadows      (get shape :shadow)]
 
     (use-shape id)
     (set-parent-id parent-id)
@@ -743,7 +761,7 @@
     (set-shape-opacity opacity)
     (set-shape-hidden hidden)
     (set-shape-children children)
-    (set-shape-corners [r1 r2 r3 r4])
+    (set-shape-corners shape)
     (when (and (= type :group) masked)
       (set-masked masked))
     (when (some? blur)
@@ -772,7 +790,6 @@
                             (set-shape-strokes id strokes)))]
       (perf/end-measure "set-object")
       pending)))
-
 
 (defn process-pending
   [pending]

@@ -151,21 +151,17 @@
     "italic" 1
     0))
 
-(defn serialize-font-id
+(defn normalize-font-id
   [font-id]
   (try
-    (if (nil? font-id)
-      (do
-        [uuid/zero])
-      (let [google-font? (str/starts-with? font-id "gfont-")]
-        (if google-font?
-          (uuid/get-u32 (google-font-id->uuid font-id))
-          (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))]
-            (if (or (nil? no-prefix) (not (string? no-prefix)) (str/blank? no-prefix))
-              [uuid/zero]
-              (uuid/get-u32 (uuid/uuid no-prefix)))))))
+    (if ^boolean (str/starts-with? font-id "gfont-")
+      (google-font-id->uuid font-id)
+      (let [no-prefix (subs font-id (inc (str/index-of font-id "-")))]
+        (if (or (nil? no-prefix) (not (string? no-prefix)) (str/blank? no-prefix))
+          uuid/zero
+          (uuid/parse no-prefix))))
     (catch :default _e
-      [uuid/zero])))
+      uuid/zero)))
 
 (defn serialize-font-weight
   [font-weight]

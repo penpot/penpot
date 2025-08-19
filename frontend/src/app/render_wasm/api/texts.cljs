@@ -6,24 +6,31 @@
 
 (ns app.render-wasm.api.texts
   (:require
+   [app.common.data :as d]
    [app.common.types.fills.impl :as types.fills.impl]
+   [app.common.uuid :as uuid]
    [app.render-wasm.api.fonts :as f]
    [app.render-wasm.helpers :as h]
    [app.render-wasm.mem :as mem]
    [app.render-wasm.serializers :as sr]
    [app.render-wasm.wasm :as wasm]))
 
-(defn utf8->buffer [text]
+(def ^:const PARAGRAPH-ATTR-U8-SIZE 44)
+(def ^:const LEAF-ATTR-U8-SIZE 56)
+
+(defn- encode-text
+  "Into an UTF8 buffer. Returns an ArrayBuffer instance"
+  [text]
   (let [encoder (js/TextEncoder.)]
     (.encode encoder text)))
 
-(defn set-text-leaf-fills
-  [fills current-offset dview]
+(defn- write-leaf-fills
+  [offset dview fills]
   (reduce (fn [offset fill]
-            (let [opacity  (or (:fill-opacity fill) 1.0)
-                  color    (:fill-color fill)
-                  gradient (:fill-color-gradient fill)
-                  image    (:fill-image fill)]
+            (let [opacity  (get fill :fill-opacity 1.0)
+                  color    (get fill :fill-color)
+                  gradient (get fill :fill-color-gradient)
+                  image    (get fill :fill-image)]
 
               (cond
                 (some? color)
@@ -33,115 +40,119 @@
                 (types.fills.impl/write-gradient-fill offset dview opacity gradient)
 
                 (some? image)
-                (types.fills.impl/write-image-fill offset dview opacity image))
+                (types.fills.impl/write-image-fill offset dview opacity image))))
 
-              (+ offset types.fills.impl/FILL-U8-SIZE)))
-          current-offset
+          offset
           fills))
 
-(defn total-fills-count
+(defn- get-total-fills
   [leaves]
   (reduce #(+ %1 (count (:fills %2))) 0 leaves))
+
+(defn- write-paragraph
+  [offset dview paragraph]
+  (let [text-align      (sr/translate-text-align (get paragraph :text-align))
+        text-direction  (sr/translate-text-direction (get paragraph :text-direction))
+        text-decoration (sr/translate-text-decoration (get paragraph :text-decoration))
+        text-transform  (sr/translate-text-transform (get paragraph :text-transform))
+        line-height     (get paragraph :line-height)
+        letter-spacing  (get paragraph :letter-spacing)
+
+        typography-ref-file (get paragraph :typography-ref-file)
+        typography-ref-id   (get paragraph :typography-ref-id)]
+
+    (-> offset
+        (mem/write-u8 dview text-align)
+        (mem/write-u8 dview text-direction)
+        (mem/write-u8 dview text-decoration)
+        (mem/write-u8 dview text-transform)
+
+        (mem/write-f32 dview line-height)
+        (mem/write-f32 dview letter-spacing)
+
+        (mem/write-uuid dview (d/nilv typography-ref-file uuid/zero))
+        (mem/write-uuid dview (d/nilv typography-ref-id uuid/zero))
+        (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
+
+(defn- write-leaves
+  [offset dview leaves paragraph]
+  (reduce (fn [offset leaf]
+            (let [font-style  (sr/translate-font-style (get leaf :font-style))
+                  font-size   (get leaf :font-size)
+                  font-weight (get leaf :font-weight)
+                  font-id     (f/normalize-font-id (get leaf :font-id))
+                  font-family (hash (get leaf :font-family))
+
+                  text-buffer (encode-text (get leaf :text))
+                  text-length (mem/size text-buffer)
+                  fills       (get leaf :fills)
+                  total-fills (count fills)
+
+                  font-variant-id
+                  (get leaf :font-variant-id)
+
+                  font-variant-id
+                  (if (uuid? font-variant-id)
+                    font-variant-id
+                    uuid/zero)
+
+                  text-decoration
+                  (or (sr/translate-text-decoration (:text-decoration leaf))
+                      (sr/translate-text-decoration (:text-decoration paragraph))
+                      (sr/translate-text-decoration "none"))
+
+                  text-transform
+                  (or (sr/translate-text-transform (:text-transform leaf))
+                      (sr/translate-text-transform (:text-transform paragraph))
+                      (sr/translate-text-transform "none"))]
+
+              (-> offset
+                  (mem/write-u8 dview font-style)
+                  (mem/write-u8 dview text-decoration)
+                  (mem/write-u8 dview text-transform)
+                  (+ 1) ;;padding
+
+                  (mem/write-f32 dview font-size)
+                  (mem/write-u32 dview font-weight)
+
+                  (mem/write-uuid dview font-id)
+                  (mem/write-i32 dview font-family)
+                  (mem/write-uuid dview (d/nilv font-variant-id uuid/zero))
+
+                  (mem/write-i32 dview text-length)
+                  (mem/write-i32 dview total-fills)
+                  (mem/assert-written offset LEAF-ATTR-U8-SIZE)
+
+                  (write-leaf-fills dview fills))))
+          offset
+          leaves))
 
 (defn write-shape-text
   ;; buffer has the following format:
   ;; [<num-leaves> <paragraph_attributes> <leaves_attributes> <text>]
   [leaves paragraph text]
-  (let [le? true
-        num-leaves (count leaves)
-        paragraph-attr-size 48
-        total-fills (total-fills-count leaves)
-        total-fills-size (* types.fills.impl/FILL-U8-SIZE total-fills)
-        leaf-attr-size 56
-        metadata-size (+ paragraph-attr-size (* num-leaves leaf-attr-size) total-fills-size)
-        text-buffer (utf8->buffer text)
-        text-size (.-byteLength text-buffer)
-        buffer (js/ArrayBuffer. (+ metadata-size text-size))
-        dview (js/DataView. buffer)]
+  (let [num-leaves    (count leaves)
+        fills-size    (* types.fills.impl/FILL-U8-SIZE
+                         (get-total-fills leaves))
+        metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
+                         (* num-leaves LEAF-ATTR-U8-SIZE)
+                         fills-size)
 
-    (.setUint32 dview 0 num-leaves le?)
+        text-buffer   (encode-text text)
+        text-size     (mem/size text-buffer)
 
-    ;; Serialize paragraph attributes
-    (let [text-align (sr/serialize-text-align (:text-align paragraph))
-          text-direction (sr/serialize-text-direction (:text-direction paragraph))
-          text-decoration (sr/serialize-text-decoration (:text-decoration paragraph))
-          text-transform (sr/serialize-text-transform (:text-transform paragraph))
-          line-height (:line-height paragraph)
-          letter-spacing (:letter-spacing paragraph)
-          typography-ref-file (sr/serialize-uuid (:typography-ref-file paragraph))
-          typography-ref-id (sr/serialize-uuid (:typography-ref-id paragraph))]
+        total-size    (+ 4 metadata-size text-size)
+        heapu8        (mem/get-heap-u8)
+        dview         (mem/get-data-view)
+        offset        (mem/alloc total-size)]
 
-      (.setUint8 dview 4 text-align le?)
-      (.setUint8 dview 5 text-direction le?)
-      (.setUint8 dview 6 text-decoration le?)
-      (.setUint8 dview 7 text-transform le?)
+    (-> offset
+        (mem/write-u32 dview num-leaves)
+        (write-paragraph dview paragraph)
+        (write-leaves dview leaves paragraph)
+        (mem/write-buffer heapu8 text-buffer))
 
-      (.setFloat32 dview 8 line-height le?)
-      (.setFloat32 dview 12 letter-spacing le?)
-
-      (.setUint32 dview 16 (aget typography-ref-file 0) le?)
-      (.setUint32 dview 20 (aget typography-ref-file 1) le?)
-      (.setUint32 dview 24 (aget typography-ref-file 2) le?)
-      (.setInt32 dview 28 (aget typography-ref-file 3) le?)
-
-      (.setUint32 dview 32 (aget typography-ref-id 0) le?)
-      (.setUint32 dview 36 (aget typography-ref-id 1) le?)
-      (.setUint32 dview 40 (aget typography-ref-id 2) le?)
-      (.setInt32 dview 44 (aget typography-ref-id 3) le?))
-
-    ;; Serialize leaves attributes
-    (loop [index 0 offset paragraph-attr-size]
-      (when (< index num-leaves)
-        (let [leaf (nth leaves index)
-              font-style (f/serialize-font-style (:font-style leaf))
-              font-size (:font-size leaf)
-              font-weight (:font-weight leaf)
-              font-id (f/serialize-font-id (:font-id leaf))
-              font-family (hash (:font-family leaf))
-              font-variant-id (sr/serialize-uuid (:font-variant-id leaf))
-              leaf-text-decoration (or (sr/serialize-text-decoration (:text-decoration leaf)) (sr/serialize-text-decoration (:text-decoration paragraph)))
-              leaf-text-transform (or (sr/serialize-text-transform (:text-transform leaf)) (sr/serialize-text-transform (:text-transform paragraph)))
-              text-buffer (utf8->buffer (:text leaf))
-              text-length (.-byteLength text-buffer)
-              fills (:fills leaf)
-              total-fills (count fills)]
-
-          (.setUint8 dview offset font-style le?)
-          (.setUint8 dview (+ offset 1) leaf-text-decoration le?)
-          (.setUint8 dview (+ offset 2) leaf-text-transform le?)
-
-          (.setFloat32 dview (+ offset 4) font-size le?)
-          (.setUint32 dview (+ offset 8) font-weight le?)
-          (.setUint32 dview (+ offset 12) (aget font-id 0) le?)
-          (.setUint32 dview (+ offset 16) (aget font-id 1) le?)
-          (.setUint32 dview (+ offset 20) (aget font-id 2) le?)
-          (.setInt32 dview (+ offset 24) (aget font-id 3) le?)
-
-          (.setInt32 dview (+ offset 28) font-family le?)
-
-          (.setUint32 dview (+ offset 32) (aget font-variant-id 0) le?)
-          (.setUint32 dview (+ offset 36) (aget font-variant-id 1) le?)
-          (.setUint32 dview (+ offset 40) (aget font-variant-id 2) le?)
-          (.setInt32 dview (+ offset 44) (aget font-variant-id 3) le?)
-
-          (.setInt32 dview (+ offset 48) text-length le?)
-          (.setInt32 dview (+ offset 52) total-fills le?)
-
-          (let [new-offset (set-text-leaf-fills fills (+ offset leaf-attr-size) dview)]
-            (recur (inc index) new-offset)))))
-
-    ;; Add text content to buffer
-    (let [text-offset metadata-size
-          buffer-u8 (js/Uint8Array. buffer)]
-      (.set buffer-u8 (js/Uint8Array. text-buffer) text-offset))
-
-    ;; Allocate memory and set buffer
-    (let [total-size (.-byteLength buffer)
-          metadata-offset (mem/alloc total-size)
-          heap (mem/get-heap-u8)]
-      (.set heap (js/Uint8Array. buffer) metadata-offset)))
-
-  (h/call wasm/internal-module "_set_shape_text_content"))
+    (h/call wasm/internal-module "_set_shape_text_content")))
 
 (def ^:private emoji-pattern #"[\uD83C-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u27BF]")
 
@@ -199,10 +210,20 @@
 (defn contains-emoji? [text]
   (boolean (some #(re-find emoji-pattern %) (seq text))))
 
-(defn get-languages [text]
+(defn collect-used-languages
+  [used text]
   (reduce-kv (fn [result lang pattern]
-               (if (re-find pattern text)
+               (cond
+                 ;; Skip regex operation if we already know that
+                 ;; langage is present
+                 (contains? result lang)
+                 result
+
+                 (re-find pattern text)
                  (conj result lang)
+
+                 :else
                  result))
-             #{}
+             used
              unicode-ranges))
+

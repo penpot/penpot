@@ -227,7 +227,8 @@
   (case value
     :fill 0
     :fix  1
-    :auto 2))
+    :auto 2
+    1))
 
 (defn translate-align-self
   [value]
@@ -270,26 +271,51 @@
     :auto-height 2
     0))
 
-(defn- serialize-enum
-  [value enum-map]
-  (get enum-map value 0))
-
-(defn serialize-vertical-align
+(defn translate-vertical-align
   [vertical-align]
-  (serialize-enum vertical-align {"top" 0 "center" 1 "bottom" 2}))
+  (case vertical-align
+    "top" 0
+    "center" 1
+    "bottom" 2
+    0))
 
-(defn serialize-text-align
+(defn translate-text-align
   [text-align]
-  (serialize-enum text-align {"left" 0 "center" 1 "right" 2 "justify" 3}))
+  (case text-align
+    "left" 0
+    "center" 1
+    "right" 2
+    "justify" 3
+    0))
 
-(defn serialize-text-transform
+(defn translate-text-transform
   [text-transform]
-  (serialize-enum text-transform {"none" 0 "uppercase" 1 "lowercase" 2 "capitalize" 3}))
+  (case text-transform
+    "none" 0
+    "uppercase" 1
+    "lowercase" 2
+    "capitalize" 3
+    nil))
 
-(defn serialize-text-decoration
+(defn translate-text-decoration
   [text-decoration]
-  (serialize-enum text-decoration {"none" 0 "underline" 1 "line-through" 2 "overline" 3}))
+  (case text-decoration
+    "none" 0
+    "underline" 1
+    "line-through" 2
+    "overline" 3
+    nil))
 
-(defn serialize-text-direction
+(defn translate-text-direction
   [text-direction]
-  (serialize-enum text-direction {"ltr" 0 "rtl" 1}))
+  (case text-direction
+    "ltr" 0
+    "rtl" 1))
+
+(defn translate-font-style
+  [font-style]
+  (case font-style
+    "normal" 0
+    "regular" 0
+    "italic" 1
+    0))
