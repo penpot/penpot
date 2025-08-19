@@ -1032,6 +1032,9 @@
         properties         (mf/with-memo [data objects variant-id]
                              (cfv/extract-properties-values data objects (:id shape)))
 
+        open*              (mf/use-state true)
+        open?              (deref open*)
+
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
 
@@ -1040,6 +1043,10 @@
                                                                                   :editing? true}))}
                             {:title (tr "workspace.shape.menu.add-variant")
                              :action #(st/emit! (dwv/add-new-variant (:id shape)))}]
+
+        toggle-content
+        (mf/use-fn
+         #(swap! open* not))
 
         on-menu-click
         (mf/use-fn
@@ -1096,9 +1103,12 @@
        [:div {:class (stl/css :element-title)}
 
 
-        [:& title-bar {:collapsable  false
+        [:& title-bar {:collapsable  true
+                       :collapsed    (not open?)
+                       :on-collapsed toggle-content
                        :title        (tr "workspace.options.component")
-                       :class        (stl/css :title-spacing-component)}
+                       :class        (stl/css :title-spacing-component)
+                       :title-class  (stl/css :title-bar-variant)}
 
          [:span {:class (stl/css :copy-text)}
           (tr "workspace.options.component.main")]
@@ -1109,78 +1119,79 @@
                             :on-click on-click-variant-title-help
                             :icon "help"}]]]]
 
-       [:div {:class (stl/css :element-content)}
-        [:div {:class (stl/css-case :component-wrapper true
-                                    :with-actions (not multi?)
-                                    :without-actions multi?)}
-         [:button {:class (stl/css-case :component-name-wrapper true
-                                        :with-main true
-                                        :swappeable false)}
+       (when open?
+         [:div {:class (stl/css :element-content)}
+          [:div {:class (stl/css-case :component-wrapper true
+                                      :with-actions (not multi?)
+                                      :without-actions multi?)}
+           [:button {:class (stl/css-case :component-name-wrapper true
+                                          :with-main true
+                                          :swappeable false)}
 
-          [:span {:class (stl/css :component-icon)} i/component]
+            [:span {:class (stl/css :component-icon)} i/component]
 
-          [:div {:class (stl/css :name-wrapper)}
-           [:div {:class (stl/css :component-name)}
-            [:span {:class (stl/css :component-name-inside)}
-             (if multi?
-               (tr "settings.multiple")
-               (cfh/last-path shape-name))]]]]
+            [:div {:class (stl/css :name-wrapper)}
+             [:div {:class (stl/css :component-name)}
+              [:span {:class (stl/css :component-name-inside)}
+               (if multi?
+                 (tr "settings.multiple")
+                 (cfh/last-path shape-name))]]]]
 
 
-         (when-not multi?
-           [:div {:class (stl/css :component-actions)}
-            [:button {:class (stl/css-case :menu-btn true
-                                           :selected menu-open?)
-                      :on-click on-menu-click}
-             i/menu]
+           (when-not multi?
+             [:div {:class (stl/css :component-actions)}
+              [:button {:class (stl/css-case :menu-btn true
+                                             :selected menu-open?)
+                        :on-click on-menu-click}
+               i/menu]
 
-            [:& component-ctx-menu {:show menu-open?
-                                    :on-close on-menu-close
-                                    :menu-entries menu-entries
-                                    :main-instance true}]])]
+              [:& component-ctx-menu {:show menu-open?
+                                      :on-close on-menu-close
+                                      :menu-entries menu-entries
+                                      :main-instance true}]])]
 
-        (when-not multi?
-          [:div {:class (stl/css :variant-property-list)}
-           (for [[pos property] (map-indexed vector properties)]
-             (let [last-prop? (<= (count properties) 1)
-                   values     (->> (:value property)
-                                   (move-empty-items-to-end)
-                                   (replace {"" "--"})
-                                   (str/join ", "))
-                   is-editing (:editing? (meta property))]
-               [:div {:key (str (:id shape) pos)
-                      :class (stl/css :variant-property-row)}
-                [:> input-with-meta* {:value (:name property)
-                                      :meta values
-                                      :is-editing is-editing
-                                      :max-length ctv/property-max-length
-                                      :data-position pos
-                                      :on-blur update-property-name}]
-                [:> icon-button* {:variant "ghost"
-                                  :aria-label (if last-prop?
-                                                (tr "workspace.shape.menu.remove-variant-property.last-property")
-                                                (tr "workspace.shape.menu.remove-variant-property"))
-                                  :on-click remove-property
-                                  :data-position pos
-                                  :icon "remove"
-                                  :disabled last-prop?}]]))])
+          (when-not multi?
+            [:div {:class (stl/css :variant-property-list)}
+             (for [[pos property] (map-indexed vector properties)]
+               (let [last-prop? (<= (count properties) 1)
+                     values     (->> (:value property)
+                                     (move-empty-items-to-end)
+                                     (replace {"" "--"})
+                                     (str/join ", "))
+                     is-editing (:editing? (meta property))]
+                 [:div {:key (str (:id shape) pos)
+                        :class (stl/css :variant-property-row)}
+                  [:> input-with-meta* {:value (:name property)
+                                        :meta values
+                                        :is-editing is-editing
+                                        :max-length ctv/property-max-length
+                                        :data-position pos
+                                        :on-blur update-property-name}]
+                  [:> icon-button* {:variant "ghost"
+                                    :aria-label (if last-prop?
+                                                  (tr "workspace.shape.menu.remove-variant-property.last-property")
+                                                  (tr "workspace.shape.menu.remove-variant-property"))
+                                    :on-click remove-property
+                                    :data-position pos
+                                    :icon "remove"
+                                    :disabled last-prop?}]]))])
 
-        (if malformed?
-          [:div {:class (stl/css :variant-warning-wrapper)}
-           [:> icon* {:icon-id "msg-neutral"
-                      :class (stl/css :variant-warning-darken)}]
-           [:div {:class (stl/css :variant-warning-highlight)}
-            (tr "workspace.options.component.variant.malformed.group.title")]
-           [:button {:class (stl/css :variant-warning-button)
-                     :on-click select-shapes-with-malformed}
-            (tr "workspace.options.component.variant.malformed.group.locate")]]
-
-          (when duplicated?
+          (if malformed?
             [:div {:class (stl/css :variant-warning-wrapper)}
              [:> icon* {:icon-id "msg-neutral"
                         :class (stl/css :variant-warning-darken)}]
              [:div {:class (stl/css :variant-warning-highlight)}
-              (tr "workspace.options.component.variant.duplicated.group.title")]
+              (tr "workspace.options.component.variant.malformed.group.title")]
              [:button {:class (stl/css :variant-warning-button)
-                       :on-click select-shapes-with-duplicated}
-              (tr "workspace.options.component.variant.duplicated.group.locate")]]))]])))
+                       :on-click select-shapes-with-malformed}
+              (tr "workspace.options.component.variant.malformed.group.locate")]]
+
+            (when duplicated?
+              [:div {:class (stl/css :variant-warning-wrapper)}
+               [:> icon* {:icon-id "msg-neutral"
+                          :class (stl/css :variant-warning-darken)}]
+               [:div {:class (stl/css :variant-warning-highlight)}
+                (tr "workspace.options.component.variant.duplicated.group.title")]
+               [:button {:class (stl/css :variant-warning-button)
+                         :on-click select-shapes-with-duplicated}
+                (tr "workspace.options.component.variant.duplicated.group.locate")]]))])])))
