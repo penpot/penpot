@@ -357,7 +357,7 @@
    [:id ::sm/uuid]
    [:file-id ::sm/uuid]
    [:created-at ::ct/inst]
-   [:content any?]])
+   [:content ::sm/any]])
 
 (def schema:get-file-fragment
   [:map {:title "get-file-fragment"}
