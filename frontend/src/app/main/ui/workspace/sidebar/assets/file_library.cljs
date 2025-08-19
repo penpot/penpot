@@ -10,10 +10,12 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.variant :as cfv]
+   [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.data.event :as ev]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
+   [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.router :as rt]
@@ -210,13 +212,23 @@
         on-typography-click
         (mf/use-fn (mf/deps on-asset-click) (partial on-asset-click :typographies))
 
+        delete-component
+        (mf/use-fn
+         (mf/deps components)
+         (fn [component-id]
+           (let [component (some #(when (= (:id %) component-id) %) components)]
+             (if (ctc/is-variant? component)
+               ;; If the component is a variant, delete its variant container
+               (dwsh/delete-shapes (:main-instance-page component) #{(:variant-id component)})
+               (dwl/delete-component {:id component-id})))))
+
         on-assets-delete
         (mf/use-fn
          (mf/deps selected file-id)
          (fn []
            (let [undo-id (js/Symbol)]
              (st/emit! (dwu/start-undo-transaction undo-id))
-             (run! st/emit! (map #(dwl/delete-component {:id %})
+             (run! st/emit! (map delete-component
                                  (:components selected)))
              (run! st/emit! (map #(dwl/delete-media {:id %})
                                  (:graphics selected)))
@@ -251,6 +263,7 @@
             :on-asset-click on-component-click
             :on-assets-delete on-assets-delete
             :on-clear-selection on-clear-selection
+            :delete-component delete-component
             :count-variants count-variants}])
 
         (when ^boolean show-colors?
