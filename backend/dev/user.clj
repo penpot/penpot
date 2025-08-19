@@ -18,6 +18,7 @@
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as smdj]
    [app.common.schema.desc-native :as smdn]
+   [app.common.schema.openapi :as oapi]
    [app.common.schema.generators :as sg]
    [app.common.spec :as us]
    [app.common.json :as json]

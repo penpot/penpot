@@ -24,7 +24,7 @@
 (def schema:plugin-data
   (sm/register!
    ^{::sm/type ::plugin-data}
-   [:map-of {:gen/max 5}
+   [:map-of {:gen/max 5 :title "PluginsData"}
     schema:keyword
     [:map-of {:gen/max 5}
      schema:string

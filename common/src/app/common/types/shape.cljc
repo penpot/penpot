@@ -184,7 +184,7 @@
    [:height ::sm/safe-number]])
 
 (def schema:shape-generic-attrs
-  [:map {:title "ShapeAttrs"}
+  [:map {:title "ShapeGenericAttrs"}
    [:page-id {:optional true} ::sm/uuid]
    [:component-id {:optional true}  ::sm/uuid]
    [:component-file {:optional true} ::sm/uuid]

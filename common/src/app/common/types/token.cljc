@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.schema :as sm]
+   [app.common.schema.generators :as sg]
    [clojure.data :as data]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -56,7 +57,8 @@
   (into #{} (keys token-type->dtcg-token-type)))
 
 (def token-name-ref
-  [:and :string [:re #"^(?!\$)([a-zA-Z0-9-$_]+\.?)*(?<!\.)$"]])
+  [:re {:title "TokenNameRef" :gen/gen sg/text}
+   #"^(?!\$)([a-zA-Z0-9-$_]+\.?)*(?<!\.)$"])
 
 (def ^:private schema:color
   [:map
@@ -66,7 +68,7 @@
 (def color-keys (schema-keys schema:color))
 
 (def ^:private schema:border-radius
-  [:map
+  [:map {:title "BorderRadiusTokenAttrs"}
    [:r1 {:optional true} token-name-ref]
    [:r2 {:optional true} token-name-ref]
    [:r3 {:optional true} token-name-ref]
@@ -81,7 +83,7 @@
 (def stroke-width-keys (schema-keys schema:stroke-width))
 
 (def ^:private schema:sizing
-  [:map
+  [:map {:title "SizingTokenAttrs"}
    [:width {:optional true} token-name-ref]
    [:height {:optional true} token-name-ref]
    [:layout-item-min-w {:optional true} token-name-ref]
@@ -92,44 +94,46 @@
 (def sizing-keys (schema-keys schema:sizing))
 
 (def ^:private schema:opacity
-  [:map
+  [:map {:title "OpacityTokenAttrs"}
    [:opacity {:optional true} token-name-ref]])
 
 (def opacity-keys (schema-keys schema:opacity))
 
 (def ^:private schema:spacing-gap
-  [:map
+  [:map {:title "SpacingGapTokenAttrs"}
    [:row-gap {:optional true} token-name-ref]
    [:column-gap {:optional true} token-name-ref]])
 
 (def ^:private schema:spacing-padding
-  [:map
+  [:map {:title "SpacingPaddingTokenAttrs"}
    [:p1 {:optional true} token-name-ref]
    [:p2 {:optional true} token-name-ref]
    [:p3 {:optional true} token-name-ref]
    [:p4 {:optional true} token-name-ref]])
 
 (def ^:private schema:spacing-margin
-  [:map
+  [:map {:title "SpacingMarginTokenAttrs"}
    [:m1 {:optional true} token-name-ref]
    [:m2 {:optional true} token-name-ref]
    [:m3 {:optional true} token-name-ref]
    [:m4 {:optional true} token-name-ref]])
 
 (def ^:private schema:spacing
-  (reduce mu/union [schema:spacing-gap
-                    schema:spacing-padding
-                    schema:spacing-margin]))
+  (-> (reduce mu/union [schema:spacing-gap
+                        schema:spacing-padding
+                        schema:spacing-margin])
+      (mu/update-properties assoc :title "SpacingTokenAttrs")))
 
 (def spacing-margin-keys (schema-keys schema:spacing-margin))
 
 (def spacing-keys (schema-keys schema:spacing))
 
 (def ^:private schema:dimensions
-  (reduce mu/union [schema:sizing
-                    schema:spacing
-                    schema:stroke-width
-                    schema:border-radius]))
+  (-> (reduce mu/union [schema:sizing
+                        schema:spacing
+                        schema:stroke-width
+                        schema:border-radius])
+      (mu/update-properties assoc :title "DimensionsTokenAttrs")))
 
 (def dimensions-keys (schema-keys schema:dimensions))
 
@@ -140,22 +144,20 @@
 
 (def axis-keys (schema-keys schema:axis))
 
-
-
 (def ^:private schema:rotation
-  [:map
+  [:map {:title "RotationTokenAttrs"}
    [:rotation {:optional true} token-name-ref]])
 
 (def rotation-keys (schema-keys schema:rotation))
 
 (def ^:private schema:font-size
-  [:map
+  [:map {:title "FontSizeTokenAttrs"}
    [:font-size {:optional true} token-name-ref]])
 
 (def font-size-keys (schema-keys schema:font-size))
 
 (def ^:private schema:letter-spacing
-  [:map
+  [:map {:title "LetterSpacingTokenAttrs"}
    [:letter-spacing {:optional true} token-name-ref]])
 
 (def letter-spacing-keys (schema-keys schema:letter-spacing))
@@ -197,8 +199,9 @@
 (def ff-typography-keys (set/difference typography-keys font-size-keys))
 
 (def ^:private schema:number
-  (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
-                    schema:rotation]))
+  (-> (reduce mu/union [[:map [:line-height {:optional true} token-name-ref]]
+                        schema:rotation])
+      (mu/update-properties assoc :title "NumberTokenAttrs")))
 
 (def number-keys (schema-keys schema:number))
 
@@ -215,10 +218,10 @@
                          number-keys))
 
 (def ^:private schema:tokens
-  [:map {:title "Applied Tokens"}])
+  [:map {:title "GenericTokenAttrs"}])
 
 (def schema:applied-tokens
-  [:merge
+  [:merge {:title "AppliedTokens"}
    schema:tokens
    schema:border-radius
    schema:sizing

@@ -14,12 +14,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def schema:grid-color
-  [:map {:title "PageGridColor"}
+  [:map {:title "GridColor"}
    [:color clr/schema:hex-color]
    [:opacity ::sm/safe-number]])
 
 (def schema:column-params
-  [:map
+  [:map {:title "ColumnGridParams"}
    [:color schema:grid-color]
    [:type {:optional true} [::sm/one-of #{:stretch :left :center :right}]]
    [:size {:optional true} [:maybe ::sm/safe-number]]
@@ -28,7 +28,7 @@
    [:gutter {:optional true} [:maybe ::sm/safe-number]]])
 
 (def schema:square-params
-  [:map
+  [:map {:title "SquareGridParams"}
    [:size {:optional true} [:maybe ::sm/safe-number]]
    [:color schema:grid-color]])
 
@@ -37,19 +37,19 @@
            :dispatch :type
            :decode/json #(update % :type keyword)}
    [:column
-    [:map
+    [:map {:title "ColumnGridAttrs"}
      [:type [:= :column]]
      [:display :boolean]
      [:params schema:column-params]]]
 
    [:row
-    [:map
+    [:map {:title "RowGridAttrs"}
      [:type [:= :row]]
      [:display :boolean]
      [:params schema:column-params]]]
 
    [:square
-    [:map
+    [:map {:title "SquareGridAttrs"}
      [:type [:= :square]]
      [:display :boolean]
      [:params schema:square-params]]]])
