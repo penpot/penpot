@@ -472,18 +472,17 @@
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
   (get-set [_ set-name] "get one set looking for name"))
 
-(def schema:token-set-node
-  [:schema {:registry {::node [:or [:fn token-set?]
-                               [:and
-                                [:map-of {:gen/max 5} :string [:ref ::node]]
-                                [:fn d/ordered-map?]]]}}
+(def ^:private schema:token-set-node
+  [:schema {:registry {::node
+                       [:or [:fn token-set?]
+                        [:and
+                         [:map-of {:gen/max 5} :string [:ref ::node]]
+                         [:fn d/ordered-map?]]]}}
    [:ref ::node]])
 
-(def schema:token-sets
-  [:and
-   [:map-of {:title "TokenSets"}
-    :string
-    schema:token-set-node]
+(def ^:private schema:token-sets
+  [:and {:title "TokenSets"}
+   [:map-of :string  schema:token-set-node]
    [:fn d/ordered-map?]])
 
 (def ^:private check-token-sets
