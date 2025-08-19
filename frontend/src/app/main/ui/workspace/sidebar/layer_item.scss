@@ -117,16 +117,12 @@
   height: 100%;
   width: $s-24;
   padding-inline-start: $s-4;
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-
-    .layer-row.selected & {
-      stroke: var(--layer-row-foreground-color-selected);
-    }
-    .layer-row.type-comp & {
-      stroke: var(--layer-row-component-foreground-color);
-    }
+  color: var(--icon-foreground);
+  .layer-row.selected & {
+    color: var(--layer-row-foreground-color-selected);
+  }
+  .layer-row.type-comp & {
+    color: var(--layer-row-component-foreground-color);
   }
   .inverse & {
     transform: rotate(-90deg);

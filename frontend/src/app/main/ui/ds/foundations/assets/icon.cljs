@@ -285,6 +285,7 @@
 (def ^:icon-id tree "tree")
 (def ^:icon-id unlock "unlock")
 (def ^:icon-id user "user")
+(def ^:icon-id variant "variant")
 (def ^:icon-id vertical-align-items-center "vertical-align-items-center")
 (def ^:icon-id vertical-align-items-end "vertical-align-items-end")
 (def ^:icon-id vertical-align-items-start "vertical-align-items-start")

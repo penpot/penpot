@@ -11,7 +11,7 @@
    [app.main.data.event :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.shape-icon :as sir]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
    [app.main.ui.inspect.attributes :refer [attributes]]
@@ -19,6 +19,7 @@
    [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.shape-icon :as usi]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -100,14 +101,16 @@
                                   :viewer-code (= from :viewer))}
      (if (seq shapes)
        [:div {:class (stl/css :tool-windows)}
-        [:div {:class (stl/css-case :shape-row true :shape-row-subtitle (some? subtitle))}
+        [:div {:class (stl/css-case :shape-info true :shape-info-subtitle (some? subtitle))}
          (if (> (count shapes) 1)
            [:*
-            [:span {:class (stl/css :layers-icon)} i/layers]
+            [:div {:class (stl/css :layers-icon)}
+             [:> icon* {:icon-id "layers" :size "s"}]]
             [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
            [:*
-            [:span {:class (stl/css :shape-icon)}
-             [:& sir/element-icon {:shape first-shape :main-instance? main-instance?}]]
+            [:div {:class (stl/css :shape-icon)}
+             ;; Use the shape icon utility to get the correct icon for the first shape
+             [:> icon* {:icon-id (usi/get-shape-icon first-shape) :size "s"}]]
             ;; Execution time translation strings:
             ;;   (tr "inspect.tabs.code.selected.circle")
             ;;   (tr "inspect.tabs.code.selected.component")
@@ -120,12 +123,14 @@
             ;;   (tr "inspect.tabs.code.selected.rect")
             ;;   (tr "inspect.tabs.code.selected.svg-raw")
             ;;   (tr "inspect.tabs.code.selected.text")
+
             [:div
              (if (some? subtitle)
                [:*
                 [:div {:class (stl/css :layer-title :layer-title-with-subtitle)} (:name first-shape)]
                 [:div {:class (stl/css :layer-subtitle)} subtitle]]
-               [:div {:class (stl/css :layer-title)} (:name first-shape)])]])]
+               [:div
+                [:div {:class (stl/css :layer-title)} (:name first-shape)]])]])]
 
         [:div {:class (stl/css :inspect-content)}
 

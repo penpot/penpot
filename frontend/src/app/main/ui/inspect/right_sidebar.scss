@@ -33,7 +33,7 @@
   padding-left: var(--sp-m);
 }
 
-.shape-row {
+.shape-info {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: $s-8;
@@ -41,7 +41,7 @@
   height: $s-32;
 }
 
-.shape-row-subtitle {
+.shape-info-subtitle {
   height: fit-content;
   align-items: flex-start;
 }
@@ -50,11 +50,6 @@
 .shape-icon {
   @include flexCenter;
   height: $s-32;
-
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-  }
 }
 
 .layer-title {

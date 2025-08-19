@@ -42,19 +42,19 @@ const findVariant = async (workspacePage, num_variant) => {
   const container = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Rectangle") })
-    .filter({ has: workspacePage.page.locator(".icon-component") })
+    .filter({ has: workspacePage.page.getByTestId("icon-component") })
     .nth(num_variant);
 
   const variant1 = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Value 1") })
-    .filter({ has: workspacePage.page.locator(".icon-variant") })
+    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
     .nth(num_variant);
 
   const variant2 = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Value 2") })
-    .filter({ has: workspacePage.page.locator(".icon-variant") })
+    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
     .nth(num_variant);
 
   return {
@@ -99,7 +99,7 @@ test("User creates a variant", async ({ page }) => {
 
   const variants = await workspacePage.layers
     .getByTestId("layer-row")
-    .filter({ has: workspacePage.page.locator(".icon-variant") })
+    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
     .all();
 
   // There are exactly two variants
@@ -241,7 +241,7 @@ test("User copy paste a variant", async ({ page }) => {
   const copy = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Rectangle") })
-    .filter({ has: workspacePage.page.locator(".icon-component-copy") });
+    .filter({ has: workspacePage.page.getByTestId("icon-component-copy") });
 
   //The copy exists and is visible
   await expect(copy).toBeVisible();
@@ -266,7 +266,7 @@ test("User cut paste a variant outside the container", async ({ page }) => {
   const component = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Rectangle / Value 1") })
-    .filter({ has: workspacePage.page.locator(".icon-component") });
+    .filter({ has: workspacePage.page.getByTestId("icon-component") });
 
   //The component exists and is visible
   await expect(component).toBeVisible();
@@ -284,7 +284,7 @@ test("User drag and drop a variant outside the container", async ({ page }) => {
   const component = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Rectangle / Value 1") })
-    .filter({ has: workspacePage.page.locator(".icon-component") });
+    .filter({ has: workspacePage.page.getByTestId("icon-component") });
 
   //The component exists and is visible
   await expect(component).toBeVisible();
@@ -312,7 +312,7 @@ test("User cut paste a component inside a variant", async ({ page }) => {
   const variant3 = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Ellipse") })
-    .filter({ has: workspacePage.page.locator(".icon-variant") })
+    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
     .first();
 
   //The new variant exists and is visible
@@ -351,7 +351,7 @@ test("User cut paste a component with path inside a variant", async ({
   const variant3 = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("button, hover") })
-    .filter({ has: workspacePage.page.locator(".icon-variant") })
+    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
     .first();
 
   //The new variant exists and is visible
@@ -386,7 +386,7 @@ test("User drag and drop a component with path inside a variant", async ({
   const variant3 = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("button, hover") })
-    .filter({ has: workspacePage.page.locator(".icon-variant") })
+    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
     .first();
 
   //The new variant exists and is visible
@@ -420,7 +420,7 @@ test("User cut paste a variant into another container", async ({ page }) => {
   const variant3 = await workspacePage.layers
     .getByTestId("layer-row")
     .filter({ has: workspacePage.page.getByText("Value 1, rectangle") })
-    .filter({ has: workspacePage.page.locator(".icon-variant") })
+    .filter({ has: workspacePage.page.getByTestId("icon-variant") })
     .first();
 
   //The new variant exists and is visible
