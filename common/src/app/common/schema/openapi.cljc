@@ -200,7 +200,34 @@
     (if (::embed options)
       result
       (if-let [ref (m/-ref schema)]
-        (let [rkey (str/concat (str/camel (namespace ref)) "$" (name ref))]
+        (let [nname (namespace ref)
+              tname (name ref)
+              tname (str/capital (str/camel tname))
+
+              nname (cond
+                      (or (= nname "app.common.schema")
+                          (= nname "app.common.time")
+                          (= nname "app.common.features"))
+                      ""
+
+                      (= nname "datoteka.fs")
+                      "Filesystem"
+
+                      (str/starts-with? nname "app.common.geom")
+                      (-> (str/replace nname #"app\.common\.geom\.\w+" "geom")
+                          (str/camel)
+                          (str/capital))
+
+                      (str/starts-with? nname "app.")
+                      (-> (subs nname 4)
+                          (str/camel)
+                          (str/capital))
+
+                      :else
+                      (str/capital (str/camel nname)))
+
+              rkey  (str nname tname)]
+
           (some-> *definitions* (swap! assoc rkey result))
           {"$ref" (str/concat defpath rkey)})
         result))))
