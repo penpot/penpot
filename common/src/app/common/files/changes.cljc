@@ -178,12 +178,6 @@
             :title "Change"
             :decode/json #(update % :type keyword)
             ::smd/simplified true}
-    [:set-option
-
-     ;; DEPRECATED: remove before 2.3 release
-     ;;
-     ;; Is still there for not cause error when event is received
-     [:map {:title "SetOptionChange"}]]
 
     [:set-comment-thread-position
      [:map
@@ -548,11 +542,6 @@
        ;; the tracked changes instead of iterate over all shapes
        #?(:clj (validate-shapes! data result items))
        result))))
-
-;; DEPRECATED: remove after 2.3 release
-(defmethod process-change :set-option
-  [data _]
-  data)
 
 ;; --- Comment Threads
 
