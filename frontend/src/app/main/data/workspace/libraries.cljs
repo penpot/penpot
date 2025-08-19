@@ -527,14 +527,17 @@
   (ptk/reify ::restore-component
     ptk/WatchEvent
     (watch [it state _]
-      (let [page-id (:current-page-id state)
-            page    (dsh/lookup-page state page-id)
-            objects (:objects page)
+      (let [current-file-id (:current-file-id state)
+            local?          (= current-file-id library-id)
 
-            ldata   (dsh/lookup-file-data state library-id)
+            ldata        (dsh/lookup-file-data state library-id)
+            component    (get-in ldata [:components component-id])
+            comp-page-id (:main-instance-page component)
+            comp-page    (dsh/get-page ldata comp-page-id)
+            objects      (:objects comp-page)
 
             changes (-> (pcb/empty-changes it)
-                        (cll/generate-restore-component ldata component-id library-id page objects))
+                        (cll/generate-restore-component ldata component-id library-id comp-page objects))
 
             page-id
             (->> changes :redo-changes (keep :page-id) first)
@@ -543,7 +546,8 @@
             (->> changes :redo-changes (keep :frame-id))]
 
         (rx/of (dch/commit-changes changes)
-               (ptk/data-event :layout/update {:page-id page-id :ids frames}))))))
+               (when local?
+                 (ptk/data-event :layout/update {:page-id page-id :ids frames})))))))
 
 
 (defn restore-components
@@ -671,7 +675,7 @@
                  (dch/commit-changes changes)))))))
 
 (defn go-to-component-file
-  [file-id component]
+  [file-id component update-layout?]
 
   (assert (uuid? file-id) "expected an uuid for `file-id`")
   (assert (ctk/check-component component) "expected a valid component")
@@ -682,24 +686,34 @@
       (let [params (-> (rt/get-params state)
                        (assoc :file-id file-id)
                        (assoc :page-id (:main-instance-page component))
-                       (assoc :component-id (:id component)))]
+                       (assoc :component-id (:id component))
+                       (assoc :update-layout update-layout?))]
         (rx/of (rt/nav :workspace params ::rt/new-window true))))))
 
 (defn go-to-local-component
   ;; id is the id of the component to go
   ;; additional-ids are ids of additional components on the same page
   ;; that will be selected and zoomed along the main one
-  [& {:keys [id additional-ids] :as options}]
+  ;; update-layout? indicates if it should send a :layout/update event
+  ;; for the parents of the component
+  [& {:keys [id additional-ids update-layout?] :as options}]
   (ptk/reify ::go-to-local-component
     ptk/WatchEvent
     (watch [_ state stream]
       (let [current-page-id (:current-page-id state)
             data            (dsh/lookup-file-data state)
+            objects         (dsh/lookup-page-objects state current-page-id)
+
 
             select-and-zoom
             (fn [ids]
-              (rx/of (dws/select-shapes ids)
-                     dwz/zoom-to-selected-shape))
+              (let [parent-ids (when update-layout?
+                                 (map #(-> (get objects %) :parent-id) ids))]
+                (rx/of
+                 (dws/select-shapes ids)
+                 dwz/zoom-to-selected-shape
+                 (when update-layout?
+                   (ptk/data-event :layout/update {:ids parent-ids})))))
 
             redirect-to-page
             (fn [page-id ids]

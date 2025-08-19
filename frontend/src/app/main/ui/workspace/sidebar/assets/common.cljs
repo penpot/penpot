@@ -451,26 +451,28 @@
 
         ;; When the show-remote is after a restore, the component may still be deleted
         do-show-remote-component
-        #(when-let [comp (find-component shape true)]
-           (st/emit! (dwl/go-to-component-file library-id comp)))
+        (fn [update-layout?]
+          (when-let [comp (find-component shape true)]
+            (st/emit! (dwl/go-to-component-file library-id comp update-layout?))))
 
         do-show-component
-        (fn []
+        (fn [_ update-layout?]
           (st/emit! dw/hide-context-menu)
           (if local-component?
             (do-show-local-component)
-            (do-show-remote-component)))
+            (do-show-remote-component update-layout?)))
 
         do-restore-component
-        #(let [;; Extract a map of component-id -> component-file in order to avoid duplicates
-               comps-to-restore (reduce (fn [id-file-map {:keys [component-id component-file]}]
-                                          (assoc id-file-map component-id component-file))
-                                        {}
-                                        restorable-copies)]
+        (fn []
+          (let [;; Extract a map of component-id -> component-file in order to avoid duplicates
+                comps-to-restore (reduce (fn [id-file-map {:keys [component-id component-file]}]
+                                           (assoc id-file-map component-id component-file))
+                                         {}
+                                         restorable-copies)]
 
-           (st/emit! (dwl/restore-components comps-to-restore))
-           (when (= 1 (count comps-to-restore))
-             (ts/schedule 1000 do-show-component)))
+            (st/emit! (dwl/restore-components comps-to-restore))
+            (when (= 1 (count comps-to-restore))
+              (ts/schedule 1000 #(do-show-component nil true)))))
 
         menu-entries [(when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.show-in-assets")
