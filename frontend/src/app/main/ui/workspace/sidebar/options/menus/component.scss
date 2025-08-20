@@ -9,12 +9,21 @@
 
 .element-set {
   margin: 0;
-  padding-top: $s-8;
 }
 
 .element-content {
   @include flexColumn;
-  gap: var(--sp-m);
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  row-gap: var(--sp-m);
+  padding-top: $s-4;
+  padding-bottom: $s-8;
+}
+
+.element-title {
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
 }
 
 .title-back {
@@ -35,7 +44,7 @@
 .title-spacing-component {
   justify-content: flex-start;
   gap: $s-8;
-  margin-bottom: $s-4;
+  grid-column: span 7;
 }
 
 .title-bar-variant {
@@ -44,6 +53,7 @@
 
 .variants-help-modal-button {
   margin-inline-start: auto;
+  grid-column: span 1;
 }
 
 .icon-back {
@@ -60,14 +70,14 @@
 }
 
 .component-wrapper {
+  grid-column: span 8;
   width: 100%;
   min-height: $s-32;
   border-radius: $br-8;
 
   &.with-actions {
-    display: grid;
-    grid-template-columns: 1fr $s-28;
-    gap: $s-2;
+    display: flex;
+    gap: $s-1;
   }
 
   &.without-actions {
@@ -83,8 +93,9 @@
 .component-name-wrapper {
   @include buttonStyle;
   cursor: default;
+  flex-grow: 1;
   display: grid;
-  grid-template-columns: $s-12 1fr;
+  grid-template-columns: $s-16 1fr;
   gap: $s-4;
   padding: 0 $s-8;
   border-radius: $br-8 0 0 $br-8;
@@ -100,7 +111,7 @@
 .component-icon {
   @include flexCenter;
   height: $s-32;
-  width: $s-12;
+  width: $s-16;
 
   svg {
     @extend .button-icon-small;
@@ -114,6 +125,7 @@
   padding: $s-8 0 $s-8 $s-2;
   border-radius: $br-8 0 0 $br-8;
   overflow: hidden;
+  gap: 0;
 }
 
 .component-name {
@@ -121,7 +133,7 @@
   @include textEllipsis;
   direction: rtl;
   text-align: left;
-  min-height: $s-16;
+  height: $s-16;
 }
 
 .component-name-inside {
@@ -134,19 +146,20 @@
   @include textEllipsis;
   direction: rtl;
   text-align: left;
-  min-height: $s-16;
+  height: $s-16;
   max-width: $s-184;
   color: var(--title-foreground-color);
 }
 
 .component-actions {
   position: relative;
+  width: $s-32;
 }
 
 .menu-btn {
   @extend .button-tertiary;
   height: 100%;
-  width: $s-28;
+  width: 100%;
   border-radius: 0 $br-8 $br-8 0;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color-hover);
@@ -191,7 +204,7 @@
 }
 
 .not-main {
-  top: $s-56;
+  top: $s-48;
 }
 
 .dropdown-element {
@@ -450,6 +463,7 @@
 
 .component-swap {
   padding-top: $s-12;
+  grid-column: span 8;
 }
 
 .component-swap-content {
@@ -733,36 +747,32 @@
 }
 
 .variant-property-list {
-  display: flex;
+  grid-column: span 8;
+
+  display: grid;
   flex-direction: column;
   gap: var(--sp-xs);
 }
 
 .variant-property-container {
   @include t.use-typography("body-small");
-  width: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
   gap: var(--sp-xs);
-  padding-right: var(--sp-xxs);
-}
-
-.variant-property-name-wrapper-copy {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  height: var(--sp-xxxl);
-  width: $s-104;
 }
 
 .variant-property-name-wrapper {
-  display: flex;
-  flex: 0 0 auto;
-  width: $s-104;
+  grid-column: span 3;
+  align-self: center;
+}
+
+.variant-property-value-wrapper {
+  grid-column: span 5;
+  align-self: center;
 }
 
 .variant-property-name {
-  color: var(--color-foreground-primary);
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -770,6 +780,8 @@
 
 .variant-warning-wrapper {
   @include bodySmallTypography;
+  grid-column: span 8;
+
   border: 1px solid var(--color-background-quaternary);
   border-radius: $s-8;
   padding: $s-12;

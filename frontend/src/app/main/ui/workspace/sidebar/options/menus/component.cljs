@@ -361,15 +361,17 @@
     [:*
      [:div {:class (stl/css :variant-property-list)}
       (for [[pos prop] (map-indexed vector properties)]
-        [:div {:key (str variant-id "-" pos) :class (stl/css :variant-property-container)}
-         [:*
-          [:div {:class (stl/css :variant-property-name-wrapper)}
-           [:> input-with-meta* {:value (:name prop)
-                                 :is-editing (:editing? (meta prop))
-                                 :max-length ctv/property-max-length
-                                 :data-position pos
-                                 :on-blur update-property-name}]]
+        [:div {:key (str variant-id "-" pos)
+               :class (stl/css :variant-property-container)}
 
+         [:div {:class (stl/css :variant-property-name-wrapper)}
+          [:> input-with-meta* {:value (:name prop)
+                                :is-editing (:editing? (meta prop))
+                                :max-length ctv/property-max-length
+                                :data-position pos
+                                :on-blur update-property-name}]]
+
+         [:div {:class (stl/css :variant-property-value-wrapper)}
           (let [mixed-value? (= (:value prop) false)]
             [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
                            :placeholder (if mixed-value? (tr "settings.multiple") "--")
@@ -463,12 +465,15 @@
     [:*
      [:div {:class (stl/css :variant-property-list)}
       (for [[pos prop] (map vector (range) properties)]
-        [:div {:key (str (:id shape) pos) :class (stl/css :variant-property-container)}
-         [:*
-          [:div {:class (stl/css :variant-property-name-wrapper-copy)
-                 :title (:name prop)}
-           [:span {:class (stl/css :variant-property-name)}
-            (:name prop)]]
+        [:div {:key (str (:id shape) pos)
+               :class (stl/css :variant-property-container)}
+
+         [:div {:class (stl/css :variant-property-name-wrapper)
+                :title (:name prop)}
+          [:div {:class (stl/css :variant-property-name)}
+           (:name prop)]]
+
+         [:div {:class (stl/css :variant-property-value-wrapper)}
           [:> select* {:default-selected (:value prop)
                        :options (get-options (:name prop))
                        :empty-to-end true
@@ -901,18 +906,19 @@
            [:span {:class (stl/css :icon-back)} i/arrow]
            [:span (tr "workspace.options.component")]]
 
-          [:> title-bar* {:collapsable  true
-                          :collapsed    (not open?)
-                          :on-collapsed toggle-content
-                          :title        (tr "workspace.options.component")
-                          :class        (stl/css :title-spacing-component)
-                          :title-class (stl/css-case :title-bar-variant is-variant?)}
-           [:span {:class (stl/css :copy-text)}
-            (if main-instance?
-              (if is-variant?
-                (tr "workspace.options.component.variant")
-                (tr "workspace.options.component.main"))
-              (tr "workspace.options.component.copy"))]
+          [:*
+           [:> title-bar* {:collapsable  true
+                           :collapsed    (not open?)
+                           :on-collapsed toggle-content
+                           :title        (tr "workspace.options.component")
+                           :class        (stl/css :title-spacing-component)
+                           :title-class  (stl/css :title-bar-variant)}
+            [:span {:class (stl/css :copy-text)}
+             (if main-instance?
+               (if is-variant?
+                 (tr "workspace.options.component.variant")
+                 (tr "workspace.options.component.main"))
+               (tr "workspace.options.component.copy"))]]
 
            (when is-variant?
              [:div {:class (stl/css :variants-help-modal-button)}
@@ -1102,16 +1108,15 @@
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
 
-
-        [:> title-bar* {:collapsable  true
-                        :collapsed    (not open?)
-                        :on-collapsed toggle-content
-                        :title        (tr "workspace.options.component")
-                        :class        (stl/css :title-spacing-component)
-                        :title-class  (stl/css :title-bar-variant)}
-
-         [:span {:class (stl/css :copy-text)}
-          (tr "workspace.options.component.main")]
+        [:*
+         [:> title-bar* {:collapsable  true
+                         :collapsed    (not open?)
+                         :on-collapsed toggle-content
+                         :title        (tr "workspace.options.component")
+                         :class        (stl/css :title-spacing-component)
+                         :title-class  (stl/css :title-bar-variant)}
+          [:span {:class (stl/css :copy-text)}
+           (tr "workspace.options.component.main")]]
 
          [:div {:class (stl/css :variants-help-modal-button)}
           [:> icon-button* {:variant "ghost"
