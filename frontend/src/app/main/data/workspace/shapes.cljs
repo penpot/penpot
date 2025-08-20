@@ -90,10 +90,9 @@
                                               :ignore-touched ignore-touched
                                               :with-objects? with-objects?})
                  (cond-> undo-group
-                   (pcb/set-undo-group undo-group)))
-
-             changes
-             (add-undo-group changes state)]
+                   (pcb/set-undo-group undo-group)
+                   (nil? undo-group)
+                   (add-undo-group state)))]
 
          (rx/concat
           (if (seq (:redo-changes changes))
@@ -103,7 +102,7 @@
 
           ;; Update layouts for properties marked
           (if update-layout-ids
-            (rx/of (ptk/data-event :layout/update {:ids update-layout-ids}))
+            (rx/of (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group}))
             (rx/empty))))))))
 
 (defn add-shape
@@ -253,7 +252,7 @@
 (defn create-artboard-from-shapes
   ([shapes id parent-id index name delta]
    (create-artboard-from-shapes shapes id parent-id index name delta true))
-  ([shapes id parent-id index name delta layout-update?]
+  ([shapes id parent-id index name delta layout-update? & {:keys [undo-group]}]
    (ptk/reify ::create-artboard-from-shapes
      ptk/WatchEvent
      (watch [it state _]
@@ -261,7 +260,9 @@
              objects      (dsh/lookup-page-objects state page-id)
 
              changes      (-> (pcb/empty-changes it page-id)
-                              (pcb/with-objects objects))
+                              (pcb/with-objects objects)
+                              (cond-> undo-group
+                                (pcb/set-undo-group undo-group)))
 
              [frame-shape changes]
              (cfsh/prepare-create-artboard-from-selection changes
@@ -398,7 +399,7 @@
 ;; --- Change Shape Order (D&D Ordering)
 
 (defn relocate-shapes
-  [ids parent-id to-index & [ignore-parents?]]
+  [ids parent-id to-index & {:keys [ignore-parents? undo-group]}]
   (dm/assert! (every? uuid? ids))
   (dm/assert! (set? ids))
   (dm/assert! (uuid? parent-id))
@@ -427,11 +428,13 @@
                          parent-id
                          to-index
                          ids
-                         :ignore-parents? ignore-parents?))
+                         :ignore-parents? ignore-parents?)
+                        (cond-> undo-group
+                          (pcb/set-undo-group undo-group)))
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
-               (ptk/data-event :layout/update {:ids (concat all-parents ids)})
+               (ptk/data-event :layout/update {:ids (concat all-parents ids) :undo-group undo-group})
                (dwu/commit-undo-transaction undo-id))))))

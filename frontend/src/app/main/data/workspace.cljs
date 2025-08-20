@@ -1128,7 +1128,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [orphans (set (into [] (keys (find-orphan-shapes state))))]
-        (rx/of (dwsh/relocate-shapes orphans uuid/zero 0 true))))))
+        (rx/of (dwsh/relocate-shapes orphans uuid/zero 0 {:ignore-parents true}))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Sitemap

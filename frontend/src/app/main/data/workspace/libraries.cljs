@@ -423,7 +423,7 @@
 
 (defn rename-component
   "Rename the component with the given id, in the current file library."
-  [id new-name]
+  [id new-name & {:keys [undo-group]}]
   (dm/assert!
    "expected an uuid instance"
    (uuid? id))
@@ -440,7 +440,9 @@
           (rx/empty)
           (let [data    (dsh/lookup-file-data state)
                 changes (-> (pcb/empty-changes it)
-                            (cll/generate-rename-component id new-name data))]
+                            (cll/generate-rename-component id new-name data)
+                            (cond-> undo-group
+                              (pcb/set-undo-group undo-group)))]
             (rx/of (dch/commit-changes changes))))))))
 
 (defn rename-component-and-main-instance

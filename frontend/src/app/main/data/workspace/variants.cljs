@@ -343,12 +343,13 @@
   "Given the id of a main shape of a component, creates a variant structure for
    that component"
   ([main-instance-id]
-   (transform-in-variant main-instance-id nil nil [] false true true))
-  ([main-instance-id variant-id delta prefix add-wrapper? duplicate? flex?]
+   (transform-in-variant main-instance-id nil nil [] false true true nil))
+  ([main-instance-id variant-id delta prefix add-wrapper? duplicate? flex? undo-group]
    (ptk/reify ::transform-in-variant
      ptk/WatchEvent
      (watch [_ state _]
-       (let [variant-id   (or variant-id (uuid/next))
+       (let [undo-group   (or undo-group (uuid/next))
+             variant-id   (or variant-id (uuid/next))
              variant-vec  [variant-id]
              file-id      (:current-file-id state)
              page-id      (:current-page-id state)
@@ -409,14 +410,14 @@
            (dwu/start-undo-transaction undo-id)
 
            (when (not= name (:name main))
-             (dwl/rename-component component-id name))
+             (dwl/rename-component component-id name {:undo-group undo-group}))
 
           ;; Create variant container
-           (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex?)
+           (dwsh/create-artboard-from-shapes [main-instance-id] variant-id nil nil nil delta flex? {:undo-group undo-group})
            (cl/remove-all-fills variant-vec {:color clr/black :opacity 1})
            (when flex? (dwsl/create-layout-from-id variant-id :flex))
-           (dwsh/update-shapes variant-vec #(merge % cont-props))
-           (dwsh/update-shapes [main-instance-id] #(merge % main-props))
+           (dwsh/update-shapes variant-vec #(merge % cont-props) {:undo-group undo-group})
+           (dwsh/update-shapes [main-instance-id] #(merge % main-props) {:undo-group undo-group})
            (cl/add-stroke variant-vec stroke-props)
            (set-variant-id component-id variant-id))
 
@@ -437,7 +438,7 @@
            (dwsh/update-shapes variant-vec #(dissoc % :layout-item-absolute))
            (dwu/commit-undo-transaction undo-id)
            (when flex?
-             (ptk/data-event :layout/update {:ids [variant-id]})))))))))
+             (ptk/data-event :layout/update {:ids [variant-id] :undo-group undo-group})))))))))
 
 (defn add-component-or-variant
   "Manage the shared shortcut, and do the pertinent action"
@@ -595,21 +596,21 @@
                                        count
                                        inc)
                      variant-id    (uuid/next)
+                     undo-group    (uuid/next)
                      undo-id       (js/Symbol)]
                  (rx/concat
                   (rx/of
-                   (when  (and page-id (not= current-page page-id))
-                     (dcm/go-to-workspace :page-id page-id))
                    (dwu/start-undo-transaction undo-id)
-                   (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false)
-                   (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
+                   (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false undo-group)
+                   (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0 {:undo-group undo-group})
                    (dwsh/update-shapes selected #(-> %
                                                      (assoc :constraints-h :left)
                                                      (assoc :constraints-v :top)
-                                                     (assoc :fixed-scroll false)))
-                   (dwsh/relocate-shapes #{variant-id} common-parent index)
-                   (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
-                   (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
+                                                     (assoc :fixed-scroll false))
+                                       {:undo-group undo-group})
+                   (dwsh/relocate-shapes #{variant-id} common-parent index {:undo-group undo-group})
+                   (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60) {:undo-group undo-group})
+                   (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60) {:undo-group undo-group})
 
                    (dwu/commit-undo-transaction undo-id)))))
 

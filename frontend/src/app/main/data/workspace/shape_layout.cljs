@@ -138,8 +138,9 @@
               (fn [data]
                 (->> (group-by :page-id data)
                      (map (fn [[page-id items]]
-                            (let [ids (reduce #(into %1 (:ids %2)) #{} items)]
-                              (update-layout-positions {:page-id page-id :ids ids})))))))
+                            (let [ids (reduce #(into %1 (:ids %2)) #{} items)
+                                  undo-group (-> items first :undo-group)]
+                              (update-layout-positions {:page-id page-id :ids ids :undo-group undo-group})))))))
              (rx/take-until stopper))))))
 
 (defn finalize-shape-layout
