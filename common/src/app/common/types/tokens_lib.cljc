@@ -213,12 +213,11 @@
 ;; === Token Set
 
 (defprotocol ITokenSet
-  (token-by-id [_ id] "get a token by its id")
-  (token-by-name [_ id] "get a token by its name")
   (add-token [_ token] "add a token at the end of the list")
   (update-token [_ id f] "update a token in the list")
   (delete-token [_ id] "delete a token from the list")
-  (get-token [_ id] "return token by id")
+  (get-token [_ id] "get a token by its id")
+  (get-token-by-name [_ id] "get a token by its name")
   (get-tokens [_] "return an ordered sequence of all tokens in the set")
   (get-tokens-map [_] "return a map of tokens in the set, indexed by token-name"))
 
@@ -287,13 +286,6 @@
                tokens))
 
   ITokenSet
-  (token-by-id [_ id]
-    (some #(when (= (:id %) id) %) ;; TODO: this will be made in an efficient way when
-          (vals tokens)))          ;;       we refactor the tokens lib internal structure
-
-  (token-by-name [_ name]
-    (get tokens name))
-
   (add-token [_ token]
     (let [token (check-token token)]
       (TokenSet. id
@@ -303,7 +295,7 @@
                  (assoc tokens (:name token) token))))
 
   (update-token [this token-id f]
-    (if-let [token (token-by-id this token-id)]
+    (if-let [token (get-token this token-id)]
       (let [token' (-> (make-token (f token))
                        (assoc :modified-at (ct/now)))]
         (TokenSet. id
@@ -318,15 +310,19 @@
       this))
 
   (delete-token [this token-id]
-    (let [token (token-by-id this token-id)]
+    (let [token (get-token this token-id)]
       (TokenSet. id
                  name
                  description
                  (ct/now)
                  (dissoc tokens (:name token)))))
 
-  (get-token [this id]      ;; TODO: this is redundant, may be removed
-    (token-by-id this id))
+  (get-token [_ id]
+    (some #(when (= (:id %) id) %) ;; TODO: this will be made in an efficient way when
+          (vals tokens)))          ;;       we refactor the tokens lib internal structure
+
+  (get-token-by-name [_ name]
+    (get tokens name))
 
   (get-tokens [_]
     (vals tokens))
@@ -557,8 +553,6 @@
     Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
     Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
     Prefixed set final name or pfname: a final name with prefix \"S-some-set\"."
-  (set-by-id [_ id] "get a set by its id")
-  (set-by-name [_ name] "get a set by its name")
   (add-set [_ token-set] "add a set to the library, at the end")
   (update-set [_ set-name f] "modify a set in the library")
   (delete-set-path [_ set-path] "delete a set in the library")
@@ -573,7 +567,8 @@
   (get-sets-at-path [_ path-str] "get an ordered sequence of sets at `path` in the library")
   (rename-set-group [_ from-path-str to-path-str] "renames set groups and all child set names from `from-path-str` to `to-path-str`")
   (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
-  (get-set [_ set-name] "get one set looking for name"))
+  (get-set [_ id] "get a set looking by id")
+  (get-set-by-name [_ name] "get a set looking by name"))
 
 (def ^:private schema:token-set-node
   [:schema {:registry {::node
@@ -950,7 +945,7 @@
   (set-group-path-exists? [_ path] "if a set group at `path` exists")
   (add-token-in-set [_ set-id token] "add token to a set")
   (get-token-in-set [_ set-id token-id] "get token in a set")
-  (get-token-by-name [_ set-id token-name] "get token in a set searching by token name")
+  (get-token-in-set-by-name [_ set-id token-name] "get token in a set searching by token name")
   (update-token-in-set [_ set-id token-id f] "update a token in a set")
   (delete-token-from-set [_ set-id token-id] "delete a token from a set")
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
@@ -980,14 +975,6 @@ Will return a value that matches this schema:
        (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
 
   ITokenSets
-  (set-by-id [this id]
-    (some #(when (= (get-id %) id) %)  ;; TODO: this will be made in an efficient way when
-          (get-sets this)))            ;;       we refactor the tokens lib internal structure
-
-  (set-by-name [_ name]
-    (let [path (set-name->prefixed-full-path name)]
-      (get-in sets path)))
-
   (add-set [_ token-set]
     (assert (token-set? token-set) "expected valid token-set")
     (let [path (get-set-prefixed-path token-set)]
@@ -1186,8 +1173,13 @@ Will return a value that matches this schema:
   (set-count [this]
     (count (get-sets this)))
 
-  (get-set [this set-id]        ;; TODO: this is redundant and should be removed
-    (set-by-id this set-id))
+  (get-set [this id]
+    (some #(when (= (get-id %) id) %)  ;; TODO: this will be made in an efficient way when
+          (get-sets this)))            ;;       we refactor the tokens lib internal structure
+
+  (get-set-by-name [_ name]
+    (let [path (set-name->prefixed-full-path name)]
+      (get-in sets path)))
 
   ITokenThemes
   (add-theme [_ token-theme]
@@ -1306,10 +1298,10 @@ Will return a value that matches this schema:
             (get-set set-id)
             (get-token token-id)))
 
-  (get-token-by-name [this set-id token-name]
+  (get-token-in-set-by-name [this set-id token-name]
     (some-> this
             (get-set set-id)
-            (token-by-name token-name)))
+            (get-token-by-name token-name)))
 
   (update-token-in-set [this set-name token-id f]
     (update-set this set-name #(update-token % token-id f)))
@@ -1349,7 +1341,7 @@ Will return a value that matches this schema:
           all-set-names    (get-ordered-set-names this)
           active-set-names (filter theme-set-names all-set-names)
           tokens           (reduce (fn [tokens set-name]
-                                     (let [set (set-by-name this set-name)]
+                                     (let [set (get-set-by-name this set-name)]
                                        (merge tokens (get-tokens-map set))))
                                    (d/ordered-map)
                                    active-set-names)]
