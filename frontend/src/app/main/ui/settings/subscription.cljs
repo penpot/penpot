@@ -7,16 +7,14 @@
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
-   [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :as i18n :refer [tr c]]
    [app.util.time :as dt]
-   [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
@@ -56,12 +54,13 @@
                                                        :on-click cta-link-trial} cta-text-trial])])
 (defn schema:seats-form [min-editors]
   [:map {:title "SeatsForm"}
-   [:min-members [::sm/number {:min min-editors :max 9999}]]])
+   [:min-members [::sm/number {:min min-editors
+                               :max 9999}]]])
 
 (mf/defc subscribe-management-dialog
   {::mf/register modal/components
    ::mf/register-as :management-dialog}
-  [{:keys [subscription-type current-subscription teams subscribe-to-trial]}]
+  [{:keys [subscription-type current-subscription editors subscribe-to-trial]}]
 
   (let [subscription-name (if subscribe-to-trial
                             (if (= subscription-type "unlimited")
@@ -71,7 +70,7 @@
                               "professional" (tr "subscription.settings.professional")
                               "unlimited" (tr "subscription.settings.unlimited")
                               "enterprise" (tr "subscription.settings.enterprise")))
-        min-editors                (or (some->> teams (map :total-editors) (apply max)) 1)
+        min-editors                (or (count editors) 1)
         initial                    (mf/with-memo [min-editors]
                                      {:min-members min-editors})
         form                       (fm/use-form :schema (schema:seats-form min-editors)
@@ -107,7 +106,14 @@
         handle-close-dialog        (mf/use-fn
                                     (fn []
                                       (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
-                                      (modal/hide!)))]
+                                      (modal/hide!)))
+
+        show-editors-list*         (mf/use-state false)
+        show-editors-list          (deref show-editors-list*)
+        handle-click               (mf/use-fn
+                                    (fn [event]
+                                      (dom/stop-propagation event)
+                                      (swap! show-editors-list* not)))]
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
@@ -116,15 +122,19 @@
        (tr "subscription.settings.management.dialog.title" subscription-name)]
 
       [:div {:class (stl/css :modal-content)}
-       (if (seq teams)
-         [:* [:div {:class (stl/css :modal-text)}
-              (tr "subscription.settings.management.dialog.currently-editors-title" 10)]
-          [:ul {:class (stl/css :teams-list)}
-           (for [team teams]
-             [:li {:key (dm/str (:id team)) :class (stl/css :team-name)}
-              (:name team) (tr "subscription.settings.management.dialog.members" (:total-editors team))])]]
-         [:div {:class (stl/css :modal-text)}
-          (tr "subscription.settings.management.dialog.no-teams")])
+       (when (seq editors)
+         [:* [:p {:class (stl/css :editors-text)}
+              (tr "subscription.settings.management.dialog.currently-editors-title" (c (count editors)))]
+          [:button {:class (stl/css :cta-button :show-editors-button) :on-click handle-click}
+           (tr "subscription.settings.management.dialog.editors")
+           [:span {:class (stl/css :icon-dropdown)}  i/arrow]]
+          (when show-editors-list
+            [:*
+             [:p {:class (stl/css :editors-text :editors-list-warning)}
+              (tr "subscription.settings.management.dialog.editors-explanation")]
+             [:ul {:class (stl/css :editors-list)}
+              (for [editor editors]
+                [:li {:key (dm/str (:id editor)) :class (stl/css :team-name)} "- " (:name editor)])]])])
 
        (when (and
               (or (and (= subscription-type "professional") (contains? #{"unlimited" "enterprise"} (:type current-subscription)))
@@ -139,8 +149,6 @@
          [:& fm/form {:on-submit subscribe-to-unlimited
                       :class (stl/css :seats-form)
                       :form form}
-          [:label {:for "editors-subscription" :class (stl/css :modal-text :editors-label)}
-           (tr "subscription.settings.management.dialog.select-editors")]
 
           [:div {:class (stl/css :editors-wrapper)}
            [:div {:class (stl/css :fields-row)}
@@ -150,7 +158,7 @@
                           :label ""
                           :class (stl/css :input-field)}]]
            [:div {:class (stl/css :editors-cost)}
-            [:span {:class (stl/css :modal-text-small)}
+            [:span {:class (stl/css :modal-text-medium)}
              (when (> (get-in @form [:clean-data :min-members]) 25)
                [:> i18n/tr-html*
                 {:class (stl/css :modal-text-cap)
@@ -161,8 +169,15 @@
                :tag-name "span"
                :content (tr "subscription.settings.management.dialog.price-month"
                             (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
-            [:span {:class (stl/css :modal-text-small)}
+            [:span {:class (stl/css :modal-text-medium)}
              (tr "subscription.settings.management.dialog.payment-explanation")]]]
+
+          (when (get-in @form [:errors :min-members])
+            [:div {:class (stl/css :error-message)}
+             (tr "subscription.settings.management.dialog.input-error")])
+
+          [:div {:class (stl/css :unlimited-capped-warning)}
+           (tr "subscription.settings.management.dialog.unlimited-capped-warning")]
 
           [:div {:class (stl/css :modal-footer)}
            [:div {:class (stl/css :action-buttons)}
@@ -232,9 +247,6 @@
   (let [route          (mf/deref refs/route)
         authenticated? (da/is-authenticated? profile)
 
-        teams*         (mf/use-state nil)
-        teams          (deref teams*)
-
         locale         (mf/deref i18n/locale)
 
         params-subscription
@@ -250,6 +262,9 @@
 
         success-modal-is-trial?
         (-> route :params :query :trial)
+
+        subscription-editors
+        (-> profile :props :subscription :editors)
 
         subscription
         (-> profile :props :subscription)
@@ -287,7 +302,7 @@
 
         open-subscription-modal
         (mf/use-fn
-         (mf/deps teams)
+         (mf/deps subscription-editors)
          (fn [subscription-type current-subscription]
            (st/emit! (ev/event {::ev/name "open-subscription-modal"
                                 ::ev/origin "settings:in-app"}))
@@ -295,12 +310,7 @@
             (modal/show :management-dialog
                         {:subscription-type subscription-type
                          :current-subscription current-subscription
-                         :teams teams :subscribe-to-trial (not subscription)}))))]
-
-    (mf/with-effect []
-      (->> (rp/cmd! :get-owned-teams)
-           (rx/subs! (fn [teams]
-                       (reset! teams* teams)))))
+                         :editors subscription-editors :subscribe-to-trial (not (:type subscription))}))))]
 
     (mf/with-effect []
       (dom/set-html-title (tr "subscription.labels")))
@@ -318,8 +328,8 @@
                                              "unlimited"
                                              "enterprise")
                         :current-subscription subscription
-                        :teams teams
-                        :subscribe-to-trial (not subscription)})
+                        :editors subscription-editors
+                        :subscribe-to-trial (not (:type subscription))})
            (rt/nav :settings-subscription {} {::rt/replace true}))
 
           ^boolean show-subscription-success-modal?
@@ -426,7 +436,7 @@
                          :benefits [(tr "subscription.settings.unlimited.storage-benefit"),
                                     (tr "subscription.settings.unlimited.autosave-benefit"),
                                     (tr "subscription.settings.unlimited.bill")]
-                         :cta-text (if subscription (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
+                         :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "unlimited" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])
@@ -440,7 +450,7 @@
                          :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
                                     (tr "subscription.settings.enterprise.autosave"),
                                     (tr "subscription.settings.enterprise.capped-bill")]
-                         :cta-text (if subscription (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
+                         :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page}])]]]))

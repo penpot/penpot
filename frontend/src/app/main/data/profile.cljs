@@ -106,7 +106,12 @@
             (rx/map deref)
             (rx/filter is-authenticated?)
             (rx/take 1)
-            (rx/map set-profile))))))
+            (rx/mapcat (fn [profile]
+                         (->> (rp/cmd! :get-subscription-usage {})
+                              (rx/map (fn [{:keys [editors]}]
+                                        (-> profile
+                                            (update-in [:props :subscription] assoc :editors editors)
+                                            (set-profile))))))))))))
 
 ;; --- Update Profile
 

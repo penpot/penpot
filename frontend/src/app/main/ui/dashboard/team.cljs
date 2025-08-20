@@ -540,17 +540,15 @@
 
   [:*
    [:& header {:section :dashboard-team-members :team team}]
-   [:section {:class (stl/css-case
-                      :dashboard-container true
-                      :dashboard-team-members true
-                      :dashboard-top-cta (show-subscription-members-banner? team))}
-    (when (and (contains? cfg/flags :subscriptions)
-               (show-subscription-members-banner? team))
-      [:> members-cta* {:team team}])
+   [:section {:class (stl/css :dashboard-container :dashboard-team-members)}
 
     [:> team-members*
      {:profile profile
-      :team team}]]])
+      :team team}]
+
+    (when (and (contains? cfg/flags :subscriptions)
+               (show-subscription-members-banner? team))
+      [:> members-cta* {:team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; INVITATIONS SECTION
@@ -813,13 +811,13 @@
   [:*
    [:& header {:section :dashboard-team-invitations
                :team team}]
-   [:section {:class (stl/css-case
-                      :dashboard-team-invitations true
-                      :dashboard-top-cta (show-subscription-members-banner? team))}
+   [:section {:class (stl/css :dashboard-team-invitations)}
+
+    [:> invitation-section* {:team team}]
+
     (when (and (contains? cfg/flags :subscriptions)
                (show-subscription-members-banner? team))
-      [:> members-cta* {:team team}])
-    [:> invitation-section* {:team team}]]])
+      [:> members-cta* {:team team}])]])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; WEBHOOKS SECTION

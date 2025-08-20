@@ -20,7 +20,7 @@
 
 (defn get-subscription-type
   [{:keys [type status] :as subscription}]
-  (if (and subscription (not (contains? #{"unpaid" "canceled"} status)))
+  (if (and subscription (:type subscription) (not (contains? #{"unpaid" "canceled"} status)))
     type
     "professional"))
 
@@ -61,7 +61,7 @@
       [:> cta-power-up*
        {:top-title (tr "subscription.dashboard.power-up.your-subscription")
         :top-description (tr "subscription.dashboard.power-up.professional.top-title")
-        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-description", subscription-href)
+        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-description" subscription-href)
         :has-dropdown true}]
 
       "unlimited"
@@ -69,13 +69,13 @@
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.trial.top-title")
-          :bottom-description (tr "subscription.dashboard.power-up.trial.bottom-description", subscription-href)
+          :bottom-description (tr "subscription.dashboard.power-up.trial.bottom-description" subscription-href)
           :has-dropdown true}]
 
         [:> cta-power-up*
          {:top-title (tr "subscription.dashboard.power-up.your-subscription")
           :top-description (tr "subscription.dashboard.power-up.unlimited-plan")
-          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom-text", subscription-href)
+          :bottom-description (tr "subscription.dashboard.power-up.unlimited.bottom-text" subscription-href)
           :has-dropdown true}])
 
       "enterprise"
@@ -147,40 +147,36 @@
      [:span {:class (stl/css :item-name)} (tr "subscription.workspace.header.menu.option.power-up")]]))
 
 (mf/defc members-cta*
-  [{:keys [team]}]
-  (let [subscription          (:subscription team)
-        go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
-        seats                 (or (:seats subscription) 0)
-        editors               (count (filterv :can-edit (:members team)))]
-
-    [:> cta* {:class (stl/css :members-cta-full-width) :title (tr "subscription.dashboard.unlimited-members-cta-title" seats editors)}
-     [:> i18n/tr-html*
-      {:tag-name "span"
-       :class (stl/css :cta-message)
-       :content (tr "subscription.dashboard.unlimited-members-cta-upgrade-owner" go-to-subscription)}]]))
+  []
+  [:> cta* {:class (stl/css :members-cta)
+            :title (tr "subscription.dashboard.unlimited-members-extra-editors-cta-title")}
+   [:> i18n/tr-html*
+    {:tag-name "span"
+     :class (stl/css :cta-message)
+     :content (tr "subscription.dashboard.unlimited-members-extra-editors-cta-text")}]])
 
 (mf/defc dashboard-cta*
-  [{:keys [team]}]
-  (let [subscription          (:subscription team)
+  [{:keys [profile]}]
+  (let [subscription          (-> profile :props :subscription)
         subscription-type     (get-subscription-type subscription)
         go-to-subscription    (dm/str (u/join cf/public-uri "#/settings/subscriptions"))
-        seats                 (or (:seats subscription) 0)
-        editors               (count (filterv :can-edit (:members team)))
+        seats                 (:quantity subscription)
+        editors               (count (:editors subscription))
         cta-title
         (cond
-          (and (= "professional" subscription-type))
-          (tr "subscription.dashboard.professional-members-cta-title" editors)
+          (= "professional" subscription-type)
+          (tr "subscription.dashboard.professional-dashboard-cta-title" editors)
 
-          (and (= "unlimited" subscription-type))
-          (tr "subscription.dashboard.unlimited-members-cta-title" seats editors))
+          (= "unlimited" subscription-type)
+          (tr "subscription.dashboard.unlimited-dashboard-cta-title" seats editors))
 
         cta-message
         (cond
-          (and (= "professional" subscription-type))
-          (tr "subscription.dashboard.professional-members-cta-upgrade-owner" go-to-subscription)
+          (= "professional" subscription-type)
+          (tr "subscription.dashboard.professional-dashboard-cta-upgrade-owner" go-to-subscription)
 
-          (and (= "unlimited" subscription-type))
-          (tr "subscription.dashboard.unlimited-members-cta-upgrade-owner" go-to-subscription))]
+          (= "unlimited" subscription-type)
+          (tr "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner" go-to-subscription))]
 
     [:> cta* {:class (stl/css :members-cta) :title cta-title}
      [:> i18n/tr-html*
@@ -189,32 +185,36 @@
        :content cta-message}]]))
 
 (defn show-subscription-dashboard-banner?
-  [team]
-  (let [subscription-type (get-subscription-type (:subscription team))
-        seats             10 ;; get total teams from profile?
-        editors           12 ;; get total editors from profile?
-        ]
+  [profile]
+  (let [subscription      (-> profile :props :subscription)
+        subscription-type (get-subscription-type subscription)
+        seats             (:quantity subscription)
+        editors           (count (:editors subscription))]
+
     (or
      (and (= subscription-type "professional")
           (> editors 8))
      (and
       (= subscription-type "unlimited")
-      (< seats editors)))))
+      (or
+     ;; common: seats < 25 and diff >= 4
+       (and (< seats 25)
+            (>= (- editors seats) 4))
+     ;; special: reached 25+ editors, seats < 25 and there is overuse
+       (and (< seats 25)
+            (>= editors 25)
+            (> editors seats)))))))
 
 (defn show-subscription-members-banner?
   [team]
-  (let [subscription-type (get-subscription-type (:subscription team))
-        seats             10 ;; get total teams from profile?
-        editors           12 ;; get total editors from profile?
+  (let [subscription      (:subscription team)
+        subscription-type (get-subscription-type subscription)
+        seats             (:seats subscription)
+        editors           (:unique-editors team)
         is-owner              (-> team :permissions :is-owner)]
     (and
      is-owner
      (= subscription-type "unlimited")
-     (or
-     ;; common: seats < 25 and diff >= 3
-      (and (< seats 25)
-           (>= (- editors seats) 3))
-     ;; special: reached 25+ editors, seats < 25 and there is overuse
-      (and (< seats 25)
-           (>= editors 25)
-           (> editors seats))))))
+     ;; common: seats < 25 and diff >= 4 between editors/seats and there is underuse
+     (and (< seats 25)
+          (>= (- seats editors) 4)))))

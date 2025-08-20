@@ -4307,9 +4307,7 @@ msgstr "Plan Enterprise"
 #: src/app/main/ui/dashboard/subscription.cljs:60
 #, markdown
 msgid "subscription.dashboard.power-up.professional.bottom-description"
-msgstr ""
-"Consigue almacenamiento adicional, recuperación de "
-"archivos y mucho más con el Plan Unlimited[Mejóralo|target:self](%s)"
+msgstr "Consigue almacenamiento adicional, recuperación de archivos y mucho más para tus equipos con el Plan Unlimited. [Mejóralo|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:59
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4341,9 +4339,7 @@ msgstr "Plan Unlimited"
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
-msgstr ""
-"Consigue más copias de seguridad, almacenamiento ilimitado y mucho más. "
-"[Echa un ojo al Plan Enterprise|target:self](%s)"
+msgstr "Consigue almacenamiento ilimitado, recuperación extendida de archivos y editores ilimitados para todos tus equipos a un precio fijo. [Echa un ojo al Plan Enterprise|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4369,25 +4365,25 @@ msgstr "Plan de equipo"
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mejora"
 
-msgid "subscription.dashboard.professional-members-cta-title"
-msgstr ""
-"Tu plan profesional está pensado para un máximo de 8 editores "
-"(propietario, administrador y editor), pero estás utilizando %s."
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr "Tienes %s editores en todos tus equipos pero que tu plan profesional cubre hasta 8."
 
 #, markdown
-msgid "subscription.dashboard.professional-members-cta-upgrade-owner"
-msgstr ""
-"Consigue más editores, almacenamiento y versiones guardadas automáticamente con el plan Unlimited o Enterprise. "
-"[Suscríbete ahora.|target:self](%s)"
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr "Mejora ahora tu plan a Unlimited o Enterprise para desbloquear más editores, almacenamiento y recuperación de archivos. [Suscríbete ahora.|target:self](%s)"
 
-msgid "subscription.dashboard.unlimited-members-cta-title"
-msgstr ""
-"¡Parece que tu equipo ha crecido! Tu plan incluye %s puestos entre todos tus equipos, pero ahora estás utilizando %s."
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr "¡Tu equipo sigue creciendo! Tu plan Unlimited cubre hasta %s editores pero ya tienes %s."
 
 #, markdown
-msgid "subscription.dashboard.unlimited-members-cta-upgrade-owner"
-msgstr ""
-"Por favor, actualiza tu versión para adaptarla a tu uso. [Suscríbete ahora.|target:self](%s)"
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr "Por favor, actualiza ahora para ajustar el número actual de editores. [Suscríbete ahora.|target:self](%s)"
+
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Invita a personas mientras estás en el plan Unlimited"
+
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr "Solo los nuevos editores de tus equipos se tendrán en cuenta para la facturación futura. Se seguirá aplicando una tarifa plana de 175$/mes para 25+ editores."
 
 #: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:222, src/app/main/ui/settings/subscription.cljs:231
 msgid "subscription.labels"
@@ -4422,7 +4418,7 @@ msgstr "Versiones guardadas automáticamente cada 90 días y recuperación de ar
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
 msgid "subscription.settings.enterprise.capped-bill"
-msgstr "Factura mensual limitada"
+msgstr "Factura mensual fija"
 
 #: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
 msgid "subscription.settings.manage-your-subscription"
@@ -4430,7 +4426,15 @@ msgstr "Gestionar tu suscripción"
 
 #: src/app/main/ui/settings/subscription.cljs:102
 msgid "subscription.settings.management.dialog.currently-editors-title"
-msgstr "Actualmente hay %s personas en tus equipos que pueden editar."
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "Actualmente hay %s persona en tus equipos que pueden editar."
+msgstr[1] "Actualmente hay %s personas en tus equipos que pueden editar."
+
+msgid "subscription.settings.management.dialog.editors"
+msgstr "Editores"
+
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr "(Propietarios, administradores y editores. Los lectores no cuentan como editores)."
 
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
@@ -4438,27 +4442,21 @@ msgstr ""
 "Ten en cuenta: cambiar a un plan inferior significa menos almacenamiento y "
 "copias de seguridad e historial de versiones más cortos."
 
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s editores)"
-
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr "Este plan se aplicará a todos los futuros equipos que crees o poseas."
-
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "Se cobrar después del período de prueba. No se requiere tarjeta de crédito en este momento."
+
+msgid "subscription.settings.management.dialog.input-error"
+msgstr "No puedes establecer menos editores de los que tienes ahora. Cambia el rol (de editor/administrador a lector) para las personas que realmente no editan archivos en la configuración del equipo."
+
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr "Consejo: Puedes aumentar ahora el número de asientos para adelantarte a las invitaciones. Con más de 25 editores en todos tus equipos, disfrutarás de una tarifa plana de 175 $ al mes."
 
 #: src/app/main/ui/settings/subscription.cljs:124
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr ""
 "**$%s** por mes"
-
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "Seleccione el número de editores (puestos) que necesitas:"
 
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.management.dialog.title"
@@ -4494,7 +4492,7 @@ msgstr "10 GB de almacenamiento"
 
 #: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
 msgid "subscription.settings.professional.teams-editors-benefit"
-msgstr "Equipos ilimitados de hasta 8 redactores"
+msgstr "Equipos ilimitados. Hasta 8 editores en todos tus equipos."
 
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
@@ -4546,7 +4544,7 @@ msgstr "Unlimited (prueba)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
-msgstr "Factura mensual limitada"
+msgstr "Factura mensual limitada en $175"
 
 #: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
 msgid "subscription.settings.unlimited.storage-benefit"

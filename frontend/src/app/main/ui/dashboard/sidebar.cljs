@@ -994,13 +994,10 @@
            (dom/open-new-window "https://penpot.app/pricing")))]
 
     [:*
-     (when (and (contains? cf/flags :subscriptions)
-                (not (show-subscription-dashboard-banner? profile)))
-       [:> subscription-sidebar* {:profile profile}])
-
-     (when (and (contains? cf/flags :subscriptions)
-                (show-subscription-dashboard-banner? profile))
-       [:> dashboard-cta* {:profile profile}])
+     (when (contains? cf/flags :subscriptions)
+       (if (show-subscription-dashboard-banner? profile)
+         [:> dashboard-cta* {:profile profile}]
+         [:> subscription-sidebar* {:profile profile}]))
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)

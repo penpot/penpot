@@ -1,0 +1,44 @@
+{
+    "~:editors": [
+        {
+            "~:id": "~u4f535993-36f9-8135-8006-9b18345c55cd",
+            "~:name": "Luke Skywalker",
+            "~:email": "luke@rebels.com"
+        },
+        {
+            "~:id": "~u70a3b232-3722-8008-8006-86646ed3b6af",
+            "~:name": "Leia Organa",
+            "~:email": "leia@rebels.com"
+        },
+        {
+            "~:id": "~u81be1d05-a07b-81d5-8006-39095ea4121c",
+            "~:name": "Han Solo",
+            "~:email": "han@falcon.com"
+        },
+        {
+            "~:id": "~u96ce2641-e3fd-803a-8006-5e516d034d57",
+            "~:name": "Darth Vader",
+            "~:email": "vader@empire.com"
+        },
+        {
+            "~:id": "~uc9aa6cb0-9fb5-80a2-8006-9c3a0783ddc7",
+            "~:name": "Obi-Wan Kenobi",
+            "~:email": "obiwan@jedi.com"
+        },
+        {
+            "~:id": "~uf88e52d7-2b77-81fd-8006-234039f9e8db",
+            "~:name": "Yoda",
+            "~:email": "yoda@jedi.com"
+        },
+        {
+            "~:id": "~uf88e52d7-2b77-81fd-8006-2341585b061d",
+            "~:name": "Chewbacca",
+            "~:email": "chewie@falcon.com"
+        },
+        {
+            "~:id": "~ufa35a73f-fa4f-81f9-8006-a558c4d406b1",
+            "~:name": "R2-D2",
+            "~:email": "r2d2@astromech.com"
+        }
+    ]
+}
