@@ -1,4 +1,3 @@
-
 use skia_safe::ImageFilter;
 
 /// Composes two image filters, returning a combined filter if both are present,
@@ -22,4 +21,3 @@ pub fn compose_filters(
         (None, None) => None,
     }
 }
-

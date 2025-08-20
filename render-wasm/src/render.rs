@@ -1,6 +1,7 @@
 mod blend;
 mod debug;
 mod fills;
+pub mod filters;
 mod fonts;
 mod gpu_state;
 pub mod grid_layout;
@@ -11,7 +12,6 @@ mod strokes;
 mod surfaces;
 mod text;
 mod ui;
-pub mod filters;
 
 use skia_safe::{self as skia, Matrix, Rect};
 use std::borrow::Cow;
@@ -455,11 +455,9 @@ impl RenderState {
         }
 
         let mut nested_blur_value = 0.;
-        for blur in self.nested_blurs.iter() {
-            if let Some(nested_blur) = blur {
-                if !nested_blur.hidden && nested_blur.blur_type == BlurType::Layer {
-                    nested_blur_value += nested_blur.value.powf(2.);
-                }
+        for nested_blur in self.nested_blurs.iter().flatten() {
+            if !nested_blur.hidden && nested_blur.blur_type == BlurType::Layer {
+                nested_blur_value += nested_blur.value.powf(2.);
             }
         }
 
@@ -514,8 +512,10 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let mut paragraphs =
-                    text_content.get_skia_paragraphs(shape.image_filter(1.).as_ref());
+                let mut paragraphs = text_content.get_skia_paragraphs(
+                    shape.image_filter(1.).as_ref(),
+                    shape.mask_filter(1.).as_ref(),
+                );
 
                 if !shape.has_visible_strokes() {
                     shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
@@ -528,6 +528,7 @@ impl RenderState {
                         stroke,
                         &shape.selrect(),
                         shape.image_filter(1.).as_ref(),
+                        shape.mask_filter(1.).as_ref(),
                     );
                     shadows::render_text_drop_shadows(
                         self,
@@ -780,7 +781,7 @@ impl RenderState {
 
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
-                self.nested_blurs.push(Some(element.blur.clone()));
+                self.nested_blurs.push(Some(element.blur));
             }
             _ => {}
         }

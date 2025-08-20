@@ -6,7 +6,7 @@ use skia_safe::{
     self as skia,
     paint::Paint,
     textlayout::{ParagraphBuilder, ParagraphStyle},
-    ImageFilter,
+    ImageFilter, MaskFilter,
 };
 use std::collections::HashSet;
 
@@ -93,7 +93,11 @@ impl TextContent {
         self.paragraphs.push(paragraph);
     }
 
-    pub fn to_paragraphs(&self, blur: Option<&ImageFilter>) -> Vec<Vec<ParagraphBuilder>> {
+    pub fn to_paragraphs(
+        &self,
+        blur: Option<&ImageFilter>,
+        blur_mask: Option<&MaskFilter>,
+    ) -> Vec<Vec<ParagraphBuilder>> {
         let fonts = get_font_collection();
         let fallback_fonts = get_fallback_fonts();
         let mut paragraph_group = Vec::new();
@@ -102,7 +106,8 @@ impl TextContent {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             for leaf in &paragraph.children {
-                let text_style = leaf.to_style(paragraph, &self.bounds, fallback_fonts, blur);
+                let text_style =
+                    leaf.to_style(paragraph, &self.bounds, fallback_fonts, blur, blur_mask);
                 let text = leaf.apply_text_transform();
                 builder.push_style(&text_style);
                 builder.add_text(&text);
@@ -118,6 +123,7 @@ impl TextContent {
         stroke: &Stroke,
         bounds: &Rect,
         blur: Option<&ImageFilter>,
+        blur_mask: Option<&MaskFilter>,
     ) -> Vec<Vec<ParagraphBuilder>> {
         let fallback_fonts = get_fallback_fonts();
         let fonts = get_font_collection();
@@ -129,10 +135,11 @@ impl TextContent {
 
             for leaf in paragraph.children.iter() {
                 let mut text_paint = merge_fills(&leaf.fills, *bounds);
-                if let Some(blur) = blur {
-                    text_paint.set_image_filter(blur.clone());
+                if let Some(blur_mask) = blur_mask {
+                    text_paint.set_mask_filter(blur_mask.clone());
                 }
-                let stroke_paints = get_text_stroke_paints(stroke, bounds, &text_paint, blur);
+                let stroke_paints =
+                    get_text_stroke_paints(stroke, bounds, &text_paint, blur, blur_mask);
                 let text: String = leaf.apply_text_transform();
 
                 for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
@@ -141,8 +148,13 @@ impl TextContent {
                         ParagraphBuilder::new(&paragraph_style, fonts)
                     });
                     let stroke_paint = stroke_paint.clone();
-                    let stroke_style =
-                        leaf.to_stroke_style(paragraph, &stroke_paint, fallback_fonts, blur);
+                    let stroke_style = leaf.to_stroke_style(
+                        paragraph,
+                        &stroke_paint,
+                        fallback_fonts,
+                        blur,
+                        blur_mask,
+                    );
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);
                 }
@@ -172,8 +184,12 @@ impl TextContent {
         paragraphs
     }
 
-    pub fn get_skia_paragraphs(&self, blur: Option<&ImageFilter>) -> Vec<Vec<ParagraphBuilder>> {
-        self.collect_paragraphs(self.to_paragraphs(blur))
+    pub fn get_skia_paragraphs(
+        &self,
+        blur: Option<&ImageFilter>,
+        blur_mask: Option<&MaskFilter>,
+    ) -> Vec<Vec<ParagraphBuilder>> {
+        self.collect_paragraphs(self.to_paragraphs(blur, blur_mask))
     }
 
     pub fn get_skia_stroke_paragraphs(
@@ -181,8 +197,9 @@ impl TextContent {
         stroke: &Stroke,
         bounds: &Rect,
         blur: Option<&ImageFilter>,
+        blur_mask: Option<&MaskFilter>,
     ) -> Vec<Vec<ParagraphBuilder>> {
-        self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds, blur))
+        self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds, blur, blur_mask))
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -194,7 +211,7 @@ impl TextContent {
     }
 
     pub fn visual_bounds(&self) -> (f32, f32) {
-        let mut paragraphs = self.to_paragraphs(None);
+        let mut paragraphs = self.to_paragraphs(None, None);
         let height = auto_height(&mut paragraphs, self.width());
         (self.width(), height)
     }
@@ -384,13 +401,14 @@ impl TextLeaf {
         paragraph: &Paragraph,
         content_bounds: &Rect,
         fallback_fonts: &HashSet<String>,
-        blur: Option<&ImageFilter>,
+        _blur: Option<&ImageFilter>,
+        blur_mask: Option<&MaskFilter>,
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
-
         let mut paint = merge_fills(&self.fills, *content_bounds);
-        if let Some(blur) = blur {
-            paint.set_image_filter(blur.clone());
+
+        if let Some(blur_mask) = blur_mask {
+            paint.set_mask_filter(blur_mask.clone());
         }
 
         style.set_foreground_paint(&paint);
@@ -429,8 +447,9 @@ impl TextLeaf {
         stroke_paint: &Paint,
         fallback_fonts: &HashSet<String>,
         blur: Option<&ImageFilter>,
+        blur_mask: Option<&MaskFilter>,
     ) -> skia::textlayout::TextStyle {
-        let mut style = self.to_style(paragraph, &Rect::default(), fallback_fonts, blur);
+        let mut style = self.to_style(paragraph, &Rect::default(), fallback_fonts, blur, blur_mask);
         style.set_foreground_paint(stroke_paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(paragraph.letter_spacing);
@@ -731,6 +750,7 @@ fn get_text_stroke_paints(
     bounds: &Rect,
     text_paint: &Paint,
     blur: Option<&ImageFilter>,
+    blur_mask: Option<&MaskFilter>,
 ) -> Vec<Paint> {
     let mut paints = Vec::new();
 
@@ -809,17 +829,20 @@ fn get_text_stroke_paints(
             paint.set_blend_mode(skia::BlendMode::DstOver);
             paint.set_anti_alias(true);
             paint.set_stroke_width(stroke.width * 2.0);
-
             set_paint_fill(&mut paint, &stroke.fill, bounds);
-            if let Some(blur) = blur {
-                paint.set_image_filter(blur.clone());
+            if let Some(blur_mask) = blur_mask {
+                paint.set_mask_filter(blur_mask.clone());
             }
-
             paints.push(paint);
 
             let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Fill);
             paint.set_blend_mode(skia::BlendMode::Clear);
+            paint.set_color(skia::Color::TRANSPARENT);
             paint.set_anti_alias(true);
+            if let Some(blur_mask) = blur_mask {
+                paint.set_mask_filter(blur_mask.clone());
+            }
             paints.push(paint);
         }
     }

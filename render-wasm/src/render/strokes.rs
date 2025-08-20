@@ -6,9 +6,9 @@ use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, St
 use skia_safe::{self as skia, textlayout::ParagraphBuilder, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
+use crate::render::filters::compose_filters;
 use crate::render::text::{self};
 use crate::render::{get_dest_rect, get_source_rect};
-use crate::render::filters::compose_filters;
 
 // FIXME: See if we can simplify these arguments
 #[allow(clippy::too_many_arguments)]

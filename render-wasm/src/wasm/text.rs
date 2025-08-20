@@ -44,7 +44,10 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
         height = shape.selrect.height();
 
         if let Type::Text(content) = &shape.shape_type {
-            let mut paragraphs = content.get_skia_paragraphs(shape.image_filter(1.).as_ref());
+            let mut paragraphs = content.get_skia_paragraphs(
+                shape.image_filter(1.).as_ref(),
+                shape.mask_filter(1.).as_ref(),
+            );
             m_width = max_width(&mut paragraphs, width);
 
             match content.grow_type() {
