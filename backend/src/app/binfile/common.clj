@@ -612,5 +612,9 @@
   "A helper for preload file libraries"
   [{:keys [::db/conn] :as cfg} file]
   (->> (get-file-libraries conn (:id file))
-       (into [file] (map #(get-file cfg (:id %))))
+       ;; WARNING: we don't migrate the libraries for avoid cascade
+       ;; migration; it is not ideal but it reduces the total of the
+       ;; required memory needed for process a single file migration
+       ;; that requires libraries to be loaded.
+       (into [file] (map #(get-file cfg (:id %) :migrate? false)))
        (d/index-by :id)))
