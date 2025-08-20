@@ -38,15 +38,13 @@
    org.im4java.core.Info))
 
 (def schema:upload
-  (sm/register!
-   ^{::sm/type ::upload}
-   [:map {:title "Upload"}
-    [:filename :string]
-    [:size ::sm/int]
-    [:path ::fs/path]
-    [:mtype {:optional true} :string]
-    [:headers {:optional true}
-     [:map-of :string :string]]]))
+  [:map {:title "Upload"}
+   [:filename :string]
+   [:size ::sm/int]
+   [:path ::fs/path]
+   [:mtype {:optional true} :string]
+   [:headers {:optional true}
+    [:map-of :string :string]]])
 
 (def ^:private schema:input
   [:map {:title "Input"}

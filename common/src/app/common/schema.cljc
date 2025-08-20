@@ -131,34 +131,10 @@
   (->> (entries schema)
        (into #{} xf:map-key)))
 
-
-;; (defn key-transformer
-;;   [& {:as opts}]
-;;   (mt/key-transformer opts))
-
-;; (defn- transform-map-keys
-;;   [f o]
-;;   (cond
-;;     (record? o)
-;;     (reduce-kv (fn [res k v]
-;;                  (let [k' (f k)]
-;;                    (if (= k k')
-;;                      res
-;;                      (-> res
-;;                          (assoc k' v)
-;;                          (dissoc k)))))
-;;                o
-;;                o)
-
-;;     (map? o)
-;;     (persistent!
-;;      (reduce-kv (fn [res k v]
-;;                   (assoc! res (f k) v))
-;;                 (transient {})
-;;                 o))
-
-;;     :else
-;;     o))
+(defn update-properties
+  [s f & args]
+  (let [s (schema s)]
+    (apply m/-update-properties s f args)))
 
 (defn -transform-map-keys
   ([f]
@@ -679,8 +655,7 @@
                     identity)]
       {:pred #(contains? options %)
        :type-properties
-       {:title "one-of"
-        :description "One of the Set"
+       {:title "enum"
         :gen/gen (sg/elements options)
         :decode/string decode
         :decode/json decode
@@ -723,15 +698,14 @@
 
       {:pred pred
        :type-properties
-       {:title "int"
-        :description "int"
+       {:title "integer"
+        :description "integer"
         :error/message "expected to be int/long"
         :error/code "errors.invalid-integer"
         :gen/gen gen
         :decode/string parse-long
         :decode/json parse-long
-        ::oapi/type "integer"
-        ::oapi/format "int64"}}))})
+        ::oapi/type "integer"}}))})
 
 (defn parse-double
   [v]
@@ -793,8 +767,8 @@
 
       {:pred pred
        :type-properties
-       {:title "int"
-        :description "int"
+       {:title "number"
+        :description "number"
         :error/message "expected to be number"
         :error/code "errors.invalid-number"
         :gen/gen gen
@@ -844,10 +818,7 @@
                              #(some (fn [prop]
                                       (contains? % prop))
                                     choices))]
-               {:pred pred
-                :type-properties
-                {:title "contains any"
-                 :description "contains predicate"}}))})
+               {:pred pred}))})
 
 ;; (register!
 ;;  {:type ::inst
@@ -968,6 +939,7 @@
   :type-properties
   {:title "string"
    :description "not whitespace string"
+   ::oapi/type "string"
    :gen/gen (sg/word-string)
    :error/fn
    (fn [{:keys [value schema]}]

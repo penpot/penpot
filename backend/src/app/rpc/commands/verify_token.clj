@@ -128,7 +128,7 @@
    [:iss :keyword]
    [:exp ::ct/inst]
    [:profile-id ::sm/uuid]
-   [:role ::types.team/role]
+   [:role types.team/schema:role]
    [:team-id ::sm/uuid]
    [:member-email ::sm/email]
    [:member-id {:optional true} ::sm/uuid]])

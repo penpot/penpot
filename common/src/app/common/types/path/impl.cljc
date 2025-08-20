@@ -18,6 +18,7 @@
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
+   [app.common.schema.openapi :as oapi]
    [app.common.svg.path :as svg.path]
    [app.common.transit :as t]
    [app.common.types.path :as-alias path]
@@ -537,7 +538,8 @@
                            (sg/fmap from-plain))]
         {:pred path-data?
          :type-properties
-         {:gen/gen generator
+         {::oapi/type "string"
+          :gen/gen generator
           :encode/json identity
           :decode/json (fn [s]
                          (cond

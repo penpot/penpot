@@ -37,14 +37,13 @@
 
 (def ^:private
   schema:get-font-variants
-  [:schema {:title "get-font-variants"}
-   [:and
-    [:map
-     [:team-id {:optional true} ::sm/uuid]
-     [:file-id {:optional true} ::sm/uuid]
-     [:project-id {:optional true} ::sm/uuid]
-     [:share-id {:optional true} ::sm/uuid]]
-    [::sm/contains-any #{:team-id :file-id :project-id}]]])
+  [:and
+   [:map {:title "get-font-variants"}
+    [:team-id {:optional true} ::sm/uuid]
+    [:file-id {:optional true} ::sm/uuid]
+    [:project-id {:optional true} ::sm/uuid]
+    [:share-id {:optional true} ::sm/uuid]]
+   [::sm/contains-any #{:team-id :file-id :project-id}]])
 
 (sv/defmethod ::get-font-variants
   {::doc/added "1.18"

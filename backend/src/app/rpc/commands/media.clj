@@ -48,7 +48,7 @@
    [:file-id ::sm/uuid]
    [:is-local ::sm/boolean]
    [:name [:string {:max 250}]]
-   [:content ::media/upload]])
+   [:content media/schema:upload]])
 
 (sv/defmethod ::upload-file-media-object
   {::doc/added "1.17"

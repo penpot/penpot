@@ -166,9 +166,6 @@
      :servers [{:url (str/ffmt "%/api/rpc" (cf/get :public-uri))
                 ;; :description "penpot backend"
                 }]
-     :security
-     {:api_key []}
-
      :paths paths
      :components {:schemas @definitions}}))
 

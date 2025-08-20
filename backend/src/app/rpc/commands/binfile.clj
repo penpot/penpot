@@ -127,7 +127,7 @@
    [:project-id ::sm/uuid]
    [:file-id {:optional true} ::sm/uuid]
    [:version {:optional true} ::sm/int]
-   [:file ::media/upload]])
+   [:file media/schema:upload]])
 
 (sv/defmethod ::import-binfile
   "Import a penpot file in a binary format. If `file-id` is provided,

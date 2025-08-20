@@ -60,16 +60,17 @@
    {:type ::hex-color
     :pred hex-color-string?
     :type-properties
-    {:title "hex-color"
+    {:title "HexColor"
      :description "HEX Color String"
      :error/message "expected a valid HEX color"
      :error/code "errors.invalid-hex-color"
      :gen/gen hex-color-generator
-     ::oapi/type "integer"
-     ::oapi/format "int64"}}))
+     ::oapi/type "string"
+     ::oapi/format "rgb"}}))
 
 (def schema:plain-color
-  [:map [:color schema:hex-color]])
+  [:map {:title "PlainColorAttrs"}
+   [:color schema:hex-color]])
 
 (def schema:image
   [:map {:title "ImageColor" :closed true}
@@ -85,7 +86,8 @@
   (sm/keys schema:image))
 
 (def schema:image-color
-  [:map [:image schema:image]])
+  [:map {:title "ImageColorAttrs"}
+   [:image schema:image]])
 
 (def gradient-types
   #{:linear :radial})
@@ -110,10 +112,11 @@
   (sm/keys schema:gradient))
 
 (def schema:gradient-color
-  [:map [:gradient schema:gradient]])
+  [:map {:title "GradientColorAttrs"}
+   [:gradient schema:gradient]])
 
 (def schema:color-attrs
-  [:map {:title "ColorAttrs" :closed true}
+  [:map {:title "GenericColorAttrs" :closed true}
    [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
    [:ref-id {:optional true} ::sm/uuid]
    [:ref-file {:optional true} ::sm/uuid]])
@@ -132,13 +135,13 @@
   (into required-color-attrs (sm/keys schema:color-attrs)))
 
 (def schema:library-color-attrs
-  [:map {:title "ColorAttrs" :closed true}
+  [:map {:title "LibraryColorAttrs" :closed true}
    [:id ::sm/uuid]
    [:name ::sm/text]
    [:path {:optional true} :string]
    [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
    [:modified-at {:optional true} ::ct/inst]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+   [:plugin-data {:optional true} ctpg/schema:plugin-data]])
 
 (def schema:library-color
   "Used for in-transit representation of a color (per example when user

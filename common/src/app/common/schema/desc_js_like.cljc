@@ -91,11 +91,15 @@
 (defmethod visit :int [_ schema _ _] (str "integer" (-titled schema) (-min-max-suffix-number schema)))
 (defmethod visit :double [_ schema _ _] (str "double" (-titled schema) (-min-max-suffix-number schema)))
 (defmethod visit :select-keys [_ schema _ options] (describe* (m/deref schema) options))
-(defmethod visit :and [_ s children _] (str (str/join " && " children) (-titled s)))
+(defmethod visit :and [_ s children _]
+  (str (str/join " && " (filter some? children)) (-titled s)))
 (defmethod visit :enum [_ s children _options] (str "enum" (-titled s) " of " (str/join ", " children)))
 (defmethod visit :maybe [_ _ children _] (str (first children) " nullable"))
 (defmethod visit :tuple [_ _ children _] (str "(" (str/join ", " children) ")"))
-(defmethod visit :re [_ s _ options] (str "regex pattern " (-titled s) "matching " (pr-str (first (m/children s options)))))
+(defmethod visit :re [_ _ children _]
+  (let [pattern (first children)]
+    (str "string & regex pattern /" (str pattern) "/")))
+
 (defmethod visit :any [_ s _ _] (str "anything" (-titled s)))
 (defmethod visit :some [_ _ _ _] "anything but null")
 (defmethod visit :nil [_ _ _ _] "null")
@@ -108,10 +112,11 @@
 (defmethod visit :uuid [_ _ _ _] "uuid")
 (defmethod visit :boolean [_ _ _ _] "boolean")
 (defmethod visit :keyword [_ _ _ _] "string")
-(defmethod visit :fn [_ _ _ _] "FN")
+(defmethod visit :fn [_ _ _ _]
+  nil)
 
 (defmethod visit :vector [_ _ children _]
-  (str "[" (last children) "]"))
+  (str "[" (str/trim (last children)) "]"))
 
 (defn -tagged [children] (map (fn [[tag _ c]] (str c " (tag: " tag ")")) children))
 
@@ -137,8 +142,15 @@
       (some? suffix)
       (str suffix))))
 
-(defmethod visit :map-of [_ _ children _]
-  (str "map[" (first children) "," (second children) "]"))
+(defmethod visit :map-of
+  [_ schema children _]
+  (let [props   (m/properties schema)
+        title   (some->> (:title props) str/camel str/capital)]
+
+    (str (if title
+           (str "type " title ": ")
+           "")
+         "map[" (first children) "," (second children) "]")))
 
 (defmethod visit :union [_ _ children _]
   (str/join " | " children))
@@ -156,61 +168,104 @@
     (or (:title props)
         "*")))
 
+
+(defn- format-map
+  [schema children]
+  (let [props      (m/properties schema)
+        closed?    (get props :closed)
+        title      (some->> (:title props) str/camel str/capital)
+        optional (into #{} (comp (filter (m/-comp :optional second))
+                                 (map first))
+                       children)
+        entries  (->> children
+                      (map (fn [[k _ s]]
+                             ;; NOTE: maybe we can detect multiple lines
+                             ;; and then just insert a break line
+                             (str "  " (str/camel k)
+                                  (when (contains? optional k) "?")
+                                  ": " (str/trim s))))
+                      (str/join ",\n"))
+
+        header   (cond-> (str "type " title)
+                   closed?       (str "!")
+                   (some? title) (str " "))]
+
+    (str header "{\n" entries "\n}")))
+
 (defmethod visit :map
-  [_ schema children {:keys [::level ::max-level] :as options}]
-  (let [props   (m/properties schema)
-        closed? (:closed props)
-        title   (some->> (:title props) str/camel str/capital)]
+  [_ schema children {:keys [::level] :as options}]
+  (let [props      (m/properties schema)
+        extracted? (get props ::extracted false)]
 
-    (if (>= level max-level)
-      (or (some-> title str)
-          "<untitled>")
-      (let [optional (into #{} (comp (filter (m/-comp :optional second))
-                                     (map first))
-                           children)
-            entries  (->> children
-                          (map (fn [[k _ s]]
-                                 (str (pad "  " level) (str/camel k)
-                                      (when (contains? optional k) "?")
-                                      ": " s)))
-                          (str/join ",\n"))
+    (cond
+      (or (= level 0) extracted?)
+      (format-map schema children)
 
-            header   (cond-> (str "type " title)
-                       closed?       (str "!")
-                       (some? title) (str " "))]
+      :else
+      (let [schema (mu/update-properties schema assoc ::extracted true)
+            title  (or (some->> (:title props) str/camel str/capital) "<untitled>")]
+        (swap! *definitions* conj (format-map schema children))
+        title))))
 
-        (str (pad header level) "{\n" entries "\n" (pad "}\n" level))))))
+(defn format-multi
+  [s children]
+  (let [props      (m/properties s)
+        title      (or (some-> (:title props) str/camel str/capital) "<untitled>")
+        dispatcher (or (-> s m/properties :dispatch-description)
+                       (-> s m/properties :dispatch))
+        entries    (->> children
+                        (map (fn [[_ _ entry]]
+                               (pad entry 1)))
+                        (str/join ",\n"))
+
+        header     (str "type " title " [dispatch=" (d/name dispatcher) "]")]
+    (str header " {\n" entries "\n}")))
 
 (defmethod visit :multi
-  [_ s children {:keys [::level ::max-level] :as options}]
-  (let [props (m/properties s)
-        title (some-> (:title props) str/camel str/capital)]
-    (if (>= level max-level)
-      title
-      (let [dispatcher (or (-> s m/properties :dispatch-description)
-                           (-> s m/properties :dispatch))
+  [_ schema children {:keys [::level] :as options}]
+  (let [props      (m/properties schema)
+        title      (or (some-> (:title props) str/camel str/capital) "<untitled>")
+        extracted? (get props ::extracted false)]
 
-            prefix   (apply str (take (inc level) (repeat "  ")))
+    (cond
+      (or (zero? level) extracted?)
+      (format-multi schema children)
 
-            entries  (->> children
-                          (map (fn [[_ _ shape]]
-                                 (str prefix shape)))
-                          (str/join ",\n"))
+      :else
+      (let [schema (mu/update-properties schema assoc ::extracted true)]
+        (swap! *definitions* conj (format-multi schema children))
+        title))))
 
-            header (cond-> "multi"
-                     (some? title) (str " " title)
-                     :always (str " [dispatch=" (d/name dispatcher) "]"))]
+(defn- format-merge
+  [schema children]
 
-        (str header " {\n" entries "\n" (pad "}" level))))))
+  (let [props      (m/properties schema)
+        entries    (->> children
+                        (map (fn [shape]
+                               (pad shape 1)))
+                        (str/join ",\n"))
+        title      (some-> (:title props) str/camel str/capital)
 
+
+        header     (str "merge type " title)]
+
+    (str header " {\n" entries "\n}")))
 
 (defmethod visit :merge
-  [_ schema children _]
-  (let [entries (str/join ",\n" children)
-        props   (m/properties schema)
-        title   (or (some-> (:title props) str/camel str/capital)
-                    "<untitled>")]
-    (str "merge type " title " { \n" entries "\n}\n")))
+  [_ schema children {:keys [::level] :as options}]
+  (let [props      (m/properties schema)
+        title      (some-> (:title props) str/camel str/capital)
+        extracted? (get props ::extracted false)]
+
+    (cond
+      (or (zero? level) extracted?)
+      (format-merge schema children)
+
+      :else
+      (let [schema (mu/update-properties schema assoc ::extracted true)]
+        (swap! *definitions* conj
+               (format-merge schema children))
+        title))))
 
 (defmethod visit ::sm/one-of
   [_ _ children _]
@@ -219,45 +274,37 @@
                                (map d/name)
                                (str/join "|")) ")")))
 
-(defmethod visit :schema [_ schema children options]
-  (visit ::m/schema schema children options))
-
-(defmethod visit ::m/schema
-  [_ schema _ {:keys [::level ::limit ::max-level] :as options}]
-  (let [schema' (m/deref schema)
-        props   (merge
-                 (m/properties schema)
-                 (m/properties schema'))
-        ref     (m/-ref schema)
-        title   (:title props)]
+(defmethod visit :schema
+  [_ schema children options]
+  (let [props      (m/properties schema)
+        title      (some-> (:title props) str/camel str/capital)
+        extracted? (get props ::extracted false)]
 
     (cond
-      (::inline props)
-      (do
-        (if (>= limit max-level)
-          title
-          (describe* schema' options)))
+      (not title)
+      (visit ::m/schema schema children options)
 
-      (and ref title)
-      (do
-        (when (<= limit max-level)
-          (swap! *definitions* conj (describe* schema' (assoc options ::base-limit limit))))
-
-        title)
-
-      (>= limit max-level)
-      (or title
-          (some-> ref d/name str/camel str/capital)
-          "<untitled>")
+      extracted?
+      (let [title (or title "<untitled>")]
+        (str "type " title ": "
+             (visit ::m/schema schema children options)))
 
       :else
-      (describe* schema' (assoc options ::base-level level ::base-limit limit)))))
+      (let [schema (mu/update-properties schema assoc ::extracted true)
+            title  (or title "<untitled>")]
+        (swap! *definitions* conj
+               (str "type " title ": "
+                    (visit ::m/schema schema children (update options ::level inc))))
+        title))))
+
+(defmethod visit ::m/schema
+  [_ schema _ {:keys [::level] :as options}]
+  (let [schema' (m/deref schema)]
+    (describe* schema' (assoc options ::base-level level))))
 
 (defn describe* [s options]
-  (letfn [(walk-fn [schema path children {:keys [::base-level ::base-limit] :or {base-level 0 base-limit 0} :as options}]
-            (let [options (assoc options
-                                 ::limit (+ base-limit (count path))
-                                 ::level (+ base-level (count path)))]
+  (letfn [(walk-fn [schema path children {:keys [::base-level] :or {base-level 0} :as options}]
+            (let [options (assoc options ::level (+ base-level (count path)))]
               (visit (m/type schema) schema children options)))]
     (m/walk s walk-fn options)))
 
@@ -275,8 +322,7 @@
                    (mu/update-properties assoc ::root true))
 
          options (into {::m/walk-entry-vals true
-                        ::level 0
-                        ::max-level 300}
+                        ::level 0}
                        options)]
 
      (binding [*definitions* defs]

@@ -15,5 +15,3 @@
    [:type [::sm/one-of types]]
    [:scale ::sm/safe-number]
    [:suffix :string]])
-
-(sm/register! ::export schema:export)

@@ -110,7 +110,6 @@
 
 (sm/register! ::data schema:data)
 (sm/register! ::file schema:file)
-(sm/register! ::media schema:media)
 (sm/register! ::colors schema:colors)
 (sm/register! ::typographies schema:typographies)
 

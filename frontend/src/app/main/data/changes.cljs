@@ -7,7 +7,6 @@
 (ns app.main.data.changes
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.changes :as cpc]
    [app.common.logging :as log]
    [app.common.time :as ct]
@@ -106,13 +105,11 @@
   [{:keys [commit-id redo-changes undo-changes origin save-undo? features
            file-id file-revn file-vern undo-group tags stack-undo? source]}]
 
-  (dm/assert!
-   "expect valid vector of changes for redo-changes"
-   (cpc/check-changes! redo-changes))
+  (assert (cpc/check-changes redo-changes)
+          "expect valid vector of changes for redo-changes")
 
-  (dm/assert!
-   "expect valid vector of changes for undo-changes"
-   (cpc/check-changes! undo-changes))
+  (assert (cpc/check-changes undo-changes)
+          "expect valid vector of changes for undo-changes")
 
   (let [commit-id (or commit-id (uuid/next))
         source    (d/nilv source :local)

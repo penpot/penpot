@@ -271,7 +271,7 @@
   [:map {:title "create-file-object-thumbnail"}
    [:file-id ::sm/uuid]
    [:object-id [:string {:max 250}]]
-   [:media ::media/upload]
+   [:media media/schema:upload]
    [:tag {:optional true} [:string {:max 50}]]])
 
 (sv/defmethod ::create-file-object-thumbnail
@@ -381,7 +381,7 @@
   [:map {:title "create-file-thumbnail"}
    [:file-id ::sm/uuid]
    [:revn ::sm/int]
-   [:media ::media/upload]])
+   [:media media/schema:upload]])
 
 (sv/defmethod ::create-file-thumbnail
   "Creates or updates the file thumbnail. Mainly used for paint the
