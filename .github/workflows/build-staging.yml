@@ -1,4 +1,4 @@
-name: Build and Upload Penpot STAGING Bundles
+name: Build and Upload Penpot STAGING Bundle
 
 on:
   schedule:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-staging-bundle:
-    uses: ./.github/workflows/build-bundles.yml
+    uses: ./.github/workflows/build-bundle.yml
     secrets: inherit
     with:
       gh_ref: "staging"
