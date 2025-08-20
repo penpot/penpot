@@ -61,25 +61,29 @@ impl Subpath {
     }
 
     fn calculate_closed(&self) -> bool {
-        let mut start = None;
-        for segment in self.segments.iter() {
-            let destination = match segment {
-                Segment::MoveTo(xy) => {
-                    start = Some(xy);
-                    None
-                }
-                Segment::LineTo(xy) => Some(xy),
-                Segment::CurveTo((_, _, xy)) => Some(xy),
-                Segment::Close => {
-                    return true;
-                }
+        if self.segments.is_empty() {
+            return false;
+        }
+
+        // Check if the path ends with a Close segment
+        if let Some(Segment::Close) = self.segments.last() {
+            return true;
+        }
+
+        // Check if the first and last points are close to each other
+        if let (Some(first), Some(last)) = (self.segments.first(), self.segments.last()) {
+            let first_point = match first {
+                Segment::MoveTo(xy) => xy,
+                _ => return false,
             };
 
-            if let (Some(&start), Some(&destination)) = (start, destination) {
-                if are_close_points(start, destination) {
-                    return true;
-                }
-            }
+            let last_point = match last {
+                Segment::LineTo(xy) => xy,
+                Segment::CurveTo((_, _, xy)) => xy,
+                _ => return false,
+            };
+
+            return are_close_points(*first_point, *last_point);
         }
 
         false
@@ -115,8 +119,12 @@ fn get_subpaths(segments: &[Segment]) -> Vec<Subpath> {
     for segment in segments {
         match segment {
             Segment::MoveTo(_) => {
-                subpaths.push(current_subpath);
+                if !current_subpath.is_empty() {
+                    subpaths.push(current_subpath);
+                }
                 current_subpath = Subpath::default();
+                // Add the MoveTo segment to the new subpath
+                current_subpath.add_segment(*segment);
             }
             _ => {
                 current_subpath.add_segment(*segment);
@@ -141,15 +149,21 @@ fn merge_paths(candidate: Subpath, others: Vec<Subpath>) -> Result<(Subpath, Vec
     let mut other_without_merged = vec![];
 
     for subpath in others {
-        if merged.ends_in(subpath.start()) {
-            merged = Subpath::try_from((&merged, &subpath))?;
-        } else if merged.starts_in(subpath.end()) {
-            merged = Subpath::try_from((&subpath, &merged))?;
-        } else if merged.ends_in(subpath.end()) {
-            merged = Subpath::try_from((&merged, &subpath.reversed()))?;
-        } else if merged.starts_in(subpath.start()) {
-            merged = Subpath::try_from((&subpath.reversed(), &merged))?;
+        // Only merge if the candidate is not already closed and the subpath can be meaningfully connected
+        if !merged.is_closed() && !subpath.is_closed() {
+            if merged.ends_in(subpath.start()) {
+                merged = Subpath::try_from((&merged, &subpath))?;
+            } else if merged.starts_in(subpath.end()) {
+                merged = Subpath::try_from((&subpath, &merged))?;
+            } else if merged.ends_in(subpath.end()) {
+                merged = Subpath::try_from((&merged, &subpath.reversed()))?;
+            } else if merged.starts_in(subpath.start()) {
+                merged = Subpath::try_from((&subpath.reversed(), &merged))?;
+            } else {
+                other_without_merged.push(subpath);
+            }
         } else {
+            // If either subpath is closed, don't merge
             other_without_merged.push(subpath);
         }
     }
@@ -196,4 +210,106 @@ pub fn is_open_path(segments: &[Segment]) -> Result<bool> {
 
     // return true if any subpath is open
     Ok(closed_subpaths.iter().any(|subpath| !subpath.is_closed()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::shapes::paths::subpaths;
+
+    #[test]
+    fn test_is_open_path_1() {
+        let segments = vec![
+            Segment::MoveTo((807.0, 348.0)),
+            Segment::LineTo((807.0, 343.0)),
+            Segment::MoveTo((807.0, 343.0)),
+            Segment::LineTo((807.00037, 338.0)),
+            Segment::LineTo((810.66144, 338.0)),
+            Segment::CurveTo((
+                (811.95294, 338.0),
+                (812.99994, 339.11926),
+                (812.99994, 340.5),
+            )),
+            Segment::CurveTo(((812.99994, 341.88074), (811.95264, 343.0), (810.661, 343.0))),
+            Segment::LineTo((807.0, 343.0)),
+            Segment::Close,
+        ];
+
+        let result =
+            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        assert!(result, "Path should be open");
+    }
+
+    #[test]
+    fn test_is_open_path_2() {
+        let segments = vec![
+            Segment::MoveTo((223.0, 582.0)),
+            Segment::LineTo((505.0, 356.0)),
+            Segment::LineTo((489.0, 874.0)),
+            Segment::LineTo((223.0, 582.0)),
+        ];
+
+        let result =
+            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        assert!(!result, "Path should be closed");
+    }
+
+    #[test]
+    fn test_is_open_path_3() {
+        let segments = vec![
+            Segment::MoveTo((389.02805, 617.99994)),
+            Segment::LineTo((391.29263, 610.7184)),
+            Segment::CurveTo((
+                (391.42545, 610.2914),
+                (391.82388, 610.0),
+                (392.27505, 610.0),
+            )),
+            Segment::LineTo((401.97116, 610.0)),
+            Segment::CurveTo((
+                (402.67935, 610.0),
+                (403.17532, 610.69257),
+                (402.9415, 611.35455),
+            )),
+            Segment::LineTo((400.834, 617.3182)),
+            Segment::CurveTo((
+                (400.68973, 617.7266),
+                (400.30063, 617.99994),
+                (399.86374, 617.99994),
+            )),
+            Segment::LineTo((389.02805, 617.99994)),
+            Segment::CurveTo((
+                (388.46024, 617.99994),
+                (388.00003, 617.5442),
+                (388.00003, 616.98175),
+            )),
+            Segment::LineTo((388.00003, 607.52344)),
+            Segment::CurveTo((
+                (388.00003, 607.12),
+                (388.15427, 606.73254),
+                (388.4307, 606.44684),
+            )),
+            Segment::CurveTo(((388.70602, 606.16), (389.07944, 606.0), (389.46823, 606.0))),
+            Segment::LineTo((392.40573, 606.0)),
+            Segment::LineTo((393.50717, 607.71436)),
+            Segment::LineTo((399.0878, 607.71436)),
+            Segment::CurveTo((
+                (399.65555, 607.71436),
+                (400.1158, 608.1701),
+                (400.1158, 608.7325),
+            )),
+            Segment::LineTo((400.1158, 610.0)),
+        ];
+
+        let result =
+            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        assert!(result, "Path should be open");
+    }
+
+    #[test]
+    fn test_is_open_path_4() {
+        let segments = vec![];
+        let result =
+            subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        assert!(!result, "Path should be closed");
+    }
 }
