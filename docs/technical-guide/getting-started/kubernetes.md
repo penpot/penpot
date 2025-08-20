@@ -103,6 +103,11 @@ If you are deploying Penpot on OpenShift, we recommend following the specific gu
 
 Make sure to review the section **OpenShift Requirements** for important security and compatibility considerations.
 
+### Using Rancher?
+
+If you are deploying Penpot on Rancher, we recommend following the specific guidelines provided in the official documentation:
+<a href="https://docs.apps.rancher.io/reference-guides/penpot/" target="_blank">Reference guides / Penpot</a>.
+
 ## Upgrade Penpot
 
 When a new version of Penpot's chart is released, or when you want to change the
