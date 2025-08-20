@@ -41,8 +41,10 @@
    [datoteka.fs :as fs]
    [datoteka.io :as io])
   (:import
+   java.io.File
    java.io.InputStream
    java.io.OutputStreamWriter
+   java.lang.AutoCloseable
    java.util.zip.ZipEntry
    java.util.zip.ZipFile
    java.util.zip.ZipOutputStream))
@@ -251,9 +253,9 @@
         (write-entry! output path params)
 
         (with-open [input (sto/get-object-data storage sobject)]
-          (.putNextEntry output (ZipEntry. (str "objects/" id ext)))
+          (.putNextEntry ^ZipOutputStream output (ZipEntry. (str "objects/" id ext)))
           (io/copy input output :size (:size sobject))
-          (.closeEntry output))))))
+          (.closeEntry ^ZipOutputStream output))))))
 
 (defn- export-file
   [{:keys [::file-id ::output] :as cfg}]
@@ -447,7 +449,7 @@
 (defn- read-manifest
   [^ZipFile input]
   (let [entry (get-zip-entry input "manifest.json")]
-    (with-open [reader (zip-entry-reader input entry)]
+    (with-open [^AutoCloseable reader (zip-entry-reader input entry)]
       (let [manifest (json/read reader :key-fn json/read-kebab-key)]
         (decode-manifest manifest)))))
 
@@ -537,12 +539,12 @@
 
 (defn- read-entry
   [^ZipFile input entry]
-  (with-open [reader (zip-entry-reader input entry)]
+  (with-open [^AutoCloseable reader (zip-entry-reader input entry)]
     (json/read reader :key-fn json/read-kebab-key)))
 
 (defn- read-plain-entry
   [^ZipFile input entry]
-  (with-open [reader (zip-entry-reader input entry)]
+  (with-open [^AutoCloseable reader (zip-entry-reader input entry)]
     (json/read reader)))
 
 (defn- read-file
@@ -1006,8 +1008,8 @@
     (try
       (l/info :hint "start exportation" :export-id (str id))
       (binding [bfc/*state* (volatile! (bfc/initial-state))]
-        (with-open [output (io/output-stream output)]
-          (with-open [output (ZipOutputStream. output)]
+        (with-open [^AutoCloseable output (io/output-stream output)]
+          (with-open [^AutoCloseable output (ZipOutputStream. output)]
             (let [cfg (assoc cfg ::output output)]
               (export-files cfg)
               (export-storage-objects cfg)))))
@@ -1051,7 +1053,7 @@
 
     (l/info :hint "import: started" :id (str id))
     (try
-      (with-open [input (ZipFile. (fs/file input))]
+      (with-open [input (ZipFile. ^File (fs/file input))]
         (import-files (assoc cfg ::bfc/input input)))
 
       (catch Throwable cause
@@ -1066,6 +1068,6 @@
 
 (defn get-manifest
   [path]
-  (with-open [input (ZipFile. (fs/file path))]
+  (with-open [^AutoCloseable input (ZipFile. ^File (fs/file path))]
     (-> (read-manifest input)
         (validate-manifest))))

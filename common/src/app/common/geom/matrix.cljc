@@ -25,16 +25,7 @@
 
 ;; --- Matrix Impl
 
-(defn format-precision
-  [mtx precision]
-  (when mtx
-    (dm/fmt "matrix(%, %, %, %, %, %)"
-            (mth/to-fixed (.-a mtx) precision)
-            (mth/to-fixed (.-b mtx) precision)
-            (mth/to-fixed (.-c mtx) precision)
-            (mth/to-fixed (.-d mtx) precision)
-            (mth/to-fixed (.-e mtx) precision)
-            (mth/to-fixed (.-f mtx) precision))))
+(declare format-precision)
 
 (cr/defrecord Matrix [^double a
                       ^double b
@@ -45,6 +36,17 @@
   Object
   (toString [this]
     (format-precision this precision)))
+
+(defn format-precision
+  [mtx precision]
+  (when mtx
+    (dm/fmt "matrix(%, %, %, %, %, %)"
+            (mth/to-fixed (.-a ^Matrix mtx) precision)
+            (mth/to-fixed (.-b ^Matrix mtx) precision)
+            (mth/to-fixed (.-c ^Matrix mtx) precision)
+            (mth/to-fixed (.-d ^Matrix mtx) precision)
+            (mth/to-fixed (.-e ^Matrix mtx) precision)
+            (mth/to-fixed (.-f ^Matrix mtx) precision))))
 
 (defn matrix?
   "Return true if `v` is Matrix instance."

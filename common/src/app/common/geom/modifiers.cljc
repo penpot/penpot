@@ -99,7 +99,7 @@
 
                 [_ modif-tree]
                 (reduce set-child-modifiers [layout-line modif-tree] children)]
-            (recur modif-tree (first pending) (rest pending) to-idx))
+            (recur modif-tree (first pending) (rest pending) (long to-idx)))
 
           modif-tree)))))
 

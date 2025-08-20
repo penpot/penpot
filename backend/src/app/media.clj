@@ -116,7 +116,7 @@
 (defn- parse-svg
   [text]
   (let [text (strip-doctype text)]
-    (dm/with-open [istream (IOUtils/toInputStream text "UTF-8")]
+    (dm/with-open [istream (IOUtils/toInputStream ^String text "UTF-8")]
       (xml/parse istream secure-parser-factory))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -313,7 +313,7 @@
                                    (db/exec-one! conn ["SET LOCAL rules.deletion_protection TO off"])
                                    (proc-fn cfg)))]
       (if (pos? result)
-        (recur (+ total result))
+        (recur (long (+ total result)))
         total))))
 
 (defmethod ig/assert-key ::handler
@@ -335,7 +335,7 @@
         (if-let [proc-fn (first procs)]
           (let [result (execute-proc! cfg proc-fn)]
             (recur (rest procs)
-                   (+ total result)))
+                   (long (+ total result))))
           (do
             (l/inf :hint "task finished" :deleted total)
             {:processed total}))))))
