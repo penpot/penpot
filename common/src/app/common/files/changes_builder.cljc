@@ -885,7 +885,7 @@
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token (some-> (get library-data :tokens-lib)
-                           (ctob/set-by-name set-name)
+                           (ctob/get-set-by-name set-name)
                            (ctob/get-token token-id))]
     (-> changes
         (update :redo-changes conj {:type :set-token

@@ -6,7 +6,6 @@
 
 (ns app.main.data.workspace.tokens.library-edit
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
@@ -23,8 +22,6 @@
    [app.main.data.workspace.tokens.propagation :as dwtp]
    [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
-   [clojure.datafy :refer [datafy]]
-   [clojure.test :as ct]
    [potok.v2.core :as ptk]))
 
 (declare set-selected-token-set-name)
@@ -153,7 +150,7 @@
       (let [data       (dsh/lookup-file-data state)
             tokens-lib (get data :tokens-lib)
             set-name   (ctob/normalize-set-name set-name)]
-        (if (and tokens-lib (ctob/set-by-name tokens-lib set-name))
+        (if (and tokens-lib (ctob/get-set-by-name tokens-lib set-name))
           (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
                             :type :toast
                             :level :error
@@ -184,7 +181,7 @@
             name       (ctob/normalize-set-name name (ctob/get-name token-set))
             tokens-lib (get data :tokens-lib)]
 
-        (if (ctob/set-by-name tokens-lib name)
+        (if (ctob/get-set-by-name tokens-lib name)
           (rx/of (ntf/show {:content (tr "errors.token-set-already-exists")
                             :type :toast
                             :level :error
