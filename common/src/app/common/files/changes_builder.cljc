@@ -916,30 +916,30 @@
                                (ctob/get-set id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
-                                    :set-id id
+                                    :id id
                                     :token-set (datafy (ctob/rename prev-token-set new-name))
-                                    :group? false})
+                                    :is-group false})
         (update :undo-changes conj {:type :set-token-set
-                                    :set-id id
+                                    :id id
                                     :token-set (datafy prev-token-set)
-                                    :group? false})
+                                    :is-group false})
         (apply-changes-local))))
 
 (defn set-token-set
-  [changes set-id group? token-set]
+  [changes id is-group token-set]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
         prev-token-set (some-> (get library-data :tokens-lib)
-                               (ctob/get-set set-id))]
+                               (ctob/get-set id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-set
-                                    :set-id set-id
+                                    :id id
                                     :token-set (datafy token-set)
-                                    :group? group?})
+                                    :is-group is-group})
         (update :undo-changes conj {:type :set-token-set
-                                    :set-id set-id
+                                    :id id
                                     :token-set (datafy prev-token-set)
-                                    :group? group?})
+                                    :is-group is-group})
         (apply-changes-local))))
 
 (defn add-component

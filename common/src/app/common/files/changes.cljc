@@ -323,7 +323,7 @@
      [:main-instance-page ::sm/uuid]]]
 
    [:mod-component
-    [:map {:title "ModCompoenentChange"}
+    [:map {:title "ModComponentChange"}
      [:type [:= :mod-component]]
      [:id ::sm/uuid]
      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
@@ -408,8 +408,8 @@
    [:set-token-set
     [:map {:title "SetTokenSetChange"}
      [:type [:= :set-token-set]]
-     [:set-id ::sm/uuid]
-     [:group? :boolean]
+     [:id ::sm/uuid]
+     [:is-group :boolean]
      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
 
    [:set-token
@@ -995,18 +995,18 @@
                                                                    (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [set-id group? token-set]}]
+  [data {:keys [id is-group token-set]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)
-                  set (ctob/get-set lib' set-id)] ;; FIXME: remove this when set-token-set uses set-id
+                  set (ctob/get-set lib' id)] ;; FIXME: remove this when set-token-set uses set-id
               (cond
                 (not token-set)
-                (if group?
+                (if is-group
                   (ctob/delete-set-group lib' (ctob/get-name set)) ;; FIXME: move to a separate change
                   (ctob/delete-set lib' (ctob/get-name set)))
 
-                (not (ctob/get-set lib' set-id))
+                (not (ctob/get-set lib' id))
                 (ctob/add-set lib' (ctob/make-token-set token-set))
 
                 :else
