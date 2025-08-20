@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.main.ui.components.copy-button :refer [copy-button*]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
@@ -67,9 +67,9 @@
 
     (when some-layout-prop?
       [:div {:class (stl/css :attributes-block)}
-       [:& title-bar {:collapsable false
-                      :title       menu-title
-                      :class       (stl/css :title-spacing-layout-element)}
+       [:> title-bar* {:collapsable false
+                       :title       menu-title
+                       :class       (stl/css :title-spacing-layout-element)}
         (when (= (count shapes) 1)
           [:> copy-button* {:data  (css/get-shape-properties-css objects (first shapes) properties)
                             :class (stl/css :copy-btn-title)}])]

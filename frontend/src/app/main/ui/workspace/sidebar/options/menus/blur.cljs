@@ -12,7 +12,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.util.i18n :as i18n :refer [tr]]
@@ -83,14 +83,14 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-value?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :title        (case type
-                                     :multiple (tr "workspace.options.blur-options.title.multiple")
-                                     :group (tr "workspace.options.blur-options.title.group")
-                                     (tr "workspace.options.blur-options.title"))
-                     :class        (stl/css-case :title-spacing-blur (not has-value?))}
+      [:> title-bar* {:collapsable  has-value?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :title        (case type
+                                      :multiple (tr "workspace.options.blur-options.title.multiple")
+                                      :group (tr "workspace.options.blur-options.title.group")
+                                      (tr "workspace.options.blur-options.title"))
+                      :class        (stl/css-case :title-spacing-blur (not has-value?))}
        (when-not has-value?
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.blur-options.add-blur")

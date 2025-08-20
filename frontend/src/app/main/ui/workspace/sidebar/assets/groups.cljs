@@ -13,7 +13,7 @@
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -48,20 +48,20 @@
       [:div {:class (stl/css :group-title-wrapper)}
        [:div {:class (stl/css :group-title)
               :on-context-menu on-context-menu}
-        [:& title-bar {:collapsable    true
-                       :collapsed      (not group-open?)
-                       :all-clickable  true
-                       :on-collapsed   on-fold-group
-                       :title          (mf/html [:* (when-not (empty? other-path)
-                                                      [:span {:class (stl/css :pre-path)
-                                                              :title (when truncated path)}
-                                                       other-path "\u00A0\u2022\u00A0"])
-                                                 [:span {:class (stl/css :path)
-                                                         :title (when truncated path)}
-                                                  last-path]
-                                                 #_[:span {:class (stl/css :title-menu)
-                                                           :on-click on-context-menu}
-                                                    "aaa"]])}]
+        [:> title-bar* {:collapsable    true
+                        :collapsed      (not group-open?)
+                        :all-clickable  true
+                        :on-collapsed   on-fold-group
+                        :title          (mf/html [:* (when-not (empty? other-path)
+                                                       [:span {:class (stl/css :pre-path)
+                                                               :title (when truncated path)}
+                                                        other-path "\u00A0\u2022\u00A0"])
+                                                  [:span {:class (stl/css :path)
+                                                          :title (when truncated path)}
+                                                   last-path]
+                                                  #_[:span {:class (stl/css :title-menu)
+                                                            :on-click on-context-menu}
+                                                     "aaa"]])}]
 
         [:& cmm/assets-context-menu
          {:on-close on-close-menu

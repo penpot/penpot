@@ -17,7 +17,7 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -174,10 +174,10 @@
 
     [:div {:class (stl/css :grid-cell-menu)}
      [:div {:class (stl/css :grid-cell-menu-title)}
-      [:& title-bar {:collapsable  true
-                     :collapsed    (not open?)
-                     :on-collapsed #(swap! state* update :open not)
-                     :title        "Grid cell"}]]
+      [:> title-bar* {:collapsable  true
+                      :collapsed    (not open?)
+                      :on-collapsed #(swap! state* update :open not)
+                      :title        "Grid cell"}]]
 
      (when open?
        [:div {:class (stl/css :grid-cell-menu-container)}

@@ -15,7 +15,7 @@
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -313,11 +313,11 @@
          #(st/emit! (dw/add-frame-grid id)))]
 
     [:div {:class (stl/css :element-set)}
-     [:& title-bar {:collapsable  has-frame-grids?
-                    :collapsed    (not open?)
-                    :on-collapsed toggle-content
-                    :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
-                    :title        (tr "workspace.options.guides.title")}
+     [:> title-bar* {:collapsable  has-frame-grids?
+                     :collapsed    (not open?)
+                     :on-collapsed toggle-content
+                     :class        (stl/css-case :title-spacing-board-grid (not has-frame-grids?))
+                     :title        (tr "workspace.options.guides.title")}
 
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "workspace.options.guides.add-guide")

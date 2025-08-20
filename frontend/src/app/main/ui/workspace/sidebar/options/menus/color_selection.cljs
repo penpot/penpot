@@ -11,7 +11,7 @@
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.selection :as dws]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -107,11 +107,11 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-colors?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :title        (tr "workspace.options.selection-color")
-                     :class        (stl/css-case :title-spacing-selected-colors (not has-colors?))}]]
+      [:> title-bar* {:collapsable  has-colors?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :title        (tr "workspace.options.selection-color")
+                      :class        (stl/css-case :title-spacing-selected-colors (not has-colors?))}]]
 
      (when open?
        [:div {:class (stl/css :element-content)}

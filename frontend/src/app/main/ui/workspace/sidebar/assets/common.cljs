@@ -28,7 +28,7 @@
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.array :as array]
@@ -176,7 +176,7 @@
                                 :opened (and (< 0 assets-count)
                                              open?))
            :on-click on-click}
-     [:& title-bar
+     [:> title-bar*
       {:collapsable   (< 0 assets-count)
        :collapsed     (not open?)
        :all-clickable true

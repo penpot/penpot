@@ -15,7 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
@@ -440,12 +440,12 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-content?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :title        title
-                     :class        (stl/css-case :title-spacing-layout-element true
-                                                 :title-spacing-empty (not has-content?))}]]
+      [:> title-bar* {:collapsable  has-content?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :title        title
+                      :class        (stl/css-case :title-spacing-layout-element true
+                                                  :title-spacing-empty (not has-content?))}]]
      (when open?
        [:div {:class (stl/css :flex-element-menu)}
         (when (or is-layout-child? is-absolute?)

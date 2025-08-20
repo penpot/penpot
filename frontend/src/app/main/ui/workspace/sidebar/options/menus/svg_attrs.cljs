@@ -10,7 +10,7 @@
    [app.common.data :as d]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
@@ -95,11 +95,11 @@
     (when-not (empty? attrs)
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-set-title)}
-        [:& title-bar {:collapsable  has-attributes?
-                       :collapsed    (not open?)
-                       :on-collapsed toggle-content
-                       :title        (tr "workspace.sidebar.options.svg-attrs.title")
-                       :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
+        [:> title-bar* {:collapsable  has-attributes?
+                        :collapsed    (not open?)
+                        :on-collapsed toggle-content
+                        :title        (tr "workspace.sidebar.options.svg-attrs.title")
+                        :class        (stl/css-case :title-spacing-svg-attrs (not has-attributes?))}]]
        (when open?
          [:div {:class (stl/css :element-set-content)}
           (for [[attr-key attr-value] attrs]

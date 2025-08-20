@@ -15,7 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -157,10 +157,10 @@
     (when in-frame?
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        [:& title-bar {:collapsable  true
-                       :collapsed    (not open?)
-                       :on-collapsed toggle-content
-                       :title        (tr "workspace.options.constraints")}]]
+        [:> title-bar* {:collapsable  true
+                        :collapsed    (not open?)
+                        :on-collapsed toggle-content
+                        :title        (tr "workspace.options.constraints")}]]
        (when open?
          [:div {:class (stl/css :element-set-content)}
           [:div {:class (stl/css :constraints-widget)}

@@ -22,7 +22,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -1002,7 +1002,7 @@
 
     [:div {:class (stl/css :element-set) :data-testid "inspect-layout"}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar
+      [:> title-bar*
        {:collapsable has-layout?
         :collapsed (not open?)
         :on-collapsed on-toggle-visibility

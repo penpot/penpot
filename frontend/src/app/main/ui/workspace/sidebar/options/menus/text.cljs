@@ -19,7 +19,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as hooks]
@@ -299,11 +299,11 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  true
-                     :collapsed    (not main-menu-open?)
-                     :on-collapsed toggle-main-menu
-                     :title        label
-                     :class        (stl/css :title-spacing-text)}
+      [:> title-bar* {:collapsable  true
+                      :collapsed    (not main-menu-open?)
+                      :on-collapsed toggle-main-menu
+                      :title        label
+                      :class        (stl/css :title-spacing-text)}
        (when (and (not typography) (not multiple?))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")

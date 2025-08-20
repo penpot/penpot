@@ -14,7 +14,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.exports.assets]
    [app.util.dom :as dom]
@@ -179,11 +179,11 @@
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
-      [:& title-bar {:collapsable  has-exports?
-                     :collapsed    (not open?)
-                     :on-collapsed toggle-content
-                     :title        (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))
-                     :class        (stl/css-case :title-spacing-export (not has-exports?))}
+      [:> title-bar* {:collapsable  has-exports?
+                      :collapsed    (not open?)
+                      :on-collapsed toggle-content
+                      :title        (tr (if (> (count ids) 1) "workspace.options.export-multiple" "workspace.options.export"))
+                      :class        (stl/css-case :title-spacing-export (not has-exports?))}
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.export.add-export")
                          :on-click add-export

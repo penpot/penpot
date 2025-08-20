@@ -13,7 +13,7 @@
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
                                                  dropdown-menu-item*]]
-   [app.main.ui.components.title-bar :refer [title-bar]]
+   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -76,7 +76,7 @@
                 :style {"--resize-height" (str resize-height "px")}}
       [:> themes-header*]
       [:div {:class (stl/css :sidebar-header)}
-       [:& title-bar {:title (tr "labels.sets")}
+       [:> title-bar* {:title (tr "labels.sets")}
         (when can-edit?
           [:> tsetslist/add-button*])]]
 
