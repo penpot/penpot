@@ -311,7 +311,7 @@
   {::mf/wrap-props false}
   [{:keys [file-id is-local components listing-thumbs? open? force-open?
            reverse-sort? selected on-asset-click on-assets-delete
-           on-clear-selection open-status-ref count-variants]}]
+           on-clear-selection open-status-ref delete-component count-variants]}]
 
   (let [input-ref                (mf/use-ref nil)
 
@@ -393,7 +393,7 @@
              (if (or multi-components? multi-assets?)
                (on-assets-delete)
                (st/emit! (dwu/start-undo-transaction undo-id)
-                         (dwl/delete-component {:id current-component-id})
+                         (delete-component current-component-id)
                          (dwl/sync-file file-id file-id :components current-component-id)
                          (dwu/commit-undo-transaction undo-id))))))
 
