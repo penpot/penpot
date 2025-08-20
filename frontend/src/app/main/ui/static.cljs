@@ -501,16 +501,16 @@
         profile     (mf/deref refs/profile)
 
         auth-error? (= type :authentication)
+        not-found?  (= type :not-found)
 
         authenticated?
         (is-authenticated? profile)
 
         request-access?
         (and
-         (or (= type :not-found) auth-error?)
          (or workspace? dashboard? view?)
-         (or (:file-id info)
-             (:team-id info)))]
+         (or (some? (:file-id info))
+             (some? (:team-id info))))]
 
     (mf/with-effect [params info]
       (when-not (:loaded info)
@@ -518,25 +518,26 @@
              (rx/subs! (partial reset! info*)
                        (partial reset! info* {:loaded true})))))
 
-    (if (and auth-error? (not authenticated?))
-      [:> context-wrapper*
-       {:is-workspace workspace?
-        :is-dashboard dashboard?
-        :is-viewer view?
-        :profile profile}
-       [:> login-dialog* {}]]
 
-      (when (get info :loaded false)
-        (if request-access?
-          [:> context-wrapper* {:is-workspace workspace?
-                                :is-dashboard dashboard?
-                                :is-viewer view?
-                                :profile profile}
-           [:> request-access* {:file-id (:file-id info)
-                                :team-id  (:team-id info)
-                                :is-default (:team-default info)
-                                :profile profile
-                                :is-workspace workspace?}]]
+    (if (or auth-error? not-found?)
+      (if (not authenticated?)
+        [:> context-wrapper*
+         {:is-workspace workspace?
+          :is-dashboard dashboard?
+          :is-viewer view?
+          :profile profile}
+         [:> login-dialog* {}]]
+        (when (get info :loaded false)
+          (if request-access?
+            [:> context-wrapper* {:is-workspace workspace?
+                                  :is-dashboard dashboard?
+                                  :is-viewer view?
+                                  :profile profile}
+             [:> request-access* {:file-id (:file-id info)
+                                  :team-id  (:team-id info)
+                                  :is-default (:team-default info)
+                                  :profile profile
+                                  :is-workspace workspace?}]]
+            [:> exception-section* props])))
 
-          [:> exception-section* props])))))
-
+      [:> exception-section* props])))
