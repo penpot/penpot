@@ -740,27 +740,18 @@ fn get_text_stroke_paints(stroke: &Stroke, bounds: &Rect, text_paint: &Paint) ->
                 set_paint_fill(&mut paint, &stroke.fill, bounds);
                 paints.push(paint);
             } else {
-                // outer
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_blend_mode(skia::BlendMode::DstATop);
-                paint.set_anti_alias(true);
-                paint.set_stroke_width(stroke.width * 2.0);
-                paints.push(paint);
-
-                let mut paint = skia::Paint::default();
+                let mut paint = text_paint.clone();
                 paint.set_style(skia::PaintStyle::Fill);
-                paint.set_blend_mode(skia::BlendMode::Clear);
-                paint.set_anti_alias(true);
+                paint.set_anti_alias(false);
+                set_paint_fill(&mut paint, &stroke.fill, bounds);
                 paints.push(paint);
 
-                // inner
                 let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_stroke_width(stroke.width * 2.0);
-                paint.set_blend_mode(skia::BlendMode::Xor);
-                paint.set_anti_alias(true);
-                set_paint_fill(&mut paint, &stroke.fill, bounds);
+                let image_filter =
+                    skia_safe::image_filters::erode((stroke.width, stroke.width), None, None);
+                paint.set_image_filter(image_filter);
+                paint.set_anti_alias(false);
+                paint.set_blend_mode(skia::BlendMode::DstOut);
                 paints.push(paint);
             }
         }
