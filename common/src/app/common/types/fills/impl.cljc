@@ -443,7 +443,7 @@
                           :code :invalid-fill
                           :hint "found invalid fill on encoding fills to binary format")))))
 
-        #?(:cljs (Fills. total dbuffer mbuffer image-ids (weak/create-weak-value-map) nil)
+        #?(:cljs (Fills. total dbuffer mbuffer image-ids (weak/weak-value-map) nil)
            :clj  (Fills. total dbuffer mbuffer nil))))))
 
 (defn fills?
