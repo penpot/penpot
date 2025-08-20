@@ -375,7 +375,8 @@
                            :r1 20
                            :r2 20
                            :r3 20
-                           :r4 20}
+                           :r4 20
+                           :layout-item-absolute true}
              flex-props   {:layout-item-h-sizing :auto
                            :layout-item-v-sizing :auto
                            :layout-padding {:p1 30 :p2 30 :p3 30 :p4 30}
@@ -433,6 +434,7 @@
 
           (rx/of
            (when duplicate? (add-new-variant main-instance-id))
+           (dwsh/update-shapes variant-vec #(dissoc % :layout-item-absolute))
            (dwu/commit-undo-transaction undo-id)
            (when flex?
              (ptk/data-event :layout/update {:ids [variant-id]})))))))))
@@ -605,9 +607,10 @@
                                                      (assoc :constraints-h :left)
                                                      (assoc :constraints-v :top)
                                                      (assoc :fixed-scroll false)))
+                   (dwsh/relocate-shapes #{variant-id} common-parent index)
                    (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
                    (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
-                   (dwsh/relocate-shapes #{variant-id} common-parent index)
+
                    (dwu/commit-undo-transaction undo-id)))))
 
              redirect-to-page
