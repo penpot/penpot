@@ -406,7 +406,6 @@
                         (ctob/add-token-in-set "test-token-set" token)
                         (ctob/add-token-in-set "not-existing-set" token))
 
-        _ (prn "tokens-lib'" (datafy tokens-lib'))
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
         token'      (ctob/get-token token-set' (thi/id :token))]
@@ -1282,20 +1281,20 @@
      (let [json (-> (slurp "test/common_tests/types/data/tokens-single-set-legacy-example.json")
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "single_set")
-           token-set (ctob/set-by-name lib "single_set")]
+           token-set (ctob/get-set-by-name lib "single_set")]
        (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
        (t/testing "token added"
-         (t/is (some? (ctob/get-token-by-name lib (ctob/get-id token-set) "color.red.100")))))))
+         (t/is (some? (ctob/get-token-in-set-by-name lib (ctob/get-id token-set) "color.red.100")))))))
 
 #?(:clj
    (t/deftest parse-single-set-dtcg-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-single-set-dtcg-example.json")
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "single_set")
-           token-set (ctob/set-by-name lib "single_set")]
+           token-set (ctob/get-set-by-name lib "single_set")]
        (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
        (t/testing "token added"
-         (t/is (some? (ctob/get-token-by-name lib (ctob/get-id token-set) "color.red.100")))))))
+         (t/is (some? (ctob/get-token-in-set-by-name lib (ctob/get-id token-set) "color.red.100")))))))
 
 #?(:clj
    (t/deftest parse-multi-set-legacy-json
@@ -1303,31 +1302,31 @@
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "")
            token-theme (ctob/get-theme lib "group-1" "theme-1")
-           core-set (ctob/set-by-name lib "core")
-           theme-set (ctob/set-by-name lib "theme")]
+           core-set (ctob/get-set-by-name lib "core")
+           theme-set (ctob/get-set-by-name lib "theme")]
        (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
        (t/testing "set exists in theme"
          (t/is (= (:group token-theme) "group-1"))
          (t/is (= (:name token-theme) "theme-1"))
          (t/is (= (:sets token-theme) #{"light"})))
        (t/testing "tokens exist in core set"
-         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib (ctob/get-id core-set) "colors.red.600")
+         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "colors.red.600")
                                    {:name "colors.red.600"
                                     :type :color
                                     :value "#e53e3e"
                                     :description ""}))
-         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib (ctob/get-id core-set) "spacing.multi-value")
+         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "spacing.multi-value")
                                    {:name "spacing.multi-value"
                                     :type :spacing
                                     :value "{dimension.sm} {dimension.xl}"
                                     :description "You can have multiple values in a single spacing token"}))
-         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib (ctob/get-id theme-set) "button.primary.background")
+         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "button.primary.background")
                                    {:name "button.primary.background"
                                     :type :color
                                     :value "{accent.default}"
                                     :description ""})))
        (t/testing "invalid tokens got discarded"
-         (t/is (nil? (ctob/get-token-by-name lib (ctob/get-id theme-set) "boxShadow.default")))))))
+         (t/is (nil? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "boxShadow.default")))))))
 
 #?(:clj
    (t/deftest parse-multi-set-dtcg-json
@@ -1335,31 +1334,31 @@
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "")
            token-theme (ctob/get-theme lib "group-1" "theme-1")
-           core-set (ctob/set-by-name lib "core")
-           theme-set (ctob/set-by-name lib "theme")]
+           core-set (ctob/get-set-by-name lib "core")
+           theme-set (ctob/get-set-by-name lib "theme")]
        (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
        (t/testing "set exists in theme"
          (t/is (= (:group token-theme) "group-1"))
          (t/is (= (:name token-theme) "theme-1"))
          (t/is (= (:sets token-theme) #{"light"})))
        (t/testing "tokens exist in core set"
-         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib (ctob/get-id core-set) "colors.red.600")
+         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "colors.red.600")
                                    {:name "colors.red.600"
                                     :type :color
                                     :value "#e53e3e"
                                     :description ""}))
-         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib (ctob/get-id core-set) "spacing.multi-value")
+         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "spacing.multi-value")
                                    {:name "spacing.multi-value"
                                     :type :spacing
                                     :value "{dimension.sm} {dimension.xl}"
                                     :description "You can have multiple values in a single spacing token"}))
-         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib (ctob/get-id theme-set) "button.primary.background")
+         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "button.primary.background")
                                    {:name "button.primary.background"
                                     :type :color
                                     :value "{accent.default}"
                                     :description ""})))
        (t/testing "invalid tokens got discarded"
-         (t/is (nil? (ctob/get-token-by-name lib (ctob/get-id theme-set) "boxShadow.default")))))))
+         (t/is (nil? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "boxShadow.default")))))))
 
 #?(:clj
    (t/deftest parse-multi-set-dtcg-json-default-team
@@ -1368,14 +1367,14 @@
            lib (ctob/parse-decoded-json json "")
            themes (ctob/get-themes lib)
            first-theme (first themes)
-           dark-set (ctob/set-by-name lib "dark")]
+           dark-set (ctob/get-set-by-name lib "dark")]
        (t/is (= '("dark") (ctob/get-ordered-set-names lib)))
        (t/is (= 1 (count themes)))
        (t/testing "existing theme is default theme"
          (t/is (= (:group first-theme) ""))
          (t/is (= (:name first-theme) ctob/hidden-theme-name)))
        (t/testing "token exist in dark set"
-         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib (ctob/get-id dark-set) "small")
+         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id dark-set) "small")
                                    {:name "small"
                                     :value "8"
                                     :type :border-radius

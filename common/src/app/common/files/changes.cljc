@@ -405,24 +405,24 @@
      [:type [:= :set-tokens-lib]]
      [:tokens-lib ::sm/any]]]
 
-    [:set-token-set
-     [:map {:title "SetTokenSetChange"}
-      [:type [:= :set-token-set]]
-      [:set-id ::sm/uuid]
-      [:group? :boolean]
-      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
+   [:set-token-set
+    [:map {:title "SetTokenSetChange"}
+     [:type [:= :set-token-set]]
+     [:set-id ::sm/uuid]
+     [:group? :boolean]
+     [:token-set [:maybe ctob/schema:token-set-attrs]]]]
 
-    [:set-token
-     [:map {:title "SetTokenChange"}
-      [:type [:= :set-token]]
-      [:set-name :string]
-      [:token-id ::sm/uuid]
-      [:token [:maybe ctob/schema:token-attrs]]]]
+   [:set-token
+    [:map {:title "SetTokenChange"}
+     [:type [:= :set-token]]
+     [:set-name :string]
+     [:token-id ::sm/uuid]
+     [:token [:maybe ctob/schema:token-attrs]]]]
 
-    [:set-base-font-size
-     [:map {:title "ModBaseFontSize"}
-      [:type [:= :set-base-font-size]]
-      [:base-font-size :string]]]])
+   [:set-base-font-size
+    [:map {:title "ModBaseFontSize"}
+     [:type [:= :set-base-font-size]]
+     [:base-font-size :string]]]])
 
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
@@ -982,7 +982,7 @@
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)
-                  set (ctob/set-by-name lib' set-name)] ;; FIXME: remove this when set-token uses set-id
+                  set (ctob/get-set-by-name lib' set-name)] ;; FIXME: remove this when set-token uses set-id
               (cond
                 (not token)
                 (ctob/delete-token-from-set lib' set-name token-id)
@@ -999,14 +999,14 @@
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)
-                  set (ctob/set-by-id lib' set-id)] ;; FIXME: remove this when set-token-set uses set-id
+                  set (ctob/get-set lib' set-id)] ;; FIXME: remove this when set-token-set uses set-id
               (cond
                 (not token-set)
                 (if group?
                   (ctob/delete-set-group lib' (ctob/get-name set)) ;; FIXME: move to a separate change
                   (ctob/delete-set lib' (ctob/get-name set)))
 
-                (not (ctob/set-by-id lib' set-id))
+                (not (ctob/get-set lib' set-id))
                 (ctob/add-set lib' (ctob/make-token-set token-set))
 
                 :else

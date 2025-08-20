@@ -43,7 +43,7 @@
          (let [file'       (ths/get-file-from-state new-state)
                tokens-lib' (toht/get-tokens-lib file')
                sets'       (ctob/get-sets tokens-lib')
-               set-b'      (ctob/set-by-name tokens-lib' "Set B")]
+               set-b'      (ctob/get-set-by-name tokens-lib' "Set B")]
 
            (t/testing "Token lib contains two sets"
              (t/is (= (count sets') 2))
@@ -55,7 +55,7 @@
     (let [file       (setup-file-with-token-lib)
           store      (ths/setup-store file)
           tokens-lib (toht/get-tokens-lib file)
-          set-a      (ctob/set-by-name tokens-lib "Set A")
+          set-a      (ctob/get-set-by-name tokens-lib "Set A")
           events     [(dwtl/update-token-set (ctob/rename set-a "Set A updated")
                                              "Set A updated")]]
 
@@ -65,7 +65,7 @@
          (let [file'       (ths/get-file-from-state new-state)
                tokens-lib' (toht/get-tokens-lib file')
                sets'       (ctob/get-sets tokens-lib')
-               set-a'      (ctob/set-by-name tokens-lib' "Set A updated")]
+               set-a'      (ctob/get-set-by-name tokens-lib' "Set A updated")]
 
            (t/testing "Set has been renamed"
              (t/is (= (count sets') 1))
