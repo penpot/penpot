@@ -192,8 +192,6 @@
      [:prev-screen schema:prev-scren-interaction]
      [:open-url schema:open-url-interaction]]]])
 
-(sm/register! ::interaction schema:interaction)
-
 (def check-interaction
   (sm/check-fn schema:interaction))
 

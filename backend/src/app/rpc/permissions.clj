@@ -10,15 +10,14 @@
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]))
 
-(sm/register!
- ^{::sm/type ::permissions}
- [:map {:title "Permissions"}
-  [:type {:gen/elements [:membership :share-link]} :keyword]
-  [:is-owner ::sm/boolean]
-  [:is-admin ::sm/boolean]
-  [:can-edit ::sm/boolean]
-  [:can-read ::sm/boolean]
-  [:is-logged ::sm/boolean]])
+(def schema:permissions
+  [:map {:title "Permissions"}
+   [:type {:gen/elements [:membership :share-link]} :keyword]
+   [:is-owner ::sm/boolean]
+   [:is-admin ::sm/boolean]
+   [:can-edit ::sm/boolean]
+   [:can-read ::sm/boolean]
+   [:is-logged ::sm/boolean]])
 
 (def valid-roles
   #{:admin :owner :editor :viewer})

@@ -103,25 +103,25 @@
   (sm/encoder ctp/schema:page sm/json-transformer))
 
 (def encode-shape
-  (sm/encoder ::cts/shape sm/json-transformer))
+  (sm/encoder cts/schema:shape sm/json-transformer))
 
 (def encode-media
-  (sm/encoder ::ctf/media sm/json-transformer))
+  (sm/encoder ctf/schema:media sm/json-transformer))
 
 (def encode-component
-  (sm/encoder ::ctc/component sm/json-transformer))
+  (sm/encoder ctc/schema:component sm/json-transformer))
 
 (def encode-color
   (sm/encoder ctcl/schema:library-color sm/json-transformer))
 
 (def encode-typography
-  (sm/encoder ::cty/typography sm/json-transformer))
+  (sm/encoder cty/schema:typography sm/json-transformer))
 
 (def encode-tokens-lib
-  (sm/encoder ::cto/tokens-lib sm/json-transformer))
+  (sm/encoder cto/schema:tokens-lib sm/json-transformer))
 
 (def encode-plugin-data
-  (sm/encoder ::ctpg/plugin-data sm/json-transformer))
+  (sm/encoder ctpg/schema:plugin-data sm/json-transformer))
 
 (def encode-storage-object
   (sm/encoder schema:storage-object sm/json-transformer))
@@ -138,7 +138,7 @@
   (sm/decoder ctf/schema:media sm/json-transformer))
 
 (def decode-component
-  (sm/decoder ::ctc/component sm/json-transformer))
+  (sm/decoder ctc/schema:component sm/json-transformer))
 
 (def decode-color
   (sm/decoder ctcl/schema:library-color sm/json-transformer))
@@ -147,19 +147,19 @@
   (sm/decoder schema:file sm/json-transformer))
 
 (def decode-page
-  (sm/decoder ::ctp/page sm/json-transformer))
+  (sm/decoder ctp/schema:page sm/json-transformer))
 
 (def decode-shape
-  (sm/decoder ::cts/shape sm/json-transformer))
+  (sm/decoder cts/schema:shape sm/json-transformer))
 
 (def decode-typography
-  (sm/decoder ::cty/typography sm/json-transformer))
+  (sm/decoder cty/schema:typography sm/json-transformer))
 
 (def decode-tokens-lib
   (sm/decoder cto/schema:tokens-lib sm/json-transformer))
 
 (def decode-plugin-data
-  (sm/decoder ::ctpg/plugin-data sm/json-transformer))
+  (sm/decoder ctpg/schema:plugin-data sm/json-transformer))
 
 (def decode-storage-object
   (sm/decoder schema:storage-object sm/json-transformer))
@@ -173,31 +173,31 @@
   (sm/check-fn schema:manifest))
 
 (def validate-file
-  (sm/check-fn ::ctf/file))
+  (sm/check-fn ctf/schema:file))
 
 (def validate-page
-  (sm/check-fn ::ctp/page))
+  (sm/check-fn ctp/schema:page))
 
 (def validate-shape
-  (sm/check-fn ::cts/shape))
+  (sm/check-fn cts/schema:shape))
 
 (def validate-media
-  (sm/check-fn ::ctf/media))
+  (sm/check-fn ctf/schema:media))
 
 (def validate-color
   (sm/check-fn ctcl/schema:library-color))
 
 (def validate-component
-  (sm/check-fn ::ctc/component))
+  (sm/check-fn ctc/schema:component))
 
 (def validate-typography
-  (sm/check-fn ::cty/typography))
+  (sm/check-fn cty/schema:typography))
 
 (def validate-tokens-lib
-  (sm/check-fn ::cto/tokens-lib))
+  (sm/check-fn cto/schema:tokens-lib))
 
 (def validate-plugin-data
-  (sm/check-fn ::ctpg/plugin-data))
+  (sm/check-fn ctpg/schema:plugin-data))
 
 (def validate-storage-object
   (sm/check-fn schema:storage-object))

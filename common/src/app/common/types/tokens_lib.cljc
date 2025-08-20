@@ -1374,7 +1374,7 @@ Will return a value that matches this schema:
   (or tokens-lib (make-tokens-lib)))
 
 (def schema:tokens-lib
-  (sm/register!
+  (sm/type-schema
    {:type ::tokens-lib
     :pred valid-tokens-lib?
     :type-properties

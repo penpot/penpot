@@ -54,7 +54,7 @@
   (sm/encoder types.tokens-lib/schema:tokens-lib sm/json-transformer))
 
 (def encode-plugin-data
-  (sm/encoder ::ctpg/plugin-data sm/json-transformer))
+  (sm/encoder ctpg/schema:plugin-data sm/json-transformer))
 
 (def ^:private valid-buckets
   #{"file-media-object"

@@ -75,7 +75,7 @@
     [:map
      [:id ::sm/uuid]
      [:fullname :string]]]
-   [:role ::types.team/role]
+   [:role types.team/schema:role]
    [:email ::sm/email]])
 
 (def ^:private check-create-invitation-params
@@ -257,7 +257,7 @@
 (def ^:private schema:create-team-invitations
   [:map {:title "create-team-invitations"}
    [:team-id ::sm/uuid]
-   [:role ::types.team/role]
+   [:role types.team/schema:role]
    [:emails [::sm/set ::sm/email]]])
 
 (def ^:private max-invitations-by-request-threshold
@@ -318,7 +318,7 @@
    [:features {:optional true} ::cfeat/features]
    [:id {:optional true} ::sm/uuid]
    [:emails [::sm/set ::sm/email]]
-   [:role ::types.team/role]])
+   [:role types.team/schema:role]])
 
 (sv/defmethod ::create-team-with-invitations
   {::doc/added "1.17"
@@ -403,7 +403,7 @@
   [:map {:title "update-team-invitation-role"}
    [:team-id ::sm/uuid]
    [:email ::sm/email]
-   [:role ::types.team/role]])
+   [:role types.team/schema:role]])
 
 (sv/defmethod ::update-team-invitation-role
   {::doc/added "1.17"

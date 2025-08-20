@@ -119,7 +119,7 @@
              (-> (u/proxy->interaction self)
                  (d/patch-object params))]
          (cond
-           (not (sm/validate ::ctsi/interaction interaction))
+           (not (sm/validate ctsi/schema:interaction interaction))
            (u/display-not-valid :action interaction)
 
            :else
@@ -453,7 +453,7 @@
                 (let [id (obj/get self "$id")
                       value (blur-defaults (parser/parse-blur value))]
                   (cond
-                    (not (sm/validate ::ctsb/blur value))
+                    (not (sm/validate ctsb/schema:blur value))
                     (u/display-not-valid :blur value)
 
                     (not (r/check-permission plugin-id "content:write"))
@@ -470,7 +470,7 @@
               (let [id (obj/get self "$id")
                     value (parser/parse-exports value)]
                 (cond
-                  (not (sm/validate [:vector ::ctse/export] value))
+                  (not (sm/validate [:vector ctse/schema:export] value))
                   (u/display-not-valid :exports value)
 
                   (not (r/check-permission plugin-id "content:write"))
@@ -1129,7 +1129,7 @@
            (fn [value]
              (let [value (parser/parse-export value)]
                (cond
-                 (not (sm/validate ::ctse/export value))
+                 (not (sm/validate ctse/schema:export value))
                  (u/display-not-valid :export value)
 
                  :else
@@ -1161,7 +1161,7 @@
                    (-> ctsi/default-interaction
                        (d/patch-object (parser/parse-interaction trigger action delay)))]
                (cond
-                 (not (sm/validate ::ctsi/interaction interaction))
+                 (not (sm/validate ctsi/schema:interaction interaction))
                  (u/display-not-valid :addInteraction interaction)
 
                  :else

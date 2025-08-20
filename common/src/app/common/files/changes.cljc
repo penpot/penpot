@@ -112,7 +112,7 @@
                 [:type [:= :set-guide]]
                 [:page-id ::sm/uuid]
                 [:id ::sm/uuid]
-                [:params [:maybe ::ctp/guide]]]
+                [:params [:maybe ctp/schema:guide]]]
         gen    (->> (sg/generator schema)
                     (sg/fmap (fn [change]
                                (if (some? (:params change))
@@ -125,7 +125,7 @@
                 [:type [:= :set-flow]]
                 [:page-id ::sm/uuid]
                 [:id ::sm/uuid]
-                [:params [:maybe ::ctp/flow]]]
+                [:params [:maybe ctp/schema:flow]]]
 
         gen    (->> (sg/generator schema)
                     (sg/fmap (fn [change]
@@ -329,7 +329,7 @@
      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
      [:name {:optional true} :string]
      [:variant-id {:optional true} ::sm/uuid]
-     [:variant-properties {:optional true} [:vector ::ctv/variant-property]]]]
+     [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 
    [:del-component
     [:map {:title "DelComponentChange"}
@@ -354,12 +354,12 @@
    [:add-typography
     [:map {:title "AddTypogrphyChange"}
      [:type [:= :add-typography]]
-     [:typography ::ctt/typography]]]
+     [:typography ctt/schema:typography]]]
 
    [:mod-typography
     [:map {:title "ModTypogrphyChange"}
      [:type [:= :mod-typography]]
-     [:typography ::ctt/typography]]]
+     [:typography ctt/schema:typography]]]
 
    [:del-typography
     [:map {:title "DelTypogrphyChange"}
@@ -434,13 +434,10 @@
 (def schema:changes
   [:sequential {:gen/max 5 :gen/min 1} schema:change])
 
-(sm/register! ::change schema:change)
-(sm/register! ::changes schema:changes)
-
 (def valid-change?
   (sm/lazy-validator schema:change))
 
-(def check-changes!
+(def check-changes
   (sm/check-fn schema:changes))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -525,7 +522,7 @@
    ;; When verify? false we spec the schema validation. Currently used
    ;; to make just 1 validation even if the changes are applied twice
    (when verify?
-     (check-changes! items))
+     (check-changes items))
 
    (binding [*touched-changes* (volatile! #{})
              cts/*wasm-sync* true]

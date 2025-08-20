@@ -253,7 +253,7 @@
 (def ^:private
   schema:update-profile-photo
   [:map {:title "update-profile-photo"}
-   [:file ::media/upload]])
+   [:file media/schema:upload]])
 
 (sv/defmethod ::update-profile-photo
   {:doc/added "1.1"

@@ -64,10 +64,10 @@
    [:revn {:min 0} ::sm/int]
    [:vern {:min 0} ::sm/int]
    [:features {:optional true} ::cfeat/features]
-   [:changes {:optional true} [:vector ::cpc/change]]
+   [:changes {:optional true} [:vector cpc/schema:change]]
    [:changes-with-metadata {:optional true}
     [:vector [:map
-              [:changes [:vector ::cpc/change]]
+              [:changes [:vector cpc/schema:change]]
               [:hint-origin {:optional true} :keyword]
               [:hint-events {:optional true} [:vector [:string {:max 250}]]]]]]
    [:skip-validate {:optional true} ::sm/boolean]])
@@ -76,7 +76,7 @@
   schema:update-file-result
   [:vector {:title "update-file-result"}
    [:map
-    [:changes [:vector ::cpc/change]]
+    [:changes [:vector cpc/schema:change]]
     [:file-id ::sm/uuid]
     [:id ::sm/uuid]
     [:revn {:min 0} ::sm/int]

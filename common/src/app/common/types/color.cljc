@@ -141,7 +141,7 @@
    [:path {:optional true} :string]
    [:opacity {:optional true} [::sm/number {:min 0 :max 1}]]
    [:modified-at {:optional true} ::ct/inst]
-   [:plugin-data {:optional true} ::ctpg/plugin-data]])
+   [:plugin-data {:optional true} ctpg/schema:plugin-data]])
 
 (def schema:library-color
   "Used for in-transit representation of a color (per example when user

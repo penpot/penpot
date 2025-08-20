@@ -57,8 +57,8 @@
 (def ^:private
   schema:undo-entry
   [:map {:title "undo-entry"}
-   [:undo-changes [:vector ::cpc/change]]
-   [:redo-changes [:vector ::cpc/change]]
+   [:undo-changes [:vector cpc/schema:change]]
+   [:redo-changes [:vector cpc/schema:change]]
    [:undo-group ::sm/uuid]
    [:tags [:set :keyword]]])
 

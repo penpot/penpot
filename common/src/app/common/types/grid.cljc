@@ -56,14 +56,9 @@
 
 (def schema:default-grids
   [:map {:title "PageGrid"}
-   [:square {:optional true} ::square-params]
-   [:row {:optional true} ::column-params]
-   [:column {:optional true} ::column-params]])
-
-(sm/register! ::square-params schema:square-params)
-(sm/register! ::column-params schema:column-params)
-(sm/register! ::grid schema:grid)
-(sm/register! ::default-grids schema:default-grids)
+   [:square {:optional true} schema:square-params]
+   [:row {:optional true} schema:column-params]
+   [:column {:optional true} schema:column-params]])
 
 (def ^:private default-square-params
   {:size 16

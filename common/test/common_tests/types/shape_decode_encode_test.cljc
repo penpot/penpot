@@ -14,7 +14,7 @@
    [app.common.types.color :refer [schema:color schema:gradient]]
    [app.common.types.path :as path]
    [app.common.types.plugins :refer [schema:plugin-data]]
-   [app.common.types.shape :as tsh]
+   [app.common.types.shape :as tsh :refer [schema:shape]]
    [app.common.types.shape.interactions :refer [schema:animation schema:interaction]]
    [app.common.types.shape.shadow :refer [schema:shadow]]
    [app.common.uuid :as uuid]
@@ -135,10 +135,10 @@
      {:num 500})))
 
 (t/deftest shape-json-roundtrip
-  (let [encode (sm/encoder ::tsh/shape (sm/json-transformer))
-        decode (sm/decoder ::tsh/shape (sm/json-transformer))]
+  (let [encode (sm/encoder schema:shape (sm/json-transformer))
+        decode (sm/decoder schema:shape (sm/json-transformer))]
     (smt/check!
-     (smt/for [shape (sg/generator ::tsh/shape)]
+     (smt/for [shape (sg/generator schema:shape)]
        (let [shape-1 (encode shape)
              shape-2 (json-roundtrip shape-1)
              shape-3 (decode shape-2)]

@@ -12,7 +12,7 @@
    [app.common.features :as cfeat]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.team :as tt]
+   [app.common.types.team :as types.team]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
@@ -629,7 +629,7 @@
 
         ;; assign owner role to new profile
         (db/update! conn :team-profile-rel
-                    (get tt/permissions-for-role :owner)
+                    (get types.team/permissions-for-role :owner)
                     {:team-id id :profile-id reassign-to}))
 
       ;; and finally, if all other conditions does not match and the
@@ -742,7 +742,7 @@
                          :team-id team-id
                          :role role})
 
-    (let [params (get tt/permissions-for-role role)]
+    (let [params (get types.team/permissions-for-role role)]
       ;; Only allow single owner on team
       (when (= role :owner)
         (db/update! conn :team-profile-rel
@@ -760,7 +760,7 @@
   [:map {:title "update-team-member-role"}
    [:team-id ::sm/uuid]
    [:member-id ::sm/uuid]
-   [:role ::tt/role]])
+   [:role types.team/schema:role]])
 
 (sv/defmethod ::update-team-member-role
   {::doc/added "1.17"
@@ -810,7 +810,7 @@
 (def ^:private schema:update-team-photo
   [:map {:title "update-team-photo"}
    [:team-id ::sm/uuid]
-   [:file ::media/upload]])
+   [:file media/schema:upload]])
 
 (sv/defmethod ::update-team-photo
   {::doc/added "1.17"

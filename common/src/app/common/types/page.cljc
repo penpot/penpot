@@ -40,7 +40,7 @@
   [:map-of {:gen/max 2} ::sm/uuid schema:guide])
 
 (def schema:objects
-  [:map-of {:gen/max 5} ::sm/uuid ::cts/shape])
+  [:map-of {:gen/max 5} ::sm/uuid cts/schema:shape])
 
 (def schema:comment-thread-position
   [:map {:title "CommentThreadPosition"}
@@ -61,11 +61,6 @@
 
    [:comment-thread-positions {:optional true}
     [:map-of ::sm/uuid schema:comment-thread-position]]])
-
-(sm/register! ::objects schema:objects)
-(sm/register! ::page schema:page)
-(sm/register! ::guide schema:guide)
-(sm/register! ::flow schema:flow)
 
 (def valid-guide?
   (sm/lazy-validator schema:guide))
