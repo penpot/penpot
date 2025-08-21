@@ -2020,12 +2020,21 @@
               skip-operations? (or skip-operations?
                                    (= attr-val (get current-shape attr)))
 
-
               ;; On a text-change, we want to force a position-data reset
               ;; so it's calculated again
               [roperations uoperations]
               (if (and (not skip-operations?) text-change?)
                 (add-update-attr-operations :position-data current-shape roperations uoperations nil)
+                [roperations uoperations])
+
+              ;; On a rotation operation we need to keep also the transformation matrixes
+              [roperations uoperations]
+              (if (and (not skip-operations?) (= attr :rotation))
+                (let [[roperations uoperations]
+                      (add-update-attr-operations
+                       :transform current-shape roperations uoperations (:transform previous-shape))]
+                  (add-update-attr-operations
+                   :transform-inverse current-shape roperations uoperations (:transform-inverse previous-shape)))
                 [roperations uoperations])
 
               [roperations' uoperations']
