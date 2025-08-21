@@ -2178,11 +2178,26 @@ msgstr "Volver"
 msgid "labels.graphic-design"
 msgstr "Diseño gráfico"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:894, src/app/main/ui/workspace/main_menu.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1084, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1109, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1295
+msgid "labels.help-learning"
+msgstr "Ayuda y aprendizaje"
+
+msgid "labels.community-contributions"
+msgstr "Comunidad y contribuciones"
+
+msgid "labels.about-penpot"
+msgstr "Acerca de Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1039, src/app/main/ui/workspace/main_menu.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1084, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1109, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1295
 msgid "labels.help-center"
 msgstr "Centro de ayuda"
 
-#: src/app/main/ui/dashboard/templates.cljs:91
+msgid "labels.learning-center"
+msgstr "Centro de aprendizaje"
+
+msgid "labels.penpot-hub"
+msgstr "Penpot hub"
+
+#: src/app/main/ui/dashboard/templates.cljs:90
 msgid "labels.hide"
 msgstr "Ocultar"
 
@@ -2391,6 +2406,12 @@ msgstr "Referencia"
 #: src/app/main/ui/dashboard/sidebar.cljs:909, src/app/main/ui/settings/sidebar.cljs:129, src/app/main/ui/workspace/main_menu.cljs:132
 msgid "labels.release-notes"
 msgstr "Notas de versión"
+
+msgid "labels.version-notes"
+msgstr "Notas versión %s"
+
+msgid "labels.penpot-changelog"
+msgstr "Registro de cambios de Penpot"
 
 #: src/app/main/ui/workspace.cljs
 #, unused

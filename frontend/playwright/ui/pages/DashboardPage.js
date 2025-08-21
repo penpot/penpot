@@ -288,6 +288,14 @@ export class DashboardPage extends BaseWebSocketPage {
     );
     await expect(this.mainHeading).toHaveText("Libraries");
   }
+
+  async openProfileMenu() {
+    await this.userAccount.click();
+  }
+
+  async clickProfileMenuItem(menuSection) {
+    await this.sidebarMenu.getByText(menuSection).click();
+  }
 }
 
 export default DashboardPage;
