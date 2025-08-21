@@ -393,17 +393,15 @@
   defined by the constant num-segments"
   [start end h1 h2]
   (let [offset (/ 1 num-segments)
-        tp (fn [t] (curve-values start end h1 h2 t))]
-    (loop [from 0
+        tp     (fn [t] (curve-values start end h1 h2 t))]
+    (loop [from   0.0
            result []]
-
-      (let [to (min 1 (+ from offset))
-            line [(tp from) (tp to)]
+      (let [to     (mth/min 1.0 (+ from offset))
+            line   [(tp from) (tp to)]
             result (conj result line)]
-
-        (if (>= to 1)
+        (if (>= to 1.0)
           result
-          (recur (long to) result))))))
+          (recur (double to) result))))))
 
 (defn curve-split
   "Splits a curve into two at the given parametric value `t`.

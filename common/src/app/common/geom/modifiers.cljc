@@ -96,10 +96,9 @@
         (if (and (some? layout-line) (<= from-idx max-idx))
           (let [to-idx   (+ from-idx (:num-children layout-line))
                 children (subvec children from-idx to-idx)
-
                 [_ modif-tree]
                 (reduce set-child-modifiers [layout-line modif-tree] children)]
-            (recur modif-tree (first pending) (rest pending) (long to-idx)))
+            (recur modif-tree (first pending) (rest pending) to-idx))
 
           modif-tree)))))
 
