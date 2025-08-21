@@ -30,7 +30,7 @@ jobs:
         id: vars
         run: |
           echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-          echo "gh_ref=${{ inputs.gh_ref }}" >> $GITHUB_OUTPUT
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Run manage.sh build-bundle from host
         run: ./manage.sh build-bundle

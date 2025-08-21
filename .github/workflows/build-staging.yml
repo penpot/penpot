@@ -1,4 +1,4 @@
-name: Build and Upload Penpot STAGING Bundle
+name: STAGING - Build and Upload Penpot Bundle
 
 on:
   schedule:

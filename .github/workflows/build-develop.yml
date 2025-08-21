@@ -1,4 +1,4 @@
-name: Build and Upload Penpot DEVELOP Bundle
+name: DEVELOP - Build and Upload Penpot Bundle
 
 on:
   schedule:

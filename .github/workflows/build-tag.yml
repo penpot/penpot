@@ -1,4 +1,4 @@
-name: Build and Upload Penpot TAG Bundle
+name: TAG - Build and Upload Penpot Bundle
 
 on:
   push:
