@@ -26,7 +26,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
@@ -709,14 +709,13 @@
      [:div {:class (stl/css :component-swap-content)}
       [:div {:class (stl/css :fields-wrapper)}
        [:div {:class (stl/css :search-field)}
-        [:& search-bar {:on-change on-search-term-change
-                        :clear-action on-search-clear-click
-                        :class (stl/css :search-wrapper)
-                        :id "swap-component-search-filter"
-                        :value (:term filters)
-                        :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
-                        :icon (mf/html [:span {:class (stl/css :search-icon)}
-                                        i/search])}]]
+        [:> search-bar* {:on-change on-search-term-change
+                         :on-clear on-search-clear-click
+                         :class (stl/css :search-wrapper)
+                         :id "swap-component-search-filter"
+                         :value (:term filters)
+                         :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
+                         :icon-id "search"}]]
 
        [:& select {:class (stl/css :select-library)
                    :default-value current-library-id

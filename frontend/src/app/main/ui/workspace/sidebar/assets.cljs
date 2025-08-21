@@ -15,7 +15,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.icons :as i]
@@ -169,9 +169,9 @@
 
 
       [:div {:class (stl/css :search-wrapper)}
-       [:& search-bar {:on-change on-search-term-change
-                       :value term
-                       :placeholder (tr "workspace.assets.search")}
+       [:> search-bar* {:on-change on-search-term-change
+                        :value term
+                        :placeholder (tr "workspace.assets.search")}
         [:button
          {:on-click on-open-menu
           :title (tr "workspace.assets.filter")

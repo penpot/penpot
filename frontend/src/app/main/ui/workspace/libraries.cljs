@@ -26,7 +26,7 @@
    [app.main.store :as st]
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.link-button :as lb]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
@@ -329,10 +329,10 @@
       [:> title-bar* {:collapsable false
                       :title       (tr "workspace.libraries.shared-libraries")
                       :class       (stl/css :title-spacing-lib)}]
-      [:& search-bar {:on-change change-search-term
-                      :value search-term
-                      :placeholder (tr "workspace.libraries.search-shared-libraries")
-                      :icon (mf/html [:span {:class (stl/css :search-icon)} i/search])}]
+      [:> search-bar* {:on-change change-search-term
+                       :value search-term
+                       :placeholder (tr "workspace.libraries.search-shared-libraries")
+                       :icon-id "search"}]
 
       (if (seq shared-libraries)
         [:div {:class (stl/css :section-list-shared)}

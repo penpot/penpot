@@ -15,6 +15,11 @@
   background-color: var(--search-bar-background-color);
 }
 
+.icon {
+  margin-left: $s-8;
+  flex: 0 0 $s-16;
+}
+
 .search-input-wrapper {
   @include flexCenter;
   height: $s-32;
@@ -52,15 +57,11 @@
   }
 }
 
-.clear {
+.clear-icon {
   @extend .button-tag;
-  border-radius: $br-8;
-  height: 100%;
   flex: 0 0 $s-32;
-  padding-right: $s-8;
+  height: 100%;
   svg {
-    @extend .button-icon-small;
-    color: transparent;
     stroke: var(--icon-foreground);
   }
 }

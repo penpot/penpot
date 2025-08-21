@@ -15,7 +15,7 @@
    [app.main.data.plugins :as dp]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -173,10 +173,10 @@
 
       [:div {:class (stl/css :modal-content)}
        [:div {:class (stl/css :top-bar)}
-        [:& search-bar {:on-change handle-url-input
-                        :value plugin-url
-                        :placeholder (tr "workspace.plugins.search-placeholder")
-                        :class (stl/css-case :input-error error?)}]
+        [:> search-bar* {:on-change handle-url-input
+                         :value plugin-url
+                         :placeholder (tr "workspace.plugins.search-placeholder")
+                         :class (stl/css-case :input-error error?)}]
 
         [:button {:class (stl/css :primary-button)
                   :disabled @fetching-manifest?

@@ -259,11 +259,6 @@
   @include flexCenter;
   margin-left: $s-8;
   flex: 0 0 $s-16;
-
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-  }
 }
 
 .component-path {

@@ -23,7 +23,7 @@
    [app.main.ui.components.editable-select :refer [editable-select]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as i]
@@ -181,10 +181,10 @@
     [:div {:class (stl/css :font-selector)}
      [:div {:class (stl/css-case :font-selector-dropdown true :font-selector-dropdown-full-size full-size?)}
       [:div {:class (stl/css :header)}
-       [:& search-bar {:on-change on-filter-change
-                       :value (:term state)
-                       :auto-focus true
-                       :placeholder (tr "workspace.options.search-font")}]
+       [:> search-bar* {:on-change on-filter-change
+                        :value (:term state)
+                        :auto-focus true
+                        :placeholder (tr "workspace.options.search-font")}]
        (when (and recent-fonts show-recent)
          [:section {:class (stl/css :show-recent)}
           [:p {:class (stl/css :title)} (tr "workspace.options.recent-fonts")]

@@ -17,7 +17,7 @@
    [app.main.data.workspace.path.shortcuts]
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -500,11 +500,11 @@
        i/close]]
      [:div {:class (stl/css :search-field)}
 
-      [:& search-bar {:on-change on-search-term-change-2
-                      :clear-action on-search-clear-click
-                      :value @filter-term
-                      :placeholder (tr "shortcuts.title")
-                      :icon (mf/html [:span {:class (stl/css :search-icon)} i/search])}]]
+      [:> search-bar* {:on-change on-search-term-change-2
+                       :on-clear on-search-clear-click
+                       :value @filter-term
+                       :placeholder (tr "shortcuts.title")
+                       :icon-id "search"}]]
 
      (if match-any?
        [:div {:class (stl/css :shortcuts-list)}

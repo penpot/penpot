@@ -15,7 +15,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.search-bar :refer [search-bar]]
+   [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
@@ -288,10 +288,10 @@
        (if show-search?
          [:*
           [:div {:class (stl/css :tool-window-bar :search)}
-           [:& search-bar {:on-change update-search-text
-                           :value current-search
-                           :on-clear clear-search-text
-                           :placeholder (tr "workspace.sidebar.layers.search")}
+           [:> search-bar* {:on-change update-search-text
+                            :value current-search
+                            :on-clear clear-search-text
+                            :placeholder (tr "workspace.sidebar.layers.search")}
             [:button {:on-click on-toggle-filters-click
                       :class (stl/css-case
                               :filter-button true
