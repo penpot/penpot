@@ -161,3 +161,19 @@ test("Updates canvas background", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a file with blurs applied to any kind of shape", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-blurs.json");
+
+  await workspace.goToWorkspace({
+    id: "aa0a383a-7553-808a-8006-ae1237b52cf9",
+    pageId: "aa0a383a-7553-808a-8006-ae160ba8bd86",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});
