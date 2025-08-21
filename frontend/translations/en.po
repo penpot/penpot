@@ -1761,8 +1761,12 @@ msgid "inspect.subtitle.main"
 msgstr "Main component"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Variant"
+msgid "inspect.tabs.switcher.label"
+msgstr "Layer info"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:101
+msgid "inspect.tabs.computed"
+msgstr "Computed"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
@@ -1819,6 +1823,10 @@ msgstr "Text"
 #: src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.tabs.info"
 msgstr "Info"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:101
+msgid "inspect.tabs.styles"
+msgstr "Styles"
 
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"
