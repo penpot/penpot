@@ -9,6 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
+- Show current Penpot version [Taiga #11603](https://tree.taiga.io/project/penpot/us/11603)
 
 ### :bug: Bugs fixed
 
