@@ -362,11 +362,13 @@ pub struct TextLeaf {
     text: String,
     font_family: FontFamily,
     font_size: f32,
+    letter_spacing: f32,
     font_style: u8,
     font_weight: i32,
     font_variant_id: Uuid,
     text_decoration: u8,
     text_transform: u8,
+    text_direction: u8,
     fills: Vec<shapes::Fill>,
 }
 
@@ -376,9 +378,11 @@ impl TextLeaf {
         text: String,
         font_family: FontFamily,
         font_size: f32,
+        letter_spacing: f32,
         font_style: u8,
         text_decoration: u8,
         text_transform: u8,
+        text_direction: u8,
         font_weight: i32,
         font_variant_id: Uuid,
         fills: Vec<shapes::Fill>,
@@ -387,9 +391,11 @@ impl TextLeaf {
             text,
             font_family,
             font_size,
+            letter_spacing,
             font_style,
             text_decoration,
             text_transform,
+            text_direction,
             font_weight,
             font_variant_id,
             fills,
@@ -413,7 +419,7 @@ impl TextLeaf {
 
         style.set_foreground_paint(&paint);
         style.set_font_size(self.font_size);
-        style.set_letter_spacing(paragraph.letter_spacing);
+        style.set_letter_spacing(self.letter_spacing);
         style.set_height(paragraph.line_height);
         style.set_height_override(true);
         style.set_half_leading(false);
@@ -452,7 +458,7 @@ impl TextLeaf {
         let mut style = self.to_style(paragraph, &Rect::default(), fallback_fonts, blur, blur_mask);
         style.set_foreground_paint(stroke_paint);
         style.set_font_size(self.font_size);
-        style.set_letter_spacing(paragraph.letter_spacing);
+        style.set_letter_spacing(self.letter_spacing);
         style.set_decoration_type(match self.text_decoration {
             0 => skia::textlayout::TextDecoration::NO_DECORATION,
             1 => skia::textlayout::TextDecoration::UNDERLINE,
@@ -503,6 +509,7 @@ pub struct RawTextLeaf {
     text_decoration: u8,
     text_transform: u8,
     font_size: f32,
+    letter_spacing: f32,
     font_weight: i32,
     font_id: [u32; 4],
     font_family: [u8; 4],
@@ -535,8 +542,9 @@ pub struct RawTextLeafData {
     font_style: u8,
     text_decoration: u8,
     text_transform: u8,
-    byte_padding: u8,
+    text_direction: u8,
     font_size: f32,
+    letter_spacing: f32,
     font_weight: i32,
     font_id: [u32; 4],
     font_family: [u8; 4],
@@ -565,8 +573,9 @@ impl From<&[u8]> for RawTextLeafData {
             font_style: text_leaf.font_style,
             text_decoration: text_leaf.text_decoration,
             text_transform: text_leaf.text_transform,
-            byte_padding: 0,
+            text_direction: 0, // TODO: Añadirlo
             font_size: text_leaf.font_size,
+            letter_spacing: text_leaf.letter_spacing,
             font_weight: text_leaf.font_weight,
             font_id: text_leaf.font_id,
             font_family: text_leaf.font_family,
@@ -669,9 +678,11 @@ impl From<&Vec<u8>> for RawTextData {
                 text,
                 font_family,
                 text_leaf.font_size,
+                text_leaf.letter_spacing,
                 text_leaf.font_style,
                 text_leaf.text_decoration,
                 text_leaf.text_transform,
+                text_leaf.text_direction,
                 text_leaf.font_weight,
                 font_variant_id,
                 text_leaf.fills.clone(),

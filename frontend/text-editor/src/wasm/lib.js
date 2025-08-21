@@ -290,11 +290,61 @@ function getFontStyle(fontStyle) {
   }
 }
 
-export function updateTextShape(fontSize, root) {
-  const paragraphAttrSize = 48;
-  const leafAttrSize = 56;
-  const fillSize = 160;
+const PARAGRAPH_ATTR_SIZE = 48;
+const LEAF_ATTR_SIZE = 60;
+const FILL_SIZE = 160;
 
+function setParagraphData(dview, { numLeaves, textAlign, textDirection, textDecoration, textTransform, lineHeight, letterSpacing }) {
+  // Set number of leaves
+  dview.setUint32(0, numLeaves, true);
+
+  // Serialize paragraph attributes
+  dview.setUint8(4, textAlign, true); // text-align: left
+  dview.setUint8(5, textDirection, true); // text-direction: LTR
+  dview.setUint8(6, textDecoration, true); // text-decoration: none
+  dview.setUint8(7, textTransform, true); // text-transform: none
+  dview.setFloat32(8, lineHeight, true); // line-height
+  dview.setFloat32(12, letterSpacing, true); // letter-spacing
+  dview.setUint32(16, 0, true); // typography-ref-file (UUID part 1)
+  dview.setUint32(20, 0, true); // typography-ref-file (UUID part 2)
+  dview.setUint32(24, 0, true); // typography-ref-file (UUID part 3)
+  dview.setUint32(28, 0, true); // typography-ref-file (UUID part 4)
+  dview.setUint32(32, 0, true); // typography-ref-id (UUID part 1)
+  dview.setUint32(36, 0, true); // typography-ref-id (UUID part 2)
+  dview.setUint32(40, 0, true); // typography-ref-id (UUID part 3)
+  dview.setUint32(44, 0, true); // typography-ref-id (UUID part 4)
+}
+
+function setLeafData(dview, leafOffset, {
+  fontStyle,
+  fontSize,
+  fontWeight,
+  letterSpacing,
+  textSize,
+  totalFills
+}) {
+  // Serialize leaf attributes
+  dview.setUint8(leafOffset + 0, fontStyle, true); // font-style: normal
+  dview.setUint8(leafOffset + 1, 0, true); // text-decoration: none
+  dview.setUint8(leafOffset + 2, 0, true); // text-transform: none
+  dview.setUint8(leafOffset + 3, 0, true); // text-direction: ltr
+  dview.setFloat32(leafOffset + 4, fontSize, true); // font-size
+  dview.setFloat32(leafOffset + 8, letterSpacing, true); // letter-spacing
+  dview.setInt32(leafOffset + 12, fontWeight, true); // font-weight: normal
+  dview.setUint32(leafOffset + 16, 0, true); // font-id (UUID part 1)
+  dview.setUint32(leafOffset + 20, 0, true); // font-id (UUID part 2)
+  dview.setUint32(leafOffset + 24, 0, true); // font-id (UUID part 3)
+  dview.setUint32(leafOffset + 28, 0, true); // font-id (UUID part 4)
+  dview.setUint32(leafOffset + 32, 0, true); // font-family hash
+  dview.setUint32(leafOffset + 36, 0, true); // font-variant-id (UUID part 1)
+  dview.setUint32(leafOffset + 40, 0, true); // font-variant-id (UUID part 2)
+  dview.setUint32(leafOffset + 44, 0, true); // font-variant-id (UUID part 3)
+  dview.setUint32(leafOffset + 48, 0, true); // font-variant-id (UUID part 4)
+  dview.setUint32(leafOffset + 52, textSize, true); // text-length
+  dview.setUint32(leafOffset + 56, totalFills, true); // total fills count
+}
+
+export function updateTextShape(fontSize, root) {
   // Calculate fills
   const fills = [
     {
@@ -305,14 +355,14 @@ export function updateTextShape(fontSize, root) {
   ];
 
   const totalFills = fills.length;
-  const totalFillsSize = totalFills * fillSize;
+  const totalFillsSize = totalFills * FILL_SIZE;
 
   const paragraphs = root.children;
   console.log("paragraphs", paragraphs.length);
 
   Module._clear_shape_text();
   for (const paragraph of paragraphs) {
-    let totalSize = paragraphAttrSize;
+    let totalSize = PARAGRAPH_ATTR_SIZE;
 
     const leaves = paragraph.children;
     const numLeaves = leaves.length;
@@ -323,7 +373,7 @@ export function updateTextShape(fontSize, root) {
       const textBuffer = new TextEncoder().encode(text);
       const textSize = textBuffer.byteLength;
       console.log("text", text, textSize);
-      totalSize += leafAttrSize + totalFillsSize;
+      totalSize += LEAF_ATTR_SIZE + totalFillsSize;
     }
 
     totalSize += paragraph.textContent.length;
@@ -371,39 +421,30 @@ export function updateTextShape(fontSize, root) {
     typography_ref_id: [u32; 4],
     */
 
-    // Set number of leaves
-    dview.setUint32(0, numLeaves, true);
-
-    // Serialize paragraph attributes
-    dview.setUint8(4, textAlign, true); // text-align: left
-    dview.setUint8(5, textDirection, true); // text-direction: LTR
-    dview.setUint8(6, textDecoration, true); // text-decoration: none
-    dview.setUint8(7, textTransform, true); // text-transform: none
-    dview.setFloat32(8, lineHeight, true); // line-height
-    dview.setFloat32(12, letterSpacing, true); // letter-spacing
-    dview.setUint32(16, 0, true); // typography-ref-file (UUID part 1)
-    dview.setUint32(20, 0, true); // typography-ref-file (UUID part 2)
-    dview.setUint32(24, 0, true); // typography-ref-file (UUID part 3)
-    dview.setUint32(28, 0, true); // typography-ref-file (UUID part 4)
-    dview.setUint32(32, 0, true); // typography-ref-id (UUID part 1)
-    dview.setUint32(36, 0, true); // typography-ref-id (UUID part 2)
-    dview.setUint32(40, 0, true); // typography-ref-id (UUID part 3)
-    dview.setUint32(44, 0, true); // typography-ref-id (UUID part 4)
-
-    let leafOffset = paragraphAttrSize;
+    setParagraphData(dview, {
+      numLeaves,
+      textAlign,
+      textDecoration,
+      textTransform,
+      textDirection,
+      lineHeight,
+      letterSpacing
+    })
+    let leafOffset = PARAGRAPH_ATTR_SIZE;
     for (const leaf of leaves) {
       console.log(
         "leafOffset",
         leafOffset,
-        paragraphAttrSize,
-        leafAttrSize,
-        fillSize,
+        PARAGRAPH_ATTR_SIZE,
+        LEAF_ATTR_SIZE,
+        FILL_SIZE,
         totalFills,
         totalFillsSize,
       );
       const fontStyle = getFontStyle(leaf.style.getPropertyValue("font-style"));
       const fontSize = parseFloat(leaf.style.getPropertyValue("font-size"));
-      console.log("font-size", fontSize);
+      const letterSpacing = parseFloat(leaf.style.getPropertyValue("letter-spacing"))
+      console.log("font-size", fontSize, "letter-spacing", letterSpacing);
       const fontWeight = parseInt(
         leaf.style.getPropertyValue("font-weight"),
         10,
@@ -414,35 +455,29 @@ export function updateTextShape(fontSize, root) {
       const textBuffer = new TextEncoder().encode(text);
       const textSize = textBuffer.byteLength;
 
-      // Serialize leaf attributes
-      dview.setUint8(leafOffset + 0, fontStyle, true); // font-style: normal
-      dview.setUint8(leafOffset + 1, 0, true); // text-decoration: none
-      dview.setUint8(leafOffset + 2, 0, true); // text-transform: none
-      dview.setFloat32(leafOffset + 4, fontSize, true); // font-size
-      dview.setInt32(leafOffset + 8, fontWeight, true); // font-weight: normal
-      dview.setUint32(leafOffset + 12, 0, true); // font-id (UUID part 1)
-      dview.setUint32(leafOffset + 16, 0, true); // font-id (UUID part 2)
-      dview.setUint32(leafOffset + 20, 0, true); // font-id (UUID part 3)
-      dview.setUint32(leafOffset + 24, 0, true); // font-id (UUID part 4)
-      dview.setUint32(leafOffset + 28, 0, true); // font-family hash
-      dview.setUint32(leafOffset + 32, 0, true); // font-variant-id (UUID part 1)
-      dview.setUint32(leafOffset + 36, 0, true); // font-variant-id (UUID part 2)
-      dview.setUint32(leafOffset + 40, 0, true); // font-variant-id (UUID part 3)
-      dview.setUint32(leafOffset + 44, 0, true); // font-variant-id (UUID part 4)
-      dview.setUint32(leafOffset + 48, textSize, true); // text-length
-      dview.setUint32(leafOffset + 52, totalFills, true); // total fills count
+      setLeafData(dview, leafOffset, {
+        fontStyle,
+        textDecoration: 0,
+        textTransform: 0,
+        textDirection: 0,
+        fontSize,
+        fontWeight,
+        letterSpacing,
+        textSize,
+        totalFills
+      })
 
       // Serialize fills
-      let fillOffset = leafOffset + leafAttrSize;
+      let fillOffset = leafOffset + LEAF_ATTR_SIZE;
       fills.forEach((fill) => {
         if (fill.type === "solid") {
           const argb = hexToU32ARGB(fill.color, fill.opacity);
           dview.setUint8(fillOffset + 0, 0x00, true); // Fill type: solid
           dview.setUint32(fillOffset + 4, argb, true);
-          fillOffset += fillSize; // Move to the next fill
+          fillOffset += FILL_SIZE; // Move to the next fill
         }
       });
-      leafOffset += leafAttrSize + totalFillsSize;
+      leafOffset += LEAF_ATTR_SIZE + totalFillsSize;
     }
 
     const text = paragraph.textContent;
@@ -459,9 +494,6 @@ export function updateTextShape(fontSize, root) {
 
 export function addTextShape(fontSize, text) {
   const numLeaves = 1; // Single text leaf for simplicity
-  const paragraphAttrSize = 48;
-  const leafAttrSize = 56;
-  const fillSize = 160;
   const textBuffer = new TextEncoder().encode(text);
   const textSize = textBuffer.byteLength;
 
@@ -474,10 +506,10 @@ export function addTextShape(fontSize, text) {
     },
   ];
   const totalFills = fills.length;
-  const totalFillsSize = totalFills * fillSize;
+  const totalFillsSize = totalFills * FILL_SIZE;
 
   // Calculate metadata and total buffer size
-  const metadataSize = paragraphAttrSize + leafAttrSize + totalFillsSize;
+  const metadataSize = PARAGRAPH_ATTR_SIZE + LEAF_ATTR_SIZE + totalFillsSize;
   const totalSize = metadataSize + textSize;
 
   // Allocate buffer
@@ -485,50 +517,37 @@ export function addTextShape(fontSize, text) {
   const heap = new Uint8Array(Module.HEAPU8.buffer, bufferPtr, totalSize);
   const dview = new DataView(heap.buffer, bufferPtr, totalSize);
 
-  // Set number of leaves
-  dview.setUint32(0, numLeaves, true);
-
-  // Serialize paragraph attributes
-  dview.setUint8(4, 1); // text-align: left
-  dview.setUint8(5, 0); // text-direction: LTR
-  dview.setUint8(6, 0); // text-decoration: none
-  dview.setUint8(7, 0); // text-transform: none
-  dview.setFloat32(8, 1.2, true); // line-height
-  dview.setFloat32(12, 0, true); // letter-spacing
-  dview.setUint32(16, 0, true); // typography-ref-file (UUID part 1)
-  dview.setUint32(20, 0, true); // typography-ref-file (UUID part 2)
-  dview.setUint32(24, 0, true); // typography-ref-file (UUID part 3)
-  dview.setInt32(28, 0, true); // typography-ref-file (UUID part 4)
-  dview.setUint32(32, 0, true); // typography-ref-id (UUID part 1)
-  dview.setUint32(36, 0, true); // typography-ref-id (UUID part 2)
-  dview.setUint32(40, 0, true); // typography-ref-id (UUID part 3)
-  dview.setInt32(44, 0, true); // typography-ref-id (UUID part 4)
+  setParagraphData(dview, {
+    numLeaves,
+    textAlign: 0,
+    textDecoration: 0,
+    textTransform: 0,
+    textDirection: 0,
+    lineHeight: 1.2,
+    letterSpacing: 0,
+  });
 
   // Serialize leaf attributes
-  const leafOffset = paragraphAttrSize;
-  dview.setUint8(leafOffset, 0); // font-style: normal
-  dview.setFloat32(leafOffset + 4, fontSize, true); // font-size
-  dview.setUint32(leafOffset + 8, 400, true); // font-weight: normal
-  dview.setUint32(leafOffset + 12, 0, true); // font-id (UUID part 1)
-  dview.setUint32(leafOffset + 16, 0, true); // font-id (UUID part 2)
-  dview.setUint32(leafOffset + 20, 0, true); // font-id (UUID part 3)
-  dview.setInt32(leafOffset + 24, 0, true); // font-id (UUID part 4)
-  dview.setInt32(leafOffset + 28, 0, true); // font-family hash
-  dview.setUint32(leafOffset + 32, 0, true); // font-variant-id (UUID part 1)
-  dview.setUint32(leafOffset + 36, 0, true); // font-variant-id (UUID part 2)
-  dview.setUint32(leafOffset + 40, 0, true); // font-variant-id (UUID part 3)
-  dview.setInt32(leafOffset + 44, 0, true); // font-variant-id (UUID part 4)
-  dview.setInt32(leafOffset + 48, textSize, true); // text-length
-  dview.setInt32(leafOffset + 52, totalFills, true); // total fills count
+  const leafOffset = PARAGRAPH_ATTR_SIZE;
+  setLeafData(dview, leafOffset, {
+    fontSize,
+    fontWeight: 400,
+    textDecoration: 0,
+    textDirection: 0,
+    textTransform: 0,
+    letterSpacing: 0,
+    textSize,
+    totalFills,
+  });
 
   // Serialize fills
-  let fillOffset = leafOffset + leafAttrSize;
+  let fillOffset = leafOffset + LEAF_ATTR_SIZE;
   fills.forEach((fill) => {
     if (fill.type === "solid") {
       const argb = hexToU32ARGB(fill.color, fill.opacity);
       dview.setUint8(fillOffset, 0x00, true); // Fill type: solid
       dview.setUint32(fillOffset + 4, argb, true);
-      fillOffset += fillSize; // Move to the next fill
+      fillOffset += FILL_SIZE; // Move to the next fill
     }
   });
 
