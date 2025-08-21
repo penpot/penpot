@@ -524,6 +524,7 @@
      (when visible?
        [:> cmm/component-item-thumbnail*
         {:file-id (:file-id item)
+         :class (stl/css :component-img)
          :root-shape root-shape
          :component item
          :container container}])
