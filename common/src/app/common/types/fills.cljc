@@ -119,7 +119,7 @@
           (c/assoc position fill)))
     (if (nil? fills)
       [fill]
-      (-> (coerce fills)
+      (-> fills
           (c/assoc position fill)))))
 
 (defn update
