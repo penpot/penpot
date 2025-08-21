@@ -7,7 +7,7 @@ pushd $_SCRIPT_DIR;
 . ./_build_env
 
 export CARGO_BUILD_TARGET=${CARGO_BUILD_TARGET:-"wasm32-unknown-emscripten"};
-export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.86.0-1/skia-binaries-cab569e6478958ca0783-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL:-"https://github.com/penpot/skia-binaries/releases/download/0.87.0/skia-binaries-e551f334ad5cbdf43abf-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"}
 
 
 pushd $_SCRIPT_DIR;
