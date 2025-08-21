@@ -190,4 +190,4 @@
           (recur (first subpath)
                  (rest subpath)
                  first-point
-                 (long signed-area)))))))
+                 signed-area))))))
