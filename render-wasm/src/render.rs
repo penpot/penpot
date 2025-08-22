@@ -511,7 +511,7 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let mut paragraphs = text_content.get_skia_paragraphs(
+                let mut paragraphs = text_content.to_paragraphs(
                     shape.image_filter(1.).as_ref(),
                     shape.mask_filter(1.).as_ref(),
                 );
@@ -524,7 +524,7 @@ impl RenderState {
                 text::render(self, &shape, &mut paragraphs, None, None);
 
                 for stroke in shape.visible_strokes().rev() {
-                    let mut stroke_paragraphs = text_content.get_skia_stroke_paragraphs(
+                    let mut stroke_paragraphs = text_content.to_stroke_paragraphs(
                         stroke,
                         &shape.selrect(),
                         shape.image_filter(1.).as_ref(),

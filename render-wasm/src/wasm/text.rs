@@ -1,5 +1,5 @@
 use crate::mem;
-use crate::shapes::{auto_height, auto_width, max_width, GrowType, RawTextData, Type};
+use crate::shapes::{auto_height, build_paragraphs_with_width, GrowType, RawTextData, Type};
 
 use crate::STATE;
 use crate::{with_current_shape, with_current_shape_mut};
@@ -43,19 +43,27 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
         height = shape.selrect.height();
 
         if let Type::Text(content) = &shape.shape_type {
-            let mut paragraphs = content.get_skia_paragraphs(
-                shape.image_filter(1.).as_ref(),
-                shape.mask_filter(1.).as_ref(),
-            );
-            m_width = max_width(&mut paragraphs, width);
+            // 1. Reset Paragraphs
+            let paragraph_width = content.get_width();
+            let mut paragraphs = content.to_paragraphs(None, None);
+            let built_paragraphs = build_paragraphs_with_width(&mut paragraphs, paragraph_width);
 
+            // 2. Max Width Calculation
+            m_width = built_paragraphs
+                .iter()
+                .flatten()
+                .fold(0.0, |max_width, p| f32::max(p.max_width(), max_width));
+
+            // 3. Width and Height Calculation
             match content.grow_type() {
                 GrowType::AutoHeight => {
-                    height = auto_height(&mut paragraphs, width).ceil();
+                    let mut paragraph_height = content.to_paragraphs(None, None);
+                    height = auto_height(&mut paragraph_height, paragraph_width).ceil();
                 }
                 GrowType::AutoWidth => {
-                    width = auto_width(&mut paragraphs, width).ceil();
-                    height = auto_height(&mut paragraphs, width).ceil();
+                    width = paragraph_width;
+                    let mut paragraph_height = content.to_paragraphs(None, None);
+                    height = auto_height(&mut paragraph_height, paragraph_width).ceil();
                 }
                 GrowType::Fixed => {}
             }

@@ -10,8 +10,8 @@ use crate::math::bools;
 use crate::math::{self as math, identitish, Bounds, Matrix, Point};
 
 use crate::shapes::{
-    auto_height, set_paragraphs_width, ConstraintH, ConstraintV, Frame, Group, GrowType, Layout,
-    Modifier, Shape, StructureEntry, TransformEntry, Type,
+    auto_height, ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape,
+    StructureEntry, TransformEntry, Type,
 };
 use crate::state::ShapesPool;
 use crate::state::State;
@@ -197,18 +197,34 @@ fn propagate_transform(
     let mut transform = entry.transform;
 
     if let Type::Text(content) = &shape.shape_type {
-        if content.grow_type() == GrowType::AutoHeight {
-            let mut paragraphs = content.get_skia_paragraphs(None, None);
-            set_paragraphs_width(shape_bounds_after.width(), &mut paragraphs);
-            let height = auto_height(&mut paragraphs, shape_bounds_after.width());
-            let resize_transform = math::resize_matrix(
-                &shape_bounds_after,
-                &shape_bounds_after,
-                shape_bounds_after.width(),
-                height,
-            );
-            shape_bounds_after = shape_bounds_after.transform(&resize_transform);
-            transform.post_concat(&resize_transform);
+        match content.grow_type() {
+            GrowType::AutoHeight => {
+                let paragraph_width = shape_bounds_after.width();
+                let mut paragraphs = content.to_paragraphs(None, None);
+                let height = auto_height(&mut paragraphs, paragraph_width);
+                let resize_transform = math::resize_matrix(
+                    &shape_bounds_after,
+                    &shape_bounds_after,
+                    shape_bounds_after.width(),
+                    height,
+                );
+                shape_bounds_after = shape_bounds_after.transform(&resize_transform);
+                transform.post_concat(&resize_transform);
+            }
+            GrowType::AutoWidth => {
+                let paragraph_width = content.get_width();
+                let mut paragraphs = content.to_paragraphs(None, None);
+                let height = auto_height(&mut paragraphs, paragraph_width);
+                let resize_transform = math::resize_matrix(
+                    &shape_bounds_after,
+                    &shape_bounds_after,
+                    paragraph_width,
+                    height,
+                );
+                shape_bounds_after = shape_bounds_after.transform(&resize_transform);
+                transform.post_concat(&resize_transform);
+            }
+            GrowType::Fixed => {}
         }
     }
 
