@@ -520,6 +520,7 @@ impl RenderState {
                     shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
                 }
 
+                let count_inner_strokes = shape.count_visible_inner_strokes();
                 text::render(self, &shape, &mut paragraphs, None, None);
 
                 for stroke in shape.visible_strokes().rev() {
@@ -528,6 +529,7 @@ impl RenderState {
                         &shape.selrect(),
                         shape.image_filter(1.).as_ref(),
                         shape.mask_filter(1.).as_ref(),
+                        count_inner_strokes,
                     );
                     shadows::render_text_drop_shadows(
                         self,

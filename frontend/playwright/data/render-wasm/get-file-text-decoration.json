@@ -25,8 +25,8 @@
     "~:has-media-trimmed": false,
     "~:comment-thread-seqn": 0,
     "~:name": "test_text_decoration",
-    "~:revn": 71,
-    "~:modified-at": "~m1753090236677",
+    "~:revn": 127,
+    "~:modified-at": "~m1755778557778",
     "~:vern": 0,
     "~:id": "~ud6c33e7b-7b64-80f3-8006-785098582f1d",
     "~:is-shared": false,
@@ -95,7 +95,8 @@
             "0007-clear-invalid-strokes-and-fills-v2",
             "0008-fix-library-colors-v4",
             "0009-clean-library-colors",
-            "0009-add-partial-text-touched-flags"
+            "0009-add-partial-text-touched-flags",
+            "0010-fix-swap-slots-pointing-non-existent-shapes"
         ]
     },
     "~:version": 67,
@@ -197,21 +198,20 @@
                             "~:shapes": [
                                 "~u38c139ee-c848-80d4-8006-865242dea382",
                                 "~ue2dd1e47-c379-8002-8006-78509a3c4e5f",
+                                "~u1082d31c-bbef-80cf-8006-87b17e182e45",
                                 "~ue2dd1e47-c379-8002-8006-7850bc8822f4",
                                 "~ue2dd1e47-c379-8002-8006-7850f96e4ae9",
                                 "~ue2dd1e47-c379-8002-8006-78510f062679",
                                 "~ue2dd1e47-c379-8002-8006-7850de3e8f37",
                                 "~ue2dd1e47-c379-8002-8006-7850f96e4aea",
                                 "~ue2dd1e47-c379-8002-8006-7850ae42e717",
-                                "~ue2dd1e47-c379-8002-8006-78510f062678",
-                                "~ue2dd1e47-c379-8002-8006-785197fca88d",
-                                "~ue2dd1e47-c379-8002-8006-7851b9d948e5"
+                                "~ue2dd1e47-c379-8002-8006-78510f062678"
                             ]
                         }
                     },
                     "~ue2dd1e47-c379-8002-8006-7850bc8822f4": {
                         "~#shape": {
-                            "~:y": 237.0000021805366,
+                            "~:y": 24.000002180536598,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -291,26 +291,26 @@
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 870.9999749172263,
-                                        "~:y": 237.00000218053657
+                                        "~:x": 1070.999959658437,
+                                        "~:y": 24.00000218053657
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1509.999957529125,
-                                        "~:y": 237.00000218053657
+                                        "~:x": 1709.9999422703359,
+                                        "~:y": 24.00000218053657
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1509.999957529125,
-                                        "~:y": 324.0000021805366
+                                        "~:x": 1709.9999422703359,
+                                        "~:y": 111.00000218053663
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 870.9999749172263,
-                                        "~:y": 324.0000021805366
+                                        "~:x": 1070.999959658437,
+                                        "~:y": 111.00000218053663
                                     }
                                 }
                             ],
@@ -332,7 +332,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": 327.1999991287788,
+                                        "~:y": 114.19999912877881,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -341,7 +341,7 @@
                                         "~:width": 638.36669921875,
                                         "~:text-decoration": "underline rgb(16, 68, 222)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 870.9999749172262,
+                                        "~:x": 1070.999959658437,
                                         "~:x1": 0,
                                         "~:y2": 90.19999694824219,
                                         "~:fills": [
@@ -368,18 +368,18 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 870.9999749172262,
+                            "~:x": 1070.999959658437,
                             "~:shadow": [],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 870.9999749172262,
-                                    "~:y": 237.0000021805366,
+                                    "~:x": 1070.999959658437,
+                                    "~:y": 24.000002180536598,
                                     "~:width": 638.9999826118988,
                                     "~:height": 87.00000000000003,
-                                    "~:x1": 870.9999749172262,
-                                    "~:y1": 237.0000021805366,
-                                    "~:x2": 1509.999957529125,
-                                    "~:y2": 324.0000021805366
+                                    "~:x1": 1070.999959658437,
+                                    "~:y1": 24.000002180536598,
+                                    "~:x2": 1709.9999422703359,
+                                    "~:y2": 111.00000218053663
                                 }
                             },
                             "~:flip-x": null,
@@ -719,7 +719,7 @@
                     },
                     "~ue2dd1e47-c379-8002-8006-7850de3e8f37": {
                         "~#shape": {
-                            "~:y": 352.00000015261764,
+                            "~:y": 139.00000015261764,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -799,26 +799,26 @@
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 870.999972771459,
-                                        "~:y": 352.00000015261764
+                                        "~:x": 1070.9999575126699,
+                                        "~:y": 139.00000015261764
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1509.9999553833577,
-                                        "~:y": 352.00000015261764
+                                        "~:x": 1709.9999401245686,
+                                        "~:y": 139.00000015261764
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1509.9999553833577,
-                                        "~:y": 438.00000130678507
+                                        "~:x": 1709.9999401245686,
+                                        "~:y": 225.00000130678507
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 870.999972771459,
-                                        "~:y": 438.00000130678507
+                                        "~:x": 1070.9999575126699,
+                                        "~:y": 225.00000130678507
                                     }
                                 }
                             ],
@@ -840,7 +840,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": 442.19999710085983,
+                                        "~:y": 229.19999710085983,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -849,7 +849,7 @@
                                         "~:width": 638.36669921875,
                                         "~:text-decoration": "line-through rgb(16, 68, 222)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 870.9999727714589,
+                                        "~:x": 1070.9999575126699,
                                         "~:x1": 0,
                                         "~:y2": 90.19999694824219,
                                         "~:fills": [
@@ -876,18 +876,18 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 870.9999727714589,
+                            "~:x": 1070.9999575126699,
                             "~:shadow": [],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 870.9999727714589,
-                                    "~:y": 352.00000015261764,
+                                    "~:x": 1070.9999575126699,
+                                    "~:y": 139.00000015261764,
                                     "~:width": 638.9999826118988,
                                     "~:height": 86.00000115416742,
-                                    "~:x1": 870.9999727714589,
-                                    "~:y1": 352.00000015261764,
-                                    "~:x2": 1509.9999553833577,
-                                    "~:y2": 438.00000130678507
+                                    "~:x1": 1070.9999575126699,
+                                    "~:y1": 139.00000015261764,
+                                    "~:x2": 1709.9999401245686,
+                                    "~:y2": 225.00000130678507
                                 }
                             },
                             "~:flip-x": null,
@@ -895,9 +895,312 @@
                             "~:flip-y": null
                         }
                     },
+                    "~u1082d31c-bbef-80cf-8006-87b17e182e45": {
+                        "~#shape": {
+                            "~:y": 534.0000326482766,
+                            "~:transform": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:rotation": 0,
+                            "~:last-resize-direction": "~:horizontal",
+                            "~:grow-type": "~:auto-height",
+                            "~:content": {
+                                "~:type": "root",
+                                "~:key": "1u5z8e0kt88",
+                                "~:children": [
+                                    {
+                                        "~:type": "paragraph-set",
+                                        "~:children": [
+                                            {
+                                                "~:line-height": "1",
+                                                "~:font-style": "normal",
+                                                "~:children": [
+                                                    {
+                                                        "~:line-height": "1",
+                                                        "~:font-style": "normal",
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "160ttioqvlh",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "underline",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#204bcd",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "aaa "
+                                                    },
+                                                    {
+                                                        "~:line-height": "1",
+                                                        "~:font-style": "normal",
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "oq8cktt92j",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "underline",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#204bcd",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "bbb and this is a longer text that I'm trying "
+                                                    },
+                                                    {
+                                                        "~:line-height": "1",
+                                                        "~:font-style": "normal",
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "1om4rmmvuxq",
+                                                        "~:font-size": "72",
+                                                        "~:font-weight": "400",
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "underline",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#cd20bb",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "sourcesanspro",
+                                                        "~:text": "to break"
+                                                    }
+                                                ],
+                                                "~:text-transform": "none",
+                                                "~:text-align": "left",
+                                                "~:font-id": "sourcesanspro",
+                                                "~:key": "2cuj5swwjwo",
+                                                "~:font-size": "72",
+                                                "~:font-weight": "400",
+                                                "~:text-direction": "ltr",
+                                                "~:type": "paragraph",
+                                                "~:font-variant-id": "regular",
+                                                "~:text-decoration": "underline",
+                                                "~:letter-spacing": "0",
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#cd20bb",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
+                                                "~:font-family": "sourcesanspro"
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "~:vertical-align": "top"
+                            },
+                            "~:hide-in-viewer": false,
+                            "~:name": "Text",
+                            "~:width": 710.7937863249533,
+                            "~:type": "~:text",
+                            "~:points": [
+                                {
+                                    "~#point": {
+                                        "~:x": 107.99999253929224,
+                                        "~:y": 534.0000326482766
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 818.7937788642455,
+                                        "~:y": 534.0000326482766
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 818.7937788642455,
+                                        "~:y": 750.0000381513255
+                                    }
+                                },
+                                {
+                                    "~#point": {
+                                        "~:x": 107.99999253929224,
+                                        "~:y": 750.0000381513255
+                                    }
+                                }
+                            ],
+                            "~:layout-item-h-sizing": "~:fix",
+                            "~:transform-inverse": {
+                                "~#matrix": {
+                                    "~:a": 1,
+                                    "~:b": 0,
+                                    "~:c": 0,
+                                    "~:d": 1,
+                                    "~:e": 0,
+                                    "~:f": 0
+                                }
+                            },
+                            "~:layout-item-v-sizing": "~:fix",
+                            "~:hidden": false,
+                            "~:id": "~u1082d31c-bbef-80cf-8006-87b17e182e45",
+                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 616.9999361038208,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "72px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -11,
+                                        "~:width": 125.06666564941406,
+                                        "~:text-decoration": "underline rgb(32, 75, 205)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 108.00000953674316,
+                                        "~:x1": 0,
+                                        "~:y2": 83,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#204bcd",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 125.06666564941406,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 94,
+                                        "~:text": "aaa "
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 616.9999361038208,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "72px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -11,
+                                        "~:width": 1091.75,
+                                        "~:text-decoration": "underline rgb(32, 75, 205)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 233.06667518615723,
+                                        "~:x1": 125.06666564941406,
+                                        "~:y2": 83,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#204bcd",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 1216.816665649414,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 94,
+                                        "~:text": "bbb and this is a longer text that I'm "
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 688.9999361038208,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "72px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 61,
+                                        "~:width": 192.14999389648438,
+                                        "~:text-decoration": "underline rgb(32, 75, 205)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 108.00000953674316,
+                                        "~:x1": 0,
+                                        "~:y2": 155,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#204bcd",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 192.14999389648438,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 94,
+                                        "~:text": "trying "
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 688.9999361038208,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "72px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 61,
+                                        "~:width": 248.48333740234375,
+                                        "~:text-decoration": "underline rgb(205, 32, 187)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 300.15000343322754,
+                                        "~:x1": 192.14999389648438,
+                                        "~:y2": 155,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cd20bb",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 440.6333312988281,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 94,
+                                        "~:text": "to break"
+                                    }
+                                }
+                            ],
+                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:strokes": [],
+                            "~:x": 107.99999253929218,
+                            "~:shadow": [
+                                {
+                                    "~:color": {
+                                        "~:color": "#000000",
+                                        "~:opacity": 0.2
+                                    },
+                                    "~:spread": 0,
+                                    "~:offset-y": 20,
+                                    "~:style": "~:drop-shadow",
+                                    "~:blur": 0,
+                                    "~:hidden": false,
+                                    "~:id": "~ub469a6ba-a7dc-80a4-8006-879b3df67493",
+                                    "~:offset-x": 20
+                                }
+                            ],
+                            "~:selrect": {
+                                "~#rect": {
+                                    "~:x": 107.99999253929218,
+                                    "~:y": 534.0000326482766,
+                                    "~:width": 710.7937863249533,
+                                    "~:height": 216.0000055030489,
+                                    "~:x1": 107.99999253929218,
+                                    "~:y1": 534.0000326482766,
+                                    "~:x2": 818.7937788642455,
+                                    "~:y2": 750.0000381513255
+                                }
+                            },
+                            "~:fills": [],
+                            "~:flip-x": null,
+                            "~:height": 216.0000055030489,
+                            "~:flip-y": null
+                        }
+                    },
                     "~ue2dd1e47-c379-8002-8006-78509a3c4e5f": {
                         "~#shape": {
-                            "~:y": -169.99999571851134,
+                            "~:y": 17.999989499537662,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -1008,31 +1311,31 @@
                             },
                             "~:hide-in-viewer": false,
                             "~:name": "Text",
-                            "~:width": 918.0000003792857,
+                            "~:width": 831.8647472253363,
                             "~:type": "~:text",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 161.00000125861249,
-                                        "~:y": -169.99999571851134
+                                        "~:x": 98.00000155120213,
+                                        "~:y": 17.999989499537662
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1079.000001637898,
-                                        "~:y": -169.99999571851134
+                                        "~:x": 929.8647487765384,
+                                        "~:y": 17.999989499537662
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1079.000001637898,
-                                        "~:y": -25.999992049812093
+                                        "~:x": 929.8647487765384,
+                                        "~:y": 162.00000175130495
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 161.00000125861249,
-                                        "~:y": -25.999992049812093
+                                        "~:x": 98.00000155120213,
+                                        "~:y": 162.00000175130495
                                     }
                                 }
                             ],
@@ -1054,7 +1357,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": -87,
+                                        "~:y": 101,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1063,7 +1366,7 @@
                                         "~:width": 125.06666564941406,
                                         "~:text-decoration": "underline rgb(32, 75, 205)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 161,
+                                        "~:x": 98,
                                         "~:x1": 0,
                                         "~:y2": 83,
                                         "~:fills": [
@@ -1081,7 +1384,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": -87,
+                                        "~:y": 101,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1090,7 +1393,7 @@
                                         "~:width": 1091.75,
                                         "~:text-decoration": "underline rgb(32, 75, 205)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 286.06666564941406,
+                                        "~:x": 223.06666564941406,
                                         "~:x1": 125.06666564941406,
                                         "~:y2": 83,
                                         "~:fills": [
@@ -1108,7 +1411,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": -15,
+                                        "~:y": 173,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1117,7 +1420,7 @@
                                         "~:width": 192.14999389648438,
                                         "~:text-decoration": "underline rgb(32, 75, 205)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 161,
+                                        "~:x": 98,
                                         "~:x1": 0,
                                         "~:y2": 155,
                                         "~:fills": [
@@ -1135,7 +1438,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": -15,
+                                        "~:y": 173,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1144,7 +1447,7 @@
                                         "~:width": 248.48333740234375,
                                         "~:text-decoration": "underline rgb(205, 32, 187)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 353.1499938964844,
+                                        "~:x": 290.1499938964844,
                                         "~:x1": 192.14999389648438,
                                         "~:y2": 155,
                                         "~:fills": [
@@ -1166,41 +1469,48 @@
                                 {
                                     "~:stroke-style": "~:solid",
                                     "~:stroke-alignment": "~:outer",
-                                    "~:stroke-width": 2,
-                                    "~:stroke-opacity": 1,
-                                    "~:stroke-image": {
-                                        "~:id": "~ud6c33e7b-7b64-80f3-8006-78509a3a2d21",
-                                        "~:width": 2560,
-                                        "~:height": 1325,
-                                        "~:mtype": "image/png",
-                                        "~:name": "background_4.png",
-                                        "~:keep-aspect-ratio": true
-                                    }
+                                    "~:stroke-width": 3,
+                                    "~:stroke-color": "#d13939",
+                                    "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 161.00000125861243,
-                            "~:shadow": [],
+                            "~:x": 98.0000015512021,
+                            "~:shadow": [
+                                {
+                                    "~:color": {
+                                        "~:color": "#000000",
+                                        "~:opacity": 0.2
+                                    },
+                                    "~:spread": 0,
+                                    "~:offset-y": 20,
+                                    "~:style": "~:drop-shadow",
+                                    "~:blur": 0,
+                                    "~:hidden": false,
+                                    "~:id": "~ub469a6ba-a7dc-80a4-8006-879b3df67493",
+                                    "~:offset-x": 20
+                                }
+                            ],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 161.00000125861243,
-                                    "~:y": -169.99999571851134,
-                                    "~:width": 918.0000003792857,
-                                    "~:height": 144.00000366869926,
-                                    "~:x1": 161.00000125861243,
-                                    "~:y1": -169.99999571851134,
-                                    "~:x2": 1079.000001637898,
-                                    "~:y2": -25.99999204981208
+                                    "~:x": 98.0000015512021,
+                                    "~:y": 17.999989499537662,
+                                    "~:width": 831.8647472253363,
+                                    "~:height": 144.0000122517673,
+                                    "~:x1": 98.0000015512021,
+                                    "~:y1": 17.999989499537662,
+                                    "~:x2": 929.8647487765384,
+                                    "~:y2": 162.00000175130495
                                 }
                             },
                             "~:fills": [],
                             "~:flip-x": null,
-                            "~:height": 144.00000366869926,
+                            "~:height": 144.0000122517673,
                             "~:flip-y": null
                         }
                     },
                     "~u38c139ee-c848-80d4-8006-865242dea382": {
                         "~#shape": {
-                            "~:y": 242.00000248741526,
+                            "~:y": 51.000001012569555,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -1563,31 +1873,31 @@
                             },
                             "~:hide-in-viewer": false,
                             "~:name": "Text",
-                            "~:width": 674.7362248725649,
+                            "~:width": 1191.6328510413837,
                             "~:type": "~:text",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 1603.999927294974,
-                                        "~:y": 242.00000248741503
+                                        "~:x": 1910.000013521422,
+                                        "~:y": 51.000001012569555
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 2278.7361521675393,
-                                        "~:y": 242.00000248741503
+                                        "~:x": 3101.632864562806,
+                                        "~:y": 51.000001012569555
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 2278.7361521675393,
-                                        "~:y": 1064.0000024874153
+                                        "~:x": 3101.632864562806,
+                                        "~:y": 1389.12261783967
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1603.999927294974,
-                                        "~:y": 1064.0000024874153
+                                        "~:x": 1910.000013521422,
+                                        "~:y": 1389.12261783967
                                     }
                                 }
                             ],
@@ -1608,7 +1918,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": 332.1999994356572,
+                                        "~:y": -437.7999967496455,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1617,7 +1927,7 @@
                                         "~:width": 173.71665954589844,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 90.19999694824219,
                                         "~:fills": [
@@ -1635,7 +1945,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": 418.60000859093066,
+                                        "~:y": -351.3999875943721,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1644,7 +1954,7 @@
                                         "~:width": 14.51666259765625,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 176.60000610351562,
                                         "~:fills": [
@@ -1662,7 +1972,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": 505.00000248741503,
+                                        "~:y": -264.9999936978877,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1671,7 +1981,7 @@
                                         "~:width": 577.13330078125,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 263,
                                         "~:fills": [
@@ -1689,7 +1999,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": 591.3999963838994,
+                                        "~:y": -178.59999980140333,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1698,7 +2008,7 @@
                                         "~:width": 282.8833312988281,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 349.3999938964844,
                                         "~:fills": [
@@ -1716,7 +2026,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": 677.7999902803838,
+                                        "~:y": -92.20000590491895,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1725,7 +2035,7 @@
                                         "~:width": 14.51666259765625,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 435.79998779296875,
                                         "~:fills": [
@@ -1743,7 +2053,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": 764.2000146944463,
+                                        "~:y": -5.799981490856453,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1752,7 +2062,7 @@
                                         "~:width": 14.51666259765625,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 522.2000122070312,
                                         "~:fills": [
@@ -1770,7 +2080,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": 850.5999780733528,
+                                        "~:y": 80.59998188805002,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1779,7 +2089,7 @@
                                         "~:width": 548.9833374023438,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 608.5999755859375,
                                         "~:fills": [
@@ -1797,7 +2107,7 @@
                                 },
                                 {
                                     "~#rect": {
-                                        "~:y": 937.0000024874153,
+                                        "~:y": 167.00000630211252,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1806,7 +2116,7 @@
                                         "~:width": 141.26666259765625,
                                         "~:text-decoration": "line-through rgb(0, 0, 0)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 1603.9999079088113,
+                                        "~:x": 1943.9998545030496,
                                         "~:x1": 0,
                                         "~:y2": 695,
                                         "~:fills": [
@@ -1825,28 +2135,43 @@
                             ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [],
-                            "~:x": 1603.999927294974,
+                            "~:x": 1910.0000135214218,
+                            "~:shadow": [
+                                {
+                                    "~:color": {
+                                        "~:color": "#000000",
+                                        "~:opacity": 0.2
+                                    },
+                                    "~:spread": 0,
+                                    "~:offset-y": 19,
+                                    "~:style": "~:drop-shadow",
+                                    "~:blur": 4,
+                                    "~:hidden": false,
+                                    "~:id": "~ue9681010-9a6e-8082-8006-87b214ff5e0f",
+                                    "~:offset-x": 10
+                                }
+                            ],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 1603.999927294974,
-                                    "~:y": 242.00000248741526,
-                                    "~:width": 674.7362248725649,
-                                    "~:height": 822.0000000000002,
-                                    "~:x1": 1603.999927294974,
-                                    "~:y1": 242.00000248741526,
-                                    "~:x2": 2278.736152167539,
-                                    "~:y2": 1064.0000024874155
+                                    "~:x": 1910.0000135214218,
+                                    "~:y": 51.000001012569555,
+                                    "~:width": 1191.6328510413837,
+                                    "~:height": 1338.1226168271005,
+                                    "~:x1": 1910.0000135214218,
+                                    "~:y1": 51.000001012569555,
+                                    "~:x2": 3101.6328645628055,
+                                    "~:y2": 1389.12261783967
                                 }
                             },
                             "~:fills": [],
                             "~:flip-x": null,
-                            "~:height": 822.0000000000002,
+                            "~:height": 1338.1226168271005,
                             "~:flip-y": null
                         }
                     },
                     "~ue2dd1e47-c379-8002-8006-78510f062678": {
                         "~#shape": {
-                            "~:y": 816.0000001526176,
+                            "~:y": 602.9999696350395,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -1921,31 +2246,31 @@
                             },
                             "~:hide-in-viewer": false,
                             "~:name": "Text",
-                            "~:width": 698.0000563466937,
+                            "~:width": 698.0000563466938,
                             "~:type": "~:text",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000165508966,
-                                        "~:y": 816.0000001526176
+                                        "~:x": 1071.0000012921075,
+                                        "~:y": 602.9999696350395
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1569.0000728975901,
-                                        "~:y": 816.0000001526176
+                                        "~:x": 1769.000057638801,
+                                        "~:y": 602.9999696350395
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1569.0000728975901,
-                                        "~:y": 902.0000013067851
+                                        "~:x": 1769.000057638801,
+                                        "~:y": 688.9999707892069
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000165508966,
-                                        "~:y": 902.0000013067851
+                                        "~:x": 1071.0000012921075,
+                                        "~:y": 688.9999707892069
                                     }
                                 }
                             ],
@@ -1967,7 +2292,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": 906.1999971008598,
+                                        "~:y": 693.1999665832817,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -1976,7 +2301,7 @@
                                         "~:width": 632.5166625976562,
                                         "~:text-decoration": "line-through rgb(16, 68, 222)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 871.0000165508965,
+                                        "~:x": 1071.0000012921073,
                                         "~:x1": 0,
                                         "~:y2": 90.19999694824219,
                                         "~:fills": [
@@ -2003,18 +2328,18 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 871.0000165508965,
+                            "~:x": 1071.0000012921073,
                             "~:shadow": [],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 871.0000165508965,
-                                    "~:y": 816.0000001526176,
-                                    "~:width": 698.0000563466937,
+                                    "~:x": 1071.0000012921073,
+                                    "~:y": 602.9999696350395,
+                                    "~:width": 698.0000563466938,
                                     "~:height": 86.00000115416742,
-                                    "~:x1": 871.0000165508965,
-                                    "~:y1": 816.0000001526176,
-                                    "~:x2": 1569.0000728975901,
-                                    "~:y2": 902.0000013067851
+                                    "~:x1": 1071.0000012921073,
+                                    "~:y1": 602.9999696350395,
+                                    "~:x2": 1769.000057638801,
+                                    "~:y2": 688.9999707892069
                                 }
                             },
                             "~:flip-x": null,
@@ -2024,7 +2349,7 @@
                     },
                     "~ue2dd1e47-c379-8002-8006-78510f062679": {
                         "~#shape": {
-                            "~:y": 700.9999564041693,
+                            "~:y": 488.0000174393256,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -2104,26 +2429,26 @@
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000188947865,
-                                        "~:y": 700.9999564041693
+                                        "~:x": 1071.0000036359975,
+                                        "~:y": 488.0000174393256
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1504.0000188947865,
-                                        "~:y": 700.9999564041693
+                                        "~:x": 1704.0000036359975,
+                                        "~:y": 488.0000174393256
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1504.0000188947865,
-                                        "~:y": 787.9999564041693
+                                        "~:x": 1704.0000036359975,
+                                        "~:y": 575.0000174393256
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000188947865,
-                                        "~:y": 787.9999564041693
+                                        "~:x": 1071.0000036359975,
+                                        "~:y": 575.0000174393256
                                     }
                                 }
                             ],
@@ -2145,7 +2470,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": 791.1999533524115,
+                                        "~:y": 578.2000143875678,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -2154,7 +2479,7 @@
                                         "~:width": 632.5166625976562,
                                         "~:text-decoration": "underline rgb(16, 68, 222)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 871.0000188947865,
+                                        "~:x": 1071.0000036359975,
                                         "~:x1": 0,
                                         "~:y2": 90.19999694824219,
                                         "~:fills": [
@@ -2181,18 +2506,18 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 871.0000188947865,
+                            "~:x": 1071.0000036359975,
                             "~:shadow": [],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 871.0000188947865,
-                                    "~:y": 700.9999564041693,
+                                    "~:x": 1071.0000036359975,
+                                    "~:y": 488.0000174393256,
                                     "~:width": 633,
                                     "~:height": 87,
-                                    "~:x1": 871.0000188947865,
-                                    "~:y1": 700.9999564041693,
-                                    "~:x2": 1504.0000188947865,
-                                    "~:y2": 787.9999564041693
+                                    "~:x1": 1071.0000036359975,
+                                    "~:y1": 488.0000174393256,
+                                    "~:x2": 1704.0000036359975,
+                                    "~:y2": 575.0000174393256
                                 }
                             },
                             "~:flip-x": null,
@@ -2200,389 +2525,9 @@
                             "~:flip-y": null
                         }
                     },
-                    "~ue2dd1e47-c379-8002-8006-7851b9d948e5": {
-                        "~#shape": {
-                            "~:y": 931.000015710521,
-                            "~:transform": {
-                                "~#matrix": {
-                                    "~:a": 1,
-                                    "~:b": 0,
-                                    "~:c": 0,
-                                    "~:d": 1,
-                                    "~:e": 0,
-                                    "~:f": 0
-                                }
-                            },
-                            "~:rotation": 0,
-                            "~:grow-type": "~:fixed",
-                            "~:content": {
-                                "~:type": "root",
-                                "~:key": "1p37s6olgps",
-                                "~:children": [
-                                    {
-                                        "~:type": "paragraph-set",
-                                        "~:children": [
-                                            {
-                                                "~:line-height": "1",
-                                                "~:font-style": "normal",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "",
-                                                        "~:font-style": "normal",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "none",
-                                                        "~:font-id": "sourcesanspro",
-                                                        "~:key": "1qkhdo08sfk",
-                                                        "~:font-size": "72",
-                                                        "~:font-weight": "400",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "regular",
-                                                        "~:text-decoration": "line-through",
-                                                        "~:letter-spacing": "0",
-                                                        "~:fills": [],
-                                                        "~:font-family": "sourcesanspro",
-                                                        "~:text": "I "
-                                                    },
-                                                    {
-                                                        "~:line-height": "1",
-                                                        "~:font-style": "normal",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "none",
-                                                        "~:font-id": "sourcesanspro",
-                                                        "~:key": "1firkih92rc",
-                                                        "~:font-size": "72",
-                                                        "~:font-weight": "400",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "regular",
-                                                        "~:text-decoration": "line-through",
-                                                        "~:letter-spacing": "0",
-                                                        "~:fills": [],
-                                                        "~:font-family": "sourcesanspro",
-                                                        "~:text": "❤️ Unicode"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "none",
-                                                "~:text-align": "left",
-                                                "~:font-id": "sourcesanspro",
-                                                "~:key": "1t9rwzf81g3",
-                                                "~:font-size": "0",
-                                                "~:font-weight": "400",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "ltr",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "regular",
-                                                "~:text-decoration": "line-through",
-                                                "~:letter-spacing": "0",
-                                                "~:fills": [],
-                                                "~:font-family": "sourcesanspro"
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "~:vertical-align": "top"
-                            },
-                            "~:hide-in-viewer": false,
-                            "~:name": "Text",
-                            "~:width": 405.1900070264876,
-                            "~:type": "~:text",
-                            "~:points": [
-                                {
-                                    "~#point": {
-                                        "~:x": 187.9999948925661,
-                                        "~:y": 931.000015710521
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 593.1900019190537,
-                                        "~:y": 931.000015710521
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 593.1900019190537,
-                                        "~:y": 1122.999941323922
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 187.9999948925661,
-                                        "~:y": 1122.999941323922
-                                    }
-                                }
-                            ],
-                            "~:layout-item-h-sizing": "~:fix",
-                            "~:transform-inverse": {
-                                "~#matrix": {
-                                    "~:a": 1,
-                                    "~:b": 0,
-                                    "~:c": 0,
-                                    "~:d": 1,
-                                    "~:e": 0,
-                                    "~:f": 0
-                                }
-                            },
-                            "~:layout-item-v-sizing": "~:fix",
-                            "~:id": "~ue2dd1e47-c379-8002-8006-7851b9d948e5",
-                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
-                            "~:position-data": [
-                                {
-                                    "~#rect": {
-                                        "~:y": 1014.0000081062317,
-                                        "~:font-style": "normal",
-                                        "~:text-transform": "none",
-                                        "~:font-size": "72px",
-                                        "~:font-weight": "400",
-                                        "~:y1": -11,
-                                        "~:width": 33.43333435058594,
-                                        "~:text-decoration": "line-through rgb(0, 0, 0)",
-                                        "~:letter-spacing": "normal",
-                                        "~:x": 187.99999888267257,
-                                        "~:x1": 0,
-                                        "~:y2": 83,
-                                        "~:fills": [],
-                                        "~:x2": 33.43333435058594,
-                                        "~:direction": "ltr",
-                                        "~:font-family": "\"sourcesanspro\"",
-                                        "~:height": 94,
-                                        "~:text": "I "
-                                    }
-                                },
-                                {
-                                    "~#rect": {
-                                        "~:y": 1014.0000081062317,
-                                        "~:font-style": "normal",
-                                        "~:text-transform": "none",
-                                        "~:font-size": "72px",
-                                        "~:font-weight": "400",
-                                        "~:y1": -11,
-                                        "~:width": 353.8999938964844,
-                                        "~:text-decoration": "line-through rgb(0, 0, 0)",
-                                        "~:letter-spacing": "normal",
-                                        "~:x": 221.4333332332585,
-                                        "~:x1": 33.43333435058594,
-                                        "~:y2": 83,
-                                        "~:fills": [],
-                                        "~:x2": 387.3333282470703,
-                                        "~:direction": "ltr",
-                                        "~:font-family": "\"sourcesanspro\"",
-                                        "~:height": 94,
-                                        "~:text": "❤️ Unicode"
-                                    }
-                                }
-                            ],
-                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
-                            "~:x": 187.99999489256606,
-                            "~:selrect": {
-                                "~#rect": {
-                                    "~:x": 187.99999489256606,
-                                    "~:y": 931.000015710521,
-                                    "~:width": 405.1900070264876,
-                                    "~:height": 191.99992561340105,
-                                    "~:x1": 187.99999489256606,
-                                    "~:y1": 931.000015710521,
-                                    "~:x2": 593.1900019190537,
-                                    "~:y2": 1122.999941323922
-                                }
-                            },
-                            "~:flip-x": null,
-                            "~:height": 191.99992561340105,
-                            "~:flip-y": null
-                        }
-                    },
-                    "~ue2dd1e47-c379-8002-8006-785197fca88d": {
-                        "~#shape": {
-                            "~:y": 816.0000004768372,
-                            "~:transform": {
-                                "~#matrix": {
-                                    "~:a": 1,
-                                    "~:b": 0,
-                                    "~:c": 0,
-                                    "~:d": 1,
-                                    "~:e": 0,
-                                    "~:f": 0
-                                }
-                            },
-                            "~:rotation": 0,
-                            "~:grow-type": "~:auto-width",
-                            "~:content": {
-                                "~:type": "root",
-                                "~:key": "1p37s6olgps",
-                                "~:children": [
-                                    {
-                                        "~:type": "paragraph-set",
-                                        "~:children": [
-                                            {
-                                                "~:line-height": "1",
-                                                "~:font-style": "normal",
-                                                "~:children": [
-                                                    {
-                                                        "~:line-height": "",
-                                                        "~:font-style": "normal",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "none",
-                                                        "~:font-id": "sourcesanspro",
-                                                        "~:key": "1qkhdo08sfk",
-                                                        "~:font-size": "72",
-                                                        "~:font-weight": "400",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "regular",
-                                                        "~:text-decoration": "underline",
-                                                        "~:letter-spacing": "0",
-                                                        "~:fills": [],
-                                                        "~:font-family": "sourcesanspro",
-                                                        "~:text": "I "
-                                                    },
-                                                    {
-                                                        "~:line-height": "1",
-                                                        "~:font-style": "normal",
-                                                        "~:typography-ref-id": null,
-                                                        "~:text-transform": "none",
-                                                        "~:font-id": "sourcesanspro",
-                                                        "~:key": "1firkih92rc",
-                                                        "~:font-size": "72",
-                                                        "~:font-weight": "400",
-                                                        "~:typography-ref-file": null,
-                                                        "~:font-variant-id": "regular",
-                                                        "~:text-decoration": "underline",
-                                                        "~:letter-spacing": "0",
-                                                        "~:fills": [],
-                                                        "~:font-family": "sourcesanspro",
-                                                        "~:text": "❤️ Unicode"
-                                                    }
-                                                ],
-                                                "~:typography-ref-id": null,
-                                                "~:text-transform": "none",
-                                                "~:text-align": "left",
-                                                "~:font-id": "sourcesanspro",
-                                                "~:key": "1t9rwzf81g3",
-                                                "~:font-size": "0",
-                                                "~:font-weight": "400",
-                                                "~:typography-ref-file": null,
-                                                "~:text-direction": "ltr",
-                                                "~:type": "paragraph",
-                                                "~:font-variant-id": "regular",
-                                                "~:text-decoration": "underline",
-                                                "~:letter-spacing": "0",
-                                                "~:fills": [],
-                                                "~:font-family": "sourcesanspro"
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "~:vertical-align": "top"
-                            },
-                            "~:hide-in-viewer": false,
-                            "~:name": "Text",
-                            "~:width": 388,
-                            "~:type": "~:text",
-                            "~:points": [
-                                {
-                                    "~#point": {
-                                        "~:x": 192.0000118613243,
-                                        "~:y": 816.0000004768372
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 580.0000118613243,
-                                        "~:y": 816.0000004768372
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 580.0000118613243,
-                                        "~:y": 888.0000004768372
-                                    }
-                                },
-                                {
-                                    "~#point": {
-                                        "~:x": 192.0000118613243,
-                                        "~:y": 888.0000004768372
-                                    }
-                                }
-                            ],
-                            "~:transform-inverse": {
-                                "~#matrix": {
-                                    "~:a": 1,
-                                    "~:b": 0,
-                                    "~:c": 0,
-                                    "~:d": 1,
-                                    "~:e": 0,
-                                    "~:f": 0
-                                }
-                            },
-                            "~:id": "~ue2dd1e47-c379-8002-8006-785197fca88d",
-                            "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
-                            "~:position-data": [
-                                {
-                                    "~#rect": {
-                                        "~:y": 899.0000004768372,
-                                        "~:font-style": "normal",
-                                        "~:text-transform": "none",
-                                        "~:font-size": "72px",
-                                        "~:font-weight": "400",
-                                        "~:y1": -11,
-                                        "~:width": 33.43333435058594,
-                                        "~:text-decoration": "underline rgb(0, 0, 0)",
-                                        "~:letter-spacing": "normal",
-                                        "~:x": 192.0000118613243,
-                                        "~:x1": 0,
-                                        "~:y2": 83,
-                                        "~:fills": [],
-                                        "~:x2": 33.43333435058594,
-                                        "~:direction": "ltr",
-                                        "~:font-family": "\"sourcesanspro\"",
-                                        "~:height": 94,
-                                        "~:text": "I "
-                                    }
-                                },
-                                {
-                                    "~#rect": {
-                                        "~:y": 899.0000004768372,
-                                        "~:font-style": "normal",
-                                        "~:text-transform": "none",
-                                        "~:font-size": "72px",
-                                        "~:font-weight": "400",
-                                        "~:y1": -11,
-                                        "~:width": 353.8999938964844,
-                                        "~:text-decoration": "underline rgb(0, 0, 0)",
-                                        "~:letter-spacing": "normal",
-                                        "~:x": 225.43334621191025,
-                                        "~:x1": 33.43333435058594,
-                                        "~:y2": 83,
-                                        "~:fills": [],
-                                        "~:x2": 387.3333282470703,
-                                        "~:direction": "ltr",
-                                        "~:font-family": "\"sourcesanspro\"",
-                                        "~:height": 94,
-                                        "~:text": "❤️ Unicode"
-                                    }
-                                }
-                            ],
-                            "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
-                            "~:x": 192.0000118613243,
-                            "~:selrect": {
-                                "~#rect": {
-                                    "~:x": 192.0000118613243,
-                                    "~:y": 816.0000004768372,
-                                    "~:width": 388,
-                                    "~:height": 72,
-                                    "~:x1": 192.0000118613243,
-                                    "~:y1": 816.0000004768372,
-                                    "~:x2": 580.0000118613243,
-                                    "~:y2": 888.0000004768372
-                                }
-                            },
-                            "~:flip-x": null,
-                            "~:height": 72,
-                            "~:flip-y": null
-                        }
-                    },
                     "~ue2dd1e47-c379-8002-8006-7850f96e4ae9": {
                         "~#shape": {
-                            "~:y": 470.99998692174745,
+                            "~:y": 257.99998692174745,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -2657,31 +2602,31 @@
                             },
                             "~:hide-in-viewer": false,
                             "~:name": "Text",
-                            "~:width": 643.9999999999999,
+                            "~:width": 644,
                             "~:type": "~:text",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000188947865,
-                                        "~:y": 470.9999869217475
+                                        "~:x": 1071.0000036359975,
+                                        "~:y": 257.9999869217475
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1515.0000188947863,
-                                        "~:y": 470.9999869217475
+                                        "~:x": 1715.0000036359972,
+                                        "~:y": 257.9999869217475
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1515.0000188947863,
-                                        "~:y": 557.9999869217474
+                                        "~:x": 1715.0000036359972,
+                                        "~:y": 344.99998692174745
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000188947865,
-                                        "~:y": 557.9999869217474
+                                        "~:x": 1071.0000036359975,
+                                        "~:y": 344.99998692174745
                                     }
                                 }
                             ],
@@ -2703,7 +2648,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": 561.1999838699896,
+                                        "~:y": 348.19998386998964,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -2712,7 +2657,7 @@
                                         "~:width": 643.7333374023438,
                                         "~:text-decoration": "underline rgb(16, 68, 222)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 871.0000188947866,
+                                        "~:x": 1071.0000036359975,
                                         "~:x1": 0,
                                         "~:y2": 90.19999694824219,
                                         "~:fills": [
@@ -2739,18 +2684,18 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 871.0000188947866,
+                            "~:x": 1071.0000036359975,
                             "~:shadow": [],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 871.0000188947866,
-                                    "~:y": 470.99998692174745,
-                                    "~:width": 643.9999999999999,
+                                    "~:x": 1071.0000036359975,
+                                    "~:y": 257.99998692174745,
+                                    "~:width": 644,
                                     "~:height": 87,
-                                    "~:x1": 871.0000188947866,
-                                    "~:y1": 470.99998692174745,
-                                    "~:x2": 1515.0000188947865,
-                                    "~:y2": 557.9999869217474
+                                    "~:x1": 1071.0000036359975,
+                                    "~:y1": 257.99998692174745,
+                                    "~:x2": 1715.0000036359975,
+                                    "~:y2": 344.99998692174745
                                 }
                             },
                             "~:flip-x": null,
@@ -2760,7 +2705,7 @@
                     },
                     "~ue2dd1e47-c379-8002-8006-7850f96e4aea": {
                         "~#shape": {
-                            "~:y": 585.9999696350395,
+                            "~:y": 372.9999696350395,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -2835,31 +2780,31 @@
                             },
                             "~:hide-in-viewer": false,
                             "~:name": "Text",
-                            "~:width": 698.0000563466937,
+                            "~:width": 698.0000563466938,
                             "~:type": "~:text",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000165508966,
-                                        "~:y": 585.9999696350395
+                                        "~:x": 1071.0000012921075,
+                                        "~:y": 372.9999696350395
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1569.0000728975901,
-                                        "~:y": 585.9999696350395
+                                        "~:x": 1769.000057638801,
+                                        "~:y": 372.9999696350395
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 1569.0000728975901,
-                                        "~:y": 671.9999707892069
+                                        "~:x": 1769.000057638801,
+                                        "~:y": 458.99997078920694
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 871.0000165508966,
-                                        "~:y": 671.9999707892069
+                                        "~:x": 1071.0000012921075,
+                                        "~:y": 458.99997078920694
                                     }
                                 }
                             ],
@@ -2881,7 +2826,7 @@
                             "~:position-data": [
                                 {
                                     "~#rect": {
-                                        "~:y": 676.1999665832817,
+                                        "~:y": 463.1999665832817,
                                         "~:font-style": "normal",
                                         "~:text-transform": "none",
                                         "~:font-size": "72px",
@@ -2890,7 +2835,7 @@
                                         "~:width": 643.7333374023438,
                                         "~:text-decoration": "line-through rgb(16, 68, 222)",
                                         "~:letter-spacing": "normal",
-                                        "~:x": 871.0000165508965,
+                                        "~:x": 1071.0000012921073,
                                         "~:x1": 0,
                                         "~:y2": 90.19999694824219,
                                         "~:fills": [
@@ -2917,18 +2862,18 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 871.0000165508965,
+                            "~:x": 1071.0000012921073,
                             "~:shadow": [],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 871.0000165508965,
-                                    "~:y": 585.9999696350395,
-                                    "~:width": 698.0000563466937,
+                                    "~:x": 1071.0000012921073,
+                                    "~:y": 372.9999696350395,
+                                    "~:width": 698.0000563466938,
                                     "~:height": 86.00000115416742,
-                                    "~:x1": 871.0000165508965,
-                                    "~:y1": 585.9999696350395,
-                                    "~:x2": 1569.0000728975901,
-                                    "~:y2": 671.9999707892069
+                                    "~:x1": 1071.0000012921073,
+                                    "~:y1": 372.9999696350395,
+                                    "~:x2": 1769.000057638801,
+                                    "~:y2": 458.99997078920694
                                 }
                             },
                             "~:flip-x": null,
