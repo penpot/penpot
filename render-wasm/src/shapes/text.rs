@@ -124,6 +124,7 @@ impl TextContent {
         bounds: &Rect,
         blur: Option<&ImageFilter>,
         blur_mask: Option<&MaskFilter>,
+        count_inner_strokes: usize,
     ) -> Vec<Vec<ParagraphBuilder>> {
         let fallback_fonts = get_fallback_fonts();
         let fonts = get_font_collection();
@@ -138,8 +139,14 @@ impl TextContent {
                 if let Some(blur_mask) = blur_mask {
                     text_paint.set_mask_filter(blur_mask.clone());
                 }
-                let stroke_paints =
-                    get_text_stroke_paints(stroke, bounds, &text_paint, blur, blur_mask);
+                let stroke_paints = get_text_stroke_paints(
+                    stroke,
+                    bounds,
+                    &text_paint,
+                    blur,
+                    blur_mask,
+                    count_inner_strokes,
+                );
                 let text: String = leaf.apply_text_transform();
 
                 for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
@@ -198,8 +205,15 @@ impl TextContent {
         bounds: &Rect,
         blur: Option<&ImageFilter>,
         blur_mask: Option<&MaskFilter>,
+        count_inner_strokes: usize,
     ) -> Vec<Vec<ParagraphBuilder>> {
-        self.collect_paragraphs(self.to_stroke_paragraphs(stroke, bounds, blur, blur_mask))
+        self.collect_paragraphs(self.to_stroke_paragraphs(
+            stroke,
+            bounds,
+            blur,
+            blur_mask,
+            count_inner_strokes,
+        ))
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -751,6 +765,7 @@ fn get_text_stroke_paints(
     text_paint: &Paint,
     blur: Option<&ImageFilter>,
     blur_mask: Option<&MaskFilter>,
+    count_inner_strokes: usize,
 ) -> Vec<Paint> {
     let mut paints = Vec::new();
 
@@ -763,7 +778,7 @@ fn get_text_stroke_paints(
                 is_opaque = shader.unwrap().is_opaque();
             }
 
-            if is_opaque {
+            if is_opaque && count_inner_strokes == 1 {
                 let mut paint = text_paint.clone();
                 paint.set_style(skia::PaintStyle::Fill);
                 paint.set_anti_alias(true);
@@ -771,7 +786,6 @@ fn get_text_stroke_paints(
                     paint.set_image_filter(blur.clone());
                 }
                 paints.push(paint);
-
                 let mut paint = skia::Paint::default();
                 paint.set_style(skia::PaintStyle::Stroke);
                 paint.set_blend_mode(skia::BlendMode::SrcIn);
