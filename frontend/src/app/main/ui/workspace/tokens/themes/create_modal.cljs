@@ -318,9 +318,8 @@
         on-click-token-set
         (mf/use-fn
          (mf/deps on-toggle-token-set)
-         (fn [prefixed-set-path-str]
-           (let [set-name (ctob/prefixed-set-path-string->set-name-string prefixed-set-path-str)]
-             (on-toggle-token-set set-name))))]
+         (fn [set-id]
+           (on-toggle-token-set set-id)))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}

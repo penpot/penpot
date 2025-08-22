@@ -9,6 +9,7 @@
    [app.common.test-helpers.files :as cthf]
    [app.common.test-helpers.ids-map :as cthi]
    [app.common.types.tokens-lib :as ctob]
+   [app.common.uuid :as uuid]
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [cljs.test :as t :include-macros true]
    [frontend-tests.helpers.pages :as thp]
@@ -76,7 +77,7 @@
     done
     (let [file   (setup-file-with-token-lib)
           store  (ths/setup-store file)
-          events [(dwtl/duplicate-token-set (cthi/id :test-token-set) false)]]
+          events [(dwtl/duplicate-token-set (cthi/id :test-token-set))]]
 
       (tohs/run-store-async
        store done events
@@ -93,7 +94,7 @@
     done
     (let [file   (setup-file-with-token-lib)
           store  (ths/setup-store file)
-          events [(dwtl/duplicate-token-set "Set B" false)]]
+          events [(dwtl/duplicate-token-set (uuid/next))]]
 
       (tohs/run-store-async
        store done events
@@ -110,7 +111,7 @@
       done
       (let [file       (setup-file-with-token-lib)
             store      (ths/setup-store file)
-            events     [(dwtl/delete-token-set-path (ctob/split-set-name "Set A") false)]]
+            events     [(dwtl/delete-token-set (cthi/id :test-token-set))]]
 
         (tohs/run-store-async
          store done events

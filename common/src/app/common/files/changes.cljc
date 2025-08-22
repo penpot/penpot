@@ -409,13 +409,12 @@
     [:map {:title "SetTokenSetChange"}
      [:type [:= :set-token-set]]
      [:id ::sm/uuid]
-     [:is-group :boolean]
      [:token-set [:maybe ctob/schema:token-set-attrs]]]]
 
    [:set-token
     [:map {:title "SetTokenChange"}
      [:type [:= :set-token]]
-     [:set-name :string]
+     [:set-id ::sm/uuid]
      [:token-id ::sm/uuid]
      [:token [:maybe ctob/schema:token-attrs]]]]
 
@@ -978,39 +977,36 @@
   (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :set-token
-  [data {:keys [set-name token-id token]}]
+  [data {:keys [set-id token-id token]}]
   (update data :tokens-lib
           (fn [lib]
-            (let [lib' (ctob/ensure-tokens-lib lib)
-                  set (ctob/get-set-by-name lib' set-name)] ;; FIXME: remove this when set-token uses set-id
+            (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
                 (not token)
-                (ctob/delete-token-from-set lib' set-name token-id)
+                (ctob/delete-token-from-set lib' set-id token-id)
 
-                (not (ctob/get-token-in-set lib' (ctob/get-id set) token-id))
-                (ctob/add-token-in-set lib' set-name (ctob/make-token token))
+                (not (ctob/get-token-in-set lib' set-id token-id))
+                (ctob/add-token-in-set lib' set-id (ctob/make-token token))
 
                 :else
-                (ctob/update-token-in-set lib' set-name token-id (fn [prev-token]
-                                                                   (ctob/make-token (merge prev-token token)))))))))
+                (ctob/update-token-in-set lib' set-id token-id
+                                          (fn [prev-token]
+                                            (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [id is-group token-set]}]
+  [data {:keys [id token-set]}]
   (update data :tokens-lib
           (fn [lib]
-            (let [lib' (ctob/ensure-tokens-lib lib)
-                  set (ctob/get-set lib' id)] ;; FIXME: remove this when set-token-set uses set-id
+            (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
                 (not token-set)
-                (if is-group
-                  (ctob/delete-set-group lib' (ctob/get-name set)) ;; FIXME: move to a separate change
-                  (ctob/delete-set lib' (ctob/get-name set)))
+                (ctob/delete-set lib' id)
 
                 (not (ctob/get-set lib' id))
                 (ctob/add-set lib' (ctob/make-token-set token-set))
 
                 :else
-                (ctob/update-set lib' (ctob/get-name set) (fn [_] (ctob/make-token-set token-set))))))))
+                (ctob/update-set lib' id (fn [_] (ctob/make-token-set token-set))))))))
 
 (defmethod process-change :set-token-theme
   [data {:keys [group theme-name theme]}]

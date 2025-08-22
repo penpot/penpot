@@ -279,7 +279,7 @@ custom-input-token-value: Custom component for editing/displaying the token valu
 custom-input-token-value-props: Custom props passed to the custom-input-token-value merged with the default props"
   [{:keys [token
            token-type
-           selected-token-set-name
+           selected-token-set-id
            action
            input-value-placeholder
 
@@ -493,13 +493,11 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
         on-delete-token
         (mf/use-fn
-         (mf/deps selected-token-set-name)
+         (mf/deps selected-token-set-id)
          (fn [e]
            (dom/prevent-default e)
            (modal/hide!)
-           (st/emit! (dwtl/delete-token
-                      (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
-                      (:id token)))))
+           (st/emit! (dwtl/delete-token selected-token-set-id (:id token)))))
 
         on-cancel
         (mf/use-fn
