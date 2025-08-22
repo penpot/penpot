@@ -295,7 +295,8 @@
     "uppercase" 1
     "lowercase" 2
     "capitalize" 3
-    nil))
+    nil 0
+    0))
 
 (defn translate-text-decoration
   [text-decoration]
@@ -304,13 +305,15 @@
     "underline" 1
     "line-through" 2
     "overline" 3
-    nil))
+    nil 0
+    0))
 
 (defn translate-text-direction
   [text-direction]
   (case text-direction
     "ltr" 0
     "rtl" 1
+    nil 0
     0))
 
 (defn translate-font-style

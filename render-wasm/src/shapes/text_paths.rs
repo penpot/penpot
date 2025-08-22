@@ -1,7 +1,6 @@
 use crate::shapes::text::TextContent;
 use skia_safe::{
-    self as skia, textlayout::Paragraph as SkiaParagraph, textlayout::ParagraphBuilder,
-    FontMetrics, Point, Rect, TextBlob,
+    self as skia, textlayout::Paragraph as SkiaParagraph, FontMetrics, Point, Rect, TextBlob,
 };
 use std::ops::Deref;
 
@@ -17,16 +16,11 @@ impl TextPaths {
         Self(content)
     }
 
-    pub fn get_skia_paragraphs(&self) -> Vec<Vec<ParagraphBuilder>> {
-        let paragraphs = self.to_paragraphs(None, None);
-        self.collect_paragraphs(paragraphs)
-    }
-
     pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
         let mut paths = Vec::new();
 
         let mut offset_y = self.bounds.y();
-        let mut paragraphs = self.get_skia_paragraphs();
+        let mut paragraphs = self.to_paragraphs(None, None);
 
         for paragraphs in paragraphs.iter_mut() {
             for paragraph_builder in paragraphs.iter_mut() {
