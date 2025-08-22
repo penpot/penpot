@@ -41,9 +41,8 @@
      (for [property properties]
        (let [property-name (cmm/get-css-rule-humanized property)
              property-value (css/get-css-value objects stroke property)]
-         [:div {:class (stl/css :stroke-row)}
-          [:div {:class (stl/css :global/attr-label)
-                 :key   (str "stroke-" (:id shape) "-" property)}
+         [:div {:class (stl/css :stroke-row) :key   (str "stroke-" (:id shape) "-" property)}
+          [:div {:class (stl/css :global/attr-label)}
            property-name]
           [:div {:class (stl/css :global/attr-value)}
 

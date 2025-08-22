@@ -31,12 +31,12 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
+   [app.util.shape-icon :as usi]
    [app.util.timers :as timers]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
@@ -110,9 +110,10 @@
        [:span
         {:class (stl/css :icon-wrapper)}
         (if is-selected [:span {:class (stl/css :selected-icon)}
-                         i/tick]
+                         [:> icon* {:icon-id "tick" :size "s"}]]
             [:span {:class (stl/css :selected-icon)}])
-        [:span {:class (stl/css :shape-icon)} icon]]
+        [:span {:class (stl/css :shape-icon)}
+         [:> icon* {:icon-id icon :size "s"}]]]
        [:span {:class (stl/css :title)} title]]
       [:li {:class (stl/css :context-menu-item)
             :disabled disabled
@@ -129,7 +130,8 @@
                     :class (stl/css :shortcut-key)} sc])])
 
        (when (> (count children) 1)
-         [:span {:class (stl/css :submenu-icon)} i/arrow])
+         [:span {:class (stl/css :submenu-icon)}
+          [:> icon* {:icon-id "arrow" :size "s"}]])
 
        (when (> (count children) 1)
          [:ul {:class (stl/css :workspace-context-submenu)
@@ -266,7 +268,7 @@
                            :on-pointer-enter (on-pointer-enter (:id object))
                            :on-pointer-leave (on-pointer-leave (:id object))
                            :on-unmount (on-unmount (:id object))
-                           :icon (sic/element-icon {:shape object})}])])
+                           :icon (usi/get-shape-icon object)}])])
      [:> menu-entry* {:title (tr "workspace.shape.menu.forward")
                       :shortcut (sc/get-tooltip :bring-forward)
                       :on-click do-bring-forward}]

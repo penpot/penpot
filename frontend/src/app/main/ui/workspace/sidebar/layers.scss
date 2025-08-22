@@ -127,12 +127,7 @@
 
 .layer-filter-icon,
 .layer-filter-close {
-  @extend .button-icon-small;
-  stroke: var(--pill-foreground-color);
-  svg {
-    height: $s-12;
-    width: $s-12;
-  }
+  color: var(--pill-foreground-color);
 }
 
 .layer-filter-name {
@@ -164,10 +159,7 @@
       align-items: center;
       gap: $s-8;
       .filter-menu-item-icon {
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--menu-foreground-color);
-        }
+        color: var(--menu-foreground-color);
       }
       .filter-menu-item-name {
         padding-top: $s-2;
@@ -175,28 +167,21 @@
       }
     }
     .filter-menu-item-tick {
-      svg {
-        @extend .button-icon-small;
-        stroke: var(--menu-foreground-color);
-      }
+      color: var(--menu-foreground-color);
     }
 
     &.selected {
       background-color: var(--menu-background-color-selected);
       .filter-menu-item-name-wrapper {
         .filter-menu-item-icon {
-          svg {
-            stroke: var(--menu-foreground-color);
-          }
+          color: var(--menu-foreground-color);
         }
         .filter-menu-item-name {
           color: var(--menu-foreground-color);
         }
       }
       .filter-menu-item-tick {
-        svg {
-          stroke: var(--menu-foreground-color);
-        }
+        color: var(--menu-foreground-color);
       }
     }
 
@@ -204,18 +189,14 @@
       background-color: var(--menu-background-color-hover);
       .filter-menu-item-name-wrapper {
         .filter-menu-item-icon {
-          svg {
-            stroke: var(--menu-foreground-color-hover);
-          }
+          color: var(--menu-foreground-color-hover);
         }
         .filter-menu-item-name {
           color: var(--menu-foreground-color-hover);
         }
       }
       .filter-menu-item-tick {
-        svg {
-          stroke: var(--menu-foreground-color-hover);
-        }
+        color: var(--menu-foreground-color-hover);
       }
     }
   }

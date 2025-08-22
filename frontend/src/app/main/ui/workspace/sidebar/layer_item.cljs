@@ -20,14 +20,15 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.shape-icon :as sic]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.layer-name :refer [layer-name*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [app.util.shape-icon :as usi]
    [app.util.timers :as ts]
    [beicon.v2.core :as rx]
    [okulary.core :as l]
@@ -54,7 +55,6 @@
         parent-board?         (and (cfh/frame-shape? item)
                                    (= uuid/zero (:parent-id item)))
         absolute?             (ctl/item-absolute? item)
-        main-instance?        (:main-instance item)
 
         variants?             (features/use-feature "variants/v1")
         is-variant?           (when variants? (ctk/is-variant? item))
@@ -65,7 +65,8 @@
 
         data                  (deref refs/workspace-data)
         component             (ctkl/get-component data (:component-id item))
-        variant-properties    (:variant-properties component)]
+        variant-properties    (:variant-properties component)
+        icon-shape            (usi/get-shape-icon item)]
     [:*
      [:div {:id id
             :ref dref
@@ -113,10 +114,7 @@
                  :on-double-click on-zoom-to-selected}
            (when absolute?
              [:div {:class (stl/css :absolute)}])
-
-           [:& sic/element-icon
-            {:shape item
-             :main-instance? main-instance?}]]]
+           [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]]
 
          [:div {:class (stl/css :button-content)}
           (when (not ^boolean filtered?)
@@ -125,9 +123,7 @@
                  :on-double-click on-zoom-to-selected}
            (when ^boolean absolute?
              [:div {:class (stl/css :absolute)}])
-           [:& sic/element-icon
-            {:shape item
-             :main-instance? main-instance?}]]])
+           [:> icon* {:icon-id icon-shape :size "s" :data-testid (str "icon-" icon-shape)}]]])
 
        [:> layer-name* {:ref name-ref
                         :shape-id id
