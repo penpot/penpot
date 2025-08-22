@@ -7,7 +7,6 @@
 (ns app.main.ui.components.search-bar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
@@ -41,7 +40,7 @@
     [:span {:class (stl/css-case :search-box true
                                  :has-children (some? children))}
      children
-     [:div {:class (dm/str class " " (stl/css :search-input-wrapper))}
+     [:div {:class [class (stl/css :search-input-wrapper)]}
       (when icon-id
         [:> icon* {:icon-id icon-id
                    :size "s"
