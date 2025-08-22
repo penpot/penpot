@@ -800,11 +800,15 @@
         (apply-changes-local))))
 
 (defn update-active-token-themes
-  [changes active-theme-paths prev-active-theme-paths]
-  (-> changes
-      (update :redo-changes conj {:type :update-active-token-themes :theme-paths active-theme-paths})
-      (update :undo-changes conj {:type :update-active-token-themes :theme-paths prev-active-theme-paths})
-      (apply-changes-local)))
+  [changes active-theme-paths]
+  (assert-library! changes)
+  (let [library-data (::library-data (meta changes))
+        prev-active-theme-paths (some-> (get library-data :tokens-lib)
+                                        (ctob/get-active-theme-paths))]
+    (-> changes
+        (update :redo-changes conj {:type :update-active-token-themes :theme-paths active-theme-paths})
+        (update :undo-changes conj {:type :update-active-token-themes :theme-paths prev-active-theme-paths})
+        (apply-changes-local))))
 
 (defn set-token-theme [changes group theme-name theme]
   (assert-library! changes)
@@ -881,31 +885,21 @@
         (update :undo-changes conj {:type :set-tokens-lib :tokens-lib prev-tokens-lib})
         (apply-changes-local))))
 
-(defn set-token [changes set-name token-id token]
+(defn set-token [changes set-id token-id token]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token (some-> (get library-data :tokens-lib)
-                           (ctob/get-set-by-name set-name)
+                           (ctob/get-set set-id)
                            (ctob/get-token token-id))]
     (-> changes
         (update :redo-changes conj {:type :set-token
-                                    :set-name set-name
+                                    :set-id set-id
                                     :token-id token-id
                                     :token token})
-        (update :undo-changes conj (if prev-token
-                                     {:type :set-token
-                                      :set-name set-name
-                                      :token-id (or
-                                                   ;; Undo of edit
-                                                 (:id token)
-                                                   ;; Undo of delete
-                                                 token-id)
-                                      :token prev-token}
-                                     ;; Undo of create token
-                                     {:type :set-token
-                                      :set-name set-name
-                                      :token-id token-id
-                                      :token nil}))
+        (update :undo-changes conj {:type :set-token
+                                    :set-id set-id
+                                    :token-id token-id
+                                    :token prev-token})
         (apply-changes-local))))
 
 (defn rename-token-set
@@ -917,16 +911,14 @@
     (-> changes
         (update :redo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy (ctob/rename prev-token-set new-name))
-                                    :is-group false})
+                                    :token-set (datafy (ctob/rename prev-token-set new-name))})
         (update :undo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy prev-token-set)
-                                    :is-group false})
+                                    :token-set (datafy prev-token-set)})
         (apply-changes-local))))
 
 (defn set-token-set
-  [changes id is-group token-set]
+  [changes id token-set]
   (assert-library! changes)
   (let [library-data   (::library-data (meta changes))
         prev-token-set (some-> (get library-data :tokens-lib)
@@ -934,12 +926,10 @@
     (-> changes
         (update :redo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy token-set)
-                                    :is-group is-group})
+                                    :token-set (datafy token-set)})
         (update :undo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy prev-token-set)
-                                    :is-group is-group})
+                                    :token-set (datafy prev-token-set)})
         (apply-changes-local))))
 
 (defn add-component

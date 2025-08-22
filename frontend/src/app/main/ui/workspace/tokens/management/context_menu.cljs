@@ -12,7 +12,6 @@
    [app.common.files.tokens :as cft]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.token :as ctt]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.tokens.application :as dwta]
@@ -318,7 +317,7 @@
                         (generic-attribute-actions #{:y} "Y" (assoc context-data :on-update-shape dwta/update-shape-position)))
                        (clean-separators)))}))
 
-(defn default-actions [{:keys [token selected-token-set-name]}]
+(defn default-actions [{:keys [token selected-token-set-id]}]
   (let [{:keys [modal]} (dwta/get-token-properties token)]
     [{:title (tr "workspace.tokens.edit")
       :no-selectable true
@@ -331,7 +330,7 @@
                                              :position :right
                                              :fields fields
                                              :action "edit"
-                                             :selected-token-set-name selected-token-set-name
+                                             :selected-token-set-id selected-token-set-id
                                              :token token}))))}
      {:title (tr "workspace.tokens.duplicate")
       :no-selectable true
@@ -339,7 +338,7 @@
      {:title (tr "workspace.tokens.delete")
       :no-selectable true
       :action #(st/emit! (dwtl/delete-token
-                          (ctob/prefixed-set-path-string->set-name-string selected-token-set-name)
+                          selected-token-set-id
                           (:id token)))}]))
 
 (defn- allowed-shape-attributes [shapes]
@@ -472,7 +471,7 @@
         token-id (:token-id mdata)
         token (mf/deref (refs/workspace-token-in-selected-set token-id))
         token-type (:type token)
-        selected-token-set-name (mf/deref refs/selected-token-set-name)
+        selected-token-set-id (mf/deref refs/selected-token-set-id)
 
         selected-shapes
         (mf/with-memo [selected objects]
@@ -487,7 +486,7 @@
      [:& menu-tree {:submenu-offset width
                     :token token
                     :errors errors
-                    :selected-token-set-name selected-token-set-name
+                    :selected-token-set-id selected-token-set-id
                     :selected-shapes selected-shapes
                     :is-selected-inside-layout is-selected-inside-layout}]]))
 

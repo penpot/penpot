@@ -171,13 +171,13 @@
           file (setup-file #(-> %
                                 (ctob/add-set (ctob/make-token-set :id set-id
                                                                    :name set-name))
-                                (ctob/add-token-in-set set-name (ctob/make-token {:name "to.delete.color.red"
-                                                                                  :id token-id
-                                                                                  :value "red"
-                                                                                  :type :color}))))
+                                (ctob/add-token-in-set set-id (ctob/make-token {:name "to.delete.color.red"
+                                                                                :id token-id
+                                                                                :value "red"
+                                                                                :type :color}))))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token set-name token-id nil))
+                      (pcb/set-token set-id token-id nil))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -197,7 +197,7 @@
                                                                      :name set-name))))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token set-name (:id token) token))
+                      (pcb/set-token set-id (:id token) token))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -219,10 +219,10 @@
           file (setup-file #(-> %
                                 (ctob/add-set (ctob/make-token-set :id set-id
                                                                    :name set-name))
-                                (ctob/add-token-in-set set-name prev-token)))
+                                (ctob/add-token-in-set set-id prev-token)))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token set-name (:id prev-token) token))
+                      (pcb/set-token set-id (:id prev-token) token))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -239,7 +239,7 @@
           file (setup-file #(ctob/add-set % (ctob/make-token-set :id set-id :name set-name)))
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token-set set-id false nil))
+                      (pcb/set-token-set set-id nil))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -256,7 +256,7 @@
           file (setup-file identity)
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token-set set-id false token-set))
+                      (pcb/set-token-set set-id token-set))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
@@ -275,7 +275,7 @@
 
           changes (-> (pcb/empty-changes)
                       (pcb/with-library-data (:data file))
-                      (pcb/set-token-set set-id false (ctob/rename token-set new-set-name)))
+                      (pcb/set-token-set set-id (ctob/rename token-set new-set-name)))
 
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
