@@ -140,7 +140,6 @@ impl Surfaces {
 
     pub fn draw_into(&mut self, from: SurfaceId, to: SurfaceId, paint: Option<&skia::Paint>) {
         let sampling_options = self.sampling_options;
-
         self.get_mut(from)
             .clone()
             .draw(self.canvas(to), (0.0, 0.0), sampling_options, paint);
