@@ -3,12 +3,20 @@
   color: #eee;
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+canvas {
+  width: 100cqw;
+}
+
 .text-editor-container {
   background-color: white;
 }
 
-#output {
-  font-family: monospace;
-  padding: 1rem;
-  border: 1px solid #333;
+.playground {
+  display: grid;
+  max-width: 1280px;
 }

@@ -310,7 +310,8 @@
   [text-direction]
   (case text-direction
     "ltr" 0
-    "rtl" 1))
+    "rtl" 1
+    0))
 
 (defn translate-font-style
   [font-style]

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "coverage": "vitest run --coverage",
+    "wasm:update": "cp ../resources/public/js/render_wasm.wasm ./src/wasm/render_wasm.wasm && cp ../resources/public/js/render_wasm.js ./src/wasm/render_wasm.js",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:watch:ui": "vitest --ui",

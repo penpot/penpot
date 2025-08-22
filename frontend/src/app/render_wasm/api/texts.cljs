@@ -16,7 +16,7 @@
    [app.render-wasm.wasm :as wasm]))
 
 (def ^:const PARAGRAPH-ATTR-U8-SIZE 44)
-(def ^:const LEAF-ATTR-U8-SIZE 56)
+(def ^:const LEAF-ATTR-U8-SIZE 60)
 
 (defn- encode-text
   "Into an UTF8 buffer. Returns an ArrayBuffer instance"
@@ -79,6 +79,7 @@
   (reduce (fn [offset leaf]
             (let [font-style  (sr/translate-font-style (get leaf :font-style))
                   font-size   (get leaf :font-size)
+                  letter-spacing (get leaf :letter-spacing)
                   font-weight (get leaf :font-weight)
                   font-id     (f/normalize-font-id (get leaf :font-id))
                   font-family (hash (get leaf :font-family))
@@ -104,15 +105,21 @@
                   text-transform
                   (or (sr/translate-text-transform (:text-transform leaf))
                       (sr/translate-text-transform (:text-transform paragraph))
-                      (sr/translate-text-transform "none"))]
+                      (sr/translate-text-transform "none"))
+
+                  text-direction
+                  (or (sr/translate-text-direction (:text-direction leaf))
+                      (sr/translate-text-direction (:text-direction paragraph))
+                      (sr/translate-text-direction "ltr"))]
 
               (-> offset
                   (mem/write-u8 dview font-style)
                   (mem/write-u8 dview text-decoration)
                   (mem/write-u8 dview text-transform)
-                  (+ 1) ;;padding
+                  (mem/write-u8 dview text-direction)
 
                   (mem/write-f32 dview font-size)
+                  (mem/write-f32 dview letter-spacing)
                   (mem/write-u32 dview font-weight)
 
                   (mem/write-uuid dview font-id)

@@ -20,7 +20,6 @@ pub extern "C" fn set_shape_text_content() {
             .add_paragraph(raw_text_data.paragraph)
             .expect("Failed to add paragraph");
     });
-
     mem::free_bytes();
 }
 
