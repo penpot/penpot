@@ -266,8 +266,7 @@
          [:span {:class (stl/css :you)} (tr "labels.you")])]
       [:div {:class (stl/css :member-email)} (:email member)]]]))
 
-(mf/defc rol-info
-  {::mf/props :obj}
+(mf/defc rol-info*
   [{:keys [member team on-set-admin on-set-editor on-set-owner on-set-viewer profile]}]
   (let [member-is-owner  (:is-owner member)
         member-is-admin  (and (:is-admin member) (not member-is-owner))
@@ -282,13 +281,15 @@
         is-you           (= (:id profile) (:id member))
 
         can-change-rol   (or is-owner is-admin)
-        not-superior     (or (and (not member-is-owner) is-admin) (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
+        not-superior     (or (and (not member-is-owner) is-admin)
+                             (and can-change-rol (or member-is-admin member-is-editor member-is-viewer)))
 
         role             (cond
                            member-is-owner  "labels.owner"
                            member-is-admin  "labels.admin"
                            member-is-editor "labels.editor"
                            :else            "labels.viewer")
+
         on-show          (mf/use-fn #(reset! show? true))
         on-hide          (mf/use-fn #(reset! show? false))]
     [:*
@@ -320,8 +321,7 @@
                :class (stl/css :rol-dropdown-item)}
           (tr "labels.owner")])]]]))
 
-(mf/defc member-actions
-  {::mf/props :obj}
+(mf/defc member-actions*
   [{:keys [member team on-delete on-leave profile]}]
   (let [is-owner?   (:is-owner member)
         owner?      (dm/get-in team [:permissions :is-owner])
@@ -470,20 +470,20 @@
       [:& member-info {:member member :profile profile}]]
 
      [:div {:class (stl/css :table-field :field-roles)}
-      [:& rol-info  {:member member
-                     :team team
-                     :on-set-admin on-set-admin
-                     :on-set-editor on-set-editor
-                     :on-set-viewer on-set-viewer
-                     :on-set-owner on-set-owner
-                     :profile profile}]]
+      [:> rol-info*  {:member member
+                      :team team
+                      :on-set-admin on-set-admin
+                      :on-set-editor on-set-editor
+                      :on-set-viewer on-set-viewer
+                      :on-set-owner on-set-owner
+                      :profile profile}]]
 
      [:div {:class (stl/css :table-field :field-actions)}
-      [:& member-actions {:member member
-                          :profile profile
-                          :team team
-                          :on-delete on-delete
-                          :on-leave on-leave'}]]]))
+      [:> member-actions* {:member member
+                           :profile profile
+                           :team team
+                           :on-delete on-delete
+                           :on-leave on-leave'}]]]))
 
 (mf/defc team-members*
   {::mf/props :obj
