@@ -459,9 +459,6 @@
 (def workspace-token-themes-no-hidden
   (l/derived #(remove ctob/hidden-theme? %) workspace-token-themes))
 
-(def selected-token-set-name   ;; FIXME: remove this when all functions use set-id
-  (l/derived (l/key :selected-token-set-name) workspace-tokens))
-
 (def selected-token-set-id
   (l/derived (l/key :selected-token-set-id) workspace-tokens))
 

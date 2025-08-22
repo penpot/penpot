@@ -24,7 +24,6 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-(declare set-selected-token-set-name)
 (declare set-selected-token-set-id)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,9 +109,9 @@
   (ptk/reify ::toggle-token-theme-active?
     ptk/WatchEvent
     (watch [it state _]
-      (let [tokens-lib (get-tokens-lib state)
-            prev-active-token-themes (some-> tokens-lib
-                                             (ctob/get-active-theme-paths))
+      (let [data (dsh/lookup-file-data state)
+
+            tokens-lib (get-tokens-lib state)
             active-token-themes (some-> tokens-lib
                                         (ctob/toggle-theme-active? group name)
                                         (ctob/get-active-theme-paths))
@@ -120,7 +119,8 @@
                                    active-token-themes
                                    (disj active-token-themes ctob/hidden-theme-path))
             changes (-> (pcb/empty-changes it)
-                        (pcb/update-active-token-themes active-token-themes' prev-active-token-themes))]
+                        (pcb/with-library-data data)
+                        (pcb/update-active-token-themes active-token-themes'))]
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -158,9 +158,8 @@
           (let [token-set (ctob/make-token-set :name set-name)
                 changes   (-> (pcb/empty-changes it)
                               (pcb/with-library-data data)
-                              (pcb/set-token-set (ctob/get-id token-set) false token-set))]
-            (rx/of (set-selected-token-set-name set-name)
-                   (set-selected-token-set-id (ctob/get-id token-set))
+                              (pcb/set-token-set (ctob/get-id token-set) token-set))]
+            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
                    (dch/commit-changes changes))))))))
 
 (defn rename-token-set-group [set-group-path set-group-fname]
@@ -189,12 +188,11 @@
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
                             (pcb/rename-token-set (ctob/get-id token-set) name))]
-            (rx/of (set-selected-token-set-name name)
-                   (set-selected-token-set-id (ctob/get-id token-set))
+            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
                    (dch/commit-changes changes))))))))
 
 (defn duplicate-token-set
-  [id is-group]
+  [id]
   (ptk/reify ::duplicate-token-set
     ptk/WatchEvent
     (watch [it state _]
@@ -205,9 +203,8 @@
         (when-let [token-set (ctob/duplicate-set id tokens-lib {:suffix suffix})]
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token-set (ctob/get-id token-set) is-group token-set))]
-            (rx/of (set-selected-token-set-name (ctob/get-name token-set))
-                   (set-selected-token-set-id (ctob/get-id token-set))
+                            (pcb/set-token-set (ctob/get-id token-set) token-set))]
+            (rx/of (set-selected-token-set-id (ctob/get-id token-set))
                    (dch/commit-changes changes))))))))
 
 (defn toggle-token-set
@@ -248,16 +245,27 @@
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
-(defn delete-token-set-path
-  [group? path]
-  (ptk/reify ::delete-token-set-path
+(defn delete-token-set
+  [id]
+  (ptk/reify ::delete-token-set
     ptk/WatchEvent
     (watch [it state _]
-      (prn "path" path)
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/set-token-set (ctob/join-set-path path) group? nil))]
+                        (pcb/set-token-set id nil))]
+        (rx/of (dch/commit-changes changes)
+               (dwtp/propagate-workspace-tokens))))))
+
+(defn delete-token-set-group
+  [path]
+  (ptk/reify ::delete-token-set-group
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [data    (dsh/lookup-file-data state)
+            changes (-> (pcb/empty-changes it)
+                        (pcb/with-library-data data)
+                        (clt/generate-delete-token-set-group (get-tokens-lib state) path))]
         (rx/of (dch/commit-changes changes)
                (dwtp/propagate-workspace-tokens))))))
 
@@ -332,13 +340,12 @@
             changes
             (-> (pcb/empty-changes)
                 (pcb/with-library-data data)
-                (pcb/set-token-set set-name false token-set)
+                (pcb/set-token-set set-name token-set)
                 (pcb/set-token-theme (:group hidden-theme)
                                      (:name hidden-theme)
                                      hidden-theme-with-set)
-                (pcb/update-active-token-themes #{ctob/hidden-theme-path} #{}))]
+                (pcb/update-active-token-themes #{ctob/hidden-theme-path}))]
         (rx/of (dch/commit-changes changes)
-               (set-selected-token-set-name set-name)
                (set-selected-token-set-id (ctob/get-id token-set)))))))
 
 (defn create-token
@@ -352,7 +359,7 @@
                 token-type (:type token)
                 changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token (ctob/get-name token-set)
+                            (pcb/set-token (ctob/get-id token-set)
                                            (:id token)
                                            token))]
 
@@ -377,15 +384,15 @@
             token-type (:type token)
             changes   (-> (pcb/empty-changes it)
                           (pcb/with-library-data data)
-                          (pcb/set-token (ctob/get-name token-set)
+                          (pcb/set-token (ctob/get-id token-set)
                                          id
                                          token'))]
         (rx/of (dch/commit-changes changes)
                (ptk/data-event ::ev/event {::ev/name "edit-token" :type token-type}))))))
 
 (defn delete-token
-  [set-name token-id]
-  (dm/assert! (string? set-name))
+  [set-id token-id]
+  (dm/assert! (uuid? set-id))
   (dm/assert! (uuid? token-id))
   (ptk/reify ::delete-token
     ptk/WatchEvent
@@ -393,7 +400,7 @@
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/set-token set-name token-id nil))]
+                        (pcb/set-token set-id token-id nil))]
         (rx/of (dch/commit-changes changes))))))
 
 (defn duplicate-token
@@ -453,13 +460,6 @@
         (update state :workspace-tokens assoc :token-set-context-menu params)
         (update state :workspace-tokens dissoc :token-set-context-menu)))))
 
-(defn set-selected-token-set-name   ;; TODO: remove this when all functions use set-id
-  [name]
-  (ptk/reify ::set-selected-token-set-name
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :workspace-tokens assoc :selected-token-set-name name))))
-
 (defn set-selected-token-set-id
   [id]
   (ptk/reify ::set-selected-token-set-id
@@ -469,7 +469,8 @@
 
 (defn start-token-set-edition
   [edition-id]
-  (assert (string? edition-id) "expected a string for `edition-id`")
+  ;; Path string for edition of a group, UUID for edition of a set.
+  (assert (or (string? edition-id) (uuid? edition-id)) "expected a string or uuid for `edition-id`")
 
   (ptk/reify ::start-token-set-edition
     ptk/UpdateEvent

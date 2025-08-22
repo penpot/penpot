@@ -115,8 +115,7 @@
         (mf/with-memo [tokens-by-type]
           (get-sorted-token-groups tokens-by-type))]
 
-    ;; (mf/with-effect [tokens-lib selected-token-set-id]
-    (mf/with-effect []
+    (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
                  (or (nil? selected-token-set-id)
                      (and selected-token-set-id
@@ -124,8 +123,7 @@
         (let [match (->> (ctob/get-sets tokens-lib)
                          (first))]
           (when match
-            (st/emit! (dwtl/set-selected-token-set-name (ctob/get-name match))
-                      (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
+            (st/emit! (dwtl/set-selected-token-set-id (ctob/get-id match)))))))
 
     [:*
      [:& token-context-menu]
