@@ -68,10 +68,7 @@ test("Updates a text font", async ({ page }) => {
   await workspace.waitForFirstRender({ hideUI: false });
 
   await workspace.clickLeafLayer("this is a text");
-  const fontStyle = workspace.page.getByTitle("Font Style");
-  await fontStyle.click();
-  const boldOption = fontStyle.getByText("bold").first();
-  await boldOption.click();
+  await page.keyboard.press("Control+b");
 
   await workspace.hideUI();
 
@@ -192,6 +189,21 @@ test("Renders a file with text decoration", async ({ page }) => {
   await workspace.goToWorkspace({
     id: "d6c33e7b-7b64-80f3-8006-785098582f1d",
     pageId: "d6c33e7b-7b64-80f3-8006-785098582f1e",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test("Renders a file with emoji and text decoration", async ({ page }) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await mockGetEmojiFont(workspace);
+
+  await workspace.mockGetFile("render-wasm/get-file-emoji-and-text-decoration.json");
+
+  await workspace.goToWorkspace({
+    id: "82d128e1-d3b1-80a5-8006-ae60fedcd5e7",
+    pageId: "82d128e1-d3b1-80a5-8006-ae60fedcd5e8",
   });
   await workspace.waitForFirstRender();
   await expect(workspace.canvas).toHaveScreenshot();
