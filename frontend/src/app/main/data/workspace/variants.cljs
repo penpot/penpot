@@ -596,22 +596,30 @@
                                        inc)
                      variant-id    (uuid/next)
                      undo-id       (js/Symbol)]
-                 (rx/concat
-                  (rx/of
-                   (when  (and page-id (not= current-page page-id))
-                     (dcm/go-to-workspace :page-id page-id))
-                   (dwu/start-undo-transaction undo-id)
-                   (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false)
-                   (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
-                   (dwsh/update-shapes selected #(-> %
-                                                     (assoc :constraints-h :left)
-                                                     (assoc :constraints-v :top)
-                                                     (assoc :fixed-scroll false)))
-                   (dwsh/relocate-shapes #{variant-id} common-parent index)
-                   (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
-                   (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
 
-                   (dwu/commit-undo-transaction undo-id)))))
+                 (rx/concat
+                  (if (and page-id (not= current-page page-id))
+                    (rx/of (dcm/go-to-workspace :page-id page-id))
+                    (rx/empty))
+
+                  (rx/of (dwu/start-undo-transaction undo-id)
+                         (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false)
+                         (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
+                         (dwsh/update-shapes selected #(-> %
+                                                           (assoc :constraints-h :left)
+                                                           (assoc :constraints-v :top)
+                                                           (assoc :fixed-scroll false)))
+                         (dwsh/relocate-shapes #{variant-id} common-parent index)
+                         (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
+                         (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60)))
+
+                  ;; NOTE: we need to schedule a commit into a
+                  ;; microtask for ensure that all the scheduled
+                  ;; microtask of previous events execute before the
+                  ;; commit
+
+                  (->> (rx/of (dwu/commit-undo-transaction undo-id))
+                       (rx/observe-on :async)))))
 
              redirect-to-page
              (fn [page-id]
