@@ -215,6 +215,6 @@
     (and
      is-owner
      (= subscription-type "unlimited")
-     ;; common: seats < 25 and diff >= 4 between editors/seats and there is underuse
+     ;; common: seats < 25 and diff >= 4 between editors/seats and there is overuse
      (and (< seats 25)
-          (>= (- seats editors) 4)))))
+          (>= (- editors seats) 4)))))
