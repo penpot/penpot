@@ -75,15 +75,19 @@
                                      {:min-members min-editors})
         form                       (fm/use-form :schema (schema:seats-form min-editors)
                                                 :initial initial)
+        submit-in-progress*        (mf/use-state false)
         subscribe-to-unlimited     (mf/use-fn
                                     (fn [form]
-                                      (let [data (:clean-data @form)
-                                            return-url (-> (rt/get-current-href) (rt/encode-url))
-                                            href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" (:min-members data) "&returnUrl=" return-url)]
-                                        (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
-                                                                         :type "unlimited"
-                                                                         :quantity (:min-members data)})
-                                                  (rt/nav-raw :href href)))))
+                                      (when (not @submit-in-progress*)
+                                        (reset! submit-in-progress* true)
+                                        (let [data (:clean-data @form)
+                                              return-url (-> (rt/get-current-href) (rt/encode-url))
+                                              href (dm/str "payments/subscriptions/create?type=unlimited&quantity=" (:min-members data) "&returnUrl=" return-url)]
+                                          (reset! form nil)
+                                          (st/emit! (ptk/event ::ev/event {::ev/name "create-trial-subscription"
+                                                                           :type "unlimited"
+                                                                           :quantity (:min-members data)})
+                                                    (rt/nav-raw :href href))))))
 
         subscribe-to-enterprise   (mf/use-fn
                                    (fn []
