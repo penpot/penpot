@@ -3610,6 +3610,9 @@ msgstr "Detach"
 msgid "settings.multiple"
 msgstr "Mixed"
 
+msgid "labels.mixed-values"
+msgstr "Mixed"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:274
 msgid "settings.remove-color"
 msgstr "Remove color"
@@ -7640,6 +7643,26 @@ msgstr "Invalid value: % is not allowed."
 #: src/app/main/ui/workspace/tokens/form.cljs:555
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "This token is not available in any active set or theme."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Detach token"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "No applicable tokens in active sets or themes."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "No matches found."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Open token list"
 
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"

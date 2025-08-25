@@ -1,0 +1,126 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../_borders.scss" as *;
+@use "../../_sizes.scss" as *;
+@use "../../typography.scss" as t;
+@use "../../colors.scss" as *;
+
+.token-field {
+  --token-field-bg-color: var(--color-background-tertiary);
+  --token-field-fg-color: var(--color-foreground-primary);
+  --token-field-icon-color: var(--color-foreground-secondary);
+  --token-field-outline-color: none;
+  --token-field-height: var(--sp-xxxl);
+  --token-field-margin: unset;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: var(--sp-xs);
+  align-items: center;
+  position: relative;
+  inline-size: 100%;
+  background: var(--token-field-bg-color);
+  border-radius: $br-8;
+  padding: var(--sp-xs);
+  outline: $b-1 solid var(--token-field-outline-color);
+
+  &:hover {
+    --token-field-bg-color: var(--color-background-quaternary);
+  }
+
+  &:focus {
+    --token-field-bg-color: var(--color-background-primary);
+    --token-field-outline-color: var(--color-accent-primary);
+  }
+}
+
+.with-icon {
+  grid-template-columns: auto 1fr auto;
+}
+
+.token-field-disabled {
+  user-select: none;
+  --token-field-bg-color: var(--color-background-primary);
+  --token-field-outline-color: var(--color-background-quaternary);
+  &:hover {
+    --token-field-bg-color: var(--color-background-primary);
+    --token-field-outline-color: var(--color-background-quaternary);
+  }
+}
+
+.pill {
+  --pill-border-color: var(--color-token-border);
+  --pill-bg-color: var(--color-background-tertiary);
+  --pill-fg-color: var(--color-token-foreground);
+  @include t.use-typography("code-font");
+  height: var(--sp-xxl);
+  width: fit-content;
+  background: var(--pill-bg-color);
+  cursor: pointer;
+  border: $b-1 solid var(--pill-border-color);
+  color: var(--pill-fg-color);
+  border-radius: $br-6;
+  padding-inline: $sz-6;
+  &:hover {
+    --pill-bg-color: var(--color-token-background);
+    --pill-fg-color: var(--color-foreground-primary);
+    --pill-border-color: var(--color-token-foreground);
+  }
+  &:focus-visible {
+    --pill-bg-color: var(--color-token-background);
+    --pill-fg-color: var(--color-foreground-primary);
+    --pill-border-color: var(--color-accent-primary);
+    outline: none;
+  }
+}
+
+.pill-disabled {
+  user-select: none;
+  --pill-bg-color: none;
+  --pill-fg-color: var(--color-foreground-secondary);
+  --pill-border-color: var(--color-token-border);
+  &:hover {
+    --pill-bg-color: none;
+    --pill-fg-color: var(--color-foreground-secondary);
+    --pill-border-color: var(--color-token-border);
+  }
+}
+
+.no-set-pill {
+  --pill-bg-color: none;
+  --pill-fg-color: var(--color-foreground-secondary);
+  --pill-border-color: var(--color-token-border);
+  position: relative;
+  &:hover {
+    --pill-bg-color: none;
+    --pill-fg-color: var(--color-foreground-secondary);
+    --pill-border-color: var(--color-token-border);
+  }
+}
+
+.pill-dot {
+  width: $sz-6;
+  height: $sz-6;
+  outline: var(--sp-xxs) solid var(--color-background-primary);
+  border-radius: 50%;
+  background-color: var(--color-foreground-error);
+  margin-left: var(--sp-xs);
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.invisible-button {
+  opacity: var(--opacity-button);
+
+  &:hover {
+    --opacity-button: 1;
+  }
+  &:focus {
+    --opacity-button: 1;
+  }
+}

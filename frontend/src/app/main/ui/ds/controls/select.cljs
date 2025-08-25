@@ -28,7 +28,6 @@
   (let [option (get-option options default)]
     (get option :id)))
 
-
 ;; Also used in combobox
 (defn handle-focus-change
   [options focused* new-index nodes]

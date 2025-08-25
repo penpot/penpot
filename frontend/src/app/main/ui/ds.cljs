@@ -11,6 +11,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
+   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
@@ -66,6 +67,7 @@
     :Tooltip tooltip*
     :ContextNotification context-notification*
     :NotificationPill notification-pill*
+    :NumericInput numeric-input*
     :Actionable actionable*
     :TokenStatusIcon token-status-icon*
     :Swatch swatch*

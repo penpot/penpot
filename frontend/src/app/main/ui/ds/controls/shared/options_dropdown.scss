@@ -13,12 +13,10 @@
   --options-dropdown-bg-color: var(--color-background-tertiary);
   --options-dropdown-outline-color: none;
   --options-dropdown-border-color: var(--color-background-quaternary);
-  --options-dropdown-empty: var(--color-canvas);
 
   position: absolute;
-  right: 0;
   top: $sz-36;
-  width: 100%;
+  width: var(--dropdown-width, 100%);
   background-color: var(--options-dropdown-bg-color);
   border-radius: $br-8;
   border: $b-1 solid var(--options-dropdown-border-color);
@@ -30,59 +28,33 @@
   z-index: var(--z-index-dropdown);
 }
 
-.option {
-  --options-dropdown-fg-color: var(--color-foreground-primary);
-  --options-dropdown-bg-color: unset;
-
-  display: grid;
-  align-items: center;
-  justify-items: start;
-  grid-template-columns: 1fr auto;
-  gap: var(--sp-xs);
-  width: 100%;
-  height: $sz-32;
-  padding: var(--sp-s);
-  border-radius: $br-8;
-  outline: $b-1 solid var(--options-dropdown-outline-color);
-  outline-offset: -1px;
-  background-color: var(--options-dropdown-bg-color);
-  color: var(--options-dropdown-fg-color);
-
-  &:hover,
-  &[aria-selected="true"] {
-    --options-dropdown-bg-color: var(--color-background-quaternary);
-  }
+.left-align {
+  left: 0;
 }
 
-.option-with-icon {
-  grid-template-columns: auto 1fr auto;
-}
-
-.option-text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-  min-width: 0;
-  padding-inline-start: var(--sp-xxs);
-}
-
-.option-icon {
-  color: var(--options-dropdown-icon-fg-color);
-}
-
-.option-current {
-  --options-dropdown-outline-color: var(--color-accent-primary);
-  outline: $b-1 solid var(--options-dropdown-outline-color);
-}
-
-.option-selected {
-  --options-dropdown-fg-color: var(--color-accent-primary);
-  --options-dropdown-icon-fg-color: var(--color-accent-primary);
+.right-align {
+  right: 0;
 }
 
 .option-separator {
   border: $b-1 solid var(--options-dropdown-border-color);
   margin-top: var(--sp-xs);
   margin-bottom: var(--sp-xs);
+}
+
+.group-option,
+.option-empty {
+  @include use-typography("body-small");
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  color: var(--color-foreground-secondary);
+  padding-inline: var(--sp-s);
+  height: var(--sp-xxxl);
+}
+
+.option-empty {
+  justify-content: center;
+  text-align: center;
+  padding: 0 40px;
 }

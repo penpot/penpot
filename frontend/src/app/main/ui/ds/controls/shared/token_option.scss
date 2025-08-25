@@ -1,0 +1,77 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../_borders.scss" as *;
+@use "../../_sizes.scss" as *;
+@use "../../typography.scss" as *;
+
+.token-option {
+  --token-options-fg-color: var(--color-foreground-primary);
+  --token-options-bg-color: unset;
+  --token-options-empty: var(--color-canvas);
+  @include use-typography("body-small");
+  display: grid;
+  align-items: center;
+  justify-items: start;
+  grid-template-columns: 1fr auto;
+  gap: $sz-6;
+  width: 100%;
+  height: $sz-32;
+  padding: var(--sp-s);
+  border-radius: $br-8;
+  outline: $b-1 solid var(--token-options-outline-color);
+  outline-offset: calc(-1 * $b-1);
+  background-color: var(--token-options-bg-color);
+  color: var(--token-options-fg-color);
+  overflow: hidden;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  &:hover,
+  &[aria-selected="true"] {
+    --token-options-bg-color: var(--color-background-quaternary);
+  }
+}
+
+.option-with-pill {
+  grid-template-columns: auto 1fr auto;
+}
+
+.option-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  width: 100%;
+  padding-inline-start: var(--sp-xxs);
+}
+
+.option-current {
+  --token-options-outline-color: var(--color-accent-primary);
+  outline: $b-1 solid var(--token-options-outline-color);
+}
+
+.option-pill {
+  @include use-typography("code-font");
+  color: var(--color-foreground-secondary);
+  background-color: var(--color-background-primary);
+  border-radius: $br-6;
+  padding: var(--sp-xxs) var(--sp-xs);
+}
+
+.option-selected-token {
+  --token-options-fg-color: var(--color-foreground-primary);
+  --token-options-icon-fg-color: var(--color-accent-primary);
+}
+
+.icon-placeholder {
+  inline-size: var(--sp-l);
+}
+
+.option-check {
+  color: var(--token-options-icon-fg-color);
+  min-width: var(--sp-l);
+}

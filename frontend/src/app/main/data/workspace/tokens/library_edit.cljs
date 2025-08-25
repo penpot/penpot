@@ -214,7 +214,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [data    (dsh/lookup-file-data state)
-            tlib (get-tokens-lib state)
+            tlib    (get-tokens-lib state)
             changes (-> (pcb/empty-changes)
                         (pcb/with-library-data data)
                         (clt/generate-toggle-token-set tlib name))]
@@ -351,7 +351,6 @@
                                            (:id token)
                                            token))]
 
-            (js/console.log "Creating token" (clj->js changes))
             (rx/of (dch/commit-changes changes)
                    (ptk/data-event ::ev/event {::ev/name "create-token" :type token-type})))
 
