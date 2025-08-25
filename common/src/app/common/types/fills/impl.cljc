@@ -7,7 +7,7 @@
 (ns app.common.types.fills.impl
   (:require
    #?(:clj [clojure.data.json :as json])
-   #?(:cljs [app.common.weak-map :as weak-map])
+   #?(:cljs [app.common.weak :as weak])
    [app.common.buffer :as buf]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -443,7 +443,7 @@
                           :code :invalid-fill
                           :hint "found invalid fill on encoding fills to binary format")))))
 
-        #?(:cljs (Fills. total dbuffer mbuffer image-ids (weak-map/create) nil)
+        #?(:cljs (Fills. total dbuffer mbuffer image-ids (weak/create-weak-value-map) nil)
            :clj  (Fills. total dbuffer mbuffer nil))))))
 
 (defn fills?

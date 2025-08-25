@@ -3613,6 +3613,9 @@ msgstr "Desvincular"
 msgid "settings.multiple"
 msgstr "Varios"
 
+msgid "labels.mixed-values"
+msgstr "Varios"
+
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:274
 msgid "settings.remove-color"
 msgstr "Eliminar color"
@@ -7529,6 +7532,26 @@ msgstr "Valor no válido: No se permiten unidades."
 #: src/app/main/ui/workspace/tokens/form.cljs:555
 msgid "workspace.tokens.warning-name-change"
 msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Este token no está disponible en ningún set ni tema activo."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Desvincular token"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "No hay tokens aplicables en  sets o temas activos."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "No hay coincidencias"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Abrir lista de tokens"
 
 #: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
