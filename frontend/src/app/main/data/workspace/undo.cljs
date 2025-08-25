@@ -170,12 +170,13 @@
                     (update :transactions-pending assoc id (ct/now))))))
 
     ptk/WatchEvent
-    (watch [_ _ _]
+    (watch [_ _ stream]
       (when (and timeout (pos? timeout))
-        (->> (rx/of (check-open-transactions timeout))
-             ;; Wait the configured time
-             (rx/delay timeout))))))
-
+        (let [stoper (rx/filter (ptk/type? ::start-undo-transaction) stream)]
+          (->> (rx/of (check-open-transactions timeout))
+               ;; Wait the configured time
+               (rx/delay timeout)
+               (rx/take-until stoper)))))))
 
 (defn discard-undo-transaction
   "Updates the state to discard any current and pending undo transaction."
