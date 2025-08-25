@@ -167,7 +167,7 @@
   (ptk/reify ::duplicate-page
     ptk/WatchEvent
     (watch [it state _]
-      (let [id                 (uuid/next)
+      (let [new-page-id        (uuid/next)
             fdata              (dsh/lookup-file-data state)
             pages              (get fdata :pages-index)
             page               (get pages page-id)
@@ -182,8 +182,9 @@
             name               (cfh/generate-unique-name base-name unames :suffix-fn suffix-fn)
             objects            (update-vals (:objects page) #(dissoc % :use-for-thumbnail))
 
-            main-instances-ids (set (keep #(when (ctc/main-instance? (val %)) (key %)) objects))
-            ids-to-remove      (set (apply concat (map #(cfh/get-children-ids objects %) main-instances-ids)))
+            main-not-variant-ids (set (keep #(when (and (ctc/main-instance? (val %)) (not (ctc/is-variant? (val %))))
+                                               (key %)) objects))
+            ids-to-remove      (set (apply concat (map #(cfh/get-children-ids objects %) main-not-variant-ids)))
 
             add-component-copy
             (fn [objs id shape]
@@ -201,25 +202,100 @@
                     objs (assoc objs id new-shape)]
                 (merge objs children)))
 
+            ;; List of the shapes that are a variant component main
+            variant-mains    (->> objects
+                                  vals
+                                  (filter ctc/is-variant?))
+
+            ;; Map ids of several variants related old ids to new
+            variants-ids-map (->> variant-mains
+                                  (reduce (fn [ids-map shape]
+                                            (assoc ids-map
+                                                   (:id shape) (uuid/next)
+                                                   (:component-id shape) (uuid/next)
+                                                   (:variant-id shape) (uuid/next)))
+                                          {}))
+
+            update-variant-values
+            (fn [shape]
+              (let [new-shape (cond-> shape
+                                (contains? shape :component-id)
+                                (assoc :component-id (get variants-ids-map (:component-id shape)))
+                                (contains? shape :variant-id)
+                                (assoc :variant-id (get variants-ids-map (:variant-id shape))))]
+                new-shape))
+
+            add-comp
+            (fn [changes main]
+              (let [new-component-id (get variants-ids-map (:component-id main))
+                    new-variant-id   (get variants-ids-map (:variant-id main))
+                    main-instance-id (get variants-ids-map (:id main))
+                    component        (ctkl/get-component fdata (:component-id main))]
+                (pcb/add-component changes
+                                   new-component-id
+                                   (:path component)
+                                   (:name component)
+                                   []
+                                   main-instance-id
+                                   new-page-id
+                                   (:annotation component)
+                                   new-variant-id
+                                   (:variant-properties component))))
+
+            ;; Generate the new page objects from the old page objects
             objects
             (reduce
              (fn [objs [id shape]]
-               (cond (contains? main-instances-ids id)
-                     (add-component-copy objs id shape)
-                     (contains? ids-to-remove id)
-                     objs
-                     :else
-                     (assoc objs id shape)))
+               (cond
+                 ;; If it is a component main (and not a variant) we don't want to
+                 ;; copy it. We want to instanciate (copy) it
+                 (contains? main-not-variant-ids id)
+                 (add-component-copy objs id shape)
+
+                 ;; If it is in the remove list, ignore it
+                 (contains? ids-to-remove id)
+                 objs
+
+                 ;; If it is a variant-container or a variant component,
+                 ;; update its values to new ids
+                 (contains? variants-ids-map id)
+                 (assoc objs id (update-variant-values shape))
+
+                 ;; In other case, simply copy it
+                 :else
+                 (assoc objs id shape)))
+             {}
+             objects)
+
+            ;; Remap parents and childs with the new ids generated for variants
+            objects
+            (reduce-kv
+             (fn [objs _ {:keys [id parent-id frame-id] :as shape}]
+               (assoc objs
+                      (get variants-ids-map id id)
+                      (-> shape
+                          (assoc :id (get variants-ids-map id id))
+                          (assoc :parent-id (get variants-ids-map parent-id parent-id))
+                          (assoc :frame-id (get variants-ids-map frame-id frame-id))
+                          (cond->
+                           (contains? shape :shapes)
+                            (assoc :shapes (mapv #(get variants-ids-map % %) (:shapes shape)))))))
              {}
              objects)
 
             page    (-> page
                         (assoc :name name)
-                        (assoc :id id)
+                        (assoc :id new-page-id)
                         (assoc :objects
                                objects))
+
             changes (-> (pcb/empty-changes it)
-                        (pcb/add-page id page))]
+                        (pcb/add-page new-page-id page)
+                        (pcb/with-page page)
+                        (pcb/with-objects objects)
+                        ;; Create new components for each duplicated variant main
+                        (as-> changes
+                              (reduce add-comp changes variant-mains)))]
         (rx/of (dch/commit-changes changes))))))
 
 (s/def ::rename-page
