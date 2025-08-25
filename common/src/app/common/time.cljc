@@ -426,3 +426,8 @@
         :encode/json format-duration
         ::oapi/type "string"
         ::oapi/format "duration"}})))
+
+#?(:cljs
+   (extend-protocol cljs.core/IEncodeJS
+     js/Date
+     (-clj->js [x] x)))
