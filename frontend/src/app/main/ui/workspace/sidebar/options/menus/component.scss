@@ -257,13 +257,8 @@
 
 .search-icon {
   @include flexCenter;
-  width: $s-12;
   margin-left: $s-8;
-
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-  }
+  flex: 0 0 $s-16;
 }
 
 .component-path {
@@ -310,7 +305,8 @@
   display: flex;
   align-items: center;
   margin-bottom: $s-4;
-  padding-right: $s-4;
+  padding: $s-2 $s-8 $s-2 $s-2;
+  gap: $s-8;
   font-size: $s-12;
   cursor: pointer;
   width: 100%;
@@ -321,6 +317,8 @@
 
   .variant-icon {
     background-color: none;
+    padding: $s-2;
+    flex: 0 0 $s-16;
   }
 
   .component-name {
@@ -328,13 +326,13 @@
     width: 80%;
   }
 
-  svg,
-  img {
+  .component-img {
+    flex: 0 0 $s-40;
     background-color: var(--assets-component-background-color);
     border-radius: $br-8;
-    height: $s-36;
-    width: $s-36;
-    margin: $s-2 $s-8 $s-2 $s-2;
+    height: $s-40;
+    width: $s-40;
+    padding: $s-2;
   }
 
   .selected {
@@ -379,6 +377,7 @@
 
   .variant-icon {
     background-color: var(--color-background-tertiary);
+    padding: 6px;
   }
 
   img {
@@ -817,8 +816,8 @@
   order: 3;
 
   svg {
-    height: $s-12;
-    width: $s-12;
+    height: 100%;
+    width: 100%;
     background-color: transparent;
     margin: 0;
 
