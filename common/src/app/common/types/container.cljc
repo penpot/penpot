@@ -436,7 +436,7 @@
 
 (defn- invalid-structure-for-component?
   "Check if the structure generated nesting children in parent is invalid in terms of nested components"
-  [objects parent children pasting? libraries]
+  [objects parent children pasting? all-comp-cut? libraries]
   (let [; If the original shapes had been cutted, and we are pasting them now, they aren't
         ; in objects. We can add them to locate later
         objects (merge objects
@@ -460,7 +460,7 @@
                                           (every? nil?)))
 
         variants-nesting-loop? (not (->> children
-                                         (map #(cfh/variants-nesting-loop? objects libraries (:id %) (:id parent)))
+                                         (map #(cfh/variants-nesting-loop? objects libraries % parent (and pasting? all-comp-cut?)))
                                          (every? nil?)))]
     (or
       ;;We don't want to change the structure of component copies
@@ -481,16 +481,16 @@
    (letfn [(get-frame [parent-id]
              (if (cfh/frame-shape? objects parent-id) parent-id (get-in objects [parent-id :frame-id])))]
      (let [parent (get objects parent-id)
-           ;; We can always move the children to the parent they already have.
-           ;; But if we are pasting, those are new items, so it is considered a change
-           no-changes?
-           (and (every? #(= parent-id (:parent-id %)) children)
-                (not pasting?))
 
-           ;; When pasting frames, children have the frames and their children
            ;; We need to check only the top shapes
            children-ids (set (map :id children))
            top-children (remove #(contains? children-ids (:parent-id %)) children)
+
+           ;; We can always move the children to the parent they already have.
+           ;; But if we are pasting, those are new items, so it is considered a change
+           no-changes?
+           (and (every? #(= parent-id (:parent-id %)) top-children)
+                (not pasting?))
 
            ;; Are all the top-children a main-instance of a component?
            all-main?
@@ -511,7 +511,7 @@
                                             true))
                   (every? :deleted)))]
        (if (or no-changes?
-               (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
+               (and (not (invalid-structure-for-component? objects parent children pasting? all-comp-cut? libraries))
                     ;; If we are moving into a main component, no descendant can be main
                     (or (nil? any-main-descendant) (not (ctk/main-instance? parent)))
                     ;; If we are moving into a variant-container, all the items should be main
