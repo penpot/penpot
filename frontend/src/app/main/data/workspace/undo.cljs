@@ -185,21 +185,32 @@
     ptk/UpdateEvent
     (update [_ state]
       (log/info :hint "discard-undo-transaction")
-      (update state :workspace-undo dissoc :transaction :transactions-pending :transactions-pending-ts))))
+      (update state :workspace-undo dissoc :transaction :transactions-pending))))
 
-(defn commit-undo-transaction [id]
+(defn- add-transaction-undo-entry
+  "Conditionally add an undo entry from the current transaction. That
+  only happens when no pending transactions are available and the
+  current transaction exists."
+  [state]
+  (let [undo-state (get state :workspace-undo)
+        current-tx (get undo-state :transaction)
+        pending-tx (get undo-state :transactions-pending)]
+    (if (and (some? current-tx)
+             (empty? pending-tx))
+      (-> state
+          (add-undo-entry current-tx)
+          (update :workspace-undo dissoc :transaction))
+      state)))
+
+(defn commit-undo-transaction
+  [id]
   (ptk/reify ::commit-undo-transaction
     ptk/UpdateEvent
     (update [_ state]
       (log/info :hint "commit-undo-transaction")
-      (let [state (-> state
-                      (update-in [:workspace-undo :transactions-pending] disj id)
-                      (update-in [:workspace-undo :transactions-pending-ts] dissoc id))]
-        (if (empty? (get-in state [:workspace-undo :transactions-pending]))
-          (-> state
-              (add-undo-entry (get-in state [:workspace-undo :transaction]))
-              (update :workspace-undo dissoc :transaction))
-          state)))))
+      (-> state
+          (update-in [:workspace-undo :transactions-pending] dissoc id)
+          (add-transaction-undo-entry)))))
 
 (def reinitialize-undo
   "Clears the undo stack, removing all entries and transactions."
@@ -214,7 +225,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (log/info :hint "check-open-transactions" :timeout timeout)
-      (let [pending-ts (-> (dm/get-in state [:workspace-undo :transactions-pending-ts])
+      (let [pending-ts (-> (dm/get-in state [:workspace-undo :transactions-pending])
                            (update-vals #(ct/diff-ms % (ct/now))))]
         (->> pending-ts
              (filter (fn [[_ ts]] (>= ts timeout)))
