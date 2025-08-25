@@ -1004,17 +1004,18 @@
                 (cll/generate-component-swap objects shape ldata page libraries id-new-component
                                              index target-cell keep-props-values keep-touched?))
 
+            updated-objects  (pcb/get-objects changes)
+            new-children-ids (cfh/get-children-ids-with-self updated-objects (:id new-shape))
+
             [changes parents-of-swapped]
             (if keep-touched?
               (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
               [changes []])
-            all-parents (-> all-parents
-                            (into parents-of-swapped)
-                            (conj (:id new-shape)))]
+            update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
-         (ptk/data-event :layout/update {:ids all-parents :undo-group undo-group})
+         (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
          (dwu/commit-undo-transaction undo-id)
          (dws/select-shape (:id new-shape) false))))))
 
