@@ -9,6 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
+
 - Add defaults for artboard drawing [Taiga #494](https://tree.taiga.io/project/penpot/us/494?milestone=465047)
 - Continuous display of distances between elements when moving a layer with the keyboard [Taiga #1780](https://tree.taiga.io/project/penpot/us/1780)
 - New Number token - unitless values  [Taiga #10936](https://tree.taiga.io/project/penpot/us/10936)
@@ -28,6 +29,7 @@
 - Fix font size/variant not updated when editing a text [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11552)
 - Fix issue where Alt + arrow keys shortcut interferes with letter-spacing when moving text layers [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11771)
 - Fix consistency issues on how font variants are visualized [Taiga #11499](https://tree.taiga.io/project/penpot/us/11499)
+- Fix parsing rx and ry SVG values for rect radius [Taiga #11861](https://tree.taiga.io/project/penpot/issue/11861)
 
 ## 2.9.0 (Unreleased)
 
