@@ -142,18 +142,7 @@
                           ELSE COALESCE(p.props->'~:subscription'->>'~:status', 'incomplete')
                        END,
             '~:seats', p.props->'~:subscription'->'~:quantity'
-          ) AS subscription,
-
-          (SELECT count(distinct p.id)
-             FROM team_profile_rel AS tpr1
-             JOIN team_profile_rel AS tpr2
-               ON (tpr1.team_id = tpr2.team_id)
-             JOIN profile AS p
-               ON (tpr2.profile_id = p.id)
-            WHERE tpr1.profile_id = p.id
-              AND tpr1.is_owner IS true
-              AND tpr2.can_edit IS true) AS unique_editors
-
+          ) AS subscription
      FROM team_profile_rel AS tp
      JOIN team AS t ON (t.id = tp.team_id)
      JOIN team_profile_rel AS tpr
