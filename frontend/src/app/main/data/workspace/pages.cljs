@@ -269,14 +269,14 @@
 
             ;; Remap parents and childs with the new ids generated for variants
             objects
-            (reduce
-             (fn [objs [_ shape]]
+            (reduce-kv
+             (fn [objs _ {:keys [id parent-id frame-id] :as shape}]
                (assoc objs
-                      (get variants-ids-map (:id shape) (:id shape))
+                      (get variants-ids-map id id)
                       (-> shape
-                          (assoc :id (get variants-ids-map (:id shape) (:id shape)))
-                          (assoc :parent-id (get variants-ids-map (:parent-id shape) (:parent-id shape)))
-                          (assoc :frame-id (get variants-ids-map (:frame-id shape) (:frame-id shape)))
+                          (assoc :id (get variants-ids-map id id))
+                          (assoc :parent-id (get variants-ids-map parent-id parent-id))
+                          (assoc :frame-id (get variants-ids-map frame-id frame-id))
                           (cond->
                            (contains? shape :shapes)
                             (assoc :shapes (mapv #(get variants-ids-map % %) (:shapes shape)))))))
