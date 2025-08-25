@@ -162,14 +162,12 @@
     ptk/UpdateEvent
     (update [_ state]
       (log/info :hint "start-undo-transaction")
-      ;; We commit the old transaction before starting the new one
-      (let [current-tx    (get-in state [:workspace-undo :transaction])
-            pending-tx    (get-in state [:workspace-undo :transactions-pending])]
-        (cond-> state
-          (nil? current-tx)  (assoc-in [:workspace-undo :transaction] empty-tx)
-          (nil? pending-tx)  (assoc-in [:workspace-undo :transactions-pending] #{id})
-          (some? pending-tx) (update-in [:workspace-undo :transactions-pending] conj id)
-          :always            (update-in [:workspace-undo :transactions-pending-ts] assoc id (ct/now)))))
+
+      (update state :workspace-undo
+              (fn [undo-state]
+                (-> undo-state
+                    (update :transaction #(d/nilv % empty-tx))
+                    (update :transactions-pending assoc id (ct/now))))))
 
     ptk/WatchEvent
     (watch [_ _ _]
