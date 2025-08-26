@@ -65,12 +65,12 @@ impl Surfaces {
             tile_dims.height * TILE_SIZE_MULTIPLIER,
         );
         let margins = skia::ISize::new(extra_tile_dims.width / 4, extra_tile_dims.height / 4);
+        // let margins = skia::ISize::new(0., 0.);
 
         let target = gpu_state.create_target_surface(width, height);
         let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
         let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
-        let drop_shadows =
-            gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
+        let drop_shadows = gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
         let inner_shadows =
             gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
         let shape_fills =
@@ -261,7 +261,7 @@ impl Surfaces {
                 | SurfaceId::Current as u32
                 | SurfaceId::DropShadows as u32
                 | SurfaceId::InnerShadows as u32,
-            |s| {
+            |s: &mut skia_safe::RCHandle<_>| {
                 s.canvas().clear(color).reset_matrix();
             },
         );
@@ -287,6 +287,10 @@ impl Surfaces {
             self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
             self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
         );
+
+
+        // Añadir el contenido de la surface dropShadows
+        // self.draw_into(SurfaceId::DropShadows, SurfaceId::Cache, None);
 
         if let Some(snapshot) = self.current.image_snapshot_with_bounds(rect) {
             self.tiles.add(tile_viewbox, tile, snapshot.clone());

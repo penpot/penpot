@@ -8,7 +8,8 @@ pub struct RenderOptions {
 
 impl RenderOptions {
     pub fn is_debug_visible(&self) -> bool {
-        self.flags & options::DEBUG_VISIBLE == options::DEBUG_VISIBLE
+        true
+        // self.flags & options::DEBUG_VISIBLE == options::DEBUG_VISIBLE
     }
 
     pub fn is_profile_rebuild_tiles(&self) -> bool {

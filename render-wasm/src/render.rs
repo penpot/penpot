@@ -22,7 +22,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, StructureEntry, Type};
+use crate::shapes::{Blur, BlurType, Corners, Fill, Shadow, Shape, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
@@ -41,6 +41,7 @@ const VIEWPORT_INTEREST_AREA_THRESHOLD: i32 = 1;
 const MAX_BLOCKING_TIME_MS: i32 = 32;
 const NODE_BATCH_THRESHOLD: i32 = 10;
 
+#[derive(Debug)]
 pub struct NodeRenderState {
     pub id: Uuid,
     // We use this bool to keep that we've traversed all the children inside this node.
@@ -51,6 +52,7 @@ pub struct NodeRenderState {
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
     mask: bool,
+    shadow: Option<Shadow>,
 }
 
 impl NodeRenderState {
@@ -354,6 +356,8 @@ impl RenderState {
             self.background_color,
         );
 
+        // self.surfaces.draw_into(SurfaceId::DropShadows, SurfaceId::Target, None);
+
         if self.options.is_debug_visible() {
             debug::render_workspace_current_tile(
                 self,
@@ -369,8 +373,8 @@ impl RenderState {
 
         let paint = skia::Paint::default();
 
-        self.surfaces
-            .draw_into(SurfaceId::DropShadows, SurfaceId::Current, Some(&paint));
+        // self.surfaces
+        //     .draw_into(SurfaceId::DropShadows, SurfaceId::Current, Some(&paint));
 
         self.surfaces
             .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
@@ -625,16 +629,16 @@ impl RenderState {
                 }
 
                 for stroke in shape.visible_strokes().rev() {
-                    shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
+                    // shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
                     //In clipped content strokes are drawn over the contained elements in a subsequent step
-                    if !shape.clip() {
+                    // if !shape.clip() {
                         strokes::render(self, shape, stroke, None, None, None, antialias, None);
-                    }
+                    // }
                     shadows::render_stroke_inner_shadows(self, shape, stroke, antialias);
                 }
 
                 shadows::render_fill_inner_shadows(self, shape, antialias);
-                shadows::render_fill_drop_shadows(self, shape, antialias);
+                // shadows::render_fill_drop_shadows(self, shape, antialias);
                 // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
@@ -728,6 +732,9 @@ impl RenderState {
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().scale((scale, scale));
         });
+
+        // println!("pan_x: {}, pan_y: {}", self.viewbox.pan_x, self.viewbox.pan_y);
+        self.surfaces.canvas(SurfaceId::DropShadows).translate((self.viewbox.pan_x, self.viewbox.pan_y));
 
         let viewbox_cache_size = get_cache_size(self.viewbox, scale);
         let cached_viewbox_cache_size = get_cache_size(self.cached_viewbox, scale);
@@ -848,6 +855,7 @@ impl RenderState {
         visited_mask: bool,
         scale_content: Option<&f32>,
     ) {
+        let scale = self.get_scale();        
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -872,6 +880,7 @@ impl RenderState {
                         clip_bounds: None,
                         visited_mask: true,
                         mask: false,
+                        shadow: None,
                     });
                     if let Some(&mask_id) = element.mask_id() {
                         self.pending_nodes.push(NodeRenderState {
@@ -880,6 +889,7 @@ impl RenderState {
                             clip_bounds: None,
                             visited_mask: false,
                             mask: true,
+                            shadow: None,
                         });
                     }
                 }
@@ -913,6 +923,39 @@ impl RenderState {
         }
 
         self.surfaces.canvas(SurfaceId::Current).restore();
+        
+        // println!("1");
+        // debug::console_debug_surface(self, SurfaceId::Current);
+
+        // debug::console_debug_surface(self, SurfaceId::Current);
+        // let image = self.surfaces.snapshot(SurfaceId::Current);
+        // let canvas = self.surfaces.canvas(SurfaceId::Current);
+        
+        // let filter = skia::image_filters::drop_shadow_only(
+        //     //(100. * scale, 100. * scale),
+        //     (0., 0.),
+        //     (4. * scale, 4. * scale),
+        //     skia::Color::MAGENTA,
+        //     None,
+        //     None,
+        //     None,
+        // );
+
+        // canvas.clear(skia_safe::Color::TRANSPARENT);
+        
+        //Draw shadow
+        // let mut paint = skia::Paint::default();
+        // paint.set_image_filter(filter);
+        // self.surfaces.canvas(SurfaceId::DropShadows).draw_image(&image, (element.selrect.x() + 100., element.selrect.y() + 100.), Some(&paint));
+        // self.surfaces.canvas(SurfaceId::Current).draw_image(&image, (300. * scale, 300. * scale), Some(&paint));
+        // self.surfaces.canvas(SurfaceId::DropShadows).draw_image(&image, (0. * scale, 0. * scale), Some(&paint));
+        // //Draw original
+        // let paint = Paint::default();
+        // canvas.draw_image(&image, (0, 0), Some(&paint));        
+
+        // println!("2");
+        // debug::console_debug_surface(self, SurfaceId::DropShadows);
+
         self.focus_mode.exit(&element.id);
     }
 
@@ -972,6 +1015,7 @@ impl RenderState {
                 clip_bounds,
                 visited_mask,
                 mask,
+                shadow,
             } = node_render_state;
 
             is_empty = false;
@@ -986,15 +1030,56 @@ impl RenderState {
                 self.update_tile_for(element, tree, modifiers);
             }
 
+            println!("node_render_state: {:?}", node_render_state);
+
+            let scale = self.get_scale();
+
             if visited_children {
-                self.render_shape_exit(
-                    tree,
-                    modifiers,
-                    structure,
-                    element,
-                    visited_mask,
-                    scale_content.get(&element.id),
-                );
+                if let Some(mut shadow) = shadow {
+                    println!(":::: exiting a shadow: {:?}", shadow);
+                    let mut shadow_element: Cow<Shape> = Cow::Borrowed(element);
+                    shadow_element.to_mut().clear_shadows();
+                    let x = shadow_element.to_mut().selrect.x();
+                    let y = shadow_element.to_mut().selrect.y();
+                    let w = shadow_element.to_mut().selrect.width();
+                    let h = shadow_element.to_mut().selrect.height();
+                    shadow_element.to_mut().selrect = math::Rect::from_xywh(x + shadow.offset.0, y + shadow.offset.1, w, h);
+                    self.render_shape(
+                        tree,   
+                        modifiers,
+                        structure,
+                        &shadow_element,
+                        scale_content.get(&element.id),
+                        clip_bounds,
+                    );
+
+                    let image = self.surfaces.snapshot(SurfaceId::Current);
+                    let canvas = self.surfaces.canvas(SurfaceId::Current);
+
+                    shadow.offset = (0., 0.);
+                    shadow.blur = shadow.blur * scale;
+                    let filter = shadow.get_drop_shadow_filter();
+            
+                    canvas.clear(skia_safe::Color::TRANSPARENT);
+                    
+                    //Draw shadow
+                    let mut paint = skia::Paint::default();
+                    paint.set_image_filter(filter);
+                    self.surfaces.canvas(SurfaceId::Current).draw_image(&image, (0. , 0. * scale), Some(&paint));
+
+                }
+                else {
+                    println!(":::: normal exit");
+                    self.render_shape_exit(
+                        tree,
+                        modifiers,
+                        structure,
+                        element,
+                        visited_mask,
+                        scale_content.get(&element.id),
+                    );
+                }
+
                 continue;
             }
 
@@ -1032,14 +1117,21 @@ impl RenderState {
 
             self.render_shape_enter(element, mask);
             if !node_render_state.is_root() && self.focus_mode.is_active() {
-                self.render_shape(
-                    tree,
-                    modifiers,
-                    structure,
-                    element,
-                    scale_content.get(&element.id),
-                    clip_bounds,
-                );
+                if let Some(shadow) = shadow {
+                    println!(":::: is a shadow: {:?}", shadow);
+                }
+                else {
+                    println!(":::: normal render");
+                    self.render_shape(
+                        tree,
+                        modifiers,
+                        structure,
+                        element,
+                        scale_content.get(&element.id),
+                        clip_bounds,
+                    );
+                }
+                
             } else if visited_children {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
@@ -1051,6 +1143,7 @@ impl RenderState {
                 clip_bounds,
                 visited_mask: false,
                 mask,
+                shadow: None,
             });
 
             if element.is_recursive() {
@@ -1076,6 +1169,7 @@ impl RenderState {
                         clip_bounds: children_clip_bounds,
                         visited_mask: false,
                         mask: false,
+                        shadow: None,
                     });
                 }
             }
@@ -1146,7 +1240,7 @@ impl RenderState {
 
             self.surfaces
                 .canvas(SurfaceId::Current)
-                .clear(self.background_color);
+                .clear(skia::Color::TRANSPARENT);
 
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
@@ -1169,15 +1263,37 @@ impl RenderState {
                         // These shapes for the tile should be ordered as they are in the parent node
                         valid_ids.sort_by_key(|id| root_ids.get_index_of(id));
 
-                        self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
-                            NodeRenderState {
-                                id,
+                        for id in valid_ids.iter() {
+                            println!("id: {:?}", id);
+                            self.pending_nodes.push(NodeRenderState {
+                                id: *id,
                                 visited_children: false,
                                 clip_bounds: None,
                                 visited_mask: false,
                                 mask: false,
+                                shadow: None,
+                            });
+                            for shadow in tree.get(id).unwrap().shadows.clone() {
+                                println!("shadow: {:?}", shadow);
+                                self.pending_nodes.push(NodeRenderState {
+                                    id: *id,
+                                    visited_children: true,
+                                    clip_bounds: None,
+                                    visited_mask: false,
+                                    mask: false,
+                                    shadow: Some(shadow),
+                                });                                
                             }
-                        }));
+                        }
+                        // self.pending_nodes.extend(valid_ids.into_iter().map(|id| {
+                        //     NodeRenderState {
+                        //         id,
+                        //         visited_children: false,
+                        //         clip_bounds: None,
+                        //         visited_mask: false,
+                        //         mask: false,
+                        //     }
+                        // }));
                     }
                 }
             } else {
