@@ -56,6 +56,22 @@
         (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value2"}]}))))
 
 
+(defn add-variant-with-copy
+  [file variant-label component1-label root1-label component2-label root2-label child1-label child2-label component-copy-label]
+  (let [file (ths/add-sample-shape file variant-label :type :frame :is-variant-container true)
+        variant-id (thi/id variant-label)]
+    (-> file
+        (ths/add-sample-shape root2-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value2")
+        (ths/add-sample-shape root1-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value1")
+        (thc/instantiate-component component-copy-label child1-label :parent-label root1-label)
+        (thc/instantiate-component component-copy-label child2-label :parent-label root2-label)
+        (thc/make-component component1-label root1-label)
+        (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value1"}]})
+        (thc/make-component component2-label root2-label)
+        (thc/update-component component2-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value2"}]}))))
+
+
+
 (defn add-variant-with-text
   [file variant-label component1-label root1-label component2-label root2-label child1-label child2-label text1 text2
    & {:keys [text1-params text2-params]}]

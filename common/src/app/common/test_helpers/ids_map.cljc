@@ -21,6 +21,10 @@
   [label id]
   (swap! idmap assoc label id))
 
+(defn rm-id!
+  [id]
+  (swap! idmap #(into {} (remove (comp #{id} val) %))))
+
 (defn new-id!
   [label]
   (let [id (uuid/next)]

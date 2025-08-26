@@ -1123,3 +1123,142 @@
     (t/is (= (get-in copy-structure-mixed-t' font-size-path-0) "50"))
     (t/is (= (get-in copy-structure-mixed-t' text-path-0) "bye"))
     (t/is (nil? (get-in copy-structure-mixed-t' font-size-path-1)))))
+
+
+(t/deftest test-switch-variant-for-other-with-same-nested-component
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :external01 :external01-root :external01-child)
+                      (tho/add-simple-component :external02 :external02-root :external02-child)
+                      (thv/add-variant-with-copy
+                       :v01 :c01 :m01 :c02 :m02 :cp01 :cp02 :external01)
+
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-cp01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        copy-cp01 (ths/get-shape file :copy-cp01)
+        copy-cp01-rect-id (-> copy-cp01 :shapes first)
+
+
+        ;; On :copy-cp01, change the width of the rect
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{copy-cp01-rect-id}
+                                            (fn [shape]
+                                              (assoc shape :width 25))
+                                            (:objects page)
+                                            {})
+        file (thf/apply-changes file changes)
+        copy-cp01-rect (ths/get-shape-by-id file copy-cp01-rect-id)
+
+        ;; ==== Action
+        ;; Switch :c01 for :c02
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+        copy02    (ths/get-shape file' :copy02)
+        copy-cp02' (ths/get-shape-by-id file' (-> copy02 :shapes first))
+        copy-cp02-rect' (ths/get-shape-by-id file' (-> copy-cp02' :shapes first))]
+
+    ;; The width of copy-cp01-rect was 25
+    (t/is (= (:width copy-cp01-rect) 25))
+
+    ;; The width of copy-cp02-rect' is 25 (change is preserved)
+    (t/is (= (:width copy-cp02-rect') 25))))
+
+
+
+(t/deftest test-switch-variant-that-has-swaped-copy
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :external01 :external01-root :external01-child)
+                      (tho/add-simple-component :external02 :external02-root :external02-child)
+                      (thv/add-variant-with-copy
+                       :v01 :c01 :m01 :c02 :m02 :cp01 :cp02 :external01)
+
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-cp01]))
+
+        copy01 (ths/get-shape file :copy01)
+        copy-cp01 (ths/get-shape file :copy-cp01)
+        external02 (thc/get-component file :external02)
+
+        ;; On :c01, swap the copy of :external01 for a copy of :external02
+        file (-> file
+                 (tho/swap-component copy-cp01 :external02 {:new-shape-label :copy-cp02 :keep-touched? false}))
+        copy-cp02 (ths/get-shape file :copy-cp02)
+
+        ;; ==== Action
+        ;; Switch :c01 for :c02
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+
+        copy02'    (ths/get-shape file' :copy02)
+        copy-cp02' (ths/get-shape file' :copy-cp02)]
+    (thf/dump-file file')
+    ;;copy-cp02 is a copy of external02
+    (t/is (= (:component-id copy-cp02) (:id external02)))
+    ;;copy-01 had copy-cp02 as child
+    (t/is (= (-> copy01 :shapes first) (:id copy-cp02)))
+
+    ;;copy-cp02' is a copy of external02
+    (t/is (= (:component-id copy-cp02') (:id external02)))
+    ;;copy-02' had copy-cp02' as child
+    (t/is (= (-> copy02' :shapes first) (:id copy-cp02')))))
+
+
+(t/deftest test-switch-variant-that-has-swaped-copy-with-changed-attr
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (tho/add-simple-component :external01 :external01-root :external01-child)
+                      (tho/add-simple-component :external02 :external02-root :external02-child)
+                      (thv/add-variant-with-copy
+                       :v01 :c01 :m01 :c02 :m02 :cp01 :cp02 :external01)
+
+                      (thc/instantiate-component :c01
+                                                 :copy01
+                                                 :children-labels [:copy-cp01]))
+
+        page   (thf/current-page file)
+        copy01 (ths/get-shape file :copy01)
+        copy-cp01 (ths/get-shape file :copy-cp01)
+        external02 (thc/get-component file :external02)
+
+        ;; On :c01, swap the copy of :external01 for a copy of :external02
+        file (-> file
+                 (tho/swap-component copy-cp01 :external02 {:new-shape-label :copy-cp02 :keep-touched? false}))
+        copy-cp02 (ths/get-shape file :copy-cp02)
+        copy-cp02-rect-id (-> copy-cp02 :shapes first)
+
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{copy-cp02-rect-id}
+                                            (fn [shape]
+                                              (assoc shape :width 25))
+                                            (:objects page)
+                                            {})
+        file (thf/apply-changes file changes)
+        copy-cp02-rect (ths/get-shape-by-id file copy-cp02-rect-id)
+
+        ;; ==== Action
+        ;; Switch :c01 for :c02
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+
+        copy02'    (ths/get-shape file' :copy02)
+        copy-cp02' (ths/get-shape file' :copy-cp02)
+        copy-cp02-rect' (ths/get-shape-by-id file' (-> copy-cp02' :shapes first))]
+    (thf/dump-file file')
+    ;;copy-cp02 is a copy of external02
+    (t/is (= (:component-id copy-cp02) (:id external02)))
+    ;;copy-01 had copy-cp02 as child
+    (t/is (= (-> copy01 :shapes first) (:id copy-cp02)))
+    ;; The width of copy-cp02-rect was 25
+    (t/is (= (:width copy-cp02-rect) 25))
+
+    ;;copy-cp02' is a copy of external02
+    (t/is (= (:component-id copy-cp02') (:id external02)))
+    ;;copy-02' had copy-cp02' as child
+    (t/is (= (-> copy02' :shapes first) (:id copy-cp02')))
+    ;; The width of copy-cp02-rect' is 25 (change is preserved)
+    (t/is (= (:width copy-cp02-rect') 25))))
