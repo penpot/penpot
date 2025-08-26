@@ -875,14 +875,19 @@
              (tm/schedule-on-idle #(dom/focus! (dom/get-element search-id))))))
 
         create-variant
-        #(st/emit! (dwv/add-new-variant id))
+        (mf/use-fn
+         (mf/deps id)
+         #(st/emit! (dwv/add-new-variant id)))
 
         add-new-property
-        #(st/emit! (dwv/add-new-property (:variant-id shape) {:property-value "Value 1"
-                                                              :editing? true}))
+        (mf/use-fn
+         (mf/deps shape)
+         #(st/emit! (dwv/add-new-property (:variant-id shape) {:property-value "Value 1"
+                                                               :editing? true})))
 
         on-combine-as-variants
-        #(st/emit! (dwv/combine-as-variants))
+        (mf/use-fn
+         #(st/emit! (dwv/combine-as-variants)))
 
         ;; NOTE: function needed for force rerender from the bottom
         ;; components. This is because `component-annotation`
@@ -1061,15 +1066,21 @@
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
 
-        create-variant     #(st/emit! (dwv/add-new-variant (:id shape)))
+        create-variant
+        (mf/use-fn
+         (mf/deps shape)
+         #(st/emit! (dwv/add-new-variant (:id shape))))
 
-        add-new-property   #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"
-                                                                        :editing? true}))
+        add-new-property
+        (mf/use-fn
+         (mf/deps variant-id)
+         #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"
+                                                      :editing? true})))
 
-        menu-entries       [{:title (tr "workspace.shape.menu.add-variant-property")
-                             :action add-new-property}
-                            {:title (tr "workspace.shape.menu.add-variant")
-                             :action create-variant}]
+        menu-entries [{:title (tr "workspace.shape.menu.add-variant-property")
+                       :action add-new-property}
+                      {:title (tr "workspace.shape.menu.add-variant")
+                       :action create-variant}]
 
         toggle-content
         (mf/use-fn
