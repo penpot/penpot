@@ -307,6 +307,7 @@
 
         file' (thf/apply-changes file changes)]
     (when new-shape-label
+      (thi/rm-id! (:id new-shape))
       (thi/set-id! new-shape-label (:id new-shape)))
     (if propagate-fn
       (propagate-fn file')
