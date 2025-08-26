@@ -153,9 +153,10 @@
   [:map
    [:id {:optional true} :string]
    [:class {:optional true} :string]
-  ;;  [:value {:optional true} [:maybe [:or
-  ;;                            :int
-  ;;                            :string]]]
+   [:value {:optional true} [:maybe [:or
+                                     :int
+                                     :string
+                                     [:= :multiple]]]]
    [:default {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:icon {:optional true} [:maybe schema:icon]]
