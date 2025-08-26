@@ -7624,6 +7624,10 @@ msgstr "Import was successful. Some tokens were not included."
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "Type '%s' is not supported (%s)\n"
 
+#: frontend/src/app/main/data/workspace/tokens/application.cljs:364
+msgid "workspace.tokens.font-variant-not-found"
+msgstr "Error setting font weight/style. This font style does not exist in the current font"
+
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:133
 msgid "workspace.tokens.value-not-valid"
 msgstr "The value is not valid"

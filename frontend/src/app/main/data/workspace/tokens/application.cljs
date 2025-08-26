@@ -18,6 +18,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
+   [app.main.data.notifications :as ntf]
    [app.main.data.style-dictionary :as sd]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace :as udw]
@@ -28,6 +29,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.fonts :as fonts]
    [app.main.store :as st]
+   [app.util.i18n :refer [tr]]
    [beicon.v2.core :as rx]
    [clojure.set :as set]
    [cuerdas.core :as str]
@@ -327,17 +329,24 @@
      (update-text-decoration value shape-ids attributes page-id))))
 
 (defn- generate-font-weight-text-shape-update
-  [font-variant shape-ids page-id]
+  [font-variant shape-ids page-id on-mismatch]
   (let [update-node? (fn [node]
                        (or (txt/is-text-node? node)
                            (txt/is-paragraph-node? node)))
         update-fn (fn [node _]
                     (let [font (fonts/get-font-data (:font-id node))
-                          font-variant-id (fonts/find-closest-variant font (:weight font-variant) (:style font-variant))]
-                      (if font-variant-id
-                        (-> node
-                            (d/txt-merge (assoc font-variant :font-variant-id (:id font-variant-id)))
-                            (cty/remove-typography-from-node))
+                          variant (fonts/find-closest-variant font (:weight font-variant) (:style font-variant))
+                          call-on-mismatch? (when (fn? on-mismatch)
+                                              (or
+                                               (not= (:weight font-variant) (:weight variant))
+                                               (when (:style font-variant)
+                                                 (not= (:style font-variant) (:style variant)))))]
+                      (if variant
+                        (do
+                          (when call-on-mismatch? (on-mismatch variant))
+                          (-> node
+                              (d/txt-merge (assoc variant :font-variant-id (:id variant)))
+                              (cty/remove-typography-from-node)))
                         node)))]
     (dwsh/update-shapes shape-ids
                         #(txt/update-text-content % update-node? update-fn nil)
@@ -348,7 +357,17 @@
   ([value shape-ids attributes] (update-font-weight value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
    (when-let [font-variant (ctt/valid-font-weight-variant value)]
-     (generate-font-weight-text-shape-update font-variant shape-ids page-id))))
+     (generate-font-weight-text-shape-update font-variant shape-ids page-id nil))))
+
+(defn update-font-weight-interactive
+  ([value shape-ids attributes] (update-font-weight-interactive value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (when-let [font-variant (ctt/valid-font-weight-variant value)]
+     (let [on-mismatch #(st/emit! (ntf/show {:content (tr "workspace.tokens.font-variant-not-found")
+                                             :type :toast
+                                             :level :warning
+                                             :timeout 7000}))]
+       (generate-font-weight-text-shape-update font-variant shape-ids page-id on-mismatch)))))
 
 ;; Events to apply / unapply tokens to shapes ------------------------------------------------------------
 
@@ -530,7 +549,7 @@
    :font-weight
    {:title "Font Weight"
     :attributes ctt/font-weight-keys
-    :on-update-shape update-font-weight
+    :on-update-shape update-font-weight-interactive
     :modal {:key :tokens/font-weight
             :fields [{:label "Font Weight"
                       :key :font-weight}]}}
