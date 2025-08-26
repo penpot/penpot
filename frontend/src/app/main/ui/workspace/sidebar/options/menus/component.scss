@@ -9,6 +9,9 @@
 
 .element-set {
   margin: 0;
+  display: grid;
+  grid-template-columns: repeat(8, var(--sp-xxxl));
+  column-gap: var(--sp-xs);
 }
 
 .element-content {
@@ -21,9 +24,9 @@
 }
 
 .element-title {
-  display: grid;
-  grid-template-columns: repeat(8, var(--sp-xxxl));
+  grid-column: span 8;
   column-gap: var(--sp-xs);
+  display: flex;
 }
 
 .title-back {
@@ -44,50 +47,31 @@
 .title-spacing-component {
   justify-content: flex-start;
   gap: $s-8;
-  grid-column: span 7;
+  flex-grow: 1;
 }
 
 .title-bar-variant {
   flex-grow: 0;
 }
 
-.variants-help-modal-button {
-  margin-inline-start: auto;
-  grid-column: span 1;
+.title-actions {
+  display: flex;
+  gap: var(--sp-xs);
 }
 
-.icon-back {
-  @include flexCenter;
-  width: $s-12;
-  height: 100%;
-
-  svg {
-    height: $s-12;
-    width: $s-12;
-    stroke: var(--icon-foreground);
-    transform: rotate(180deg);
-  }
-}
-
-.component-wrapper {
+.component-line {
   grid-column: span 8;
   width: 100%;
   min-height: $s-32;
   border-radius: $br-8;
+  display: flex;
+  gap: var(--sp-xs);
+}
 
-  &.with-actions {
-    display: flex;
-    gap: $s-1;
-  }
-
-  &.without-actions {
-    padding-right: 0.5rem;
-
-    .component-name-wrapper {
-      width: 100%;
-      border-radius: $br-8;
-    }
-  }
+.component-wrapper {
+  display: flex;
+  flex-grow: 1;
+  gap: $s-1;
 }
 
 .component-name-wrapper {
@@ -102,24 +86,27 @@
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color-hover);
 
-  &:hover {
-    background-color: var(--assets-item-background-color-hover);
-    color: var(--assets-item-name-foreground-color-hover);
+  &.without-menu {
+    width: 100%;
+    border-radius: $br-8;
+  }
+
+  &.swappeable {
+    &:hover {
+      background-color: var(--assets-item-background-color-hover);
+      color: var(--assets-item-name-foreground-color-hover);
+    }
   }
 }
 
 .component-icon {
-  @include flexCenter;
+  display: flex;
   height: $s-32;
-  width: $s-16;
-
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-  }
+  align-items: center;
+  color: var(--icon-foreground);
 }
 
-.name-wrapper {
+.component-name-outside {
   @include flexColumn;
   min-height: $s-32;
   padding: $s-8 0 $s-8 $s-2;
@@ -156,32 +143,16 @@
   width: $s-32;
 }
 
-.menu-btn {
-  @extend .button-tertiary;
+.component-menu-btn {
+  @extend .button-secondary;
+  cursor: unset;
   height: 100%;
   width: 100%;
   border-radius: 0 $br-8 $br-8 0;
-  background-color: var(--assets-item-background-color);
-  color: var(--assets-item-name-foreground-color-hover);
 
-  svg {
-    @extend .button-icon;
-    min-height: $s-16;
-    min-width: $s-16;
+  &.selected {
+    @extend .button-icon-selected;
   }
-
-  &:hover {
-    background-color: var(--assets-item-background-color-hover);
-    color: var(--assets-item-name-foreground-color-hover);
-
-    &.selected {
-      @extend .button-icon-selected;
-    }
-  }
-}
-
-.menu-btn.selected {
-  @extend .button-icon-selected;
 }
 
 .copy-text {
@@ -190,10 +161,6 @@
   display: flex;
   align-items: center;
   color: var(--title-foreground-color);
-}
-
-.swappeable {
-  cursor: pointer;
 }
 
 .custom-select-dropdown {
@@ -209,56 +176,6 @@
 
 .dropdown-element {
   @extend .dropdown-element-base;
-}
-
-.icon-wrapper {
-  display: flex;
-
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--icon-foreground);
-  }
-}
-
-.input-text {
-  @include removeInputStyle;
-  height: $s-32;
-  width: 100%;
-  margin: 0;
-  padding: $s-4;
-  border: 0;
-  font-size: $fs-12;
-  color: var(--input-foreground-color-active);
-
-  &::placeholder {
-    color: var(--input-foreground-color-disabled);
-  }
-
-  &:focus-visible {
-    border-color: var(--input-border-outline-color-active);
-  }
-}
-
-.clear-btn {
-  @include buttonStyle;
-  @include flexCenter;
-  height: $s-16;
-  width: $s-16;
-
-  .clear-icon {
-    @include flexCenter;
-
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--icon-foreground);
-    }
-  }
-}
-
-.search-icon {
-  @include flexCenter;
-  margin-left: $s-8;
-  flex: 0 0 $s-16;
 }
 
 .component-path {
