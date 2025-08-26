@@ -333,10 +333,7 @@
                            (txt/is-paragraph-node? node)))
         update-fn (fn [node _]
                     (let [font (fonts/get-font-data (:font-id node))
-                          font-variant-id (or
-                                           (fonts/find-variant font font-variant)
-                                           ;; When variant with matching weight but not with matching style (italic) is found, use that one
-                                           (fonts/find-variant font (dissoc font-variant :style)))]
+                          font-variant-id (fonts/find-closest-variant font (:weight font-variant) (:style font-variant))]
                       (if font-variant-id
                         (-> node
                             (d/txt-merge (assoc font-variant :font-variant-id (:id font-variant-id)))
