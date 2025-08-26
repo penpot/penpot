@@ -65,14 +65,17 @@
 
 (defn- get-option-by-name
   [options name]
-  (d/seek #(= name (get % :name)) options))
+  (let [options (if (delay? options) (deref options) options)]
+    (d/seek #(= name (get % :name)) options)))
 
 (defn- get-token-op
   [tokens name]
-  (->> tokens
-       vals
-       (apply concat)
-       (some #(when (= (:name %) name) %))))
+  (let [tokens (if (delay? tokens) @tokens tokens)
+        xform  (filter #(= (:name %) name))]
+    (reduce-kv (fn [result _ tokens]
+                 (into result xform tokens))
+               []
+               tokens)))
 
 (defn- clean-token-name
   [s]
@@ -114,14 +117,14 @@
     (subs s (inc start))))
 
 (defn- filter-token-groups-by-name
-  [tokens-by-type filter-text]
+  [tokens filter-text]
   (let [lc-filter (str/lower filter-text)]
     (into {}
           (keep (fn [[group tokens]]
                   (let [filtered (filter #(str/includes? (str/lower (:name %)) lc-filter) tokens)]
                     (when (seq filtered)
                       [group filtered]))))
-          tokens-by-type)))
+          tokens)))
 
 (defn- focusable-option?
   [option]
@@ -183,7 +186,9 @@
            is-selected-on-focus nillable
            tokens applied-token empty-to-end
            on-change on-blur on-focus on-detach
-           property align ref] :rest props}]
+           property align ref]
+    :rest props}]
+
   (let [;; NOTE: we use mfu/bean here for transparently handle
         ;; options provide as clojure data structures or javascript
         ;; plain objects and lists.
@@ -253,12 +258,14 @@
 
         dropdown-options
         (mf/with-memo [tokens filter-id]
-          (let [partial (extract-partial-brace-text filter-id)
-                options (if (seq partial)
-                          (filter-token-groups-by-name tokens partial)
-                          tokens)
-                no-sets? (nil? tokens)]
-            (generate-dropdown-options options no-sets?)))
+          (delay
+            (let [tokens  (if (delay? tokens) @tokens tokens)
+                  partial (extract-partial-brace-text filter-id)
+                  options (if (seq partial)
+                            (filter-token-groups-by-name tokens partial)
+                            tokens)
+                  no-sets? (nil? tokens)]
+              (generate-dropdown-options options no-sets?))))
 
         selected-id*
         (mf/use-state (fn []
@@ -351,23 +358,27 @@
 
         on-option-click
         (mf/use-fn
-         (mf/deps dropdown-options on-token-apply)
+         (mf/deps on-token-apply)
          (fn [event]
-           (let [node   (dom/get-current-target event)
-                 id     (dom/get-data node "id")
-                 option (get-option dropdown-options id)
-                 value  (get option :resolved-value)
-                 name   (get option :name)]
+           (let [node    (dom/get-current-target event)
+                 id      (dom/get-data node "id")
+                 options (mf/ref-val options-ref)
+                 options (if (delay? options) @options options)
+                 option  (get-option options id)
+                 value   (get option :resolved-value)
+                 name    (get option :name)]
              (on-token-apply id value name)
              (reset! filter-id* ""))))
 
         on-option-enter
         (mf/use-fn
-         (mf/deps dropdown-options focused-id on-token-apply)
+         (mf/deps focused-id on-token-apply)
          (fn [_]
-           (let [option (get-option dropdown-options focused-id)
-                 value  (get option :resolved-value)
-                 name   (get option :name)]
+           (let [options (mf/ref-val options-ref)
+                 options (if (delay? options) @options options)
+                 option  (get-option options focused-id)
+                 value   (get option :resolved-value)
+                 name    (get option :name)]
              (on-token-apply focused-id value name)
              (reset! filter-id* ""))))
 
@@ -386,9 +397,9 @@
              (when (fn? on-blur)
                (on-blur event)))))
 
-        handle-key-down
+        on-key-down
         (mf/use-fn
-         (mf/deps dropdown-options is-open apply-value update-input is-open focused-id handle-focus-change)
+         (mf/deps is-open apply-value update-input is-open focused-id handle-focus-change)
          (fn [event]
            (mf/set-ref-val! dirty-ref true)
            (let [up?          (kbd/up-arrow? event)
@@ -398,7 +409,8 @@
                  node         (mf/ref-val ref)
                  open-tokens  (kbd/is-key? event "{")
                  close-tokens (kbd/is-key? event "}")
-                 options      (mf/ref-val options-ref)]
+                 options      (mf/ref-val options-ref)
+                 options      (if (delay? options) @options options)]
 
              (cond
                (and (some? options) open-tokens)
@@ -418,8 +430,8 @@
                    (dom/prevent-default event)
                    (if focused-id
                      (on-option-enter event)
-                     (let [option-id (first-focusable-id dropdown-options)
-                           option (get-option dropdown-options option-id)
+                     (let [option-id (first-focusable-id options)
+                           option (get-option options option-id)
                            value  (get option :resolved-value)
                            name   (get option :name)]
                        (on-token-apply option-id value name)
@@ -461,7 +473,7 @@
                    (update-input (fmt/format-number new-val))
                    (apply-value (dm/str new-val))))))))
 
-        handle-focus
+        on-focus
         (mf/use-fn
          (mf/deps on-focus select-on-focus)
          (fn [event]
@@ -473,7 +485,7 @@
                ;; In webkit browsers the mouseup event will be called after the on-focus causing and unselect
                (.addEventListener target "mouseup" dom/prevent-default #js {:once true})))))
 
-        handle-mouse-wheel
+        on-mouse-wheel
         (mf/use-fn
          (mf/deps apply-value parse-value min max nillable ref default step min max)
          (fn [event]
@@ -580,8 +592,8 @@
                                                placeholder)
                                 :default-value (or (mf/ref-val last-value*) (fmt/format-number value))
                                 :on-blur on-blur
-                                :on-key-down handle-key-down
-                                :on-focus handle-focus
+                                :on-key-down on-key-down
+                                :on-focus on-focus
                                 :on-change store-raw-value
                                 :disabled disabled
                                 :slot-start (when icon
@@ -603,11 +615,12 @@
 
         token-props
         (when (and token-applied (not= :multiple token-applied))
-          (let [token (get-option-by-name dropdown-options token-applied)
-                id (get token :id)
-                label (get token :name)
+          (let [token       (get-option-by-name dropdown-options token-applied)
+                id          (get token :id)
+                label       (get token :name)
                 token-value (or (get token :resolved-value)
-                                (or (mf/ref-val last-value*) (fmt/format-number value)))]
+                                (or (mf/ref-val last-value*)
+                                    (fmt/format-number value)))]
             (mf/spread-props props
                              {:id id
                               :label label
@@ -649,9 +662,9 @@
         (when-let [node (mf/ref-val ref)]
           (dom/set-value! node value'))))
 
-    (mf/with-layout-effect [handle-mouse-wheel]
+    (mf/with-layout-effect [on-mouse-wheel]
       (when-let [node (mf/ref-val ref)]
-        (let [key (events/listen node "wheel" handle-mouse-wheel #js {:passive false})]
+        (let [key (events/listen node "wheel" on-mouse-wheel #js {:passive false})]
           #(events/unlistenByKey key))))
 
     (mf/with-effect [dropdown-options]
@@ -666,11 +679,12 @@
        [:> input-field* input-props])
 
      (when ^boolean is-open
-       [:> options-dropdown* {:on-click on-option-click
-                              :id listbox-id
-                              :options dropdown-options
-                              :selected selected-id
-                              :focused focused-id
-                              :align align
-                              :empty-to-end empty-to-end
-                              :ref set-option-ref}])]))
+       (let [options (if (delay? dropdown-options) @dropdown-options dropdown-options)]
+         [:> options-dropdown* {:on-click on-option-click
+                                :id listbox-id
+                                :options options
+                                :selected selected-id
+                                :focused focused-id
+                                :align align
+                                :empty-to-end empty-to-end
+                                :ref set-option-ref}]))]))
