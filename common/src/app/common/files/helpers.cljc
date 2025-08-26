@@ -438,20 +438,25 @@
 
 (defn variants-nesting-loop?
   "Check if a variants nesting loop would be created if the given shape is moved below the given parent"
-  [objects libraries shape-id parent-id]
-  (let [get-variant-id #(or (:variant-id %)
-                            (when (:is-variant-container %) (:id %))
-                            (when (:component-id %)
-                              (dm/get-in libraries [(:component-file %)
-                                                    :data
-                                                    :components
-                                                    (:component-id %)
-                                                    :variant-id])))
-        child-variant-ids  (into #{} (keep get-variant-id)
-                                 (get-children-with-self objects shape-id))
-        parent-variant-ids (into #{} (keep get-variant-id)
-                                 (get-parents-with-self objects parent-id))]
-    (seq (set/intersection child-variant-ids parent-variant-ids))))
+  [objects libraries shape parent pasting-cutted-mains?]
+  ;; If we are cut-pasting mains into its own variant, it is ok
+  (if (and pasting-cutted-mains?
+           (:is-variant-container parent)
+           (= (:variant-id shape) (:id parent)))
+    nil
+    (let [get-variant-id #(or (:variant-id %)
+                              (when (:is-variant-container %) (:id %))
+                              (when (:component-id %)
+                                (dm/get-in libraries [(:component-file %)
+                                                      :data
+                                                      :components
+                                                      (:component-id %)
+                                                      :variant-id])))
+          child-variant-ids  (into #{} (keep get-variant-id)
+                                   (get-children-with-self objects (:id shape)))
+          parent-variant-ids (into #{} (keep get-variant-id)
+                                   (get-parents-with-self objects (:id parent)))]
+      (seq (set/intersection child-variant-ids parent-variant-ids)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
