@@ -22,7 +22,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, StructureEntry, Type};
+use crate::shapes::{Blur, BlurType, Corners, Fill, Shadow, Shape, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
@@ -46,7 +46,7 @@ pub struct NodeRenderState {
     // We use this bool to keep that we've traversed all the children inside this node.
     visited_children: bool,
     // This is used to clip the content of frames.
-    clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+    clip_bounds: Option<(Rect, Rect, Option<Corners>, Matrix, Matrix)>,
     // This is a flag to indicate that we've already drawn the mask of a masked group.
     visited_mask: bool,
     // This bool indicates that we're drawing the mask shape.
@@ -61,19 +61,27 @@ impl NodeRenderState {
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
-        modifiers: Option<&Matrix>,
-    ) -> Option<(Rect, Option<Corners>, Matrix)> {
+        tree: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> Option<(Rect, Rect, Option<Corners>, Matrix, Matrix)> {
         if self.id.is_nil() || !element.clip() {
             return self.clip_bounds;
         }
 
         let bounds = element.selrect();
+        let extended_bounds = element.extrect(tree, modifiers);
+        
         let mut transform = element.transform;
         transform.post_translate(bounds.center());
         transform.pre_translate(-bounds.center());
 
-        if let Some(modifier) = modifiers {
+        let mut extended_transform = element.transform;
+        extended_transform.post_translate(extended_bounds.center());
+        extended_transform.pre_translate(-extended_bounds.center());
+
+        if let Some(modifier) = modifiers.get(&element.id) {
             transform.post_concat(modifier);
+            extended_transform.post_concat(modifier);
         }
 
         let corners = match &element.shape_type {
@@ -82,7 +90,9 @@ impl NodeRenderState {
             _ => None,
         };
 
-        Some((bounds, corners, transform))
+        println!("{:?}: bounds: {:?}, extended_bounds: {:?}", element.id, bounds, extended_bounds);
+
+        Some((bounds, extended_bounds, corners, transform, extended_transform))
     }
 }
 
@@ -181,6 +191,7 @@ pub(crate) struct RenderState {
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>,
+    pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
 }
@@ -272,6 +283,7 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             nested_blurs: vec![],
+            nested_shadows: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
         }
@@ -410,6 +422,42 @@ impl RenderState {
     pub fn set_focus_mode(&mut self, shapes: Vec<Uuid>) {
         self.focus_mode.set_shapes(shapes);
     }
+    
+    fn clip_shape(&mut self, surface_ids: u32, shape: &Shape, antialias: bool, bounds:Rect, corners: Option<Corners>, matrix: Matrix) {
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas().concat(&matrix);
+        });
+
+        if let Some(corners) = corners {
+            let rrect = RRect::new_rect_radii(bounds, &corners);
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas()
+                    .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+            });
+        } else {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas()
+                    .clip_rect(bounds, skia::ClipOp::Intersect, antialias);
+            });
+        }
+
+        // This renders a red line around clipped
+        // shapes (frames).
+        if self.options.is_debug_visible() {
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+            paint.set_stroke_width(4.);
+            self.surfaces
+                .canvas(SurfaceId::Fills)
+                .draw_rect(bounds, &paint);
+        }
+
+        self.surfaces.apply_mut(surface_ids, |s| {
+            s.canvas()
+                .concat(&matrix.invert().unwrap_or(Matrix::default()));
+        });
+    }
 
     pub fn render_shape(
         &mut self,
@@ -418,7 +466,7 @@ impl RenderState {
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
         scale_content: Option<&f32>,
-        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+        clip_bounds: Option<(Rect, Rect, Option<Corners>, Matrix, Matrix)>,
     ) {
         let shape = if let Some(scale_content) = scale_content {
             &shape.scale_content(*scale_content)
@@ -437,40 +485,22 @@ impl RenderState {
         let antialias = shape.should_use_antialias(self.get_scale());
 
         // set clipping
-        if let Some((bounds, corners, transform)) = clip_bounds {
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas().concat(&transform);
-            });
+        if let Some((bounds, extended_bounds, corners, transform, extended_transform)) = clip_bounds {
+            let clip_surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::InnerShadows as u32;
+            self.clip_shape(clip_surface_ids, shape, antialias, bounds, corners, transform);
+            let clip_surface_ids = SurfaceId::DropShadows as u32;
+            self.clip_shape(clip_surface_ids, shape, antialias, extended_bounds, corners, extended_transform);
 
-            if let Some(corners) = corners {
-                let rrect = RRect::new_rect_radii(bounds, &corners);
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas()
-                        .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
-                });
-            } else {
-                self.surfaces.apply_mut(surface_ids, |s| {
-                    s.canvas()
-                        .clip_rect(bounds, skia::ClipOp::Intersect, antialias);
-                });
-            }
+            // self.surfaces.canvas(SurfaceId::Current).concat(&transform);
+            // // Aplicar clipping inverso usando BlendMode::kClear
+            // let mut paint = skia::Paint::default();
+            // paint.set_color(skia::Color::BLACK);
+            // paint.set_blend_mode(skia::BlendMode::Clear);
+            // self.surfaces.canvas(SurfaceId::Current).draw_rect(bounds, &paint);        
+            // self.surfaces.canvas(SurfaceId::Current).concat(&transform.invert().unwrap_or(Matrix::default()));
 
-            // This renders a red line around clipped
-            // shapes (frames).
-            if self.options.is_debug_visible() {
-                let mut paint = skia::Paint::default();
-                paint.set_style(skia::PaintStyle::Stroke);
-                paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
-                paint.set_stroke_width(4.);
-                self.surfaces
-                    .canvas(SurfaceId::Fills)
-                    .draw_rect(bounds, &paint);
-            }
-
-            self.surfaces.apply_mut(surface_ids, |s| {
-                s.canvas()
-                    .concat(&transform.invert().unwrap_or(Matrix::default()));
-            });
         }
 
         // We don't want to change the value in the global state
@@ -495,6 +525,14 @@ impl RenderState {
             shape
                 .to_mut()
                 .set_blur(BlurType::Layer as u8, false, nested_blur_value.sqrt());
+        }
+
+        if let Some(nested_shadows) = self.nested_shadows.last() {
+            for nested_shadow in nested_shadows.iter() {
+                if !nested_shadow.hidden() {
+                    shape.to_mut().add_shadow(nested_shadow.clone());
+                }
+            }
         }
 
         let center = shape.center();
@@ -623,7 +661,6 @@ impl RenderState {
                         fills::render(self, shape, fill, antialias);
                     }
                 }
-
                 for stroke in shape.visible_strokes().rev() {
                     shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
                     //In clipped content strokes are drawn over the contained elements in a subsequent step
@@ -638,6 +675,12 @@ impl RenderState {
                 // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
+        // println!("drop shadows");
+        // debug::console_debug_surface(self, SurfaceId::DropShadows);
+
+        // println!("inner shadows");
+        // debug::console_debug_surface(self, SurfaceId::InnerShadows);
+
         self.apply_drawing_to_render_canvas(Some(&shape));
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
@@ -807,13 +850,6 @@ impl RenderState {
             }
         }
 
-        match element.shape_type {
-            Type::Frame(_) | Type::Group(_) => {
-                self.nested_blurs.push(Some(element.blur));
-            }
-            _ => {}
-        }
-
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
@@ -892,6 +928,7 @@ impl RenderState {
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_blurs.pop();
+                self.nested_shadows.pop();
             }
             _ => {}
         }
@@ -913,6 +950,7 @@ impl RenderState {
         }
 
         self.surfaces.canvas(SurfaceId::Current).restore();
+        // debug::console_debug_surface(self, SurfaceId::Current);
         self.focus_mode.exit(&element.id);
     }
 
@@ -1040,6 +1078,19 @@ impl RenderState {
                     scale_content.get(&element.id),
                     clip_bounds,
                 );
+                
+                //TODO: moved here so we don't apply blurs and shadows twice
+                match element.shape_type {
+                    Type::Frame(_) | Type::Group(_) => {
+                        self.nested_blurs.push(Some(element.blur));
+                        //TODO: esto es necesario solo si no hay algún fill con opacity > 0?
+                        // if element.fills.iter().any(|fill| fill.opacity() > 0.0) {                        
+                        // self.nested_shadows.push(element.shadows.clone());
+                        self.nested_shadows.push(Vec::new());
+                    }
+                    _ => {}
+                }
+        
             } else if visited_children {
                 self.apply_drawing_to_render_canvas(Some(element));
             }
@@ -1055,7 +1106,7 @@ impl RenderState {
 
             if element.is_recursive() {
                 let children_clip_bounds =
-                    node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
+                    node_render_state.get_children_clip_bounds(element, tree, modifiers);
 
                 let mut children_ids =
                     element.modified_children_ids(structure.get(&element.id), false);

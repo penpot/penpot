@@ -4,6 +4,7 @@ use crate::render::text::{self};
 use crate::shapes::{Shadow, Shape, Stroke, Type};
 use skia_safe::textlayout::ParagraphBuilder;
 use skia_safe::{Paint, Path};
+use std::borrow::Cow;
 
 // Fill Shadows
 pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
@@ -21,6 +22,16 @@ fn render_fill_drop_shadow(
     antialias: bool,
 ) {
     let paint = &shadow.get_drop_shadow_paint(antialias, shape.image_filter(1.).as_ref());
+
+    let mut shape_copy: Cow<Shape> = Cow::Borrowed(shape);
+    let mut content_rect = shape_copy.selrect;
+    // println!("content_rect 1: {:?}", content_rect);
+    for stroke in shape_copy.visible_strokes().rev() {
+        let stroke_rect = stroke.outer_rect(&shape_copy.selrect);
+        content_rect.join(stroke_rect);
+    }
+    // println!("content_rect z: {:?}", content_rect);
+    // shape_copy.to_mut().selrect = content_rect;
     render_shadow_paint(render_state, shape, paint, SurfaceId::DropShadows);
 }
 
@@ -48,6 +59,7 @@ pub fn render_stroke_drop_shadows(
     stroke: &Stroke,
     antialias: bool,
 ) {
+    //TODO: fills con opacity > 0 
     if !shape.has_fills() {
         for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
             let filter = shadow.get_drop_shadow_filter();
@@ -55,7 +67,7 @@ pub fn render_stroke_drop_shadows(
                 render_state,
                 shape,
                 stroke,
-                None,
+                Some(SurfaceId::DropShadows),
                 filter.as_ref(),
                 None,
                 antialias,

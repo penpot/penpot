@@ -745,7 +745,7 @@ impl Shape {
                 .with_outset((max_stroke, max_stroke))
         } else {
             let mut bounds_rect = self.bounds().to_rect();
-            let mut stroke_rect = bounds_rect;
+            let mut stroke_rect: skia_safe::Rect = bounds_rect;
             stroke_rect.left -= max_stroke;
             stroke_rect.right += max_stroke;
             stroke_rect.top -= max_stroke;
@@ -761,7 +761,8 @@ impl Shape {
             rect.bottom = rect.top + height;
         }
 
-        for shadow in self.shadows.iter() {
+        let mut total_shadow_rect = rect;
+        for shadow in self.shadows.iter().filter(|s| !s.hidden()) {
             let (x, y) = shadow.offset;
             let mut shadow_rect = rect;
             shadow_rect.left += x;
@@ -774,8 +775,9 @@ impl Shape {
             shadow_rect.right += shadow.blur;
             shadow_rect.bottom += shadow.blur;
 
-            rect.join(shadow_rect);
+            total_shadow_rect.join(shadow_rect);
         }
+        rect = total_shadow_rect;
 
         if self.blur.blur_type != blurs::BlurType::None {
             rect.left -= self.blur.value;
