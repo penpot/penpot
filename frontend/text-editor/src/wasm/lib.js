@@ -182,7 +182,6 @@ export function set_parent(id) {
 }
 
 export function render() {
-  console.log('render')
   Module._set_view(1, 0, 0);
   Module._render_from_cache();
   debouncedRender();
@@ -284,9 +283,11 @@ function getFontStyle(fontStyle) {
   switch (fontStyle) {
     default:
     case 'normal':
+    case 'regular':
+      return 0;
     case 'oblique':
     case 'italic':
-      return 0;
+      return 1;
   }
 }
 
@@ -316,6 +317,7 @@ function setParagraphData(dview, { numLeaves, textAlign, textDirection, textDeco
 }
 
 function setLeafData(dview, leafOffset, {
+  fontId,
   fontStyle,
   fontSize,
   fontWeight,
@@ -331,10 +333,10 @@ function setLeafData(dview, leafOffset, {
   dview.setFloat32(leafOffset + 4, fontSize, true); // font-size
   dview.setFloat32(leafOffset + 8, letterSpacing, true); // letter-spacing
   dview.setInt32(leafOffset + 12, fontWeight, true); // font-weight: normal
-  dview.setUint32(leafOffset + 16, 0, true); // font-id (UUID part 1)
-  dview.setUint32(leafOffset + 20, 0, true); // font-id (UUID part 2)
-  dview.setUint32(leafOffset + 24, 0, true); // font-id (UUID part 3)
-  dview.setUint32(leafOffset + 28, 0, true); // font-id (UUID part 4)
+  dview.setUint32(leafOffset + 16, fontId[0], true); // font-id (UUID part 1)
+  dview.setUint32(leafOffset + 20, fontId[1], true); // font-id (UUID part 2)
+  dview.setUint32(leafOffset + 24, fontId[2], true); // font-id (UUID part 3)
+  dview.setUint32(leafOffset + 28, fontId[3], true); // font-id (UUID part 4)
   dview.setUint32(leafOffset + 32, 0, true); // font-family hash
   dview.setUint32(leafOffset + 36, 0, true); // font-variant-id (UUID part 1)
   dview.setUint32(leafOffset + 40, 0, true); // font-variant-id (UUID part 2)
@@ -344,7 +346,15 @@ function setLeafData(dview, leafOffset, {
   dview.setUint32(leafOffset + 56, totalFills, true); // total fills count
 }
 
-export function updateTextShape(fontSize, root) {
+function getFontFrom(fontFamily, fontWeight, fontStyle, fonts) {
+  const fontList = fonts.get(fontFamily)
+  if (!fontList) {
+    return null
+  }
+  return fontList.find(fontData => fontData.weight === fontWeight && fontStyle === fontData.style)
+}
+
+export function updateTextShape(root, fonts) {
   // Calculate fills
   const fills = [
     {
@@ -358,7 +368,6 @@ export function updateTextShape(fontSize, root) {
   const totalFillsSize = totalFills * FILL_SIZE;
 
   const paragraphs = root.children;
-  console.log("paragraphs", paragraphs.length);
 
   Module._clear_shape_text();
   for (const paragraph of paragraphs) {
@@ -366,19 +375,16 @@ export function updateTextShape(fontSize, root) {
 
     const leaves = paragraph.children;
     const numLeaves = leaves.length;
-    console.log("leaves", numLeaves);
 
     for (const leaf of leaves) {
       const text = leaf.textContent;
       const textBuffer = new TextEncoder().encode(text);
       const textSize = textBuffer.byteLength;
-      console.log("text", text, textSize);
       totalSize += LEAF_ATTR_SIZE + totalFillsSize;
     }
 
     totalSize += paragraph.textContent.length;
 
-    console.log("Total Size", totalSize);
     // Allocate buffer
     const bufferPtr = allocBytes(totalSize);
     const heap = new Uint8Array(Module.HEAPU8.buffer, bufferPtr, totalSize);
@@ -387,39 +393,21 @@ export function updateTextShape(fontSize, root) {
     const textAlign = getTextAlign(
       paragraph.style.getPropertyValue("text-align"),
     );
-    console.log("text-align", textAlign);
     const textDirection = getTextDirection(
       paragraph.style.getPropertyValue("text-direction"),
     );
-    console.log("text-direction", textDirection);
     const textDecoration = getTextDecoration(
       paragraph.style.getPropertyValue("text-decoration"),
     );
-    console.log("text-decoration", textDecoration);
     const textTransform = getTextTransform(
       paragraph.style.getPropertyValue("text-transform"),
     );
-    console.log("text-transform", textTransform);
     const lineHeight = parseFloat(
       paragraph.style.getPropertyValue("line-height"),
     );
-    console.log("line-height", lineHeight);
     const letterSpacing = parseFloat(
       paragraph.style.getPropertyValue("letter-spacing"),
     );
-    console.log("letter-spacing", letterSpacing);
-
-    /*
-    num_leaves: u32,
-    text_align: u8,
-    text_direction: u8,
-    text_decoration: u8,
-    text_transform: u8,
-    line_height: f32,
-    letter_spacing: f32,
-    typography_ref_file: [u32; 4],
-    typography_ref_id: [u32; 4],
-    */
 
     setParagraphData(dview, {
       numLeaves,
@@ -432,31 +420,25 @@ export function updateTextShape(fontSize, root) {
     })
     let leafOffset = PARAGRAPH_ATTR_SIZE;
     for (const leaf of leaves) {
-      console.log(
-        "leafOffset",
-        leafOffset,
-        PARAGRAPH_ATTR_SIZE,
-        LEAF_ATTR_SIZE,
-        FILL_SIZE,
-        totalFills,
-        totalFillsSize,
-      );
-      const fontStyle = getFontStyle(leaf.style.getPropertyValue("font-style"));
+      const fontStyle = leaf.style.getPropertyValue("font-style");
+      const fontStyleSerialized = getFontStyle(fontStyle);
       const fontSize = parseFloat(leaf.style.getPropertyValue("font-size"));
       const letterSpacing = parseFloat(leaf.style.getPropertyValue("letter-spacing"))
-      console.log("font-size", fontSize, "letter-spacing", letterSpacing);
       const fontWeight = parseInt(
         leaf.style.getPropertyValue("font-weight"),
         10,
       );
-      console.log("font-weight", fontWeight);
 
       const text = leaf.textContent;
       const textBuffer = new TextEncoder().encode(text);
       const textSize = textBuffer.byteLength;
-
+      const fontFamily = leaf.style.getPropertyValue('font-family');
+      const fontData = getFontFrom(fontFamily, fontWeight, fontStyle, fonts)
+      const defaultFontId = new Uint32Array([0, 0, 0, 0])
+      const fontId = fontData ? getU32(fontData.id) : defaultFontId
       setLeafData(dview, leafOffset, {
-        fontStyle,
+        fontId,
+        fontStyle: fontStyleSerialized,
         textDecoration: 0,
         textTransform: 0,
         textDirection: 0,
@@ -464,8 +446,8 @@ export function updateTextShape(fontSize, root) {
         fontWeight,
         letterSpacing,
         textSize,
-        totalFills
-      })
+        totalFills,
+      });
 
       // Serialize fills
       let fillOffset = leafOffset + LEAF_ATTR_SIZE;
@@ -485,14 +467,13 @@ export function updateTextShape(fontSize, root) {
 
     // Add text content
     const textOffset = leafOffset;
-    console.log('textOffset', textOffset);
     heap.set(textBuffer, textOffset);
 
     Module._set_shape_text_content();
   }
 }
 
-export function addTextShape(fontSize, text) {
+export function addTextShape(text, fonts) {
   const numLeaves = 1; // Single text leaf for simplicity
   const textBuffer = new TextEncoder().encode(text);
   const textSize = textBuffer.byteLength;
@@ -529,13 +510,25 @@ export function addTextShape(fontSize, text) {
 
   // Serialize leaf attributes
   const leafOffset = PARAGRAPH_ATTR_SIZE;
+  const fontStyle = getFontStyle('normal');
+  const fontStyleSerialized = getFontStyle(fontStyle);
+  const fontSize = 14;
+  const letterSpacing = 0;
+  const fontWeight = 400;
+  const fontFamily = 'MontserratAlternates';
+  const fontData = getFontFrom(fontFamily, fontWeight, fontStyle, fonts);
+  const defaultFontId = new Uint32Array([0, 0, 0, 0]);
+  const fontId = fontData ? getU32(fontData.id) : defaultFontId;
+
   setLeafData(dview, leafOffset, {
+    fontId,
     fontSize,
-    fontWeight: 400,
+    fontStyle: fontStyleSerialized,
+    fontWeight,
     textDecoration: 0,
     textDirection: 0,
     textTransform: 0,
-    letterSpacing: 0,
+    letterSpacing,
     textSize,
     totalFills,
   });
@@ -557,4 +550,45 @@ export function addTextShape(fontSize, text) {
 
   // Call the WebAssembly function
   Module._set_shape_text_content();
+}
+
+export function storeFonts(fonts) {
+  for (const [fontName, fontStyles] of fonts) {
+    for (const font of fontStyles) {
+      const shapeId = getU32('00000000-0000-0000-0000-000000000000');
+      const fontId = getU32(font.id);
+      const weight = font.weight;
+      const style = getFontStyle(font.style);
+      const size = font.arrayBuffer.byteLength;
+      const ptr = Module._alloc_bytes(size);
+      const heap = Module.HEAPU8;
+      const mem = new Uint8Array(heap.buffer, ptr, size);
+      mem.set(new Uint8Array(font.arrayBuffer));
+      const emoji = false
+      const fallback = false
+      Module._store_font(
+        shapeId[0],
+        shapeId[1],
+        shapeId[2],
+        shapeId[3],
+        fontId[0],
+        fontId[1],
+        fontId[2],
+        fontId[3],
+        weight,
+        style,
+        emoji,
+        fallback,
+      );
+      Module._is_font_uploaded(
+        fontId[0],
+        fontId[1],
+        fontId[2],
+        fontId[3],
+        weight,
+        style,
+        emoji,
+      );
+    }
+  }
 }
