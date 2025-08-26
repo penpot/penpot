@@ -222,7 +222,7 @@
   display: flex;
   align-items: center;
   margin-bottom: $s-4;
-  padding: $s-2 $s-8 $s-2 $s-2;
+  padding: $s-1 $s-8 $s-1 $s-1;
   gap: $s-8;
   font-size: $s-12;
   cursor: pointer;
@@ -231,6 +231,7 @@
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color);
+  border: $s-1 solid transparent;
 
   .variant-icon {
     background-color: none;
@@ -246,14 +247,14 @@
   .component-img {
     flex: 0 0 $s-40;
     background-color: var(--assets-component-background-color);
-    border-radius: $br-8;
+    border-radius: $br-6;
     height: $s-40;
     width: $s-40;
     padding: $s-2;
   }
 
-  .selected {
-    color: var(--assets-item-name-foreground-color-hover);
+  &.selected {
+    border: $s-1 solid var(--assets-item-border-color);
   }
 
   &:hover {
@@ -288,13 +289,10 @@
   border-radius: $br-8;
   background-color: var(--assets-component-background-color);
   overflow: hidden;
-  --assets-component-current-border-color: var(--assets-component-border-color);
-  border: $s-4 solid var(--assets-component-current-border-color);
   cursor: pointer;
 
   .variant-icon {
     background-color: var(--color-background-tertiary);
-    padding: 6px;
   }
 
   img {
@@ -306,10 +304,9 @@
     border: 0;
   }
 
-  svg {
+  .component-img {
     height: 100%;
     width: 100%;
-    stroke: none;
     object-fit: contain;
   }
 
@@ -334,13 +331,22 @@
   &:hover {
     .component-name {
       display: block;
-      color: var(--assets-item-name-foreground-color-hover);
-      background: var(--assets-item-background-color-hover);
     }
   }
 
   &.selected {
-    --assets-component-current-border-color: var(--assets-item-border-color);
+    border: $s-2 solid var(--assets-item-border-color);
+
+    &::before {
+      content: " ";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: $s-4 solid var(--assets-component-second-border-selected);
+      border-radius: $br-8;
+    }
 
     .component-name {
       color: var(--assets-item-name-foreground-color-hover);
@@ -729,17 +735,8 @@
   @include flexCenter;
   height: $s-24;
   width: $s-24;
-  border-radius: $br-8;
-  order: 3;
-
-  svg {
-    height: 100%;
-    width: 100%;
-    background-color: transparent;
-    margin: 0;
-
-    stroke: var(--color-accent-secondary);
-  }
+  color: var(--color-accent-secondary);
+  border-radius: $s-8;
 }
 
 .variant-mark-cell {

@@ -128,7 +128,8 @@
   column-gap: $s-8;
   height: $s-44;
   padding-right: $s-4;
-  padding: $s-2;
+  padding: $s-1;
+  border: $s-1 solid transparent;
   border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   cursor: pointer;
@@ -148,10 +149,6 @@
 
         input {
           color: var(--input-foreground-color-active);
-        }
-
-        span svg {
-          stroke: var(--input-foreground-color-active);
         }
       }
     }
@@ -241,9 +238,5 @@
   height: $s-24;
   width: $s-24;
   order: 3;
-
-  svg {
-    @extend .button-icon-small;
-    stroke: var(--color-accent-secondary);
-  }
+  color: var(--color-accent-secondary);
 }
