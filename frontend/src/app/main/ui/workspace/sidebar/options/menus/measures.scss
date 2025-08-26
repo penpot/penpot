@@ -187,3 +187,7 @@
 .checkbox-button {
   @extend .button-icon;
 }
+
+.numeric-input-measures {
+  --dropdown-width: 247px;
+}

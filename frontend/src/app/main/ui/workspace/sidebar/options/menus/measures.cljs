@@ -14,10 +14,12 @@
    [app.common.logic.shapes :as cls]
    [app.common.types.shape :as cts]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.token :as tk]
    [app.main.constants :refer [size-presets]]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.interactions :as dwi]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
@@ -25,7 +27,9 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.numeric-input :as ni]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
@@ -87,12 +91,31 @@
                  shape)]
     (select-keys shape measure-attrs)))
 
+(mf/defc numeric-input-wrapper*
+  {::mf/private true}
+  [{:keys [values name applied-tokens] :rest props}]
+  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
+        tokens (mf/with-memo [tokens name]
+                 (delay
+                   (-> (deref tokens)
+                       (select-keys (get tk/tokens-by-input name))
+                       (not-empty))))
+
+        props  (mf/spread-props props
+                                {:placeholder (if (or (= :multiple (:applied-tokens values))
+                                                      (= :multiple (get values name)))
+                                                (tr "settings.multiple") "--")
+                                 :class (stl/css :numeric-input-measures)
+                                 :applied-token (get applied-tokens name)
+                                 :tokens tokens
+                                 :value (get values name)})]
+    [:> ni/numeric-input* props]))
+
 (def ^:private xf:map-type (map :type))
 (def ^:private xf:mapcat-type-to-options (mapcat type->options))
 
 (mf/defc measures-menu*
-  {::mf/memo true}
-  [{:keys [ids values type shapes]}]
+  [{:keys [ids values applied-tokens type shapes]}]
   (let [all-types
         (mf/with-memo [type shapes]
           ;; We only need this when multiple type is used
@@ -284,12 +307,20 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [value attr]
-           (st/emit! (udw/trigger-bounding-box-cloaking ids))
-           (binding [cts/*wasm-sync* true]
-             (run! #(do-position-change %1 value attr) shapes))))
+           (if (or (string? value) (int? value))
+             (do (st/emit! (udw/trigger-bounding-box-cloaking ids))
+                 (binding [cts/*wasm-sync* true]
+                   (run! #(do-position-change %1 value attr) shapes)))
+             (do
+               (let [value2 (:resolved-value value)]
+                 (st/emit! (udw/trigger-bounding-box-cloaking ids)
+                           (dwta/toggle-token {:token value
+                                               :attrs #{attr}
+                                               :shapes shapes}))
+                 (binding [cts/*wasm-sync* true]
+                   (run! #(do-position-change %1 value2 attr) shapes)))))))
 
         ;; ROTATION
-
         on-rotation-change
         (mf/use-fn
          (mf/deps ids)
@@ -310,6 +341,15 @@
         on-pos-y-change
         (mf/use-fn (mf/deps on-position-change) #(on-position-change % :y))
 
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token attr]
+          ;;  Review this, detach is having problems
+           (let [shape-ids (map :id shapes)]
+             (st/emit! (dwta/unapply-token {:token token
+                                            :attributes #{attr}
+                                            :shape-ids shape-ids})))))
         ;; CLIP CONTENT AND SHOW IN VIEWER
         on-change-clip-content
         (mf/use-fn
@@ -421,31 +461,30 @@
                           :disabled (= proportion-lock :multiple)
                           :aria-label (if proportion-lock (tr "workspace.options.size.unlock") (tr "workspace.options.size.lock"))
                           :on-click on-proportion-lock-change}]])
+
      (when (options :position)
        [:div {:class (stl/css :position)}
-        [:div {:class (stl/css-case :x-position true
-                                    :disabled disabled-position?)
-               :title (tr "workspace.options.x")}
-         [:span {:class (stl/css :icon-text)} "X"]
-         [:> numeric-input* {:no-validate true
-                             :placeholder (if (= :multiple (:x values)) (tr "settings.multiple") "--")
-                             :on-change on-pos-x-change
-                             :disabled disabled-position?
-                             :class (stl/css :numeric-input)
-                             :value (:x values)}]]
+        [:> numeric-input-wrapper*
+         {:disabled disabled-position?
+          :on-change on-position-change
+          :on-detach on-detach-token
+          :icon "character-x"
+          :name :x
+          :property (tr "workspace.options.x")
+          :applied-tokens applied-tokens
+          :values values}]
 
-        [:div {:class (stl/css-case :y-position true
-                                    :disabled disabled-position?)
-               :title (tr "workspace.options.y")}
-         [:span {:class (stl/css :icon-text)} "Y"]
-         [:> numeric-input* {:no-validate true
-                             :placeholder (if (= :multiple (:y values)) (tr "settings.multiple") "--")
-                             :disabled disabled-position?
-                             :on-change on-pos-y-change
-                             :class (stl/css :numeric-input)
-                             :value (:y values)}]]])
-     (when (or (options :rotation)
-               (options :radius))
+        [:> numeric-input-wrapper*
+         {:disabled disabled-position?
+          :on-change on-position-change
+          :on-detach on-detach-token
+          :icon "character-y"
+          :name :y
+          :property (tr "workspace.options.y")
+          :applied-tokens applied-tokens
+          :values values}]])
+
+     (when (or (options :rotation) (options :radius))
        [:div {:class (stl/css :rotation-radius)}
         (when (options :rotation)
           [:div {:class (stl/css :rotation)
