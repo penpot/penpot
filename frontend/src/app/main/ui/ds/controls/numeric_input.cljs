@@ -149,7 +149,6 @@
 (def ^:private schema:icon
   [:and :string [:fn #(contains? icon-list %)]])
 
-;; TODO: Review schema props
 (def ^:private schema:numeric-input
   [:map
    [:id {:optional true} :string]
@@ -301,7 +300,6 @@
                (when (fn? on-change)
                  (on-change parsed))
 
-               ;; Comprar si es valor es necesario, sino borrar
                (mf/set-ref-val! raw-value* (fmt/format-number parsed))
                (update-input (fmt/format-number parsed)))
 
