@@ -6,9 +6,9 @@
 
 (ns app.main.ui.workspace.sidebar.options.shapes.path
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
@@ -22,32 +22,68 @@
    [app.main.ui.workspace.sidebar.options.menus.svg-attrs :refer [svg-attrs-menu]]
    [rumext.v2 :as mf]))
 
-(mf/defc options
+(mf/defc options*
   [{:keys [shape] :as props}]
-  (let [ids [(:id shape)]
-        type (:type shape)
+  (let [ids
+        (mf/with-memo [shape]
+          [(dm/get-prop shape :id)])
 
-        measure-values (select-keys shape measure-attrs)
-        stroke-values (select-keys shape stroke-attrs)
-        layer-values (select-keys shape layer-attrs)
-        constraint-values (select-keys shape constraint-attrs)
-        layout-item-values (select-keys shape layout-item-attrs)
-        layout-container-values (select-keys shape layout-container-flex-attrs)
+        shapes
+        (mf/with-memo [shape]
+          [shape])
 
-        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)
+        type
+        (dm/get-prop shape :type)
 
-        is-flex-parent-ref (mf/use-memo (mf/deps ids) #(refs/flex-layout-child? ids))
-        is-flex-parent? (mf/deref is-flex-parent-ref)
+        measure-values
+        (select-keys shape measure-attrs)
 
-        is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
-        is-grid-parent? (mf/deref is-grid-parent-ref)
+        stroke-values
+        (select-keys shape stroke-attrs)
 
-        is-layout-child-absolute? (ctl/item-absolute? shape)
+        layer-values
+        (select-keys shape layer-attrs)
 
-        ids (hooks/use-equal-memo ids)
-        parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
-        parents (mf/deref parents-by-ids-ref)]
+        constraint-values
+        (select-keys shape constraint-attrs)
+
+        layout-item-values
+        (select-keys shape layout-item-attrs)
+
+        layout-container-values
+        (select-keys shape layout-container-flex-attrs)
+
+        is-layout-child-ref
+        (mf/with-memo [ids]
+          (refs/is-layout-child? ids))
+
+        is-layout-child?
+        (mf/deref is-layout-child-ref)
+
+        is-flex-parent-ref
+        (mf/with-memo [ids]
+          (refs/flex-layout-child? ids))
+
+        is-flex-parent?
+        (mf/deref is-flex-parent-ref)
+
+        is-grid-parent-ref
+        (mf/with-memo [ids]
+          (refs/grid-layout-child? ids))
+
+        is-grid-parent?
+        (mf/deref is-grid-parent-ref)
+
+        is-layout-child-absolute?
+        (ctl/item-absolute? shape)
+
+        parents-by-ids-ref
+        (mf/with-memo [ids]
+          (refs/parents-by-ids ids))
+
+        parents
+        (mf/deref parents-by-ids-ref)]
+
     [:*
      [:& layer-menu {:ids ids
                      :type type
@@ -55,7 +91,7 @@
      [:> measures-menu* {:ids ids
                          :type type
                          :values measure-values
-                         :shape shape}]
+                         :shapes shapes}]
 
      [:& layout-container-menu
       {:type type

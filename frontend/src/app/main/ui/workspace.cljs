@@ -29,8 +29,7 @@
    [app.main.ui.workspace.nudge]
    [app.main.ui.workspace.palette :refer [palette]]
    [app.main.ui.workspace.plugins]
-   [app.main.ui.workspace.sidebar :refer [left-sidebar* right-sidebar*]]
-   [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button]]
+   [app.main.ui.workspace.sidebar :refer [sidebar*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
    [app.main.ui.workspace.tokens.export]
    [app.main.ui.workspace.tokens.export.modal]
@@ -114,18 +113,14 @@
            @palete-size)}]]]
 
      (when-not hide-ui?
-       [:*
-        (if (:collapse-left-sidebar layout)
-          [:& collapsed-button]
-          [:> left-sidebar* {:layout layout
-                             :file file
-                             :page-id page-id}])
-        [:> right-sidebar* {:section options-mode
-                            :selected selected
-                            :drawing-tool (get drawing :tool)
-                            :layout layout
-                            :file file
-                            :page-id page-id}]])]))
+       [:> sidebar* {:layout layout
+                     ;; FIXME
+                     :file-id (get file :id)
+                     :page-id page-id
+                     :file file
+                     :selected selected
+                     :section options-mode
+                     :drawing-tool (get drawing :tool)}])]))
 
 (mf/defc workspace-loader*
   {::mf/private true}

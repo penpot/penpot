@@ -7,10 +7,10 @@
 (ns app.main.ui.workspace.sidebar.options.shapes.svg-raw
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.color :as cc]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
@@ -26,15 +26,10 @@
 
 ;; This is a list of svg tags that can be grouped in shape-container
 ;; this allows them to have gradients, shadows and masks
-(def svg-elements #{:svg :g :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
+(def ^:private svg-elements
+  #{:svg :g :circle :ellipse :image :line :path :polygon :polyline :rect :symbol :text :textPath})
 
-(defn hex->number [_] 1)
-
-(defn shorthex->longhex [hex]
-  (let [[_ r g b] hex]
-    (str "#" r r g g b b)))
-
-(defn parse-color [color]
+(defn- parse-color [color]
   (try
     (cond
       (or (not color) (= color "none")) nil
@@ -51,8 +46,7 @@
       (.error js/console "Error parsing color" e)
       nil)))
 
-
-(defn get-fill-values [shape]
+(defn- get-fill-values [shape]
   (let [fill-values (select-keys shape fill/fill-attrs)
         color       (-> (or (get-in shape [:content :attrs :fill])
                             (get-in shape [:content :attrs :style :fill]))
@@ -64,7 +58,7 @@
                       fill-values)]
     fill-values))
 
-(defn get-stroke-values [shape]
+(defn- get-stroke-values [shape]
   (let [stroke-values (select-keys shape stroke-attrs)
         color         (-> (or (get-in shape [:content :attrs :stroke])
                               (get-in shape [:content :attrs :style :stroke]))
@@ -92,42 +86,75 @@
                         stroke-values)]
     stroke-values))
 
-(mf/defc options
+(mf/defc options*
   {::mf/wrap [mf/memo]}
   [{:keys [shape] :as props}]
 
-  (let [ids [(:id shape)]
-        type (:type shape)
+  (let [id     (dm/get-prop shape :id)
+        type   (dm/get-prop shape :type)
+        ids    (mf/with-memo [id] [id])
+        shapes (mf/with-memo [shape] [shape])
 
-        {:keys [tag] :as content} (:content shape)
-        measure-values (select-keys shape measure-attrs)
-        constraint-values (select-keys shape constraint-attrs)
-        fill-values    (get-fill-values shape)
-        stroke-values  (get-stroke-values shape)
-        layout-item-values (select-keys shape layout-item-attrs)
-        layout-container-values (select-keys shape layout-container-flex-attrs)
+        {:keys [tag] :as content}
+        (get shape :content)
 
-        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)
+        fill-values
+        (mf/with-memo [shape]
+          (get-fill-values shape))
 
-        is-flex-parent-ref (mf/use-memo (mf/deps ids) #(refs/flex-layout-child? ids))
-        is-flex-parent? (mf/deref is-flex-parent-ref)
+        stroke-values
+        (mf/with-memo [shape]
+          (get-stroke-values shape))
 
-        is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
-        is-grid-parent? (mf/deref is-grid-parent-ref)
+        measure-values
+        (select-keys shape measure-attrs)
 
-        is-layout-child-absolute? (ctl/item-absolute? shape)
+        constraint-values
+        (select-keys shape constraint-attrs)
 
-        ids (hooks/use-equal-memo ids)
-        parents-by-ids-ref (mf/use-memo (mf/deps ids) #(refs/parents-by-ids ids))
-        parents (mf/deref parents-by-ids-ref)]
+        layout-item-values
+        (select-keys shape layout-item-attrs)
+
+        layout-container-values
+        (select-keys shape layout-container-flex-attrs)
+
+        is-layout-child-ref
+        (mf/with-memo [ids]
+          (refs/is-layout-child? ids))
+
+        is-layout-child?
+        (mf/deref is-layout-child-ref)
+
+        is-flex-parent-ref
+        (mf/with-memo [ids]
+          (refs/flex-layout-child? ids))
+
+        is-flex-parent?
+        (mf/deref is-flex-parent-ref)
+
+        is-grid-parent-ref
+        (mf/with-memo [ids]
+          (refs/grid-layout-child? ids))
+
+        is-grid-parent?
+        (mf/deref is-grid-parent-ref)
+
+        is-layout-child-absolute?
+        (ctl/item-absolute? shape)
+
+        parents-by-ids-ref
+        (mf/with-memo [ids]
+          (refs/parents-by-ids ids))
+
+        parents
+        (mf/deref parents-by-ids-ref)]
 
     (when (contains? svg-elements tag)
       [:*
        [:> measures-menu* {:ids ids
                            :type type
                            :values measure-values
-                           :shape shape}]
+                           :shapes shapes}]
 
        [:& layout-container-menu
         {:type type

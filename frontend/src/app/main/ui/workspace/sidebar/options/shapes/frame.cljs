@@ -31,49 +31,77 @@
   (let [shape-id   (dm/get-prop shape :id)
         shape-type (dm/get-prop shape :type)
 
-        ids        (mf/with-memo [shape-id]
-                     [shape-id])
+        ids
+        (mf/with-memo [shape-id]
+          [shape-id])
 
-        shapes     (mf/with-memo [shape]
-                     [shape])
+        shapes
+        (mf/with-memo [shape]
+          [shape])
 
-        stroke-values           (select-keys shape stroke-attrs)
-        layer-values            (select-keys shape layer-attrs)
-        measure-values          (select-measure-keys shape)
-        constraint-values       (select-keys shape constraint-attrs)
-        layout-container-values (select-keys shape layout-container-flex-attrs)
-        layout-item-values      (select-keys shape layout-item-attrs)
+        stroke-values
+        (select-keys shape stroke-attrs)
+
+        layer-values
+        (select-keys shape layer-attrs)
+
+        measure-values
+        (select-measure-keys shape)
+
+        constraint-values
+        (select-keys shape constraint-attrs)
+
+        layout-container-values
+        (select-keys shape layout-container-flex-attrs)
+
+        layout-item-values
+        (select-keys shape layout-item-attrs)
 
         is-layout-child-ref
         (mf/with-memo [ids]
           (refs/is-layout-child? ids))
+
         is-layout-child?
         (mf/deref is-layout-child-ref)
 
         is-flex-parent-ref
         (mf/with-memo [ids]
           (refs/flex-layout-child? ids))
+
         is-flex-parent?
         (mf/deref is-flex-parent-ref)
 
         is-grid-parent-ref
         (mf/with-memo [ids]
           (refs/grid-layout-child? ids))
+
         is-grid-parent?
         (mf/deref is-grid-parent-ref)
 
         parents-by-ids-ref
         (mf/with-memo [ids]
           (refs/parents-by-ids ids))
+
         parents
         (mf/deref parents-by-ids-ref)
 
-        is-layout-container?      (ctl/any-layout? shape)
-        is-flex-layout?           (ctl/flex-layout? shape)
-        is-grid-layout?           (ctl/grid-layout? shape)
-        is-layout-child-absolute? (ctl/item-absolute? shape)
-        variants?                 (features/use-feature "variants/v1")
-        is-variant?               (when variants? (ctk/is-variant-container? shape))]
+        is-layout-container?
+        (ctl/any-layout? shape)
+
+        is-flex-layout?
+        (ctl/flex-layout? shape)
+
+        is-grid-layout?
+        (ctl/grid-layout? shape)
+
+        is-layout-child-absolute?
+        (ctl/item-absolute? shape)
+
+        variants?
+        (features/use-feature "variants/v1")
+
+        is-variant?
+        (when variants? (ctk/is-variant-container? shape))]
 
     [:*
      [:& layer-menu {:ids ids
@@ -82,7 +110,7 @@
      [:> measures-menu* {:ids ids
                          :values measure-values
                          :type shape-type
-                         :shape shape}]
+                         :shapes shapes}]
 
      [:& component-menu {:shapes shapes}]
 

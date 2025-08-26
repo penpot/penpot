@@ -22,7 +22,8 @@
 (def ^:private flatten-icon
   (i/icon-xref :boolean-flatten (stl/css :flatten-icon)))
 
-(mf/defc bool-options
+(mf/defc bool-options*
+  {::mf/memo true}
   []
   (let [selected               (mf/deref refs/selected-objects)
         head                   (first selected)

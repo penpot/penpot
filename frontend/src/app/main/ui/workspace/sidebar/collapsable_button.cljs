@@ -13,8 +13,8 @@
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc collapsed-button
-  {::mf/wrap-props false}
+(mf/defc collapsed-button*
+  {::mf/memo true}
   []
   (let [on-click (mf/use-fn #(st/emit! (dw/toggle-layout-flag :collapse-left-sidebar)))]
     [:div {:id "left-sidebar-aside"

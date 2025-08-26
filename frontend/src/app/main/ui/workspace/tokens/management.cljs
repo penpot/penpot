@@ -53,7 +53,7 @@
 
 (mf/defc tokens-section*
   {::mf/private true}
-  [{:keys [tokens-lib]}]
+  [{:keys [tokens-lib active-tokens resolved-active-tokens]}]
   (let [objects         (mf/deref refs/workspace-page-objects)
         selected        (mf/deref refs/selected-shapes)
         open-status     (mf/deref ref:token-type-open-status)
@@ -66,18 +66,9 @@
         (mf/with-memo [selected-shapes objects]
           (some #(ctsl/any-layout-immediate-child? objects %) selected-shapes))
 
-        active-theme-tokens
-        (mf/with-memo [tokens-lib]
-          (if tokens-lib
-            (ctob/get-tokens-in-active-sets tokens-lib)
-            {}))
-
-        ;; Resolve tokens as second step
-        active-theme-tokens'
-        (sd/use-resolved-tokens* active-theme-tokens)
-
         ;; This only checks for the currently explicitly selected set
         ;; name, it is ephimeral and can be nil
+        ;; FIXME: this is a repeated deref for the same `:workspace-tokens` state
         selected-token-set-name
         (mf/deref refs/selected-token-set-name)
 
@@ -92,8 +83,8 @@
           (ctob/get-tokens-map selected-token-set))
 
         tokens
-        (mf/with-memo [active-theme-tokens selected-token-set-tokens]
-          (merge active-theme-tokens selected-token-set-tokens))
+        (mf/with-memo [active-tokens selected-token-set-tokens]
+          (merge active-tokens selected-token-set-tokens))
 
         tokens
         (sd/use-resolved-tokens* tokens)
@@ -154,7 +145,7 @@
                            :type type
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
-                           :active-theme-tokens active-theme-tokens'
+                           :active-theme-tokens resolved-active-tokens
                            :tokens tokens}]))
 
      (for [type empty-group]
@@ -162,5 +153,5 @@
                          :type type
                          :selected-shapes selected-shapes
                          :is-selected-inside-layout :is-selected-inside-layout
-                         :active-theme-tokens active-theme-tokens'
+                         :active-theme-tokens resolved-active-tokens
                          :tokens []}])]))

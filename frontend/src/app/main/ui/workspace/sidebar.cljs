@@ -8,9 +8,11 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [sidebar-default-width sidebar-default-max-width]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.data.style-dictionary :as sd]
    [app.main.data.workspace :as dw]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -25,6 +27,7 @@
    [app.main.ui.workspace.left-header :refer [left-header*]]
    [app.main.ui.workspace.right-header :refer [right-header*]]
    [app.main.ui.workspace.sidebar.assets :refer [assets-toolbox*]]
+   [app.main.ui.workspace.sidebar.collapsable-button :refer [collapsed-button*]]
    [app.main.ui.workspace.sidebar.debug :refer [debug-panel*]]
    [app.main.ui.workspace.sidebar.debug-shape-info :refer [debug-shape-info*]]
    [app.main.ui.workspace.sidebar.history :refer [history-toolbox*]]
@@ -96,7 +99,7 @@
 
 (mf/defc left-sidebar*
   {::mf/memo true}
-  [{:keys [layout file page-id] :as props}]
+  [{:keys [layout file page-id tokens-lib active-tokens resolved-active-tokens]}]
   (let [options-mode   (mf/deref refs/options-mode-global)
         project        (mf/deref refs/project)
         file-id        (get file :id)
@@ -147,7 +150,7 @@
          :left-settings-bar true
          :global/two-row    (<= width 300)
          :global/three-row  (and (> width 300) (<= width 400))
-         :global/four-row  (> width 400))
+         :global/four-row   (> width 400))
 
         tabs-action-button
         (mf/with-memo []
@@ -197,7 +200,10 @@
               :file-id file-id}]
 
             :tokens
-            [:> tokens-sidebar-tab*]
+            [:> tokens-sidebar-tab*
+             {:tokens-lib tokens-lib
+              :active-tokens active-tokens
+              :resolved-active-tokens resolved-active-tokens}]
 
             :layers
             [:> layers-content*
@@ -255,8 +261,7 @@
         [:> history-toolbox*]])]))
 
 (mf/defc right-sidebar*
-  {::mf/memo true}
-  [{:keys [layout section file page-id drawing-tool] :as props}]
+  [{:keys [layout section file page-id drawing-tool active-tokens] :as props}]
   (let [is-comments?     (= drawing-tool :comments)
         is-history?      (contains? layout :document-history)
         is-inspect?      (= section :inspect)
@@ -289,45 +294,84 @@
          (fn []
            (set-width (if (> width sidebar-default-width)
                         sidebar-default-width
-                        sidebar-default-max-width))))]
+                        sidebar-default-max-width))))
+
+        active-tokens-by-type
+        (mf/with-memo [active-tokens]
+          (delay (ctob/group-by-type active-tokens)))]
 
     [:> (mf/provider muc/sidebar) {:value :right}
-     [:aside
-      {:class (stl/css-case :right-settings-bar true
-                            :not-expand (not can-be-expanded?)
-                            :expanded (> width sidebar-default-width))
+     [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
 
-       :id "right-sidebar-aside"
-       :data-testid "right-sidebar"
-       :data-size (str width)
-       :style {:--width (if can-be-expanded?
-                          (dm/str width "px")
-                          (dm/str sidebar-default-width "px"))}}
+      [:aside
+       {:class (stl/css-case :right-settings-bar true
+                             :not-expand (not can-be-expanded?)
+                             :expanded (> width sidebar-default-width))
 
-      (when can-be-expanded?
-        [:div {:class (stl/css :resize-area)
-               :on-pointer-down on-pointer-down
-               :on-lost-pointer-capture on-lost-pointer-capture
-               :on-pointer-move on-pointer-move}])
+        :id "right-sidebar-aside"
+        :data-testid "right-sidebar"
+        :data-size (str width)
+        :style {:--width (if can-be-expanded?
+                           (dm/str width "px")
+                           (dm/str sidebar-default-width "px"))}}
 
-      [:> right-header*
-       {:file file
-        :layout layout
-        :page-id page-id}]
+       (when can-be-expanded?
+         [:div {:class (stl/css :resize-area)
+                :on-pointer-down on-pointer-down
+                :on-lost-pointer-capture on-lost-pointer-capture
+                :on-pointer-move on-pointer-move}])
 
-      [:div {:class (stl/css :settings-bar-inside)}
-       (cond
-         dbg-shape-panel?
-         [:> debug-shape-info*]
+       [:> right-header*
+        {:file file
+         :layout layout
+         :page-id page-id}]
 
-         is-comments?
-         [:> comments-sidebar* {}]
+       [:div {:class (stl/css :settings-bar-inside)}
+        (cond
+          dbg-shape-panel?
+          [:> debug-shape-info*]
 
-         is-history?
-         [:> history-content* {}]
+          is-comments?
+          [:> comments-sidebar* {}]
 
-         :else
-         (let [props (mf/spread-props props
-                                      {:on-change-section on-change-section
-                                       :on-expand on-expand})]
-           [:> options-toolbox* props]))]]]))
+          is-history?
+          [:> history-content* {}]
+
+          :else
+          (let [props (mf/spread-props props
+                                       {:on-change-section on-change-section
+                                        :on-expand on-expand})]
+            [:> options-toolbox* props]))]]]]))
+
+(mf/defc sidebar*
+  [{:keys [layout file file-id page-id section drawing-tool selected]}]
+  (let [tokens-lib
+        (mf/deref refs/tokens-lib)
+
+        active-tokens
+        (mf/with-memo [tokens-lib]
+          (if tokens-lib
+            (ctob/get-tokens-in-active-sets tokens-lib)
+            {}))
+
+        resolved-active-tokens
+        (sd/use-resolved-tokens* active-tokens)]
+
+    [:*
+     (if (:collapse-left-sidebar layout)
+       [:> collapsed-button*]
+       [:> left-sidebar* {:layout layout
+                          :file file
+                          :page-id page-id
+                          :tokens-lib tokens-lib
+                          :active-tokens active-tokens
+                          :resolved-active-tokens resolved-active-tokens}])
+     [:> right-sidebar* {:section section
+                         :selected selected
+                         :drawing-tool drawing-tool
+                         :layout layout
+                         :file file
+                         :file-id file-id
+                         :page-id page-id
+                         :tokens-lib tokens-lib
+                         :active-tokens resolved-active-tokens}]]))

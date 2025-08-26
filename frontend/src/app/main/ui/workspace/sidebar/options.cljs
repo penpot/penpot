@@ -20,8 +20,8 @@
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.inspect.right-sidebar :as hrs]
    [app.main.ui.workspace.sidebar.options.drawing :as drawing]
-   [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options]]
-   [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options]]
+   [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options*]]
+   [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
@@ -32,7 +32,6 @@
    [app.main.ui.workspace.sidebar.options.shapes.circle :as circle]
    [app.main.ui.workspace.sidebar.options.shapes.frame :as frame]
    [app.main.ui.workspace.sidebar.options.shapes.group :as group]
-   [app.main.ui.workspace.sidebar.options.shapes.image :as image]
    [app.main.ui.workspace.sidebar.options.shapes.multiple :as multiple]
    [app.main.ui.workspace.sidebar.options.shapes.path :as path]
    [app.main.ui.workspace.sidebar.options.shapes.rect :as rect]
@@ -57,14 +56,13 @@
     [:*
      (case shape-type
        :frame   [:> frame/options* props]
-       :group   [:& group/options {:shape shape :shape-with-children shapes-with-children :file-id file-id :libraries libraries}]
-       :text    [:& text/options {:shape shape  :file-id file-id :libraries libraries}]
-       :rect    [:& rect/options {:shape shape}]
-       :circle  [:& circle/options {:shape shape}]
-       :path    [:& path/options {:shape shape}]
-       :image   [:& image/options {:shape shape}]
-       :svg-raw [:& svg-raw/options {:shape shape}]
-       :bool    [:& bool/options {:shape shape}]
+       :group   [:> group/options* {:shape shape :shape-with-children shapes-with-children :file-id file-id :libraries libraries}]
+       :text    [:> text/options* {:shape shape  :file-id file-id :libraries libraries}]
+       :rect    [:> rect/options* {:shape shape}]
+       :circle  [:> circle/options* {:shape shape}]
+       :path    [:> path/options* {:shape shape}]
+       :svg-raw [:> svg-raw/options* {:shape shape}]
+       :bool    [:> bool/options* {:shape shape}]
        nil)
      [:& exports-menu
       {:ids [(:id shape)]
@@ -73,7 +71,7 @@
        :page-id page-id
        :file-id file-id}]]))
 
-(mf/defc specialized-panel
+(mf/defc specialized-panel*
   {::mf/wrap [mf/memo]}
   [{:keys [panel]}]
   (when (= (:type panel) :component-swap)
@@ -92,8 +90,8 @@
                                   (map #(dm/get-in objects [edition :layout-grid-cells %])))]
 
     [:div {:class (stl/css :element-options :design-options)}
-     [:& align-options]
-     [:& bool-options]
+     [:> align-options*]
+     [:> bool-options*]
 
      (cond
        (and edit-grid? (d/not-empty? selected-cells))
@@ -107,7 +105,7 @@
          :values (get objects edition)}]
 
        (not (nil? sp-panel))
-       [:& specialized-panel {:panel sp-panel}]
+       [:> specialized-panel* {:panel sp-panel}]
 
        (d/not-empty? drawing)
        [:> drawing/drawing-options*
@@ -125,7 +123,7 @@
          :shapes-with-children shapes-with-children}]
 
        :else
-       [:& multiple/options
+       [:> multiple/options*
         {:shapes-with-children shapes-with-children
          :shapes selected-shapes
          :page-id page-id
@@ -210,12 +208,9 @@
 
 (mf/defc options-toolbox*
   {::mf/memo true}
-  [{:keys [section selected on-change-section on-expand]}]
-  (let [page-id              (mf/use-ctx ctx/current-page-id)
-        file-id              (mf/use-ctx ctx/current-file-id)
-        shapes               (mf/deref refs/selected-objects)
+  [{:keys [page-id file-id section selected on-change-section on-expand]}]
+  (let [shapes               (mf/deref refs/selected-objects)
         shapes-with-children (mf/deref refs/selected-shapes-with-children)]
-
     [:> options-content* {:shapes shapes
                           :selected selected
                           :shapes-with-children shapes-with-children
