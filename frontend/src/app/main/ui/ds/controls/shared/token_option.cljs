@@ -18,11 +18,10 @@
   [:map
    [:id {:optiona true} :string]
    [:ref some?]
-   [:resolved {:optional true} [:or :number :string]]
+   [:resolved {:optional true} [:or :int :string]]
    [:name {:optional true} :string]
    [:on-click {:optional true} fn?]
    [:selected {:optional true} :boolean]
-   [:focused {:optional true} :boolean]
    [:focused {:optional true} :boolean]])
 
 (mf/defc token-option*
