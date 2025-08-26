@@ -1,10 +1,12 @@
 (ns app.main.ui.inspect.styles
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
+   [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 
@@ -20,29 +22,30 @@
 
 (defn- get-shape-type
   [shapes first-shape first-component]
-  (cond
-    (and (= (count shapes) 1)
-         (or (ctc/is-variant-container? first-shape)
-             (ctc/is-variant? first-component)))
-    :variant
+  (if (= (count shapes) 1)
+    (if (or (ctc/is-variant-container? first-shape)
+            (ctc/is-variant? first-component))
+      :variant
 
-    (= (count shapes) 1)
-    (:type first-shape)
-
-    :else
+      (:type first-shape))
     :multiple))
 
 (mf/defc styles-tab*
   [{:keys [color-space shapes libraries file-id]}]
   (let [data               (dm/get-in libraries [file-id :data])
         first-shape        (first shapes)
-        first-component    (ctkl/get-component data (:component-id first-shape))
-        type               (get-shape-type shapes first-shape first-component)
+        first-component    (mf/with-memo (ctkl/get-component data (:component-id first-shape)))
+        type               (mf/with-memo (get-shape-type shapes first-shape first-component))
+        has-tokens?        (:applied-tokens first-shape)
         options            (type->options type)]
-
-    [:div {:class (stl/css :element-options)}
-     (for [[idx option] (map-indexed vector options)]
-       [:> style-box* {:key idx :attribute option} color-space])]))
+    [:ol {:class (stl/css :styles-tab) :aria-label (tr "inspect.tabs.styles")}
+     (when has-tokens?
+       [:li {:key "token"}
+        [:> style-box* {:attribute :token}
+         [:p "Tokens Panel (WIP)"]]])
+     (for [option options]
+       [:li {:key (d/name option)}
+        [:> style-box* {:attribute option} color-space]])]))
 
 
 ;; WIP

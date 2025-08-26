@@ -1861,6 +1861,58 @@ msgstr "Styles"
 msgid "inspect.tabs.switcher.label"
 msgstr "Layer info"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:10
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Variant properties"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:11
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Token Sets & Themes"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Size & Position"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.fill"
+msgstr "Fill"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.stroke"
+msgstr "Stroke"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.text"
+msgstr "Text"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.shadow"
+msgstr "Shadow"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.layout-element"
+msgstr "Layout Element"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.visibility"
+msgstr "Visibility"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.blur"
+msgstr "Blur"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Toggle panel %s"
+
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"
 msgstr "Mark all as read"
