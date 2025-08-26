@@ -9,6 +9,14 @@ on:
         description: 'Name of the branch'
         type: string
         required: true
+      build_wasm:
+        type: boolean
+        required: true
+        default: true
+      build_storybook:
+        type: boolean
+        required: true
+        default: true
 
 jobs:
   build-bundle:
@@ -33,6 +41,9 @@ jobs:
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: Run manage.sh build-bundle from host
+        env:
+          BUILD_WASM: ${{ inputs.build_wasm }}
+          BUILD_STORYBOOK: ${{ inputs.build_wasm }}
         run: ./manage.sh build-bundle
 
       - name: Prepare directories for zipping
