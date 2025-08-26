@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-08-27 12:15+0000\n"
 "Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -725,7 +725,8 @@ msgstr[1] "%s fichiers ont bien été importés."
 
 #: src/app/main/ui/dashboard/import.cljs:470
 msgid "dashboard.import.import-warning"
-msgstr "Certains fichiers contenaient des objets invalides qui ont été enlevés."
+msgstr ""
+"Certains fichiers contenaient des objets non valides qui ont été enlevés."
 
 #: src/app/main/ui/dashboard.cljs:244
 msgid "dashboard.import.no-perms"
@@ -1315,11 +1316,11 @@ msgstr "Un problème est survenu avec le web worker."
 
 #: src/app/main/ui/components/color_input.cljs:58
 msgid "errors.invalid-color"
-msgstr "Couleur invalide"
+msgstr "Couleur non valide"
 
 #: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
 msgid "errors.invalid-data"
-msgstr "Donnée invalide"
+msgstr "Données non valides"
 
 #: src/app/main/ui/auth/register.cljs, src/app/main/ui/auth/login.cljs, src/app/main/ui/auth/recovery_request.cljs
 #, unused
@@ -1337,11 +1338,11 @@ msgstr "Le code de récupération n’est pas valide."
 #: src/app/util/forms.cljs
 #, unused
 msgid "errors.invalid-text"
-msgstr "Texte invalide"
+msgstr "Texte non valide"
 
 #: src/app/main/ui/static.cljs:69
 msgid "errors.invite-invalid"
-msgstr "Invitation invalide"
+msgstr "Invitation non valide"
 
 #: src/app/main/ui/static.cljs:70
 msgid "errors.invite-invalid.info"
@@ -1399,7 +1400,7 @@ msgstr "Le mot de passe doit contenir au moins 8 caractères"
 
 #: src/app/main/errors.cljs:137
 msgid "errors.paste-data-validation"
-msgstr "Données du presse-papier invalides"
+msgstr "Données dans le presse-papier non valides"
 
 #: src/app/main/data/auth.cljs:312, src/app/main/ui/auth/login.cljs:103, src/app/main/ui/auth/login.cljs:111
 msgid "errors.profile-blocked"
@@ -1417,7 +1418,7 @@ msgstr "L’enregistrement est actuellement désactivé."
 
 #: src/app/main/errors.cljs:186
 msgid "errors.svg-parser.invalid-svg"
-msgstr "Le SVG est invalide ou mal formé"
+msgstr "Le fichier SVG n'est pas valide ou est mal formé"
 
 #: src/app/main/errors.cljs:232
 msgid "errors.team-feature-mismatch"
@@ -1713,7 +1714,7 @@ msgstr "Aucune"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.underline"
-msgstr "Soulignage"
+msgstr "Souligné"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:151
 msgid "inspect.attributes.typography.text-transform"
@@ -1729,7 +1730,7 @@ msgstr "Aucune"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:430
 msgid "inspect.attributes.typography.text-transform.capitalize"
-msgstr "Premières Lettres en Capitales"
+msgstr "Première lettre en capitale"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:157
 msgid "inspect.attributes.typography.text-transform.unset"
@@ -1737,7 +1738,7 @@ msgstr "Non assigné"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:424
 msgid "inspect.attributes.typography.text-transform.uppercase"
-msgstr "Capitales"
+msgstr "Majuscules"
 
 #: src/app/main/ui/inspect/attributes/variant.cljs:44
 msgid "inspect.attributes.variant"
@@ -6620,7 +6621,7 @@ msgstr "Copier les propriétés"
 
 #: src/app/main/ui/workspace/context_menu.cljs:211
 msgid "workspace.shape.menu.copy-svg"
-msgstr "Copier comme SVG"
+msgstr "Copier sous forme de fichier SVG"
 
 #: src/app/main/ui/workspace/context_menu.cljs:216
 msgid "workspace.shape.menu.copy-text"
@@ -6987,7 +6988,7 @@ msgstr "Entrez le nom de l'unité de style %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
 msgid "workspace.tokens.error-parse"
-msgstr "Erreur d'importation : Impossible d'interpréter le JSON."
+msgstr "Erreur d'importation : Impossible d'interpréter le fichier JSON."
 
 #: src/app/main/ui/workspace/tokens/context_menu.cljs:201
 msgid "workspace.tokens.gaps"
@@ -7031,8 +7032,8 @@ msgstr "Importer des tokens"
 #, unused
 msgid "workspace.tokens.import-tooltip"
 msgstr ""
-"Importer un fichier JSON remplacera toutes vos unités de style, collections "
-"et thèmes"
+"L'importation d'un fichier JSON remplacera toutes vos unités de style, "
+"collections et thèmes"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:346
 msgid "workspace.tokens.inactive-set"
@@ -7040,15 +7041,17 @@ msgstr "Inactif"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45
 msgid "workspace.tokens.invalid-color"
-msgstr "Couleur invalide : %s"
+msgstr "Couleur non valide : %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:19
 msgid "workspace.tokens.invalid-json"
-msgstr "Erreur d'importation : Données de l'unité de style invalides dans le JSON."
+msgstr ""
+"Erreur d'importation : données de l'unité de style non valides dans le "
+"fichier JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57, src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/errors.cljs:69
 msgid "workspace.tokens.invalid-value"
-msgstr "Valeur de l'unité de style invalide : %s"
+msgstr "Valeur de l'unité de style non valide : %s"
 
 #: src/app/main/ui/workspace/tokens/modals/themes.cljs:190
 msgid "workspace.tokens.label.group"
@@ -7120,7 +7123,7 @@ msgstr "%s collections actives"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:49
 msgid "workspace.tokens.number-too-large"
-msgstr "Valeur de l'unité de style invalide. La valeur est trop grande : %s"
+msgstr "Valeur de l'unité de style non valide. La valeur est trop grande : %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/warnings.cljs:15
 msgid "workspace.tokens.opacity-range"
@@ -7602,7 +7605,7 @@ msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
 msgstr ""
 "L'abonnement Illimité ou Entreprise inclut plus d'éditeurs, de stockage et "
 "de versions à enregistrement automatique. Contactez le propriétaire de "
-"l'équipe  : %s"
+"l'équipe : %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
 #, fuzzy, markdown
@@ -7779,11 +7782,10 @@ msgid "workspace.tokens.export.no-tokens-themes-sets"
 msgstr "Il n'y a pas de tokens, de thèmes ou de collections à exporter."
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
-#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
-"Il semblerait que votre équipe s'est agrandie ! Votre abonnement inclut %s "
-"sièges, mais vous en utiliser maintenant plus que ça."
+"Votre équipe semble s'être agrandie. Votre abonnement inclut %s "
+"utilisateurs, mais vous en utilisez actuellement %s"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:1000
 msgid "subscription.dashboard.upgrade-plan.power-up"
@@ -7801,7 +7803,8 @@ msgstr "(Aucun paiement ne sera fait maintenant)"
 
 #: src/app/main/ui/settings/subscription.cljs:112
 msgid "subscription.settings.management.dialog.select-editors"
-msgstr "Sélectionnez le nombre d'éditeurs (sièges) dont vous avez besoin :"
+msgstr ""
+"Sélectionnez le nombre d'éditeurs (utilisateurs) dont vous avez besoin :"
 
 #: src/app/main/ui/settings/subscription.cljs:168
 msgid "subscription.settings.sucess.dialog.footer"
@@ -7809,7 +7812,7 @@ msgstr "Profitez bien de votre abonnement !"
 
 #: src/app/main/ui/workspace/sidebar/assets/components.cljs:173
 msgid "workspace.assets.components.num-variants"
-msgstr "%s Variants"
+msgstr "%s variantes"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:808
 msgid "workspace.options.component.unlinked"
@@ -7849,3 +7852,154 @@ msgstr "La largueur du tracé doit être plus grand ou égal à 0."
 #, unused
 msgid "subscription.dashboard.power-up.unlimited.cta"
 msgstr "Jetez un oeil"
+
+msgid "errors.email-does-not-match-invitation"
+msgstr "L'adresse e-mail ne correspond pas à celle de l'invitation."
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr ""
+"Cette version est verrouillée et ne peut pas être supprimée par d'autres "
+"personnes"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Cette version est déjà verrouillée"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Barré"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "Verrouiller"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "Déverrouiller"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Seul le créateur d'une version peut la verrouiller"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Seul le créateur d'une version peut la déverrouiller"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:246
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Fichier JSON unique"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr ""
+"Procédez à la mise à niveau pour que votre abonnement corresponde à votre "
+"utilisation. [Abonnez-vous.|target:self](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr ""
+"Procédez à la mise à niveau pour que votre abonnement corresponde à votre "
+"utilisation. Contactez le responsable de l'équipe : %s"
+
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Abonnement Entreprise (version d'essai)"
+
+msgid "labels.pinned-projects"
+msgstr "Projets épinglés"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:689
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Famille de polices ou liste de polices séparées par une virgule (,)"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:688
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Sélectionner une famille de polices"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:45
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "L'importation a réussi. Certains tokens n'ont pas été inclus."
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs
+msgid "workspace.tokens.more-options"
+msgstr "Cliquez avec le bouton droit pour afficher les options"
+
+msgid "workspace.versions.locked-by-other"
+msgstr "Cette version est verrouillée par %s et ne peut pas être modifiée"
+
+msgid "workspace.versions.locked-by-you"
+msgstr "Vous avez verrouillé cette version"
+
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Version verrouillée. Seul le créateur peut la modifier"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:245
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "Fichier ZIP"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:247
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Dossier"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:109
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"Valeur du token non valide : seules les valeurs Aucune, Majuscules, "
+"Minuscules ou Première lettre en capitale sont acceptées"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:81
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Valeur du token non valide : seules les valeurs Aucune, Souligné et Barré "
+"sont acceptées"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:799
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Entrez la décoration de texte : Aucune | Souligné | Barré"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:560
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Famille de polices"
+
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "Stockez les données dans le navigateur."
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "Les composants doivent se trouver sur la même page"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "La variante doit comporter au moins une propriété"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:251
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Importer %s"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"Cette variante possède des propriétés et des valeurs identiques à celles "
+"d'une autre variante."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr ""
+"Certaines de ces variantes possèdent des propriétés et des valeurs "
+"identiques."
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Comment les variantes restent connectées"
+
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"Pour conserver les modifications lorsque vous passez d'une variante à une "
+"autre, Penpot connecte les calques qui :"
+
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "Possèdent le même nom."
+
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "Sont du même type"
+
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "Possèdent le même niveau hiérarchique"
