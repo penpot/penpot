@@ -19,6 +19,7 @@
    [app.common.time :as ct]
    [app.common.types.file :as ctf]
    [app.common.uuid :as uuid]
+   [app.common.weak :as weak]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -606,11 +607,19 @@
          (map decode-row))
         (db/exec! conn [sql:get-file-libraries file-id])))
 
-;; FIXME: this will use a lot of memory if file uses too many big
-;; libraries, we should load required libraries on demand
 (defn get-resolved-file-libraries
-  "A helper for preload file libraries"
-  [{:keys [::db/conn] :as cfg} file]
-  (->> (get-file-libraries conn (:id file))
-       (into [file] (map #(get-file cfg (:id %))))
-       (d/index-by :id)))
+  "Get all file libraries including itself. Returns an instance of
+  LoadableWeakValueMap that allows do not have strong references to
+  the loaded libraries and reduce possible memory pressure on having
+  all this libraries loaded at same time on processing file validation
+  or file migration.
+
+  This still requires at least one library at time to be loaded while
+  access to it is performed, but it improves considerable not having
+  the need of loading all the libraries at the same time."
+  [{:keys [::db/conn] :as cfg} {:keys [id] :as file}]
+  (let [library-ids (->> (get-file-libraries conn (:id file))
+                         (map :id)
+                         (cons (:id file)))
+        load-fn     #(get-file cfg % :migrate? false)]
+    (weak/loadable-weak-value-map library-ids load-fn {id file})))

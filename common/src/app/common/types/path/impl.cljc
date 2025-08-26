@@ -379,7 +379,7 @@
      (-transform [this m]
        (let [buffer (buf/clone buffer)]
          (impl-transform buffer m size)
-         (PathData. size buffer (weak/create-weak-value-map) nil)))
+         (PathData. size buffer (weak/weak-value-map) nil)))
 
      (-walk [_ f initial]
        (impl-walk buffer f initial size))
@@ -600,14 +600,14 @@
              count (long (/ size SEGMENT-U8-SIZE))]
          (PathData. count
                     (js/DataView. buffer)
-                    (weak/create-weak-value-map)
+                    (weak/weak-value-map)
                     nil))
 
        (instance? js/DataView buffer)
        (let [buffer' (.-buffer ^js/DataView buffer)
              size    (.-byteLength ^js/ArrayBuffer buffer')
              count   (long (/ size SEGMENT-U8-SIZE))]
-         (PathData. count buffer (weak/create-weak-value-map) nil))
+         (PathData. count buffer (weak/weak-value-map) nil))
 
        (instance? js/Uint8Array buffer)
        (from-bytes (.-buffer buffer))

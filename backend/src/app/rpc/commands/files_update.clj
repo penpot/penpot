@@ -408,7 +408,6 @@
                    (not skip-validate))
           (bfc/get-resolved-file-libraries cfg file))
 
-
         ;; The main purpose of this atom is provide a contextual state
         ;; for the changes subsystem where optionally some hints can
         ;; be provided for the changes processing. Right now we are
