@@ -1,0 +1,41 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../ds/typography.scss" as *;
+
+.style-box {
+  --title-gap: var(--sp-xs);
+  --title-padding: var(--sp-s);
+  --title-color: var(--color-foreground-primary);
+  --arrow-color: var(--color-foreground-secondary);
+
+  padding-block: var(--sp-s);
+}
+
+.disclosure-header {
+  display: flex;
+  gap: var(--title-gap);
+  padding-block: var(--title-padding);
+}
+
+.disclosure-button {
+  display: grid;
+  place-items: center;
+  color: var(--arrow-color);
+
+  appearance: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+
+.panel-title {
+  @include use-typography("headline-small");
+  text-transform: capitalize;
+  flex: 1;
+  color: var(--title-color);
+}
