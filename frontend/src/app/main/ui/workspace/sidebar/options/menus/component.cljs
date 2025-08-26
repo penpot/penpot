@@ -512,7 +512,6 @@
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
     [:div {:ref item-ref
-           :title (if is-search (:full-name item) (:name item))
            :class (stl/css-case :component-item (not listing-thumbs)
                                 :grid-cell listing-thumbs
                                 :selected (= (:id item) component-id)
@@ -526,12 +525,15 @@
          :root-shape root-shape
          :component item
          :container container}])
-     [:span  {:class (stl/css-case :component-name true
-                                   :selected (= (:id item) component-id))}
+     [:span {:title (if is-search (:full-name item) (:name item))
+             :class (stl/css-case :component-name true
+                                  :selected (= (:id item) component-id))}
       (if is-search (:full-name item) (:name item))]
      (when (ctk/is-variant? item)
-       [:span {:class (stl/css-case :variant-mark-cell listing-thumbs :variant-icon true)
-               :title (tr "workspace.assets.components.num-variants" num-variants)} i/variant])]))
+       [:span {:class (stl/css-case :variant-mark-cell listing-thumbs
+                                    :variant-icon true)
+               :title (tr "workspace.assets.components.num-variants" num-variants)}
+        [:> icon* {:icon-id "variant" :size "s"}]])]))
 
 (mf/defc component-group-item*
   [{:keys [item on-enter-group]}]
