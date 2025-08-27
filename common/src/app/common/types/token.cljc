@@ -415,14 +415,19 @@
        (reduce (fn [acc [k vs]]
                  (into acc (zipmap vs (repeat k)))) {})))
 
+(defn parse-font-weight [font-weight]
+  (let [[_ variant italic] (->> (str/lower font-weight)
+                                (re-find #"^(.+?)\s*(italic)?$"))]
+    {:variant variant
+     :italic? (some? italic)}))
+
 (defn valid-font-weight-variant
   "Converts font-weight token value to a map like `{:weight \"100\" :style \"italic\"}`.
   Converts a weight alias like `regular` to a number, needs to be a regular number.
   Adds `italic` style when found in the `value` string."
   [value]
-  (let [[weight style] (->> (str/split value #"\s+")
-                            (map str/lower))
-        weight (get font-weight-map weight weight)]
+  (let [{:keys [variant italic?]} (parse-font-weight value)
+        weight (get font-weight-map variant variant)]
     (when (font-weight-values weight)
       (cond-> {:weight weight}
-        (= style "italic") (assoc :style "italic")))))
+        italic? (assoc :style "italic")))))
