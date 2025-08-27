@@ -19,6 +19,7 @@
    [app.main.ui.components.color-input :refer [color-input*]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
@@ -47,10 +48,11 @@
 
 (mf/defc color-row*
   [{:keys [index color class disable-gradient disable-opacity disable-image disable-picker hidden
-           on-change on-reorder on-detach on-open on-close on-remove
-           disable-drag on-focus on-blur select-only select-on-focus]}]
+           on-change on-reorder on-detach on-open on-close on-remove origin
+           disable-drag on-focus on-blur select-only select-on-focus on-token-change]}]
   (let [libraries        (mf/deref refs/files)
         on-change        (h/use-ref-callback on-change)
+        on-token-change  (h/use-ref-callback on-token-change)
 
         file-id          (or (:ref-file color) (:file-id color))
         color-id         (or (:ref-id color) (:id color))
@@ -69,6 +71,11 @@
         editing-text?    (deref editing-text*)
 
         class            (if (some? class) (dm/str class " ") "")
+
+        active-tokens*    (mf/use-ctx ctx/active-tokens-by-type)
+        active-tokens     (if active-tokens*
+                            @active-tokens*
+                            {})
 
         opacity?
         (and (not multiple-colors?)
@@ -133,7 +140,7 @@
 
         handle-click-color
         (mf/use-fn
-         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open)
+         (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open active-tokens)
          (fn [color event]
            (let [color (cond
                          multiple-colors?
@@ -157,9 +164,13 @@
                         :disable-image disable-image
                         ;; on-change second parameter means if the source is the color-picker
                         :on-change #(on-change % index)
+                        :on-token-change on-token-change
                         :on-close (fn [value opacity id file-id]
                                     (when on-close
                                       (on-close value opacity id file-id)))
+                        :active-tokens active-tokens
+                        :color-origin origin
+                        :origin :sidebar
                         :data color}]
 
              (when (fn? on-open)

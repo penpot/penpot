@@ -226,6 +226,7 @@
                                :on-remove on-remove
                                :disable-drag disable-drag?
                                :on-focus on-focus
+                               :origin :fill
                                :select-on-focus (not disable-drag?)
                                :on-blur on-blur}]))])
 

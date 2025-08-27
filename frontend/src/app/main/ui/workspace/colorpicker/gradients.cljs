@@ -158,6 +158,7 @@
        :disable-picker true
        :color stop
        :index index
+       :origin :gradient
        :on-change handle-change-stop-color
        :on-remove handle-remove-stop
        :on-focus handle-focus-stop-color

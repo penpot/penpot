@@ -115,7 +115,7 @@
       (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true
                                                     :page-id page-id}))))
 
-(defn- value->color
+(defn value->color
   "Transform a token color value into penpot color data structure"
   [color]
   (when-let [tc (tinycolor/valid-color color)]
@@ -584,6 +584,35 @@
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
 
+
+(defn apply-token-on-selected
+  [color-options token]
+  (ptk/reify ::apply-token-on-selected
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from color-options)
+              (rx/map
+               (fn [cop]
+                 (let [shape-ids [(:shape-id cop)]]
+                   (case (:prop cop)
+                     :fill    (apply-token {:attributes #{:fill}
+                                            :token token
+                                            :shape-ids shape-ids
+                                            :on-update-shape update-fill})
+                     :stroke  (apply-token {:attributes #{:stroke-color}
+                                            :token token
+                                            :shape-ids shape-ids
+                                            :on-update-shape update-stroke-color})
+                     ;; Text
+                     :content (apply-token {:attributes #{:fill}
+                                            :token token
+                                            :shape-ids shape-ids
+                                            :on-update-shape update-fill})
+                     :shadow  (rx/empty))))))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 ;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,

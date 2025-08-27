@@ -81,15 +81,29 @@
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dwtl/set-token-type-section-open type true)
-                     ;; FIXME: use dom/get-client-position
-                     (modal/show (:key modal)
-                                 {:x (.-clientX ^js event)
-                                  :y (.-clientY ^js event)
-                                  :position :right
-                                  :fields (:fields modal)
-                                  :title title
-                                  :action "create"
-                                  :token-type type}))))
+                     ;; Normally the modal position is calculated by client-position,
+                     ;; but in some cases it is opened programmatically (not by a user click),
+                     ;; so we need to set its position explicitly.
+                     (let [pos (dom/get-client-position event)
+                           window-size (dom/get-window-size)
+                           left-sidebar (dom/get-element "left-sidebar-aside")
+                           x-size (dom/get-data left-sidebar "size")
+                           modal-size {:width 452
+                                       :height 392}
+                           x (if (= 0 (:x pos))
+                               (- (int x-size) 30)
+                               (:x pos))
+                           y (if (= 0 (:y pos))
+                               (- (/ (:height window-size) 2) (/ (:height modal-size) 2))
+                               (:y pos))]
+                       (modal/show (:key modal)
+                                   {:x x
+                                    :y y
+                                    :position :right
+                                    :fields (:fields modal)
+                                    :title title
+                                    :action "create"
+                                    :token-type type})))))
 
         on-token-pill-click
         (mf/use-fn
@@ -111,6 +125,7 @@
          [:> icon-button* {:on-click on-popover-open-click
                            :variant "ghost"
                            :icon i/add
+                           :id (str "add-token-button-" title)
                            :aria-label (tr "workspace.tokens.add-token" title)}])]
       (when is-open
         [:& cmm/asset-section-block {:role :content}

@@ -14,6 +14,7 @@
    [app.common.schema :as sm]
    [app.common.types.color :as ct]
    [app.config :as cfg]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.color :as uc]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -66,7 +67,7 @@
 
 (mf/defc swatch*
   {::mf/schema (sm/schema schema:swatch)}
-  [{:keys [background on-click size active class]
+  [{:keys [background on-click size active class tooltip-content]
     :rest props}]
   (let [;; NOTE: this code is only relevant for storybook, because
         ;; storybook is unable to pass in a comfortable way a complex
@@ -90,6 +91,7 @@
                         :stops gradient-stops}
         image          (:image background)
         format         (if id? "rounded" "square")
+        element-id     (mf/use-id)
 
         class
         (dm/str class " " (stl/css-case
@@ -106,23 +108,26 @@
         (mf/spread-props props {:class class
                                 :on-click on-click
                                 :type button-type
-                                :title (color-title background)})]
+                                :aria-labelledby element-id})]
 
-    [:> element-type props
-     (cond
+    [:> tooltip* {:content (if tooltip-content
+                             tooltip-content
+                             (color-title background))
+                  :id element-id}
+     [:> element-type props
+      (cond
+        (some? gradient-type)
+        [:span {:class (stl/css :swatch-gradient)
+                :style {:background-image (str (uc/gradient->css gradient-data) ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
 
-       (some? gradient-type)
-       [:span {:class (stl/css :swatch-gradient)
-               :style {:background-image (str (uc/gradient->css gradient-data) ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
+        (some? image)
+        (let [uri (cfg/resolve-file-media image)]
+          [:span {:class (stl/css :swatch-image)
+                  :style {:background-image (str/ffmt "url(%)" uri)}}])
 
-       (some? image)
-       (let [uri (cfg/resolve-file-media image)]
-         [:span {:class (stl/css :swatch-image)
-                 :style {:background-image (str/ffmt "url(%)" uri)}}])
-
-       :else
-       [:span {:class (stl/css :swatch-opacity)}
-        [:span {:class (stl/css :swatch-solid-side)
-                :style {:background (uc/color->background (assoc background :opacity 1))}}]
-        [:span {:class (stl/css :swatch-opacity-side)
-                :style {:background (uc/color->background background)}}]])]))
+        :else
+        [:span {:class (stl/css :swatch-opacity)}
+         [:span {:class (stl/css :swatch-solid-side)
+                 :style {:background (uc/color->background (assoc background :opacity 1))}}]
+         [:span {:class (stl/css :swatch-opacity-side)
+                 :style {:background (uc/color->background background)}}]])]]))

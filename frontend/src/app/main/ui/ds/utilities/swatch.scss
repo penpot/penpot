@@ -17,7 +17,7 @@
   --checkerboard-background: repeating-conic-gradient(lightgray 0% 25%, white 0% 50%);
   --checkerboard-size: 0.5rem 0.5rem;
 
-  border: 1px solid var(--border-color);
+  border: $b-1 solid var(--border-color);
   border-radius: var(--border-radius);
   overflow: hidden;
 

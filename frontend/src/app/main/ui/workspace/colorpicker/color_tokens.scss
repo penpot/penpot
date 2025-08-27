@@ -1,0 +1,87 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "../../ds/typography.scss" as t;
+@use "../../ds/_borders.scss" as *;
+@use "../../ds/_sizes.scss" as *;
+
+.color-token-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.color-token-item {
+  --color-token-background: var(--color-background-primary);
+  background-color: var(--color-token-background);
+  color: var(--color-foreground-primary);
+  text-align: left;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-xs);
+  width: 100%;
+  border-radius: $br-8;
+  padding: var(--sp-xs);
+  height: var(--sp-xxl);
+  border: none;
+  cursor: pointer;
+  &:hover {
+    --color-token-background: var(--color-background-tertiary);
+  }
+}
+
+.color-token-selected {
+  background-color: var(--color-background-tertiary);
+}
+
+.color-token-selected-grid {
+  border: $b-1 solid var(--color-accent-primary);
+  border-radius: $br-4;
+  width: fit-content;
+}
+
+.token-selected-icon {
+  color: var(--color-foreground-secondary);
+}
+
+.token-name {
+  @include t.use-typography("body-small");
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.color-tokens-section {
+  max-height: $sz-430;
+  overflow: auto;
+}
+
+.set-actions {
+  display: flex;
+}
+
+.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--sp-xxl), 1fr));
+  justify-items: start;
+  gap: var(--sp-s);
+}
+
+.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.set-title-bar {
+  @include t.use-typography("title-small");
+  text-transform: none;
+}
+
+.search-input {
+  padding: $sz-1;
+}
