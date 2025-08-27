@@ -65,7 +65,7 @@
   (sm/lazy-validator schema:content))
 
 (def schema:position-data
-  [:vector {:min 1 :gen/max 2}
+  [:vector {:min 0 :gen/max 2}
    [:map
     [:x ::sm/safe-number]
     [:y ::sm/safe-number]
