@@ -32,9 +32,11 @@
   If `:token-units` is not in cf/flags, number tokens are excluded."
   [tokens-by-type]
   (let [token-units? (contains? cf/flags :token-units)
+        token-typography-composite-types? (contains? cf/flags :token-typography-composite)
         token-typography-types? (contains? cf/flags :token-typography-types)
         all-types (cond-> dwta/token-properties
                     (not token-units?) (dissoc :number)
+                    (not token-typography-composite-types?) (remove-keys ctt/typography-token-keys)
                     (not token-typography-types?) (remove-keys ctt/ff-typography-keys))
         all-types (-> all-types keys seq)]
     (loop [empty  #js []
