@@ -1768,6 +1768,14 @@ msgstr "Componente principal"
 msgid "inspect.subtitle.variant"
 msgstr "Variante"
 
+#: src/app/main/ui/inspect/right_sidebar.cljs:59
+msgid "inspect.tabs.switcher.label"
+msgstr "Información sobre la capa"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:101
+msgid "inspect.tabs.computed"
+msgstr "Calculado"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Código"
@@ -1823,6 +1831,10 @@ msgstr "Texto"
 #: src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.tabs.info"
 msgstr "Información"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:101
+msgid "inspect.tabs.styles"
+msgstr "Estilos"
 
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"

@@ -131,7 +131,8 @@
     :hide-release-modal
     :subscriptions
     :subscriptions-old
-    :frontend-binary-fills})
+    :frontend-binary-fills
+    :inspect-styles})
 
 (def all-flags
   (set/union email login varia))

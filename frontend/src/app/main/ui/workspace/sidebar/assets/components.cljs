@@ -460,7 +460,7 @@
              (st/emit! (dwu/start-undo-transaction undo-id))
              (run! st/emit!
                    (->> components
-                        (filter #(str/starts-with? (:path %) path))
+                        (filter #(cfh/inside-path? (:path %) path))
                         (map #(dwv/rename-comp-or-variant-and-main
                                (:id %)
                                (cmm/rename-group % path last-path)))))
@@ -491,7 +491,7 @@
              (st/emit! (dwu/start-undo-transaction undo-id))
              (run! st/emit!
                    (->> components
-                        (filter #(str/starts-with? (:path %) path))
+                        (filter #(cfh/inside-path? (:path %) path))
                         (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
@@ -501,7 +501,7 @@
          (fn [path]
            (on-clear-selection)
            (let [comps   (->> components
-                              (filter #(str/starts-with? (:path %) path)))
+                              (filter #(cfh/inside-path? (:path %) path)))
                  ids     (into #{} (map :main-instance-id comps))
                  page-id (->> comps first :main-instance-page)]
 

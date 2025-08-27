@@ -8,15 +8,18 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.types.component :as ctk]
+   [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as i]
    [app.main.ui.inspect.attributes :refer [attributes]]
    [app.main.ui.inspect.code :refer [code]]
    [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
+   [app.main.ui.inspect.styles :refer [styles-tab*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.shape-icon :as usi]
@@ -39,11 +42,13 @@
 (mf/defc right-sidebar
   [{:keys [frame page objects file selected shapes page-id file-id share-id from on-change-section on-expand]
     :or {from :viewer}}]
-  (let [section        (mf/use-state #(do :info))
+  (let [color-space*   (mf/use-state "hex")
+        color-space   (deref color-space*)
+
+        section        (mf/use-state #(if (contains? cf/flags :inspect-styles) :styles :info))
         objects        (or objects (:objects page))
         shapes         (or shapes
                            (resolve-shapes objects selected))
-
         first-shape    (first shapes)
         page-id        (or page-id (:id page))
         file-id        (or file-id (:id file))
@@ -82,20 +87,42 @@
          (fn []
            (dom/open-new-window "https://help.penpot.app/user-guide/inspect/")))
 
+        handle-change-color-space
+        (mf/use-fn
+         (fn [color-space]
+           (reset! color-space* color-space)))
+
+        color-spaces
+        (mf/with-memo []
+          [{:label (tr "inspect.attributes.color.hex")
+            :id "hex"}
+           {:label (tr "inspect.attributes.color.rgba")
+            :id "rgba"}
+           {:label (tr "inspect.attributes.color.hsla")
+            :id "hsla"}])
+
         tabs
         (mf/with-memo []
-          [{:label (tr "inspect.tabs.info")
-            :id "info"}
-           {:label (tr "inspect.tabs.code")
-            :data-testid "code"
-            :id "code"}])]
+          (if (contains? cf/flags :inspect-styles)
+            [{:label (tr "inspect.tabs.styles")
+              :id "styles"}
+             {:label (tr "inspect.tabs.computed")
+              :id "computed"}
+             {:label (tr "inspect.tabs.code")
+              :data-testid "code"
+              :id "code"}]
+            [{:label (tr "inspect.tabs.info")
+              :id "info"}
+             {:label (tr "inspect.tabs.code")
+              :data-testid "code"
+              :id "code"}]))]
 
     (mf/use-effect
      (mf/deps shapes handle-change-tab)
      (fn []
        (if (seq shapes)
          (st/emit! (ptk/event ::ev/event {::ev/name "inspect-mode-click-element"}))
-         (handle-change-tab :info))))
+         (handle-change-tab (if (contains? cf/flags :inspect-styles) :styles :info)))))
 
     [:aside {:class (stl/css-case :settings-bar-right true
                                   :viewer-code (= from :viewer))}
@@ -133,27 +160,63 @@
                 [:div {:class (stl/css :layer-title)} (:name first-shape)]])]])]
 
         [:div {:class (stl/css :inspect-content)}
+         (if (contains? cf/flags :inspect-styles)
+           [:div {:class (stl/css :inspect-tab-switcher)}
+            [:span {:class (stl/css :inspect-tab-switcher-label)} (tr "inspect.tabs.switcher.label")]
+            [:div {:class (stl/css :inspect-tab-switcher-controls)}
+             [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
+              [:> select* {:options color-spaces
+                           :default-selected "hex"
+                           :on-change handle-change-color-space}]]
+             [:div {:class (stl/css :inspect-tab-switcher-controls-tab)}
+              [:> select* {:options tabs
+                           :default-selected (name @section)
+                           :on-change handle-change-tab}]]]]
+           nil)
 
-         [:> tab-switcher* {:tabs tabs
-                            :selected (name @section)
-                            :on-change handle-change-tab
-                            :class (stl/css :viewer-tab-switcher)}
-          (case @section
-            :info
-            [:& attributes {:page-id page-id
-                            :objects objects
-                            :file-id file-id
-                            :frame frame
-                            :shapes shapes
-                            :from from
-                            :libraries libraries
-                            :share-id share-id}]
+         (if (contains? cf/flags :inspect-styles)
+           [:div {:class (stl/css :inspect-tab :viewer-tab-switcher :viewer-tab-switcher-layout)}
+            (case @section
+              :styles
+              [:> styles-tab* {:color-space color-space
+                               :shapes shapes
+                               :libraries libraries
+                               :file-id file-id}]
+              :computed
+              [:& attributes {:page-id page-id
+                              :objects objects
+                              :file-id file-id
+                              :frame frame
+                              :shapes shapes
+                              :from from
+                              :libraries libraries
+                              :share-id share-id}]
 
-            :code
-            [:& code {:frame frame
-                      :shapes shapes
-                      :on-expand handle-expand
-                      :from from}])]]]
+              :code
+              [:& code {:frame frame
+                        :shapes shapes
+                        :on-expand handle-expand
+                        :from from}])]
+           [:> tab-switcher* {:tabs tabs
+                              :selected (name @section)
+                              :on-change handle-change-tab
+                              :class (stl/css :viewer-tab-switcher)}
+            (case @section
+              :info
+              [:& attributes {:page-id page-id
+                              :objects objects
+                              :file-id file-id
+                              :frame frame
+                              :shapes shapes
+                              :from from
+                              :libraries libraries
+                              :share-id share-id}]
+
+              :code
+              [:& code {:frame frame
+                        :shapes shapes
+                        :on-expand handle-expand
+                        :from from}])])]]
        [:div {:class (stl/css :empty)}
         [:div {:class (stl/css :code-info)}
          [:span {:class (stl/css :placeholder-icon)}

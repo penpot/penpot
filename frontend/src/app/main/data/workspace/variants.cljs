@@ -569,57 +569,56 @@
              combine
              (fn [current-page]
                (let [objects       (dsh/lookup-page-objects state current-page)
-                     selected      (or selected
-                                       (->> (dsh/lookup-selected state)
-                                            (cfh/clean-loops objects)
-                                            (remove (fn [id]
-                                                      (let [shape (get objects id)]
-                                                        (or (not (ctc/main-instance? shape))
-                                                            (ctc/is-variant? shape)))))))
-                     shapes        (mapv #(get objects %) selected)
-                     rect          (bounding-rect shapes)
-                     prefix        (->> shapes
-                                        (mapv #(cfh/split-path (:name %)))
-                                        (common-prefix))
-                     ;; When the common parent is root, add a wrapper
-                     add-wrapper?  (= prefix [])
-                     first-shape   (first shapes)
-                     delta         (gpt/point (- (:x rect) (:x first-shape) 30)
-                                              (- (:y rect) (:y first-shape) 30))
-                     common-parent (->> selected
-                                        (mapv #(-> (cfh/get-parent-ids objects %) reverse))
-                                        common-prefix
-                                        last)
-                     index         (-> (get objects common-parent)
-                                       :shapes
-                                       count
-                                       inc)
-                     variant-id    (uuid/next)
-                     undo-id       (js/Symbol)]
+                     selected      (->> (or selected (dsh/lookup-selected state))
+                                        (cfh/clean-loops objects)
+                                        (remove (fn [id]
+                                                  (let [shape (get objects id)]
+                                                    (or (not (ctc/main-instance? shape))
+                                                        (ctc/is-variant? shape))))))]
+                 (when (> (count selected) 1)
+                   (let [shapes        (mapv #(get objects %) selected)
+                         rect          (bounding-rect shapes)
+                         prefix        (->> shapes
+                                            (mapv #(cfh/split-path (:name %)))
+                                            (common-prefix))
+                         ;; When the common parent is root, add a wrapper
+                         add-wrapper?  (empty? prefix)
+                         first-shape   (first shapes)
+                         delta         (gpt/point (- (:x rect) (:x first-shape) 30)
+                                                  (- (:y rect) (:y first-shape) 30))
+                         common-parent (->> selected
+                                            (mapv #(-> (cfh/get-parent-ids objects %) reverse))
+                                            common-prefix
+                                            last)
+                         index         (-> (get objects common-parent)
+                                           :shapes
+                                           count
+                                           inc)
+                         variant-id    (uuid/next)
+                         undo-id       (js/Symbol)]
 
-                 (rx/concat
-                  (if (and page-id (not= current-page page-id))
-                    (rx/of (dcm/go-to-workspace :page-id page-id))
-                    (rx/empty))
+                     (rx/concat
+                      (if (and page-id (not= current-page page-id))
+                        (rx/of (dcm/go-to-workspace :page-id page-id))
+                        (rx/empty))
 
-                  (rx/of (dwu/start-undo-transaction undo-id)
-                         (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false)
-                         (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
-                         (dwsh/update-shapes selected #(-> %
-                                                           (assoc :constraints-h :left)
-                                                           (assoc :constraints-v :top)
-                                                           (assoc :fixed-scroll false)))
-                         (dwsh/relocate-shapes #{variant-id} common-parent index)
-                         (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
-                         (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60)))
+                      (rx/of (dwu/start-undo-transaction undo-id)
+                             (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false)
+                             (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
+                             (dwsh/update-shapes selected #(-> %
+                                                               (assoc :constraints-h :left)
+                                                               (assoc :constraints-v :top)
+                                                               (assoc :fixed-scroll false)))
+                             (dwsh/relocate-shapes #{variant-id} common-parent index)
+                             (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
+                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60)))
 
-                  ;; NOTE: we need to schedule a commit into a
-                  ;; microtask for ensure that all the scheduled
-                  ;; microtask of previous events execute before the
-                  ;; commit
-
-                  (->> (rx/of (dwu/commit-undo-transaction undo-id))
-                       (rx/observe-on :async)))))
+                      ;; NOTE: we need to schedule a commit into a
+                      ;; microtask for ensure that all the scheduled
+                      ;; microtask of previous events execute before the
+                      ;; commit
+                      (->> (rx/of (dwu/commit-undo-transaction undo-id))
+                           (rx/observe-on :async)))))))
 
              redirect-to-page
              (fn [page-id]
