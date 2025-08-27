@@ -17,15 +17,16 @@ const TILE_SIZE_MULTIPLIER: i32 = 2;
 #[repr(u32)]
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum SurfaceId {
-    Target = 0b0_0000_0001,
-    Cache = 0b0_0000_0010,
-    Current = 0b0_0000_0100,
-    Fills = 0b0_0000_1000,
-    Strokes = 0b0_0001_0000,
-    DropShadows = 0b0_0010_0000,
-    InnerShadows = 0b0_0100_0000,
-    UI = 0b0_1000_0000,
-    Debug = 0b1_0000_0000,
+    Target = 0b00_0000_0001,
+    Cache = 0b00_0000_0010,
+    Current = 0b00_0000_0100,
+    CurrentShape = 0b00_0000_1000,
+    Fills = 0b00_0001_0000,
+    Strokes = 0b00_0010_0000,
+    DropShadows = 0b00_0100_0000,
+    InnerShadows = 0b00_1000_0000,
+    UI = 0b01_0000_0000,
+    Debug = 0b10_0000_0000,
 }
 
 pub struct Surfaces {
@@ -34,6 +35,7 @@ pub struct Surfaces {
     cache: skia::Surface,
     // keeps the current render
     current: skia::Surface,
+    current_shape: skia::Surface,
     // keeps the current shape's fills
     shape_fills: skia::Surface,
     // keeps the current shape's strokes
@@ -70,6 +72,7 @@ impl Surfaces {
         let target = gpu_state.create_target_surface(width, height);
         let cache = gpu_state.create_surface_with_dimensions("cache".to_string(), width, height);
         let current = gpu_state.create_surface_with_isize("current".to_string(), extra_tile_dims);
+        let current_shape = gpu_state.create_surface_with_isize("current_shape".to_string(), extra_tile_dims);
         let drop_shadows = gpu_state.create_surface_with_isize("drop_shadows".to_string(), extra_tile_dims);
         let inner_shadows =
             gpu_state.create_surface_with_isize("inner_shadows".to_string(), extra_tile_dims);
@@ -86,6 +89,7 @@ impl Surfaces {
             target,
             cache,
             current,
+            current_shape,
             drop_shadows,
             inner_shadows,
             shape_fills,
@@ -154,6 +158,9 @@ impl Surfaces {
         if ids & SurfaceId::Current as u32 != 0 {
             f(self.get_mut(SurfaceId::Current));
         }
+        if ids & SurfaceId::CurrentShape as u32 != 0 {
+            f(self.get_mut(SurfaceId::CurrentShape));
+        }
         if ids & SurfaceId::Cache as u32 != 0 {
             f(self.get_mut(SurfaceId::Cache));
         }
@@ -194,11 +201,12 @@ impl Surfaces {
     }
 
     #[inline]
-    fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
+    pub fn get_mut(&mut self, id: SurfaceId) -> &mut skia::Surface {
         match id {
             SurfaceId::Target => &mut self.target,
             SurfaceId::Cache => &mut self.cache,
             SurfaceId::Current => &mut self.current,
+            SurfaceId::CurrentShape => &mut self.current_shape,
             SurfaceId::DropShadows => &mut self.drop_shadows,
             SurfaceId::InnerShadows => &mut self.inner_shadows,
             SurfaceId::Fills => &mut self.shape_fills,
@@ -287,10 +295,6 @@ impl Surfaces {
             self.current.width() - TILE_SIZE_MULTIPLIER * self.margins.width,
             self.current.height() - TILE_SIZE_MULTIPLIER * self.margins.height,
         );
-
-
-        // Añadir el contenido de la surface dropShadows
-        // self.draw_into(SurfaceId::DropShadows, SurfaceId::Cache, None);
 
         if let Some(snapshot) = self.current.image_snapshot_with_bounds(rect) {
             self.tiles.add(tile_viewbox, tile, snapshot.clone());
