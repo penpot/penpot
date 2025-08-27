@@ -7,6 +7,7 @@
 (ns app.http.management
   "Internal mangement HTTP API"
   (:require
+   [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
@@ -217,6 +218,12 @@
 
         props
         (assoc props :subscription subscription)]
+
+    (l/dbg :hint "update customer"
+           :profile-id (str id)
+           :subscription-type (get subscription :type)
+           :subscription-status (get subscription :status)
+           :subscription-quantity (get subscription :quantity))
 
     (db/update! cfg :profile
                 {:props (db/tjson props)}
