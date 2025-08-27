@@ -11,6 +11,7 @@
    [app.common.time :as ct]
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.project :as dpj]
@@ -351,6 +352,8 @@
     (mf/with-effect [team-id]
       (st/emit! (dd/fetch-recent-files team-id)
                 (dd/clear-selected-files)))
+
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-projects)
 
     (when (seq projects)
       [:*
