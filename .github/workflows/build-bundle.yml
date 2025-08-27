@@ -10,12 +10,12 @@ on:
         required: true
         default: 'develop'
       build_wasm:
-        description: 'Valid values: yes, no'
+        description: 'BUILD_WASM. Valid values: yes, no'
         type: string
         required: false
         default: 'yes'
       build_storybook:
-        description: 'Valid values: yes, no'
+        description: 'BUILD_STORYBOOK. Valid values: yes, no'
         type: string
         required: false
         default: 'yes'
@@ -27,12 +27,12 @@ on:
         required: true
         default: 'develop'
       build_wasm:
-        description: 'Valid values: yes, no'
+        description: 'BUILD_WASM. Valid values: yes, no'
         type: string
         required: false
         default: 'yes'
       build_storybook:
-        description: 'Valid values: yes, no'
+        description: 'BUILD_STORYBOOK. Valid values: yes, no'
         type: string
         required: false
         default: 'yes'
