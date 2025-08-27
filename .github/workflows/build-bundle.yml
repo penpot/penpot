@@ -43,7 +43,7 @@ jobs:
       - name: Run manage.sh build-bundle from host
         env:
           BUILD_WASM: ${{ inputs.build_wasm }}
-          BUILD_STORYBOOK: ${{ inputs.build_wasm }}
+          BUILD_STORYBOOK: ${{ inputs.build_storybook }}
         run: ./manage.sh build-bundle
 
       - name: Prepare directories for zipping
