@@ -10,13 +10,19 @@ on:
         required: true
         default: 'develop'
       build_wasm:
-        type: boolean
+        type: choice
+        options:
+          - yes
+          - no
         required: false
-        default: true
+        default: 'yes'
       build_storybook:
-        type: boolean
+        type: choice
+        options:
+          - yes
+          - no
         required: false
-        default: true
+        default: 'yes'
   workflow_call:
     inputs:
       gh_ref:
@@ -25,13 +31,19 @@ on:
         required: true
         default: 'develop'
       build_wasm:
-        type: boolean
+        type: choice
+        options:
+          - yes
+          - no
         required: false
-        default: true
+        default: 'yes'
       build_storybook:
-        type: boolean
+        type: choice
+        options:
+          - yes
+          - no
         required: false
-        default: true
+        default: 'yes'
 
 jobs:
   build-bundle:
