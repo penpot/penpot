@@ -395,7 +395,9 @@
                                       (tr "subscription.settings.enterprise.autosave"),
                                       (tr "subscription.settings.enterprise.capped-bill")]
                            :cta-text (tr "subscription.settings.manage-your-subscription")
-                           :cta-link go-to-payments}]
+                           :cta-link go-to-payments
+                           :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
+                           :cta-link-trial go-to-payments}]
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
                            :card-title-icon i/character-e
                            :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
