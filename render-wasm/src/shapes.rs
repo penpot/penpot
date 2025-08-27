@@ -1109,6 +1109,13 @@ impl Shape {
     pub fn has_visible_inner_strokes(&self) -> bool {
         self.visible_strokes().any(|s| s.kind == StrokeKind::Inner)
     }
+
+    pub fn count_visible_inner_strokes(&self) -> usize {
+        self.visible_strokes()
+            .filter(|s| s.kind == StrokeKind::Inner)
+            .count()
+    }
+
     /*
       Returns the list of children taking into account the structure modifiers
     */

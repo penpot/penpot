@@ -22,7 +22,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Blur, BlurType, Corners, Fill, Shadow, Shape, StructureEntry, Type};
+use crate::shapes::{Blur, BlurType, Corners, Fill, Shadow, ShadowStyle, Shape, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
@@ -186,6 +186,7 @@ pub(crate) struct RenderState {
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>,
+    pub nested_shadows: Vec<Vec<Shadow>>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
     pub snapshots: Vec<skia::Image>,
@@ -278,6 +279,7 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             nested_blurs: vec![],
+            nested_shadows: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
             snapshots: vec![],
@@ -849,6 +851,7 @@ impl RenderState {
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_blurs.push(Some(element.blur));
+                self.nested_shadows.push(element.shadows.clone());
             }
             _ => {}
         }
@@ -934,6 +937,7 @@ impl RenderState {
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_blurs.pop();
+                self.nested_shadows.pop();
             }
             _ => {}
         }
@@ -1168,11 +1172,19 @@ impl RenderState {
             //     .canvas(SurfaceId::CurrentShape)
             //     .clear(skia::Color::TRANSPARENT);
 
+
             if !node_render_state.is_root() && self.focus_mode.is_active() {
                 println!(":::: normal render");
                 self.surfaces.canvas(SurfaceId::CurrentShape).clear(skia_safe::Color::TRANSPARENT);
 
-                for shadow in element.drop_shadows().rev().filter(|s| !s.hidden()) {
+                // Concatenate nested shadows to the shape's shadows
+                let mut shadows = element.shadows.clone();
+                if let Some(nested_shadows) = self.nested_shadows.last() {
+                    // shadows.extend(nested_shadows);
+                }
+                
+
+                for shadow in shadows.iter().filter(|shadow| shadow.style() == ShadowStyle::Drop).rev().filter(|s| !s.hidden()) {
                     let mut shadow = *shadow;
                     println!(":::: normal render");
 
