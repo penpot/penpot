@@ -15,6 +15,7 @@
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
@@ -27,17 +28,11 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options*
-  [{:keys [shape file-id shapes-with-children libraries] :as props}]
+  [{:keys [shape shapes-with-children libraries file-id page-id] :as props}]
   (let [shape-id   (dm/get-prop shape :id)
         shape-type (dm/get-prop shape :type)
-
-        ids
-        (mf/with-memo [shape-id]
-          [shape-id])
-
-        shapes
-        (mf/with-memo [shape]
-          [shape])
+        ids        (mf/with-memo [shape-id] [shape-id])
+        shapes     (mf/with-memo [shape] [shape])
 
         stroke-values
         (select-keys shape stroke-attrs)
@@ -160,4 +155,10 @@
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
-     [:& frame-grid {:shape shape}]]))
+     [:& frame-grid {:shape shape}]
+     [:> exports-menu* {:type type
+                        :ids ids
+                        :shapes shapes
+                        :values (select-keys shape exports-attrs)
+                        :page-id page-id
+                        :file-id file-id}]]))

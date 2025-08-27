@@ -159,7 +159,10 @@ export class WorkspacePage extends BaseWebSocketPage {
       "get-profiles-for-file-comments?file-id=*",
       "workspace/get-profile-for-file-comments.json",
     );
-    await this.mockRPC(/get\-file\?/, "workspace/get-file-blank.json");
+    await this.mockRPC(
+      /get\-file\?/,
+      "workspace/get-file-blank.json"
+    );
     await this.mockRPC(
       "get-file-object-thumbnails?file-id=*",
       "workspace/get-file-object-thumbnails-blank.json",

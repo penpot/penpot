@@ -10,6 +10,7 @@
 
 ### :sparkles: New features & Enhancements
 
+- Add efficiency enhancements to right sidebar [Github #7182](https://github.com/penpot/penpot/pull/7182)
 - Add defaults for artboard drawing [Taiga #494](https://tree.taiga.io/project/penpot/us/494?milestone=465047)
 - Continuous display of distances between elements when moving a layer with the keyboard [Taiga #1780](https://tree.taiga.io/project/penpot/us/1780)
 - New Number token - unitless values  [Taiga #10936](https://tree.taiga.io/project/penpot/us/10936)

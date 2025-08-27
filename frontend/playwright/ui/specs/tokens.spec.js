@@ -20,7 +20,10 @@ const setupEmptyTokensFile = async (page) => {
     "workspace/update-file-create-rect.json",
   );
 
-  await workspacePage.goToWorkspace();
+  await workspacePage.goToWorkspace({
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
+  });
 
   const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
   await tokensTabButton.click();
@@ -60,8 +63,8 @@ const setupTokensFile = async (page, options = {}) => {
   );
 
   await workspacePage.goToWorkspace({
-    fileId: "51e13852-1a8e-8037-8005-9e9413a1f1f6",
-    pageId: "51e13852-1a8e-8037-8005-9e9413a1f1f7",
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
   });
 
   const tokensTabButton = page.getByRole("tab", { name: "Tokens" });

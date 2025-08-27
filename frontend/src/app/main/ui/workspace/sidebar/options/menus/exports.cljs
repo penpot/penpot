@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.main.data.exports.assets :as de]
-   [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -26,29 +25,55 @@
   "Shape attrs that corresponds to exports. Used in other namespaces."
   [:exports])
 
-(mf/defc exports-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "page-id" "file-id"]))]}
-  [{:keys [ids type values page-id file-id] :as props}]
-  (let [exports            (:exports values [])
-        has-exports?       (or (= :multiple exports) (some? (seq exports)))
+(defn- check-exports-menu-props
+  [old-props new-props]
+  (and (identical? (unchecked-get old-props "ids")
+                   (unchecked-get new-props "ids"))
+       (identical? (unchecked-get old-props "type")
+                   (unchecked-get new-props "type"))
+       (identical? (unchecked-get old-props "pageId")
+                   (unchecked-get new-props "pageId"))
+       (identical? (unchecked-get old-props "fileId")
+                   (unchecked-get new-props "fileId"))
 
-        comp-state*        (mf/use-state true)
-        open?              (deref comp-state*)
+       ;; NOTE: we explicitly ignore "shapes" prop and use values for
+       ;; track if the "value" changes (checking by value equality);
+       ;; this prevents rerender the component when no real change is
+       ;; made to exports
+       (= (unchecked-get old-props "values")
+          (unchecked-get new-props "values"))))
 
-        toggle-content     (mf/use-fn #(swap! comp-state* not))
+(mf/defc exports-menu*
+  {::mf/wrap [#(mf/memo' % check-exports-menu-props)]}
+  [{:keys [ids type shapes values file-id page-id]}]
 
-        state              (mf/deref refs/export)
-        in-progress?       (:in-progress state)
+  (let [exports (get values :exports [])
+        open*   (mf/use-state true)
+        open?   (deref open*)
 
-        shapes-with-exports (->> (dsh/lookup-shapes @st/state ids)
-                                 (filter #(pos? (count (:exports %)))))
+        state   (mf/deref refs/export)
 
-        sname               (when (seqable? exports)
-                              (let [sname  (-> shapes-with-exports first :name)
-                                    suffix (-> exports first :suffix)]
-                                (cond-> sname
-                                  (and (= 1 (count exports)) (some? suffix))
-                                  (str suffix))))
+        in-progress?
+        (get state :in-progress)
+
+        has-exports?
+        (or (= :multiple exports)
+            (some? (seq exports)))
+
+        toggle-content
+        (mf/use-fn #(swap! open* not))
+
+        shapes-with-exports
+        (mf/with-memo [shapes]
+          (filter (comp seq :exports) shapes))
+
+        sname
+        (when (seqable? exports)
+          (let [sname  (-> shapes-with-exports first :name)
+                suffix (-> exports first :suffix)]
+            (cond-> sname
+              (and (= 1 (count exports)) (some? suffix))
+              (str suffix))))
 
         scale-enabled?
         (mf/use-fn

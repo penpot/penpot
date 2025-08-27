@@ -11,6 +11,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
@@ -22,7 +23,7 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options*
-  [{:keys [shape] :as props}]
+  [{:keys [shape file-id page-id]}]
   (let [id     (dm/get-prop shape :id)
         type   (dm/get-prop shape :type)
         ids    (mf/with-memo [id] [id])
@@ -124,4 +125,13 @@
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
-                    :values (select-keys shape [:blur])}]]))
+                    :values (select-keys shape [:blur])}]
+
+     [:> exports-menu* {:type type
+                        :ids ids
+                        :shapes shapes
+                        :values (select-keys shape exports-attrs)
+                        :page-id page-id
+                        :file-id file-id}]]))
+
+

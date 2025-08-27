@@ -23,7 +23,7 @@
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
-   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
@@ -485,4 +485,9 @@
        [:& blur-menu {:type type :ids blur-ids :values blur-values}])
 
      (when-not (empty? exports-ids)
-       [:& exports-menu {:type type :ids exports-ids :values exports-values :page-id page-id :file-id file-id}])]))
+       [:> exports-menu* {:type type
+                          :ids exports-ids
+                          :shapes shapes
+                          :values exports-values
+                          :page-id page-id
+                          :file-id file-id}])]))

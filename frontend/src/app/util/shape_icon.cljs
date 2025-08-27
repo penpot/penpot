@@ -14,10 +14,11 @@
 (defn- get-bool-icon
   "Returns the icon for a boolean shape"
   [shape]
-  (case (:bool-type shape)
+  (case (get shape :bool-type)
     :difference   "boolean-difference"
     :exclude      "boolean-exclude"
     :intersection "boolean-intersection"
+    :union        "boolean-union"
     nil))
 
 (defn- get-frame-icon

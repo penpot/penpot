@@ -15,7 +15,10 @@ test("BUG 11552 - Apply styles to the current caret", async ({ page }) => {
     "text-editor/update-file-11552.json",
   );
 
-  await workspace.goToWorkspace();
+  await workspace.goToWorkspace({
+    fileId: "238a17e0-75ff-8075-8006-934586ea2230",
+    pageId: "238a17e0-75ff-8075-8006-934586ea2231",
+  });
   await workspace.clickLeafLayer("Lorem ipsum");
   await workspace.clickLeafLayer("Lorem ipsum");
 
