@@ -10,3 +10,5 @@ jobs:
     secrets: inherit
     with:
       gh_ref: "develop"
+      build_wasm: true
+      build_storybook: true

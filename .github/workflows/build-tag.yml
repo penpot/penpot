@@ -11,3 +11,5 @@ jobs:
     secrets: inherit
     with:
       gh_ref: ${{ github.ref_name }}
+      build_wasm: false
+      build_storybook: true

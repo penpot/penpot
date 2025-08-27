@@ -11,11 +11,11 @@ on:
         required: true
       build_wasm:
         type: boolean
-        required: true
+        required: false
         default: true
       build_storybook:
         type: boolean
-        required: true
+        required: false
         default: true
 
 jobs:
