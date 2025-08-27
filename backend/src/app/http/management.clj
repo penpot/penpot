@@ -29,19 +29,40 @@
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid database pool"))
 
+(def ^:private default-system
+  {:name ::default-system
+   :compile
+   (fn [_ _]
+     (fn [handler cfg]
+       (fn [request]
+         (handler cfg request))))})
+
+(def ^:private transaction
+  {:name ::transaction
+   :compile
+   (fn [data _]
+     (when (:transaction data)
+       (fn [handler]
+         (fn [cfg request]
+           (db/tx-run! cfg handler request)))))})
+
 (defmethod ig/init-key ::routes
   [_ cfg]
-  [["/authenticate"
-    {:handler (partial authenticate cfg)
+  ["" {:middleware [[default-system cfg]
+                    [transaction]]}
+   ["/authenticate"
+    {:handler authenticate
      :allowed-methods #{:post}}]
 
    ["/get-customer"
-    {:handler (partial get-customer cfg)
+    {:handler get-customer
+     :transaction true
      :allowed-methods #{:post}}]
 
    ["/update-customer"
-    {:handler (partial update-customer cfg)
-     :allowed-methods #{:post}}]])
+    {:handler update-customer
+     :allowed-methods #{:post}
+     :transaction true}]])
 
 ;; ---- HELPERS
 
@@ -192,7 +213,7 @@
         (-> request :params coerce-update-customer-params)
 
         {:keys [props] :as profile}
-        (cmd.profile/get-profile cfg id)
+        (cmd.profile/get-profile cfg id ::db/for-update true)
 
         props
         (assoc props :subscription subscription)]
