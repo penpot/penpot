@@ -9,6 +9,7 @@
   (:require
    [app.main.data.common :as dcm]
    [app.main.data.dashboard :as dd]
+   [app.main.data.dashboard.shortcuts :as sc]
    [app.main.data.event :as ev]
    [app.main.data.project :as dpj]
    [app.main.refs :as refs]
@@ -182,6 +183,8 @@
     (mf/with-effect [project-id]
       (st/emit! (dpj/fetch-files project-id)
                 (dd/clear-selected-files)))
+
+    (hooks/use-shortcuts ::dashboard sc/shortcuts-drafts-libraries)
 
     [:*
      [:> header* {:team team
