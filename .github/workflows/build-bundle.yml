@@ -31,17 +31,11 @@ on:
         required: true
         default: 'develop'
       build_wasm:
-        type: choice
-        options:
-          - yes
-          - no
+        type: string
         required: false
         default: 'yes'
       build_storybook:
-        type: choice
-        options:
-          - yes
-          - no
+        type: string
         required: false
         default: 'yes'
 
