@@ -84,7 +84,10 @@ const setupTypographyTokensFile = async (page, options = {}) => {
   return setupTokensFile(page, {
     file: "workspace/get-file-typography-tokens.json",
     fileFragment: "workspace/get-file-fragment-typography-tokens.json",
-    flags: ["enable-token-typography-types"],
+    flags: [
+      "enable-token-typography-types",
+      "enable-token-typography-composite",
+    ],
     ...options,
   });
 };
