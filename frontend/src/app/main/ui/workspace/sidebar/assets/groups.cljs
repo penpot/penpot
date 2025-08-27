@@ -58,10 +58,7 @@
                                                         other-path "\u00A0\u2022\u00A0"])
                                                   [:span {:class (stl/css :path)
                                                           :title (when truncated path)}
-                                                   last-path]
-                                                  #_[:span {:class (stl/css :title-menu)
-                                                            :on-click on-context-menu}
-                                                     "aaa"]])}]
+                                                   last-path]])}]
 
         [:& cmm/assets-context-menu
          {:on-close on-close-menu
