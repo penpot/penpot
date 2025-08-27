@@ -821,6 +821,13 @@
   (let [path-split (split-path path)]
     (merge-path-item (first path-split) name)))
 
+(defn inside-path? [child parent]
+  (let [child-path  (split-path child)
+        parent-path (split-path parent)]
+    (and (<= (count parent-path) (count child-path))
+         (= parent-path (take (count parent-path) child-path)))))
+
+
 
 (defn split-by-last-period
   "Splits a string into two parts:
