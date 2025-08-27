@@ -6,6 +6,8 @@
 
 @import "refactor/common-refactor.scss";
 
+$width-settings-bar: $s-276;
+
 .typography-entry {
   display: flex;
   flex-direction: row;
@@ -74,18 +76,16 @@
 .typography-font {
   @include bodySmallTypography;
   @include textEllipsis;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  display: block;
+  align-self: center;
   margin-left: $s-6;
+}
+
+.typography-name {
   color: var(--assets-item-name-foreground-color);
 }
 
 .typography-font {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  min-width: 0;
   color: var(--assets-item-name-foreground-color-rest);
 }
 
@@ -250,6 +250,8 @@
 
 .text-options {
   @include flexColumn;
+  max-width: calc(var(--width, $width-settings-bar) - $s-16);
+
   &:not(.text-options-full-size) {
     position: relative;
   }
@@ -258,8 +260,14 @@
     @extend .asset-element;
     padding: $s-8 0 $s-8 $s-8;
     cursor: pointer;
+
     .name {
       flex-grow: 1;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
     }
     .icon {
       @include flexCenter;
@@ -413,7 +421,9 @@
 
   .label {
     @include bodySmallTypography;
+    @include textEllipsis;
     flex-grow: 1;
+    min-width: 0;
   }
 }
 
