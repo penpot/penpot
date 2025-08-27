@@ -131,9 +131,7 @@
   ;; NOTE: we need to retrieve the profile independently if we use
   ;; it or not for explicit locking and avoid concurrent updates of
   ;; the same row/object.
-  (let [profile (-> (db/get-by-id conn :profile profile-id ::sql/for-update true)
-                    (decode-row))
-
+  (let [profile (get-profile conn profile-id ::db/for-update true)
         ;; Update the profile map with direct params
         profile (-> profile
                     (assoc :fullname fullname)
@@ -143,9 +141,9 @@
     (db/update! conn :profile
                 {:fullname fullname
                  :lang lang
-                 :theme theme
-                 :props (db/tjson (:props profile))}
-                {:id profile-id})
+                 :theme theme}
+                {:id profile-id}
+                {::db/return-keys false})
 
     (-> profile
         (strip-private-attrs)
@@ -228,21 +226,22 @@
 
 (defn- update-notifications!
   [{:keys [::db/conn] :as cfg} {:keys [profile-id dashboard-comments email-comments email-invites]}]
-  (let [profile (get-profile conn profile-id)
+  (let [profile
+        (get-profile conn profile-id ::db/for-update true)
 
         notifications
         {:dashboard-comments dashboard-comments
          :email-comments email-comments
-         :email-invites email-invites}]
+         :email-invites email-invites}
 
-    (db/update!
-     conn :profile
-     {:props
-      (-> (:props profile)
-          (assoc :notifications notifications)
-          (db/tjson))}
-     {:id (:id profile)})
+        props
+        (-> (get profile :props)
+            (assoc :notifications notifications))]
 
+    (db/update! conn :profile
+                {:props (db/tjson props)}
+                {:id profile-id}
+                {::db/return-keys false})
     nil))
 
 ;; --- MUTATION: Update Photo
@@ -411,7 +410,7 @@
 
 (defn update-profile-props
   [{:keys [::db/conn] :as cfg} profile-id props]
-  (let [profile (get-profile conn profile-id ::sql/for-update true)
+  (let [profile (get-profile conn profile-id ::db/for-update true)
         props   (reduce-kv (fn [props k v]
                              ;; We don't accept namespaced keys
                              (if (simple-ident? k)
@@ -424,16 +423,17 @@
 
     (db/update! conn :profile
                 {:props (db/tjson props)}
-                {:id profile-id})
+                {:id profile-id}
+                {::db/return-keys false})
 
     (filter-props props)))
 
 (sv/defmethod ::update-profile-props
   {::doc/added "1.0"
-   ::sm/params schema:update-profile-props}
+   ::sm/params schema:update-profile-props
+   ::db/transaction true}
   [cfg {:keys [::rpc/profile-id props]}]
-  (db/tx-run! cfg (fn [cfg]
-                    (update-profile-props cfg profile-id props))))
+  (update-profile-props cfg profile-id props))
 
 ;; --- MUTATION: Delete Profile
 
@@ -470,6 +470,26 @@
 
     (-> (rph/wrap nil)
         (rph/with-transform (session/delete-fn cfg)))))
+
+(def sql:get-subscription-editors
+  "SELECT DISTINCT
+          p.id,
+          p.fullname AS name,
+          p.email AS email
+     FROM team_profile_rel AS tpr1
+     JOIN team_profile_rel AS tpr2
+       ON (tpr1.team_id = tpr2.team_id)
+     JOIN profile AS p
+       ON (tpr2.profile_id = p.id)
+    WHERE tpr1.profile_id = ?
+      AND tpr1.is_owner IS true
+      AND tpr2.can_edit IS true")
+
+(sv/defmethod ::get-subscription-usage
+  {::doc/added "2.9"}
+  [cfg {:keys [::rpc/profile-id]}]
+  (let [editors (db/exec! cfg [sql:get-subscription-editors profile-id])]
+    {:editors editors}))
 
 ;; --- HELPERS
 

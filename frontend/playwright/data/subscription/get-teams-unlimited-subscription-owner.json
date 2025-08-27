@@ -33,6 +33,7 @@
         "fdata/shape-data-type"
       ]
     },
+    "~:unique-editors": 1,
     "~:permissions": {
       "~:type": "~:owner",
       "~:is-owner": true,

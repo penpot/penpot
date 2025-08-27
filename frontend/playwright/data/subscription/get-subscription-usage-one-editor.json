@@ -1,0 +1,9 @@
+{
+    "~:editors": [
+        {
+            "~:id": "~u4f535993-36f9-8135-8006-9b18345c55cd",
+            "~:name": "Luke Skywalker",
+            "~:email": "luke@rebels.com"
+        }
+    ]
+}
