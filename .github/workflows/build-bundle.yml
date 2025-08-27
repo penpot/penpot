@@ -3,12 +3,27 @@ name: Build and Upload Penpot Bundle
 on:
   # Create bundle from manual action
   workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch'
+        type: string
+        required: true
+        default: 'develop'
+      build_wasm:
+        type: boolean
+        required: false
+        default: true
+      build_storybook:
+        type: boolean
+        required: false
+        default: true
   workflow_call:
     inputs:
       gh_ref:
         description: 'Name of the branch'
         type: string
         required: true
+        default: 'develop'
       build_wasm:
         type: boolean
         required: false
