@@ -259,6 +259,9 @@
 (defn inst
   [s]
   (cond
+    (nil? s)
+    s
+
     (inst? s)
     s
 
