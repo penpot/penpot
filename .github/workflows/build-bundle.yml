@@ -10,17 +10,13 @@ on:
         required: true
         default: 'develop'
       build_wasm:
-        type: choice
-        options:
-          - yes
-          - no
+        description: 'Valid values: yes, no'
+        type: string
         required: false
         default: 'yes'
       build_storybook:
-        type: choice
-        options:
-          - yes
-          - no
+        description: 'Valid values: yes, no'
+        type: string
         required: false
         default: 'yes'
   workflow_call:
@@ -31,10 +27,12 @@ on:
         required: true
         default: 'develop'
       build_wasm:
+        description: 'Valid values: yes, no'
         type: string
         required: false
         default: 'yes'
       build_storybook:
+        description: 'Valid values: yes, no'
         type: string
         required: false
         default: 'yes'
