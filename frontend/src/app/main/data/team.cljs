@@ -16,6 +16,7 @@
    [app.config :as cf]
    [app.main.data.event :as ev]
    [app.main.data.media :as di]
+   [app.main.data.profile :as dp]
    [app.main.features :as features]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -142,8 +143,9 @@
 
 (defn update-member-role
   [{:keys [role member-id] :as params}]
-  (dm/assert! (uuid? member-id))
-  (dm/assert! (contains? ctt/valid-roles role))
+
+  (assert (uuid? member-id))
+  (assert (contains? ctt/valid-roles role))
 
   (ptk/reify ::update-member-role
     ptk/WatchEvent
@@ -152,13 +154,13 @@
             params  (assoc params :team-id team-id)]
         (->> (rp/cmd! :update-team-member-role params)
              (rx/mapcat (fn [_]
-                          (rx/of (fetch-members team-id)
+                          (rx/of (dp/refresh-profile)
+                                 (fetch-members team-id)
                                  (fetch-teams)
-                                 (ptk/data-event ::ev/event
-                                                 {::ev/name "update-team-member-role"
-                                                  :team-id team-id
-                                                  :role role
-                                                  :member-id member-id})))))))))
+                                 (ev/event {::ev/name "update-team-member-role"
+                                            :team-id team-id
+                                            :role role
+                                            :member-id member-id})))))))))
 
 (defn delete-member
   [{:keys [member-id] :as params}]

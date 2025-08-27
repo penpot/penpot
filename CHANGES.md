@@ -31,7 +31,8 @@
 - Fix consistency issues on how font variants are visualized [Taiga #11499](https://tree.taiga.io/project/penpot/us/11499)
 - Fix parsing rx and ry SVG values for rect radius [Taiga #11861](https://tree.taiga.io/project/penpot/issue/11861)
 
-## 2.9.0 (Unreleased)
+
+## 2.9.0
 
 ### :rocket: Epics and highlights
 

@@ -143,16 +143,21 @@
 .members-cta {
   height: fit-content;
   margin-block-start: var(--sp-s);
-  margin-inline-start: $s-68;
-  max-width: $s-200;
+  margin-inline-start: $s-52;
+  max-width: $s-220;
 
   .cta-title {
     line-height: 1.2;
   }
 }
 
-.members-cta-full-width {
-  max-width: $s-1000;
+.dashboard-cta {
+  height: fit-content;
+  margin: var(--sp-l);
+
+  .cta-title {
+    line-height: 1.2;
+  }
 }
 
 .cta-message {

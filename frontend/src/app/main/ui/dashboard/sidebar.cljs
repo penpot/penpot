@@ -27,7 +27,11 @@
    [app.main.ui.dashboard.comments :refer [comments-icon* comments-section]]
    [app.main.ui.dashboard.inline-edition :refer [inline-edition]]
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
-   [app.main.ui.dashboard.subscription :refer [subscription-sidebar* menu-team-icon* get-subscription-type]]
+   [app.main.ui.dashboard.subscription :refer [subscription-sidebar*
+                                               menu-team-icon*
+                                               dashboard-cta*
+                                               show-subscription-dashboard-banner?
+                                               get-subscription-type]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.icons :as i :refer [icon-xref]]
    [app.util.dom :as dom]
@@ -838,7 +842,9 @@
 
     [:*
      (when (contains? cf/flags :subscriptions)
-       [:> subscription-sidebar* {:profile profile}])
+       (if (show-subscription-dashboard-banner? profile)
+         [:> dashboard-cta* {:profile profile}]
+         [:> subscription-sidebar* {:profile profile}]))
 
      ;; TODO remove this block when subscriptions is full implemented
      (when (contains? cf/flags :subscriptions-old)

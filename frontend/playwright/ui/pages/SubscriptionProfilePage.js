@@ -7,8 +7,8 @@ export class SubscriptionProfilePage extends DashboardPage {
 
     await DashboardPage.mockRPC(
       page,
-      "get-owned-teams",
-      "subscription/get-owned-teams.json",
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
     );
   }
 

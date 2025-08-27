@@ -22,6 +22,12 @@ test.describe("Subscriptions: workspace", () => {
       "subscription/get-profile-unlimited-subscription.json",
     );
 
+    await WorkspacePage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
+
     await workspacePage.mockRPC(
       "push-audit-events",
       "workspace/audit-event-empty.json",
@@ -44,6 +50,12 @@ test.describe("Subscriptions: workspace", () => {
       "subscription/get-profile-enterprise-subscription.json",
     );
 
+    await WorkspacePage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
+
     await workspacePage.mockRPC(
       "push-audit-events",
       "workspace/audit-event-empty.json",
@@ -59,6 +71,18 @@ test.describe("Subscriptions: workspace", () => {
   }) => {
     const workspacePage = new WorkspacePage(page);
     await workspacePage.setupEmptyFile();
+
+    await WorkspacePage.mockRPC(
+      page,
+      "get-profile",
+      "subscription/get-profile-enterprise-subscription.json",
+    );
+
+    await WorkspacePage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
+    );
 
     await workspacePage.mockRPC(
       "push-audit-events",
@@ -88,6 +112,12 @@ test.describe("Subscriptions: workspace", () => {
       page,
       "get-profile",
       "subscription/get-profile-unlimited-subscription.json",
+    );
+
+    await WorkspacePage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
     );
 
     await WorkspacePage.mockRPC(
@@ -124,6 +154,12 @@ test.describe("Subscriptions: workspace", () => {
       page,
       "get-profile",
       "subscription/get-profile-enterprise-subscription.json",
+    );
+
+    await WorkspacePage.mockRPC(
+      page,
+      "get-subscription-usage",
+      "subscription/get-subscription-usage.json",
     );
 
     await WorkspacePage.mockRPC(
