@@ -43,7 +43,7 @@
     "~:subscription": {
       "~:type": "unlimited",
       "~:status": "trialing",
-      "~:seats": 5
+      "~:seats": 2
     },
     "~:name": "Second team",
     "~:modified-at": "~m1701164272671",

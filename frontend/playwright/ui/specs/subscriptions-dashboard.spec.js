@@ -215,6 +215,12 @@ test.describe("Subscriptions: team members and invitations", () => {
       "subscription/get-team-members-subscription-member.json",
     );
 
+    await DashboardPage.mockRPC(
+      page,
+      "get-team-stats?team-id=*",
+      "dashboard/get-team-stats.json",
+    );
+
     await dashboardPage.mockRPC(
       "push-audit-events",
       "workspace/audit-event-empty.json",
@@ -299,7 +305,7 @@ test.describe("Subscriptions: team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-subscription-usage",
-      "subscription/get-subscription-usage-one-editor.json",
+      "subscription/get-subscription-usage.json",
     );
 
     await DashboardPage.mockRPC(
@@ -325,7 +331,7 @@ test.describe("Subscriptions: team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-team-members?team-id=*",
-      "subscription/get-team-members-subscription-one-member.json",
+      "subscription/get-team-members-subscription-eight-member.json",
     );
 
     await dashboardPage.mockRPC(
@@ -334,7 +340,9 @@ test.describe("Subscriptions: team members and invitations", () => {
     );
 
     await dashboardPage.goToSecondTeamMembersSection();
-    await expect(page.getByTestId("cta")).toBeVisible();
+
+    const ctas = page.getByTestId("cta");
+    await expect(ctas).toHaveCount(2);
     await expect(
       page.getByText("Inviting people while on the unlimited plan"),
     ).toBeVisible();
@@ -352,7 +360,7 @@ test.describe("Subscriptions: team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-subscription-usage",
-      "subscription/get-subscription-usage-one-editor.json",
+      "subscription/get-subscription-usage.json",
     );
 
     await DashboardPage.mockRPC(
@@ -378,7 +386,7 @@ test.describe("Subscriptions: team members and invitations", () => {
     await DashboardPage.mockRPC(
       page,
       "get-team-members?team-id=*",
-      "subscription/get-team-members-subscription-one-member.json",
+      "subscription/get-team-members-subscription-eight-member.json",
     );
 
     await DashboardPage.mockRPC(
@@ -393,7 +401,9 @@ test.describe("Subscriptions: team members and invitations", () => {
     );
 
     await dashboardPage.goToSecondTeamInvitationsSection();
-    await expect(page.getByTestId("cta")).toBeVisible();
+
+    const ctas = page.getByTestId("cta");
+    await expect(ctas).toHaveCount(2);
     await expect(
       page.getByText("Inviting people while on the unlimited plan"),
     ).toBeVisible();
