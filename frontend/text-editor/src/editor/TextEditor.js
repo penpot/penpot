@@ -517,8 +517,8 @@ export class TextEditor extends EventTarget {
   }
 }
 
-export function createRootFromHTML(html, style) {
-  const fragment = mapContentFragmentFromHTML(html, style);
+export function createRootFromHTML(html, style = undefined) {
+  const fragment = mapContentFragmentFromHTML(html, style || undefined);
   const root = createRoot([], style);
   root.replaceChildren(fragment);
   resetInertElement();
