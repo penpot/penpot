@@ -1,19 +1,19 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
-"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2025-08-29 15:01+0000\n"
+"Last-Translator: Corentin Noël <tintou@noel.tf>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
-msgstr "Avez-vous déjà un compte ?"
+msgstr "Vous avez déjà un compte ?"
 
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:238
 msgid "auth.check-mail"
@@ -23,7 +23,7 @@ msgstr "Vérifiez vos emails"
 #, unused
 msgid "auth.check-your-email"
 msgstr ""
-"Vérifiez votre email et cliquez sur le lien pour vérifier et commencer à "
+"Vérifiez votre e-mail et cliquez sur le lien pour vérifier et commencer à "
 "utiliser Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs:67
@@ -146,8 +146,8 @@ msgstr "Pas encore de compte ?"
 #: src/app/main/ui/auth/register.cljs:351
 msgid "auth.register-account-tagline"
 msgstr ""
-"Faites nous savoir ce que nous devons vous montrer sur le tableau de bord "
-"et dans les emails."
+"Faites nous savoir ce que nous devons vous montrer sur le tableau de bord et "
+"dans les e-mails."
 
 #: src/app/main/ui/auth/register.cljs:350
 msgid "auth.register-account-title"
@@ -1488,7 +1488,7 @@ msgstr "Une erreur inattendue s’est produite."
 
 #: src/app/main/ui/auth/verify_token.cljs:62
 msgid "errors.unexpected-token"
-msgstr "Token inconnu"
+msgstr "Jeton inconnu"
 
 #, unused
 msgid "errors.validation"
@@ -1575,7 +1575,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
-msgstr "Email"
+msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs:102
 msgid "feedback.twitter-go-to"
@@ -7124,11 +7124,11 @@ msgstr "Ajouter un nouveau thème"
 
 #: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:60
 msgid "workspace.tokens.add-set-to-group"
-msgstr "Ajouter le composant à ce groupe"
+msgstr "Ajouter la collection à ce groupe"
 
 #: src/app/main/ui/workspace/tokens/management/group.cljs:113
 msgid "workspace.tokens.add-token"
-msgstr "Ajouter un token : %s"
+msgstr "Ajouter une unité de style : %s"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:161
 msgid "workspace.tokens.applied-to"
@@ -7210,7 +7210,7 @@ msgstr "Modifier l'unité de style"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
-msgstr "La valeur du token doit être renseignée"
+msgstr "La valeur de l'unité de style doit être renseignée"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:540
 msgid "workspace.tokens.enter-token-name"
@@ -7226,7 +7226,7 @@ msgstr "Exporter"
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:125
 msgid "workspace.tokens.export-tokens"
-msgstr "Exporter des tokens"
+msgstr "Exporter des unités de style"
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:118
 msgid "workspace.tokens.export.multiple-files"
@@ -7234,7 +7234,7 @@ msgstr "Plusieurs fichiers"
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:38
 msgid "workspace.tokens.export.no-tokens-themes-sets"
-msgstr "Il n'y a pas de tokens, de thèmes ou de collections à exporter."
+msgstr "Il n'y a pas d'unité de style, de thèmes ou de collections à exporter."
 
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:35
 msgid "workspace.tokens.export.preview"
@@ -7292,11 +7292,11 @@ msgstr ""
 msgid "workspace.tokens.import-single-file"
 msgstr ""
 "Dans un fichier JSON, les clés de premier niveau doivent correspondre aux "
-"noms de collection des tokens."
+"noms de collection des unités de style."
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:236
 msgid "workspace.tokens.import-tokens"
-msgstr "Importer des tokens"
+msgstr "Importer des unités de style"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
 #, unused
@@ -7308,12 +7308,12 @@ msgstr ""
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:246
 msgid "workspace.tokens.import-warning"
 msgstr ""
-"L'importation des tokens va remplacer tous vos tokens, collections et "
-"thèmes actuels."
+"L'importation des unités de style va remplacer toutes vos unités de style, "
+"collections et thèmes actuels."
 
 #: src/app/main/ui/workspace/tokens/management.cljs:141
 msgid "workspace.tokens.inactive-set"
-msgstr "Inactif"
+msgstr "Inactive"
 
 #: src/app/main/ui/workspace/tokens/management.cljs:132
 msgid "workspace.tokens.inactive-set-description"
@@ -7333,27 +7333,29 @@ msgstr ""
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
 msgid "workspace.tokens.invalid-json-token-name"
-msgstr "Erreur lors de l'importation : nom de token non valide au format JSON."
+msgstr ""
+"Erreur lors de l'importation : nom de l'unité de style non valide au format "
+"JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
 msgid "workspace.tokens.invalid-json-token-name-detail"
 msgstr ""
-"« %s » n'est pas un nom de token valide.\n"
-"Les noms de tokens ne doivent pas comporter de lettres et de chiffres "
-"séparés par des caractères « . » et ne doivent pas commencer par le symbole "
-"« $ »."
+"« %s » n'est pas un nom d'unité de style valide.\n"
+"Les noms des unités de style ne doivent pas comporter de lettres et de "
+"chiffres séparés par des caractères « . » et ne doivent pas commencer par le "
+"symbole « $ »."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
 msgid "workspace.tokens.invalid-text-case-token-value"
 msgstr ""
-"Valeur du token non valide : seules les valeurs Aucune, Majuscules, "
-"Minuscules ou Première lettre en capitale sont acceptées"
+"Valeur de l'unité de style non valide : seules les valeurs Aucune, "
+"Majuscules, Minuscules ou Première lettre en capitale sont acceptées"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:85
 msgid "workspace.tokens.invalid-text-decoration-token-value"
 msgstr ""
-"Valeur du token non valide : seules les valeurs Aucune, Souligné et Barré "
-"sont acceptées"
+"Valeur de l'unité de style non valide : seules les valeurs Aucune, Souligné "
+"et Barré sont acceptées"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
@@ -7442,7 +7444,6 @@ msgstr ""
 "ou 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Valeur initiale : %s"
 
@@ -7464,7 +7465,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Erreurs de référence : "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Valeur déduite : %s"
 
@@ -7507,7 +7507,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/settings/menu.cljs:84
 msgid "workspace.tokens.settings"
-msgstr "Paramètres des tokens"
+msgstr "Paramètres des unités de style"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:245
 msgid "workspace.tokens.size"
@@ -7586,7 +7586,7 @@ msgstr "Outils"
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:47
 msgid "workspace.tokens.unknown-token-type-message"
-msgstr "L'importation a réussi. Certains tokens n'ont pas été inclus."
+msgstr "L'importation a réussi. Certaines unités de style n'ont pas été inclus."
 
 #: src/app/main/data/workspace/tokens/import_export.cljs:49
 msgid "workspace.tokens.unknown-token-type-section"
@@ -7602,7 +7602,9 @@ msgstr "Valeur non valide : les unités ne sont pas autorisées."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:563
 msgid "workspace.tokens.warning-name-change"
-msgstr "Si vous renommez ce token, toute référence à son ancien nom sera incorrecte."
+msgstr ""
+"Si vous renommez cette unité de style, toute référence à son ancien nom sera "
+"incorrecte."
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:145
 msgid "workspace.toolbar.assets"
@@ -7933,3 +7935,43 @@ msgstr "Les versions auto-enregistrées seront gardées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr ""
+"Aucune unité de style n'est applicable dans la collection ou le thème actif."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Ouvrir la liste des unités de style"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr ""
+"Cette unité de style n'est pas disponible dans la collection ou le thème "
+"actif."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Détacher l'unité de style"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Aucune correspondance."
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Calculé"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "Styles"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Info sur la couche"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr ""
+"Aucune unité de style, collection ou thème n'ont été trouvés dans ce fichier."
