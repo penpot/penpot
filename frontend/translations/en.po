@@ -1850,12 +1850,8 @@ msgid "inspect.tabs.info"
 msgstr "Info"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:107
-msgid "inspect.tabs.styles"
+msgid "labels.styles"
 msgstr "Styles"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:165
-msgid "inspect.tabs.switcher.label"
-msgstr "Layer info"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:10
 msgid "inspect.tabs.styles.panel.variant"
@@ -1865,45 +1861,21 @@ msgstr "Variant properties"
 msgid "inspect.tabs.styles.panel.token"
 msgstr "Token Sets & Themes"
 
+#: src/app/main/ui/inspect/styles/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Active themes"
+
+#: src/app/main/ui/inspect/styles/tokens_panel.cljs:30
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Active sets"
+
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.geometry"
 msgstr "Size & Position"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.fill"
-msgstr "Fill"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.stroke"
-msgstr "Stroke"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.text"
-msgstr "Text"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.shadow"
-msgstr "Shadow"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.layout"
-msgstr "Layout"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.layout-element"
 msgstr "Layout Element"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.visibility"
-msgstr "Visibility"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.blur"
-msgstr "Blur"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.svg"
-msgstr "SVG"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.toggle-style"
@@ -2634,6 +2606,38 @@ msgstr "YouTube"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
 msgid "labels.variant"
 msgstr "Variant"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.fill"
+msgstr "Fill"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.stroke"
+msgstr "Stroke"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.text"
+msgstr "Text"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.blur"
+msgstr "Blur"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.shadow"
+msgstr "Shadow"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.visibility"
+msgstr "Visibility"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.svg"
+msgstr "SVG"
 
 #: src/app/main/ui/ds/product/loader.cljs:21
 msgid "loader.tips.01.message"

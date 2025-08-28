@@ -1860,7 +1860,7 @@ msgid "inspect.tabs.info"
 msgstr "Información"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:107
-msgid "inspect.tabs.styles"
+msgid "labels.styles"
 msgstr "Estilos"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:10
@@ -1871,45 +1871,21 @@ msgstr "Propiedades de las variantes"
 msgid "inspect.tabs.styles.panel.token"
 msgstr "Sets y temas de tokens"
 
+#: src/app/main/ui/inspect/styles/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.token.active-themes"
+msgstr "Temas activos"
+
+#: src/app/main/ui/inspect/styles/tokens_panel.cljs:30
+msgid "inspect.tabs.styles.panel.token.active-sets"
+msgstr "Sets activos"
+
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.geometry"
 msgstr "Tamaño y posición"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.fill"
-msgstr "Relleno"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.stroke"
-msgstr "Borde"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.text"
-msgstr "Texto"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.shadow"
-msgstr "Sombra"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.layout"
-msgstr "Layout"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.layout-element"
 msgstr "Layout de elemento"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.visibility"
-msgstr "Visibilidad"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.blur"
-msgstr "Desenfoque"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.svg"
-msgstr "SVG"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.toggle-style"
@@ -2624,6 +2600,38 @@ msgstr "Tu cuenta"
 #, unused
 msgid "labels.youtube"
 msgstr "YouTube"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.fill"
+msgstr "Relleno"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.stroke"
+msgstr "Borde"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.text"
+msgstr "Texto"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.blur"
+msgstr "Desenfoque"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.shadow"
+msgstr "Sombra"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.visibility"
+msgstr "Visibilidad"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "labels.svg"
+msgstr "SVG"
 
 #: src/app/main/ui/ds/product/loader.cljs:21
 msgid "loader.tips.01.message"

@@ -1,6 +1,7 @@
 (ns app.main.ui.inspect.styles.style-box
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.i18n :refer [tr]]
@@ -12,15 +13,15 @@
     :variant    (tr "inspect.tabs.styles.panel.variant")
     :token      (tr "inspect.tabs.styles.panel.token")
     :geometry   (tr "inspect.tabs.styles.panel.geometry")
-    :fill       (tr "inspect.tabs.styles.panel.fill")
-    :stroke     (tr "inspect.tabs.styles.panel.stroke")
-    :text       (tr "inspect.tabs.styles.panel.text")
-    :blur       (tr "inspect.tabs.styles.panel.blur")
-    :shadow     (tr "inspect.tabs.styles.panel.shadow")
-    :layout     (tr "inspect.tabs.styles.panel.layout")
+    :fill       (tr "labels.fill")
+    :stroke     (tr "labels.stroke")
+    :text       (tr "labels.text")
+    :blur       (tr "labels.blur")
+    :shadow     (tr "labels.shadow")
+    :layout     (tr "labels.layout")
     :layout-element (tr "inspect.tabs.styles.panel.layout-element")
-    :visibility (tr "inspect.tabs.styles.panel.visibility")
-    :svg        (tr "inspect.tabs.styles.panel.svg")
+    :visibility (tr "labels.visibility")
+    :svg        (tr "labels.svg")
     nil))
 
 (mf/defc style-box*
@@ -43,8 +44,9 @@
     [:article {:class (stl/css :style-box)}
      [:header {:class (stl/css :disclosure-header)}
       [:button {:class (stl/css :disclosure-button)
+                :aria-expanded expanded
+                :aria-controls (str "style-box-" (d/name attribute))
                 :on-click toggle-panel
-                :title (tr "inspect.tabs.styles.panel.toggle-style" title)
                 :aria-label (tr "inspect.tabs.styles.panel.toggle-style" title)}
        [:> icon* {:icon-id (if expanded "arrow-down" "arrow")
                   :class (stl/css :disclosure-icon)
@@ -56,5 +58,5 @@
                           :on-click copy-shorthand
                           :icon "clipboard"}])]
      (when expanded
-       [:div {:class (stl/css :style-box-content) :inert true}
-        [:div {:class (stl/css :style-box-description)} children]])]))
+       [:div {:class (stl/css :style-box-content) :id (str "style-box-" (d/name attribute))}
+        [:div {:class (stl/css :style-box-panel-wrapper)} children]])]))

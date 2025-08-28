@@ -5,6 +5,9 @@
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.tokens-lib :as ctob]
+   [app.main.refs :as refs]
+   [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -36,13 +39,19 @@
         first-shape        (first shapes)
         first-component    (mf/with-memo (ctkl/get-component data (:component-id first-shape)))
         type               (mf/with-memo (get-shape-type shapes first-shape first-component))
-        has-tokens?        (:applied-tokens first-shape)
+
+        ;; Must be reviewed for performance and code clarity
+        tokens-lib         (mf/deref refs/tokens-lib)
+        active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
+        active-sets
+        (mf/with-memo [tokens-lib]
+          (some-> tokens-lib (ctob/get-active-themes-set-names)))
         options            (type->options type)]
-    [:ol {:class (stl/css :styles-tab) :aria-label (tr "inspect.tabs.styles")}
-     (when has-tokens?
-       [:li {:key "token"}
+    [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
+     (when (or active-themes active-sets)
+       [:li
         [:> style-box* {:attribute :token}
-         [:p "Tokens Panel (WIP)"]]])
+         [:> tokens-panel* {:themes active-themes :sets active-sets}]]])
      (for [option options]
        [:li {:key (d/name option)}
         [:> style-box* {:attribute option} color-space]])]))

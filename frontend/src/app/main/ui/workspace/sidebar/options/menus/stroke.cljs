@@ -41,7 +41,7 @@
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")
-                (tr "workspace.options.stroke"))
+                (tr "labels.stroke"))
 
         state*          (mf/use-state true)
         open?           (deref state*)
