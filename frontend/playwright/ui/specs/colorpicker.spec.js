@@ -190,7 +190,7 @@ test("Gradient stops limit", async ({ page }) => {
 
   await workspacePage.goToWorkspace({
     fileId: "c7ce0794-0992-8105-8004-38f280443849",
-    pageId: "66697432-c33d-8055-8006-2c62cc084cad"
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
   });
 
   await workspacePage.clickLeafLayer("Rectangle");

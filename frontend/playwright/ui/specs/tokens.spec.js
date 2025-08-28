@@ -119,7 +119,6 @@ test.describe("Tokens: Tokens Tab", () => {
       .click();
 
     // Create color token with mouse
-
     await expect(tokensUpdateCreateModal).toBeVisible();
 
     const nameField = tokensUpdateCreateModal.getByLabel("Name");

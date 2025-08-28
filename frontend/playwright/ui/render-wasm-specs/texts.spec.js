@@ -12,36 +12,35 @@ test.beforeEach(async ({ page }) => {
 async function mockGetEmojiFont(workspace) {
   await workspace.mockGetAsset(
     /notocoloremoji.*\.ttf$/,
-    "render-wasm/assets/notocoloremojisubset.ttf"
+    "render-wasm/assets/notocoloremojisubset.ttf",
   );
 }
 
 async function mockGetJapaneseFont(workspace) {
   await workspace.mockGetAsset(
     /notosansjp.*\.ttf$/,
-    "render-wasm/assets/notosansjpsubset.ttf"
+    "render-wasm/assets/notosansjpsubset.ttf",
   );
   await workspace.mockGetAsset(
     /notosanssc.*\.ttf$/,
-    "render-wasm/assets/notosansjpsubset.ttf"
+    "render-wasm/assets/notosansjpsubset.ttf",
   );
 }
 
 async function mockGetSymbolsFont(workspace) {
   await workspace.mockGetAsset(
     /notosanssymbols.*\.ttf$/,
-    "render-wasm/assets/notosanssymbolssubset.ttf"
+    "render-wasm/assets/notosanssymbolssubset.ttf",
   );
   await workspace.mockGetAsset(
     /notosanssymbols2.*\.ttf$/,
-    "render-wasm/assets/notosanssymbols2subset.ttf"
+    "render-wasm/assets/notosanssymbols2subset.ttf",
   );
   await workspace.mockGetAsset(
     /notomusic.*\.ttf$/,
-    "render-wasm/assets/notomusicsubset.ttf"
+    "render-wasm/assets/notomusicsubset.ttf",
   );
 }
-
 
 test("Renders a file with texts", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
@@ -139,7 +138,7 @@ test("Renders a file with texts with images", async ({ page }) => {
   await workspace.mockFileMediaAsset(
     [
       "4f89252d-ebbc-813e-8006-8699e4170e17",
-      "4f89252d-ebbc-813e-8006-8699e4170e18"
+      "4f89252d-ebbc-813e-8006-8699e4170e18",
     ],
     "render-wasm/assets/pattern.png",
   );
@@ -156,7 +155,9 @@ test("Renders a file with texts with images", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with texts with emoji and different symbols", async ({ page }) => {
+test("Renders a file with texts with emoji and different symbols", async ({
+  page,
+}) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await mockGetEmojiFont(workspace);
@@ -176,9 +177,7 @@ test("Renders a file with text decoration", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockFileMediaAsset(
-    [
-      "d6c33e7b-7b64-80f3-8006-78509a3a2d21",
-    ],
+    ["d6c33e7b-7b64-80f3-8006-78509a3a2d21"],
     "render-wasm/assets/pattern.png",
   );
   await mockGetEmojiFont(workspace);
@@ -199,7 +198,9 @@ test("Renders a file with emoji and text decoration", async ({ page }) => {
   await workspace.setupEmptyFile();
   await mockGetEmojiFont(workspace);
 
-  await workspace.mockGetFile("render-wasm/get-file-emoji-and-text-decoration.json");
+  await workspace.mockGetFile(
+    "render-wasm/get-file-emoji-and-text-decoration.json",
+  );
 
   await workspace.goToWorkspace({
     id: "82d128e1-d3b1-80a5-8006-ae60fedcd5e7",
@@ -222,11 +223,13 @@ test("Renders a file with multiple emoji", async ({ page }) => {
     pageId: "6bd7c17d-4f59-815e-8006-5e999f38f211",
   });
 
-  await workspace.waitForFirstRender();  
+  await workspace.waitForFirstRender();
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with texts with different alignments", async ({ page }) => {
+test("Renders a file with texts with different alignments", async ({
+  page,
+}) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-file-text-align.json");
@@ -251,12 +254,16 @@ test("Updates text alignment edition - part 1", async ({ page }) => {
   await workspace.waitForFirstRender({ hideUI: false });
   await workspace.clickLeafLayer("Text 1");
 
-  const textOptionsButton = workspace.page.getByTestId("text-align-options-button");
+  const textOptionsButton = workspace.page.getByTestId(
+    "text-align-options-button",
+  );
   const autoWidthButton = workspace.page.getByTitle("Auto width");
   const autoHeightButton = workspace.page.getByTitle("Auto height");
   const alignMiddleButton = workspace.page.getByTitle("Align middle");
   const alignBottomButton = workspace.page.getByTitle("Align bottom");
-  const alignRightButton = workspace.page.getByTitle("Align right (Ctrl+Alt+R)");
+  const alignRightButton = workspace.page.getByTitle(
+    "Align right (Ctrl+Alt+R)",
+  );
 
   await textOptionsButton.click();
 
@@ -276,7 +283,7 @@ test("Updates text alignment edition - part 1", async ({ page }) => {
   await workspace.page.keyboard.press("Escape");
   await workspace.hideUI();
 
-  await expect(workspace.canvas).toHaveScreenshot({timeout: 10000});
+  await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
 });
 
 test("Updates text alignment edition - part 2", async ({ page }) => {
@@ -291,11 +298,15 @@ test("Updates text alignment edition - part 2", async ({ page }) => {
   await workspace.waitForFirstRender({ hideUI: false });
   await workspace.clickLeafLayer("Text 1");
 
-  const textOptionsButton = workspace.page.getByTestId("text-align-options-button");
+  const textOptionsButton = workspace.page.getByTestId(
+    "text-align-options-button",
+  );
   const alignTopButton = workspace.page.getByTitle("Align top");
   const alignMiddleButton = workspace.page.getByTitle("Align middle");
   const alignBottomButton = workspace.page.getByTitle("Align bottom");
-  const alignCenterButton = workspace.page.getByTitle("Align center (Ctrl+Alt+T)");
+  const alignCenterButton = workspace.page.getByTitle(
+    "Align center (Ctrl+Alt+T)",
+  );
   const alignJustifyButton = workspace.page.getByTitle("Justify (Ctrl+Alt+J)");
   const LTRButton = workspace.page.getByTitle("LTR");
   const RTLButton = workspace.page.getByTitle("RTL");
@@ -324,7 +335,7 @@ test("Updates text alignment edition - part 2", async ({ page }) => {
   await workspace.page.keyboard.press("Escape");
   await workspace.hideUI();
 
-  await expect(workspace.canvas).toHaveScreenshot({timeout: 10000});
+  await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
 });
 
 test("Updates text alignment edition - part 3", async ({ page }) => {
@@ -339,13 +350,17 @@ test("Updates text alignment edition - part 3", async ({ page }) => {
   await workspace.waitForFirstRender({ hideUI: false });
   await workspace.clickLeafLayer("Text 1");
 
-  const textOptionsButton = workspace.page.getByTestId("text-align-options-button");
+  const textOptionsButton = workspace.page.getByTestId(
+    "text-align-options-button",
+  );
   const autoWidthButton = workspace.page.getByTitle("Auto width");
   const autoHeightButton = workspace.page.getByTitle("Auto height");
   const alignMiddleButton = workspace.page.getByTitle("Align middle");
   const alignBottomButton = workspace.page.getByTitle("Align bottom");
   const alignLeftButton = workspace.page.getByTitle("Align left (Ctrl+Alt+L)");
-  const alignCenterButton = workspace.page.getByTitle("Align center (Ctrl+Alt+T)");
+  const alignCenterButton = workspace.page.getByTitle(
+    "Align center (Ctrl+Alt+T)",
+  );
   const alignJustifyButton = workspace.page.getByTitle("Justify (Ctrl+Alt+J)");
   const RTLButton = workspace.page.getByTitle("RTL");
 
@@ -375,5 +390,5 @@ test("Updates text alignment edition - part 3", async ({ page }) => {
   await workspace.page.keyboard.press("Escape");
   await workspace.hideUI();
 
-  await expect(workspace.canvas).toHaveScreenshot({timeout: 10000});
+  await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
 });

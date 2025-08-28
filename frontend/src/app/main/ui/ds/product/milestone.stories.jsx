@@ -38,10 +38,16 @@ export default {
     active: false,
     editing: false,
   },
-  render: ({ profileName, profileAvatar, profileColor, createdAt, ...args }) => {
+  render: ({
+    profileName,
+    profileAvatar,
+    profileColor,
+    createdAt,
+    ...args
+  }) => {
     const profile = {
       id: "00000000-0000-0000-0000-000000000000",
-      fullname: profileName
+      fullname: profileName,
     };
 
     if (profileAvatar) {
