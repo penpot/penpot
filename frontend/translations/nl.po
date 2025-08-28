@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
+"PO-Revision-Date: 2025-08-29 15:01+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch "
-"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
+"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
+">\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3630,7 +3630,7 @@ msgstr ""
 
 #: src/app/main/ui/onboarding/team_choice.cljs:36
 msgid "onboarding.team-modal.create-team-feature-1"
-msgstr "Oneindig veel bestanden en projecten"
+msgstr "Onbeperkt veel bestanden en projecten"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:40
 msgid "onboarding.team-modal.create-team-feature-2"
@@ -3642,7 +3642,7 @@ msgstr "Rollenbeheer"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:48
 msgid "onboarding.team-modal.create-team-feature-4"
-msgstr "Oneindig veel leden"
+msgstr "Onbeperkt aantal leden"
 
 #: src/app/main/ui/onboarding/team_choice.cljs:52
 msgid "onboarding.team-modal.create-team-feature-5"
@@ -3674,7 +3674,7 @@ msgstr "Ontkoppelen"
 
 #: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:90, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:376, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:967, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1181, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:206, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:360, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:404, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:415, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:434, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:462, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
 msgid "settings.multiple"
-msgstr "Gemixt"
+msgstr "Gemengd"
 
 #: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:283
 msgid "settings.remove-color"
@@ -4401,8 +4401,9 @@ msgstr "Unlimited-abonnement"
 #, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
-"Krijg extra editors, meer back-up, onbeperkte opslag en meer. [Kijk eens "
-"naar het Enterprise-abonnement.|target:self](%s)"
+"Krijg onbeperkte opslag, uitgebreid bestandsherstel en onbeperkte editors "
+"voor al je teams tegen een vaste prijs. "
+"[Kijk eens naar het Enterprise-abonnement.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4538,9 +4539,8 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Je bent %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "Je hebt ons gesteund met dit abonnement sinds: %s"
+msgstr "Je hebt ons sinds %s gesteund met dit abonnement"
 
 #: src/app/main/ui/settings/subscription.cljs:443, src/app/main/ui/settings/subscription.cljs:457
 msgid "subscription.settings.try-it-free"
@@ -4556,7 +4556,7 @@ msgstr "Unlimited (proef)"
 
 #: src/app/main/ui/settings/subscription.cljs:370, src/app/main/ui/settings/subscription.cljs:382, src/app/main/ui/settings/subscription.cljs:442
 msgid "subscription.settings.unlimited.bill"
-msgstr "Gemaximeerde maandelijkse rekening"
+msgstr "Maandelijkse rekening van max. $175"
 
 #: src/app/main/ui/dashboard/subscription.cljs:147, src/app/main/ui/workspace/main_menu.cljs:933
 msgid "subscription.workspace.header.menu.option.power-up"
@@ -5099,7 +5099,7 @@ msgstr "Hulp & informatie"
 #: src/app/main/ui/workspace/main_menu.cljs:916
 #, unused
 msgid "workspace.header.menu.option.power-up"
-msgstr "Geef je plan een boost"
+msgstr "Geef je abonnement een tandje erbij"
 
 #: src/app/main/ui/workspace/main_menu.cljs:894
 msgid "workspace.header.menu.option.preferences"
@@ -7505,7 +7505,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "De dekking moet tussen 0 en 100% of 0 en 1 zijn (bijv. 50% of 0,5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Oorspronkelijke waarde: %s"
 
@@ -7527,7 +7526,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Referentie fouten: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Opgeloste waarde: %s"
 
@@ -7603,7 +7601,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Lijst met thema's"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:589, src/app/main/ui/workspace/tokens/management/create/form.cljs:590
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beschrijving"
 
@@ -8002,3 +7999,162 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Geen tokens van toepassing in actieve verzamelingen of thema's."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Dit token is niet beschikbaar in een actieve verzameling of thema."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Geen overeenkomsten gevonden."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Lijst met tokens openen"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Token loskoppelen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Berekend"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "Stijlen"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Laaginfo"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:591
+msgid "labels.mixed-values"
+msgstr "Gemengd"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr ""
+"Krijg extra opslag, bestandsherstel en meer voor je teams met het Unlimited-"
+"abonnement. [Tandje erbij!|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Je hebt %s-editors voor de teams in jouw beheer, terwijl jouw professionele "
+"abonnement maximaal 8 toestaat."
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"Upgrade nu naar Unlimited of Enterprise om meer editors, opslag en "
+"bestandsherstel te ontgrendelen. [Abonneer nu.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"Je team blijft groeien! Je Unlimited-abonnement dekt maximaal %s editors, "
+"maar je hebt er nu %s."
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"Upgrade nu om overeen te komen met je huidige aantal editors. "
+"[Neem nu een abonnement.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Alleen nieuwe editors in jouw eigen teams tellen mee voor toekomstige "
+"facturering. Voor 25+ editors geldt nog steeds een bedrag van $175/maand."
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Mensen uitnodigen bij het Unlimited-abonnement"
+
+#: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "Onbeperkte opslag"
+
+#: src/app/main/ui/settings/subscription.cljs:184
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"Tip: Je kunt het aantal gebruikers nu verhogen om uitnodigingen te blijven "
+"doen. Bij 25+ editors van verschillende teams geniet je van een vaste prijs "
+"van $175/maand."
+
+#: src/app/main/ui/settings/subscription.cljs:361, src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "Onbeperkte teams. Maximaal 8 editors in je eigen teams."
+
+#: src/app/main/ui/settings/subscription.cljs:369, src/app/main/ui/settings/subscription.cljs:381, src/app/main/ui/settings/subscription.cljs:441
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "30-dagen automatisch opgeslagen versies en bestandsherstel"
+
+#: src/app/main/ui/settings/subscription.cljs:368, src/app/main/ui/settings/subscription.cljs:380, src/app/main/ui/settings/subscription.cljs:440
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25GB opslag"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "Momenteel heb je % s persoon in je teams die kan bewerken."
+msgstr[1] "Momenteel heb je % s persoen in je teams die kunnen bewerken."
+
+#: src/app/main/ui/settings/subscription.cljs:133
+msgid "subscription.settings.management.dialog.editors"
+msgstr "Editors"
+
+#: src/app/main/ui/settings/subscription.cljs:138
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr "(Eigenaren, beheerder en redacteuren. Kijkers tellen niet als Editors)"
+
+#: src/app/main/ui/settings/subscription.cljs:181
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Je kunt niet minder editors instellen dan nu. Wijzig de rol (editor/admin "
+"naar viewer) voor mensen die bestanden niet daadwerkelijk bewerken in de "
+"teaminstellingen."
+
+#: src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:427
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "7-dagen automatische versies en bestandsherstel"
+
+#: src/app/main/ui/settings/subscription.cljs:359, src/app/main/ui/settings/subscription.cljs:426
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10GB opslag"
+
+#: src/app/main/ui/settings/subscription.cljs:238
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "Bedankt voor het kiezen van het Penpot %s-abonnement!"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:80
+msgid "workspace.assets.component-group-options"
+msgstr "Componentgroep opties"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:486
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"Dit onderdeel heeft varianten met ongeldige namen. Zorg ervoor dat elke "
+"variant de juiste structuur volgt."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:489
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Ongeldige varianten zoeken"
+
+#: src/app/main/data/workspace/tokens/application.cljs:366
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Fout bij instellen van lettertype gewicht/stijl. Deze lettertypestijl "
+"bestaat niet in het huidige lettertype"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Ongeldige waarde: % is niet toegestaan."
