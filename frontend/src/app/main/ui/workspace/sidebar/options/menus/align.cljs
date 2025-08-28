@@ -16,7 +16,8 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc align-options
+(mf/defc align-options*
+  {::mf/memo true}
   []
   (let [selected            (mf/deref refs/selected-shapes)
         ;; don't need to watch objects, only read the value

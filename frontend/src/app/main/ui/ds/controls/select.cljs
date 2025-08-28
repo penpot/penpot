@@ -20,8 +20,9 @@
 
 (defn get-option
   [options id]
-  (or (d/seek #(= id (get % :id)) options)
-      (nth options 0)))
+  (let [options (if (delay? options) @options options)]
+    (or (d/seek #(= id (get % :id)) options)
+        (nth options 0))))
 
 (defn- get-selected-option-id
   [options default]

@@ -9,14 +9,16 @@
   (:require
    [app.common.attrs :as attrs]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.component :as ctk]
    [app.common.types.path :as path]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.weak :as weak]
    [app.main.refs :as refs]
-   [app.main.ui.hooks :as hooks]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
@@ -202,10 +204,6 @@
   applies (some of them ignore some attributes)"
   [shapes objects attr-group]
   (let [attrs (group->attrs attr-group)
-
-        default-text-attrs
-        (txt/get-default-text-attrs)
-
         merge-attrs
         (fn [v1 v2]
           (cond
@@ -213,8 +211,21 @@
             (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
             :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
 
+        merge-token-values
+        (fn [acc keys attrs]
+          (reduce
+           (fn [accum key]
+             (let [new-val (get attrs key)
+                   existing (get accum key ::not-found)]
+               (cond
+                 (= existing ::not-found) (assoc accum key new-val)
+                 (= existing new-val)     accum
+                 :else                    (assoc accum key :multiple))))
+           acc
+           keys))
+
         extract-attrs
-        (fn [[ids values] {:keys [id type] :as shape}]
+        (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
           (let [read-mode      (get-in type->read-mode [type attr-group])
                 editable-attrs (filter (get editable-attrs (:type shape)) attrs)]
             (case read-mode
@@ -228,144 +239,192 @@
                                   (into {} (map #(vector % nil)) editable-attrs)
                                   (cond
                                     (= attr-group :measure) (select-measure-keys shape)
-                                    :else (select-keys shape editable-attrs)))]
+                                    :else (select-keys shape editable-attrs)))
+                    new-token-acc (merge-token-values token-acc editable-attrs applied-tokens)]
                 [(conj ids id)
-                 (merge-attrs values shape-values)])
+                 (merge-attrs values shape-values)
+                 new-token-acc])
 
               :text
               (let [shape-attrs (select-keys shape attrs)
 
                     content-attrs
-                    (attrs/get-text-attrs-multi shape default-text-attrs attrs)
+                    (attrs/get-text-attrs-multi shape txt/default-text-attrs attrs)
 
                     new-values
                     (-> values
                         (merge-attrs shape-attrs)
-                        (merge-attrs content-attrs))]
+                        (merge-attrs content-attrs))
+
+                    new-token-acc (merge-token-values token-acc content-attrs applied-tokens)]
                 [(conj ids id)
-                 new-values])
+                 new-values
+                 new-token-acc])
 
               :children
               (let [children (->> (:shapes shape []) (map #(get objects %)))
                     [new-ids new-values] (get-attrs* children objects attr-group)]
-                [(d/concat-vec ids new-ids) (merge-attrs values new-values)])
+                [(d/concat-vec ids new-ids) (merge-attrs values new-values) {}])
 
               [])))]
 
-    (reduce extract-attrs [[] []] shapes)))
+    (reduce extract-attrs [[] {} {}] shapes)))
 
-(def get-attrs (memoize get-attrs*))
-
-(defn basic-shape [_ shape]
-  (cond-> shape
-    :always
-    (dissoc :selrect :points :x :y :width :height :transform :transform-inverse :rotation :svg-transform :svg-viewbox :thumbnail)
-
-    (= (:type shape) :path)
-    (dissoc :content)))
+(def get-attrs
+  (weak/memoize get-attrs*))
 
 (defn- is-bool-descendant?
-  [[_ shape] objects selected-shape-ids]
+  [objects selected-shape-ids shape]
 
   (let [parent-id (:parent-id shape)
         parent (get objects parent-id)]
     (cond
-      (nil? shape) false                                                   ;; failsafe
-      (contains? selected-shape-ids (:id shape)) false                     ;; if it is one of the selected shapes, it is considerer not a bool descendant
-      (= :bool (:type parent)) true                                        ;; if its parent is of type bool, it is a bool descendant
+      (nil? shape) false                                              ;; failsafe
+      (contains? selected-shape-ids (:id shape)) false                ;; if it is one of the selected shapes, it is considerer not a bool descendant
+      (= :bool (:type parent)) true                                   ;; if its parent is of type bool, it is a bool descendant
       :else (recur [parent-id parent] objects selected-shape-ids))))  ;; else, check its parent
 
-(mf/defc options
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes" "shapes-with-children" "page-id" "file-id"]))]
-   ::mf/wrap-props false}
-  [props]
-  (let [shapes               (unchecked-get props "shapes")
-        shapes-with-children (unchecked-get props "shapes-with-children")
+(defn- check-options-props
+  [new-props old-props]
+  (and (= (unchecked-get new-props "shapes")
+          (unchecked-get old-props "shapes"))
+       (= (unchecked-get new-props "shapesWithChildren")
+          (unchecked-get old-props "shapesWithChildren"))
+       (= (unchecked-get new-props "pageId")
+          (unchecked-get old-props "pageId"))
+       (= (unchecked-get new-props "fileId")
+          (unchecked-get old-props "fileId"))))
 
-        ;; remove children from bool shapes
-        shape-ids (into #{} (map :id) shapes)
+(mf/defc options*
+  {::mf/wrap [#(mf/memo' % check-options-props)]}
+  [{:keys [shapes shapes-with-children page-id file-id libraries] :as props}]
+  (let [shape-ids
+        (mf/with-memo [shapes]
+          (into #{} d/xf:map-id shapes))
 
-        objects (->> shapes-with-children (group-by :id) (d/mapm (fn [_ v] (first v))))
+        is-layout-child-ref
+        (mf/with-memo [shape-ids]
+          (refs/is-layout-child? shape-ids))
+
+        is-layout-child?
+        (mf/deref is-layout-child-ref)
+
+        is-flex-parent-ref
+        (mf/with-memo [shape-ids]
+          (refs/flex-layout-child? shape-ids))
+
+        is-flex-parent?
+        (mf/deref is-flex-parent-ref)
+
+        is-grid-parent-ref
+        (mf/with-memo [shape-ids]
+          (refs/grid-layout-child? shape-ids))
+
+        is-grid-parent?
+        (mf/deref is-grid-parent-ref)
+
+        has-flex-layout-container?
+        (some ctl/flex-layout? shapes)
+
+        all-layout-child-ref
+        (mf/with-memo [shape-ids]
+          (refs/all-layout-child? shape-ids))
+
+        all-layout-child?
+        (mf/deref all-layout-child-ref)
+
+        all-flex-layout-container?
+        (mf/with-memo [shapes]
+          (every? ctl/flex-layout? shapes))
+
+        show-caps?
+        (mf/with-memo [shapes]
+          (some #(and (cfh/path-shape? %)
+                      (path/shape-with-open-path? %))
+                shapes))
+
+        has-text?
+        (mf/with-memo [shapes]
+          (some cfh/text-shape? shapes))
+
         objects
-        (into {}
-              (filter #(not (is-bool-descendant? % objects shape-ids)))
-              objects)
+        (mf/with-memo [shapes-with-children]
+          (let [objects (d/index-by :id shapes-with-children)]
+            (reduce-kv (fn [objects id object]
+                         (if (is-bool-descendant? objects shape-ids object)
+                           (dissoc objects id)
+                           objects))
+                       objects
+                       objects)))
 
-        workspace-modifiers (mf/deref refs/workspace-modifiers)
-        shapes (map #(gsh/transform-shape % (get-in workspace-modifiers [(:id %) :modifiers])) shapes)
+        [layer-ids layer-values]
+        (get-attrs shapes objects :layer)
 
-        page-id (unchecked-get props "page-id")
-        file-id (unchecked-get props "file-id")
-        shared-libs (unchecked-get props "libraries")
+        [text-ids text-values]
+        (get-attrs shapes objects :text)
 
-        show-caps (some #(and (= :path (:type %)) (path/shape-with-open-path? %)) shapes)
+        [constraint-ids constraint-values]
+        (get-attrs shapes objects :constraint)
 
-        ;; Selrect/points only used for measures and it's the one that changes the most. We separate it
-        ;; so we can memoize it
-        objects-no-measures (->> objects (d/mapm basic-shape))
-        objects-no-measures (hooks/use-equal-memo objects-no-measures)
+        [fill-ids fill-values]
+        (get-attrs shapes objects :fill)
+
+        [shadow-ids shadow-values]
+        (get-attrs shapes objects :shadow)
+
+        [blur-ids blur-values]
+        (get-attrs shapes objects :blur)
+
+        [stroke-ids stroke-values]
+        (get-attrs shapes objects :stroke)
+
+        [exports-ids exports-values]
+        (get-attrs shapes objects :exports)
+
+        [layout-container-ids layout-container-values]
+        (get-attrs shapes objects :layout-container)
+
+        [layout-item-ids layout-item-values {}]
+        (get-attrs shapes objects :layout-item)
+
+        components
+        (mf/with-memo [shapes]
+          (not-empty (filter ctk/instance-head? shapes)))
+
+        workspace-modifiers
+        (mf/deref refs/workspace-modifiers)
+
+        shapes
+        (mf/with-memo [workspace-modifiers shapes]
+          (into []
+                (map (fn [shape]
+                       (let [shape-id  (dm/get-prop shape :id)
+                             modifiers (dm/get-in workspace-modifiers [shape-id :modifiers])]
+                         (gsh/transform-shape shape modifiers))))
+                shapes))
 
         type :multiple
-        all-types (into #{} (map :type shapes))
 
-        ids (->> shapes (map :id))
-        is-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/is-layout-child? ids))
-        is-layout-child? (mf/deref is-layout-child-ref)
-
-        is-flex-parent-ref (mf/use-memo (mf/deps ids) #(refs/flex-layout-child? ids))
-        is-flex-parent? (mf/deref is-flex-parent-ref)
-
-        is-grid-parent-ref (mf/use-memo (mf/deps ids) #(refs/grid-layout-child? ids))
-        is-grid-parent? (mf/deref is-grid-parent-ref)
-
-        has-text? (contains? all-types :text)
-
-        has-flex-layout-container? (->> shapes (some ctl/flex-layout?))
-
-        all-layout-child-ref (mf/use-memo (mf/deps ids) #(refs/all-layout-child? ids))
-        all-layout-child? (mf/deref all-layout-child-ref)
-
-        all-flex-layout-container? (->> shapes (every? ctl/flex-layout?))
-
-        [measure-ids    measure-values]    (get-attrs shapes objects :measure)
-
-        [layer-ids            layer-values
-         text-ids             text-values
-         constraint-ids       constraint-values
-         fill-ids             fill-values
-         shadow-ids           shadow-values
-         blur-ids             blur-values
-         stroke-ids           stroke-values
-         exports-ids          exports-values
-         layout-container-ids layout-container-values
-         layout-item-ids      layout-item-values]
-        (mf/use-memo
-         (mf/deps shapes objects-no-measures)
-         (fn []
-           (into
-            []
-            (mapcat identity)
-            [(get-attrs shapes objects-no-measures :layer)
-             (get-attrs shapes objects-no-measures :text)
-             (get-attrs shapes objects-no-measures :constraint)
-             (get-attrs shapes objects-no-measures :fill)
-             (get-attrs shapes objects-no-measures :shadow)
-             (get-attrs shapes objects-no-measures :blur)
-             (get-attrs shapes objects-no-measures :stroke)
-             (get-attrs shapes objects-no-measures :exports)
-             (get-attrs shapes objects-no-measures :layout-container)
-             (get-attrs shapes objects-no-measures :layout-item)])))
-
-        components (filter ctk/instance-head? shapes)]
+        ;; NOTE: we only need transformed shapes for the measure menu,
+        ;; the rest of menus can live with shapes not transformed; we
+        ;; also don't use the memoized version of get-attrs because it
+        ;; makes no sense because the shapes object are changed on
+        ;; each rerender.
+        [measure-ids measure-values]
+        (get-attrs* shapes objects :measure)]
 
     [:div {:class (stl/css :options)}
      (when-not (empty? layer-ids)
        [:& layer-menu {:type type :ids layer-ids :values layer-values}])
 
      (when-not (empty? measure-ids)
-       [:> measures-menu* {:type type :all-types all-types :ids measure-ids :values measure-values :shape shapes}])
+       [:> measures-menu*
+        {:type type
+         :ids measure-ids
+         :values measure-values
+         :shapes shapes}])
 
-     (when-not (empty? components)
+     (when (some? components)
        [:& component-menu {:shapes components}])
 
      [:& layout-container-menu
@@ -394,15 +453,18 @@
        [:> fill/fill-menu* {:type type :ids fill-ids :values fill-values}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :show-caps show-caps :values stroke-values
+       [:& stroke-menu {:type type
+                        :ids stroke-ids
+                        :show-caps show-caps?
+                        :values stroke-values
                         :disable-stroke-style has-text?}])
 
      (when-not (empty? shapes)
        [:> color-selection-menu*
         {:file-id file-id
          :type type
-         :shapes (vals objects-no-measures)
-         :libraries shared-libs}])
+         :shapes shapes
+         :libraries libraries}])
 
      (when-not (empty? shadow-ids)
        [:> shadow-menu* {:type type

@@ -144,16 +144,12 @@
                          :on-click open-settings-modal}])]))
 
 (mf/defc tokens-sidebar-tab*
-  {::mf/wrap [mf/memo]}
-  []
+  [{:keys [tokens-lib] :as props}]
   (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
-        (use-resize-hook :tokens 200 38 "0.6" :y false nil)
-
-        tokens-lib
-        (mf/deref refs/tokens-lib)]
+        (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
 
     [:div {:class (stl/css :sidebar-wrapper)}
      [:> token-management-section*
@@ -166,5 +162,5 @@
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}
        [:div {:class (stl/css :resize-handle-horiz)}]]
-      [:> tokens-section* {:tokens-lib tokens-lib}]]
+      [:> tokens-section* props]]
      [:> import-export-button*]]))

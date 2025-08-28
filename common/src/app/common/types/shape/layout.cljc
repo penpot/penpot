@@ -517,7 +517,7 @@
   ([objects id]
    (item-absolute? (get objects id)))
   ([shape]
-   (true? (:layout-item-absolute shape))))
+   (true? (get shape :layout-item-absolute))))
 
 (defn position-absolute?
   ([objects id]
