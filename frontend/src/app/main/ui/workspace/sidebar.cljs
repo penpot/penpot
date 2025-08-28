@@ -138,7 +138,7 @@
                 :id "layers"}
                {:label (tr "workspace.toolbar.assets")
                 :id "assets"}
-               {:label "Tokens"
+               {:label (tr "workspace.toolbar.tokens")
                 :id "tokens"}]
               [{:label (tr "workspace.sidebar.layers")
                 :id "layers"}

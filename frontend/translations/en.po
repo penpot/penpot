@@ -7825,6 +7825,10 @@ msgstr "Typographies (%s)"
 msgid "workspace.toolbar.toggle-toolbar"
 msgstr "Toggle toolbar"
 
+#: src/app/main/ui/workspace/sidebar.cljs:141
+msgid "workspace.toolbar.tokens"
+msgstr "Tokens"
+
 #: src/app/main/ui/workspace/viewport/top_bar.cljs:39
 msgid "workspace.top-bar.read-only.done"
 msgstr "Done"
