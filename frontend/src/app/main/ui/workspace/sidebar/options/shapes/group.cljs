@@ -17,7 +17,7 @@
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
-   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [measures-menu*]]
@@ -106,7 +106,9 @@
         (get-attrs shapes objects :layout-item)]
 
     [:div {:class (stl/css :options)}
-     [:& layer-menu {:type type :ids layer-ids :values layer-values}]
+     [:> layer-menu* {:type type
+                      :ids layer-ids
+                      :values layer-values}]
      [:> measures-menu* {:type type
                          :ids measure-ids
                          :values measure-values
