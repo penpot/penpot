@@ -694,6 +694,7 @@
 }
 
 .variant-property-name {
+  color: var(--color-foreground-secondary);
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
