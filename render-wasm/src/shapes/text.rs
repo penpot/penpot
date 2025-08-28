@@ -120,8 +120,7 @@ impl TextContent {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             for leaf in &paragraph.children {
-                let text_style =
-                    leaf.to_style(paragraph, &self.bounds, fallback_fonts, blur, blur_mask);
+                let text_style = leaf.to_style(&self.bounds, fallback_fonts, blur, blur_mask);
                 let text = leaf.apply_text_transform();
                 builder.push_style(&text_style);
                 builder.add_text(&text);
@@ -169,13 +168,8 @@ impl TextContent {
                         ParagraphBuilder::new(&paragraph_style, fonts)
                     });
                     let stroke_paint = stroke_paint.clone();
-                    let stroke_style = leaf.to_stroke_style(
-                        paragraph,
-                        &stroke_paint,
-                        fallback_fonts,
-                        blur,
-                        blur_mask,
-                    );
+                    let stroke_style =
+                        leaf.to_stroke_style(&stroke_paint, fallback_fonts, blur, blur_mask);
                     builder.push_style(&stroke_style);
                     builder.add_text(&text);
                 }
@@ -320,14 +314,12 @@ impl Paragraph {
             3 => skia::textlayout::TextAlign::Justify,
             _ => skia::textlayout::TextAlign::Left,
         });
-        style.set_height(self.line_height);
         style.set_text_direction(match self.text_direction {
             0 => skia::textlayout::TextDirection::LTR,
             1 => skia::textlayout::TextDirection::RTL,
             _ => skia::textlayout::TextDirection::LTR,
         });
 
-        // Force minimum line height for empty lines using strut style
         if !self.children.is_empty() {
             let reference_child = self
                 .children
@@ -336,13 +328,21 @@ impl Paragraph {
                 .unwrap_or(&self.children[0]);
 
             let mut strut_style = skia::textlayout::StrutStyle::default();
+            let line_height = self.line_height.max(1.0);
             strut_style.set_font_size(reference_child.font_size);
-            strut_style.set_height(self.line_height);
+            strut_style.set_height(line_height);
             strut_style.set_height_override(true);
-            strut_style.set_half_leading(false);
-            strut_style.set_leading(0.0);
+            strut_style.set_half_leading(true);
             strut_style.set_strut_enabled(true);
             strut_style.set_force_strut_height(true);
+
+            let font_families = vec![
+                reference_child.serialized_font_family(),
+                default_font(),
+                DEFAULT_EMOJI_FONT.to_string(),
+            ];
+            strut_style.set_font_families(&font_families);
+
             style.set_strut_style(strut_style);
         }
 
@@ -404,7 +404,6 @@ impl TextLeaf {
 
     pub fn to_style(
         &self,
-        paragraph: &Paragraph,
         content_bounds: &Rect,
         fallback_fonts: &HashSet<String>,
         _blur: Option<&ImageFilter>,
@@ -420,8 +419,6 @@ impl TextLeaf {
         style.set_foreground_paint(&paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
-        style.set_height(paragraph.line_height);
-        style.set_height_override(true);
         style.set_half_leading(false);
 
         style.set_decoration_type(match self.text_decoration {
@@ -449,13 +446,12 @@ impl TextLeaf {
 
     pub fn to_stroke_style(
         &self,
-        paragraph: &Paragraph,
         stroke_paint: &Paint,
         fallback_fonts: &HashSet<String>,
         blur: Option<&ImageFilter>,
         blur_mask: Option<&MaskFilter>,
     ) -> skia::textlayout::TextStyle {
-        let mut style = self.to_style(paragraph, &Rect::default(), fallback_fonts, blur, blur_mask);
+        let mut style = self.to_style(&Rect::default(), fallback_fonts, blur, blur_mask);
         style.set_foreground_paint(stroke_paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);

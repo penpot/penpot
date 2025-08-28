@@ -1,7 +1,7 @@
 use super::{RenderState, Shape, SurfaceId};
 use crate::shapes::VerticalAlign;
 use crate::utils::get_font_collection;
-use skia_safe::{textlayout::ParagraphBuilder, FontMetrics, Paint, Path};
+use skia_safe::{textlayout::ParagraphBuilder, Paint, Path};
 
 pub fn render(
     render_state: &mut RenderState,
@@ -33,7 +33,6 @@ pub fn render(
 
     let layer_rec = skia_safe::canvas::SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
-
     for group in paragraphs {
         let mut group_offset_y = global_offset_y;
         let group_len = group.len();
@@ -67,53 +66,132 @@ pub fn render(
                     .collect();
 
                 let mut current_x_offset = 0.0;
-                let total_line_width = line_metrics.width as f32;
                 let total_chars = line_metrics.end_index - line_metrics.start_index;
-
-                // Calculate line's actual start position considering text alignment
-                // let paragraph_width = shape.bounds().width();
                 let line_start_offset = line_metrics.left as f32;
 
-                // No text decoration for empty lines
                 if total_chars == 0 || style_metrics.is_empty() {
                     continue;
                 }
 
-                for (i, (index, style_metric)) in style_metrics.iter().enumerate() {
-                    let text_style = style_metric.text_style;
+                let line_baseline = xy.1 + line_metrics.baseline as f32;
+                let full_text = builder.get_text();
+
+                // 1. Caculate text decoration for line
+                let mut max_underline_thickness: f32 = 0.0;
+                let mut underline_y = None;
+                let mut max_strike_thickness: f32 = 0.0;
+                let mut strike_y = None;
+                for (_style_start, style_metric) in style_metrics.iter() {
                     let font_metrics = style_metric.font_metrics;
-                    let next_index = style_metrics
+                    let font_size = font_metrics
+                        .cap_height
+                        .abs()
+                        .max(font_metrics.x_height.abs());
+                    let min_thickness = (font_size * 0.06).max(1.0);
+                    let thickness = font_metrics
+                        .underline_thickness()
+                        .unwrap_or(1.0)
+                        .max(min_thickness);
+                    if style_metric.text_style.decoration().ty
+                        == skia_safe::textlayout::TextDecoration::UNDERLINE
+                    {
+                        let y =
+                            line_baseline + font_metrics.underline_position().unwrap_or(thickness);
+                        max_underline_thickness = max_underline_thickness.max(thickness);
+                        underline_y = Some(y);
+                    }
+                    if style_metric.text_style.decoration().ty
+                        == skia_safe::textlayout::TextDecoration::LINE_THROUGH
+                    {
+                        let y = line_baseline
+                            + font_metrics
+                                .strikeout_position()
+                                .unwrap_or(-font_metrics.cap_height / 2.0);
+                        max_strike_thickness = max_strike_thickness.max(thickness);
+                        strike_y = Some(y);
+                    }
+                }
+
+                // 2. Draw decorations per segment
+                for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
+                    let text_style = style_metric.text_style;
+                    let style_end = style_metrics
                         .get(i + 1)
                         .map(|(next_i, _)| *next_i)
                         .unwrap_or(line_metrics.end_index);
-                    let char_count = next_index - index;
-                    let segment_width = if total_chars > 0 {
-                        (char_count as f32 / total_chars as f32) * total_line_width
+
+                    let seg_start = (*style_start).max(line_metrics.start_index);
+                    let seg_end = style_end.min(line_metrics.end_index);
+                    if seg_start >= seg_end {
+                        continue;
+                    }
+
+                    let start_byte = full_text
+                        .char_indices()
+                        .nth(seg_start)
+                        .map(|(i, _)| i)
+                        .unwrap_or(0);
+                    let end_byte = full_text
+                        .char_indices()
+                        .nth(seg_end)
+                        .map(|(i, _)| i)
+                        .unwrap_or(full_text.len());
+                    let segment_text = &full_text[start_byte..end_byte];
+
+                    let rects = skia_paragraph.get_rects_for_range(
+                        seg_start..seg_end,
+                        skia_safe::textlayout::RectHeightStyle::Tight,
+                        skia_safe::textlayout::RectWidthStyle::Tight,
+                    );
+                    let (segment_width, actual_x_offset) = if !rects.is_empty() {
+                        let total_width: f32 = rects.iter().map(|r| r.rect.width()).sum();
+                        let skia_x_offset = rects
+                            .first()
+                            .map(|r| r.rect.left - line_start_offset)
+                            .unwrap_or(0.0);
+                        (total_width, skia_x_offset)
                     } else {
-                        char_count as f32 * font_metrics.avg_char_width
+                        let font = skia_paragraph.get_font_at(seg_start);
+                        let measured_width = font.measure_text(segment_text, None).0;
+                        (measured_width, current_x_offset)
                     };
+
+                    // Underline
                     if text_style.decoration().ty
-                        != skia_safe::textlayout::TextDecoration::NO_DECORATION
+                        == skia_safe::textlayout::TextDecoration::UNDERLINE
                     {
-                        let decoration_type = text_style.decoration().ty;
-                        let text_left = xy.0 + line_start_offset + current_x_offset;
-                        let text_top =
-                            xy.1 + line_metrics.baseline as f32 - line_metrics.ascent as f32;
-                        let text_width = segment_width;
-                        let line_height = line_metrics.height as f32;
-
-                        let r = calculate_text_decoration_rect(
-                            decoration_type,
-                            font_metrics,
-                            text_left,
-                            text_top,
-                            text_width,
-                            line_height,
-                        );
-
-                        if let Some(decoration_rect) = r {
-                            let decoration_paint = text_style.foreground();
-                            canvas.draw_rect(decoration_rect, &decoration_paint);
+                        if let Some(y) = underline_y {
+                            let thickness = max_underline_thickness;
+                            let text_left = xy.0 + line_start_offset + actual_x_offset;
+                            let text_width = segment_width;
+                            let r = skia_safe::Rect::new(
+                                text_left,
+                                y - thickness / 2.0,
+                                text_left + text_width,
+                                y + thickness / 2.0,
+                            );
+                            let mut decoration_paint = text_style.foreground();
+                            decoration_paint.set_anti_alias(true);
+                            canvas.draw_rect(r, &decoration_paint);
+                        }
+                    }
+                    // Strikethrough
+                    if text_style.decoration().ty
+                        == skia_safe::textlayout::TextDecoration::LINE_THROUGH
+                    {
+                        if let Some(y) = strike_y {
+                            let thickness = max_strike_thickness;
+                            let text_left = xy.0 + line_start_offset + actual_x_offset;
+                            let text_width = segment_width;
+                            let r = skia_safe::Rect::new(
+                                text_left,
+                                y - thickness / 2.0,
+                                text_left + text_width,
+                                y + thickness / 2.0,
+                            );
+                            let mut decoration_paint = text_style.foreground();
+                            decoration_paint.set_anti_alias(true);
+                            canvas.draw_rect(r, &decoration_paint);
                         }
                     }
                     current_x_offset += segment_width;
@@ -141,38 +219,6 @@ pub fn render(
     }
 
     canvas.restore();
-}
-
-pub fn calculate_text_decoration_rect(
-    decoration: skia_safe::textlayout::TextDecoration,
-    font_metrics: FontMetrics,
-    blob_left: f32,
-    blob_offset_y: f32,
-    text_width: f32,
-    blob_height: f32,
-) -> Option<skia_safe::Rect> {
-    let thickness = font_metrics.underline_thickness().unwrap_or(1.0);
-    match decoration {
-        skia_safe::textlayout::TextDecoration::LINE_THROUGH => {
-            let line_position = blob_height / 2.0;
-            Some(skia_safe::Rect::new(
-                blob_left,
-                blob_offset_y + line_position - thickness / 2.0,
-                blob_left + text_width,
-                blob_offset_y + line_position + thickness / 2.0,
-            ))
-        }
-        skia_safe::textlayout::TextDecoration::UNDERLINE => {
-            let underline_y = blob_offset_y + blob_height - thickness;
-            Some(skia_safe::Rect::new(
-                blob_left,
-                underline_y,
-                blob_left + text_width,
-                underline_y + thickness,
-            ))
-        }
-        _ => None,
-    }
 }
 
 fn calculate_total_paragraphs_height(paragraphs: &mut [ParagraphBuilder], width: f32) -> f32 {
