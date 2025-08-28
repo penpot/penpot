@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
+"PO-Revision-Date: 2025-08-29 15:01+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
 "n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4394,7 +4394,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:177
 msgid "subscription.settings.management.dialog.payment-explanation"
-msgstr "(לא יבוצע שום תשלום כעת)"
+msgstr "יחויב אחרי הניסיון. לא צריך כרגע כרטיס אשראי."
 
 #: src/app/main/ui/settings/subscription.cljs:170, src/app/main/ui/settings/subscription.cljs:174
 #, markdown
@@ -4454,7 +4454,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "התוכנית שלך היא %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "תמכת בנו עם התוכנית הזאת מאז: %s"
 
@@ -5473,7 +5472,7 @@ msgstr "חולקים את אותו השם."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "הם מאותו הסוג"
+msgstr "הם מאותו הסוג."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
@@ -5481,7 +5480,7 @@ msgstr "מרובע, אליפסה, נתיבים ופעולות בוליאניות
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "יש את אותה רמת ההיררכיה"
+msgstr "יש את אותה רמת ההיררכיה."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
@@ -7381,7 +7380,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "שקיפות צריכה להיות בין 0 ל־100% או 0 ו־1 (כלומר 50% או 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "ערך מקורי: %s"
 
@@ -7403,7 +7401,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "שגיאות הפניה: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "ערך פתור: %s"
 
@@ -7471,7 +7468,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "רשימת ערכות עיצוב"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:589, src/app/main/ui/workspace/tokens/management/create/form.cljs:590
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "תיאור"
 
@@ -7866,3 +7862,106 @@ msgstr "גרסאות שנשמרו אוטומטית תישמרנה למשך %s י
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "אין אסימונים תקפים בערכות או בערכות העיצוב הפעילות."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "לא נמצאו תוצאות."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "פתיחת רשימת אסימונים"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "ניתוק אסימון"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "האסימון הזה לא זמין באף ערכה או ערכת עיצוב פעילה."
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "מחושב"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "סגנונות"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "פרטי שכבה"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:591
+msgid "labels.mixed-values"
+msgstr "מעורבב"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr ""
+"קבלת יותר מקום אחסון, שחזור קבצים ועוד עבור הצוותים שלך עם התוכנית ללא "
+"הגבלה. [להשתדרג!|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"יש לך %s עורכים על פני הצוותים שבבעלותך, בעוד שהתוכנית המקצועית שלך מכסה עד "
+"8."
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"הצוות שלך לא מפסיק לגדול! התוכנית ללא הגבלה מכסה עד %s עורכים, אך כעת יש לך "
+"%s."
+
+#: src/app/main/ui/settings/subscription.cljs:133
+msgid "subscription.settings.management.dialog.editors"
+msgstr "עורכים"
+
+#: src/app/main/ui/settings/subscription.cljs:138
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr "[בעלים, מנהלים ועורכים. צופים לא נספרים כעורכים)"
+
+#: src/app/main/ui/settings/subscription.cljs:359, src/app/main/ui/settings/subscription.cljs:426
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10 ג״ב אחסון"
+
+#: src/app/main/ui/settings/subscription.cljs:361, src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "צוותים ללא הגבלה. עד 7 עורכים על פני הצוותים בבעלותך."
+
+#: src/app/main/ui/settings/subscription.cljs:238
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "תודה על הבחירה בתוכנית %s של Penpot!"
+
+#: src/app/main/ui/settings/subscription.cljs:368, src/app/main/ui/settings/subscription.cljs:380, src/app/main/ui/settings/subscription.cljs:440
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25 ג״ב אחסון"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:80
+msgid "workspace.assets.component-group-options"
+msgstr "אפשרויות קבוצת רכיבים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:489
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "איתור הגוונים שגויים"
+
+#: src/app/main/data/workspace/tokens/application.cljs:366
+msgid "workspace.tokens.font-variant-not-found"
+msgstr "שגיאה בהגדרת משקל/סגנון גופן. סגנון הגופן הזה לא קיים בגופן הנוכחי"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "ערך שגוי: אסור %."
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "נכון לעכשיו, יש משתמש/ת %s על פני הצוותים שלך שיכולים לערוך."
+msgstr[1] "נכון לעכשיו, יש %s משתמשים/ות על פני הצוותים שלך שיכולים לערוך."
+msgstr[2] "נכון לעכשיו, יש %s משתמשים/ות על פני הצוותים שלך שיכולים לערוך."
+msgstr[3] "נכון לעכשיו, יש %s משתמשים/ות על פני הצוותים שלך שיכולים לערוך."
