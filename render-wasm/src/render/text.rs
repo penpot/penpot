@@ -1,6 +1,5 @@
 use super::{RenderState, Shape, SurfaceId};
 use crate::shapes::VerticalAlign;
-use crate::utils::get_font_collection;
 use skia_safe::{textlayout::ParagraphBuilder, Paint, Path};
 
 pub fn render(
@@ -8,9 +7,7 @@ pub fn render(
     shape: &Shape,
     paragraphs: &mut [Vec<ParagraphBuilder>],
     surface_id: Option<SurfaceId>,
-    paint: Option<&Paint>,
 ) {
-    let fonts = get_font_collection();
     let canvas = render_state
         .surfaces
         .canvas(surface_id.unwrap_or(SurfaceId::Fills));
@@ -37,23 +34,8 @@ pub fn render(
         let mut group_offset_y = global_offset_y;
         let group_len = group.len();
 
-        for (index, builder) in group.iter_mut().enumerate() {
+        for builder in group.iter_mut() {
             let mut skia_paragraph = builder.build();
-
-            if paint.is_some() && index == 0 {
-                let text = builder.get_text().to_string();
-                let mut paragraph_builder =
-                    ParagraphBuilder::new(&builder.get_paragraph_style(), fonts);
-                let mut text_style: skia_safe::Handle<_> = builder.peek_style();
-                text_style.set_foreground_paint(paint.unwrap());
-                paragraph_builder.reset();
-                paragraph_builder.push_style(&text_style);
-                paragraph_builder.add_text(&text);
-                skia_paragraph = paragraph_builder.build();
-            } else if paint.is_some() && index > 0 {
-                continue;
-            }
-
             skia_paragraph.layout(paragraph_width);
             let paragraph_height = skia_paragraph.height();
             let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);

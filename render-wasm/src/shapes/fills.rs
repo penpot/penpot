@@ -232,6 +232,7 @@ pub fn merge_fills(fills: &[Fill], bounding_box: Rect) -> skia::Paint {
 
     if fills.is_empty() {
         combined_shader = Some(skia::shaders::color(skia::Color::TRANSPARENT));
+        fills_paint.set_color(skia::Color::TRANSPARENT);
         fills_paint.set_shader(combined_shader);
         return fills_paint;
     }

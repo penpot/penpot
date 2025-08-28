@@ -1152,6 +1152,34 @@ impl Shape {
             self.children_ids(include_hidden)
         }
     }
+
+    pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
+        let drop_shadows: Vec<&crate::shapes::shadows::Shadow> =
+            self.drop_shadows().filter(|s| !s.hidden()).collect();
+        drop_shadows
+            .into_iter()
+            .map(|shadow| {
+                let mut paint = skia_safe::Paint::default();
+                let filter = shadow.get_drop_shadow_filter();
+                paint.set_image_filter(filter);
+                paint
+            })
+            .collect()
+    }
+
+    pub fn inner_shadow_paints(&self) -> Vec<skia_safe::Paint> {
+        let inner_shadows: Vec<&crate::shapes::shadows::Shadow> =
+            self.inner_shadows().filter(|s| !s.hidden()).collect();
+        inner_shadows
+            .into_iter()
+            .map(|shadow| {
+                let mut paint = skia_safe::Paint::default();
+                let filter = shadow.get_inner_shadow_filter();
+                paint.set_image_filter(filter);
+                paint
+            })
+            .collect()
+    }
 }
 
 #[cfg(test)]

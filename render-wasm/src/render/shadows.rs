@@ -59,7 +59,6 @@ pub fn render_stroke_drop_shadows(
                 filter.as_ref(),
                 None,
                 antialias,
-                None,
             )
         }
     }
@@ -82,7 +81,6 @@ pub fn render_stroke_inner_shadows(
                 filter.as_ref(),
                 None,
                 antialias,
-                None,
             )
         }
     }
@@ -92,11 +90,13 @@ pub fn render_text_drop_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
     paragraphs: &mut [Vec<ParagraphBuilder>],
-    antialias: bool,
 ) {
-    for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_drop_shadow(render_state, shape, shadow, paragraphs, antialias);
-    }
+    text::render(
+        render_state,
+        shape,
+        paragraphs,
+        Some(SurfaceId::DropShadows),
+    );
 }
 
 // Render text paths (unused)
@@ -122,50 +122,16 @@ pub fn render_text_path_stroke_drop_shadows(
     }
 }
 
-pub fn render_text_drop_shadow(
-    render_state: &mut RenderState,
-    shape: &Shape,
-    shadow: &Shadow,
-    paragraphs: &mut [Vec<ParagraphBuilder>],
-    antialias: bool,
-) {
-    let paint = shadow.get_drop_shadow_paint(antialias, shape.image_filter(1.).as_ref());
-
-    text::render(
-        render_state,
-        shape,
-        paragraphs,
-        Some(SurfaceId::DropShadows),
-        Some(&paint),
-    );
-}
-
 pub fn render_text_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
     paragraphs: &mut [Vec<ParagraphBuilder>],
-    antialias: bool,
 ) {
-    for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-        render_text_inner_shadow(render_state, shape, shadow, paragraphs, antialias);
-    }
-}
-
-pub fn render_text_inner_shadow(
-    render_state: &mut RenderState,
-    shape: &Shape,
-    shadow: &Shadow,
-    paragraphs: &mut [Vec<ParagraphBuilder>],
-    antialias: bool,
-) {
-    let paint = shadow.get_inner_shadow_paint(antialias, shape.image_filter(1.).as_ref());
-
     text::render(
         render_state,
         shape,
         paragraphs,
         Some(SurfaceId::InnerShadows),
-        Some(&paint),
     );
 }
 

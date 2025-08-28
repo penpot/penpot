@@ -537,32 +537,58 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let mut paragraphs = text_content.to_paragraphs(
-                    shape.image_filter(1.).as_ref(),
-                    shape.mask_filter(1.).as_ref(),
-                );
+                let drop_shadows = shape.drop_shadow_paints();
+                let inner_shadows = shape.inner_shadow_paints();
+                let blur_filter = shape.image_filter(1.);
+                let blur_mask = shape.mask_filter(1.);
+                let mut paragraphs =
+                    text_content.to_paragraphs(blur_filter.as_ref(), blur_mask.as_ref(), None);
 
-                if !shape.has_visible_strokes() {
-                    shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
+                // Render all drop shadows if there are no visible strokes
+                if !shape.has_visible_strokes() && !drop_shadows.is_empty() {
+                    for drop_shadow in &drop_shadows {
+                        let mut paragraphs_with_drop_shadows = text_content.to_paragraphs(
+                            blur_filter.as_ref(),
+                            blur_mask.as_ref(),
+                            Some(&drop_shadow),
+                        );
+                        shadows::render_text_drop_shadows(
+                            self,
+                            &shape,
+                            &mut paragraphs_with_drop_shadows,
+                        );
+                    }
                 }
 
                 let count_inner_strokes = shape.count_visible_inner_strokes();
-                text::render(self, &shape, &mut paragraphs, None, None);
-
+                text::render(self, &shape, &mut paragraphs, None);
                 for stroke in shape.visible_strokes().rev() {
+                    for drop_shadow in &drop_shadows {
+                        let mut stroke_paragraphs_with_drop_shadows = text_content
+                            .to_stroke_paragraphs(
+                                stroke,
+                                &shape.selrect(),
+                                blur_filter.as_ref(),
+                                blur_mask.as_ref(),
+                                Some(&drop_shadow),
+                                count_inner_strokes,
+                            );
+                        shadows::render_text_drop_shadows(
+                            self,
+                            &shape,
+                            &mut stroke_paragraphs_with_drop_shadows,
+                        );
+                    }
+
                     let mut stroke_paragraphs = text_content.to_stroke_paragraphs(
                         stroke,
                         &shape.selrect(),
-                        shape.image_filter(1.).as_ref(),
-                        shape.mask_filter(1.).as_ref(),
+                        blur_filter.as_ref(),
+                        blur_mask.as_ref(),
+                        None,
                         count_inner_strokes,
                     );
-                    shadows::render_text_drop_shadows(
-                        self,
-                        &shape,
-                        &mut stroke_paragraphs,
-                        antialias,
-                    );
+
                     strokes::render(
                         self,
                         &shape,
@@ -571,17 +597,38 @@ impl RenderState {
                         None,
                         Some(&mut stroke_paragraphs),
                         antialias,
-                        None,
+                    );
+
+                    for inner_shadow in &inner_shadows {
+                        let mut stroke_paragraphs_with_inner_shadows = text_content
+                            .to_stroke_paragraphs(
+                                stroke,
+                                &shape.selrect(),
+                                blur_filter.as_ref(),
+                                blur_mask.as_ref(),
+                                Some(&inner_shadow),
+                                count_inner_strokes,
+                            );
+                        shadows::render_text_inner_shadows(
+                            self,
+                            &shape,
+                            &mut stroke_paragraphs_with_inner_shadows,
+                        );
+                    }
+                }
+
+                for inner_shadow in &inner_shadows {
+                    let mut paragraphs_with_inner_shadows = text_content.to_paragraphs(
+                        blur_filter.as_ref(),
+                        blur_mask.as_ref(),
+                        Some(&inner_shadow),
                     );
                     shadows::render_text_inner_shadows(
                         self,
                         &shape,
-                        &mut stroke_paragraphs,
-                        antialias,
+                        &mut paragraphs_with_inner_shadows,
                     );
                 }
-
-                shadows::render_text_inner_shadows(self, &shape, &mut paragraphs, antialias);
             }
             _ => {
                 let surface_ids = SurfaceId::Strokes as u32
@@ -630,7 +677,7 @@ impl RenderState {
                     shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
                     //In clipped content strokes are drawn over the contained elements in a subsequent step
                     if !shape.clip() {
-                        strokes::render(self, shape, stroke, None, None, None, antialias, None);
+                        strokes::render(self, shape, stroke, None, None, None, antialias);
                     }
                     shadows::render_stroke_inner_shadows(self, shape, stroke, antialias);
                 }
