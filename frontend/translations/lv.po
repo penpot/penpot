@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-15 19:02+0000\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -4389,6 +4389,7 @@ msgid "subscription.settings.unlimited-trial"
 msgstr "Neierobežots (izmēģinājuma)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "Ierobežots ikmēneša rēķins"
 
@@ -7636,10 +7637,12 @@ msgstr ""
 "rezerves kopiju un versiju vēsturi."
 
 #: src/app/main/ui/settings/subscription.cljs:126
+#, fuzzy
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Tagad netiks veikts maksājums)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s**  mēnesī"
 
@@ -7763,7 +7766,7 @@ msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Uzņēmējdarbības plāns (izmēģinājuma)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
 "Iegūsti papildu redaktorus, vairāk rezerves kopēšanas, neierobežotu krātuvi "
@@ -7773,6 +7776,7 @@ msgid "subscription.settings.enterprise.autosave"
 msgstr "90 dienu automātiski saglabātas versijas un datņu atkope"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+#, fuzzy
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "Ierobežots ikmēneša rēķins"
 
@@ -7790,6 +7794,7 @@ msgstr ""
 "neatkārtojama īpašību vērtību kopa."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Doties uz galveno sastāvdaļu"
 
@@ -7798,14 +7803,17 @@ msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Dažiem variantiem ir vienādas īpašības un vērtības"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.all"
 msgstr "Šiem variantiem ir vienādas īpašības un vērtības."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.one"
 msgstr "Šim variantam ir tādas pašas īpašības un vērtības kā citam."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.some"
 msgstr "Dažiem no šiem variantiem ir vienādas īpašības un vērtības."
 
@@ -7820,16 +7828,20 @@ msgstr ""
 msgid "workspace.options.component.variants-help-modal.rule1"
 msgstr "ir tāds pats nosaukums;"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2"
 msgstr "ir vienāds veids;"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
 msgstr ""
 "Taisnstūris, elipse, ceļi un Būla darbības skaitās kā viens un tas pats "
 "veids."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3"
 msgstr "ir tāds pats hierarhijas līmenis."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
 msgstr "Kopas, dēļi un izkārtojumi tiek uztverti kā līdzvērtīgi."
