@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-08-28 10:46+0000\n"
-"Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
+"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -4413,6 +4413,7 @@ msgid "subscription.settings.unlimited-trial"
 msgstr "Illimité (essai)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "Facture mensuelle plafonnée"
 
@@ -7895,12 +7896,14 @@ msgid "workspace.tokens.import-button-prefix"
 msgstr "Importer %s"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.one"
 msgstr ""
 "Cette variante possède des propriétés et des valeurs identiques à celles "
 "d'une autre variante."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.some"
 msgstr ""
 "Certaines de ces variantes possèdent des propriétés et des valeurs "
@@ -7917,8 +7920,10 @@ msgstr ""
 msgid "workspace.options.component.variants-help-modal.rule1"
 msgstr "Possèdent le même nom."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2"
 msgstr "Sont du même type"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3"
 msgstr "Possèdent le même niveau hiérarchique"
