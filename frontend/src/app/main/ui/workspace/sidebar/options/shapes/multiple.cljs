@@ -277,12 +277,22 @@
   [objects selected-shape-ids shape]
 
   (let [parent-id (:parent-id shape)
-        parent (get objects parent-id)]
+        parent    (get objects parent-id)]
+
     (cond
-      (nil? shape) false                                              ;; failsafe
-      (contains? selected-shape-ids (:id shape)) false                ;; if it is one of the selected shapes, it is considerer not a bool descendant
-      (= :bool (:type parent)) true                                   ;; if its parent is of type bool, it is a bool descendant
-      :else (recur [parent-id parent] objects selected-shape-ids))))  ;; else, check its parent
+      (nil? shape)
+      false
+
+      ;; if it is one of the selected shapes, it is considerer not a
+      ;; bool descendant
+      (contains? selected-shape-ids (:id shape))
+      false
+
+      (cfh/bool-shape? parent)
+      true
+
+      :else
+      (recur objects selected-shape-ids parent))))
 
 (defn- check-options-props
   [new-props old-props]
