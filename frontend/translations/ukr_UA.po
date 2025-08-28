@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-19 11:03+0000\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -4410,6 +4410,7 @@ msgid "subscription.settings.unlimited-trial"
 msgstr "Безлімітний (пробний)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "Місячний рахунок з граничною сумою"
 
@@ -7666,10 +7667,12 @@ msgid "subscription.settings.try-it-free"
 msgstr "Спробуйте перші 14 днів безкоштовно"
 
 #: src/app/main/ui/settings/subscription.cljs:126
+#, fuzzy
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Платіж не буде зроблено)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s** на місяць"
 
@@ -7783,7 +7786,7 @@ msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "План Корпоративний (пробний)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
 "Отримайте більше редакторів, резервних копій, необмежене сховище та більше. "
@@ -7793,6 +7796,7 @@ msgid "subscription.settings.enterprise.autosave"
 msgstr "90-денні автозбережнні версії та відновлення файлів"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+#, fuzzy
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "Місячний рахунок з граничною сумою"
 
@@ -7810,6 +7814,7 @@ msgstr ""
 "унікальний набір значень властивостей."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "До головного компонента"
 
@@ -7818,14 +7823,17 @@ msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Деякі варіанти мають однакові властивості та значення"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.all"
 msgstr "Ці варіанти мають однакові властивості та значення."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.one"
 msgstr "Цей варіант має значення та властивості, які належать і до іншого."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.some"
 msgstr "Деякі з цих варіантів мають однакові значення і властивості."
 
