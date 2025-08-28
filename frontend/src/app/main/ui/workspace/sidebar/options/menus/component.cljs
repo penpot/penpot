@@ -876,6 +876,11 @@
              (when can-swap? (st/emit! (dwsp/open-specialized-panel :component-swap)))
              (tm/schedule-on-idle #(dom/focus! (dom/get-element search-id))))))
 
+        transform-into-variant
+        (mf/use-fn
+         (mf/deps id)
+         #(st/emit! (dwv/transform-in-variant id)))
+
         create-variant
         (mf/use-fn
          (mf/deps id)
@@ -936,10 +941,10 @@
                                :on-click on-click-variant-title-help
                                :icon "help"}])
 
-           (when (and is-variant? main-instance?)
+           (when main-instance?
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant")
-                               :on-click create-variant
+                               :on-click (if is-variant? create-variant transform-into-variant)
                                :icon "variant"}])])]
 
        (when open?
