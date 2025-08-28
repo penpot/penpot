@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-08-15 19:02+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
 "19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2650,9 +2650,8 @@ msgid "modals.big-nudge"
 msgstr "Liela nobīde"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
-msgstr "Pārbaudīt jauno e-pastu"
+msgstr "Apstiprināt jauno e-pasta adresi"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2925,11 +2924,8 @@ msgid "modals.invite-member.emails"
 msgstr "E-pasta ziņojumi, atdalīti ar komatiem"
 
 #: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Dažas no e-pasta adresēm ir pašreizējiem komandas dalībniekiem. Uzaicinājumi "
-"viņiem netiks nosūtīti."
+msgstr "Daži dalībnieki jau ir komandā. Mēs uzaicināsim pārējos."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -4314,10 +4310,11 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Abonēt"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
-"Patīk izmēģinājuma laiks? Atslēdz nepārtrauktu pilnu piekļuvi! [Abonēt](%s)"
+"Patīk izmēģinājuma laiks? Atslēdz nepārtrauktu pilnu piekļuvi! "
+"[Abonēt|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -4367,9 +4364,8 @@ msgid "subscription.settings.manage-your-subscription"
 msgstr "Pārvaldīt savu abonementu"
 
 #: src/app/main/ui/settings/subscription.cljs:282
-#, fuzzy
 msgid "subscription.settings.member-since"
-msgstr "Penpot dalībnieks kopš %s"
+msgstr "Penpot dalībnieks kopš: %s"
 
 #: src/app/main/ui/settings/subscription.cljs:285
 msgid "subscription.settings.other-plans"
@@ -4400,9 +4396,8 @@ msgid "subscription.settings.section-plan"
 msgstr "Tavs abonements"
 
 #: src/app/main/ui/settings/subscription.cljs:278
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "Tu atbalsti mūs ar šo plānu kopš %s"
+msgstr "Tu atbalsti mūs ar šo plānu kopš: %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
 msgid "subscription.settings.unlimited"
@@ -7594,11 +7589,11 @@ msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Iegūsti vairāk redaktoru, krātuves un automātiski saglabātu versiju ar "
-"neierobežoto vai uzņēmējdarbības plānu! [Abonēt tagad.](%s)"
+"neierobežoto vai uzņēmējdarbības plānu! [Abonēt tagad.|target:self](%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
 msgid "labels.empty"
@@ -7645,11 +7640,10 @@ msgid "dashboard.select-ui-theme.system"
 msgstr "Sistēmas izskats"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
-#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "Izskatās, ka Tava komanda ir palielinājusies. Tavā plānā ir iekļautas %s "
-"vietas, bet Tu tagad izmanto vairāk."
+"vietas, bet Tu tagad izmanto %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:154
 msgid "subscription.dashboard.cta.professional-plan-designed"
@@ -7709,9 +7703,8 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Tagad netiks veikts maksājums)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
-#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "%s par redaktoru mēnesī × %s"
+msgstr "**$%s**  mēnesī"
 
 #: src/app/main/ui/settings/subscription.cljs:112
 msgid "subscription.settings.management.dialog.select-editors"
@@ -7802,3 +7795,148 @@ msgstr "Priekšskatījums:"
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:117
 msgid "workspace.tokens.export.single-file"
 msgstr "Viena datne"
+
+msgid "errors.email-does-not-match-invitation"
+msgstr "E-pasta adrese neatbilst uzaicinājumā esošajai."
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "Šī versija ir aizslēgta, un citi to nevar izdzēst"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Tikai versijas izveidotājs var to aizslēgt"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Tikai versijas izveidotājs var to atslēgt"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Šī versija jau ir aizslēgta"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Pārsvītrojums"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "Aizslēgt"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "Atslēgt"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr ""
+"Lūgums uzlabot, lai atbilstu savam lietojumam. [Abonēt tagad.|target:self]"
+"(%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr ""
+"Lūgums uzlabot, lai atbilstu savam lietojumam. Jāsazinās ar komandas "
+"īpašnieku: %s"
+
+#: src/app/main/ui/dashboard/subscription.cljs:60
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom"
+msgstr ""
+"Iegūsti papildu redaktorus un krātuvi, datņu atkopi un vairāk ar "
+"neierobežoto plānu. [Uzlabot|target:self](%s)"
+
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Uzņēmējdarbības plāns (izmēģinājuma)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:74
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Iegūsti papildu redaktorus, vairāk rezerves kopēšanas, neierobežotu krātuvi "
+"un vēl. [Ieskaties uzņēmējdarbības plānā!|target:self](%s)"
+
+#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr ""
+"Neierobežota krātuve un 90 dienu automātiski saglabātu versiju un datņu "
+"atkope"
+
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90 dienu automātiski saglabātas versijas un datņu atkope"
+
+#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Ierobežots ikmēneša rēķins"
+
+#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
+msgid "subscription.settings.professional.storage-autosave"
+msgstr ""
+"10 GB krātuves un 7 dienu automātiski saglabātas versijas un datņu atkope"
+
+msgid "subscription.settings.editors"
+msgstr "(x %s redaktori)"
+
+#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
+msgid "subscription.settings.unlimited.storage-autosave"
+msgstr ""
+"25 GB krātuves un 30 dienu automātiski saglabātas versijas un datņu atkope"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Atrast atkārtojošos variantus"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Šai sastāvdaļai ir nesaderīgi varianti. Jāpārliecinās, ka katram no tiem ir "
+"neatkārtojama īpašību vērtību kopa."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Doties uz galveno sastāvdaļu"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Dažiem variantiem ir vienādas īpašības un vērtības"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.adjust"
+msgstr "Jāpielāgo vērtības, lai tās varētu ievietot."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "Šiem variantiem ir vienādas īpašības un vērtības."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "Šim variantam ir tādas pašas īpašības un vērtības kā citam."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Dažiem no šiem variantiem ir vienādas īpašības un vērtības."
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Kā varianti paliek savienoti"
+
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"Lai paturētu izmaiņas, kad pārslēdzas starp variantiem, Penpot savieno "
+"slāņus, kuriem:"
+
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "ir tāds pats nosaukums;"
+
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "ir vienāds veids;"
+
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Taisnstūris, elipse, ceļi un Būla darbības skaitās kā viens un tas pats "
+"veids."
+
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "ir tāds pats hierarhijas līmenis."
+
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "Kopas, dēļi un izkārtojumi tiek uztverti kā līdzvērtīgi."

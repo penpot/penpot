@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-08-19 11:03+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
 "Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
 "frontend/ukr_UA/>\n"
@@ -10,7 +10,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -2668,9 +2668,8 @@ msgid "modals.big-nudge"
 msgstr "Великий зсув"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
-msgstr "Підтвердьте нову електрону адресу"
+msgstr "Підтвердьте нову пошту"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2947,11 +2946,8 @@ msgid "modals.invite-member.emails"
 msgstr "Електроні адреси, розділені комами"
 
 #: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Деякі електроні адреси належать поточним учасникам команди. Запрошення не "
-"надсилатимуться."
+msgstr "Деякі учасники вже запрошені, ми запросимо решту."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -4335,11 +4331,11 @@ msgid "subscription.dashboard.power-up.subscribe"
 msgstr "Підписатись"
 
 #: src/app/main/ui/dashboard/subscription.cljs:68
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
 "Насолоджуєтесь пробним періодом? Отримайте повний доступ назавжди. "
-"[Оформлюйте підписку](%s)"
+"[Оформлюйте підписку|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:62
 #, unused
@@ -7619,12 +7615,12 @@ msgstr ""
 "адміністратор та редактор)."
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Отримайте більше редакторів, місця для сховища та більше автозбережених "
-"версій з Планом Безлімітний чи Корпоративний. [Оформлюйте підписку зараз.]"
-"(%s)"
+"версій з Планом Безлімітний чи Корпоративний. "
+"[Оформлюйте підписку зараз.|target:self](%s)"
 
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
@@ -7637,11 +7633,9 @@ msgid "labels.empty"
 msgstr "Порожньо"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
-#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
-"Схоже, Ваша команда підросла! План розрахований на %s \"стільців\", проте "
-"учасників більше ніж \"стільців\"."
+"Схоже, Ваша команда підросла! План розрахований на %s місць, проте зайнято %s"
 
 #: src/app/main/ui/settings/subscription.cljs:253
 msgid "subscription.settings.add-payment-to-continue"
@@ -7736,9 +7730,8 @@ msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Платіж не буде зроблено)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
-#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "$7 на редактора/місяці x %s"
+msgstr "**$%s** на місяць"
 
 #: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
 msgid "subscription.settings.more-information"
@@ -7823,3 +7816,119 @@ msgstr "Системна тема"
 #: src/app/main/ui/components/color_input.cljs:36
 msgid "inspect.attributes.color"
 msgstr "Колір"
+
+msgid "errors.email-does-not-match-invitation"
+msgstr "Поштова адреса не відповідає тому що в запрошенню."
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "Ця версія заблокована і не може бути видалена іншими"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Тільки власник версії може заблокувати її"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Тільки власник версії може розблокувати її"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Ця версія вже заблокована"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Закреслення"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "Заблокувати"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "Розблокувати"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
+msgstr ""
+"Для використовуваних вами обʼємів Вам варто оновитись. "
+"[Підписуйтесь зараз.target:self](%s)"
+
+#, markdown
+msgid "subscription.dashboard.cta.upgrade-more-seats-member"
+msgstr ""
+"Для використовуваних вами обʼємів Вам варто оновитись. Звʼяжіться з "
+"власником команди: %s"
+
+#: src/app/main/ui/dashboard/subscription.cljs:60
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom"
+msgstr ""
+"Отримайте більше редакторів, місця у сховищі, відновлення файлів та більше з "
+"планом Безлімітний. [Підсилюйтесь|target:self](%s)"
+
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "План Корпоративний (пробний)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:74
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Отримайте більше редакторів, резервних копій, необмежене сховище та більше. "
+"[Огляньте план Корпоративний.|target:self](%s)"
+
+#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
+msgid "subscription.settings.enterprise.unlimited-storage"
+msgstr ""
+"Сховище без обмежень, 90-денні автозбереження версій та відновлення файлів"
+
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90-денні автозбережнні версії та відновлення файлів"
+
+#: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Місячний рахунок з граничною сумою"
+
+#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
+msgid "subscription.settings.professional.storage-autosave"
+msgstr "10ГБ сховища, 7-денні автозбережені версії та відновлення файлів"
+
+msgid "subscription.settings.editors"
+msgstr "(x %s редакторів)"
+
+#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
+msgid "subscription.settings.unlimited.storage-autosave"
+msgstr "25ГБ сховище, 30-денні автозбережені версії та відновлення файлів"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Розташувати дубльовані варіанти"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:440
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Цей компонент має версії, що конфліктують. Впевніться, що кожна варіація має "
+"унікальний набір значень властивостей."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "До головного компонента"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Деякі варіанти мають однакові властивості та значення"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr "Ці варіанти мають однакові властивості та значення."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr "Цей варіант має значення та властивості, які належать і до іншого."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr "Деякі з цих варіантів мають однакові значення і властивості."
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Як варіанти лишаються зʼєднаними"

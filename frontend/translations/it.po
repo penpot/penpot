@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-08-12 08:02+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -2661,9 +2661,8 @@ msgid "modals.big-nudge"
 msgstr "Grande scatto"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
-msgstr "Verificare il nuovo indirizzo e-mail"
+msgstr "Conferma il nuovo indirizzo e-mail"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2932,11 +2931,8 @@ msgid "modals.invite-member.emails"
 msgstr "Email, separate da virgole"
 
 #: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr ""
-"Alcune email appartengono a membri attuali del team. I loro inviti non "
-"saranno inviati."
+msgstr "Alcuni membri sono già nel team. Inviteremo i restanti."
 
 #: src/app/main/ui/dashboard/team.cljs:221
 msgid "modals.invite-team-member.text"
@@ -7677,18 +7673,18 @@ msgid "inspect.attributes.color"
 msgstr "Colore"
 
 #: src/app/main/ui/dashboard/subscription.cljs:160
-#, fuzzy
 msgid "subscription.dashboard.cta.unlimited-many-editors"
 msgstr ""
 "Sembra che il tuo team sia cresciuto! Il tuo piano include %s postazioni, ma "
-"ne stai utilizzando di più."
+"ne stai utilizzando %s."
 
 #: src/app/main/ui/dashboard/subscription.cljs:165
-#, fuzzy, markdown
+#, markdown
 msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
 msgstr ""
 "Ottieni più editor, più spazio di archiviazione e più versione salvate "
-"automaticamente con il piano Unlimited o Enterprise. [Abbonati ora.](%s)"
+"automaticamente con il piano Unlimited o Enterprise. "
+"[Abbonati ora.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
@@ -7836,3 +7832,30 @@ msgstr "Valore non valido: le unità non sono consentite."
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:985
 msgid "workspace.options.component.variant.malformed.group.title"
 msgstr "Alcune varianti hanno nomi non validi"
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "Questa versione è bloccata e non può essere eliminata da altri"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "Solo il creatore della versione può bloccarla"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "Solo il creatore della versione può sbloccarla"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "Questa versione è già bloccata"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "Barrato"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "Blocca"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "Sblocca"

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
-"Last-Translator: 王世阳 <wangshiyangchina@gmail.com>\n"
+"PO-Revision-Date: 2025-08-19 11:03+0000\n"
+"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -22,7 +22,7 @@ msgstr "请检查您的邮箱"
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
 msgid "auth.check-your-email"
-msgstr "请检查电子邮箱，点击邮件中的超链接来验证，然后开始使用Penpot。"
+msgstr "请检查您的邮箱，点击邮件中的链接来验证，然后开始使用Penpot。"
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
@@ -55,7 +55,7 @@ msgstr "登录我的账号"
 
 #: src/app/main/ui/auth/register.cljs:212, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
-msgstr "在这里登录"
+msgstr "在这里登录。"
 
 #: src/app/main/ui/auth/login.cljs:195
 msgid "auth.login-submit"
@@ -71,7 +71,7 @@ msgstr "GitHub登录"
 
 #: src/app/main/ui/auth/login.cljs:228
 msgid "auth.login-with-gitlab-submit"
-msgstr "Gitlab登录"
+msgstr "GitLab登录"
 
 #: src/app/main/ui/auth/login.cljs:216
 msgid "auth.login-with-google-submit"
@@ -361,7 +361,7 @@ msgstr "令牌无到期时限"
 
 #: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:615
 msgid "dashboard.add-shared"
-msgstr "添加为共享库"
+msgstr "新增为共享库"
 
 #: src/app/main/ui/settings/profile.cljs:75
 msgid "dashboard.change-email"
@@ -369,7 +369,7 @@ msgstr "修改电子邮件"
 
 #: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:524, src/app/main/data/workspace/pages.cljs:164
 msgid "dashboard.copy-suffix"
-msgstr "（拷贝）"
+msgstr "（复制）"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:352
 msgid "dashboard.create-new-team"
@@ -539,10 +539,6 @@ msgstr "文件已启用“组件v2”功能，但这个团队尚未支持该功�
 #, unused
 msgid "dashboard.import.import-error"
 msgstr "文件导入过程中出现未知问题，导入失败。"
-
-#: src/app/main/ui/dashboard/import.cljs:475
-msgid "dashboard.import.import-message"
-msgstr "%s 个文件导入成功。"
 
 #: src/app/main/ui/dashboard/import.cljs:470
 msgid "dashboard.import.import-warning"
@@ -717,7 +713,7 @@ msgstr "显示全部文档"
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "您的文件已被成功删除"
-msgstr[1] "您的文件已被成功删除"
+msgstr[1] "您的多个文件已被成功删除"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:61
 msgid "dashboard.success-delete-project"
@@ -727,7 +723,7 @@ msgstr "成功删除了项目"
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "您的文件已被成功复制"
-msgstr[1] "您的文件已被成功复制"
+msgstr[1] "您的多个文件已被成功复制"
 
 #: src/app/main/ui/dashboard/project_menu.cljs:34
 msgid "dashboard.success-duplicate-project"
@@ -1251,7 +1247,7 @@ msgstr "文字风格"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:111
 msgid "inspect.attributes.typography.font-weight"
-msgstr "字体重量"
+msgstr "字体粗细"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:129, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:391
 msgid "inspect.attributes.typography.letter-spacing"
@@ -1976,9 +1972,8 @@ msgid "modals.big-nudge"
 msgstr "小幅微调"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
-msgstr "验证新的邮件"
+msgstr "确认新的邮件"
 
 #: src/app/main/ui/settings/change_email.cljs:97
 msgid "modals.change-email.info"
@@ -2233,9 +2228,8 @@ msgid "modals.invite-member.emails"
 msgstr "电子邮件，以逗号分隔"
 
 #: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
 msgid "modals.invite-member.repeated-invitation"
-msgstr "有些电子邮件是来自当前的团队成员。他们的邀请将不会被发送。"
+msgstr "有些成员已经在团队中，我们将邀请其余成员。"
 
 #: src/app/main/ui/dashboard/team.cljs:217
 msgid "modals.invite-team-member.title"
@@ -2297,7 +2291,7 @@ msgstr[1] "你确定要移动这些共享库吗？"
 msgid "modals.move-shared-confirm.title"
 msgid_plural "modals.move-shared-confirm.title"
 msgstr[0] "移动共享库"
-msgstr[1] "移动共享库"
+msgstr[1] "移动多个共享库"
 
 #: src/app/main/ui/workspace/main_menu.cljs:272, src/app/main/ui/workspace/nudge.cljs:46
 msgid "modals.nudge-title"
@@ -2325,7 +2319,7 @@ msgstr "发布"
 
 #: src/app/main/ui/workspace/libraries.cljs:269
 msgid "modals.publish-empty-library.message"
-msgstr "你的库是空白的。你确定想要发布它？"
+msgstr "你的库是空的。你确定想要发布它？"
 
 #: src/app/main/ui/workspace/libraries.cljs:268
 msgid "modals.publish-empty-library.title"
@@ -4775,7 +4769,7 @@ msgstr "所有方向"
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
 msgid "workspace.options.layout.padding-simple"
-msgstr "简易内边距"
+msgstr "简单内边距"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layout.cljs
 #, unused
@@ -5663,3 +5657,1613 @@ msgstr "更新"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/auth/register.cljs:343
+msgid "auth.register-account-title"
+msgstr "您的昵称"
+
+#: src/app/main/ui/auth/register.cljs:124
+#, unused
+msgid "auth.register-tagline"
+msgstr "拥有一个Penpot的免费账户，您可以创建任意多的团队并与其他设计师和开发人员在任"
+"意数量的项目中协作。 "
+
+#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
+#, unused
+msgid "errors.field-max-length"
+msgstr "最多可包含1个字符。"
+
+#: src/app/main/ui/onboarding/questions.cljs:404
+#, unused
+msgid "labels.event"
+msgstr "事件"
+
+#, unused
+msgid "labels.ok"
+msgstr "好的"
+
+#: src/app/main/ui/auth/register.cljs:50
+#, markdown
+msgid "auth.terms-and-privacy-agreement"
+msgstr "我同意 [服务条款](%s) 与 [隐私政策](%s)。"
+
+#: src/app/main/ui/onboarding/questions.cljs:85
+msgid "labels.product-design"
+msgstr "产品或UX设计"
+
+#: src/app/main/ui/static.cljs:135
+msgid "not-found.login.free"
+msgstr "Penpot 是免费且开源的设计工具，用于设计与代码之间的协作"
+
+#: src/app/main/ui/comments.cljs:530
+msgid "comments.mentions.not-found"
+msgstr "未找到 @%s 相关人员"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:41
+msgid "dashboard.add-file"
+msgstr "新增文件"
+
+#: src/app/main/ui/workspace/main_menu.cljs:626
+msgid "dashboard.create-version-menu"
+msgstr "固定此版本"
+
+#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
+msgid "dashboard.empty-placeholder-drafts-subtitle"
+msgstr "项目成员创建草稿后，它将显示在这里。"
+
+#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:281
+msgid "dashboard.empty-placeholder-drafts-title"
+msgstr "还没有草稿。"
+
+#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:287
+msgid "dashboard.empty-placeholder-files-subtitle"
+msgstr "项目成员创建文件后，它将显示在这里。"
+
+#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:282
+msgid "dashboard.empty-placeholder-files-title"
+msgstr "还没有文件。"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:114
+msgid "dashboard.empty-placeholder-libraries-subtitle-viewer-role"
+msgstr "添加至项目中的库将显示在这里。"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:111
+msgid "dashboard.empty-placeholder-libraries-title"
+msgstr "还没有库。"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:59
+msgid "dashboard.empty-project.add-library"
+msgstr "新增一个库或一个模版"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:43, src/app/main/ui/dashboard/placeholder.cljs:134
+msgid "dashboard.empty-project.create"
+msgstr "创建新文件"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:61
+msgid "dashboard.empty-project.explore"
+msgstr "浏览并新增"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:57
+msgid "dashboard.empty-project.go-to-libraries"
+msgstr "转至库和模版"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:49, src/app/main/ui/dashboard/placeholder.cljs:51
+msgid "dashboard.empty-project.import"
+msgstr "导入一个文件"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:53
+msgid "dashboard.empty-project.import-penpot"
+msgstr "导入一个 .penpot 文件"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:45
+msgid "dashboard.empty-project.start"
+msgstr "开始构建令人惊奇的材料"
+
+#: src/app/main/ui/dashboard/fonts.cljs:456
+msgid "dashboard.fonts.empty-placeholder-viewer"
+msgstr "还没有定制化的字体。"
+
+#: src/app/main/ui/dashboard/fonts.cljs:457
+msgid "dashboard.fonts.empty-placeholder-viewer-sub"
+msgstr "一旦项目成员上传定制化的字体，它将会显示在这里。"
+
+#: src/app/main/ui/dashboard.cljs:243
+msgid "dashboard.import.bad-url"
+msgstr "导入失败，模版 URL 不正确"
+
+#: src/app/main/ui/dashboard.cljs:241
+#, unused
+msgid "dashboard.import.error"
+msgstr "导入失败，请重试"
+
+#: src/app/main/ui/dashboard/import.cljs:481
+msgid "dashboard.import.import-error.disclaimer"
+msgstr "不是所有文件都被导入"
+
+#: src/app/main/ui/dashboard/import.cljs:485
+msgid "dashboard.import.import-error.message1"
+msgstr "下面的文件有错误："
+
+#: src/app/main/ui/dashboard/import.cljs:490
+msgid "dashboard.import.import-error.message2"
+msgstr "有错误的文件将不会被上传。"
+
+#: src/app/main/ui/dashboard.cljs:244
+msgid "dashboard.import.no-perms"
+msgstr "你没有权限导入到此团队"
+
+#: src/app/main/ui/dashboard/templates.cljs:257
+msgid "dashboard.libraries-and-templates.description"
+msgstr "这里你有一些可以添加至你项目的库和模版"
+
+#: src/app/main/data/comments.cljs:472
+msgid "dashboard.mark-all-as-read.success"
+msgstr "标记所有通知为已读"
+
+#: src/app/main/ui/dashboard/comments.cljs:90
+msgid "dashboard.notifications"
+msgstr "通知"
+
+#: src/app/main/data/profile.cljs:272
+msgid "dashboard.notifications.notifications-saved"
+msgstr "通知设置已更新"
+
+#: src/app/main/ui/dashboard/comments.cljs:44
+msgid "dashboard.notifications.view"
+msgstr "查看通知"
+
+#: src/app/main/data/common.cljs:203
+msgid "dashboard.permissions-change.admin"
+msgstr "你现在是此团队的管理员。"
+
+#: src/app/main/data/common.cljs:202
+msgid "dashboard.permissions-change.editor"
+msgstr "你现在是此团队的编辑人员。"
+
+#: src/app/main/data/common.cljs:204
+msgid "dashboard.permissions-change.owner"
+msgstr "你现在是此团队的拥有者。"
+
+#: src/app/main/data/common.cljs:201
+msgid "dashboard.permissions-change.viewer"
+msgstr "你现在是此团队的查看人员。"
+
+#: src/app/main/ui/dashboard.cljs:207
+msgid "dashboard.plugins.bad-url"
+msgstr "插件 URL 不正确"
+
+#: src/app/main/ui/dashboard.cljs:205
+msgid "dashboard.plugins.parse-error"
+msgstr "不能解析插件清单"
+
+#: src/app/main/ui/dashboard.cljs:168
+msgid "dashboard.plugins.try-plugin"
+msgstr "尝试插件 "
+
+#: src/app/main/data/common.cljs:236
+msgid "dashboard.removed-from-team"
+msgstr "你现在不再是此团队“%s”的成员。"
+
+#: src/app/main/ui/settings/options.cljs:68
+msgid "dashboard.select-ui-theme.dark"
+msgstr "Penpot 暗黑模式（缺省）"
+
+#: src/app/main/ui/settings/options.cljs:69
+msgid "dashboard.select-ui-theme.light"
+msgstr "Penpot 浅色模式"
+
+#: src/app/main/ui/settings/options.cljs:70
+msgid "dashboard.select-ui-theme.system"
+msgstr "系统主题"
+
+#: src/app/main/ui/settings/notifications.cljs:57
+msgid "dashboard.settings.notifications.dashboard-comments.all"
+msgstr "全部评论、提及和回复"
+
+#: src/app/main/ui/settings/notifications.cljs:59
+msgid "dashboard.settings.notifications.dashboard-comments.none"
+msgstr "无"
+
+#: src/app/main/ui/settings/notifications.cljs:58
+msgid "dashboard.settings.notifications.dashboard-comments.partial"
+msgstr "仅提及和回复"
+
+#: src/app/main/ui/settings/notifications.cljs:54
+msgid "dashboard.settings.notifications.dashboard-comments.title"
+msgstr "文件评论"
+
+#: src/app/main/ui/settings/notifications.cljs:53
+msgid "dashboard.settings.notifications.dashboard.title"
+msgstr "仪表板通知"
+
+#: src/app/main/ui/settings/notifications.cljs:67
+msgid "dashboard.settings.notifications.email-comments.all"
+msgstr "全部评论、提及和回复"
+
+#: src/app/main/ui/settings/notifications.cljs:69
+msgid "dashboard.settings.notifications.email-comments.none"
+msgstr "无"
+
+#: src/app/main/ui/settings/notifications.cljs:68
+msgid "dashboard.settings.notifications.email-comments.partial"
+msgstr "仅提及和回复"
+
+#: src/app/main/ui/settings/notifications.cljs:64
+msgid "dashboard.settings.notifications.email-comments.title"
+msgstr "文件评论"
+
+#: src/app/main/ui/settings/notifications.cljs:76
+msgid "dashboard.settings.notifications.email-invites.all"
+msgstr "全部类型的邀请和请求"
+
+#: src/app/main/ui/settings/notifications.cljs:79
+msgid "dashboard.settings.notifications.email-invites.none"
+msgstr "无"
+
+#: src/app/main/ui/settings/notifications.cljs:73
+msgid "dashboard.settings.notifications.email-invites.title"
+msgstr "邀请和请求"
+
+#: src/app/main/ui/settings/notifications.cljs:52
+msgid "dashboard.settings.notifications.title"
+msgstr "通知"
+
+#: src/app/main/ui/workspace/main_menu.cljs:633
+msgid "dashboard.show-version-history"
+msgstr "版本历史"
+
+#: src/app/main/ui/dashboard/templates.cljs:133
+msgid "dashboard.template.add-to-project"
+msgstr "添加至您的项目"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:998
+msgid "dashboard.upgrade-plan.no-limits"
+msgstr "无创作能力限制"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:997
+msgid "dashboard.upgrade-plan.penpot-free"
+msgstr "Penpot 免费"
+
+#: src/app/main/ui/dashboard/team.cljs:995
+msgid "dashboard.webhooks.cant-edit"
+msgstr "您只能删除或修改由您创建的 webhooks。"
+
+#: src/app/main/data/auth.cljs:314
+msgid "errors.auth-provider-not-allowed"
+msgstr "认证提供者不允许访问此个人设定"
+
+#: src/app/main/ui/comments.cljs:727, src/app/main/ui/comments.cljs:758, src/app/main/ui/comments.cljs:855
+msgid "errors.character-limit-exceeded"
+msgstr "超出字符限制"
+
+#: src/app/main/errors.cljs:195
+msgid "errors.comment-error"
+msgstr "评论有错误"
+
+#: src/app/main/errors.cljs:267
+msgid "errors.deprecated.contact.after"
+msgstr "所以我们可以帮助你。"
+
+#: src/app/main/errors.cljs:266
+msgid "errors.deprecated.contact.text"
+msgstr "联系我们"
+
+msgid "errors.email-does-not-match-invitation"
+msgstr "邮件和此邀请不匹配。"
+
+#: src/app/util/forms.cljs:61
+msgid "errors.field-missing"
+msgstr "空字段"
+
+#: src/app/main/errors.cljs:157
+msgid "errors.internal-assertion-error"
+msgstr "内部断言错误"
+
+#: src/app/util/forms.cljs:35, src/app/util/forms.cljs:84
+msgid "errors.invalid-data"
+msgstr "无效数据"
+
+#: src/app/util/forms.cljs
+#, unused
+msgid "errors.invalid-text"
+msgstr "无效文本"
+
+#: src/app/main/errors.cljs:227
+msgid "errors.migration-in-progress"
+msgstr "迁移正在进行中"
+
+#: src/app/main/errors.cljs:152
+msgid "errors.version-locked"
+msgstr "此版本被锁定，不能被其他人删除"
+
+#: src/app/main/errors.cljs:160
+msgid "errors.only-creator-can-lock"
+msgstr "只有版本创建者可以锁定"
+
+#: src/app/main/errors.cljs:168
+msgid "errors.only-creator-can-unlock"
+msgstr "只有版本创建者可以解除锁定"
+
+#: src/app/main/errors.cljs:176
+msgid "errors.version-already-locked"
+msgstr "此版本已被锁定"
+
+#: src/app/main/errors.cljs:186
+msgid "errors.svg-parser.invalid-svg"
+msgstr "SVG无效或格式错误"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:152, src/app/main/data/workspace/tokens/library_edit.cljs:182
+msgid "errors.token-set-already-exists"
+msgstr "同名的集已经存在"
+
+#: src/app/main/data/tokens.cljs:
+#, unused
+msgid "errors.token-set-doesnt-exists"
+msgstr "不能复制一个未知的集"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:76, src/app/main/data/workspace/tokens/library_edit.cljs:98
+msgid "errors.token-theme-already-exists"
+msgstr "同名的主题选项已经存在"
+
+#: src/app/main/ui/components/color_input.cljs:36
+msgid "inspect.attributes.color"
+msgstr "颜色"
+
+msgid "inspect.attributes.typography.text-decoration.line-through"
+msgstr "删除线"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variant"
+msgstr "变体属性"
+
+#: src/app/main/ui/inspect/attributes/variant.cljs:44
+msgid "inspect.attributes.variants"
+msgstr "变体属性"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:61
+msgid "inspect.subtitle.copy"
+msgstr "复制"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:57
+msgid "inspect.subtitle.main"
+msgstr "主组件"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:59
+msgid "inspect.subtitle.variant"
+msgstr "变体"
+
+#: src/app/main/ui/dashboard/comments.cljs:95
+msgid "label.mark-all-as-read"
+msgstr "标记全部为已读"
+
+#: src/app/main/ui/workspace/libraries.cljs:176
+msgid "labels.add"
+msgstr "新增"
+
+#: src/app/main/ui/workspace/libraries.cljs:176
+msgid "labels.adding"
+msgstr "新增..."
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:226
+msgid "labels.collapse"
+msgstr "折叠"
+
+#: src/app/main/ui/comments.cljs:910
+msgid "labels.comment"
+msgstr "评论"
+
+#: src/app/main/ui/comments.cljs:914
+msgid "labels.comment.mark-as-solved"
+msgstr "标记为已解决"
+
+#: src/app/main/ui/components/copy_button.cljs:41
+msgid "labels.copy"
+msgstr "复制"
+
+#: src/app/main/ui/inspect/attributes/common.cljs:118
+msgid "labels.copy-color"
+msgstr "复制颜色"
+
+#: src/app/main/ui/static.cljs:62
+msgid "labels.copyright"
+msgstr "Kaleidos @2024"
+
+#: src/app/main/ui/onboarding/questions.cljs:260
+#, unused
+msgid "labels.director"
+msgstr "主管"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:63
+msgid "labels.duplicate"
+msgstr "复制"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
+msgid "labels.empty"
+msgstr "空"
+
+#: src/app/main/ui/dashboard/import.cljs:294
+msgid "labels.error"
+msgstr "错误"
+
+#: src/app/main/ui/dashboard/templates.cljs:90
+msgid "labels.hide"
+msgstr "隐藏"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:413
+msgid "labels.import"
+msgstr "导入"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:179
+msgid "labels.lock"
+msgstr "锁定"
+
+#: src/app/main/ui/comments.cljs:581
+msgid "labels.mention"
+msgstr "提及"
+
+#: src/app/main/ui/settings/sidebar.cljs:103
+msgid "labels.notifications"
+msgstr "通知"
+
+#: src/app/main/ui/comments.cljs:920, src/app/main/ui/comments.cljs:984, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:326
+msgid "labels.options"
+msgstr "选项"
+
+#: src/app/main/ui/comments.cljs:676
+msgid "labels.post"
+msgstr "发帖"
+
+#: src/app/main/data/common.cljs:83
+msgid "labels.refresh"
+msgstr "刷新"
+
+#: src/app/main/ui/comments.cljs:639
+msgid "labels.replies"
+msgstr "回复"
+
+#: src/app/main/ui/comments.cljs:644
+msgid "labels.replies.new"
+msgstr "新回复"
+
+#: src/app/main/ui/comments.cljs:638
+msgid "labels.reply"
+msgstr "回复"
+
+#: src/app/main/ui/comments.cljs:643
+msgid "labels.reply.new"
+msgstr "新回复"
+
+#: src/app/main/ui/comments.cljs:719
+msgid "labels.reply.thread"
+msgstr "回复"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:139, src/app/main/ui/workspace/sidebar/versions.cljs:270
+msgid "labels.restore"
+msgstr "还原"
+
+#: src/app/main/ui/onboarding/questions.cljs:84, src/app/main/ui/onboarding/questions.cljs:230, src/app/main/ui/onboarding/questions.cljs:240
+msgid "labels.select-option"
+msgstr "选择选项"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:251
+msgid "labels.sets"
+msgstr "集"
+
+#: src/app/main/ui/dashboard/templates.cljs:86
+msgid "labels.show"
+msgstr "显示"
+
+#: src/app/main/ui/workspace/comments.cljs:67, src/app/main/ui/workspace/comments.cljs:139
+msgid "labels.show-mentions"
+msgstr "只显示您的提及"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:185
+msgid "labels.themes"
+msgstr "主题"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:73
+msgid "labels.unknown-error"
+msgstr "未知错误"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:176
+msgid "labels.unlock"
+msgstr "解锁"
+
+#: src/app/main/ui/ds/product/loader.cljs:22
+msgid "loader.tips.02.title"
+msgstr "实时协作"
+
+#: src/app/main/ui/ds/product/loader.cljs:24
+msgid "loader.tips.03.title"
+msgstr "像 CSS 一样自动布局"
+
+#: src/app/main/ui/ds/product/loader.cljs:26
+msgid "loader.tips.04.title"
+msgstr "导出为代码"
+
+#: src/app/main/ui/ds/product/loader.cljs:28
+msgid "loader.tips.05.title"
+msgstr "设计库"
+
+#: src/app/main/ui/ds/product/loader.cljs:30
+msgid "loader.tips.06.title"
+msgstr "交互式原型"
+
+#: src/app/main/ui/ds/product/loader.cljs:32
+msgid "loader.tips.07.title"
+msgstr "Web 标准格式"
+
+#: src/app/main/ui/ds/product/loader.cljs:34
+msgid "loader.tips.08.title"
+msgstr "键盘快捷键"
+
+#: src/app/main/ui/ds/product/loader.cljs:36
+msgid "loader.tips.09.title"
+msgstr "暗黑和浅色模式"
+
+#: src/app/main/ui/ds/product/loader.cljs:38
+msgid "loader.tips.10.title"
+msgstr "插件支持"
+
+#: src/app/main/ui/static.cljs:309
+msgid "not-found.no-permission.you-can-ask.file"
+msgstr "要访问此文件，您可以询问团队拥有者。"
+
+#: src/app/main/ui/static.cljs:318
+msgid "not-found.no-permission.you-can-ask.project"
+msgstr "要访问此项目，您可以询问团队拥有者。"
+
+#: src/app/main/ui/onboarding/questions.cljs:249
+msgid "onboarding.questions.reasons.alternative"
+msgstr "寻找 Figma、XD等的替代者"
+
+#: src/app/main/ui/onboarding/questions.cljs:405
+#, unused
+msgid "onboarding.questions.referer.search"
+msgstr "搜索引擎（Google、Yahoo、Bing）"
+
+#: src/app/main/ui/onboarding/questions.cljs:406
+#, unused
+msgid "onboarding.questions.referer.social"
+msgstr "社交媒体（X、Linkedin、FB等）"
+
+#: src/app/main/ui/settings/notifications.cljs:63
+msgid "dashboard.settings.notifications.email.title"
+msgstr "邮件通知"
+
+#: src/app/main/ui/settings/notifications.cljs:84
+msgid "dashboard.settings.notifications.submit"
+msgstr "更新设置"
+
+#: src/app/main/ui/onboarding/questions.cljs:318
+msgid "onboarding.questions.start-with.prototyping"
+msgstr "原型设计"
+
+#: src/app/main/ui/onboarding/questions.cljs:314
+msgid "onboarding.questions.start-with.ui"
+msgstr "设计 App 的 UI/UX"
+
+#: src/app/main/ui/onboarding/questions.cljs:316
+msgid "onboarding.questions.start-with.wireframing"
+msgstr "线框图"
+
+#: src/app/main/ui/onboarding/questions.cljs:110
+msgid "onboarding.questions.step1.title"
+msgstr "帮助我们了解你"
+
+#: src/app/main/ui/onboarding/questions.cljs:122
+msgid "onboarding.questions.step3.question1"
+msgstr "您做什么工作？"
+
+#: src/app/main/ui/onboarding/questions.cljs:270
+msgid "onboarding.questions.step3.title"
+msgstr "告诉我们您的工作"
+
+#: src/app/main/ui/onboarding/questions.cljs:345
+msgid "onboarding.questions.step4.title"
+msgstr "您想从哪里开始？"
+
+#: src/app/main/ui/onboarding/questions.cljs:428
+#, unused
+msgid "onboarding.questions.step5.title"
+msgstr "您是如何听说Penpot的？"
+
+#: src/app/main/ui/onboarding/questions.cljs:235
+msgid "onboarding.questions.team-size.freelancer"
+msgstr "我是自由工作者"
+
+#: src/app/main/ui/onboarding/questions.cljs:79
+msgid "onboarding.questions.use.education"
+msgstr "教育"
+
+#: src/app/main/ui/onboarding/questions.cljs:80
+msgid "onboarding.questions.use.personal"
+msgstr "个人"
+
+#: src/app/main/ui/onboarding/questions.cljs:78
+msgid "onboarding.questions.use.work"
+msgstr "工作"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:227
+msgid "settings.detach"
+msgstr "分离"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:274
+msgid "settings.remove-color"
+msgstr "移除颜色"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:94
+msgid "shortcuts.copy-link"
+msgstr "复制链接"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:106
+#, unused
+msgid "shortcuts.copy-props"
+msgstr "复制属性"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
+#, unused
+msgid "shortcuts.paste-props"
+msgstr "粘贴属性"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:604
+#, unused
+msgid "shortcuts.plugins"
+msgstr "插件管理器"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:167
+msgid "shortcuts.rename"
+msgstr "重命名"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:169
+msgid "shortcuts.scale"
+msgstr "缩放"
+
+#: src/app/main/ui/dashboard/subscription.cljs:80
+msgid "subscription.dashboard.power-up.enterprise-plan"
+msgstr "企业计划"
+
+#: src/app/main/ui/dashboard/subscription.cljs:59
+msgid "subscription.dashboard.power-up.professional.top-title"
+msgstr "专业计划"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64, src/app/main/ui/settings/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:131
+#, unused
+msgid "subscription.dashboard.power-up.subscribe"
+msgstr "订阅"
+
+#: src/app/main/ui/dashboard/subscription.cljs:67
+msgid "subscription.dashboard.power-up.trial.top-title"
+msgstr "无限计划（试验）"
+
+#: src/app/main/ui/dashboard/subscription.cljs:73
+msgid "subscription.dashboard.power-up.unlimited-plan"
+msgstr "无限计划"
+
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "企业计划（实验）"
+
+#: src/app/main/ui/dashboard/subscription.cljs:70
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.cta"
+msgstr "看一看"
+
+#: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
+msgid "subscription.dashboard.power-up.your-subscription"
+msgstr "您的订阅："
+
+#: src/app/main/ui/dashboard/subscription.cljs:102
+msgid "subscription.dashboard.team-plan"
+msgstr "团队计划"
+
+#: src/app/main/ui/settings/sidebar.cljs:116, src/app/main/ui/settings/subscription.cljs:222, src/app/main/ui/settings/subscription.cljs:231
+msgid "subscription.labels"
+msgstr "订阅"
+
+#: src/app/main/ui/dashboard/subscription.cljs:110, src/app/main/ui/settings/subscription.cljs:57, src/app/main/ui/settings/subscription.cljs:266, src/app/main/ui/settings/subscription.cljs:313
+msgid "subscription.settings.enterprise"
+msgstr "企业"
+
+#: src/app/main/ui/settings/subscription.cljs:53
+msgid "subscription.settings.enterprise-trial"
+msgstr "企业（实验）"
+
+#: src/app/main/ui/dashboard/subscription.cljs:114, src/app/main/ui/settings/subscription.cljs:251, src/app/main/ui/settings/subscription.cljs:262, src/app/main/ui/settings/subscription.cljs:272
+msgid "subscription.settings.manage-your-subscription"
+msgstr "管理您的订阅"
+
+#: src/app/main/ui/settings/subscription.cljs:106
+msgid "subscription.settings.management.dialog.members"
+msgstr " （%s 编辑者）"
+
+#: src/app/main/ui/settings/subscription.cljs:124
+#, markdown
+msgid "subscription.settings.management.dialog.price-month"
+msgstr "每月 **$%s**"
+
+#: src/app/main/ui/settings/subscription.cljs:112
+msgid "subscription.settings.management.dialog.select-editors"
+msgstr "选择您需要的编辑者数量（席位）："
+
+#: src/app/main/ui/settings/subscription.cljs:97
+msgid "subscription.settings.management.dialog.title"
+msgstr "应用 %s 到您的团队"
+
+#: src/app/main/ui/settings/subscription.cljs:282
+msgid "subscription.settings.member-since"
+msgstr "Penpot 成员，自从： %s"
+
+#: src/app/main/ui/settings/subscription.cljs:295, src/app/main/ui/settings/subscription.cljs:309, src/app/main/ui/settings/subscription.cljs:323
+msgid "subscription.settings.more-information"
+msgstr "更多信息"
+
+#: src/app/main/ui/settings/subscription.cljs:285
+msgid "subscription.settings.other-plans"
+msgstr "其它 penpot 计划"
+
+#: src/app/main/ui/dashboard/subscription.cljs:105, src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:238, src/app/main/ui/settings/subscription.cljs:287
+msgid "subscription.settings.professional"
+msgstr "专业"
+
+#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
+msgid "subscription.settings.professional.projects-files"
+msgstr "无限项目、文件、草稿"
+
+#: src/app/main/ui/settings/subscription.cljs:235
+msgid "subscription.settings.section-plan"
+msgstr "您的订阅"
+
+#: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.subscribe"
+msgstr "订阅"
+
+#: src/app/main/ui/settings/subscription.cljs:168
+msgid "subscription.settings.sucess.dialog.footer"
+msgstr "享受您的计划！"
+
+#: src/app/main/ui/settings/subscription.cljs:166
+msgid "subscription.settings.sucess.dialog.title"
+msgstr "你是 %s！"
+
+#: src/app/main/ui/dashboard/subscription.cljs:108, src/app/main/ui/settings/subscription.cljs:56, src/app/main/ui/settings/subscription.cljs:256, src/app/main/ui/settings/subscription.cljs:299
+msgid "subscription.settings.unlimited"
+msgstr "无限"
+
+#: src/app/main/ui/dashboard/subscription.cljs:107, src/app/main/ui/settings/subscription.cljs:52, src/app/main/ui/settings/subscription.cljs:245
+msgid "subscription.settings.unlimited-trial"
+msgstr "无限（实验）"
+
+#: src/app/main/ui/settings/notifications.cljs:45
+msgid "title.settings.notifications"
+msgstr "通知 - Penpot"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:165
+msgid "workspace.assets.add-library"
+msgstr "新增库"
+
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:493
+msgid "workspace.assets.colors.add-color"
+msgstr "新增颜色"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:524
+msgid "workspace.assets.components.add-component"
+msgstr "新增组件"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:173
+msgid "workspace.assets.components.num-variants"
+msgstr "%s 变体"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:519
+msgid "workspace.assets.grid-view"
+msgstr "网格视图"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:515
+msgid "workspace.assets.list-view"
+msgstr "列表视图"
+
+#: src/app/main/ui/workspace/sidebar/assets.cljs:170
+msgid "workspace.assets.manage-library"
+msgstr "管理库"
+
+#: src/app/main/ui/workspace/sidebar/assets/typographies.cljs:404
+msgid "workspace.assets.typography.add-typography"
+msgstr "新增排版"
+
+#: src/app/main/ui/workspace/main_menu.cljs:916
+#, unused
+msgid "workspace.header.menu.option.power-up"
+msgstr "升级您的计划"
+
+#: src/app/main/ui/workspace/main_menu.cljs:285
+msgid "workspace.header.menu.toggle-system-theme"
+msgstr "切换至系统主题"
+
+#: src/app/main/ui/workspace/right_header.cljs:227
+msgid "workspace.header.share"
+msgstr "共享"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:429, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:435
+msgid "workspace.layout_grid.editor.padding.bottom"
+msgstr "下内边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:354, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:361
+msgid "workspace.layout_grid.editor.padding.horizontal"
+msgstr "水平内边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:444, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:450
+msgid "workspace.layout_grid.editor.padding.left"
+msgstr "左内边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:414, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:420
+msgid "workspace.layout_grid.editor.padding.right"
+msgstr "右内边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:399, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:405
+msgid "workspace.layout_grid.editor.padding.top"
+msgstr "上内边距"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:340, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:346
+msgid "workspace.layout_grid.editor.padding.vertical"
+msgstr "垂直内边距"
+
+#: src/app/main/ui/workspace/main_menu.cljs:901
+msgid "workspace.plugins.menu.title"
+msgstr "插件"
+
+#: src/app/main/ui/workspace/plugins.cljs:367
+msgid "workspace.plugins.permissions-update.title"
+msgstr "更新此插件"
+
+#: src/app/main/ui/workspace/plugins.cljs:278
+msgid "workspace.plugins.permissions.allow-download"
+msgstr "开始文件下载。"
+
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "保存数据至浏览器。"
+
+#: src/app/main/ui/workspace/plugins.cljs:271
+msgid "workspace.plugins.permissions.comment-read"
+msgstr "阅读您的评论和回复。"
+
+#: src/app/main/ui/workspace/plugins.cljs:258
+msgid "workspace.plugins.permissions.library-read"
+msgstr "阅读您的库和资源。"
+
+#: src/app/main/ui/workspace/plugins.cljs:252
+msgid "workspace.plugins.permissions.library-write"
+msgstr "阅读和修改您的库和资源。"
+
+#: src/app/main/ui/workspace/plugins.cljs:311
+msgid "workspace.plugins.permissions.title"
+msgstr "'%s' 插件需要访问："
+
+#: src/app/main/ui/workspace/plugins.cljs:209
+msgid "workspace.plugins.plugin-list-link"
+msgstr "插件列表"
+
+#: src/app/main/ui/workspace/plugins.cljs:86
+msgid "workspace.plugins.remove-plugin"
+msgstr "移除插件"
+
+#: src/app/main/ui/workspace/plugins.cljs:178
+msgid "workspace.plugins.search-placeholder"
+msgstr "写入插件 URL"
+
+#, unused
+msgid "workspace.plugins.success"
+msgstr "插件已正确载入。"
+
+#: src/app/main/ui/workspace/plugins.cljs:172
+msgid "workspace.plugins.title"
+msgstr "插件"
+
+#: src/app/main/ui/workspace/plugins.cljs:431
+msgid "workspace.plugins.try-out.cancel"
+msgstr "不是现在"
+
+#: src/app/main/ui/workspace/plugins.cljs:420
+msgid "workspace.plugins.try-out.title"
+msgstr "'%s' 插件已为您的使用者安装！"
+
+#: src/app/main/ui/workspace/plugins.cljs:437
+msgid "workspace.plugins.try-out.try"
+msgstr "尝试插件"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1015, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1039
+msgid "workspace.shape.menu.add-layout"
+msgstr "新增布局"
+
+#: src/app/main/ui/workspace/context_menu.cljs:592, src/app/main/ui/workspace/sidebar/assets/common.cljs:498, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:880
+msgid "workspace.shape.menu.add-variant"
+msgstr "创建变体"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:878
+msgid "workspace.shape.menu.add-variant-property"
+msgstr "新增新属性"
+
+#: src/app/main/ui/workspace/context_menu.cljs:207
+msgid "workspace.shape.menu.copy-css"
+msgstr "复制为 CSS"
+
+#: src/app/main/ui/workspace/context_menu.cljs:209
+msgid "workspace.shape.menu.copy-css-nested"
+msgstr "复制为 CSS （嵌套层）"
+
+#: src/app/main/ui/workspace/context_menu.cljs:192
+msgid "workspace.shape.menu.copy-link"
+msgstr "复制链接"
+
+#: src/app/main/ui/workspace/context_menu.cljs:205
+msgid "workspace.shape.menu.copy-paste-as"
+msgstr "复制/粘贴为..."
+
+#: src/app/main/ui/workspace/context_menu.cljs:219
+msgid "workspace.shape.menu.copy-props"
+msgstr "复制属性"
+
+#: src/app/main/ui/workspace/context_menu.cljs:211
+msgid "workspace.shape.menu.copy-svg"
+msgstr "复制为 SVG"
+
+#: src/app/main/ui/workspace/context_menu.cljs:216
+msgid "workspace.shape.menu.copy-text"
+msgstr "复制为文本"
+
+#: src/app/main/ui/workspace/context_menu.cljs:385
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "合并为变体"
+
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "组件需要在同一个页面中"
+
+#: src/app/main/ui/workspace/context_menu.cljs:223
+msgid "workspace.shape.menu.paste-props"
+msgstr "粘贴属性"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1033
+msgid "workspace.shape.menu.remove-layout"
+msgstr "移除布局"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property"
+msgstr "移除属性"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:974
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "变体至少需要有一个属性"
+
+#: src/app/main/ui/workspace/context_menu.cljs:318
+msgid "workspace.shape.menu.rename"
+msgstr "重命名"
+
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:249
+msgid "workspace.sidebar.sitemap.add-page"
+msgstr "新增页"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:83
+msgid "workspace.tokens.active-themes"
+msgstr "%s 个活动的主题"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs
+#, unused
+msgid "workspace.tokens.add set"
+msgstr "新增集"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:62, src/app/main/ui/workspace/tokens/modals/themes.cljs:165, src/app/main/ui/workspace/tokens/modals/themes.cljs:328
+msgid "workspace.tokens.add-new-theme"
+msgstr "新增新主题"
+
+#: src/app/main/ui/workspace/tokens/sets_context_menu.cljs:60
+msgid "workspace.tokens.add-set-to-group"
+msgstr "新增集至此编组"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:138
+msgid "workspace.tokens.applied-to"
+msgstr "应用于"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:337
+msgid "workspace.tokens.back-to-themes"
+msgstr "返回到主题列表"
+
+#: src/app/main/ui/workspace/tokens/modals/settings.cljs:90
+msgid "workspace.tokens.base-font-size"
+msgstr "基本字体大小"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:127
+msgid "workspace.tokens.choose-file"
+msgstr "选择文件"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:132
+msgid "workspace.tokens.choose-folder"
+msgstr "选择文件夹"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:251
+msgid "workspace.tokens.import-button-prefix"
+msgstr "导入 %s"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:245
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP 文件"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:246
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "单 JSON 文件"
+
+#: src/app/main/ui/workspace/tokens/modals/import.cljs:247
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "文件夹"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:245
+msgid "workspace.tokens.color"
+msgstr "颜色"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:53
+msgid "workspace.tokens.create-new-theme"
+msgstr "现在创建您的第一个主题。"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:140, src/app/main/ui/workspace/tokens/sidebar.cljs:193
+msgid "workspace.tokens.create-one"
+msgstr "创建一个。"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:285
+msgid "workspace.tokens.delete"
+msgstr "删除 token"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
+msgid "workspace.tokens.delete-theme-title"
+msgstr "删除主题"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:282
+msgid "workspace.tokens.duplicate"
+msgstr "复制 token"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:200, src/app/main/data/workspace/tokens/library_edit.cljs:402
+msgid "workspace.tokens.duplicate-suffix"
+msgstr "复制"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:269
+msgid "workspace.tokens.edit"
+msgstr "编辑 token"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:327
+msgid "workspace.tokens.edit-theme-title"
+msgstr "编辑主题"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:71
+msgid "workspace.tokens.edit-themes"
+msgstr "编辑主题"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:525
+msgid "workspace.tokens.edit-token"
+msgstr "编辑 token"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:15
+msgid "workspace.tokens.error-parse"
+msgstr "导入错误：不能解析 JSON。"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:47
+msgid "workspace.tokens.export"
+msgstr "导出"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:126
+msgid "workspace.tokens.export-tokens"
+msgstr "导出 tokens"
+
+#: src/app/main/ui/ds/product/loader.cljs:20
+msgid "loader.tips.01.title"
+msgstr "可重用组件"
+
+#: src/app/main/ui/dashboard/subscription.cljs:133, src/app/main/ui/workspace/main_menu.cljs:928
+msgid "subscription.workspace.header.menu.option.power-up"
+msgstr "升级您的计划"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:489, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:490
+msgid "workspace.layout_grid.editor.padding.expand"
+msgstr "显示4边内距选项"
+
+#: src/app/main/ui/onboarding/questions.cljs:320
+msgid "onboarding.questions.start-with.ds"
+msgstr "创建设计系统"
+
+#: src/app/main/ui/onboarding/questions.cljs:116
+msgid "onboarding.questions.step1.question1"
+msgstr "您将使用 Penpot 做什么？"
+
+#: src/app/main/ui/onboarding/questions.cljs:273
+msgid "onboarding.questions.step1.question2"
+msgstr "是什么让你今天来到 Penpot？"
+
+#: src/app/main/ui/onboarding/questions.cljs:190
+msgid "onboarding.questions.step2.title"
+msgstr "这些工具中您最常使用哪个？"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1000
+msgid "subscription.dashboard.upgrade-plan.power-up"
+msgstr "升级"
+
+#: src/app/main/ui/workspace/libraries.cljs:369
+msgid "workspace.libraries.empty.some-templates"
+msgstr "这里有些模版"
+
+#: src/app/main/ui/workspace/libraries.cljs:387
+#, unused
+msgid "workspace.libraries.more-templates"
+msgstr "您可以搜索 "
+
+#: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:67, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:72
+msgid "workspace.notification-pill.detail"
+msgstr "细节"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+msgid "workspace.options.blur-options.add-blur"
+msgstr "新增模糊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+msgid "workspace.options.blur-options.remove-blur"
+msgstr "移除模糊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+msgid "workspace.options.blur-options.toggle-blur"
+msgstr "切换模糊"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:777, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:930
+msgid "workspace.options.component.main"
+msgstr "主要"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:808
+msgid "workspace.options.component.unlinked"
+msgstr "未链接"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:776
+msgid "workspace.options.component.variant"
+msgstr "变体"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "定位到复制的变体"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "转到主组件"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
+msgid "workspace.options.component.variant.malformed.group.locate"
+msgstr "定位无效的变体"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:985
+msgid "workspace.options.component.variant.malformed.group.title"
+msgstr "一些变体的名字无效"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:248
+msgid "workspace.options.component.variant.malformed.single.all"
+msgstr "这些变体的名字无效。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:245
+msgid "workspace.options.component.variant.malformed.single.one"
+msgstr "这个变体的名字无效。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:251
+msgid "workspace.options.component.variant.malformed.single.some"
+msgstr "其中一些变体的名字无效。"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:340
+msgid "workspace.options.component.variant.malformed.structure.example"
+msgstr "[property]=[value], [property]=[value]"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:338
+msgid "workspace.options.component.variant.malformed.structure.title"
+msgstr "尝试使用下面的结构："
+
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "变体如何保持连接"
+
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "共享相同的名字。"
+
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "是相同的类型"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:188
+msgid "workspace.options.export.add-export"
+msgstr "新增导出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:235
+msgid "workspace.options.export.remove-export"
+msgstr "移除导出"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
+msgid "workspace.options.fill.add-fill"
+msgstr "新增填充"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:172
+msgid "workspace.options.fill.remove-fill"
+msgstr "移除填充"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:338
+msgid "workspace.options.fit-content"
+msgstr "调整画板适应内容大小"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:154
+msgid "workspace.options.flows.remove-flow"
+msgstr "移除流"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:323
+msgid "workspace.options.guides.add-guide"
+msgstr "新增辅助线"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:187
+msgid "workspace.options.guides.remove-guide"
+msgstr "移除辅助线"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:183
+msgid "workspace.options.guides.toggle-guide"
+msgstr "切换辅助线"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:735
+msgid "workspace.options.interactions.add-interaction"
+msgstr "新增交互"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs
+#, unused
+msgid "workspace.options.interactions.remove-interaction"
+msgstr "移除交互"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:190, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:196
+msgid "workspace.options.layer-options.toggle-layer"
+msgstr "显示/隐藏图层"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:137
+msgid "workspace.options.radius.show-single-corners"
+msgstr "显示独立的圆角"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+msgid "workspace.options.shadow-options.add-shadow"
+msgstr "新增阴影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:152, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+msgid "workspace.options.shadow-options.remove-shadow"
+msgstr "移除阴影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:148
+msgid "workspace.options.shadow-options.toggle-shadow"
+msgstr "切换阴影"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:370
+msgid "workspace.options.size.lock"
+msgstr "锁定比率"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:370
+msgid "workspace.options.size.unlock"
+msgstr "解锁比率"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+msgid "workspace.options.stroke.add-stroke"
+msgstr "新增描边颜色"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+msgid "workspace.options.stroke.remove-stroke"
+msgstr "移除描边"
+
+#: src/app/main/ui/workspace/plugins.cljs:83
+msgid "workspace.plugins.button-open"
+msgstr "打开"
+
+#: src/app/main/ui/workspace/plugins.cljs:197
+#, markdown
+msgid "workspace.plugins.discover"
+msgstr "发现 [more plugins](%s)"
+
+#: src/app/main/ui/workspace/plugins.cljs:204
+msgid "workspace.plugins.empty-plugins"
+msgstr "未安装插件"
+
+#: src/app/main/ui/workspace/plugins.cljs:191
+msgid "workspace.plugins.error.manifest"
+msgstr "插件清单不正确。"
+
+#: src/app/main/ui/workspace/plugins.cljs:183
+msgid "workspace.plugins.install"
+msgstr "安装"
+
+#: src/app/main/ui/workspace/plugins.cljs:213
+msgid "workspace.plugins.installed-plugins"
+msgstr "已安装的插件"
+
+#: src/app/main/ui/workspace/main_menu.cljs:704
+msgid "workspace.plugins.menu.plugins-manager"
+msgstr "插件管理器"
+
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:488
+msgid "workspace.shape.menu.restore-variant"
+msgstr "恢复变体"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:132
+msgid "workspace.tokens.add-token"
+msgstr "新增令牌：%s"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:264
+msgid "workspace.tokens.axis"
+msgstr "轴"
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:33
+msgid "workspace.tokens.export.preview"
+msgstr "预览："
+
+#: src/app/main/ui/workspace/tokens/modals/export.cljs:117
+msgid "workspace.tokens.export.single-file"
+msgstr "单文件"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:201
+msgid "workspace.tokens.gaps"
+msgstr "间隔"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.generic-error"
+msgstr "错误： "
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:104
+msgid "workspace.tokens.group-name"
+msgstr "编组名称"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28, src/app/main/data/workspace/tokens/errors.cljs:33
+msgid "workspace.tokens.import-error"
+msgstr "导入错误："
+
+#: src/app/main/data/workspace/tokens/errors.cljs:45
+msgid "workspace.tokens.invalid-color"
+msgstr "无效的颜色值：%s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.invalid-json"
+msgstr "导入错误：JSON 中存在无效的令牌数据。"
+
+#: src/app/main/ui/workspace/tokens/errors.cljs:16
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "导入错误；JSON中存在无效的令牌名。"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:57, src/app/main/data/workspace/tokens/errors.cljs:65, src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.invalid-value"
+msgstr "无效的令牌值：%s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:190
+msgid "workspace.tokens.label.group"
+msgstr "编组"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:192
+msgid "workspace.tokens.label.group-placeholder"
+msgstr "新增编组 (如模式)"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:198
+msgid "workspace.tokens.label.theme"
+msgstr "主题"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:199
+msgid "workspace.tokens.label.theme-placeholder"
+msgstr "新增一个主题（如浅色）"
+
+#: src/app/main/ui/workspace/sidebar.cljs:282
+msgid "workspace.versions.tab.history"
+msgstr "历史"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:66, src/app/main/ui/ds/product/user_milestone.cljs:73
+msgid "workspace.versions.version-menu"
+msgstr "打开版本菜单"
+
+msgid "labels.sources"
+msgstr "源"
+
+msgid "labels.pinned-projects"
+msgstr "固定项目"
+
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "存在相同的层级"
+
+#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+msgid "workspace.tokens.no-active-theme"
+msgstr "主题未启用"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:137, src/app/main/ui/workspace/tokens/sets.cljs:143
+msgid "workspace.tokens.no-sets-yet"
+msgstr "尚不存在任何集。"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:241
+msgid "workspace.tokens.radius"
+msgstr "圆角半径"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.reference-error"
+msgstr "参考错误： "
+
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/form.cljs:219, src/app/main/ui/workspace/tokens/form.cljs:223, src/app/main/ui/workspace/tokens/token_pill.cljs:125
+msgid "workspace.tokens.resolved-value"
+msgstr "解析的值：%s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:233
+msgid "workspace.tokens.save-theme"
+msgstr "保存主题"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs:249, src/app/main/ui/workspace/tokens/sets.cljs:351
+msgid "workspace.tokens.select-set"
+msgstr "选择集。"
+
+#: src/app/main/ui/workspace/tokens/context_menu.cljs:214
+msgid "workspace.tokens.size"
+msgstr "大小"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:130
+msgid "workspace.tokens.theme-name"
+msgstr "主题 %s"
+
+#: src/app/main/ui/workspace/tokens/modals/themes.cljs:45, src/app/main/ui/workspace/tokens/modals/themes.cljs:94
+msgid "workspace.tokens.themes-list"
+msgstr "主题列表"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:574, src/app/main/ui/workspace/tokens/form.cljs:575
+msgid "workspace.tokens.token-description"
+msgstr "描述"
+
+#: src/app/main/ui/workspace/tokens/form.cljs:531
+msgid "workspace.tokens.token-name"
+msgstr "名称"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:405
+msgid "workspace.tokens.tools"
+msgstr "工具"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:207, src/app/main/ui/workspace/top_toolbar.cljs:208
+msgid "workspace.toolbar.plugins"
+msgstr "插件 (%s)"
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:226, src/app/main/ui/workspace/top_toolbar.cljs:227
+msgid "workspace.toolbar.toggle-toolbar"
+msgstr "切换工具栏"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:190
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s 个自动保存版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:188
+msgid "workspace.versions.autosaved.version"
+msgstr "自动保存 %s"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:209
+msgid "workspace.versions.button.pin"
+msgstr "固定版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:204
+msgid "workspace.versions.button.restore"
+msgstr "恢复版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:334, src/app/main/ui/workspace/sidebar/versions.cljs:336
+msgid "workspace.versions.button.save"
+msgstr "保存版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:343
+msgid "workspace.versions.empty"
+msgstr "还没有版本"
+
+#: src/app/main/ui/ds/product/autosaved_milestone.cljs:52
+msgid "workspace.versions.expand-snapshot"
+msgstr "展开快照"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:316
+msgid "workspace.versions.filter.all"
+msgstr "全部版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:315
+msgid "workspace.versions.filter.label"
+msgstr "版本筛选"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:317
+msgid "workspace.versions.filter.mine"
+msgstr "我的版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:323
+msgid "workspace.versions.filter.user"
+msgstr "%s 的版本"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:329
+msgid "workspace.versions.loading"
+msgstr "截入中..."
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:266
+msgid "workspace.versions.restore-warning"
+msgstr "你想要恢复此版本吗？"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "打开快照菜单"
+
+msgid "workspace.versions.locked-by-you"
+msgstr "此版本已被您锁定"
+
+#: src/app/main/ui/ds/product/loader.cljs:27
+msgid "loader.tips.04.message"
+msgstr "从您的设计中直接获取 CSS 和 SVG。"
+
+#: src/app/main/ui/ds/product/loader.cljs:37
+msgid "loader.tips.09.message"
+msgstr "选择适合您风格的主题。"
+
+#: src/app/main/ui/onboarding/questions.cljs:322
+msgid "onboarding.questions.start-with.code"
+msgstr "从设计中产生真实代码"
+
+#: src/app/main/ui/settings/subscription.cljs:102
+msgid "subscription.settings.management.dialog.choose-this-plan"
+msgstr "您选择此计划是："
+
+#: src/app/main/ui/settings/subscription.cljs:278
+msgid "subscription.settings.support-us-since"
+msgstr "您一直支持我们的这个计划自从：%s"
+
+#: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
+msgid "subscription.settings.try-it-free"
+msgstr "免费试用14天"
+
+#: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+msgid "subscription.settings.unlimited.bill"
+msgstr "月度账单上限"
+
+#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
+msgid "subscription.settings.unlimited.storage-autosave"
+msgstr "25GB存储空间，以及30天自动保存版本和文件恢复"
+
+#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
+msgid "subscription.settings.unlimited.teams"
+msgstr "无限制团队，无论您的团队规模如何"
+
+#: src/app/main/ui/workspace/libraries.cljs:371
+msgid "workspace.libraries.empty.add-some"
+msgstr "或者添加一些这样的来试试："
+
+#: src/app/main/ui/workspace/libraries.cljs:365
+msgid "workspace.libraries.empty.no-libraries"
+msgstr "您的团队中没有共享库，您可以查找"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:265
+msgid "errors.drop-token-set-parent-to-child"
+msgstr "无法将父集放置到自己的子路径中。"
+
+#: src/app/main/errors.cljs:173
+msgid "errors.internal-worker-error"
+msgstr "web worker 出错。"
+
+#: src/app/main/data/workspace/tokens/library_edit.cljs:264
+msgid "errors.token-set-exists-on-drop"
+msgstr "无法完成删除，同名集合已存在于路径中。"
+
+#: src/app/main/ui/dashboard/team.cljs:769
+msgid "labels.no-invitations-gather-people"
+msgstr "召集你的人，一起建设伟大的事业。"
+
+#: src/app/main/ui/ds/product/loader.cljs:21
+msgid "loader.tips.01.message"
+msgstr "保持设计的一致性，方便跨项目更新。"
+
+#: src/app/main/ui/ds/product/loader.cljs:23
+msgid "loader.tips.02.message"
+msgstr "与您的团队实时协作，即时分享反馈。"
+
+#: src/app/main/ui/ds/product/loader.cljs:25
+msgid "loader.tips.03.message"
+msgstr "使用熟悉的类CSS布局控制灵活设计。"
+
+#: src/app/main/errors.cljs:265
+msgid "errors.deprecated.contact.before"
+msgstr "虽然Penpot不再支持此类型的资源，但您可以"
+
+#: src/app/main/ui/onboarding/questions.cljs:246
+msgid "onboarding.questions.reasons.fit"
+msgstr "评估Penpot是否适合我的团队"
+
+#: src/app/main/ui/onboarding/questions.cljs:252
+msgid "onboarding.questions.reasons.testing"
+msgstr "自托管前测试"
+
+#: src/app/main/ui/onboarding/questions.cljs:407
+#, unused
+msgid "onboarding.questions.referer.article"
+msgstr "文章（博客、帖子、实时通讯）"
