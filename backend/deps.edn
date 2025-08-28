@@ -3,7 +3,7 @@
 
  :deps
  {penpot/common {:local/root "../common"}
-  org.clojure/clojure {:mvn/version "1.12.1"}
+  org.clojure/clojure {:mvn/version "1.12.2"}
   org.clojure/tools.namespace {:mvn/version "1.5.0"}
 
   com.github.luben/zstd-jni {:mvn/version "1.5.7-3"}

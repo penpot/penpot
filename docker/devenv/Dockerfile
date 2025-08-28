@@ -73,7 +73,7 @@ RUN set -eux; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v22.16.0 \
+ENV NODE_VERSION=v22.18.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
@@ -107,7 +107,7 @@ RUN set -eux; \
 
 FROM base AS setup-jvm
 
-ENV CLOJURE_VERSION=1.12.0.1501
+ENV CLOJURE_VERSION=1.12.2.1565
 
 RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
@@ -184,8 +184,8 @@ RUN set -eux; \
 FROM base AS setup-utils
 
 ENV CLJKONDO_VERSION=2025.01.16 \
-    BABASHKA_VERSION=1.12.196 \
-    CLJFMT_VERSION=0.13.0
+    BABASHKA_VERSION=1.12.207 \
+    CLJFMT_VERSION=0.13.1
 
 RUN set -ex; \
     ARCH="$(dpkg --print-architecture)"; \

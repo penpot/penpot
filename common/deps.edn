@@ -1,5 +1,5 @@
 {:deps
- {org.clojure/clojure {:mvn/version "1.12.1"}
+ {org.clojure/clojure {:mvn/version "1.12.2"}
   org.clojure/data.json {:mvn/version "2.5.1"}
   org.clojure/tools.cli {:mvn/version "1.1.230"}
   org.clojure/test.check {:mvn/version "1.1.1"}
