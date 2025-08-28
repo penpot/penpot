@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-12 08:02+0000\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4385,6 +4385,7 @@ msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited (prova)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "Fattura mensile con tetto massimo"
 
@@ -7662,6 +7663,7 @@ msgstr ""
 "archiviazione e backup e cronologia delle versioni più brevi."
 
 #: src/app/main/ui/settings/subscription.cljs:126
+#, fuzzy
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Non verrà effettuato nessun pagamento in questo momento)"
 
