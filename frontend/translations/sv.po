@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-08-11 07:21+0000\n"
 "Last-Translator: Henrik Allberg <henrik@thexorb.com>\n"
-"Language-Team: Swedish <https://hosted.weblate.org/projects/penpot/frontend/"
-"sv/>\n"
+"Language-Team: Swedish "
+"<https://hosted.weblate.org/projects/penpot/frontend/sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -11,11 +11,11 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 "X-Generator: Weblate 5.13-dev\n"
 
-#: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
+#: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
 msgstr "Har du redan ett konto?"
 
-#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:231
+#: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:238
 msgid "auth.check-mail"
 msgstr "Kontrollera din e-post"
 
@@ -30,7 +30,7 @@ msgstr ""
 msgid "auth.confirm-password"
 msgstr "Bekräfta lösenordet"
 
-#: src/app/main/ui/auth/register.cljs:220
+#: src/app/main/ui/auth/register.cljs:227
 msgid "auth.create-demo-account"
 msgstr "Skapa demokonto"
 
@@ -49,7 +49,7 @@ msgstr ""
 msgid "auth.forgot-password"
 msgstr "Glömt lösenordet?"
 
-#: src/app/main/ui/auth/register.cljs:153, src/app/main/ui/auth/register.cljs:321
+#: src/app/main/ui/auth/register.cljs:160, src/app/main/ui/auth/register.cljs:328
 msgid "auth.fullname"
 msgstr "Fullständigt namn"
 
@@ -57,7 +57,7 @@ msgstr "Fullständigt namn"
 msgid "auth.login-account-title"
 msgstr "Logga in på mitt konto"
 
-#: src/app/main/ui/auth/register.cljs:212, src/app/main/ui/static.cljs:158, src/app/main/ui/viewer/login.cljs:101
+#: src/app/main/ui/auth/register.cljs:219, src/app/main/ui/static.cljs:156, src/app/main/ui/viewer/login.cljs:101
 msgid "auth.login-here"
 msgstr "Logga in här."
 
@@ -111,15 +111,15 @@ msgstr "En återställningslänk har skickats till din inkorg."
 msgid "auth.notifications.team-invitation-accepted"
 msgstr "Tillagd i teamet"
 
-#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:167
+#: src/app/main/ui/auth/login.cljs:179, src/app/main/ui/auth/register.cljs:174
 msgid "auth.password"
 msgstr "Lösenord"
 
-#: src/app/main/ui/auth/register.cljs:166
+#: src/app/main/ui/auth/register.cljs:173
 msgid "auth.password-length-hint"
 msgstr "Minst 8 tecken"
 
-#: src/app/main/ui/auth/register.cljs:254
+#: src/app/main/ui/auth/register.cljs:261
 msgid "auth.privacy-policy"
 msgstr "Sekretesspolicy"
 
@@ -139,19 +139,19 @@ msgstr "Glömt lösenordet?"
 msgid "auth.recovery-submit"
 msgstr "Ändra lösenordet"
 
-#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:141, src/app/main/ui/viewer/login.cljs:87
+#: src/app/main/ui/auth/login.cljs:298, src/app/main/ui/static.cljs:139, src/app/main/ui/viewer/login.cljs:87
 msgid "auth.register"
 msgstr "Inget konto?"
 
-#: src/app/main/ui/auth/register.cljs:344
+#: src/app/main/ui/auth/register.cljs:351
 msgid "auth.register-account-tagline"
 msgstr "Vilket visningsnamn ska vara på översiktsvyn och i mail från oss."
 
-#: src/app/main/ui/auth/register.cljs:343
+#: src/app/main/ui/auth/register.cljs:350
 msgid "auth.register-account-title"
 msgstr "Ditt namn"
 
-#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:178, src/app/main/ui/auth/register.cljs:330, src/app/main/ui/static.cljs:145, src/app/main/ui/viewer/login.cljs:91
+#: src/app/main/ui/auth/login.cljs:302, src/app/main/ui/auth/register.cljs:185, src/app/main/ui/auth/register.cljs:337, src/app/main/ui/static.cljs:143, src/app/main/ui/viewer/login.cljs:91
 msgid "auth.register-submit"
 msgstr "Skapa ett konto"
 
@@ -162,7 +162,7 @@ msgstr ""
 "Med ett gratis Penpot-konto kan du skapa obegränsade team och samarbeta med "
 "andra designers och utvecklare på så många projekt som du vill. "
 
-#: src/app/main/ui/auth/register.cljs:199
+#: src/app/main/ui/auth/register.cljs:206
 msgid "auth.register-title"
 msgstr "Skapa ett konto"
 
@@ -171,12 +171,12 @@ msgstr "Skapa ett konto"
 msgid "auth.sidebar-tagline"
 msgstr "Den öppna källkodslösningen för design och prototyper."
 
-#: src/app/main/ui/auth/register.cljs:50
+#: src/app/main/ui/auth/register.cljs:51
 #, markdown
 msgid "auth.terms-and-privacy-agreement"
 msgstr "Jag godkänner [terms of service](%s) och [privacy policy](%s)."
 
-#: src/app/main/ui/auth/register.cljs:246, src/app/main/ui/dashboard/sidebar.cljs:1083, src/app/main/ui/workspace/main_menu.cljs:155
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:927, src/app/main/ui/workspace/main_menu.cljs:156
 msgid "auth.terms-of-service"
 msgstr "Användarvillkor"
 
@@ -186,11 +186,11 @@ msgstr ""
 "När du skapar ett nytt konto accepterar du våra användarvillkor och "
 "integritetspolicyn."
 
-#: src/app/main/ui/auth/register.cljs:232
+#: src/app/main/ui/auth/register.cljs:239
 msgid "auth.verification-email-sent"
 msgstr "Vi har skickat ett verifieringsmail till"
 
-#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:160
+#: src/app/main/ui/auth/login.cljs:172, src/app/main/ui/auth/recovery_request.cljs:77, src/app/main/ui/auth/register.cljs:167
 msgid "auth.work-email"
 msgstr "Arbetsmail"
 
@@ -325,78 +325,78 @@ msgstr "Starta rundturen"
 msgid "dasboard.walkthrough-hero.title"
 msgstr "Gränssnittsgenomgång"
 
-#: src/app/main/ui/settings/access_tokens.cljs:104
+#: src/app/main/ui/settings/access_tokens.cljs:103
 msgid "dashboard.access-tokens.copied-success"
 msgstr "Token kopierad"
 
-#: src/app/main/ui/settings/access_tokens.cljs:190
+#: src/app/main/ui/settings/access_tokens.cljs:189
 msgid "dashboard.access-tokens.create"
 msgstr "Skapa ny token"
 
-#: src/app/main/ui/settings/access_tokens.cljs:65
+#: src/app/main/ui/settings/access_tokens.cljs:64
 msgid "dashboard.access-tokens.create.success"
 msgstr "Accesstoken skapad."
 
-#: src/app/main/ui/settings/access_tokens.cljs:288
+#: src/app/main/ui/settings/access_tokens.cljs:286
 msgid "dashboard.access-tokens.empty.add-one"
 msgstr "Tryck på knappen \"Generera ny token\" för att generera en."
 
-#: src/app/main/ui/settings/access_tokens.cljs:287
+#: src/app/main/ui/settings/access_tokens.cljs:285
 msgid "dashboard.access-tokens.empty.no-access-tokens"
 msgstr "Du har inga tokens."
 
-#: src/app/main/ui/settings/access_tokens.cljs:136
+#: src/app/main/ui/settings/access_tokens.cljs:135
 msgid "dashboard.access-tokens.expiration-180-days"
 msgstr "180 dagar"
 
-#: src/app/main/ui/settings/access_tokens.cljs:133
+#: src/app/main/ui/settings/access_tokens.cljs:132
 msgid "dashboard.access-tokens.expiration-30-days"
 msgstr "30 dagar"
 
-#: src/app/main/ui/settings/access_tokens.cljs:134
+#: src/app/main/ui/settings/access_tokens.cljs:133
 msgid "dashboard.access-tokens.expiration-60-days"
 msgstr "60 dagar"
 
-#: src/app/main/ui/settings/access_tokens.cljs:135
+#: src/app/main/ui/settings/access_tokens.cljs:134
 msgid "dashboard.access-tokens.expiration-90-days"
 msgstr "90 dagar"
 
-#: src/app/main/ui/settings/access_tokens.cljs:132
+#: src/app/main/ui/settings/access_tokens.cljs:131
 msgid "dashboard.access-tokens.expiration-never"
 msgstr "Aldrig"
 
-#: src/app/main/ui/settings/access_tokens.cljs:270
+#: src/app/main/ui/settings/access_tokens.cljs:268
 msgid "dashboard.access-tokens.expired-on"
 msgstr "Förföll den %s"
 
-#: src/app/main/ui/settings/access_tokens.cljs:271
+#: src/app/main/ui/settings/access_tokens.cljs:269
 msgid "dashboard.access-tokens.expires-on"
 msgstr "Förfaller den %s"
 
-#: src/app/main/ui/settings/access_tokens.cljs:269
+#: src/app/main/ui/settings/access_tokens.cljs:267
 msgid "dashboard.access-tokens.no-expiration"
 msgstr "Inget förfallodatum"
 
-#: src/app/main/ui/settings/access_tokens.cljs:185
+#: src/app/main/ui/settings/access_tokens.cljs:184
 msgid "dashboard.access-tokens.personal"
 msgstr "Personliga accesstokens"
 
-#: src/app/main/ui/settings/access_tokens.cljs:186
+#: src/app/main/ui/settings/access_tokens.cljs:185
 msgid "dashboard.access-tokens.personal.description"
 msgstr ""
 "Personliga åtkomsttokens fungerar som ett alternativ till vårt "
 "inloggnings-/lösenordsautentiseringssystem och kan användas för att tillåta "
 "en applikation att komma åt interna Penpot API"
 
-#: src/app/main/ui/settings/access_tokens.cljs:143
+#: src/app/main/ui/settings/access_tokens.cljs:142
 msgid "dashboard.access-tokens.token-will-expire"
 msgstr "Token kommer att förfalla den %"
 
-#: src/app/main/ui/settings/access_tokens.cljs:144
+#: src/app/main/ui/settings/access_tokens.cljs:143
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "Token har inget förfallodatum"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:615
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:620
 msgid "dashboard.add-shared"
 msgstr "Lägg till som delat bibliotek"
 
@@ -404,55 +404,55 @@ msgstr "Lägg till som delat bibliotek"
 msgid "dashboard.change-email"
 msgstr "Ändra e-post"
 
-#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:524, src/app/main/data/workspace/pages.cljs:164
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:524, src/app/main/data/workspace/pages.cljs:178
 msgid "dashboard.copy-suffix"
 msgstr "(kopia)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:352
+#: src/app/main/ui/dashboard/sidebar.cljs:328
 msgid "dashboard.create-new-team"
 msgstr "Skapa nytt team"
 
-#: src/app/main/ui/workspace/main_menu.cljs:626
+#: src/app/main/ui/workspace/main_menu.cljs:631
 msgid "dashboard.create-version-menu"
 msgstr "Nåla fast denna version"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:282, src/app/main/ui/dashboard/sidebar.cljs:668
+#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:548
 msgid "dashboard.default-team-name"
 msgstr "Ditt Penpot"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:587
+#: src/app/main/ui/dashboard/sidebar.cljs:476
 msgid "dashboard.delete-team"
 msgstr "Radera team"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:308, src/app/main/ui/dashboard/file_menu.cljs:313, src/app/main/ui/workspace/main_menu.cljs:656, src/app/main/ui/workspace/main_menu.cljs:665
+#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:661, src/app/main/ui/workspace/main_menu.cljs:670
 msgid "dashboard.download-binary-file"
 msgstr "Ladda ner Penpot-fil (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:318, src/app/main/ui/workspace/main_menu.cljs:674
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:679
 msgid "dashboard.download-standard-file"
 msgstr "Ladda ner standardfil (.svg + .json)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:283, src/app/main/ui/dashboard/project_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:286, src/app/main/ui/dashboard/project_menu.cljs:92
 msgid "dashboard.duplicate"
 msgstr "Duplicera"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:239
+#: src/app/main/ui/dashboard/file_menu.cljs:242
 msgid "dashboard.duplicate-multi"
 msgstr "Duplicera %s filer"
 
-#: src/app/main/ui/dashboard/files.cljs:199, src/app/main/ui/dashboard/projects.cljs:286
+#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:285
 msgid "dashboard.empty-placeholder-drafts-subtitle"
 msgstr "När en projektmedlem skapar ett utkast kommer det att visas här."
 
-#: src/app/main/ui/dashboard/files.cljs:194, src/app/main/ui/dashboard/projects.cljs:281
+#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:280
 msgid "dashboard.empty-placeholder-drafts-title"
 msgstr "Inga utkast än."
 
-#: src/app/main/ui/dashboard/files.cljs:200, src/app/main/ui/dashboard/projects.cljs:287
+#: src/app/main/ui/dashboard/files.cljs:201, src/app/main/ui/dashboard/projects.cljs:286
 msgid "dashboard.empty-placeholder-files-subtitle"
 msgstr "När en projektmedlem skapar en fil kommer den att visas här."
 
-#: src/app/main/ui/dashboard/files.cljs:195, src/app/main/ui/dashboard/projects.cljs:282
+#: src/app/main/ui/dashboard/files.cljs:196, src/app/main/ui/dashboard/projects.cljs:281
 msgid "dashboard.empty-placeholder-files-title"
 msgstr "Inga filer än."
 
@@ -480,15 +480,15 @@ msgstr "Bibliotek som läggs till i projektet visas här."
 msgid "dashboard.empty-placeholder-libraries-title"
 msgstr "Inga bibliotek än."
 
-#: src/app/main/ui/dashboard/file_menu.cljs:249, src/app/main/ui/dashboard/file_menu.cljs:254
+#: src/app/main/ui/dashboard/file_menu.cljs:252, src/app/main/ui/dashboard/file_menu.cljs:257
 msgid "dashboard.export-binary-multi"
 msgstr "Ladda ner % Penpot-filer (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:682
+#: src/app/main/ui/workspace/main_menu.cljs:687
 msgid "dashboard.export-frames"
 msgstr "Exportera tavla som PDF"
 
-#: src/app/main/ui/exports/assets.cljs:199
+#: src/app/main/ui/exports/assets.cljs:200
 msgid "dashboard.export-frames.title"
 msgstr "Exportera som PDF"
 
@@ -496,33 +496,33 @@ msgstr "Exportera som PDF"
 msgid "dashboard.export-multi"
 msgstr "Exportera Penpot %s filer"
 
-#: src/app/main/ui/exports/assets.cljs:106
+#: src/app/main/ui/exports/assets.cljs:107
 msgid "dashboard.export-multiple.selected"
 msgstr "%s av %s objekt markerade"
 
-#: src/app/main/ui/workspace/main_menu.cljs:644
+#: src/app/main/ui/workspace/main_menu.cljs:649
 msgid "dashboard.export-shapes"
 msgstr "Exportera"
 
-#: src/app/main/ui/exports/assets.cljs:177
+#: src/app/main/ui/exports/assets.cljs:178
 msgid "dashboard.export-shapes.how-to"
 msgstr ""
 "Du kan lägga till exportinställningar till objekt från designegenskaperna "
 "(vid botten av höger sidnavigation)."
 
-#: src/app/main/ui/exports/assets.cljs:181
+#: src/app/main/ui/exports/assets.cljs:182
 msgid "dashboard.export-shapes.how-to-link"
 msgstr "Info hur man ställer in export i Penpot."
 
-#: src/app/main/ui/exports/assets.cljs:176
+#: src/app/main/ui/exports/assets.cljs:177
 msgid "dashboard.export-shapes.no-elements"
 msgstr "Det finns inga objekt med exportinställningar."
 
-#: src/app/main/ui/exports/assets.cljs:187
+#: src/app/main/ui/exports/assets.cljs:188
 msgid "dashboard.export-shapes.title"
 msgstr "Exportera markerade"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:259
+#: src/app/main/ui/dashboard/file_menu.cljs:262
 msgid "dashboard.export-standard-multi"
 msgstr "Ladda ner %s standardfiler (.svg + .json)"
 
@@ -630,11 +630,11 @@ msgstr ""
 "använder [Transfonter](https://transfonter.org/) för att generera "
 "webbteckensnitt och åtgärda fel. "
 
-#: src/app/main/ui/dashboard/import.cljs:461, src/app/main/ui/dashboard/project_menu.cljs:109
+#: src/app/main/ui/dashboard/import.cljs:464, src/app/main/ui/dashboard/project_menu.cljs:109
 msgid "dashboard.import"
 msgstr "Importera Penpot-filer"
 
-#: src/app/main/ui/dashboard/import.cljs:290, src/app/worker/import.cljs:121, src/app/worker/import.cljs:124
+#: src/app/main/ui/dashboard/import.cljs:293, src/app/worker/import.cljs:121, src/app/worker/import.cljs:124
 msgid "dashboard.import.analyze-error"
 msgstr "Oops! Vi kunde inte importera denna fil"
 
@@ -656,13 +656,13 @@ msgstr "Importen misslyckades. Försök igen"
 msgid "dashboard.import.import-error"
 msgstr "Problem att importera filen. Filen importerades inte."
 
-#: src/app/main/ui/dashboard/import.cljs:475
+#: src/app/main/ui/dashboard/import.cljs:479
 msgid "dashboard.import.import-message"
 msgid_plural "dashboard.import.import-message"
 msgstr[0] "1 fil importerades."
 msgstr[1] "%s filer importerades."
 
-#: src/app/main/ui/dashboard/import.cljs:470
+#: src/app/main/ui/dashboard/import.cljs:474
 msgid "dashboard.import.import-warning"
 msgstr "Vissa filer innehöll ogiltiga objekt som har tagits bort."
 
@@ -698,23 +698,23 @@ msgstr "Laddar upp data till server (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Laddar upp fil: %"
 
-#: src/app/main/ui/dashboard/team.cljs:121, src/app/main/ui/dashboard/team.cljs:774
+#: src/app/main/ui/dashboard/team.cljs:120, src/app/main/ui/dashboard/team.cljs:766
 msgid "dashboard.invite-profile"
 msgstr "Bjud in personer"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:563, src/app/main/ui/dashboard/sidebar.cljs:572, src/app/main/ui/dashboard/sidebar.cljs:579, src/app/main/ui/dashboard/team.cljs:350
+#: src/app/main/ui/dashboard/sidebar.cljs:458, src/app/main/ui/dashboard/sidebar.cljs:465, src/app/main/ui/dashboard/sidebar.cljs:470, src/app/main/ui/dashboard/team.cljs:349
 msgid "dashboard.leave-team"
 msgstr "Lämna teamet"
 
-#: src/app/main/ui/dashboard/templates.cljs:83, src/app/main/ui/dashboard/templates.cljs:168
+#: src/app/main/ui/dashboard/templates.cljs:84, src/app/main/ui/dashboard/templates.cljs:169
 msgid "dashboard.libraries-and-templates"
 msgstr "Bibliotek & mallar"
 
-#: src/app/main/ui/dashboard/templates.cljs:169
+#: src/app/main/ui/dashboard/templates.cljs:170
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Ta reda på mer om dem och hur du kan bidra"
 
-#: src/app/main/ui/dashboard/import.cljs:362, src/app/main/ui/workspace/libraries.cljs:151
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:151
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "Problem när mallen importerades. Mallen importerades inte."
 
@@ -730,19 +730,19 @@ msgstr "laddar dina filer …"
 msgid "dashboard.loading-fonts"
 msgstr "laddar dina teckensnitt …"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:291, src/app/main/ui/dashboard/project_menu.cljs:101
+#: src/app/main/ui/dashboard/file_menu.cljs:294, src/app/main/ui/dashboard/project_menu.cljs:101
 msgid "dashboard.move-to"
 msgstr "Flytta till"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:244
+#: src/app/main/ui/dashboard/file_menu.cljs:247
 msgid "dashboard.move-to-multi"
 msgstr "Flytta %s filer till"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:223
+#: src/app/main/ui/dashboard/file_menu.cljs:226
 msgid "dashboard.move-to-other-team"
 msgstr "Flytta till andra team"
 
-#: src/app/main/ui/dashboard/files.cljs:105, src/app/main/ui/dashboard/projects.cljs:253, src/app/main/ui/dashboard/projects.cljs:254
+#: src/app/main/ui/dashboard/files.cljs:106, src/app/main/ui/dashboard/projects.cljs:252, src/app/main/ui/dashboard/projects.cljs:253
 msgid "dashboard.new-file"
 msgstr "+ Ny fil"
 
@@ -762,7 +762,7 @@ msgstr "Nytt projekt"
 msgid "dashboard.no-matches-for"
 msgstr "Inga träffar hittades för ”%s”"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:873
+#: src/app/main/ui/dashboard/sidebar.cljs:762
 msgid "dashboard.no-projects-placeholder"
 msgstr "Fastklistrade projekt visas här"
 
@@ -790,15 +790,15 @@ msgstr "Lösenordet sparat!"
 msgid "dashboard.notifications.view"
 msgstr "Visa notifieringar"
 
-#: src/app/main/ui/dashboard/team.cljs:1174
+#: src/app/main/ui/dashboard/team.cljs:1162
 msgid "dashboard.num-of-members"
 msgstr "%s medlemmar"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:274
+#: src/app/main/ui/dashboard/file_menu.cljs:277
 msgid "dashboard.open-in-new-tab"
 msgstr "Öppna filen i en ny flik"
 
-#: src/app/main/ui/dashboard/files.cljs:118, src/app/main/ui/dashboard/grid.cljs:426, src/app/main/ui/dashboard/projects.cljs:262, src/app/main/ui/dashboard/projects.cljs:263
+#: src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
 msgid "dashboard.options"
 msgstr "Alternativ"
 
@@ -859,7 +859,7 @@ msgstr "Du är inte längre en del av teamet ”%s”."
 msgid "dashboard.save-settings"
 msgstr "Spara inställningar"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:254
+#: src/app/main/ui/dashboard/sidebar.cljs:257, src/app/main/ui/dashboard/sidebar.cljs:258
 msgid "dashboard.search-placeholder"
 msgstr "Sök…"
 
@@ -935,55 +935,55 @@ msgstr "Uppdatera inställningar"
 msgid "dashboard.settings.notifications.title"
 msgstr "Notifieringar"
 
-#: src/app/main/ui/dashboard/projects.cljs:305
+#: src/app/main/ui/dashboard/projects.cljs:304
 msgid "dashboard.show-all-files"
 msgstr "Visa alla filer"
 
-#: src/app/main/ui/workspace/main_menu.cljs:633
+#: src/app/main/ui/workspace/main_menu.cljs:638
 msgid "dashboard.show-version-history"
 msgstr "Versionshistorik"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:97
+#: src/app/main/ui/dashboard/file_menu.cljs:98
 msgid "dashboard.success-delete-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Din fil har raderats"
 msgstr[1] "Dina filer har raderats"
 
-#: src/app/main/ui/dashboard/project_menu.cljs:61
+#: src/app/main/ui/dashboard/project_menu.cljs:63
 msgid "dashboard.success-delete-project"
 msgstr "Ditt projekt har raderats"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:92
+#: src/app/main/ui/dashboard/file_menu.cljs:93
 msgid "dashboard.success-duplicate-file"
 msgid_plural "dashboard.success-delete-file"
 msgstr[0] "Din fil har duplicerats"
 msgstr[1] "Dina filer har duplicerats"
 
-#: src/app/main/ui/dashboard/project_menu.cljs:34
+#: src/app/main/ui/dashboard/project_menu.cljs:35
 msgid "dashboard.success-duplicate-project"
 msgstr "Ditt projekt har duplicerats"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:131, src/app/main/ui/dashboard/grid.cljs:615, src/app/main/ui/dashboard/sidebar.cljs:161
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:164
 msgid "dashboard.success-move-file"
 msgstr "Din fil har flyttats"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:130
+#: src/app/main/ui/dashboard/file_menu.cljs:131
 msgid "dashboard.success-move-files"
 msgstr "Dina filer har flyttats"
 
-#: src/app/main/ui/dashboard/project_menu.cljs:55
+#: src/app/main/ui/dashboard/project_menu.cljs:57
 msgid "dashboard.success-move-project"
 msgstr "Ditt projekt har flyttats"
 
-#: src/app/main/ui/dashboard/team.cljs:1157
+#: src/app/main/ui/dashboard/team.cljs:1145
 msgid "dashboard.team-info"
 msgstr "Team info"
 
-#: src/app/main/ui/dashboard/team.cljs:1163
+#: src/app/main/ui/dashboard/team.cljs:1151
 msgid "dashboard.team-members"
 msgstr "Teammedlemmar"
 
-#: src/app/main/ui/dashboard/team.cljs:1178
+#: src/app/main/ui/dashboard/team.cljs:1166
 msgid "dashboard.team-projects"
 msgstr "Teamprojekt"
 
@@ -999,7 +999,7 @@ msgstr "Sökresultat"
 msgid "dashboard.type-something"
 msgstr "Skriv för att söka i resultatet"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:298, src/app/main/ui/workspace/main_menu.cljs:607
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:612
 msgid "dashboard.unpublish-shared"
 msgstr "Avpublicera biblioteket"
 
@@ -1007,50 +1007,50 @@ msgstr "Avpublicera biblioteket"
 msgid "dashboard.update-settings"
 msgstr "Uppdatera inställningarna"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:998
+#: src/app/main/ui/dashboard/sidebar.cljs:856
 msgid "dashboard.upgrade-plan.no-limits"
 msgstr "Inga gränser för kreativitet"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:997
+#: src/app/main/ui/dashboard/sidebar.cljs:854
 msgid "dashboard.upgrade-plan.penpot-free"
 msgstr "Gratis Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:950
+#: src/app/main/ui/dashboard/team.cljs:937
 msgid "dashboard.webhooks.active"
 msgstr "Är aktiv"
 
-#: src/app/main/ui/dashboard/team.cljs:951
+#: src/app/main/ui/dashboard/team.cljs:938
 msgid "dashboard.webhooks.active.explain"
 msgstr "När denna hook triggas kommer händelsedetaljer att sändas"
 
-#: src/app/main/ui/dashboard/team.cljs:995
+#: src/app/main/ui/dashboard/team.cljs:982
 msgid "dashboard.webhooks.cant-edit"
 msgstr "Du kan bara ta bort eller ändra webhooks som du har skapat."
 
-#: src/app/main/ui/dashboard/team.cljs:941
+#: src/app/main/ui/dashboard/team.cljs:928
 msgid "dashboard.webhooks.content-type"
 msgstr "Innehållstyp"
 
-#: src/app/main/ui/dashboard/team.cljs:974
+#: src/app/main/ui/dashboard/team.cljs:961
 msgid "dashboard.webhooks.create"
 msgstr "Skapa webhook"
 
-#: src/app/main/ui/dashboard/team.cljs:866
+#: src/app/main/ui/dashboard/team.cljs:853
 msgid "dashboard.webhooks.create.success"
 msgstr "Webhook skapades."
 
-#: src/app/main/ui/dashboard/team.cljs:971
+#: src/app/main/ui/dashboard/team.cljs:958
 msgid "dashboard.webhooks.description"
 msgstr ""
 "Webhooks är ett enkelt sätt att låta andra webbplatser och appar bli "
 "meddelade när vissa händelser inträffar i Penpot. Vi skickar en "
 "POST-begäran till var och en av de webbadresser du anger."
 
-#: src/app/main/ui/dashboard/team.cljs:1100
+#: src/app/main/ui/dashboard/team.cljs:1087
 msgid "dashboard.webhooks.empty.add-one"
 msgstr "Tryck på knappen \"Lägg till webhook\" för att lägga till en."
 
-#: src/app/main/ui/dashboard/team.cljs:1099
+#: src/app/main/ui/dashboard/team.cljs:1086
 msgid "dashboard.webhooks.empty.no-webhooks"
 msgstr "Det finns inga webhooks."
 
@@ -1070,7 +1070,7 @@ msgstr "E-post"
 msgid "dashboard.your-name"
 msgstr "Ditt namn"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:39, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:348, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:320, src/app/main/ui/dashboard/team.cljs:536, src/app/main/ui/dashboard/team.cljs:813, src/app/main/ui/dashboard/team.cljs:1086, src/app/main/ui/dashboard/team.cljs:1133
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:347, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:301, src/app/main/ui/dashboard/team.cljs:535, src/app/main/ui/dashboard/team.cljs:805, src/app/main/ui/dashboard/team.cljs:1073, src/app/main/ui/dashboard/team.cljs:1120
 msgid "dashboard.your-penpot"
 msgstr "Ditt Penpot"
 
@@ -1086,15 +1086,15 @@ msgstr "Observera"
 msgid "ds.component-subtitle"
 msgstr "Komponenter att uppdatera:"
 
-#: src/app/main/ui/workspace/plugins.cljs:331, src/app/main/ui/workspace/plugins.cljs:385
+#: src/app/main/ui/workspace/plugins.cljs:338, src/app/main/ui/workspace/plugins.cljs:392
 msgid "ds.confirm-allow"
 msgstr "Tillåt"
 
-#: src/app/main/ui/comments.cljs:670, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:139, src/app/main/ui/workspace/plugins.cljs:325, src/app/main/ui/workspace/plugins.cljs:379
+#: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:332, src/app/main/ui/workspace/plugins.cljs:386
 msgid "ds.confirm-cancel"
 msgstr "Avbryt"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:152
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
 msgid "ds.confirm-ok"
 msgstr "Ok"
 
@@ -1122,11 +1122,11 @@ msgstr "Teckensnittet % kunde inte laddas"
 msgid "errors.bad-font-plural"
 msgstr "Teckensnittet %s kunde inte laddas"
 
-#: src/app/main/data/workspace/media.cljs:199
+#: src/app/main/data/workspace/media.cljs:204
 msgid "errors.cannot-upload"
 msgstr "Kan inte ladda upp mediafilen."
 
-#: src/app/main/data/workspace/clipboard.cljs:278, src/app/main/data/workspace/clipboard.cljs:496
+#: src/app/main/data/workspace/clipboard.cljs:279, src/app/main/data/workspace/clipboard.cljs:497
 msgid "errors.clipboard-not-implemented"
 msgstr "Din webbläsare kan inte utföra denna åtgärd"
 
@@ -1138,31 +1138,31 @@ msgstr "E-postadressen används redan"
 msgid "errors.email-already-validated"
 msgstr "E-postadressen är redan validerad."
 
-#: src/app/main/ui/auth/register.cljs:100, src/app/main/ui/settings/password.cljs:27
+#: src/app/main/ui/auth/register.cljs:105, src/app/main/ui/settings/password.cljs:27
 msgid "errors.email-as-password"
 msgstr "Du kan inte använda e-postadressen som lösenord"
 
-#: src/app/main/data/auth.cljs:316, src/app/main/ui/auth/register.cljs:90
+#: src/app/main/data/auth.cljs:316, src/app/main/ui/auth/register.cljs:95
 msgid "errors.email-domain-not-allowed"
 msgstr "Domänen är inte tillåten"
 
-#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:93, src/app/main/ui/auth/register.cljs:96, src/app/main/ui/dashboard/team.cljs:637, src/app/main/ui/settings/change_email.cljs:37
+#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:629, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
 msgstr "E-postmeddelandet «%s» har genererat många returmeddelanden."
 
-#: src/app/main/ui/dashboard/team.cljs:195, src/app/main/ui/onboarding/team_choice.cljs:110
+#: src/app/main/ui/dashboard/team.cljs:194, src/app/main/ui/onboarding/team_choice.cljs:110
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr ""
 "E-postmeddelandet ”%s” har rapporterats som skräppost eller permanenta "
 "returmeddelanden."
 
-#: src/app/main/errors.cljs:241
+#: src/app/main/errors.cljs:277
 msgid "errors.feature-mismatch"
 msgstr ""
 "Det verkar som om du öppnar en fil som har funktionen ”%s” aktiverad, men "
 "den aktuella Penpot-versionen stöder den inte eller har den inaktiverad."
 
-#: src/app/main/errors.cljs:245, src/app/main/errors.cljs:259
+#: src/app/main/errors.cljs:281, src/app/main/errors.cljs:295
 msgid "errors.feature-not-supported"
 msgstr "Funktionen \"%s\" stöds inte."
 
@@ -1180,18 +1180,18 @@ msgstr "Måste innehålla minst 1 tecken."
 msgid "errors.field-not-all-whitespace"
 msgstr "Namnet måste innehålla något annat tecken än mellanslag."
 
-#: src/app/main/errors.cljs:237
+#: src/app/main/errors.cljs:273
 msgid "errors.file-feature-mismatch"
 msgstr ""
 "Det verkar som om det inte finns någon överensstämmelse mellan de "
 "aktiverade funktionerna och funktionerna i den fil du försöker öppna. "
 "Migreringar för ”%s” måste tillämpas innan filen kan öppnas."
 
-#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:102, src/app/main/ui/auth/register.cljs:297, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:198, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:80, src/app/main/ui/settings/feedback.cljs:49
+#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:197, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "Något fel har inträffat."
 
-#: src/app/main/ui/components/color_input.cljs:58
+#: src/app/main/ui/components/color_input.cljs:51
 msgid "errors.invalid-color"
 msgstr "Ogiltig färg"
 
@@ -1208,11 +1208,11 @@ msgstr "Bekräftelsemail måste matcha"
 msgid "errors.invalid-recovery-token"
 msgstr "Återställningstoken är ogiltig."
 
-#: src/app/main/ui/static.cljs:69
+#: src/app/main/ui/static.cljs:70
 msgid "errors.invite-invalid"
 msgstr "Inbjudan ogiltig"
 
-#: src/app/main/ui/static.cljs:70
+#: src/app/main/ui/static.cljs:71
 msgid "errors.invite-invalid.info"
 msgstr "Denna inbjudan kan vara avbruten eller har upphört att gälla."
 
@@ -1220,35 +1220,35 @@ msgstr "Denna inbjudan kan vara avbruten eller har upphört att gälla."
 msgid "errors.ldap-disabled"
 msgstr "LDAP-autentisering är inaktiverad."
 
-#: src/app/main/errors.cljs:253, src/app/main/ui/dashboard/team.cljs:190, src/app/main/ui/onboarding/team_choice.cljs:105
+#: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
 msgid "errors.max-quote-reached"
 msgstr "Du har nått \"%s\" kvoten. Kontakta supporten."
 
-#: src/app/main/ui/dashboard/team.cljs:186, src/app/main/ui/onboarding/team_choice.cljs:101
+#: src/app/main/ui/dashboard/team.cljs:185, src/app/main/ui/onboarding/team_choice.cljs:101
 msgid "errors.maximum-invitations-by-request-reached"
 msgstr ""
 "Det maximala (%s) antalet e-postmeddelanden som kan bjudas in i en enda "
 "begäran har uppnåtts"
 
-#: src/app/main/data/workspace/media.cljs:185
+#: src/app/main/data/workspace/media.cljs:190
 msgid "errors.media-too-large"
 msgstr "Bilden är för stor för att infogas."
 
-#: src/app/main/data/media.cljs:70, src/app/main/data/workspace/media.cljs:188
+#: src/app/main/data/media.cljs:70, src/app/main/data/workspace/media.cljs:193
 msgid "errors.media-type-mismatch"
 msgstr "Det verkar som om innehållet i bilden inte stämmer överens med filtillägget."
 
-#: src/app/main/data/media.cljs:67, src/app/main/data/workspace/media.cljs:173, src/app/main/data/workspace/media.cljs:176, src/app/main/data/workspace/media.cljs:179, src/app/main/data/workspace/media.cljs:182
+#: src/app/main/data/media.cljs:67, src/app/main/data/workspace/media.cljs:178, src/app/main/data/workspace/media.cljs:181, src/app/main/data/workspace/media.cljs:184, src/app/main/data/workspace/media.cljs:187
 msgid "errors.media-type-not-allowed"
 msgstr "Det här är inte en giltig bild."
 
-#: src/app/main/ui/dashboard/team.cljs:632
+#: src/app/main/ui/dashboard/team.cljs:624
 msgid "errors.member-is-muted"
 msgstr ""
 "Den profil du bjuder in har e-postmeddelanden som är avstängda "
 "(skräppostrapporter eller höga studsar)."
 
-#: src/app/main/errors.cljs:227
+#: src/app/main/errors.cljs:263
 msgid "errors.migration-in-progress"
 msgstr "Migrering pågår"
 
@@ -1262,7 +1262,7 @@ msgstr "Lösenordet för bekräftelse måste matcha"
 msgid "errors.password-too-short"
 msgstr "Lösenordet måste innehålla minst 8 tecken"
 
-#: src/app/main/errors.cljs:137
+#: src/app/main/errors.cljs:141
 msgid "errors.paste-data-validation"
 msgstr "Ogiltiga data i urklipp"
 
@@ -1270,29 +1270,29 @@ msgstr "Ogiltiga data i urklipp"
 msgid "errors.profile-blocked"
 msgstr "Profilen är blockerad"
 
-#: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:181, src/app/main/ui/dashboard/team.cljs:628, src/app/main/ui/onboarding/team_choice.cljs:97, src/app/main/ui/settings/change_email.cljs:33
+#: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:180, src/app/main/ui/dashboard/team.cljs:620, src/app/main/ui/onboarding/team_choice.cljs:97, src/app/main/ui/settings/change_email.cljs:33
 msgid "errors.profile-is-muted"
 msgstr "Din profil har e-post avstängd (spamrapporter eller många returmeddelanden)."
 
-#: src/app/main/data/auth.cljs:310, src/app/main/ui/auth/register.cljs:87
+#: src/app/main/data/auth.cljs:310, src/app/main/ui/auth/register.cljs:92
 msgid "errors.registration-disabled"
 msgstr "Registreringen är för närvarande inaktiverad."
 
-#: src/app/main/errors.cljs:232
+#: src/app/main/errors.cljs:268
 msgid "errors.team-feature-mismatch"
 msgstr "Upptäckt av inkompatibel funktion '%s'"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:381, src/app/main/ui/dashboard/team.cljs:392
+#: src/app/main/ui/dashboard/sidebar.cljs:354, src/app/main/ui/dashboard/team.cljs:391
 msgid "errors.team-leave.insufficient-members"
 msgstr ""
 "Otillräckligt med medlemmar för att lämna teamet, du vill förmodligen ta "
 "bort det."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:384, src/app/main/ui/dashboard/team.cljs:395
+#: src/app/main/ui/dashboard/sidebar.cljs:357, src/app/main/ui/dashboard/team.cljs:394
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "Medlemmen du försöker tilldela finns inte."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:387, src/app/main/ui/dashboard/team.cljs:398
+#: src/app/main/ui/dashboard/sidebar.cljs:360, src/app/main/ui/dashboard/team.cljs:397
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "Ägare kan inte lämna teamet, du måste tilldela ägarrollen till någon annan."
 
@@ -1308,35 +1308,35 @@ msgstr "Okänd token"
 msgid "errors.validation"
 msgstr "Valideringsfel"
 
-#: src/app/main/errors.cljs:249
+#: src/app/main/errors.cljs:285
 msgid "errors.version-not-supported"
 msgstr "Filen har ett inkompatibelt versionsnummer"
 
-#: src/app/main/ui/dashboard/team.cljs:886
+#: src/app/main/ui/dashboard/team.cljs:873
 msgid "errors.webhooks.connection"
 msgstr "Anslutningsfel, URL:en är inte tillgänglig"
 
-#: src/app/main/ui/dashboard/team.cljs:880
+#: src/app/main/ui/dashboard/team.cljs:867
 msgid "errors.webhooks.invalid-uri"
 msgstr "Valideringsfel av URL:en."
 
-#: src/app/main/ui/dashboard/team.cljs:1039
+#: src/app/main/ui/dashboard/team.cljs:1026
 msgid "errors.webhooks.last-delivery"
 msgstr "Den sista leveransen lyckades inte."
 
-#: src/app/main/ui/dashboard/team.cljs:882, src/app/main/ui/dashboard/team.cljs:1042
+#: src/app/main/ui/dashboard/team.cljs:869, src/app/main/ui/dashboard/team.cljs:1029
 msgid "errors.webhooks.ssl-validation"
 msgstr "Fel på SSL validering."
 
-#: src/app/main/ui/dashboard/team.cljs:884
+#: src/app/main/ui/dashboard/team.cljs:871
 msgid "errors.webhooks.timeout"
 msgstr "Timeout"
 
-#: src/app/main/ui/dashboard/team.cljs:878
+#: src/app/main/ui/dashboard/team.cljs:865
 msgid "errors.webhooks.unexpected"
 msgstr "Oväntat fel vid validering"
 
-#: src/app/main/ui/dashboard/team.cljs:888, src/app/main/ui/dashboard/team.cljs:1045
+#: src/app/main/ui/dashboard/team.cljs:875, src/app/main/ui/dashboard/team.cljs:1032
 msgid "errors.webhooks.unexpected-status"
 msgstr "Oväntad status %"
 
@@ -1401,19 +1401,19 @@ msgstr "Ett fel har inträffat"
 msgid "inspect.attributes.blur"
 msgstr "Oskärpa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:124
 msgid "inspect.attributes.blur.value"
 msgstr "Värde"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:110
+#: src/app/main/ui/inspect/attributes/common.cljs:110, src/app/main/ui/inspect/right_sidebar.cljs:97
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:112
+#: src/app/main/ui/inspect/attributes/common.cljs:112, src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:111
+#: src/app/main/ui/inspect/attributes/common.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:99
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
@@ -1421,15 +1421,17 @@ msgstr "RGBA"
 msgid "inspect.attributes.fill"
 msgstr "Fylla"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:97, src/app/main/ui/inspect/attributes/image.cljs:51
+#: src/app/main/ui/inspect/attributes/common.cljs:97
 msgid "inspect.attributes.image.download"
 msgstr "Ladda ner källbilden"
 
 #: src/app/main/ui/inspect/attributes/image.cljs:39
+#, unused
 msgid "inspect.attributes.image.height"
 msgstr "Höjd"
 
 #: src/app/main/ui/inspect/attributes/image.cljs:32
+#, unused
 msgid "inspect.attributes.image.width"
 msgstr "Bredd"
 
@@ -1468,15 +1470,15 @@ msgstr "Topp"
 msgid "inspect.attributes.layout.width"
 msgstr "Bredd"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:57
+#: src/app/main/ui/inspect/attributes/shadow.cljs:65
 msgid "inspect.attributes.shadow"
 msgstr "Skugga"
 
-#: src/app/main/ui/inspect/attributes/geometry.cljs:40
+#: src/app/main/ui/inspect/attributes/geometry.cljs:46
 msgid "inspect.attributes.size"
 msgstr "Storlek och position"
 
-#: src/app/main/ui/inspect/attributes/stroke.cljs:52
+#: src/app/main/ui/inspect/attributes/stroke.cljs:63
 msgid "inspect.attributes.stroke"
 msgstr "Fet"
 
@@ -1513,145 +1515,145 @@ msgstr "Ifylld"
 msgid "inspect.attributes.stroke.width"
 msgstr "Bredd"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:76, src/app/main/ui/inspect/attributes/text.cljs:189
+#: src/app/main/ui/inspect/attributes/text.cljs:78, src/app/main/ui/inspect/attributes/text.cljs:191
 msgid "inspect.attributes.typography"
 msgstr "Typografi"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:84, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
+#: src/app/main/ui/inspect/attributes/text.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
 msgid "inspect.attributes.typography.font-family"
 msgstr "Teckensnittsfamilj"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:102, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
+#: src/app/main/ui/inspect/attributes/text.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
 msgid "inspect.attributes.typography.font-size"
 msgstr "Teckenstorlek"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:93, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:338
+#: src/app/main/ui/inspect/attributes/text.cljs:95, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:338
 msgid "inspect.attributes.typography.font-style"
 msgstr "Teckensnitt"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:111
+#: src/app/main/ui/inspect/attributes/text.cljs:113
 msgid "inspect.attributes.typography.font-weight"
 msgstr "Teckensnittsvikt"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:129, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:391
+#: src/app/main/ui/inspect/attributes/text.cljs:131, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:388
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Teckenavstånd"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:120, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:374
+#: src/app/main/ui/inspect/attributes/text.cljs:122, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
 msgid "inspect.attributes.typography.line-height"
 msgstr "Radavstånd"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:138
+#: src/app/main/ui/inspect/attributes/text.cljs:140
 msgid "inspect.attributes.typography.text-decoration"
 msgstr "Textdekorering"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:140
+#: src/app/main/ui/inspect/attributes/text.cljs:142
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Ingen"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:142
+#: src/app/main/ui/inspect/attributes/text.cljs:144
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "Understrykning"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:151
+#: src/app/main/ui/inspect/attributes/text.cljs:153
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Texttransformation"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:434
-msgid "inspect.attributes.typography.text-transform.lowercase"
-msgstr "Gemener"
-
-#: src/app/main/ui/inspect/attributes/text.cljs:154
-msgid "inspect.attributes.typography.text-transform.none"
-msgstr "Ingen"
-
-#: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:430
+#: src/app/main/ui/inspect/attributes/text.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Versalbörjan"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:157
+#: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:433
+msgid "inspect.attributes.typography.text-transform.lowercase"
+msgstr "Gemener"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:156
+msgid "inspect.attributes.typography.text-transform.none"
+msgstr "Ingen"
+
+#: src/app/main/ui/inspect/attributes/text.cljs:159
 msgid "inspect.attributes.typography.text-transform.unset"
 msgstr "Oinställt"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:424
+#: src/app/main/ui/inspect/attributes/text.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Versaler"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:163
+#: src/app/main/ui/inspect/right_sidebar.cljs:230
 msgid "inspect.empty.help"
 msgstr "Om du vill veta mer om designinspektion kan du besöka Penpots hjälpcenter"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:166
+#: src/app/main/ui/inspect/right_sidebar.cljs:233
 msgid "inspect.empty.more-info"
 msgstr "Mer information om inspektion"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:158
+#: src/app/main/ui/inspect/right_sidebar.cljs:225
 msgid "inspect.empty.select"
 msgstr ""
 "Välj en form, ett tavla eller en grupp för att inspektera deras egenskaper "
 "och kod"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:105
+#: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
 msgid "inspect.tabs.code"
 msgstr "Kod"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:129
+#: src/app/main/ui/inspect/right_sidebar.cljs:142
 msgid "inspect.tabs.code.selected.circle"
 msgstr "Cirkel"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:130
+#: src/app/main/ui/inspect/right_sidebar.cljs:143
 msgid "inspect.tabs.code.selected.component"
 msgstr "Komponent"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:131
+#: src/app/main/ui/inspect/right_sidebar.cljs:144
 msgid "inspect.tabs.code.selected.curve"
 msgstr "Kurva"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:132
+#: src/app/main/ui/inspect/right_sidebar.cljs:145
 msgid "inspect.tabs.code.selected.frame"
 msgstr "Tavla"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:133
+#: src/app/main/ui/inspect/right_sidebar.cljs:146
 msgid "inspect.tabs.code.selected.group"
 msgstr "Grupp"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:134
+#: src/app/main/ui/inspect/right_sidebar.cljs:147
 msgid "inspect.tabs.code.selected.image"
 msgstr "Bild"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:135
+#: src/app/main/ui/inspect/right_sidebar.cljs:148
 msgid "inspect.tabs.code.selected.mask"
 msgstr "Mask"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:124
+#: src/app/main/ui/inspect/right_sidebar.cljs:136
 msgid "inspect.tabs.code.selected.multiple"
 msgstr "%s valda"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:136
+#: src/app/main/ui/inspect/right_sidebar.cljs:149
 msgid "inspect.tabs.code.selected.path"
 msgstr "Bana"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:137
+#: src/app/main/ui/inspect/right_sidebar.cljs:150
 msgid "inspect.tabs.code.selected.rect"
 msgstr "Rektangel"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:138
+#: src/app/main/ui/inspect/right_sidebar.cljs:151
 msgid "inspect.tabs.code.selected.svg-raw"
 msgstr "SVG"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:139
+#: src/app/main/ui/inspect/right_sidebar.cljs:152
 msgid "inspect.tabs.code.selected.text"
 msgstr "Text"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:101
+#: src/app/main/ui/inspect/right_sidebar.cljs:114
 msgid "inspect.tabs.info"
 msgstr "Info"
 
-#: src/app/main/ui/workspace/main_menu.cljs:163
+#: src/app/main/ui/workspace/main_menu.cljs:164
 msgid "label.shortcuts"
 msgstr "Genvägar"
 
-#: src/app/main/data/common.cljs:90, src/app/main/ui/dashboard/import.cljs:526
+#: src/app/main/data/common.cljs:90, src/app/main/ui/dashboard/import.cljs:530
 msgid "labels.accept"
 msgstr "Acceptera"
 
@@ -1659,7 +1661,7 @@ msgstr "Acceptera"
 msgid "labels.access-tokens"
 msgstr "Accesstokens"
 
-#: src/app/main/ui/dashboard/team.cljs:1058
+#: src/app/main/ui/dashboard/team.cljs:1045
 msgid "labels.active"
 msgstr "Aktiv"
 
@@ -1675,7 +1677,7 @@ msgstr "Lägg till teckensnitt"
 msgid "labels.adding"
 msgstr "Lägger till..."
 
-#: src/app/main/ui/dashboard/team.cljs:133, src/app/main/ui/dashboard/team.cljs:318, src/app/main/ui/dashboard/team.cljs:571, src/app/main/ui/dashboard/team.cljs:601, src/app/main/ui/onboarding/team_choice.cljs:58
+#: src/app/main/ui/dashboard/team.cljs:132, src/app/main/ui/dashboard/team.cljs:318, src/app/main/ui/dashboard/team.cljs:563, src/app/main/ui/dashboard/team.cljs:593, src/app/main/ui/onboarding/team_choice.cljs:58
 msgid "labels.admin"
 msgstr "Admin"
 
@@ -1683,11 +1685,11 @@ msgstr "Admin"
 msgid "labels.adobe-xd"
 msgstr "Adobe XD"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:70, src/app/main/ui/workspace/tokens/context_menu.cljs:104, src/app/main/ui/workspace/tokens/token_pill.cljs:120
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:90, src/app/main/ui/workspace/tokens/management/context_menu.cljs:124, src/app/main/ui/workspace/tokens/management/token_pill.cljs:141
 msgid "labels.all"
 msgstr "Allt"
 
-#: src/app/main/ui/auth/register.cljs:250
+#: src/app/main/ui/auth/register.cljs:257
 msgid "labels.and"
 msgstr "och"
 
@@ -1696,17 +1698,17 @@ msgstr "och"
 msgid "labels.back"
 msgstr "Tillbaka"
 
-#: src/app/main/ui/static.cljs:339
+#: src/app/main/ui/static.cljs:292
 msgid "labels.bad-gateway.desc-message"
 msgstr ""
 "Det ser ut som om du behöver vänta lite och försöka igen; vi utför "
 "underhåll av våra servrar."
 
-#: src/app/main/ui/static.cljs:338
+#: src/app/main/ui/static.cljs:291
 msgid "labels.bad-gateway.main-message"
 msgstr "Bad Gateway"
 
-#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:511, src/app/main/ui/dashboard/team.cljs:957, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:161, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:176, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:143, src/app/main/ui/workspace/tokens/form.cljs:599, src/app/main/ui/workspace/tokens/modals/export.cljs:42, src/app/main/ui/workspace/tokens/modals/import.cljs:122, src/app/main/ui/workspace/tokens/modals/settings.cljs:105, src/app/main/ui/workspace/tokens/modals/themes.cljs:227
+#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:944, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:158, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/management/create/form.cljs:613, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
 msgid "labels.cancel"
 msgstr "Avbryt"
 
@@ -1714,19 +1716,19 @@ msgstr "Avbryt"
 msgid "labels.canva"
 msgstr "Canva"
 
-#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:102, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:171, src/app/main/ui/settings/subscription.cljs:174, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:128, src/app/main/ui/workspace/libraries.cljs:627, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:301, src/app/main/ui/workspace/sidebar.cljs:278, src/app/main/ui/workspace/tokens/modals/export.cljs:141, src/app/main/ui/workspace/tokens/modals/import.cljs:142, src/app/main/ui/workspace/tokens/modals/settings.cljs:79, src/app/main/ui/workspace/tokens/modals/themes.cljs:58, src/app/main/ui/workspace/tokens/modals/themes.cljs:161, src/app/main/ui/workspace/tokens/modals/themes.cljs:441, src/app/main/ui/workspace/tokens/modals.cljs:90
+#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:102, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:246, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:128, src/app/main/ui/workspace/libraries.cljs:623, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:243, src/app/main/ui/workspace/tokens/export.cljs:24, src/app/main/ui/workspace/tokens/import.cljs:18, src/app/main/ui/workspace/tokens/management/create/modals.cljs:90, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:58, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:161, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:442
 msgid "labels.close"
 msgstr "Stäng"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:226
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:186
 msgid "labels.collapse"
 msgstr "Dra ihop"
 
-#: src/app/main/ui/comments.cljs:910
+#: src/app/main/ui/comments.cljs:913
 msgid "labels.comment"
 msgstr "Kommentar"
 
-#: src/app/main/ui/comments.cljs:914
+#: src/app/main/ui/comments.cljs:917
 msgid "labels.comment.mark-as-solved"
 msgstr "Markera som löst"
 
@@ -1734,7 +1736,7 @@ msgstr "Markera som löst"
 msgid "labels.comments"
 msgstr "Kommentarer"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1046, src/app/main/ui/workspace/main_menu.cljs:115
+#: src/app/main/ui/dashboard/sidebar.cljs:899, src/app/main/ui/workspace/main_menu.cljs:116
 msgid "labels.community"
 msgstr "Community"
 
@@ -1742,7 +1744,7 @@ msgstr "Community"
 msgid "labels.confirm-password"
 msgstr "Bekräfta lösenordet"
 
-#: src/app/main/ui/dashboard/import.cljs:517, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:145
+#: src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:210
 msgid "labels.continue"
 msgstr "Fortsätt"
 
@@ -1754,15 +1756,15 @@ msgstr "Fortsätt med"
 msgid "labels.continue-with-penpot"
 msgstr "Du kan fortsätta med ett Penpot-konto"
 
-#: src/app/main/ui/dashboard/team.cljs:700
+#: src/app/main/ui/dashboard/team.cljs:692
 msgid "labels.copy-invitation-link"
 msgstr "Kopiera länk"
 
-#: src/app/main/ui/static.cljs:62
+#: src/app/main/ui/static.cljs:63
 msgid "labels.copyright"
 msgstr "Kaleidos @2024"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:151, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:201
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:166, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:202
 msgid "labels.create"
 msgstr "Skapa"
 
@@ -1782,23 +1784,23 @@ msgstr "Anpassade teckensnitt"
 msgid "labels.dashboard"
 msgstr "Översiktsvy"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:326, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:993, src/app/main/ui/settings/access_tokens.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:220, src/app/main/ui/workspace/sidebar/versions.cljs:142, src/app/main/ui/workspace/tokens/form.cljs:592, src/app/main/ui/workspace/tokens/modals/themes.cljs:361, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:64
+#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:980, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:221, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/form.cljs:607, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:64, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:362
 msgid "labels.delete"
 msgstr "Radera"
 
-#: src/app/main/ui/comments.cljs:1005
+#: src/app/main/ui/comments.cljs:1009
 msgid "labels.delete-comment"
 msgstr "Radera kommentar"
 
-#: src/app/main/ui/comments.cljs:928
+#: src/app/main/ui/comments.cljs:931
 msgid "labels.delete-comment-thread"
 msgstr "Radera tråd"
 
-#: src/app/main/ui/dashboard/team.cljs:706
+#: src/app/main/ui/dashboard/team.cljs:698
 msgid "labels.delete-invitation"
 msgstr "Ta bort inbjudan"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:270
+#: src/app/main/ui/dashboard/file_menu.cljs:273
 msgid "labels.delete-multi-files"
 msgstr "Radera %s filer"
 
@@ -1811,15 +1813,15 @@ msgstr "Utveckling"
 msgid "labels.director"
 msgstr "Direktör"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:210
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:211
 msgid "labels.discard"
 msgstr "Kassera"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:29, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:177, src/app/main/ui/dashboard/projects.cljs:228, src/app/main/ui/dashboard/projects.cljs:232, src/app/main/ui/dashboard/sidebar.cljs:837
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:178, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:724
 msgid "labels.drafts"
 msgstr "Utkast"
 
-#: src/app/main/ui/comments.cljs:1001, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:991, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:216, src/app/main/ui/workspace/tokens/sidebar.cljs:200
+#: src/app/main/ui/comments.cljs:1005, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:978, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:217, src/app/main/ui/workspace/tokens/themes.cljs:51
 msgid "labels.edit"
 msgstr "Redigera"
 
@@ -1827,7 +1829,7 @@ msgstr "Redigera"
 msgid "labels.edit-file"
 msgstr "Redigera fil"
 
-#: src/app/main/ui/dashboard/team.cljs:131, src/app/main/ui/dashboard/team.cljs:315, src/app/main/ui/dashboard/team.cljs:572, src/app/main/ui/dashboard/team.cljs:605, src/app/main/ui/onboarding/team_choice.cljs:57
+#: src/app/main/ui/dashboard/team.cljs:130, src/app/main/ui/dashboard/team.cljs:315, src/app/main/ui/dashboard/team.cljs:564, src/app/main/ui/dashboard/team.cljs:597, src/app/main/ui/onboarding/team_choice.cljs:57
 msgid "labels.editor"
 msgstr "Redaktör"
 
@@ -1836,11 +1838,11 @@ msgstr "Redaktör"
 msgid "labels.event"
 msgstr "Evenemang"
 
-#: src/app/main/ui/dashboard/team.cljs:722
+#: src/app/main/ui/dashboard/team.cljs:714
 msgid "labels.expired-invitation"
 msgstr "Löpt ut"
 
-#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/workspace/tokens/sidebar.cljs:416
+#: src/app/main/ui/exports/assets.cljs:171, src/app/main/ui/workspace/tokens/sidebar.cljs:137
 msgid "labels.export"
 msgstr "Exportera"
 
@@ -1868,7 +1870,7 @@ msgstr "Teckensnittsleverantör"
 msgid "labels.font-variants"
 msgstr "Stilar"
 
-#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:857
+#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:737
 msgid "labels.fonts"
 msgstr "Teckensnitt"
 
@@ -1882,15 +1884,15 @@ msgstr "VD eller Grundare"
 msgid "labels.freelancer"
 msgstr "Frilansare"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1076, src/app/main/ui/workspace/main_menu.cljs:147
+#: src/app/main/ui/dashboard/sidebar.cljs:922, src/app/main/ui/workspace/main_menu.cljs:148
 msgid "labels.github-repo"
 msgstr "Github repo"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1093, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:176
+#: src/app/main/ui/dashboard/sidebar.cljs:935, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:177
 msgid "labels.give-feedback"
 msgstr "Ge feedback"
 
-#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:352, src/app/main/ui/static.cljs:172, src/app/main/ui/viewer/login.cljs:111
+#: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:170, src/app/main/ui/viewer/login.cljs:111
 msgid "labels.go-back"
 msgstr "Gå tillbaka"
 
@@ -1898,7 +1900,7 @@ msgstr "Gå tillbaka"
 msgid "labels.graphic-design"
 msgstr "Grafisk design"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1039, src/app/main/ui/workspace/main_menu.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1084, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1109, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1295
+#: src/app/main/ui/dashboard/sidebar.cljs:894, src/app/main/ui/workspace/main_menu.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1084, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1109, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1295
 msgid "labels.help-center"
 msgstr "Hjälpcenter"
 
@@ -1906,11 +1908,11 @@ msgstr "Hjälpcenter"
 msgid "labels.hide-resolved-comments"
 msgstr "Dölj åtgärdade kommentarer"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:413
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:134
 msgid "labels.import"
 msgstr "Importera"
 
-#: src/app/main/ui/dashboard/team.cljs:1059
+#: src/app/main/ui/dashboard/team.cljs:1046
 msgid "labels.inactive"
 msgstr "Inaktiv"
 
@@ -1918,13 +1920,13 @@ msgstr "Inaktiv"
 msgid "labels.installed-fonts"
 msgstr "Installerade teckensnitt"
 
-#: src/app/main/ui/static.cljs:420
+#: src/app/main/ui/static.cljs:373
 msgid "labels.internal-error.desc-message"
 msgstr ""
 "Något dåligt har hänt. Försök igen och kontakta support om problemet "
 "kvarstår."
 
-#: src/app/main/ui/static.cljs:419
+#: src/app/main/ui/static.cljs:372
 msgid "labels.internal-error.main-message"
 msgstr "Internt fel"
 
@@ -1932,7 +1934,7 @@ msgstr "Internt fel"
 msgid "labels.invision"
 msgstr "InVision"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:532, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:109, src/app/main/ui/dashboard/team.cljs:792
+#: src/app/main/ui/dashboard/sidebar.cljs:435, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108, src/app/main/ui/dashboard/team.cljs:784
 msgid "labels.invitations"
 msgstr "Inbjudningar"
 
@@ -1940,11 +1942,11 @@ msgstr "Inbjudningar"
 msgid "labels.language"
 msgstr "Språk"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1069, src/app/main/ui/workspace/main_menu.cljs:139
+#: src/app/main/ui/dashboard/sidebar.cljs:917, src/app/main/ui/workspace/main_menu.cljs:140
 msgid "labels.libraries-and-templates"
 msgstr "Bibliotek & mallar"
 
-#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:115, src/app/main/ui/dashboard/grid.cljs:134, src/app/main/ui/dashboard/import.cljs:255, src/app/main/ui/dashboard/placeholder.cljs:140, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:237, src/app/main/ui/workspace.cljs:123, src/app/main/ui.cljs:67, src/app/main/ui.cljs:105, src/app/main/ui.cljs:124
+#: src/app/main/ui/auth/verify_token.cljs:100, src/app/main/ui/dashboard/grid.cljs:115, src/app/main/ui/dashboard/grid.cljs:134, src/app/main/ui/dashboard/import.cljs:258, src/app/main/ui/dashboard/placeholder.cljs:140, src/app/main/ui/ds/product/loader.cljs:85, src/app/main/ui/exports/files.cljs:62, src/app/main/ui/viewer.cljs:643, src/app/main/ui/workspace/sidebar/assets/file_library.cljs:249, src/app/main/ui/workspace.cljs:128, src/app/main/ui.cljs:68, src/app/main/ui.cljs:106, src/app/main/ui.cljs:125
 msgid "labels.loading"
 msgstr "Laddar…"
 
@@ -1952,11 +1954,11 @@ msgstr "Laddar…"
 msgid "labels.log-or-sign"
 msgstr "Logga in eller registrera dig"
 
-#: src/app/main/ui/static.cljs:56, src/app/main/ui/static.cljs:134
+#: src/app/main/ui/static.cljs:57, src/app/main/ui/static.cljs:132
 msgid "labels.login"
 msgstr "Logga in"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1101
+#: src/app/main/ui/dashboard/sidebar.cljs:941
 msgid "labels.logout"
 msgstr "Logga ut"
 
@@ -1964,11 +1966,11 @@ msgstr "Logga ut"
 msgid "labels.marketing"
 msgstr "Marknadsföring"
 
-#: src/app/main/ui/dashboard/team.cljs:511
+#: src/app/main/ui/dashboard/team.cljs:510
 msgid "labels.member"
 msgstr "Medlem"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:526, src/app/main/ui/dashboard/team.cljs:99, src/app/main/ui/dashboard/team.cljs:107
+#: src/app/main/ui/dashboard/sidebar.cljs:431, src/app/main/ui/dashboard/team.cljs:98, src/app/main/ui/dashboard/team.cljs:106
 msgid "labels.members"
 msgstr "Medlemmar"
 
@@ -1976,7 +1978,7 @@ msgstr "Medlemmar"
 msgid "labels.new-password"
 msgstr "Nytt lösenord"
 
-#: src/app/main/ui/dashboard/templates.cljs:289, src/app/main/ui/onboarding/questions.cljs:54, src/app/main/ui/viewer.cljs:112
+#: src/app/main/ui/dashboard/templates.cljs:293, src/app/main/ui/onboarding/questions.cljs:54, src/app/main/ui/viewer.cljs:112
 msgid "labels.next"
 msgstr "Nästa"
 
@@ -1984,7 +1986,7 @@ msgstr "Nästa"
 msgid "labels.no-comments-available"
 msgstr "Du har kommit ikapp! Nya meddelanden om kommentarer visas här."
 
-#: src/app/main/ui/dashboard/team.cljs:767
+#: src/app/main/ui/dashboard/team.cljs:759
 msgid "labels.no-invitations"
 msgstr "Inga pågående inbjudningar."
 
@@ -1995,7 +1997,7 @@ msgstr ""
 "Den här sidan kanske inte finns eller har du inte behörighet att komma åt "
 "den."
 
-#: src/app/main/ui/static.cljs:328
+#: src/app/main/ui/static.cljs:281
 msgid "labels.not-found.main-message"
 msgstr "Oops!"
 
@@ -2003,7 +2005,7 @@ msgstr "Oops!"
 msgid "labels.notifications"
 msgstr "Notifieringar"
 
-#: src/app/main/ui/dashboard/projects.cljs:239, src/app/main/ui/dashboard/team.cljs:1188
+#: src/app/main/ui/dashboard/projects.cljs:238, src/app/main/ui/dashboard/team.cljs:1176
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "1 fil"
@@ -2015,7 +2017,7 @@ msgid_plural "labels.num-of-frames"
 msgstr[0] "1 tavla"
 msgstr[1] "%s tavlor"
 
-#: src/app/main/ui/dashboard/team.cljs:1183
+#: src/app/main/ui/dashboard/team.cljs:1171
 msgid "labels.num-of-projects"
 msgid_plural "labels.num-of-projects"
 msgstr[0] "1 projekt"
@@ -2034,7 +2036,7 @@ msgstr "Gammalt lösenord"
 msgid "labels.only-yours"
 msgstr "Endast din"
 
-#: src/app/main/ui/comments.cljs:920, src/app/main/ui/comments.cljs:984, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:297, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:326
+#: src/app/main/ui/comments.cljs:923, src/app/main/ui/comments.cljs:988, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:309, src/app/main/ui/workspace/sidebar/options/menus/text.cljs:338
 msgid "labels.options"
 msgstr "Alternativ"
 
@@ -2050,7 +2052,7 @@ msgstr "Annat (ange)"
 msgid "labels.other-short"
 msgstr "Andra"
 
-#: src/app/main/ui/dashboard/team.cljs:322, src/app/main/ui/dashboard/team.cljs:570, src/app/main/ui/dashboard/team.cljs:1169
+#: src/app/main/ui/dashboard/team.cljs:322, src/app/main/ui/dashboard/team.cljs:562, src/app/main/ui/dashboard/team.cljs:1157
 msgid "labels.owner"
 msgstr "Ägare"
 
@@ -2058,11 +2060,11 @@ msgstr "Ägare"
 msgid "labels.password"
 msgstr "Lösenord"
 
-#: src/app/main/ui/dashboard/team.cljs:723
+#: src/app/main/ui/dashboard/team.cljs:715
 msgid "labels.pending-invitation"
 msgstr "Pågående"
 
-#: src/app/main/ui/comments.cljs:676
+#: src/app/main/ui/comments.cljs:679
 msgid "labels.post"
 msgstr "Inlägg"
 
@@ -2082,11 +2084,11 @@ msgstr "Produktledning"
 msgid "labels.profile"
 msgstr "Profil"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:830
+#: src/app/main/ui/dashboard/sidebar.cljs:717
 msgid "labels.projects"
 msgstr "Projekt"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1059, src/app/main/ui/settings/sidebar.cljs:129, src/app/main/ui/workspace/main_menu.cljs:131
+#: src/app/main/ui/dashboard/sidebar.cljs:909, src/app/main/ui/settings/sidebar.cljs:129, src/app/main/ui/workspace/main_menu.cljs:132
 msgid "labels.release-notes"
 msgstr "Releaseinformation"
 
@@ -2100,11 +2102,11 @@ msgstr "Ladda om fil"
 msgid "labels.remove"
 msgstr "Ta bort"
 
-#: src/app/main/ui/dashboard/team.cljs:354
+#: src/app/main/ui/dashboard/team.cljs:353
 msgid "labels.remove-member"
 msgstr "Ta bort medlem"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:278, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:555, src/app/main/ui/workspace/sidebar/assets/groups.cljs:151, src/app/main/ui/workspace/sidebar/versions.cljs:136, src/app/main/ui/workspace/tokens/sets_context_menu.cljs:61
+#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:452, src/app/main/ui/workspace/sidebar/assets/groups.cljs:166, src/app/main/ui/workspace/sidebar/versions.cljs:191, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:61
 msgid "labels.rename"
 msgstr "Byt namn"
 
@@ -2112,47 +2114,47 @@ msgstr "Byt namn"
 msgid "labels.rename-team"
 msgstr "Byt teamnamn"
 
-#: src/app/main/ui/comments.cljs:639
+#: src/app/main/ui/comments.cljs:642
 msgid "labels.replies"
 msgstr "svar"
 
-#: src/app/main/ui/comments.cljs:644
+#: src/app/main/ui/comments.cljs:647
 msgid "labels.replies.new"
 msgstr "nya svar"
 
-#: src/app/main/ui/comments.cljs:638
+#: src/app/main/ui/comments.cljs:641
 msgid "labels.reply"
 msgstr "svara"
 
-#: src/app/main/ui/comments.cljs:643
+#: src/app/main/ui/comments.cljs:646
 msgid "labels.reply.new"
 msgstr "nytt svar"
 
-#: src/app/main/ui/comments.cljs:719
+#: src/app/main/ui/comments.cljs:722
 msgid "labels.reply.thread"
 msgstr "Svara"
 
-#: src/app/main/ui/dashboard/team.cljs:703
+#: src/app/main/ui/dashboard/team.cljs:695
 msgid "labels.resend-invitation"
 msgstr "Skicka inbjudan igen"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:139, src/app/main/ui/workspace/sidebar/versions.cljs:270
+#: src/app/main/ui/workspace/sidebar/versions.cljs:86, src/app/main/ui/workspace/sidebar/versions.cljs:196
 msgid "labels.restore"
 msgstr "Återställ"
 
-#: src/app/main/ui/static.cljs:341, src/app/main/ui/static.cljs:350, src/app/main/ui/static.cljs:424
+#: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
 msgid "labels.retry"
 msgstr "Försök igen"
 
-#: src/app/main/ui/dashboard/team.cljs:512, src/app/main/ui/dashboard/team.cljs:793
+#: src/app/main/ui/dashboard/team.cljs:511, src/app/main/ui/dashboard/team.cljs:785
 msgid "labels.role"
 msgstr "Roll"
 
-#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:202, src/app/main/ui/workspace/tokens/form.cljs:604, src/app/main/ui/workspace/tokens/modals/settings.cljs:109
+#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:203, src/app/main/ui/workspace/tokens/management/create/form.cljs:618, src/app/main/ui/workspace/tokens/settings/menu.cljs:108
 msgid "labels.save"
 msgstr "Spara"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:589
+#: src/app/main/ui/workspace/sidebar/layers.cljs:421, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:715
 msgid "labels.search"
 msgstr "Sök"
 
@@ -2172,19 +2174,19 @@ msgstr "Skicka"
 msgid "labels.sending"
 msgstr "Skickar…"
 
-#: src/app/main/ui/static.cljs:348
+#: src/app/main/ui/static.cljs:301
 msgid "labels.service-unavailable.desc-message"
 msgstr "Vi utför schemalagt underhåll av våra system."
 
-#: src/app/main/ui/static.cljs:347
+#: src/app/main/ui/static.cljs:300
 msgid "labels.service-unavailable.main-message"
 msgstr "Tjänsten är inte tillgänglig"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:251
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:79
 msgid "labels.sets"
 msgstr "Uppsättningar"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:546, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:114, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
+#: src/app/main/ui/dashboard/sidebar.cljs:445, src/app/main/ui/dashboard/team.cljs:99, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
 msgid "labels.settings"
 msgstr "Inställningar"
 
@@ -2196,7 +2198,7 @@ msgstr "Dela"
 msgid "labels.share-prototype"
 msgstr "Dela prototyp"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:846
+#: src/app/main/ui/dashboard/sidebar.cljs:744
 msgid "labels.shared-libraries"
 msgstr "Bibliotek"
 
@@ -2224,7 +2226,7 @@ msgstr "Koncept"
 msgid "labels.start"
 msgstr "Start"
 
-#: src/app/main/ui/dashboard/team.cljs:794
+#: src/app/main/ui/dashboard/team.cljs:786
 msgid "labels.status"
 msgstr "Status"
 
@@ -2242,15 +2244,15 @@ msgstr "Teamledare"
 msgid "labels.team-member"
 msgstr "Teammedlem"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:185
+#: src/app/main/ui/workspace/tokens/themes.cljs:36
 msgid "labels.themes"
 msgstr "Teman"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1053, src/app/main/ui/workspace/main_menu.cljs:123
+#: src/app/main/ui/dashboard/sidebar.cljs:904, src/app/main/ui/workspace/main_menu.cljs:124
 msgid "labels.tutorials"
 msgstr "Självstudier"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:264
+#: src/app/main/ui/dashboard/file_menu.cljs:267
 msgid "labels.unpublish-multi-files"
 msgstr "Avpublicera %s filerna"
 
@@ -2274,27 +2276,27 @@ msgstr "Ladda upp teckensnitt"
 msgid "labels.uploading"
 msgstr "Laddar upp…"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:246
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:245
 msgid "labels.view-only"
 msgstr "Enbart visning"
 
-#: src/app/main/ui/dashboard/team.cljs:130, src/app/main/ui/dashboard/team.cljs:312, src/app/main/ui/dashboard/team.cljs:573, src/app/main/ui/dashboard/team.cljs:609, src/app/main/ui/onboarding/team_choice.cljs:56
+#: src/app/main/ui/dashboard/team.cljs:129, src/app/main/ui/dashboard/team.cljs:312, src/app/main/ui/dashboard/team.cljs:565, src/app/main/ui/dashboard/team.cljs:601, src/app/main/ui/onboarding/team_choice.cljs:56
 msgid "labels.viewer"
 msgstr "Visare"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:539, src/app/main/ui/dashboard/team.cljs:102, src/app/main/ui/dashboard/team.cljs:112, src/app/main/ui/dashboard/team.cljs:969
+#: src/app/main/ui/dashboard/sidebar.cljs:440, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:111, src/app/main/ui/dashboard/team.cljs:956
 msgid "labels.webhooks"
 msgstr "Webhooks"
 
-#: src/app/main/ui/comments.cljs:847
+#: src/app/main/ui/comments.cljs:850
 msgid "labels.write-new-comment"
 msgstr "Skriv ny kommentar"
 
-#: src/app/main/ui/dashboard/team.cljs:267
+#: src/app/main/ui/dashboard/team.cljs:266
 msgid "labels.you"
 msgstr "(du)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:1029
+#: src/app/main/ui/dashboard/sidebar.cljs:886
 msgid "labels.your-account"
 msgstr "Ditt konto"
 
@@ -2303,15 +2305,15 @@ msgstr "Ditt konto"
 msgid "labels.youtube"
 msgstr "YouTube"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:479, src/app/main/ui/workspace/colorpicker.cljs:480, src/app/main/ui/workspace/colorpicker.cljs:482
+#: src/app/main/ui/workspace/colorpicker.cljs:449, src/app/main/ui/workspace/colorpicker.cljs:450, src/app/main/ui/workspace/colorpicker.cljs:452
 msgid "media.choose-image"
 msgstr "Välj bild"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:243
+#: src/app/main/ui/workspace/colorpicker.cljs:244
 msgid "media.gradient"
 msgstr "Gradient"
 
-#: src/app/main/data/workspace/media.cljs:265, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:44, src/app/main/ui/ds/utilities/swatch.cljs:57, src/app/main/ui/inspect/attributes/common.cljs:63, src/app/main/ui/workspace/colorpicker.cljs:245, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:243
+#: src/app/main/data/workspace/media.cljs:270, src/app/main/ui/components/color_bullet.cljs:33, src/app/main/ui/components/color_bullet.cljs:46, src/app/main/ui/ds/utilities/swatch.cljs:44, src/app/main/ui/ds/utilities/swatch.cljs:57, src/app/main/ui/inspect/attributes/common.cljs:63, src/app/main/ui/workspace/colorpicker.cljs:246, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:251
 msgid "media.image"
 msgstr "Bild"
 
@@ -2319,7 +2321,7 @@ msgstr "Bild"
 msgid "media.image.short"
 msgstr "img"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:472
+#: src/app/main/ui/workspace/colorpicker.cljs:442
 msgid "media.keep-aspect-ratio"
 msgstr "Behåll aspektförhållandet"
 
@@ -2328,7 +2330,7 @@ msgstr "Behåll aspektförhållandet"
 msgid "media.linear"
 msgstr "Linjär"
 
-#: src/app/main/data/media.cljs:51, src/app/main/data/workspace/media.cljs:223, src/app/main/data/workspace/media.cljs:436
+#: src/app/main/data/media.cljs:51, src/app/main/data/workspace/media.cljs:228, src/app/main/data/workspace/media.cljs:443
 msgid "media.loading"
 msgstr "Laddar bild…"
 
@@ -2337,7 +2339,7 @@ msgstr "Laddar bild…"
 msgid "media.radial"
 msgstr "Radiell"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:241
+#: src/app/main/ui/workspace/colorpicker.cljs:242
 msgid "media.solid"
 msgstr "Fylld"
 
@@ -2368,7 +2370,6 @@ msgid "modals.big-nudge"
 msgstr "Stor knuff"
 
 #: src/app/main/ui/settings/change_email.cljs:109
-#, fuzzy
 msgid "modals.change-email.confirm-email"
 msgstr "Verifiera ny e-post"
 
@@ -2390,55 +2391,55 @@ msgstr "Ändra e-post"
 msgid "modals.change-email.title"
 msgstr "Ändra din e-post"
 
-#: src/app/main/ui/settings/access_tokens.cljs:153, src/app/main/ui/settings/access_tokens.cljs:159
+#: src/app/main/ui/settings/access_tokens.cljs:152, src/app/main/ui/settings/access_tokens.cljs:158
 msgid "modals.create-access-token.copy-token"
 msgstr "Kopiera token"
 
-#: src/app/main/ui/settings/access_tokens.cljs:131
+#: src/app/main/ui/settings/access_tokens.cljs:130
 msgid "modals.create-access-token.expiration-date.label"
 msgstr "Förfallodatum"
 
-#: src/app/main/ui/settings/access_tokens.cljs:125
+#: src/app/main/ui/settings/access_tokens.cljs:124
 msgid "modals.create-access-token.name.label"
 msgstr "Namn"
 
-#: src/app/main/ui/settings/access_tokens.cljs:127
+#: src/app/main/ui/settings/access_tokens.cljs:126
 msgid "modals.create-access-token.name.placeholder"
 msgstr "Namnet kan hjälpa till att veta vad token är till för"
 
-#: src/app/main/ui/settings/access_tokens.cljs:179
+#: src/app/main/ui/settings/access_tokens.cljs:178
 msgid "modals.create-access-token.submit-label"
 msgstr "Skapa token"
 
-#: src/app/main/ui/settings/access_tokens.cljs:112
+#: src/app/main/ui/settings/access_tokens.cljs:111
 msgid "modals.create-access-token.title"
 msgstr "Generera accesstoken"
 
-#: src/app/main/ui/dashboard/team.cljs:962
+#: src/app/main/ui/dashboard/team.cljs:949
 msgid "modals.create-webhook.submit-label"
 msgstr "Skapa webhook"
 
-#: src/app/main/ui/dashboard/team.cljs:927
+#: src/app/main/ui/dashboard/team.cljs:914
 msgid "modals.create-webhook.title"
 msgstr "Skapa webhook"
 
-#: src/app/main/ui/dashboard/team.cljs:938
+#: src/app/main/ui/dashboard/team.cljs:925
 msgid "modals.create-webhook.url.label"
 msgstr "Payload URL"
 
-#: src/app/main/ui/dashboard/team.cljs:939
+#: src/app/main/ui/dashboard/team.cljs:926
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://example.com/postreceive"
 
-#: src/app/main/ui/settings/access_tokens.cljs:259
+#: src/app/main/ui/settings/access_tokens.cljs:257
 msgid "modals.delete-acces-token.accept"
 msgstr "Radera token"
 
-#: src/app/main/ui/settings/access_tokens.cljs:258
+#: src/app/main/ui/settings/access_tokens.cljs:256
 msgid "modals.delete-acces-token.message"
 msgstr "Är du säker på att du vill radera denna token?"
 
-#: src/app/main/ui/settings/access_tokens.cljs:257
+#: src/app/main/ui/settings/access_tokens.cljs:255
 msgid "modals.delete-acces-token.title"
 msgstr "Radera token"
 
@@ -2458,49 +2459,49 @@ msgstr "Genom att ta bort ditt konto förlorar du alla dina projekt och arkiv."
 msgid "modals.delete-account.title"
 msgstr "Är du säker på att du vill radera ditt konto?"
 
-#: src/app/main/ui/comments.cljs:898
+#: src/app/main/ui/comments.cljs:901
 msgid "modals.delete-comment-thread.accept"
 msgstr "Radera konversation"
 
-#: src/app/main/ui/comments.cljs:897
+#: src/app/main/ui/comments.cljs:900
 msgid "modals.delete-comment-thread.message"
 msgstr ""
 "Är du säker på att du vill radera konversationen? Alla kommentarer i denna "
 "tråd kommer att raderas."
 
-#: src/app/main/ui/comments.cljs:896
+#: src/app/main/ui/comments.cljs:899
 msgid "modals.delete-comment-thread.title"
 msgstr "Radera konversation"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:152
 msgid "modals.delete-component-annotation.message"
 msgstr "Är du säker på att du vill radera anteckningen?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:150
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:151
 msgid "modals.delete-component-annotation.title"
 msgstr "Radera anteckningen"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:124
+#: src/app/main/ui/dashboard/file_menu.cljs:125
 msgid "modals.delete-file-confirm.accept"
 msgstr "Radera fil"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:123
+#: src/app/main/ui/dashboard/file_menu.cljs:124
 msgid "modals.delete-file-confirm.message"
 msgstr "Är du säker på att du vill radera filen?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:122
+#: src/app/main/ui/dashboard/file_menu.cljs:123
 msgid "modals.delete-file-confirm.title"
 msgstr "Raderar fil"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:118
+#: src/app/main/ui/dashboard/file_menu.cljs:119
 msgid "modals.delete-file-multi-confirm.accept"
 msgstr "Radera filer"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:117
+#: src/app/main/ui/dashboard/file_menu.cljs:118
 msgid "modals.delete-file-multi-confirm.message"
 msgstr "Är du säker på att du vill radera %s filerna?"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:116
+#: src/app/main/ui/dashboard/file_menu.cljs:117
 msgid "modals.delete-file-multi-confirm.title"
 msgstr "Raderar %s filer"
 
@@ -2524,23 +2525,23 @@ msgstr ""
 msgid "modals.delete-font.title"
 msgstr "Ta bort teckensnitt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:648, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+#: src/app/main/ui/workspace/context_menu.cljs:670, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
 msgid "modals.delete-page.body"
 msgstr "Är du säker på att du vill ta bort den här sidan?"
 
-#: src/app/main/ui/workspace/context_menu.cljs:647, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
+#: src/app/main/ui/workspace/context_menu.cljs:669, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
 msgid "modals.delete-page.title"
 msgstr "Radera sida"
 
-#: src/app/main/ui/dashboard/project_menu.cljs:71
+#: src/app/main/ui/dashboard/project_menu.cljs:73
 msgid "modals.delete-project-confirm.accept"
 msgstr "Radera projekt"
 
-#: src/app/main/ui/dashboard/project_menu.cljs:70
+#: src/app/main/ui/dashboard/project_menu.cljs:72
 msgid "modals.delete-project-confirm.message"
 msgstr "Är du säker på att du vill ta bort detta projekt?"
 
-#: src/app/main/ui/dashboard/project_menu.cljs:69
+#: src/app/main/ui/dashboard/project_menu.cljs:71
 msgid "modals.delete-project-confirm.title"
 msgstr "Radera projekt"
 
@@ -2574,29 +2575,29 @@ msgid_plural "modals.delete-shared-confirm.title"
 msgstr[0] "Raderar fil"
 msgstr[1] "Raderar filer"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:451
+#: src/app/main/ui/dashboard/sidebar.cljs:424
 msgid "modals.delete-team-confirm.accept"
 msgstr "Radera team"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:450
+#: src/app/main/ui/dashboard/sidebar.cljs:423
 msgid "modals.delete-team-confirm.message"
 msgstr ""
 "Är du säker på att du vill ta bort det här teamet? Alla projekt och filer "
 "som är kopplade till teamet raderas permanent."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:449
+#: src/app/main/ui/dashboard/sidebar.cljs:422
 msgid "modals.delete-team-confirm.title"
 msgstr "Ta bort team"
 
-#: src/app/main/ui/dashboard/team.cljs:460
+#: src/app/main/ui/dashboard/team.cljs:459
 msgid "modals.delete-team-member-confirm.accept"
 msgstr "Ta bort medlemmar"
 
-#: src/app/main/ui/dashboard/team.cljs:459
+#: src/app/main/ui/dashboard/team.cljs:458
 msgid "modals.delete-team-member-confirm.message"
 msgstr "Är du säker på att du vill ta bort den här medlemmen från teamet?"
 
-#: src/app/main/ui/dashboard/team.cljs:458
+#: src/app/main/ui/dashboard/team.cljs:457
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Ta bort teammedlem"
 
@@ -2610,58 +2611,57 @@ msgstr[1] ""
 "Tillgångar som redan har använts i dessa filer kommer att finnas kvar där "
 "(ingen design kommer att förstöras)."
 
-#: src/app/main/ui/dashboard/team.cljs:1032
+#: src/app/main/ui/dashboard/team.cljs:1019
 msgid "modals.delete-webhook.accept"
 msgstr "Ta bort webhook"
 
-#: src/app/main/ui/dashboard/team.cljs:1031
+#: src/app/main/ui/dashboard/team.cljs:1018
 msgid "modals.delete-webhook.message"
 msgstr "Är du säker på att du vill ta bort denna webhook?"
 
-#: src/app/main/ui/dashboard/team.cljs:1030
+#: src/app/main/ui/dashboard/team.cljs:1017
 msgid "modals.delete-webhook.title"
 msgstr "Raderar webhook"
 
-#: src/app/main/ui/dashboard/team.cljs:961
+#: src/app/main/ui/dashboard/team.cljs:948
 msgid "modals.edit-webhook.submit-label"
 msgstr "Redigera webhook"
 
-#: src/app/main/ui/dashboard/team.cljs:926
+#: src/app/main/ui/dashboard/team.cljs:913
 msgid "modals.edit-webhook.title"
 msgstr "Redigera webhook"
 
-#: src/app/main/ui/dashboard/team.cljs:248
+#: src/app/main/ui/dashboard/team.cljs:247
 msgid "modals.invite-member-confirm.accept"
 msgstr "Skicka inbjudan"
 
-#: src/app/main/ui/dashboard/team.cljs:244, src/app/main/ui/onboarding/team_choice.cljs:203
+#: src/app/main/ui/dashboard/team.cljs:243, src/app/main/ui/onboarding/team_choice.cljs:203
 msgid "modals.invite-member.emails"
 msgstr "E-post, kommaseparerad"
 
-#: src/app/main/ui/dashboard/team.cljs:228
-#, fuzzy
+#: src/app/main/ui/dashboard/team.cljs:227
 msgid "modals.invite-member.repeated-invitation"
 msgstr ""
 "Vissa e-postmeddelanden är från nuvarande teammedlemmar. Deras inbjudningar "
 "kommer inte att skickas."
 
-#: src/app/main/ui/dashboard/team.cljs:221
+#: src/app/main/ui/dashboard/team.cljs:220
 msgid "modals.invite-team-member.text"
 msgstr ""
 "Du kan bjuda in medlemmar till teamet så att de får tillgång till den här "
 "filen och alla teamets filer."
 
-#: src/app/main/ui/dashboard/team.cljs:217
+#: src/app/main/ui/dashboard/team.cljs:216
 msgid "modals.invite-team-member.title"
 msgstr "Bjud in teammedlemmar till teamet"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:439, src/app/main/ui/dashboard/team.cljs:426
+#: src/app/main/ui/dashboard/sidebar.cljs:412, src/app/main/ui/dashboard/team.cljs:425
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
 "Eftersom du är den enda medlemmen i det här teamet raderas teamet "
 "tillsammans med sina projekt och filer."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:438, src/app/main/ui/dashboard/team.cljs:425
+#: src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:424
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Är du säker på att du vill lämna %s teamet?"
 
@@ -2689,15 +2689,15 @@ msgstr "Välj en medlem att befordra"
 msgid "modals.leave-and-reassign.title"
 msgstr "Innan du lämnar"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:418, src/app/main/ui/dashboard/sidebar.cljs:440, src/app/main/ui/dashboard/team.cljs:427, src/app/main/ui/dashboard/team.cljs:449
+#: src/app/main/ui/dashboard/sidebar.cljs:391, src/app/main/ui/dashboard/sidebar.cljs:413, src/app/main/ui/dashboard/team.cljs:426, src/app/main/ui/dashboard/team.cljs:448
 msgid "modals.leave-confirm.accept"
 msgstr "Lämna teamet"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:417, src/app/main/ui/dashboard/team.cljs:448
+#: src/app/main/ui/dashboard/sidebar.cljs:390, src/app/main/ui/dashboard/team.cljs:447
 msgid "modals.leave-confirm.message"
 msgstr "Är du säker på att du vill lämna teamet?"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:416, src/app/main/ui/dashboard/sidebar.cljs:437, src/app/main/ui/dashboard/team.cljs:424, src/app/main/ui/dashboard/team.cljs:447
+#: src/app/main/ui/dashboard/sidebar.cljs:389, src/app/main/ui/dashboard/sidebar.cljs:410, src/app/main/ui/dashboard/team.cljs:423, src/app/main/ui/dashboard/team.cljs:446
 msgid "modals.leave-confirm.title"
 msgstr "Lämnar teamet"
 
@@ -2719,27 +2719,27 @@ msgid_plural "modals.move-shared-confirm.title"
 msgstr[0] "Flytta biblioteket"
 msgstr[1] "Flytta biblioteken"
 
-#: src/app/main/ui/workspace/main_menu.cljs:272, src/app/main/ui/workspace/nudge.cljs:46
+#: src/app/main/ui/workspace/main_menu.cljs:274, src/app/main/ui/workspace/nudge.cljs:46
 msgid "modals.nudge-title"
 msgstr "Knuffmängd"
 
-#: src/app/main/ui/dashboard/team.cljs:379
+#: src/app/main/ui/dashboard/team.cljs:378
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Överför ägandet"
 
-#: src/app/main/ui/dashboard/team.cljs:378
+#: src/app/main/ui/dashboard/team.cljs:377
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
 "Om du överför ägandet kommer du att ändra din roll till Admin och förlora "
 "vissa behörigheter över det här teamet. "
 
-#: src/app/main/ui/dashboard/team.cljs:377
+#: src/app/main/ui/dashboard/team.cljs:376
 msgid "modals.promote-owner-confirm.message"
 msgstr ""
 "Du är den nuvarande ägaren av detta team. Är du säker på att du vill göra "
 "%s till den nya ägaren av teamet?"
 
-#: src/app/main/ui/dashboard/team.cljs:376
+#: src/app/main/ui/dashboard/team.cljs:375
 msgid "modals.promote-owner-confirm.title"
 msgstr "Ny teamägare"
 
@@ -2807,33 +2807,33 @@ msgstr ""
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Uppdaterar komponenter i ett delat bibliotek"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:424
 msgid "modals.update-remote-component.accept"
 msgstr "Uppdatera"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:422
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
 msgid "modals.update-remote-component.cancel"
 msgstr "Avbryt"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:421
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:422
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Du håller på att uppdatera komponenter i ett delat bibliotek. Detta kan "
 "påverka andra filer som använder den."
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:420
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:421
 msgid "modals.update-remote-component.message"
 msgstr "Uppdatera en komponent i ett delat bibliotek"
 
-#: src/app/main/ui/static.cljs:330
+#: src/app/main/ui/static.cljs:283
 msgid "not-found.desc-message.doesnt-exist"
 msgstr "Denna sida existerar inte"
 
-#: src/app/main/ui/static.cljs:329
+#: src/app/main/ui/static.cljs:282
 msgid "not-found.desc-message.error"
 msgstr "404 fel"
 
-#: src/app/main/ui/static.cljs:135
+#: src/app/main/ui/static.cljs:133
 msgid "not-found.login.free"
 msgstr ""
 "Penpot är ett designverktyg med fri och öppen källkod för samarbete mellan "
@@ -2847,79 +2847,79 @@ msgstr "Vi har skickat ett återställningsmail till"
 msgid "not-found.login.sent-recovery-check"
 msgstr "Kontrollera din e-post och klicka på länken för att skapa ett nytt lösenord."
 
-#: src/app/main/ui/static.cljs:149
+#: src/app/main/ui/static.cljs:147
 msgid "not-found.login.signup-free"
 msgstr "Registrera dig kostnadsfritt"
 
-#: src/app/main/ui/static.cljs:150
+#: src/app/main/ui/static.cljs:148
 msgid "not-found.login.start-using"
 msgstr "Börja använda Penpot på några sekunder!"
 
-#: src/app/main/ui/static.cljs:64
+#: src/app/main/ui/static.cljs:65
 msgid "not-found.made-with-love"
 msgstr "Tillverkad med KÄRLEK och Open Source"
 
-#: src/app/main/ui/static.cljs:290
+#: src/app/main/ui/static.cljs:243
 msgid "not-found.no-permission.already-requested.file"
 msgstr "Du har redan begärt tillgång till denna fil."
 
-#: src/app/main/ui/static.cljs:291
+#: src/app/main/ui/static.cljs:244
 msgid "not-found.no-permission.already-requested.or-others.file"
 msgstr ""
 "Du har redan begärt tillgång till denna fil eller andra filer eller projekt "
 "i detta team."
 
-#: src/app/main/ui/static.cljs:297
+#: src/app/main/ui/static.cljs:250
 msgid "not-found.no-permission.already-requested.or-others.project"
 msgstr ""
 "Du har redan begärt tillgång till detta projekt eller andra projekt eller "
 "filer i det här teamet."
 
-#: src/app/main/ui/static.cljs:296
+#: src/app/main/ui/static.cljs:249
 msgid "not-found.no-permission.already-requested.project"
 msgstr "Du har redan begärt tillgång till detta projekt."
 
-#: src/app/main/ui/static.cljs:311, src/app/main/ui/static.cljs:320
+#: src/app/main/ui/static.cljs:264, src/app/main/ui/static.cljs:273
 msgid "not-found.no-permission.ask"
 msgstr "BEGÄR TILLGÅNG"
 
-#: src/app/main/ui/static.cljs:303
+#: src/app/main/ui/static.cljs:256
 msgid "not-found.no-permission.done.remember"
 msgstr "Kom ihåg att om ägaren tillåter det kommer du att bli inbjuden till teamet."
 
-#: src/app/main/ui/static.cljs:302
+#: src/app/main/ui/static.cljs:255
 msgid "not-found.no-permission.done.success"
 msgstr "Din förfrågan har skickats!"
 
-#: src/app/main/ui/static.cljs:308
+#: src/app/main/ui/static.cljs:261
 msgid "not-found.no-permission.file"
 msgstr "Du har inte tillgång till den här filen."
 
-#: src/app/main/ui/static.cljs:51, src/app/main/ui/static.cljs:286, src/app/main/ui/static.cljs:292, src/app/main/ui/static.cljs:298, src/app/main/ui/static.cljs:304, src/app/main/ui/static.cljs:313, src/app/main/ui/static.cljs:322
+#: src/app/main/ui/static.cljs:52, src/app/main/ui/static.cljs:239, src/app/main/ui/static.cljs:245, src/app/main/ui/static.cljs:251, src/app/main/ui/static.cljs:257, src/app/main/ui/static.cljs:266, src/app/main/ui/static.cljs:275
 msgid "not-found.no-permission.go-dashboard"
 msgstr "Gå till din Penpot"
 
-#: src/app/main/ui/static.cljs:310, src/app/main/ui/static.cljs:319
+#: src/app/main/ui/static.cljs:263, src/app/main/ui/static.cljs:272
 msgid "not-found.no-permission.if-approves"
 msgstr "Om ägaren tillåter det kommer du att bli inbjuden till teamet."
 
-#: src/app/main/ui/static.cljs:248, src/app/main/ui/static.cljs:260
+#: src/app/main/ui/static.cljs:450, src/app/main/ui/static.cljs:463
 msgid "not-found.no-permission.penpot-file"
 msgstr "Penpot-fil"
 
-#: src/app/main/ui/static.cljs:285, src/app/main/ui/static.cljs:317
+#: src/app/main/ui/static.cljs:238, src/app/main/ui/static.cljs:270
 msgid "not-found.no-permission.project"
 msgstr "Du har inte tillgång till detta projekt."
 
-#: src/app/main/ui/static.cljs:247, src/app/main/ui/static.cljs:258
+#: src/app/main/ui/static.cljs:449, src/app/main/ui/static.cljs:461
 msgid "not-found.no-permission.project-name"
 msgstr "PROJEKT"
 
-#: src/app/main/ui/static.cljs:309
+#: src/app/main/ui/static.cljs:262
 msgid "not-found.no-permission.you-can-ask.file"
 msgstr "För att komma åt den här filen kan du fråga ägaren av teamet."
 
-#: src/app/main/ui/static.cljs:318
+#: src/app/main/ui/static.cljs:271
 msgid "not-found.no-permission.you-can-ask.project"
 msgstr "För att komma åt detta projekt kan du fråga ägaren av teamet."
 
@@ -2933,11 +2933,11 @@ msgstr ""
 msgid "notifications.by-code.upgrade-version"
 msgstr "En ny version är tillgänglig, uppdatera sidan"
 
-#: src/app/main/ui/dashboard/team.cljs:169, src/app/main/ui/dashboard/team.cljs:653
+#: src/app/main/ui/dashboard/team.cljs:168, src/app/main/ui/dashboard/team.cljs:645
 msgid "notifications.invitation-email-sent"
 msgstr "Inbjudan skickades"
 
-#: src/app/main/ui/dashboard/team.cljs:674
+#: src/app/main/ui/dashboard/team.cljs:666
 msgid "notifications.invitation-link-copied"
 msgstr "Inbjudningslänken kopierades"
 
@@ -3087,7 +3087,7 @@ msgstr ""
 "Kom ihåg att inkludera alla. Utvecklare, designers, chefer... mångfald gör "
 "skillnad :)"
 
-#: src/app/main/ui/dashboard/team.cljs:233, src/app/main/ui/onboarding/team_choice.cljs:194
+#: src/app/main/ui/dashboard/team.cljs:232, src/app/main/ui/onboarding/team_choice.cljs:194
 msgid "onboarding.choice.team-up.roles"
 msgstr "Bjud in med rollen:"
 
@@ -3307,19 +3307,19 @@ msgstr "Penpot"
 msgid "profile.recovery.go-to-login"
 msgstr "Gå till Logga in"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:227
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:239
 msgid "settings.detach"
 msgstr "Separera"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:91, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:326, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:802, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:946, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:360, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:349, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:360, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:379, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:390, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:406, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:312, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:182, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:385, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:402, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:251, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:90, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:376, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:967, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1181, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:206, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:360, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:404, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:415, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:434, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:462, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
 msgid "settings.multiple"
 msgstr "Mixad"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:274
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:283
 msgid "settings.remove-color"
 msgstr "Ta bort färg"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:279
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:288
 msgid "settings.select-this-color"
 msgstr "Välj objekt med denna stil"
 
@@ -3357,7 +3357,7 @@ msgstr "Allmän"
 msgid "shortcut-subsection.general-viewer"
 msgstr "Allmän"
 
-#: src/app/main/ui/workspace/main_menu.cljs:841, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
+#: src/app/main/ui/workspace/main_menu.cljs:845, src/app/main/ui/workspace/sidebar/shortcuts.cljs:60
 msgid "shortcut-subsection.main-menu"
 msgstr "Huvudmeny"
 
@@ -3989,7 +3989,7 @@ msgstr "Ökning av zoom"
 msgid "shortcuts.zoom-selected"
 msgstr "Zooma in markerad"
 
-#: src/app/main/ui/dashboard/files.cljs:179
+#: src/app/main/ui/dashboard/files.cljs:180
 msgid "title.dashboard.files"
 msgstr "%s - Penpot"
 
@@ -4001,7 +4001,7 @@ msgstr "Teckensnittsleverantörer - %s - Penpot"
 msgid "title.dashboard.fonts"
 msgstr "Teckensnitt - %s - Penpot"
 
-#: src/app/main/ui/dashboard/projects.cljs:350
+#: src/app/main/ui/dashboard/projects.cljs:349
 msgid "title.dashboard.projects"
 msgstr "Projekt - %s - Penpot"
 
@@ -4017,7 +4017,7 @@ msgstr "Delade bibliotek -%s - Penpot"
 msgid "title.default"
 msgstr "Penpot - Designfrihet för team"
 
-#: src/app/main/ui/settings/access_tokens.cljs:280
+#: src/app/main/ui/settings/access_tokens.cljs:278
 msgid "title.settings.access-tokens"
 msgstr "Profil - Accesstokens"
 
@@ -4041,19 +4041,19 @@ msgstr "Lösenord - Penpot"
 msgid "title.settings.profile"
 msgstr "Profil - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:811
+#: src/app/main/ui/dashboard/team.cljs:803
 msgid "title.team-invitations"
 msgstr "Inbjudningar - %s - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:534
+#: src/app/main/ui/dashboard/team.cljs:533
 msgid "title.team-members"
 msgstr "Medlemmar - %s - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:1131
+#: src/app/main/ui/dashboard/team.cljs:1118
 msgid "title.team-settings"
 msgstr "Inställningar - %s - Penpot"
 
-#: src/app/main/ui/dashboard/team.cljs:1084
+#: src/app/main/ui/dashboard/team.cljs:1071
 msgid "title.team-webhooks"
 msgstr "Webhooks - %s - Penpot"
 
@@ -4061,7 +4061,7 @@ msgstr "Webhooks - %s - Penpot"
 msgid "title.viewer"
 msgstr "%s - Visningsläge - Penpot"
 
-#: src/app/main/ui/workspace.cljs:226
+#: src/app/main/ui/workspace.cljs:232
 msgid "title.workspace"
 msgstr "%s - Penpot"
 
@@ -4125,43 +4125,43 @@ msgstr "Visa interaktioner på klick"
 msgid "viewer.header.sitemap"
 msgstr "Översiktsplan"
 
-#: src/app/main/ui/dashboard/team.cljs:1038
+#: src/app/main/ui/dashboard/team.cljs:1025
 msgid "webhooks.last-delivery.success"
 msgstr "Senaste leveransen lyckades."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:58
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:59
 msgid "workspace.align.hcenter"
 msgstr "Justera horisontellt centrum (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:74
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:75
 msgid "workspace.align.hdistribute"
 msgstr "Distribuera horisontellt avstånd (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:50
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:51
 msgid "workspace.align.hleft"
 msgstr "Justera vänster (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:66
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:67
 msgid "workspace.align.hright"
 msgstr "Justera höger (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:99
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:100
 msgid "workspace.align.vbottom"
 msgstr "Justera botten (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:92
 msgid "workspace.align.vcenter"
 msgstr "Justera vertikalt centrum (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:104
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:105
 msgid "workspace.align.vdistribute"
 msgstr "Distribuera vertikalt avstånd (%)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:83
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:84
 msgid "workspace.align.vtop"
 msgstr "Justera toppen (%s)"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:165
+#: src/app/main/ui/workspace/sidebar/assets.cljs:163
 msgid "workspace.assets.add-library"
 msgstr "Lägg till bibliotek"
 
@@ -4170,11 +4170,11 @@ msgstr "Lägg till bibliotek"
 msgid "workspace.assets.assets"
 msgstr "Tillgångar"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:143
+#: src/app/main/ui/workspace/sidebar/assets.cljs:141
 msgid "workspace.assets.box-filter-all"
 msgstr "Alla tillgångar"
 
-#: src/app/main/ui/dashboard/grid.cljs:148, src/app/main/ui/dashboard/grid.cljs:180, src/app/main/ui/workspace/sidebar/assets/colors.cljs:485, src/app/main/ui/workspace/sidebar/assets.cljs:150
+#: src/app/main/ui/dashboard/grid.cljs:148, src/app/main/ui/dashboard/grid.cljs:180, src/app/main/ui/workspace/sidebar/assets/colors.cljs:485, src/app/main/ui/workspace/sidebar/assets.cljs:148
 msgid "workspace.assets.colors"
 msgstr "Färger"
 
@@ -4182,31 +4182,31 @@ msgstr "Färger"
 msgid "workspace.assets.colors.add-color"
 msgstr "Lägg till färg"
 
-#: src/app/main/ui/dashboard/grid.cljs:144, src/app/main/ui/dashboard/grid.cljs:159, src/app/main/ui/workspace/sidebar/assets/components.cljs:503, src/app/main/ui/workspace/sidebar/assets.cljs:146
+#: src/app/main/ui/dashboard/grid.cljs:144, src/app/main/ui/dashboard/grid.cljs:159, src/app/main/ui/workspace/sidebar/assets/components.cljs:560, src/app/main/ui/workspace/sidebar/assets.cljs:144
 msgid "workspace.assets.components"
 msgstr "Komponenter"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:524
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:581
 msgid "workspace.assets.components.add-component"
 msgstr "Lägg till komponent"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:125
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:140
 msgid "workspace.assets.create-group"
 msgstr "Skapa en grupp"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:136
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:151
 msgid "workspace.assets.create-group-hint"
 msgstr "Dina objekt kommer att namnges automatiskt som \"gruppnamn / objektnamn\""
 
-#: src/app/main/ui/workspace/context_menu.cljs:657, src/app/main/ui/workspace/sidebar/assets/colors.cljs:249, src/app/main/ui/workspace/sidebar/assets/components.cljs:567, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
+#: src/app/main/ui/workspace/context_menu.cljs:679, src/app/main/ui/workspace/sidebar/assets/colors.cljs:249, src/app/main/ui/workspace/sidebar/assets/components.cljs:625, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
 msgid "workspace.assets.delete"
 msgstr "Radera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:662
+#: src/app/main/ui/workspace/context_menu.cljs:684
 msgid "workspace.assets.duplicate"
 msgstr "Duplicera"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:562
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:620
 msgid "workspace.assets.duplicate-main"
 msgstr "Duplicera huvudarbetsytan"
 
@@ -4214,7 +4214,7 @@ msgstr "Duplicera huvudarbetsytan"
 msgid "workspace.assets.edit"
 msgstr "Redigera"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:179
+#: src/app/main/ui/workspace/sidebar/assets.cljs:177
 msgid "workspace.assets.filter"
 msgstr "Filter"
 
@@ -4223,43 +4223,43 @@ msgstr "Filter"
 msgid "workspace.assets.graphics"
 msgstr "Grafik"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:519
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:576
 msgid "workspace.assets.grid-view"
 msgstr "Rutnätsvy"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:253, src/app/main/ui/workspace/sidebar/assets/components.cljs:571, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:253, src/app/main/ui/workspace/sidebar/assets/components.cljs:629, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:447
 msgid "workspace.assets.group"
 msgstr "Grupp"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:135
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:150
 msgid "workspace.assets.group-name"
 msgstr "Gruppnamn"
 
-#: src/app/main/ui/workspace/sidebar/assets/components.cljs:515
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:572
 msgid "workspace.assets.list-view"
 msgstr "Listvy"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:106, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:500
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:617
 msgid "workspace.assets.local-library"
 msgstr "lokala bibliotek"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:294
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:307
 msgid "workspace.assets.not-found"
 msgstr "Inga tillgångar hittades"
 
-#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:111
+#: src/app/main/ui/workspace/sidebar/assets/file_library.cljs:113
 msgid "workspace.assets.open-library"
 msgstr "Öppna bibliotek fil"
 
-#: src/app/main/ui/workspace/context_menu.cljs:660, src/app/main/ui/workspace/sidebar/assets/colors.cljs:241, src/app/main/ui/workspace/sidebar/assets/components.cljs:558, src/app/main/ui/workspace/sidebar/assets/groups.cljs:62, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
+#: src/app/main/ui/workspace/context_menu.cljs:682, src/app/main/ui/workspace/sidebar/assets/colors.cljs:241, src/app/main/ui/workspace/sidebar/assets/components.cljs:616, src/app/main/ui/workspace/sidebar/assets/groups.cljs:66, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
 msgid "workspace.assets.rename"
 msgstr "Byt namn"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:126
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:141
 msgid "workspace.assets.rename-group"
 msgstr "Byt namn på gruppen"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:176
+#: src/app/main/ui/workspace/sidebar/assets.cljs:174
 msgid "workspace.assets.search"
 msgstr "Sök tillgångar"
 
@@ -4281,11 +4281,11 @@ msgid_plural "workspace.assets.sidebar.components"
 msgstr[0] "1 komponent"
 msgstr[1] "%s komponenter"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:195
+#: src/app/main/ui/workspace/sidebar/assets.cljs:193
 msgid "workspace.assets.sort"
 msgstr "Sortera"
 
-#: src/app/main/ui/dashboard/grid.cljs:152, src/app/main/ui/dashboard/grid.cljs:207, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:154
+#: src/app/main/ui/dashboard/grid.cljs:152, src/app/main/ui/dashboard/grid.cljs:207, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:152
 msgid "workspace.assets.typography"
 msgstr "Typografi"
 
@@ -4298,27 +4298,27 @@ msgstr "Lägg till teckenssnitt"
 msgid "workspace.assets.typography.font-id"
 msgstr "Teckensnitt"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:523
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-size"
 msgstr "Storlek"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:519
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
 msgid "workspace.assets.typography.font-variant-id"
 msgstr "Variation"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:541
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Gå till stilbibliotek fil för att redigera"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:531
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
 msgid "workspace.assets.typography.letter-spacing"
 msgstr "Teckenavstånd"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:527
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:526
 msgid "workspace.assets.typography.line-height"
 msgstr "Radavstånd"
 
-#: src/app/main/ui/dashboard/grid.cljs:217, src/app/main/ui/workspace/libraries.cljs:546, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:481, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:507, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:614, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:634
+#: src/app/main/ui/dashboard/grid.cljs:217, src/app/main/ui/workspace/libraries.cljs:546, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:480, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:506, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:613, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:633
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -4326,75 +4326,75 @@ msgstr "Ag"
 msgid "workspace.assets.typography.text-styles"
 msgstr "Textstilar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:535
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:534
 msgid "workspace.assets.typography.text-transform"
 msgstr "Texttransformation"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:65
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:69
 msgid "workspace.assets.ungroup"
 msgstr "Avgruppera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:769
+#: src/app/main/ui/workspace/context_menu.cljs:791
 msgid "workspace.context-menu.grid-cells.area"
 msgstr "Skapa område"
 
-#: src/app/main/ui/workspace/context_menu.cljs:772
+#: src/app/main/ui/workspace/context_menu.cljs:794
 msgid "workspace.context-menu.grid-cells.create-board"
 msgstr "Skapa tavla"
 
-#: src/app/main/ui/workspace/context_menu.cljs:764
+#: src/app/main/ui/workspace/context_menu.cljs:786
 msgid "workspace.context-menu.grid-cells.merge"
 msgstr "Sammanfoga celler"
 
-#: src/app/main/ui/workspace/context_menu.cljs:727
+#: src/app/main/ui/workspace/context_menu.cljs:749
 msgid "workspace.context-menu.grid-track.column.add-after"
 msgstr "Lägg till 1 kolumn till höger"
 
-#: src/app/main/ui/workspace/context_menu.cljs:726
+#: src/app/main/ui/workspace/context_menu.cljs:748
 msgid "workspace.context-menu.grid-track.column.add-before"
 msgstr "Lägg till 1 kolumn till vänster"
 
-#: src/app/main/ui/workspace/context_menu.cljs:728
+#: src/app/main/ui/workspace/context_menu.cljs:750
 msgid "workspace.context-menu.grid-track.column.delete"
 msgstr "Radera kolumn"
 
-#: src/app/main/ui/workspace/context_menu.cljs:729
+#: src/app/main/ui/workspace/context_menu.cljs:751
 msgid "workspace.context-menu.grid-track.column.delete-shapes"
 msgstr "Ta bort kolumn och former"
 
-#: src/app/main/ui/workspace/context_menu.cljs:725
+#: src/app/main/ui/workspace/context_menu.cljs:747
 msgid "workspace.context-menu.grid-track.column.duplicate"
 msgstr "Duplicera kolumn"
 
-#: src/app/main/ui/workspace/context_menu.cljs:734
+#: src/app/main/ui/workspace/context_menu.cljs:756
 msgid "workspace.context-menu.grid-track.row.add-after"
 msgstr "Lägg till 1 rad nedanför"
 
-#: src/app/main/ui/workspace/context_menu.cljs:733
+#: src/app/main/ui/workspace/context_menu.cljs:755
 msgid "workspace.context-menu.grid-track.row.add-before"
 msgstr "Lägg till 1 rad ovanför"
 
-#: src/app/main/ui/workspace/context_menu.cljs:735
+#: src/app/main/ui/workspace/context_menu.cljs:757
 msgid "workspace.context-menu.grid-track.row.delete"
 msgstr "Ta bort rad"
 
-#: src/app/main/ui/workspace/context_menu.cljs:736
+#: src/app/main/ui/workspace/context_menu.cljs:758
 msgid "workspace.context-menu.grid-track.row.delete-shapes"
 msgstr "Ta bort rad och former"
 
-#: src/app/main/ui/workspace/context_menu.cljs:732
+#: src/app/main/ui/workspace/context_menu.cljs:754
 msgid "workspace.context-menu.grid-track.row.duplicate"
 msgstr "Duplicera rad"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:529
+#: src/app/main/ui/workspace/sidebar/layers.cljs:513
 msgid "workspace.focus.focus-mode"
 msgstr "Fokusläge"
 
-#: src/app/main/ui/workspace/context_menu.cljs:385, src/app/main/ui/workspace/context_menu.cljs:684
+#: src/app/main/ui/workspace/context_menu.cljs:395, src/app/main/ui/workspace/context_menu.cljs:706
 msgid "workspace.focus.focus-off"
 msgstr "Fokusera av"
 
-#: src/app/main/ui/workspace/context_menu.cljs:384
+#: src/app/main/ui/workspace/context_menu.cljs:394
 msgid "workspace.focus.focus-on"
 msgstr "Fokusera på"
 
@@ -4410,11 +4410,11 @@ msgstr "Linjär gradient"
 msgid "workspace.gradients.radial"
 msgstr "Radiell gradient"
 
-#: src/app/main/ui/workspace/main_menu.cljs:244
+#: src/app/main/ui/workspace/main_menu.cljs:246
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Inaktivera dynamisk justering"
 
-#: src/app/main/ui/workspace/main_menu.cljs:198
+#: src/app/main/ui/workspace/main_menu.cljs:200
 msgid "workspace.header.menu.disable-scale-content"
 msgstr "Inaktivera proportionell skala"
 
@@ -4423,23 +4423,23 @@ msgstr "Inaktivera proportionell skala"
 msgid "workspace.header.menu.disable-scale-text"
 msgstr "Inaktivera skala text"
 
-#: src/app/main/ui/workspace/main_menu.cljs:229
+#: src/app/main/ui/workspace/main_menu.cljs:231
 msgid "workspace.header.menu.disable-snap-guides"
 msgstr "Inaktivera fäst till guidelinjer"
 
-#: src/app/main/ui/workspace/main_menu.cljs:259
+#: src/app/main/ui/workspace/main_menu.cljs:261
 msgid "workspace.header.menu.disable-snap-pixel-grid"
 msgstr "Inaktivera fäst till pixelrutnät"
 
-#: src/app/main/ui/workspace/main_menu.cljs:213
+#: src/app/main/ui/workspace/main_menu.cljs:215
 msgid "workspace.header.menu.disable-snap-ruler-guides"
 msgstr "Inaktivera fäst till linjaler"
 
-#: src/app/main/ui/workspace/main_menu.cljs:245
+#: src/app/main/ui/workspace/main_menu.cljs:247
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Aktivera dynamisk justering"
 
-#: src/app/main/ui/workspace/main_menu.cljs:199
+#: src/app/main/ui/workspace/main_menu.cljs:201
 msgid "workspace.header.menu.enable-scale-content"
 msgstr "Aktivera proportionell skalning"
 
@@ -4448,51 +4448,51 @@ msgstr "Aktivera proportionell skalning"
 msgid "workspace.header.menu.enable-scale-text"
 msgstr "Aktivera textskalning"
 
-#: src/app/main/ui/workspace/main_menu.cljs:230
+#: src/app/main/ui/workspace/main_menu.cljs:232
 msgid "workspace.header.menu.enable-snap-guides"
 msgstr "Fäst till guidelinjer"
 
-#: src/app/main/ui/workspace/main_menu.cljs:260
+#: src/app/main/ui/workspace/main_menu.cljs:262
 msgid "workspace.header.menu.enable-snap-pixel-grid"
 msgstr "Aktivera fäste till pixelrutnät"
 
-#: src/app/main/ui/workspace/main_menu.cljs:214
+#: src/app/main/ui/workspace/main_menu.cljs:216
 msgid "workspace.header.menu.enable-snap-ruler-guides"
 msgstr "Fäst till linjaler"
 
-#: src/app/main/ui/workspace/main_menu.cljs:391
+#: src/app/main/ui/workspace/main_menu.cljs:394
 msgid "workspace.header.menu.hide-artboard-names"
 msgstr "Dölj tavelnamn"
 
-#: src/app/main/ui/workspace/main_menu.cljs:345
+#: src/app/main/ui/workspace/main_menu.cljs:348
 msgid "workspace.header.menu.hide-guides"
 msgstr "Dölj guidelinjer"
 
-#: src/app/main/ui/workspace/main_menu.cljs:362
+#: src/app/main/ui/workspace/main_menu.cljs:365
 msgid "workspace.header.menu.hide-palette"
 msgstr "Dölj färgpalett"
 
-#: src/app/main/ui/workspace/main_menu.cljs:403
+#: src/app/main/ui/workspace/main_menu.cljs:406
 msgid "workspace.header.menu.hide-pixel-grid"
 msgstr "Dölj pixelrutnät"
 
-#: src/app/main/ui/workspace/main_menu.cljs:329
+#: src/app/main/ui/workspace/main_menu.cljs:332
 msgid "workspace.header.menu.hide-rules"
 msgstr "Dölj linjaler"
 
-#: src/app/main/ui/workspace/main_menu.cljs:376
+#: src/app/main/ui/workspace/main_menu.cljs:379
 msgid "workspace.header.menu.hide-textpalette"
 msgstr "Dölj teckensnittspaletten"
 
-#: src/app/main/ui/workspace/main_menu.cljs:867
+#: src/app/main/ui/workspace/main_menu.cljs:872
 msgid "workspace.header.menu.option.edit"
 msgstr "Redigera"
 
-#: src/app/main/ui/workspace/main_menu.cljs:856
+#: src/app/main/ui/workspace/main_menu.cljs:861
 msgid "workspace.header.menu.option.file"
 msgstr "Fil"
 
-#: src/app/main/ui/workspace/main_menu.cljs:913
+#: src/app/main/ui/workspace/main_menu.cljs:918
 msgid "workspace.header.menu.option.help-info"
 msgstr "Hjälp & info"
 
@@ -4501,55 +4501,55 @@ msgstr "Hjälp & info"
 msgid "workspace.header.menu.option.power-up"
 msgstr "Starta upp dina plan"
 
-#: src/app/main/ui/workspace/main_menu.cljs:889
+#: src/app/main/ui/workspace/main_menu.cljs:894
 msgid "workspace.header.menu.option.preferences"
 msgstr "Inställningar"
 
-#: src/app/main/ui/workspace/main_menu.cljs:878
+#: src/app/main/ui/workspace/main_menu.cljs:883
 msgid "workspace.header.menu.option.view"
 msgstr "Visa"
 
-#: src/app/main/ui/workspace/main_menu.cljs:474
+#: src/app/main/ui/workspace/main_menu.cljs:478
 msgid "workspace.header.menu.redo"
 msgstr "Återställ"
 
-#: src/app/main/ui/workspace/main_menu.cljs:445
+#: src/app/main/ui/workspace/main_menu.cljs:449
 msgid "workspace.header.menu.select-all"
 msgstr "Markera allt"
 
-#: src/app/main/ui/workspace/main_menu.cljs:392
+#: src/app/main/ui/workspace/main_menu.cljs:395
 msgid "workspace.header.menu.show-artboard-names"
 msgstr "Visa kartnamn"
 
-#: src/app/main/ui/workspace/main_menu.cljs:346
+#: src/app/main/ui/workspace/main_menu.cljs:349
 msgid "workspace.header.menu.show-guides"
 msgstr "Visa guidelinjer"
 
-#: src/app/main/ui/workspace/main_menu.cljs:363
+#: src/app/main/ui/workspace/main_menu.cljs:366
 msgid "workspace.header.menu.show-palette"
 msgstr "Visa färgpalett"
 
-#: src/app/main/ui/workspace/main_menu.cljs:404
+#: src/app/main/ui/workspace/main_menu.cljs:407
 msgid "workspace.header.menu.show-pixel-grid"
 msgstr "Visa pixelrutnät"
 
-#: src/app/main/ui/workspace/main_menu.cljs:330
+#: src/app/main/ui/workspace/main_menu.cljs:333
 msgid "workspace.header.menu.show-rules"
 msgstr "Visa linjaler"
 
-#: src/app/main/ui/workspace/main_menu.cljs:377
+#: src/app/main/ui/workspace/main_menu.cljs:380
 msgid "workspace.header.menu.show-textpalette"
 msgstr "Visa teckensnittpalett"
 
-#: src/app/main/ui/workspace/main_menu.cljs:286
+#: src/app/main/ui/workspace/main_menu.cljs:288
 msgid "workspace.header.menu.toggle-dark-theme"
 msgstr "Växla till mörkt tema"
 
-#: src/app/main/ui/workspace/main_menu.cljs:284, src/app/main/ui/workspace/main_menu.cljs:287
+#: src/app/main/ui/workspace/main_menu.cljs:286, src/app/main/ui/workspace/main_menu.cljs:289
 msgid "workspace.header.menu.toggle-light-theme"
 msgstr "Växla till ljust tema"
 
-#: src/app/main/ui/workspace/main_menu.cljs:460
+#: src/app/main/ui/workspace/main_menu.cljs:464
 msgid "workspace.header.menu.undo"
 msgstr "Ångra"
 
@@ -4557,19 +4557,19 @@ msgstr "Ångra"
 msgid "workspace.header.reset-zoom"
 msgstr "Återställ"
 
-#: src/app/main/ui/workspace/left_header.cljs:127
+#: src/app/main/ui/workspace/left_header.cljs:126
 msgid "workspace.header.save-error"
 msgstr "Fel vid sparandet"
 
-#: src/app/main/ui/workspace/left_header.cljs:126
+#: src/app/main/ui/workspace/left_header.cljs:125
 msgid "workspace.header.saved"
 msgstr "Sparad"
 
-#: src/app/main/ui/workspace/left_header.cljs:124, src/app/main/ui/workspace/left_header.cljs:125
+#: src/app/main/ui/workspace/left_header.cljs:123, src/app/main/ui/workspace/left_header.cljs:124
 msgid "workspace.header.saving"
 msgstr "Sparar"
 
-#: src/app/main/ui/workspace/right_header.cljs:227
+#: src/app/main/ui/workspace/right_header.cljs:239
 msgid "workspace.header.share"
 msgstr "Dela"
 
@@ -4578,7 +4578,7 @@ msgstr "Dela"
 msgid "workspace.header.unsaved"
 msgstr "Osparade ändringar"
 
-#: src/app/main/ui/workspace/right_header.cljs:232
+#: src/app/main/ui/workspace/right_header.cljs:244
 msgid "workspace.header.viewer"
 msgstr "Visningsläge (%s)"
 
@@ -4618,15 +4618,15 @@ msgstr "Avsluta"
 msgid "workspace.layout_grid.editor.padding.expand"
 msgstr "Visa padding-inställningar för 4 sidor"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:59
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:60
 msgid "workspace.layout_grid.editor.title"
 msgstr "Redigera rutnät"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:65
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:66
 msgid "workspace.layout_grid.editor.top-bar.done"
 msgstr "Klart"
 
-#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:62
+#: src/app/main/ui/workspace/viewport/grid_layout_editor.cljs:63
 msgid "workspace.layout_grid.editor.top-bar.locate"
 msgstr "Lokalisera"
 
@@ -4643,7 +4643,7 @@ msgstr "Lägg till"
 msgid "workspace.libraries.colors"
 msgstr "%s färger"
 
-#: src/app/main/ui/workspace/color_palette.cljs:146
+#: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Du har inga färgstilar i ditt bibliotek"
 
@@ -4651,7 +4651,7 @@ msgstr "Du har inga färgstilar i ditt bibliotek"
 msgid "workspace.libraries.colors.empty-typography-palette"
 msgstr "Du har inga teckensnitt i ditt bibliotek"
 
-#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:49, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:48, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
 msgid "workspace.libraries.colors.file-library"
 msgstr "Filbibliotek"
 
@@ -4660,7 +4660,7 @@ msgstr "Filbibliotek"
 msgid "workspace.libraries.colors.hsv"
 msgstr "HSV"
 
-#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:111, src/app/main/ui/workspace/colorpicker/libraries.cljs:48
+#: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:111, src/app/main/ui/workspace/colorpicker/libraries.cljs:47
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Nyligen använda färger"
 
@@ -4669,7 +4669,7 @@ msgstr "Nyligen använda färger"
 msgid "workspace.libraries.colors.rgb-complementary"
 msgstr "RGB komplementerande"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:344
+#: src/app/main/ui/workspace/colorpicker.cljs:346
 msgid "workspace.libraries.colors.rgba"
 msgstr "RGBA"
 
@@ -4705,7 +4705,7 @@ msgstr "%s grafik"
 msgid "workspace.libraries.in-this-file"
 msgstr "BIBLIOTEK I DENNA FIL"
 
-#: src/app/main/ui/workspace/libraries.cljs:611, src/app/main/ui/workspace/libraries.cljs:631
+#: src/app/main/ui/workspace/libraries.cljs:609, src/app/main/ui/workspace/libraries.cljs:627
 msgid "workspace.libraries.libraries"
 msgstr "BIBLIOTEK"
 
@@ -4747,11 +4747,11 @@ msgstr "DELADE BIBLIOTEK"
 msgid "workspace.libraries.shared-library-btn"
 msgstr "Anslut bibliotek"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:313
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:325
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Flera typografier"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:316
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:328
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Avlänka alla typografier"
 
@@ -4771,7 +4771,7 @@ msgstr "Uppdatera"
 msgid "workspace.libraries.update.see-all-changes"
 msgstr "se alla ändringar"
 
-#: src/app/main/ui/workspace/libraries.cljs:614
+#: src/app/main/ui/workspace/libraries.cljs:611
 msgid "workspace.libraries.updates"
 msgstr "UPDATERINGAR"
 
@@ -4779,27 +4779,27 @@ msgstr "UPDATERINGAR"
 msgid "workspace.options.add-interaction"
 msgstr "Klicka på + knappen för att lägga till interaktioner."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:96
 msgid "workspace.options.blur-options.add-blur"
 msgstr "Lägg till oskärpa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:112
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:117
 msgid "workspace.options.blur-options.remove-blur"
 msgstr "Ta bort oskärpa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:87, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:105
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:110
 msgid "workspace.options.blur-options.title"
 msgstr "Oskärpa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:86
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.group"
 msgstr "Grupposkärpa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:85
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:90
 msgid "workspace.options.blur-options.title.multiple"
 msgstr "Oskärpemarkering"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:108
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:113
 msgid "workspace.options.blur-options.toggle-blur"
 msgstr "Växla oskärpa"
 
@@ -4807,39 +4807,39 @@ msgstr "Växla oskärpa"
 msgid "workspace.options.canvas-background"
 msgstr "Canvas bakgrund"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:424
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:484
 msgid "workspace.options.clip-content"
 msgstr "Innehåll i urklipp"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:766, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:771, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:927
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:917, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:923, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1149
 msgid "workspace.options.component"
 msgstr "Komponent"
 
-#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:192
+#: src/app/main/ui/inspect/annotation.cljs:19, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:193
 msgid "workspace.options.component.annotation"
 msgstr "Anteckning"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:778
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:931
 msgid "workspace.options.component.copy"
 msgstr "Kopiera"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:184
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:185
 msgid "workspace.options.component.create-annotation"
 msgstr "Skapa en anteckning"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:183
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:184
 msgid "workspace.options.component.edit-annotation"
 msgstr "Redigera en anteckning"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:777, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:930
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:930, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1153
 msgid "workspace.options.component.main"
 msgstr "Huvuddel"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:580
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:706
 msgid "workspace.options.component.swap"
 msgstr "Växla komponent"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:624
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:749
 msgid "workspace.options.component.swap.empty"
 msgstr "Det finns inga tillgångar i detta bibliotek"
 
@@ -4883,7 +4883,7 @@ msgstr "Topp"
 msgid "workspace.options.constraints.topbottom"
 msgstr "Topp & Botten"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:185
+#: src/app/main/ui/workspace/sidebar/options.cljs:157
 msgid "workspace.options.design"
 msgstr "Design"
 
@@ -4914,32 +4914,31 @@ msgstr "Ta bort export"
 msgid "workspace.options.export.suffix"
 msgstr "Suffix"
 
-#: src/app/main/ui/exports/assets.cljs:239
+#: src/app/main/ui/exports/assets.cljs:240
 msgid "workspace.options.exporting-complete"
 msgstr "Exporten lyckades"
 
-#: src/app/main/ui/exports/assets.cljs:169, src/app/main/ui/exports/assets.cljs:240, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:248
+#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/exports/assets.cljs:241, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:248
 msgid "workspace.options.exporting-object"
 msgstr "Exporterar…"
 
-#: src/app/main/ui/exports/assets.cljs:238
+#: src/app/main/ui/exports/assets.cljs:239
 msgid "workspace.options.exporting-object-error"
 msgstr "Exporten misslyckades"
 
-#: src/app/main/ui/exports/assets.cljs:241
+#: src/app/main/ui/exports/assets.cljs:242
 msgid "workspace.options.exporting-object-slow"
 msgstr "Exporten oväntat långsam"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:182
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221
 msgid "workspace.options.fill"
 msgstr "Fylla"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:158
-#, fuzzy
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:194
 msgid "workspace.options.fill.add-fill"
 msgstr "Lägg till fyllningsfärg"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:172
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:208
 msgid "workspace.options.fill.remove-fill"
 msgstr "Ta bort fyllningsfärg"
 
@@ -5057,11 +5056,11 @@ msgstr "Rader"
 msgid "workspace.options.grid.square"
 msgstr "Kvadrat"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:53
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:110
 msgid "workspace.options.group-fill"
 msgstr "Gruppfyllning"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:42
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
 msgid "workspace.options.group-stroke"
 msgstr "Gruppera fet"
 
@@ -5081,11 +5080,11 @@ msgstr "Guidelinjer"
 msgid "workspace.options.guides.toggle-guide"
 msgstr "Växla guide"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:356
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:411
 msgid "workspace.options.height"
 msgstr "Höjd"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:193, src/app/main/ui/workspace/sidebar/options.cljs:196
+#: src/app/main/ui/workspace/sidebar/options.cljs:161
 msgid "workspace.options.inspect"
 msgstr "Inspektion"
 
@@ -5316,67 +5315,67 @@ msgstr "Lägg till interaktion"
 msgid "workspace.options.interactions.remove-interaction"
 msgstr "Ta bort interaktion"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "Färg"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:141
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:147
 msgid "workspace.options.layer-options.blend-mode.color-burn"
 msgstr "Efterbelys färg"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:144
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:150
 msgid "workspace.options.layer-options.blend-mode.color-dodge"
 msgstr "Färgskugga"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:139
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:145
 msgid "workspace.options.layer-options.blend-mode.darken"
 msgstr "Mörkare"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:148
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:154
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "Differens"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:149
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
 msgid "workspace.options.layer-options.blend-mode.exclusion"
 msgstr "Uteslutning"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:147
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:153
 msgid "workspace.options.layer-options.blend-mode.hard-light"
 msgstr "Skarpt ljus"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:150
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
 msgid "workspace.options.layer-options.blend-mode.hue"
 msgstr "Nyans"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:142
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:148
 msgid "workspace.options.layer-options.blend-mode.lighten"
 msgstr "Ljusare"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:153
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
 msgid "workspace.options.layer-options.blend-mode.luminosity"
 msgstr "Luminiscens"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:140
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:146
 msgid "workspace.options.layer-options.blend-mode.multiply"
 msgstr "Multiplicera"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:138
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:144
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "Normal"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:145
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:151
 msgid "workspace.options.layer-options.blend-mode.overlay"
 msgstr "Täcka över"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
 msgid "workspace.options.layer-options.blend-mode.saturation"
 msgstr "Mättnad"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:143
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:149
 msgid "workspace.options.layer-options.blend-mode.screen"
 msgstr "Raster"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:146
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:152
 msgid "workspace.options.layer-options.blend-mode.soft-light"
 msgstr "Mjukt ljus"
 
@@ -5395,7 +5394,7 @@ msgstr "Gruppera lager"
 msgid "workspace.options.layer-options.title.multiple"
 msgstr "Markerade lager"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:190, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:196
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:202
 msgid "workspace.options.layer-options.toggle-layer"
 msgstr "Växla lagersynlighet"
 
@@ -5530,15 +5529,15 @@ msgstr "utrymme mellan"
 msgid "workspace.options.layout.top"
 msgstr "Topp"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:157
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:156
 msgid "workspace.options.more-colors"
 msgstr "Fler färger"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:141
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Fler biblioteksfärger"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:175
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:181
 msgid "workspace.options.opacity"
 msgstr "Opacitet"
 
@@ -5547,35 +5546,35 @@ msgstr "Opacitet"
 msgid "workspace.options.position"
 msgstr "Position"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:189
+#: src/app/main/ui/workspace/sidebar/options.cljs:159
 msgid "workspace.options.prototype"
 msgstr "Prototyp"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:82
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:81
 msgid "workspace.options.radius"
 msgstr "Radie"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:119
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:118
 msgid "workspace.options.radius-bottom-left"
 msgstr "Vänster botten"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:127
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:126
 msgid "workspace.options.radius-bottom-right"
 msgstr "Höger botten"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:103
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:102
 msgid "workspace.options.radius-top-left"
 msgstr "Topp vänster"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:111
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:110
 msgid "workspace.options.radius-top-right"
 msgstr "Topp höger"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:136
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:135
 msgid "workspace.options.radius.hide-all-corners"
 msgstr "Dra ihop oberoende radie"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:137
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:136
 msgid "workspace.options.radius.show-single-corners"
 msgstr "Visa oberoende radie"
 
@@ -5583,11 +5582,11 @@ msgstr "Visa oberoende radie"
 msgid "workspace.options.recent-fonts"
 msgstr "Nyligen"
 
-#: src/app/main/ui/exports/assets.cljs:283
+#: src/app/main/ui/exports/assets.cljs:284
 msgid "workspace.options.retry"
 msgstr "Försök igen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:399
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:455
 msgid "workspace.options.rotation"
 msgstr "Rotering"
 
@@ -5599,75 +5598,75 @@ msgstr "Sök teckensnitt"
 msgid "workspace.options.select-a-shape"
 msgstr "Välj en form, tavla eller grupp för att dra en anslutning till andra kartor."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:114
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:113
 msgid "workspace.options.selection-color"
 msgstr "Markerade färger"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:52
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:109
 msgid "workspace.options.selection-fill"
 msgstr "Fyllning inom markering"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:41
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:42
 msgid "workspace.options.selection-stroke"
 msgstr "Markeringskontur"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:302
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:335
 msgid "workspace.options.shadow-options.add-shadow"
 msgstr "Lägg till skugga"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:40, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:172, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:174
+#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:200
 msgid "workspace.options.shadow-options.blur"
 msgstr "Oskärpa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:205
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:231
 msgid "workspace.options.shadow-options.color"
 msgstr "Skuggfärg"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:116
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:142
 msgid "workspace.options.shadow-options.drop-shadow"
 msgstr "Släpskugga"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:117
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:143
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "Innerskugga"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:162
+#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:188
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "X"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:39, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:194
+#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:220
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Y"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:152, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:315
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:178, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:348
 msgid "workspace.options.shadow-options.remove-shadow"
 msgstr "Ta bort skugga"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:41, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:183, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:185
+#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:209, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:211
 msgid "workspace.options.shadow-options.spread"
 msgstr "Spridning"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:297
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:330
 msgid "workspace.options.shadow-options.title"
 msgstr "Skugga"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:296
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:329
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Gruppskugga"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:295
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:328
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Urvalda skuggor"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:148
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:174
 msgid "workspace.options.shadow-options.toggle-shadow"
 msgstr "Växla skugga"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:201
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:241
 msgid "workspace.options.show-fill-on-export"
 msgstr "Visa i exporter"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:439
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:499
 msgid "workspace.options.show-in-viewer"
 msgstr "Visa i visningsläge"
 
@@ -5675,11 +5674,11 @@ msgstr "Visa i visningsläge"
 msgid "workspace.options.size"
 msgstr "Storlek"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:298
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:70, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:352
 msgid "workspace.options.size-presets"
 msgstr "Storleksinställningar"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:44
 msgid "workspace.options.stroke"
 msgstr "Fet"
 
@@ -5740,7 +5739,7 @@ msgstr "Triangelpil"
 msgid "workspace.options.stroke-cap.triangle-arrow-short"
 msgstr "Triangel"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:192
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:201
 msgid "workspace.options.stroke-color"
 msgstr "Konturfärg"
 
@@ -5748,7 +5747,7 @@ msgstr "Konturfärg"
 msgid "workspace.options.stroke-width"
 msgstr "Konturbredd"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:171
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:180
 msgid "workspace.options.stroke.add-stroke"
 msgstr "Lägg till streckfärg"
 
@@ -5776,7 +5775,7 @@ msgstr "Mixad"
 msgid "workspace.options.stroke.outer"
 msgstr "Utanför"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:184
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:193
 msgid "workspace.options.stroke.remove-stroke"
 msgstr "Ta bort streckfärg"
 
@@ -5784,43 +5783,43 @@ msgstr "Ta bort streckfärg"
 msgid "workspace.options.stroke.solid"
 msgstr "Fylld"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:118
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:122
 msgid "workspace.options.text-options.align-bottom"
 msgstr "Justera botten"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:114
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:118
 msgid "workspace.options.text-options.align-middle"
 msgstr "Justera mitten"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:110
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:114
 msgid "workspace.options.text-options.align-top"
 msgstr "Justera toppen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:85
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:89
 msgid "workspace.options.text-options.direction-ltr"
 msgstr "LTR"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:90
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:94
 msgid "workspace.options.text-options.direction-rtl"
 msgstr "RTL"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:159
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "Autohöjd"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:155
 msgid "workspace.options.text-options.grow-auto-width"
 msgstr "Autobredd"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:147
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:151
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Fast"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:394
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:391
 msgid "workspace.options.text-options.letter-spacing"
 msgstr "Teckenavstånd"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:376
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:373
 msgid "workspace.options.text-options.line-height"
 msgstr "Radavstånd"
 
@@ -5834,35 +5833,35 @@ msgstr "Gemener"
 msgid "workspace.options.text-options.none"
 msgstr "Ingen"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:182
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:186
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Genomstruken (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Justera center (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "Rättfärdiga (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:50
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
 msgstr "Justera vänster (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
 msgstr "Justera höger (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:195
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"
 msgstr "Text"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:194
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:198
 msgid "workspace.options.text-options.title-group"
 msgstr "Grupptext"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:193
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:197
 msgid "workspace.options.text-options.title-selection"
 msgstr "Markerad text"
 
@@ -5871,7 +5870,7 @@ msgstr "Markerad text"
 msgid "workspace.options.text-options.titlecase"
 msgstr "Versalbörjan"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:177
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:181
 msgid "workspace.options.text-options.underline"
 msgstr "Understruken (%s)"
 
@@ -5884,55 +5883,55 @@ msgstr "Versaler"
 msgid "workspace.options.use-play-button"
 msgstr "Använd spelknappen i sidhuvudet för att köra prototypvisaren."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:345
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:400
 msgid "workspace.options.width"
 msgstr "Bredd"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:376
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:431
 msgid "workspace.options.x"
 msgstr "X axel"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:387
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:442
 msgid "workspace.options.y"
 msgstr "Y axel"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:165
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:166
 msgid "workspace.path.actions.add-node"
 msgstr "Lägg till nod (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:172
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:173
 msgid "workspace.path.actions.delete-node"
 msgstr "Ta bort nod (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:150
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:151
 msgid "workspace.path.actions.draw-nodes"
 msgstr "Rita noder (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:187
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:188
 msgid "workspace.path.actions.join-nodes"
 msgstr "Sätt ihop noder (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:202
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:203
 msgid "workspace.path.actions.make-corner"
 msgstr "Till hörnet (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:209
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:210
 msgid "workspace.path.actions.make-curve"
 msgstr "Till kurva (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:180
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:181
 msgid "workspace.path.actions.merge-nodes"
 msgstr "Sammanfoga noder (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:157
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:158
 msgid "workspace.path.actions.move-nodes"
 msgstr "Flytta noder (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:194
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:195
 msgid "workspace.path.actions.separate-nodes"
 msgstr "Separera noder (%s)"
 
-#: src/app/main/ui/workspace/viewport/path_actions.cljs:216
+#: src/app/main/ui/workspace/viewport/path_actions.cljs:217
 msgid "workspace.path.actions.snap-nodes"
 msgstr "Fästnoder (%s)"
 
@@ -5953,7 +5952,7 @@ msgstr "Inga plugins installerade"
 msgid "workspace.plugins.error.manifest"
 msgstr "Pluginmanifestet är felaktigt."
 
-#: src/app/main/data/plugins.cljs:88, src/app/main/ui/workspace/main_menu.cljs:749, src/app/main/ui/workspace/plugins.cljs:82
+#: src/app/main/data/plugins.cljs:89, src/app/main/ui/workspace/main_menu.cljs:755, src/app/main/ui/workspace/plugins.cljs:82
 msgid "workspace.plugins.error.need-editor"
 msgstr "Du måste vara redaktör för att kunna använda detta plugin"
 
@@ -5969,19 +5968,19 @@ msgstr "Installera"
 msgid "workspace.plugins.installed-plugins"
 msgstr "Installerade plugins"
 
-#: src/app/main/ui/workspace/main_menu.cljs:704
+#: src/app/main/ui/workspace/main_menu.cljs:710
 msgid "workspace.plugins.menu.plugins-manager"
 msgstr "Pluginhanterare"
 
-#: src/app/main/ui/workspace/main_menu.cljs:901
+#: src/app/main/ui/workspace/main_menu.cljs:906
 msgid "workspace.plugins.menu.title"
 msgstr "Plugins"
 
-#: src/app/main/ui/workspace/plugins.cljs:367
+#: src/app/main/ui/workspace/plugins.cljs:374
 msgid "workspace.plugins.permissions-update.title"
 msgstr "UPPDATERA DETTA PLUGIN"
 
-#: src/app/main/ui/workspace/plugins.cljs:371
+#: src/app/main/ui/workspace/plugins.cljs:378
 msgid "workspace.plugins.permissions-update.warning"
 msgstr ""
 "Detta plugin har ändrats sedan du senast öppnade det. Det vill nu också få "
@@ -6007,7 +6006,7 @@ msgstr "Läs innehållet i filer som användarna har tillgång till."
 msgid "workspace.plugins.permissions.content-write"
 msgstr "Läs och ändra innehållet i filer som användarna har tillgång till."
 
-#: src/app/main/ui/workspace/plugins.cljs:318
+#: src/app/main/ui/workspace/plugins.cljs:325
 msgid "workspace.plugins.permissions.disclaimer"
 msgstr ""
 "Observera att detta plugin har skapats av en extern part, så se till att du "
@@ -6022,7 +6021,7 @@ msgstr "Läs dina bibliotek och tillgångar."
 msgid "workspace.plugins.permissions.library-write"
 msgstr "Läs och modifiera dina bibliotek och tillgångar."
 
-#: src/app/main/ui/workspace/plugins.cljs:311
+#: src/app/main/ui/workspace/plugins.cljs:318
 msgid "workspace.plugins.permissions.title"
 msgstr "'%s' PLUGIN ÖNSKAR TILLGÅNG TILL:"
 
@@ -6050,30 +6049,30 @@ msgstr "Pluginen laddades."
 msgid "workspace.plugins.title"
 msgstr "Plugins"
 
-#: src/app/main/ui/workspace/plugins.cljs:431
+#: src/app/main/ui/workspace/plugins.cljs:438
 msgid "workspace.plugins.try-out.cancel"
 msgstr "INTE NU"
 
-#: src/app/main/ui/workspace/plugins.cljs:424
+#: src/app/main/ui/workspace/plugins.cljs:431
 msgid "workspace.plugins.try-out.message"
 msgstr ""
 "Vill du ta en titt? Det kommer att öppnas i ett nytt utkast för ditt "
 "nuvarande team. (Om inte, kan du alltid hitta det i de installerade plugins "
 "för alla filer.)"
 
-#: src/app/main/ui/workspace/plugins.cljs:420
+#: src/app/main/ui/workspace/plugins.cljs:427
 msgid "workspace.plugins.try-out.title"
 msgstr "'%s' PLUGIN ÄR INSTALLERAD FÖR DIN ANVÄNDARE!"
 
-#: src/app/main/ui/workspace/plugins.cljs:437
+#: src/app/main/ui/workspace/plugins.cljs:444
 msgid "workspace.plugins.try-out.try"
 msgstr "TESTA PLUGIN"
 
-#: src/app/main/ui/workspace/context_menu.cljs:547
+#: src/app/main/ui/workspace/context_menu.cljs:557
 msgid "workspace.shape.menu.add-flex"
 msgstr "Lägg till flex layout"
 
-#: src/app/main/ui/workspace/context_menu.cljs:551
+#: src/app/main/ui/workspace/context_menu.cljs:561
 msgid "workspace.shape.menu.add-grid"
 msgstr "Lägg till grid layout"
 
@@ -6081,111 +6080,111 @@ msgstr "Lägg till grid layout"
 msgid "workspace.shape.menu.add-layout"
 msgstr "Lägg till layout"
 
-#: src/app/main/ui/workspace/context_menu.cljs:271
+#: src/app/main/ui/workspace/context_menu.cljs:281
 msgid "workspace.shape.menu.back"
 msgstr "Flytta längst bak"
 
-#: src/app/main/ui/workspace/context_menu.cljs:268
+#: src/app/main/ui/workspace/context_menu.cljs:278
 msgid "workspace.shape.menu.backward"
 msgstr "Flytta bakåt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:189
+#: src/app/main/ui/workspace/context_menu.cljs:199
 msgid "workspace.shape.menu.copy"
 msgstr "Kopiera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:207
+#: src/app/main/ui/workspace/context_menu.cljs:217
 msgid "workspace.shape.menu.copy-css"
 msgstr "Kopiera som CSS"
 
-#: src/app/main/ui/workspace/context_menu.cljs:209
+#: src/app/main/ui/workspace/context_menu.cljs:219
 msgid "workspace.shape.menu.copy-css-nested"
 msgstr "Kopiera som CSS (nästlade lager)"
 
-#: src/app/main/ui/workspace/context_menu.cljs:192
+#: src/app/main/ui/workspace/context_menu.cljs:202
 msgid "workspace.shape.menu.copy-link"
 msgstr "Kopiera länken till urklipp"
 
-#: src/app/main/ui/workspace/context_menu.cljs:205
+#: src/app/main/ui/workspace/context_menu.cljs:215
 msgid "workspace.shape.menu.copy-paste-as"
 msgstr "Kopiera/Klistra in som ..."
 
-#: src/app/main/ui/workspace/context_menu.cljs:219
+#: src/app/main/ui/workspace/context_menu.cljs:229
 msgid "workspace.shape.menu.copy-props"
 msgstr "Kopiera egenskaper"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:474
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:481
 msgid "workspace.shape.menu.create-annotation"
 msgstr "Skapa anteckning"
 
-#: src/app/main/ui/workspace/context_menu.cljs:371
+#: src/app/main/ui/workspace/context_menu.cljs:381
 msgid "workspace.shape.menu.create-artboard-from-selection"
 msgstr "Markering till tavla"
 
-#: src/app/main/ui/workspace/context_menu.cljs:573
+#: src/app/main/ui/workspace/context_menu.cljs:588
 msgid "workspace.shape.menu.create-component"
 msgstr "Skapa komponent"
 
-#: src/app/main/ui/workspace/context_menu.cljs:577
+#: src/app/main/ui/workspace/context_menu.cljs:592
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Skapa flera komponenter"
 
-#: src/app/main/ui/workspace/context_menu.cljs:195
+#: src/app/main/ui/workspace/context_menu.cljs:205
 msgid "workspace.shape.menu.cut"
 msgstr "Klipp ut"
 
-#: src/app/main/ui/workspace/context_menu.cljs:603, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:779, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1057
+#: src/app/main/ui/workspace/context_menu.cljs:625, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:779, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1057
 msgid "workspace.shape.menu.delete"
 msgstr "Radera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:494
+#: src/app/main/ui/workspace/context_menu.cljs:504
 msgid "workspace.shape.menu.delete-flow-start"
 msgstr "Ta bort flödesstart"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:479
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:486
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Koppla från instans"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:478
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:485
 msgid "workspace.shape.menu.detach-instances-in-bulk"
 msgstr "Koppla från instanser"
 
-#: src/app/main/ui/workspace/context_menu.cljs:435, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:78
+#: src/app/main/ui/workspace/context_menu.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:87
 msgid "workspace.shape.menu.difference"
 msgstr "Skillnad"
 
-#: src/app/main/ui/workspace/context_menu.cljs:201
+#: src/app/main/ui/workspace/context_menu.cljs:211
 msgid "workspace.shape.menu.duplicate"
 msgstr "Duplicera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:421
+#: src/app/main/ui/workspace/context_menu.cljs:431
 msgid "workspace.shape.menu.edit"
 msgstr "Redigera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:441, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:88
+#: src/app/main/ui/workspace/context_menu.cljs:451, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:97
 msgid "workspace.shape.menu.exclude"
 msgstr "Exkludera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:448, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:92
+#: src/app/main/ui/workspace/context_menu.cljs:458, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:101
 msgid "workspace.shape.menu.flatten"
 msgstr "Platta ut"
 
-#: src/app/main/ui/workspace/context_menu.cljs:288
+#: src/app/main/ui/workspace/context_menu.cljs:298
 msgid "workspace.shape.menu.flip-horizontal"
 msgstr "Vänd horisontellt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:284
+#: src/app/main/ui/workspace/context_menu.cljs:294
 msgid "workspace.shape.menu.flip-vertical"
 msgstr "Vänd vertikalt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:496
+#: src/app/main/ui/workspace/context_menu.cljs:506
 msgid "workspace.shape.menu.flow-start"
 msgstr "Flödesstart"
 
-#: src/app/main/ui/workspace/context_menu.cljs:262
+#: src/app/main/ui/workspace/context_menu.cljs:272
 msgid "workspace.shape.menu.forward"
 msgstr "Flytta framåt"
 
-#: src/app/main/ui/workspace/context_menu.cljs:265
+#: src/app/main/ui/workspace/context_menu.cljs:275
 msgid "workspace.shape.menu.front"
 msgstr "Flytta längst fram"
 
@@ -6194,47 +6193,47 @@ msgstr "Flytta längst fram"
 msgid "workspace.shape.menu.go-main"
 msgstr "Gå till huvudkomponentfil"
 
-#: src/app/main/ui/workspace/context_menu.cljs:357
+#: src/app/main/ui/workspace/context_menu.cljs:367
 msgid "workspace.shape.menu.group"
 msgstr "Grupp"
 
-#: src/app/main/ui/workspace/context_menu.cljs:465, src/app/main/ui/workspace/sidebar/layer_item.cljs:163
+#: src/app/main/ui/workspace/context_menu.cljs:475, src/app/main/ui/workspace/sidebar/layer_item.cljs:159
 msgid "workspace.shape.menu.hide"
 msgstr "Dölj"
 
-#: src/app/main/ui/workspace/context_menu.cljs:679, src/app/main/ui/workspace/main_menu.cljs:417
+#: src/app/main/ui/workspace/context_menu.cljs:701, src/app/main/ui/workspace/main_menu.cljs:420
 msgid "workspace.shape.menu.hide-ui"
 msgstr "Via / Dölj UI"
 
-#: src/app/main/ui/workspace/context_menu.cljs:438, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:83
+#: src/app/main/ui/workspace/context_menu.cljs:448, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:92
 msgid "workspace.shape.menu.intersection"
 msgstr "Intersektion"
 
-#: src/app/main/ui/workspace/context_menu.cljs:473, src/app/main/ui/workspace/sidebar/layer_item.cljs:171, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:203
+#: src/app/main/ui/workspace/context_menu.cljs:483, src/app/main/ui/workspace/sidebar/layer_item.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:209
 msgid "workspace.shape.menu.lock"
 msgstr "Lås"
 
-#: src/app/main/ui/workspace/context_menu.cljs:362
+#: src/app/main/ui/workspace/context_menu.cljs:372
 msgid "workspace.shape.menu.mask"
 msgstr "Mask"
 
-#: src/app/main/ui/workspace/context_menu.cljs:198, src/app/main/ui/workspace/context_menu.cljs:676
+#: src/app/main/ui/workspace/context_menu.cljs:208, src/app/main/ui/workspace/context_menu.cljs:698
 msgid "workspace.shape.menu.paste"
 msgstr "Klistra in"
 
-#: src/app/main/ui/workspace/context_menu.cljs:223
+#: src/app/main/ui/workspace/context_menu.cljs:233
 msgid "workspace.shape.menu.paste-props"
 msgstr "Klista in egenskaper"
 
-#: src/app/main/ui/workspace/context_menu.cljs:431
+#: src/app/main/ui/workspace/context_menu.cljs:441
 msgid "workspace.shape.menu.path"
 msgstr "Bana"
 
-#: src/app/main/ui/workspace/context_menu.cljs:537
+#: src/app/main/ui/workspace/context_menu.cljs:547
 msgid "workspace.shape.menu.remove-flex"
 msgstr "Ta bort flex layout"
 
-#: src/app/main/ui/workspace/context_menu.cljs:540
+#: src/app/main/ui/workspace/context_menu.cljs:550
 msgid "workspace.shape.menu.remove-grid"
 msgstr "Ta bort grid layout"
 
@@ -6242,59 +6241,59 @@ msgstr "Ta bort grid layout"
 msgid "workspace.shape.menu.remove-layout"
 msgstr "Ta bort layout"
 
-#: src/app/main/ui/workspace/context_menu.cljs:318
+#: src/app/main/ui/workspace/context_menu.cljs:328
 msgid "workspace.shape.menu.rename"
 msgstr "Byt namn"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:483
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:490
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Återställ standardvärden"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:489
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:496
 msgid "workspace.shape.menu.restore-main"
 msgstr "Återställ huvudkomponent"
 
-#: src/app/main/ui/workspace/context_menu.cljs:252
+#: src/app/main/ui/workspace/context_menu.cljs:262
 msgid "workspace.shape.menu.select-layer"
 msgstr "Välj lager"
 
-#: src/app/main/ui/workspace/context_menu.cljs:462, src/app/main/ui/workspace/sidebar/layer_item.cljs:162
+#: src/app/main/ui/workspace/context_menu.cljs:472, src/app/main/ui/workspace/sidebar/layer_item.cljs:158
 msgid "workspace.shape.menu.show"
 msgstr "Visa"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:471
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:478
 msgid "workspace.shape.menu.show-in-assets"
 msgstr "Visa i tillgångspanelen"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:492, src/app/main/ui/workspace/sidebar/assets/components.cljs:576
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:499, src/app/main/ui/workspace/sidebar/assets/components.cljs:634
 msgid "workspace.shape.menu.show-main"
 msgstr "Visa huvudkomponent"
 
-#: src/app/main/ui/workspace/context_menu.cljs:303
+#: src/app/main/ui/workspace/context_menu.cljs:313
 msgid "workspace.shape.menu.thumbnail-remove"
 msgstr "Ta bort miniatyrbild"
 
-#: src/app/main/ui/workspace/context_menu.cljs:305
+#: src/app/main/ui/workspace/context_menu.cljs:315
 msgid "workspace.shape.menu.thumbnail-set"
 msgstr "Ställ in som miniatyrbild"
 
-#: src/app/main/ui/workspace/context_menu.cljs:426
+#: src/app/main/ui/workspace/context_menu.cljs:436
 msgid "workspace.shape.menu.transform-to-path"
 msgstr "Gör om till bana"
 
-#: src/app/main/ui/workspace/context_menu.cljs:353
+#: src/app/main/ui/workspace/context_menu.cljs:363
 msgid "workspace.shape.menu.ungroup"
 msgstr "Avgruppera"
 
-#: src/app/main/ui/workspace/context_menu.cljs:432, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:73
+#: src/app/main/ui/workspace/context_menu.cljs:442, src/app/main/ui/workspace/sidebar/options/menus/bool.cljs:82
 msgid "workspace.shape.menu.union"
 msgstr "Sammanfoga"
 
-#: src/app/main/ui/workspace/context_menu.cljs:470, src/app/main/ui/workspace/sidebar/layer_item.cljs:170, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:209
+#: src/app/main/ui/workspace/context_menu.cljs:480, src/app/main/ui/workspace/sidebar/layer_item.cljs:166, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:215
 msgid "workspace.shape.menu.unlock"
 msgstr "Lås upp"
 
-#: src/app/main/ui/workspace/context_menu.cljs:367
+#: src/app/main/ui/workspace/context_menu.cljs:377
 msgid "workspace.shape.menu.unmask"
 msgstr "Avmaska"
 
@@ -6303,11 +6302,11 @@ msgstr "Avmaska"
 msgid "workspace.shape.menu.update-components-in-bulk"
 msgstr "Uppdatera huvudkomponenter"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:495
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:502
 msgid "workspace.shape.menu.update-main"
 msgstr "Uppdatera huvudkomponent"
 
-#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:51
+#: src/app/main/ui/components/tab_container.cljs:52, src/app/main/ui/workspace/sidebar.cljs:58
 msgid "workspace.sidebar.collapse"
 msgstr "Minimera sidonavigation"
 
@@ -6315,43 +6314,43 @@ msgstr "Minimera sidonavigation"
 msgid "workspace.sidebar.expand"
 msgstr "Expandera sidonavigation"
 
-#: src/app/main/ui/workspace/right_header.cljs:218, src/app/main/ui/workspace/right_header.cljs:219
+#: src/app/main/ui/workspace/right_header.cljs:230, src/app/main/ui/workspace/right_header.cljs:231
 msgid "workspace.sidebar.history"
 msgstr "Historia"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:526, src/app/main/ui/workspace/sidebar.cljs:130, src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:143
+#: src/app/main/ui/workspace/sidebar/layers.cljs:510, src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:143
 msgid "workspace.sidebar.layers"
 msgstr "Lager"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:384
+#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:375
 msgid "workspace.sidebar.layers.components"
 msgstr "Komponenter"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:309, src/app/main/ui/workspace/sidebar/layers.cljs:342
+#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:339
 msgid "workspace.sidebar.layers.frames"
 msgstr "Tavlor"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:310, src/app/main/ui/workspace/sidebar/layers.cljs:356
+#: src/app/main/ui/workspace/sidebar/layers.cljs:312, src/app/main/ui/workspace/sidebar/layers.cljs:351
 msgid "workspace.sidebar.layers.groups"
 msgstr "Grupper"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:314, src/app/main/ui/workspace/sidebar/layers.cljs:412
+#: src/app/main/ui/workspace/sidebar/layers.cljs:316, src/app/main/ui/workspace/sidebar/layers.cljs:399
 msgid "workspace.sidebar.layers.images"
 msgstr "Bilder"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:311, src/app/main/ui/workspace/sidebar/layers.cljs:370
+#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:363
 msgid "workspace.sidebar.layers.masks"
 msgstr "Masker"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:292
+#: src/app/main/ui/workspace/sidebar/layers.cljs:293
 msgid "workspace.sidebar.layers.search"
 msgstr "Sök lager"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:426
+#: src/app/main/ui/workspace/sidebar/layers.cljs:317, src/app/main/ui/workspace/sidebar/layers.cljs:411
 msgid "workspace.sidebar.layers.shapes"
 msgstr "Former"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:313, src/app/main/ui/workspace/sidebar/layers.cljs:398
+#: src/app/main/ui/workspace/sidebar/layers.cljs:315, src/app/main/ui/workspace/sidebar/layers.cljs:387
 msgid "workspace.sidebar.layers.texts"
 msgstr "Texter"
 
@@ -6359,19 +6358,19 @@ msgstr "Texter"
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Importerade SVG attribut"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:239
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:238
 msgid "workspace.sidebar.sitemap"
 msgstr "Sidor"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:249
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:248
 msgid "workspace.sidebar.sitemap.add-page"
 msgstr "Lägg till sida"
 
-#: src/app/main/ui/workspace/left_header.cljs:97
+#: src/app/main/ui/workspace/left_header.cljs:96
 msgid "workspace.sitemap"
 msgstr "Översiktsplan"
 
-#: src/app/main/ui/workspace/tokens/theme_select.cljs:83
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:86
 msgid "workspace.tokens.active-themes"
 msgstr "%s aktiva teman"
 
@@ -6380,51 +6379,51 @@ msgstr "%s aktiva teman"
 msgid "workspace.tokens.add set"
 msgstr "Lägg till uppsättning"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:337
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:338
 msgid "workspace.tokens.back-to-themes"
 msgstr "Tillbaka till temalista"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:53
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:53
 msgid "workspace.tokens.create-new-theme"
 msgstr "Skapa ditt första tema nu."
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:140, src/app/main/ui/workspace/tokens/sidebar.cljs:193
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:100, src/app/main/ui/workspace/tokens/themes.cljs:44
 msgid "workspace.tokens.create-one"
 msgstr "Skapa ett."
 
-#: src/app/main/ui/workspace/tokens/form.cljs:526
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:534
 msgid "workspace.tokens.create-token"
 msgstr "Skapa en ny %s token"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:285
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
 msgid "workspace.tokens.delete"
 msgstr "Ta bort token"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:154
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
 msgid "workspace.tokens.delete-theme-title"
 msgstr "Ta bort tema"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:282
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:334
 msgid "workspace.tokens.duplicate"
 msgstr "Duplicera token"
 
-#: src/app/main/ui/workspace/tokens/context_menu.cljs:269
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:321
 msgid "workspace.tokens.edit"
 msgstr "Redigera token"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:327
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:328
 msgid "workspace.tokens.edit-theme-title"
 msgstr "Redigera tema"
 
-#: src/app/main/ui/workspace/tokens/theme_select.cljs:71
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:74
 msgid "workspace.tokens.edit-themes"
 msgstr "Redigera teman"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:525
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
 msgid "workspace.tokens.edit-token"
 msgstr "Redigera token"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:532
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:540
 msgid "workspace.tokens.enter-token-name"
 msgstr "Ange %s tokennamn"
 
@@ -6433,45 +6432,45 @@ msgstr "Ange %s tokennamn"
 msgid "workspace.tokens.grouping-set-alert"
 msgstr "Gruppering av Token Set stöds inte."
 
-#: src/app/main/ui/workspace/tokens/theme_select.cljs:88
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:91
 msgid "workspace.tokens.no-active-theme"
 msgstr "Inget tema aktiverat"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:515
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:480
 msgid "workspace.tokens.no-sets-create"
 msgstr "Det finns inga uppsättningar definierade. Skapa ett först."
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:137, src/app/main/ui/workspace/tokens/sets.cljs:143
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:97, src/app/main/ui/workspace/tokens/sets/lists.cljs:103
 msgid "workspace.tokens.no-sets-yet"
 msgstr "Det finns inga uppsättningar."
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:189
+#: src/app/main/ui/workspace/tokens/themes.cljs:40
 msgid "workspace.tokens.no-themes"
 msgstr "Det finns inga teman."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:49
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49
 msgid "workspace.tokens.no-themes-currently"
 msgstr "Du har för närvarande inga teman."
 
-#: src/app/main/ui/workspace/tokens/token_pill.cljs:124
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
 #, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Originalvärde: "
 
-#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/form.cljs:219, src/app/main/ui/workspace/tokens/form.cljs:223, src/app/main/ui/workspace/tokens/token_pill.cljs:125
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
 #, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Lösta värden: "
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:233
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:234
 msgid "workspace.tokens.save-theme"
 msgstr "Spara tema"
 
-#: src/app/main/ui/workspace/tokens/sets.cljs:249, src/app/main/ui/workspace/tokens/sets.cljs:351
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:209, src/app/main/ui/workspace/tokens/sets/lists.cljs:315
 msgid "workspace.tokens.select-set"
 msgstr "Välj uppsättning."
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:342
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:343
 msgid "workspace.tokens.set-selection-theme"
 msgstr ""
 "Definiera vilka tokenuppsättningar som ska användas som en del av detta "
@@ -6482,28 +6481,28 @@ msgstr ""
 msgid "workspace.tokens.set.not-active"
 msgstr "Token set är inte aktivt"
 
-#: src/app/main/ui/workspace/tokens/modals/themes.cljs:130
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:574, src/app/main/ui/workspace/tokens/form.cljs:575
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:589, src/app/main/ui/workspace/tokens/management/create/form.cljs:590
 #, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beskrivning"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:531
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:539
 msgid "workspace.tokens.token-name"
 msgstr "Namn"
 
-#: src/app/main/ui/workspace/tokens/form.cljs:560
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:567
 msgid "workspace.tokens.token-value"
 msgstr "Värde"
 
-#: src/app/main/ui/workspace/tokens/sidebar.cljs:405
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:125
 msgid "workspace.tokens.tools"
 msgstr "Verktyg"
 
-#: src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:146
+#: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:145
 msgid "workspace.toolbar.assets"
 msgstr "Tillgångar"
 
@@ -6511,39 +6510,39 @@ msgstr "Tillgångar"
 msgid "workspace.toolbar.color-palette"
 msgstr "Färgpalett (%s)"
 
-#: src/app/main/ui/workspace/right_header.cljs:207, src/app/main/ui/workspace/right_header.cljs:208
+#: src/app/main/ui/workspace/right_header.cljs:216, src/app/main/ui/workspace/right_header.cljs:217
 msgid "workspace.toolbar.comments"
 msgstr "Kommentarer (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:187, src/app/main/ui/workspace/top_toolbar.cljs:188
+#: src/app/main/ui/workspace/top_toolbar.cljs:188, src/app/main/ui/workspace/top_toolbar.cljs:189
 msgid "workspace.toolbar.curve"
 msgstr "Kurva (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:167, src/app/main/ui/workspace/top_toolbar.cljs:168
+#: src/app/main/ui/workspace/top_toolbar.cljs:168, src/app/main/ui/workspace/top_toolbar.cljs:169
 msgid "workspace.toolbar.ellipse"
 msgstr "Ellips (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:129, src/app/main/ui/workspace/top_toolbar.cljs:150
+#: src/app/main/ui/workspace/top_toolbar.cljs:130, src/app/main/ui/workspace/top_toolbar.cljs:151
 msgid "workspace.toolbar.frame"
 msgstr "Tavla (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:59, src/app/main/ui/workspace/top_toolbar.cljs:60
+#: src/app/main/ui/workspace/top_toolbar.cljs:57, src/app/main/ui/workspace/top_toolbar.cljs:58
 msgid "workspace.toolbar.image"
 msgstr "Bild (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:139, src/app/main/ui/workspace/top_toolbar.cljs:140
+#: src/app/main/ui/workspace/top_toolbar.cljs:140, src/app/main/ui/workspace/top_toolbar.cljs:141
 msgid "workspace.toolbar.move"
 msgstr "Flytta (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:196, src/app/main/ui/workspace/top_toolbar.cljs:197
+#: src/app/main/ui/workspace/top_toolbar.cljs:197, src/app/main/ui/workspace/top_toolbar.cljs:198
 msgid "workspace.toolbar.path"
 msgstr "Bana (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:207, src/app/main/ui/workspace/top_toolbar.cljs:208
+#: src/app/main/ui/workspace/top_toolbar.cljs:208, src/app/main/ui/workspace/top_toolbar.cljs:209
 msgid "workspace.toolbar.plugins"
 msgstr "Plugins (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:158, src/app/main/ui/workspace/top_toolbar.cljs:159
+#: src/app/main/ui/workspace/top_toolbar.cljs:159, src/app/main/ui/workspace/top_toolbar.cljs:160
 msgid "workspace.toolbar.rect"
 msgstr "Rektangel (%s)"
 
@@ -6552,7 +6551,7 @@ msgstr "Rektangel (%s)"
 msgid "workspace.toolbar.shortcuts"
 msgstr "Genvägar (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:176, src/app/main/ui/workspace/top_toolbar.cljs:177
+#: src/app/main/ui/workspace/top_toolbar.cljs:177, src/app/main/ui/workspace/top_toolbar.cljs:178
 msgid "workspace.toolbar.text"
 msgstr "Text (%s)"
 
@@ -6560,15 +6559,15 @@ msgstr "Text (%s)"
 msgid "workspace.toolbar.text-palette"
 msgstr "Typografier (%s)"
 
-#: src/app/main/ui/workspace/top_toolbar.cljs:226, src/app/main/ui/workspace/top_toolbar.cljs:227
+#: src/app/main/ui/workspace/top_toolbar.cljs:227, src/app/main/ui/workspace/top_toolbar.cljs:228
 msgid "workspace.toolbar.toggle-toolbar"
 msgstr "Växla verktygsfält"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:38
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:39
 msgid "workspace.top-bar.read-only.done"
 msgstr "Klart"
 
-#: src/app/main/ui/workspace/viewport/top_bar.cljs:35
+#: src/app/main/ui/workspace/viewport/top_bar.cljs:36
 #, markdown
 msgid "workspace.top-bar.view-only"
 msgstr "**Inspektera kod** (Endast visning)"
@@ -6718,71 +6717,71 @@ msgstr "Körning över %s"
 msgid "workspace.undo.title"
 msgstr "Historia"
 
-#: src/app/main/data/workspace/libraries.cljs:1183, src/app/main/ui/workspace/sidebar/versions.cljs:268
+#: src/app/main/data/workspace/libraries.cljs:1223, src/app/main/ui/workspace/sidebar/versions.cljs:84
 msgid "workspace.updates.dismiss"
 msgstr "Avfärda"
 
-#: src/app/main/data/workspace/libraries.cljs:1181
+#: src/app/main/data/workspace/libraries.cljs:1221
 msgid "workspace.updates.more-info"
 msgstr "Mer info"
 
-#: src/app/main/data/workspace/libraries.cljs:1179
+#: src/app/main/data/workspace/libraries.cljs:1219
 msgid "workspace.updates.there-are-updates"
 msgstr "Det finns uppdateringar i delade bibliotek"
 
-#: src/app/main/data/workspace/libraries.cljs:1185
+#: src/app/main/data/workspace/libraries.cljs:1225
 msgid "workspace.updates.update"
 msgstr "Uppdatera"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:190
+#: src/app/main/ui/ds/product/milestone_group.cljs:73
 msgid "workspace.versions.autosaved.entry"
 msgstr "%s autosparade versioner"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:188
+#: src/app/main/ui/workspace/sidebar/versions.cljs:259
 msgid "workspace.versions.autosaved.version"
 msgstr "Autosparad %s"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:209
+#: src/app/main/ui/workspace/sidebar/versions.cljs:277
 msgid "workspace.versions.button.pin"
 msgstr "Fastnålad version"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:204
+#: src/app/main/ui/workspace/sidebar/versions.cljs:272
 msgid "workspace.versions.button.restore"
 msgstr "Återställ version"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:334, src/app/main/ui/workspace/sidebar/versions.cljs:336
+#: src/app/main/ui/workspace/sidebar/versions.cljs:394, src/app/main/ui/workspace/sidebar/versions.cljs:396
 msgid "workspace.versions.button.save"
 msgstr "Spara version"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:343
+#: src/app/main/ui/workspace/sidebar/versions.cljs:403
 msgid "workspace.versions.empty"
 msgstr "Det finns inga versioner"
 
-#: src/app/main/ui/ds/product/autosaved_milestone.cljs:52
+#: src/app/main/ui/ds/product/milestone_group.cljs:67
 msgid "workspace.versions.expand-snapshot"
 msgstr "Expandera snapshots"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:316
+#: src/app/main/ui/workspace/sidebar/versions.cljs:368
 msgid "workspace.versions.filter.all"
 msgstr "Alla versioner"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:315
+#: src/app/main/ui/workspace/sidebar/versions.cljs:382
 msgid "workspace.versions.filter.label"
 msgstr "Versionsfilter"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:317
+#: src/app/main/ui/workspace/sidebar/versions.cljs:369
 msgid "workspace.versions.filter.mine"
 msgstr "Mina versioner"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:323
+#: src/app/main/ui/workspace/sidebar/versions.cljs:373
 msgid "workspace.versions.filter.user"
 msgstr "%s's versioner"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:329
+#: src/app/main/ui/workspace/sidebar/versions.cljs:389
 msgid "workspace.versions.loading"
 msgstr "Laddar..."
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:266
+#: src/app/main/ui/workspace/sidebar/versions.cljs:82
 msgid "workspace.versions.restore-warning"
 msgstr "Vill du återställa den här versionen?"
 
@@ -6790,26 +6789,26 @@ msgstr "Vill du återställa den här versionen?"
 msgid "workspace.versions.snapshot-menu"
 msgstr "Öppna snapshot-menyn"
 
-#: src/app/main/ui/workspace/sidebar.cljs:285
+#: src/app/main/ui/workspace/sidebar.cljs:236
 msgid "workspace.versions.tab.actions"
 msgstr "Åtgärder"
 
-#: src/app/main/ui/workspace/sidebar.cljs:282
+#: src/app/main/ui/workspace/sidebar.cljs:234
 msgid "workspace.versions.tab.history"
 msgstr "Historik"
 
-#: src/app/main/ui/ds/product/autosaved_milestone.cljs:66, src/app/main/ui/ds/product/user_milestone.cljs:73
+#: src/app/main/ui/ds/product/milestone.cljs:84, src/app/main/ui/ds/product/milestone_group.cljs:86
 msgid "workspace.versions.version-menu"
 msgstr "Öppna versionsmenyn"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:372
+#: src/app/main/ui/workspace/sidebar/versions.cljs:59
 #, markdown
 msgid "workspace.versions.warning.subtext"
 msgstr ""
 "Om du vill höja denna gräns kan du skriva till oss på "
 "[support@penpot.app](%s)"
 
-#: src/app/main/ui/workspace/sidebar/versions.cljs:368
+#: src/app/main/ui/workspace/sidebar/versions.cljs:429
 msgid "workspace.versions.warning.text"
 msgstr "Autosparade versioner sparas i %s dagar."
 
