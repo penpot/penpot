@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-27 12:15+0000\n"
-"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
+"Last-Translator: Unreal Vision <unrealvisionyt@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -7734,6 +7734,7 @@ msgstr ""
 "et des sauvegardes et des version d'historique plus courtes."
 
 #: src/app/main/ui/settings/subscription.cljs:126
+#, fuzzy
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Aucun paiement ne sera fait maintenant)"
 
