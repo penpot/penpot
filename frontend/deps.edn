@@ -3,7 +3,7 @@
  {penpot/common
   {:local/root "../common"}
 
-  org.clojure/clojure {:mvn/version "1.12.1"}
+  org.clojure/clojure {:mvn/version "1.12.2"}
   binaryage/devtools {:mvn/version "RELEASE"}
   metosin/reitit-core {:mvn/version "0.9.1"}
   funcool/okulary {:mvn/version "2022.04.11-16"}
