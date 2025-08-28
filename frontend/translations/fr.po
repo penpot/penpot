@@ -1770,10 +1770,6 @@ msgstr "Copier"
 msgid "inspect.subtitle.main"
 msgstr "Composant principal"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Variante"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Code"
@@ -4343,13 +4339,6 @@ msgstr "Abonnement Professionnel"
 msgid "subscription.dashboard.power-up.subscribe"
 msgstr "S'abonner"
 
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr ""
-"Éditeurs et stockage supplémentaires, version à enregistrement automatique, "
-"sauvegarde des fichiers et bien plus encore."
-
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Abonnement Illimité (essai)"
@@ -4406,14 +4395,6 @@ msgstr "organisation par mois"
 msgid "subscription.settings.professional"
 msgstr "Professionnel"
 
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "Nombre illimité de projets, de fichiers et de brouillons"
-
-#: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
-msgstr "Nombre illimité d'équipes de 8 éditeurs maximum"
-
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Votre abonnement"
@@ -4434,10 +4415,6 @@ msgstr "Illimité (essai)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Facture mensuelle plafonnée"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "Nombre illimité d'équipes, quelle que soit la taille de votre équipe"
 
 #: src/app/main/ui/dashboard/files.cljs:179
 msgid "title.dashboard.files"
@@ -7568,10 +7545,6 @@ msgstr "Les versions auto-enregistrées seront gardées %s jours."
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
 
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s éditeurs)"
-
 #: src/app/main/ui/settings/subscription.cljs:124
 #, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
@@ -7593,27 +7566,6 @@ msgstr "Thème système"
 msgid "labels.empty"
 msgstr "Vide"
 
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr ""
-"L'abonnement Professionnel est conçu pour les équipes comptant jusqu'à 8 "
-"éditeurs (propriétaire, administrateur et éditeur)."
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"L'abonnement Illimité ou Entreprise inclut plus d'éditeurs, de stockage et "
-"de versions à enregistrement automatique. Contactez le propriétaire de "
-"l'équipe : %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, fuzzy, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"L'abonnement Illimité ou Entreprise inclut plus d'éditeurs, de stockage et "
-"de versions à enregistrement automatique. [Abonnez-vous.](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "Votre abonnement :"
@@ -7631,12 +7583,6 @@ msgid "subscription.settings.add-payment-to-continue"
 msgstr ""
 "Ajouter une méthode de paiement pour continuer à l'utiliser après l'essai"
 
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr ""
-"Cet abonnement s'applique à toutes les équipes futures que vous allez créer "
-"ou dont vous serez propriétaire."
-
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.management.dialog.title"
 msgstr "Appliquer %s à vos équipes"
@@ -7648,10 +7594,6 @@ msgstr "Plus d'informations"
 #: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.subscribe"
 msgstr "S'abonner"
-
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "Vous sélectionnez cet abonnement pour :"
 
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.start-trial"
@@ -7781,12 +7723,6 @@ msgstr ""
 msgid "workspace.tokens.export.no-tokens-themes-sets"
 msgstr "Il n'y a pas de tokens, de thèmes ou de collections à exporter."
 
-#: src/app/main/ui/dashboard/subscription.cljs:160
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"Votre équipe semble s'être agrandie. Votre abonnement inclut %s "
-"utilisateurs, mais vous en utilisez actuellement %s"
-
 #: src/app/main/ui/dashboard/sidebar.cljs:1000
 msgid "subscription.dashboard.upgrade-plan.power-up"
 msgstr "Mise à niveau"
@@ -7800,11 +7736,6 @@ msgstr ""
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Aucun paiement ne sera fait maintenant)"
-
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr ""
-"Sélectionnez le nombre d'éditeurs (utilisateurs) dont vous avez besoin :"
 
 #: src/app/main/ui/settings/subscription.cljs:168
 msgid "subscription.settings.sucess.dialog.footer"
@@ -7888,19 +7819,6 @@ msgstr "Seul le créateur d'une version peut la déverrouiller"
 #: src/app/main/ui/workspace/tokens/modals/import.cljs:246
 msgid "workspace.tokens.import-menu-json-option"
 msgstr "Fichier JSON unique"
-
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
-msgstr ""
-"Procédez à la mise à niveau pour que votre abonnement corresponde à votre "
-"utilisation. [Abonnez-vous.|target:self](%s)"
-
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-member"
-msgstr ""
-"Procédez à la mise à niveau pour que votre abonnement corresponde à votre "
-"utilisation. Contactez le responsable de l'équipe : %s"
 
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Abonnement Entreprise (version d'essai)"

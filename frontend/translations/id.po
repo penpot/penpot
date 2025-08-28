@@ -1680,10 +1680,6 @@ msgstr "Salin"
 msgid "inspect.subtitle.main"
 msgstr "Komponen utama"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Varian"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Kode"

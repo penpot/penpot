@@ -1755,10 +1755,6 @@ msgstr "Kopiëren"
 msgid "inspect.subtitle.main"
 msgstr "Hoofdcomponent"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Variant"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Code"
@@ -4327,13 +4323,6 @@ msgstr ""
 "Bevalt de proefperiode? Kies voor altijd volledige toegang. "
 "[Abonneren|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr ""
-"Extra editors, opslag en automatisch opgeslagen versie, back-up van "
-"bestanden en meer."
-
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Unlimited-abonnement (proefversie)"
@@ -4394,14 +4383,6 @@ msgstr "organisatie per maand"
 msgid "subscription.settings.professional"
 msgstr "Professioneel"
 
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "Onbeperkt aantal projecten, bestanden en concepten"
-
-#: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
-msgstr "Onbeperkt aantal teams van maximaal 8 editors"
-
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Uw abonnement"
@@ -4421,10 +4402,6 @@ msgstr "Unlimited (proef)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Gemaximeerde maandelijkse rekening"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "Onbeperkte teams, ongeacht de grootte"
 
 #: src/app/main/ui/dashboard/files.cljs:179
 msgid "title.dashboard.files"
@@ -7613,12 +7590,6 @@ msgstr "Systeemthema"
 msgid "inspect.attributes.color"
 msgstr "Kleur"
 
-#: src/app/main/ui/dashboard/subscription.cljs:160
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"Het lijkt erop dat je team is gegroeid! Je abonnement is voor %s personen, "
-"maar je bent nu met %s."
-
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "Jouw abonnement:"
@@ -7634,10 +7605,6 @@ msgstr "Tandje erbij"
 #: src/app/main/ui/settings/subscription.cljs:53
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (proefperiode)"
-
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s teamleden)"
 
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
@@ -7719,29 +7686,15 @@ msgstr "Er zijn geen tokens, thema's of verzamelingen om te exporteren."
 msgid "workspace.tokens.export.preview"
 msgstr "Voorbeeld:"
 
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "Selecteer het aantal teamleden (seats) dat je nodig hebt:"
-
 #: src/app/main/ui/settings/subscription.cljs:253
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "Voeg een betaalmethode toe om door te gaan na de proefperiode"
-
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr ""
-"Het Professional-abonnement is ontworpen voor teams van maximaal 8 leden ("
-"eigenaar, beheerder en redacteur)."
 
 #: src/app/main/ui/settings/subscription.cljs:167
 msgid "subscription.settings.success.dialog.description"
 msgstr ""
 "Je kunt je abonnement op elk gewenst moment aanpassen via de pagina "
 "'Abonnement' in je accountgegevens."
-
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "Je kiest dit abonnement voor:"
 
 #: src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.try-it-free"
@@ -7759,37 +7712,15 @@ msgstr "Penpot Donker (standaard)"
 msgid "subscription.settings.more-information"
 msgstr "Meer informatie"
 
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"Grotere teams, meer opslagruimte en meer automatisch opgeslagen versies met "
-"het Unlimited- of Enterprise-abonnement. [Neem een abonnement.|target:self]"
-"(%s)"
-
 #: src/app/main/ui/settings/subscription.cljs:145
 msgid "subscription.settings.start-trial"
 msgstr "Start gratis proefperiode"
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"Grotere teams, meer opslagruimte en meer automatisch opgeslagen versies met "
-"het Unlimited- of Enterprise-abonnement. Neem contact op met de teameigenaar:"
-" %s"
 
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "Let op: overstappen naar een lager abonnement betekent minder opslagruimte "
 "en kortere back-ups en versiegeschiedenis."
-
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr ""
-"Dit abonnement is van toepassing op alle toekomstige teams die je maakt of "
-"waarvan je de eigenaar bent."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:370
 msgid "workspace.options.size.lock"
@@ -7841,31 +7772,11 @@ msgstr "Vergrendelen"
 msgid "labels.unlock"
 msgstr "Ontgrendelen"
 
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
-msgstr ""
-"Upgrade alstublieft om het gebruik aan te passen."
-"[Neem een abonnement.|target:self](%s)"
-
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-member"
-msgstr ""
-"Upgrade alstublieft om het gebruik aan te passen. Neem contact op met de "
-"teameigenaar: %s"
-
 #, markdown
 msgid "subscription.workspace.versions.warning.subtext-member"
 msgstr ""
 "Als je deze limiet wilt verhogen, neem dan contact op met de teameigenaar: "
 "[%s](mailto)"
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom"
-msgstr ""
-"Krijg extra editors en opslag, bestandsherstel en meer met het Unlimited-"
-"abonnement. [Power-up|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
 #, markdown
@@ -7873,17 +7784,6 @@ msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
 "Krijg extra editors, meer back-up, onbeperkte opslag en meer. "
 "[Kijk eens naar het Enterprise-abonnement.|target:self](%s)"
-
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.unlimited-storage"
-msgstr ""
-"Onbeperkte opslag en 90-dagen automatisch opslaan van versies en "
-"bestandsherstel"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage-autosave"
-msgstr ""
-"25 GB opslag en 30 dagen automatische opslag van versies en bestandsherstel"
 
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Enterprise-abonnement (proef)"
@@ -7899,11 +7799,6 @@ msgstr "90-dagen automatische opslag van versies en bestandsherstel"
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "Gemaximeerde maandelijkse rekening"
-
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage-autosave"
-msgstr ""
-"10GB aan opslag en 7-dagen automatische opslag van versies en bestandsherstel"
 
 msgid "subscription.settings.editors"
 msgstr "(x %s editors)"
@@ -7925,10 +7820,6 @@ msgstr "Ga naar het hoofdonderdeel"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
 msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Sommige varianten hebben identieke eigenschappen en waarden"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.duplicated.single.adjust"
-msgstr "Pas de waarden aan zodat ze kunnen worden opgehaald."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.all"

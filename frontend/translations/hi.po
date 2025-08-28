@@ -1739,10 +1739,6 @@ msgstr "कापी"
 msgid "inspect.subtitle.main"
 msgstr "मुख्य घटक"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "वेरिएंट"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "कोड"
@@ -4832,33 +4828,6 @@ msgstr "ज़ूम लेंस बढ़ाएं"
 msgid "shortcuts.zoom-selected"
 msgstr "चयनित पर ज़ूम करें"
 
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr ""
-"प्रोफेशनल प्लान टीमों के लिए डिज़ाइन किया गया है, जिसमें अधिकतम 8 संपादक (मालिक, एडमि"
-"न, और संपादक) शामिल हो सकते हैं।"
-
-#: src/app/main/ui/dashboard/subscription.cljs:160
-#, fuzzy
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"ऐसा लगता है कि आपकी टीम बढ़ गई है! आपके प्लान में %s सीटें शामिल हैं, लेकिन आप अब उससे अधि"
-"क सीटें उपयोग कर रहे हैं।"
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"असीमित या एंटरप्राइज प्लान के साथ अधिक संपादक, अधिक संग्रहण, और अधिक ऑटोसेव्ड संस्करण "
-"प्राप्त करें। टीम के मालिक से संपर्क करें: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, fuzzy, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"असीमित या एंटरप्राइज प्लान के साथ अधिक संपादक, अधिक संग्रहण, और अधिक ऑटोसेव्ड संस्करण "
-"प्राप्त करें। [अभी सदस्यता लें।](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:80
 msgid "subscription.dashboard.power-up.enterprise-plan"
 msgstr "एंटरप्राइज प्लान"
@@ -4877,12 +4846,6 @@ msgstr "सदस्यता लें"
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr ""
 "क्या आप अपनी ट्रायल का आनंद ले रहे हैं? पूरी पहुँच हमेशा के लिए अनलॉक करें। [सदस्यता लें](%s)"
-
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr ""
-"अतिरिक्त संपादक, संग्रहण और ऑटोसेव्ड संस्करण, फ़ाइल बैकअप और भी बहुत कुछ।"
 
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
@@ -4943,23 +4906,11 @@ msgstr "एंटरप्राइज़ (परीक्षण)"
 msgid "subscription.settings.manage-your-subscription"
 msgstr "अपनी सदस्यता प्रबंधित करें"
 
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "आप इस योजना को इसलिए चुन रहे हैं:"
-
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "ध्यान दें: कम प्लान पर स्विच करने का मतलब कम संग्रहण और कम अवधि के बैकअप तथा संस्करण "
 "इतिहास है।"
-
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s संपादक)"
-
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr "यह योजना सभी भविष्य में बनाई या स्वामित्व वाली टीमों पर लागू होगी।"
 
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
@@ -4969,10 +4920,6 @@ msgstr "(अभी कोई भुगतान नहीं किया जा
 #, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 प्रति संपादक/महीना x %s"
-
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "अपनी आवश्यकता के अनुसार संपादकों (सीटों) की संख्या चुनें:"
 
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.management.dialog.title"
@@ -5002,14 +4949,6 @@ msgstr "प्रति माह संगठन"
 #: src/app/main/ui/dashboard/subscription.cljs:105, src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:238, src/app/main/ui/settings/subscription.cljs:287
 msgid "subscription.settings.professional"
 msgstr "प्रोफेशनल"
-
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "असीमित परियोजनाएँ, फ़ाइलें और ड्राफ्ट"
-
-#: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
-msgstr "अधिकतम 8 संपादकों की असीमित टीमें"
 
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
@@ -5056,10 +4995,6 @@ msgstr "असीमित (परीक्षण)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "मासिक बिल की सीमा"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "असीमित टीमें, चाहे आपकी टीम का आकार कुछ भी हो"
 
 #: src/app/main/ui/dashboard/subscription.cljs:133, src/app/main/ui/workspace/main_menu.cljs:928
 msgid "subscription.workspace.header.menu.option.power-up"

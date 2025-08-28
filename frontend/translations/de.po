@@ -1709,10 +1709,6 @@ msgstr "Kopieren"
 msgid "inspect.subtitle.main"
 msgstr "Hauptkomponente"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Variante"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Code"
@@ -7255,10 +7251,6 @@ msgstr "Diese Variante hat einen ungültigen Namen."
 msgid "subscription.settings.member-since"
 msgstr "Penpot-Mitglied seit %s"
 
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "Unbegrenzte Anzahl von Projekte, Dateien und Entwürfen"
-
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Ihr Abonnement"
@@ -7286,10 +7278,6 @@ msgstr "Unbegrenzt (Testversion)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Monatliche Rechnung mit Kostenobergrenze"
-
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s Redakteure)"
 
 #: src/app/main/ui/dashboard/templates.cljs:257
 msgid "dashboard.libraries-and-templates.description"

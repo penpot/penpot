@@ -6028,10 +6028,6 @@ msgstr "复制"
 msgid "inspect.subtitle.main"
 msgstr "主组件"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "变体"
-
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"
 msgstr "标记全部为已读"
@@ -6372,18 +6368,10 @@ msgstr "企业（实验）"
 msgid "subscription.settings.manage-your-subscription"
 msgstr "管理您的订阅"
 
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " （%s 编辑者）"
-
 #: src/app/main/ui/settings/subscription.cljs:124
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "每月 **$%s**"
-
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "选择您需要的编辑者数量（席位）："
 
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.management.dialog.title"
@@ -6404,10 +6392,6 @@ msgstr "其它 penpot 计划"
 #: src/app/main/ui/dashboard/subscription.cljs:105, src/app/main/ui/settings/subscription.cljs:55, src/app/main/ui/settings/subscription.cljs:238, src/app/main/ui/settings/subscription.cljs:287
 msgid "subscription.settings.professional"
 msgstr "专业"
-
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "无限项目、文件、草稿"
 
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
@@ -7191,10 +7175,6 @@ msgstr "选择适合您风格的主题。"
 msgid "onboarding.questions.start-with.code"
 msgstr "从设计中产生真实代码"
 
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "您选择此计划是："
-
 #: src/app/main/ui/settings/subscription.cljs:278
 msgid "subscription.settings.support-us-since"
 msgstr "您一直支持我们的这个计划自从：%s"
@@ -7206,14 +7186,6 @@ msgstr "免费试用14天"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "月度账单上限"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage-autosave"
-msgstr "25GB存储空间，以及30天自动保存版本和文件恢复"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "无限制团队，无论您的团队规模如何"
 
 #: src/app/main/ui/workspace/libraries.cljs:371
 msgid "workspace.libraries.empty.add-some"

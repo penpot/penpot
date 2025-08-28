@@ -1755,10 +1755,6 @@ msgstr "Copia"
 msgid "inspect.subtitle.main"
 msgstr "Componente principale"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Variante"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Codice"
@@ -4310,13 +4306,6 @@ msgstr ""
 "Ti sta piacendo la prova? Sblocca l’accesso completo per sempre.[Abbonati]"
 "(%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr ""
-"Editor, spazio di archiviazione e versioni salvate automaticamente "
-"aggiuntivi, file di backup e altro ancora."
-
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Piano Unlimited (versione di prova)"
@@ -4378,14 +4367,6 @@ msgstr "organizzazione per mese"
 msgid "subscription.settings.professional"
 msgstr "Professional"
 
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "Progetti, file e bozze illimitati"
-
-#: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
-msgstr "Team illimitati fino ad 8 editor"
-
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Il tuo abbonamento"
@@ -4406,10 +4387,6 @@ msgstr "Unlimited (prova)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Fattura mensile con tetto massimo"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "Team illimitati, indipendentemente dalle dimensioni del tuo team"
 
 #: src/app/main/ui/dashboard/files.cljs:179
 msgid "title.dashboard.files"
@@ -7622,20 +7599,6 @@ msgstr "Clicca per chiudere il tracciato"
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
 
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr ""
-"Il piano Professional è pensato per i team fino a 8 editor (proprietario, "
-"amministratore ed editor)."
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"Ottieni più editor, più spazio di archiviazione e più versione salvate "
-"automaticamente con il piano Unlimited o Enterprise. Contatta il "
-"proprietario del team: %s"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
 msgid "labels.empty"
 msgstr "Vuoto"
@@ -7672,20 +7635,6 @@ msgstr "Tema di sistema"
 msgid "inspect.attributes.color"
 msgstr "Colore"
 
-#: src/app/main/ui/dashboard/subscription.cljs:160
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"Sembra che il tuo team sia cresciuto! Il tuo piano include %s postazioni, ma "
-"ne stai utilizzando %s."
-
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"Ottieni più editor, più spazio di archiviazione e più versione salvate "
-"automaticamente con il piano Unlimited o Enterprise. "
-"[Abbonati ora.|target:self](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "Il tuo abbonamento:"
@@ -7706,25 +7655,11 @@ msgstr "Aggiungi un metodo di pagamento per continuare dopo il periodo di prova"
 msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (versione di prova)"
 
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "Stai scegliendo questo piano per:"
-
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "Attenzione: passare a un piano inferiore significa meno spazio di "
 "archiviazione e backup e cronologia delle versioni più brevi."
-
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s editor)"
-
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr ""
-"Questo piano si applicherà a tutti i team futuri che creerai o di cui sarai "
-"proprietario."
 
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
@@ -7734,10 +7669,6 @@ msgstr "(Non verrà effettuato nessun pagamento in questo momento)"
 #, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "$7 per editor/mese x %s"
-
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "Seleziona il numero di editor (postazioni) di cui hai bisogno:"
 
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.management.dialog.title"

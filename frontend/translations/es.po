@@ -1765,10 +1765,6 @@ msgid "inspect.subtitle.main"
 msgstr "Componente principal"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Variante"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
 msgid "inspect.tabs.switcher.label"
 msgstr "Información sobre la capa"
 

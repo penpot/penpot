@@ -1741,10 +1741,6 @@ msgstr "Ievietot starpliktuvē"
 msgid "inspect.subtitle.main"
 msgstr "Galvenā sastāvdaļa"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Variants"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Kods"
@@ -4316,13 +4312,6 @@ msgstr ""
 "Patīk izmēģinājuma laiks? Atslēdz nepārtrauktu pilnu piekļuvi! "
 "[Abonēt|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr ""
-"Papildu redaktori, krājumi un automātiski saglabātas versijas, datņu "
-"rezerves kopēšana un vēl."
-
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Neierobežots plāns (izmēģinājums)"
@@ -4383,14 +4372,6 @@ msgstr "apvienība mēnesī"
 msgid "subscription.settings.professional"
 msgstr "Profesionāls"
 
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "Neierobežoti projekti, datnes un uzmetumi"
-
-#: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
-msgstr "Neierobežotas komandas līdz 8 dalībniekiem"
-
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Tavs abonements"
@@ -4410,10 +4391,6 @@ msgstr "Neierobežots (izmēģinājuma)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Ierobežots ikmēneša rēķins"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "Neierobežotas komandas, un nav svarīgi, cik liela ir komanda"
 
 #: src/app/main/ui/dashboard/files.cljs:179
 msgid "title.dashboard.files"
@@ -7588,13 +7565,6 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
 
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"Iegūsti vairāk redaktoru, krātuves un automātiski saglabātu versiju ar "
-"neierobežoto vai uzņēmējdarbības plānu! [Abonēt tagad.|target:self](%s)"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
 msgid "labels.empty"
 msgstr "Tukšs"
@@ -7639,25 +7609,6 @@ msgstr "Penpot gaišs"
 msgid "dashboard.select-ui-theme.system"
 msgstr "Sistēmas izskats"
 
-#: src/app/main/ui/dashboard/subscription.cljs:160
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"Izskatās, ka Tava komanda ir palielinājusies. Tavā plānā ir iekļautas %s "
-"vietas, bet Tu tagad izmanto %s."
-
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr ""
-"Lietpratēju plāns ir paredzēts komandām līdz 8 dalībniekiem (īpašnieks, "
-"pārvaldītājs un redaktors)."
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"Iegūsti vairāk redaktoru, krātuves un automātiski saglabātu versiju ar "
-"neierobežoto vai uzņēmējdarbības plānu! Sazinies ar komandas īpašnieku: %s"
-
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "Tavs abonements:"
@@ -7678,25 +7629,11 @@ msgstr "Pievieno maksājumu veidu, lai turpinātu pēc sava izmēģinājuma laik
 msgid "subscription.settings.enterprise-trial"
 msgstr "Uzņēmējdarbībai (izmēģinājuma)"
 
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "Tu izvēlies šo plānu:"
-
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
 "Uzmanību: pārslēgšanās uz zemāku plānu nozīmē mazāk krātuves un īsāku "
 "rezerves kopiju un versiju vēsturi."
-
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s redaktori)"
-
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr ""
-"Šis plāns attieksies uz visām komandām, kuras turpmāk izveidosi vai kuras "
-"Tev turpmāk piederēs."
 
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.payment-explanation"
@@ -7705,10 +7642,6 @@ msgstr "(Tagad netiks veikts maksājums)"
 #: src/app/main/ui/settings/subscription.cljs:124
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s**  mēnesī"
-
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "Atlasi redaktoru (vietu) skaitu, kas būs nepieciešams:"
 
 #: src/app/main/ui/settings/subscription.cljs:97
 msgid "subscription.settings.management.dialog.title"
@@ -7826,26 +7759,6 @@ msgstr "Aizslēgt"
 msgid "labels.unlock"
 msgstr "Atslēgt"
 
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
-msgstr ""
-"Lūgums uzlabot, lai atbilstu savam lietojumam. [Abonēt tagad.|target:self]"
-"(%s)"
-
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-member"
-msgstr ""
-"Lūgums uzlabot, lai atbilstu savam lietojumam. Jāsazinās ar komandas "
-"īpašnieku: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom"
-msgstr ""
-"Iegūsti papildu redaktorus un krātuvi, datņu atkopi un vairāk ar "
-"neierobežoto plānu. [Uzlabot|target:self](%s)"
-
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Uzņēmējdarbības plāns (izmēģinājuma)"
 
@@ -7856,12 +7769,6 @@ msgstr ""
 "Iegūsti papildu redaktorus, vairāk rezerves kopēšanas, neierobežotu krātuvi "
 "un vēl. [Ieskaties uzņēmējdarbības plānā!|target:self](%s)"
 
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.unlimited-storage"
-msgstr ""
-"Neierobežota krātuve un 90 dienu automātiski saglabātu versiju un datņu "
-"atkope"
-
 msgid "subscription.settings.enterprise.autosave"
 msgstr "90 dienu automātiski saglabātas versijas un datņu atkope"
 
@@ -7869,18 +7776,8 @@ msgstr "90 dienu automātiski saglabātas versijas un datņu atkope"
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "Ierobežots ikmēneša rēķins"
 
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage-autosave"
-msgstr ""
-"10 GB krātuves un 7 dienu automātiski saglabātas versijas un datņu atkope"
-
 msgid "subscription.settings.editors"
 msgstr "(x %s redaktori)"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage-autosave"
-msgstr ""
-"25 GB krātuves un 30 dienu automātiski saglabātas versijas un datņu atkope"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.duplicated.group.locate"
@@ -7899,10 +7796,6 @@ msgstr "Doties uz galveno sastāvdaļu"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
 msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Dažiem variantiem ir vienādas īpašības un vērtības"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.duplicated.single.adjust"
-msgstr "Jāpielāgo vērtības, lai tās varētu ievietot."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
 msgid "workspace.options.component.variant.duplicated.single.all"

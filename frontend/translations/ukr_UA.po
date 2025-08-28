@@ -1753,10 +1753,6 @@ msgstr "Копіювати"
 msgid "inspect.subtitle.main"
 msgstr "Головний компонент"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "Варіант"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "Код"
@@ -4337,13 +4333,6 @@ msgstr ""
 "Насолоджуєтесь пробним періодом? Отримайте повний доступ назавжди. "
 "[Оформлюйте підписку|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr ""
-"Додаткові редактори та версії з автозбереженням, резервне копіювання файлів "
-"та більше."
-
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "Безлімітний план (пробний)"
@@ -4403,14 +4392,6 @@ msgstr "організацій на місяць"
 msgid "subscription.settings.professional"
 msgstr "Професійний"
 
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "Проєкти, файли та чернетки без обмежень"
-
-#: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
-msgstr "Безліч команд по 8 редакторів кожна"
-
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "Ваша підписка"
@@ -4431,10 +4412,6 @@ msgstr "Безлімітний (пробний)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "Місячний рахунок з граничною сумою"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "Безліч команд з безліччю учасників"
 
 #: src/app/main/ui/dashboard/files.cljs:179
 msgid "title.dashboard.files"
@@ -7608,20 +7585,6 @@ msgstr "Автозбережені версії зберігатимуться �
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Натисність щоб закінчити шлях"
 
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr ""
-"План Професійний створений для команд до 8 редакторів (власник, "
-"адміністратор та редактор)."
-
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"Отримайте більше редакторів, місця для сховища та більше автозбережених "
-"версій з Планом Безлімітний чи Корпоративний. "
-"[Оформлюйте підписку зараз.|target:self](%s)"
-
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
 msgstr ""
@@ -7631,11 +7594,6 @@ msgstr ""
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:263
 msgid "labels.empty"
 msgstr "Порожньо"
-
-#: src/app/main/ui/dashboard/subscription.cljs:160
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr ""
-"Схоже, Ваша команда підросла! План розрахований на %s місць, проте зайнято %s"
 
 #: src/app/main/ui/settings/subscription.cljs:253
 msgid "subscription.settings.add-payment-to-continue"
@@ -7661,14 +7619,6 @@ msgstr "Зафіксувати співвідношення"
 msgid "subscription.settings.enterprise-trial"
 msgstr "Корпоративний (пробний)"
 
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s редакторів)"
-
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "Ви обираєте план для:"
-
 #: src/app/main/ui/dashboard/subscription.cljs:58, src/app/main/ui/dashboard/subscription.cljs:66, src/app/main/ui/dashboard/subscription.cljs:72, src/app/main/ui/dashboard/subscription.cljs:79
 msgid "subscription.dashboard.power-up.your-subscription"
 msgstr "Ваша підписка:"
@@ -7688,16 +7638,6 @@ msgstr "Визначити помилкові варіанти"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:340
 msgid "workspace.options.component.variant.malformed.structure.example"
 msgstr "[property] =  [value], [property] = [value]"
-
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr ""
-"Цей план буде застосовано до усіх команд, які ви створите або отримаєте у "
-"власність."
-
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "Оберіть потрібну кількість редакторів (місць):"
 
 #: src/app/main/ui/settings/subscription.cljs:293, src/app/main/ui/settings/subscription.cljs:307, src/app/main/ui/settings/subscription.cljs:321
 msgid "subscription.settings.subscribe"
@@ -7748,14 +7688,6 @@ msgstr "Деякі варіанти мають помилкові імена"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:251
 msgid "workspace.options.component.variant.malformed.single.some"
 msgstr "Деякі з цих варіантів мають помилкові імена."
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"Отримайте більше редакторів, місця для сховища та більше автозбережених "
-"версій з Планом Безлімітний чи Корпоративний. Звʼяжіться з власником команди:"
-" %s"
 
 #: src/app/main/ui/dashboard/subscription.cljs:102
 msgid "subscription.dashboard.team-plan"
@@ -7847,26 +7779,6 @@ msgstr "Заблокувати"
 msgid "labels.unlock"
 msgstr "Розблокувати"
 
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
-msgstr ""
-"Для використовуваних вами обʼємів Вам варто оновитись. "
-"[Підписуйтесь зараз.target:self](%s)"
-
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-member"
-msgstr ""
-"Для використовуваних вами обʼємів Вам варто оновитись. Звʼяжіться з "
-"власником команди: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom"
-msgstr ""
-"Отримайте більше редакторів, місця у сховищі, відновлення файлів та більше з "
-"планом Безлімітний. [Підсилюйтесь|target:self](%s)"
-
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "План Корпоративний (пробний)"
 
@@ -7877,11 +7789,6 @@ msgstr ""
 "Отримайте більше редакторів, резервних копій, необмежене сховище та більше. "
 "[Огляньте план Корпоративний.|target:self](%s)"
 
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.unlimited-storage"
-msgstr ""
-"Сховище без обмежень, 90-денні автозбереження версій та відновлення файлів"
-
 msgid "subscription.settings.enterprise.autosave"
 msgstr "90-денні автозбережнні версії та відновлення файлів"
 
@@ -7889,16 +7796,8 @@ msgstr "90-денні автозбережнні версії та віднов�
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "Місячний рахунок з граничною сумою"
 
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage-autosave"
-msgstr "10ГБ сховища, 7-денні автозбережені версії та відновлення файлів"
-
 msgid "subscription.settings.editors"
 msgstr "(x %s редакторів)"
-
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage-autosave"
-msgstr "25ГБ сховище, 30-денні автозбережені версії та відновлення файлів"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:957
 msgid "workspace.options.component.variant.duplicated.group.locate"

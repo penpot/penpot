@@ -1702,10 +1702,6 @@ msgstr "העתקה"
 msgid "inspect.subtitle.main"
 msgstr "רכיב ראשי"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.subtitle.variant"
-msgstr "הגוון"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:105
 msgid "inspect.tabs.code"
 msgstr "קוד"
@@ -4247,11 +4243,6 @@ msgstr "הרשמה"
 msgid "subscription.dashboard.power-up.trial.bottom-description"
 msgstr "הניסיון מצליח עד כה? אפשר לקבל גישה מלאה לתמיד.[הרשמה|target:self](%s)"
 
-#: src/app/main/ui/dashboard/subscription.cljs:62
-#, unused
-msgid "subscription.dashboard.power-up.trial.top-description"
-msgstr "עורכים נוספים, אחסון וגרסה נשמרת אוטומטית, גיבוי קבצים ועוד."
-
 #: src/app/main/ui/dashboard/subscription.cljs:67
 msgid "subscription.dashboard.power-up.trial.top-title"
 msgstr "תוכנית לא מוגבלת (ניסיון)"
@@ -4310,14 +4301,6 @@ msgstr "ארגון לחודש"
 msgid "subscription.settings.professional"
 msgstr "מקצועי"
 
-#: src/app/main/ui/settings/subscription.cljs:239, src/app/main/ui/settings/subscription.cljs:290
-msgid "subscription.settings.professional.projects-files"
-msgstr "אין הגבלה על מיזמים, קבצים וטיוטות"
-
-#: src/app/main/ui/settings/subscription.cljs:240, src/app/main/ui/settings/subscription.cljs:291
-msgid "subscription.settings.professional.teams-editors"
-msgstr "אין הגבלה על צוותים של עד 8 עורכים"
-
 #: src/app/main/ui/settings/subscription.cljs:235
 msgid "subscription.settings.section-plan"
 msgstr "המינוי שלך"
@@ -4337,10 +4320,6 @@ msgstr "ללא הגבלה (התנסות)"
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
 msgid "subscription.settings.unlimited.bill"
 msgstr "חשבון חודשי מוגבל"
-
-#: src/app/main/ui/settings/subscription.cljs:248, src/app/main/ui/settings/subscription.cljs:259, src/app/main/ui/settings/subscription.cljs:304
-msgid "subscription.settings.unlimited.teams"
-msgstr "אין הגבלה על צוותים, ללא תלות בגודלם"
 
 #: src/app/main/ui/dashboard/files.cljs:179
 msgid "title.dashboard.files"
@@ -7512,10 +7491,6 @@ msgstr "להתנסות בחינם למשך 14 ימים"
 msgid "workspace.tokens.export.single-file"
 msgstr "קובץ בודד"
 
-#: src/app/main/ui/dashboard/subscription.cljs:160
-msgid "subscription.dashboard.cta.unlimited-many-editors"
-msgstr "נראה שהצוות שלך גדל! התוכנית שלך כוללת %s מושבים אבל כרגע מנוצלים %s"
-
 #: src/app/main/ui/workspace/tokens/modals/export.cljs:120
 msgid "workspace.tokens.export.multiple-files"
 msgstr "ריבוי קבצים"
@@ -7528,20 +7503,9 @@ msgstr "אפשר לערוך את המינוי שלך בכל עת מעמוד ‚�
 msgid "subscription.settings.subscribe"
 msgstr "הרשמה למינוי"
 
-#: src/app/main/ui/settings/subscription.cljs:112
-msgid "subscription.settings.management.dialog.select-editors"
-msgstr "נא לבחור מספר עורכים (מושבים) רצוי:"
-
 #: src/app/main/ui/settings/subscription.cljs:253
 msgid "subscription.settings.add-payment-to-continue"
 msgstr "נא להוסיף שיטת תשלום כדי להמשיך להשתמש אחרי תקופת הניסיון"
-
-#: src/app/main/ui/dashboard/subscription.cljs:168
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-member"
-msgstr ""
-"אפשר להרחיב את כמות העורכים, האחסון ולשמור יותר גרסאות שנשמרו אוטומטית עם "
-"התוכנית המוגבלת או התאגידית. נא ליצור קשר עם בעלי הקבוצה: %s"
 
 #: src/app/main/ui/settings/options.cljs:68
 msgid "dashboard.select-ui-theme.dark"
@@ -7563,17 +7527,6 @@ msgstr "צבע"
 msgid "labels.empty"
 msgstr "ריקה"
 
-#: src/app/main/ui/dashboard/subscription.cljs:154
-msgid "subscription.dashboard.cta.professional-plan-designed"
-msgstr "התוכנית המקצועית תוכננה לצוותים של עד 8 עורכים (בעלים, מנהלים ועורכים)."
-
-#: src/app/main/ui/dashboard/subscription.cljs:165
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-to-unlimited-enterprise-owner"
-msgstr ""
-"אפשר להרחיב את כמות העורכים, האחסון ולשמור יותר גרסאות שנשמרו אוטומטית עם "
-"התוכנית המוגבלת או התאגידית. [הרשמה כעת.|target:self](%s)"
-
 #: src/app/main/ui/dashboard/subscription.cljs:102
 msgid "subscription.dashboard.team-plan"
 msgstr "תוכנית צוותית"
@@ -7589,19 +7542,6 @@ msgstr "שדרוג"
 #: src/app/main/ui/settings/subscription.cljs:53
 msgid "subscription.settings.enterprise-trial"
 msgstr "תאגידית (ניסיונית)"
-
-#: src/app/main/ui/settings/subscription.cljs:106
-msgid "subscription.settings.management.dialog.members"
-msgstr " (%s עורכים)"
-
-#: src/app/main/ui/settings/subscription.cljs:108
-msgid "subscription.settings.management.dialog.no-teams"
-msgstr ""
-"התוכנית הזאת תחול על כל הצוותים העתידיים שייווצרו על ידיך או שיהיו בבעלותך."
-
-#: src/app/main/ui/settings/subscription.cljs:102
-msgid "subscription.settings.management.dialog.choose-this-plan"
-msgstr "בחרת את התוכנית הזאת עבור:"
 
 #: src/app/main/ui/settings/subscription.cljs:132
 msgid "subscription.settings.management.dialog.downgrade"
@@ -7735,24 +7675,6 @@ msgstr "נעילה"
 msgid "labels.unlock"
 msgstr "שחרור נעילה"
 
-#: src/app/main/ui/dashboard/subscription.cljs:176
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-owner"
-msgstr ""
-"נא לשדרג כדי שתהיה התאמה לצורכי השימוש שלך. [הרשמה כעת.|target:self](%s)"
-
-#, markdown
-msgid "subscription.dashboard.cta.upgrade-more-seats-member"
-msgstr ""
-"נא לשדרג כדי שתהיה התאמה לצורכי השימוש שלך. נא ליצור קשר עם בעלי הצוות: %s"
-
-#: src/app/main/ui/dashboard/subscription.cljs:60
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom"
-msgstr ""
-"קבלת עורכים ואחסון נוספים, שחזור קבצים ועוד בתוכנית הבלתי מוגבלת. "
-"[להשתדרג|target:self](%s)"
-
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "תוכנית מסחרית (ניסיון)"
 
@@ -7823,10 +7745,6 @@ msgstr "להגוון הזה יש מאפיינים וערכים זהים להגו
 msgid "workspace.options.component.variant.duplicated.single.all"
 msgstr "להגוונים האלה יש מאפיינים וערכים זהים."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
-msgid "workspace.options.component.variant.duplicated.single.adjust"
-msgstr "כיוון הערכים כדי שאפשר יהיה למשוך אותם."
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:954
 msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "לחלק מההגוונים יש מאפיינים וערכים זהים"
@@ -7845,16 +7763,8 @@ msgstr ""
 msgid "workspace.options.component.variant.duplicated.group.locate"
 msgstr "איתור הגוונים כפולים"
 
-#: src/app/main/ui/settings/subscription.cljs:250, src/app/main/ui/settings/subscription.cljs:261, src/app/main/ui/settings/subscription.cljs:306
-msgid "subscription.settings.unlimited.storage-autosave"
-msgstr "25 ג״ב אחסון ו־30 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
-
 msgid "subscription.settings.editors"
 msgstr "(× %s עורכים)"
-
-#: src/app/main/ui/settings/subscription.cljs:241, src/app/main/ui/settings/subscription.cljs:292
-msgid "subscription.settings.professional.storage-autosave"
-msgstr "10 ג״ב אחסון ו־7 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
 msgid "subscription.settings.enterprise.capped-bill"
@@ -7862,10 +7772,6 @@ msgstr "חשבונית חודשית מוגבלת"
 
 msgid "subscription.settings.enterprise.autosave"
 msgstr "90 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
-
-#: src/app/main/ui/settings/subscription.cljs:271, src/app/main/ui/settings/subscription.cljs:320
-msgid "subscription.settings.enterprise.unlimited-storage"
-msgstr "אחסון בלתי מוגבל ו־90 ימי שמירת גרסאות אוטומטית ושחזור קבצים"
 
 msgid "labels.pinned-projects"
 msgstr "מיזמים נעוצים"
