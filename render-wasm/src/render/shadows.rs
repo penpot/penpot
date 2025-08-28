@@ -6,10 +6,16 @@ use skia_safe::textlayout::ParagraphBuilder;
 use skia_safe::{Paint, Path};
 
 // Fill Shadows
-pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
+pub fn render_fill_drop_shadows(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    antialias: bool,
+    shadows: Vec<Shadow>,
+    surface_id: SurfaceId,
+) {
     if shape.has_fills() {
-        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            render_fill_drop_shadow(render_state, shape, shadow, antialias);
+        for shadow in shadows.iter().rev().filter(|s| !s.hidden()) {
+            render_fill_drop_shadow(render_state, shape, shadow, antialias, surface_id);
         }
     }
 }
@@ -19,9 +25,10 @@ fn render_fill_drop_shadow(
     shape: &Shape,
     shadow: &Shadow,
     antialias: bool,
+    surface_id: SurfaceId,
 ) {
     let paint = &shadow.get_drop_shadow_paint(antialias, shape.image_filter(1.).as_ref());
-    render_shadow_paint(render_state, shape, paint, SurfaceId::DropShadows);
+    render_shadow_paint(render_state, shape, paint, surface_id);
 }
 
 pub fn render_fill_inner_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
@@ -47,15 +54,17 @@ pub fn render_stroke_drop_shadows(
     shape: &Shape,
     stroke: &Stroke,
     antialias: bool,
+    shadows: Vec<Shadow>,
+    surface_id: SurfaceId,
 ) {
     if !shape.has_fills() {
-        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+        for shadow in shadows.iter().rev().filter(|s| !s.hidden()) {
             let filter = shadow.get_drop_shadow_filter();
             strokes::render(
                 render_state,
                 shape,
                 stroke,
-                None,
+                Some(surface_id),
                 filter.as_ref(),
                 None,
                 antialias,

@@ -181,6 +181,10 @@ pub(crate) struct RenderState {
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>,
+    // nested_shadows_context maintains a stack of shapes whose shadows are inherited by
+    // nested child elements during rendering. When rendering child elements, their shadows
+    // are extended with the drop shadows from the most recent shadow shape in this stack.
+    pub nested_shadows_context: Vec<Shape>,
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
 }
@@ -272,8 +276,10 @@ impl RenderState {
             pending_tiles: PendingTiles::new_empty(),
             nested_fills: vec![],
             nested_blurs: vec![],
+            nested_shadows_context: vec![],
             show_grid: None,
             focus_mode: FocusMode::new(),
+            // shadow_snapshots: vec![],
         }
     }
 
@@ -327,7 +333,7 @@ impl RenderState {
     }
 
     pub fn reset_canvas(&mut self) {
-        self.surfaces.reset(self.background_color);
+        self.surfaces.reset(skia::Color::TRANSPARENT);
     }
 
     #[allow(dead_code)]
@@ -426,6 +432,7 @@ impl RenderState {
             shape
         };
 
+        //surface_ids for clipping
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::DropShadows as u32
@@ -624,8 +631,56 @@ impl RenderState {
                     }
                 }
 
+                let mut nested_shadows_context = vec![];
+                if let Some(origin_shape) = self.nested_shadows_context.last() {
+                    if let Type::Frame(_) = &origin_shape.shape_type {
+                        nested_shadows_context = origin_shape.drop_shadows().cloned().collect();
+
+                        let mut origin_shape: Cow<Shape> = Cow::Borrowed(origin_shape);
+                        if let Some(shape_modifiers) = modifiers.get(&origin_shape.id) {
+                            origin_shape.to_mut().apply_transform(shape_modifiers);
+                        }
+
+                        // Rotate the nested shadow surface if the origin_shape had a rotation
+                        let shadow_bounds = origin_shape.get_frame_shadows_bounds();
+                        let mut rotation_matrix = Matrix::default();
+                        rotation_matrix.set_rotate(origin_shape.rotation, None);
+                        rotation_matrix.post_translate(center);
+                        rotation_matrix.pre_translate(-center);
+
+                        self.surfaces.canvas(SurfaceId::NestedShadows).save();
+                        self.surfaces
+                            .canvas(SurfaceId::NestedShadows)
+                            .concat(&rotation_matrix);
+
+                        if origin_shape.clip() {
+                            self.surfaces.canvas(SurfaceId::NestedShadows).clip_rect(
+                                shadow_bounds,
+                                skia::ClipOp::Intersect,
+                                true,
+                            );
+                        }
+                    }
+                }
+
                 for stroke in shape.visible_strokes().rev() {
-                    shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
+                    shadows::render_stroke_drop_shadows(
+                        self,
+                        shape,
+                        stroke,
+                        antialias,
+                        nested_shadows_context.clone(),
+                        SurfaceId::NestedShadows,
+                    );
+
+                    shadows::render_stroke_drop_shadows(
+                        self,
+                        shape,
+                        stroke,
+                        antialias,
+                        shape.drop_shadows().cloned().collect(),
+                        SurfaceId::DropShadows,
+                    );
                     //In clipped content strokes are drawn over the contained elements in a subsequent step
                     if !shape.clip() {
                         strokes::render(self, shape, stroke, None, None, None, antialias, None);
@@ -634,10 +689,28 @@ impl RenderState {
                 }
 
                 shadows::render_fill_inner_shadows(self, shape, antialias);
-                shadows::render_fill_drop_shadows(self, shape, antialias);
+                shadows::render_fill_drop_shadows(
+                    self,
+                    shape,
+                    antialias,
+                    nested_shadows_context.clone(),
+                    SurfaceId::NestedShadows,
+                );
+                shadows::render_fill_drop_shadows(
+                    self,
+                    shape,
+                    antialias,
+                    shape.drop_shadows().cloned().collect(),
+                    SurfaceId::DropShadows,
+                );
                 // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
+
+                if !self.nested_shadows_context.is_empty() {
+                    self.surfaces.canvas(SurfaceId::NestedShadows).restore();
+                }
             }
         };
+
         self.apply_drawing_to_render_canvas(Some(&shape));
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
@@ -724,6 +797,7 @@ impl RenderState {
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::DropShadows as u32
+            | SurfaceId::NestedShadows as u32
             | SurfaceId::InnerShadows as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().scale((scale, scale));
@@ -807,13 +881,6 @@ impl RenderState {
             }
         }
 
-        match element.shape_type {
-            Type::Frame(_) | Type::Group(_) => {
-                self.nested_blurs.push(Some(element.blur));
-            }
-            _ => {}
-        }
-
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
@@ -892,6 +959,7 @@ impl RenderState {
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
                 self.nested_blurs.pop();
+                self.nested_shadows_context.pop();
             }
             _ => {}
         }
@@ -913,6 +981,50 @@ impl RenderState {
         }
 
         self.surfaces.canvas(SurfaceId::Current).restore();
+
+        if let Type::Frame(_) = element.shape_type {
+            if element.parent_id == Some(Uuid::nil()) {
+                let image = self.surfaces.snapshot(SurfaceId::Current);
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .clear(skia::Color::TRANSPARENT);
+
+                let mut paint = skia::Paint::default();
+
+                // When we clip a shadowed element we are generating vertical/horizontal lines with the shadow color, so we need to blur it to avoid artifacts.
+                if element.clip() {
+                    let mut max_blur: f32 = 0.;
+                    if let Some(origin_shape) = self.nested_shadows_context.last() {
+                        for shadow in origin_shape.drop_shadows() {
+                            max_blur = max_blur.max(shadow.blur);
+                        }
+                    }
+                    for shadow in element.drop_shadows() {
+                        max_blur = max_blur.max(shadow.blur);
+                    }
+
+                    let scale = self.get_scale();
+                    let filter = skia::image_filters::blur(
+                        (max_blur * scale, max_blur * scale),
+                        None,
+                        None,
+                        None,
+                    );
+
+                    paint.set_image_filter(filter);
+                }
+
+                self.surfaces
+                    .draw_into(SurfaceId::NestedShadows, SurfaceId::Current, Some(&paint));
+                self.surfaces
+                    .canvas(SurfaceId::Current)
+                    .draw_image(image, (0, 0), None);
+                self.surfaces
+                    .canvas(SurfaceId::NestedShadows)
+                    .clear(skia::Color::TRANSPARENT);
+            }
+        }
+
         self.focus_mode.exit(&element.id);
     }
 
@@ -1004,9 +1116,15 @@ impl RenderState {
                 if let Some(modifier) = modifiers.get(&node_id) {
                     transformed_element.to_mut().apply_transform(modifier);
                 }
+                if !self.nested_shadows_context.is_empty() {
+                    transformed_element
+                        .to_mut()
+                        .shadows
+                        .extend(self.nested_shadows_context.last().unwrap().drop_shadows());
+                }
 
                 let is_visible = transformed_element
-                    .extrect(tree, modifiers)
+                    .calculate_extrect(tree, modifiers)
                     .intersects(self.render_area)
                     && !transformed_element.hidden
                     && !transformed_element.visually_insignificant(
@@ -1042,6 +1160,14 @@ impl RenderState {
                 );
             } else if visited_children {
                 self.apply_drawing_to_render_canvas(Some(element));
+            }
+
+            match element.shape_type {
+                Type::Frame(_) | Type::Group(_) => {
+                    self.nested_blurs.push(Some(element.blur));
+                    self.nested_shadows_context.push(element.clone());
+                }
+                _ => {}
             }
 
             // Set the node as visited_children before processing children
@@ -1146,7 +1272,11 @@ impl RenderState {
 
             self.surfaces
                 .canvas(SurfaceId::Current)
-                .clear(self.background_color);
+                .clear(skia::Color::TRANSPARENT);
+
+            self.surfaces
+                .canvas(SurfaceId::NestedShadows)
+                .clear(skia::Color::TRANSPARENT);
 
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));

@@ -719,6 +719,40 @@ impl Shape {
             .get_or_init(|| self.calculate_extrect(shapes_pool, modifiers))
     }
 
+    pub fn get_frame_shadows_bounds(&self) -> math::Rect {
+        assert!(
+            self.is_frame(),
+            "This method can only be called on frame shapes"
+        );
+
+        let base_bounds = self.bounds().to_rect();
+        let mut result = math::Rect::new_empty();
+
+        let mut max_stroke: f32 = 0.;
+        for stroke in self.strokes.iter() {
+            let width = match stroke.render_kind(false) {
+                StrokeKind::Inner => stroke.width,
+                StrokeKind::Center => stroke.width / 2.,
+                StrokeKind::Outer => 0.,
+            };
+            max_stroke = max_stroke.max(width);
+        }
+
+        for shadow in self.shadows.iter() {
+            if !shadow.hidden() {
+                let (x, y) = shadow.offset;
+                let mut shadow_rect = base_bounds;
+                shadow_rect.left += x + max_stroke + shadow.spread;
+                shadow_rect.right += x - max_stroke - shadow.spread;
+                shadow_rect.top += y + max_stroke + shadow.spread;
+                shadow_rect.bottom += y - max_stroke - shadow.spread;
+
+                result.join(shadow_rect);
+            }
+        }
+        result
+    }
+
     pub fn calculate_extrect(
         &self,
         shapes_pool: &ShapesPool,
@@ -762,22 +796,24 @@ impl Shape {
         }
 
         for shadow in self.shadows.iter() {
-            let (x, y) = shadow.offset;
-            let mut shadow_rect = rect;
-            shadow_rect.left += x;
-            shadow_rect.right += x;
-            shadow_rect.top += y;
-            shadow_rect.bottom += y;
+            if !shadow.hidden() {
+                let (x, y) = shadow.offset;
+                let mut shadow_rect = rect;
+                shadow_rect.left += x;
+                shadow_rect.right += x;
+                shadow_rect.top += y;
+                shadow_rect.bottom += y;
 
-            shadow_rect.left -= shadow.blur;
-            shadow_rect.top -= shadow.blur;
-            shadow_rect.right += shadow.blur;
-            shadow_rect.bottom += shadow.blur;
+                shadow_rect.left -= shadow.blur;
+                shadow_rect.top -= shadow.blur;
+                shadow_rect.right += shadow.blur;
+                shadow_rect.bottom += shadow.blur;
 
-            rect.join(shadow_rect);
+                rect.join(shadow_rect);
+            }
         }
 
-        if self.blur.blur_type != blurs::BlurType::None {
+        if self.blur.blur_type != blurs::BlurType::None && !self.blur.hidden {
             rect.left -= self.blur.value;
             rect.top -= self.blur.value;
             rect.right += self.blur.value;
@@ -801,7 +837,6 @@ impl Shape {
                         transformed_element.to_mut().apply_transform(modifier);
                     }
 
-                    // Get the child's extended rectangle and join it with the container's rectangle
                     let child_extrect = transformed_element.extrect(shapes_pool, modifiers);
                     rect.join(child_extrect);
                 }
