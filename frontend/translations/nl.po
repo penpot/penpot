@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-12 08:02+0000\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4400,6 +4400,7 @@ msgid "subscription.settings.unlimited-trial"
 msgstr "Unlimited (proef)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "Gemaximeerde maandelijkse rekening"
 
@@ -7607,10 +7608,12 @@ msgid "subscription.settings.enterprise-trial"
 msgstr "Enterprise (proefperiode)"
 
 #: src/app/main/ui/settings/subscription.cljs:126
+#, fuzzy
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(Er wordt nu geen betaling gedaan)"
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s** per maand"
 
@@ -7779,7 +7782,7 @@ msgstr ""
 "[%s](mailto)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
 "Krijg extra editors, meer back-up, onbeperkte opslag en meer. "
@@ -7797,6 +7800,7 @@ msgid "subscription.settings.enterprise.autosave"
 msgstr "90-dagen automatische opslag van versies en bestandsherstel"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+#, fuzzy
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "Gemaximeerde maandelijkse rekening"
 
@@ -7814,6 +7818,7 @@ msgstr ""
 "een unieke set eigenschapswaarden heeft."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "Ga naar het hoofdonderdeel"
 
@@ -7822,15 +7827,18 @@ msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "Sommige varianten hebben identieke eigenschappen en waarden"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.all"
 msgstr "Deze varianten hebben identieke eigenschappen en waarden."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.one"
 msgstr ""
 "Deze variant heeft identieke eigenschappen en waarden als een andere variant."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.some"
 msgstr "Sommige van deze varianten hebben identieke eigenschappen en waarden."
 
@@ -7845,16 +7853,20 @@ msgstr ""
 msgid "workspace.options.component.variants-help-modal.rule1"
 msgstr "Dezelfde naam delen."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2"
 msgstr "Van hetzelfde type zijn"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
 msgstr ""
 "Rechthoek, ellips, paden en Booleaanse bewerkingen tellen als hetzelfde type."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3"
 msgstr "Hetzelfde hiërarchische niveau hebben"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
 msgstr "Groepen, borden en lay-outs worden als gelijkwaardig beschouwd."
 
