@@ -17,12 +17,13 @@
    [app.common.types.pages-list :as ctpl]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.shape.token :as ctst]
    [app.common.types.text :as ctt]
    [app.common.types.token :as cto]
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(def text-typography-attrs (set ctt/text-typography-attrs))
+(def text-typography-style-attrs (set ctt/text-typography-attrs))
 
 (defn- generate-unapply-tokens
   "When updating attributes that have a token applied, we must unapply it, because the value
@@ -38,10 +39,14 @@
           (let [new-shape (get new-objects (:id shape))
                 attrs     (ctt/get-diff-attrs (:content shape) (:content new-shape))
 
-                ;; Unapply token when applying typography asset style
-                attrs     (if (seq (set/intersection text-typography-attrs attrs))
-                            (into attrs cto/typography-keys)
-                            attrs)]
+                attrs     (cond-> attrs
+                            ;; Unapply token when applying typography asset style
+                            (seq (set/intersection text-typography-style-attrs attrs))
+                            (into cto/typography-keys)
+
+                            ;; Unapply font-weight when changing the font-family attribute
+                            (and (:font-id attrs) (ctst/font-weight-applied? shape))
+                            (conj :font-weight))]
             (apply set/union (map cto/shape-attr->token-attrs attrs))))
 
         check-attr
