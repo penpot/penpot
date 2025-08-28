@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-19 11:03+0000\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
 "Last-Translator: Jun Fang <junfang123@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
@@ -6369,7 +6369,7 @@ msgid "subscription.settings.manage-your-subscription"
 msgstr "管理您的订阅"
 
 #: src/app/main/ui/settings/subscription.cljs:124
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "每月 **$%s**"
 
@@ -6807,6 +6807,7 @@ msgid "workspace.options.component.variant.duplicated.group.locate"
 msgstr "定位到复制的变体"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "转到主组件"
 
@@ -6844,6 +6845,7 @@ msgstr "变体如何保持连接"
 msgid "workspace.options.component.variants-help-modal.rule1"
 msgstr "共享相同的名字。"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2"
 msgstr "是相同的类型"
 
@@ -7040,6 +7042,7 @@ msgstr "源"
 msgid "labels.pinned-projects"
 msgstr "固定项目"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3"
 msgstr "存在相同的层级"
 
@@ -7184,6 +7187,7 @@ msgid "subscription.settings.try-it-free"
 msgstr "免费试用14天"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "月度账单上限"
 
