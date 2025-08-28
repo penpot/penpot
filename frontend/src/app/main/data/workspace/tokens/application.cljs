@@ -258,7 +258,7 @@
             (dwsl/update-layout-child shape-ids props {:ignore-touched true
                                                        :page-id page-id}))))))))
 
-(defn generate-text-shape-update
+(defn- generate-text-shape-update
   [txt-attrs shape-ids page-id]
   (let [update-node? (fn [node]
                        (or (txt/is-text-node? node)
@@ -284,21 +284,53 @@
    (when (number? value)
      (generate-text-shape-update {:letter-spacing (str value)} shape-ids page-id))))
 
+(defn- generate-font-variant-text-shape-update
+  "Generate shape update for either updating `:font-family` or `font-weight`.
+  Try to find the closest weight variant."
+  [txt-attrs shape-ids page-id on-mismatch]
+  (let [update-node? (fn [node]
+                       (or (txt/is-text-node? node)
+                           (txt/is-paragraph-node? node)))
+        update-fn (fn [node _]
+                    (let [font (if (= (:font-id txt-attrs) (str uuid/zero))
+                                 (fonts/get-font-data (:font-id node))
+                                 (fonts/get-font-data (:font-id txt-attrs)))
+                          variant (when font
+                                    (fonts/find-closest-variant font (:weight node) (:style node)))
+                          txt-attrs (cond-> txt-attrs
+                                      (:id variant) (assoc :font-variant-id (:id variant)))
+                          call-on-mismatch? (when (and (fn? on-mismatch) variant)
+                                              (or
+                                               (not= (:weight txt-attrs) (:weight variant))
+                                               (when (:style txt-attrs)
+                                                 (not= (:style txt-attrs) (:style variant)))))]
+                      (if (or variant (not font))
+                        (do
+                          (when call-on-mismatch? (on-mismatch variant))
+                          (-> node
+                              (d/txt-merge txt-attrs)
+                              (cty/remove-typography-from-node)))
+                        node)))]
+    (dwsh/update-shapes shape-ids
+                        #(txt/update-text-content % update-node? update-fn nil)
+                        {:ignore-touched true
+                         :page-id page-id})))
+
 (defn update-font-family
   ([value shape-ids attributes] (update-font-family value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
    (let [font-family (-> (first value)
                          ;; Strip quotes around font-family like `"Inter"`
                          (str/trim #"[\"']"))
-         font (some-> font-family
-                      (fonts/find-font-family))
-         text-attrs (if font
-                      {:font-id (:id font)
-                       :font-family (:family font)}
+         font-family (some-> font-family
+                             (fonts/find-font-family))
+         text-attrs (if font-family
+                      {:font-id (:id font-family)
+                       :font-family (:family font-family)}
                       {:font-id (str uuid/zero)
                        :font-family font-family})]
      (when text-attrs
-       (generate-text-shape-update text-attrs shape-ids page-id)))))
+       (generate-font-variant-text-shape-update text-attrs shape-ids page-id nil)))))
 
 (defn update-font-size
   ([value shape-ids attributes] (update-font-size value shape-ids attributes nil))
@@ -328,36 +360,12 @@
      (st/emit! (ptk/data-event :expand-text-more-options))
      (update-text-decoration value shape-ids attributes page-id))))
 
-(defn- generate-font-weight-text-shape-update
-  [font-variant shape-ids page-id on-mismatch]
-  (let [update-node? (fn [node]
-                       (or (txt/is-text-node? node)
-                           (txt/is-paragraph-node? node)))
-        update-fn (fn [node _]
-                    (let [font (fonts/get-font-data (:font-id node))
-                          variant (fonts/find-closest-variant font (:weight font-variant) (:style font-variant))
-                          call-on-mismatch? (when (fn? on-mismatch)
-                                              (or
-                                               (not= (:weight font-variant) (:weight variant))
-                                               (when (:style font-variant)
-                                                 (not= (:style font-variant) (:style variant)))))]
-                      (if variant
-                        (do
-                          (when call-on-mismatch? (on-mismatch variant))
-                          (-> node
-                              (d/txt-merge (assoc variant :font-variant-id (:id variant)))
-                              (cty/remove-typography-from-node)))
-                        node)))]
-    (dwsh/update-shapes shape-ids
-                        #(txt/update-text-content % update-node? update-fn nil)
-                        {:ignore-touched true
-                         :page-id page-id})))
 
 (defn update-font-weight
   ([value shape-ids attributes] (update-font-weight value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
    (when-let [font-variant (ctt/valid-font-weight-variant value)]
-     (generate-font-weight-text-shape-update font-variant shape-ids page-id nil))))
+     (generate-font-variant-text-shape-update font-variant shape-ids page-id nil))))
 
 (defn update-font-weight-interactive
   ([value shape-ids attributes] (update-font-weight-interactive value shape-ids attributes nil))
@@ -367,7 +375,7 @@
                                              :type :toast
                                              :level :warning
                                              :timeout 7000}))]
-       (generate-font-weight-text-shape-update font-variant shape-ids page-id on-mismatch)))))
+       (generate-font-variant-text-shape-update font-variant shape-ids page-id on-mismatch)))))
 
 (defn- apply-functions-map
   "Apply map of functions `fs` to a map of values `vs` using `args`.
