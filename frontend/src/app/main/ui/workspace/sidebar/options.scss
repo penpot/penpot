@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "../../ds/_sizes.scss";
+@use "../../ds/_sizes.scss" as *;
 @import "refactor/common-refactor.scss";
 
 .tool-window {

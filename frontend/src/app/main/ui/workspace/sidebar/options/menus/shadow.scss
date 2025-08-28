@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../../../../ds/_sizes.scss" as *;
 @import "refactor/common-refactor.scss";
-@import "../../../../ds/_sizes.scss";
 
 .element-set {
   margin: 0;
