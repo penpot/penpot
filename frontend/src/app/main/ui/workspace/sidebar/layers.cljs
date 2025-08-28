@@ -20,7 +20,6 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item]]
    [app.util.dom :as dom]
@@ -418,7 +417,8 @@
           [:> title-bar* {:collapsable  false
                           :title        (:name page)
                           :on-btn-click toggle-search
-                          :btn-children i/search}]]))]))
+                          :btn-icon     "search"
+                          :btn-title    (tr "labels.search")}]]))]))
 
 
 (defn- on-scroll
