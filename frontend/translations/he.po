@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-15 19:01+0000\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -4318,6 +4318,7 @@ msgid "subscription.settings.unlimited-trial"
 msgstr "ללא הגבלה (התנסות)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "חשבון חודשי מוגבל"
 
@@ -7550,10 +7551,12 @@ msgstr ""
 "הגיבויים והגרסאות."
 
 #: src/app/main/ui/settings/subscription.cljs:124
+#, fuzzy
 msgid "subscription.settings.management.dialog.price-month"
 msgstr "**$%s** לחודש"
 
 #: src/app/main/ui/settings/subscription.cljs:126
+#, fuzzy
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(לא יבוצע שום תשלום כעת)"
 
@@ -7712,15 +7715,19 @@ msgstr "שילוב כהגוון"
 msgid "workspace.plugins.permissions.allow-localstorage"
 msgstr "אחסון נתונים בדפדפן."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
 msgstr "קבוצות, לוחות ופריסות נחשבים לשווי ערך."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule3"
 msgstr "יש את אותה רמת ההיררכיה"
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
 msgstr "מרובע, אליפסה, נתיבים ופעולות בוליאניות נחשבים לאותו הסוג."
 
+#, fuzzy
 msgid "workspace.options.component.variants-help-modal.rule2"
 msgstr "הם מאותו הסוג"
 
@@ -7734,14 +7741,17 @@ msgid "workspace.options.component.variants-help-modal.title"
 msgstr "איך הגוונים נשארים מחוברים"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.some"
 msgstr "לחלק מההגוונים האלה יש מאפיינים וערכים זהים."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.one"
 msgstr "להגוון הזה יש מאפיינים וערכים זהים להגוון אחר."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:309
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.single.all"
 msgstr "להגוונים האלה יש מאפיינים וערכים זהים."
 
@@ -7750,6 +7760,7 @@ msgid "workspace.options.component.variant.duplicated.group.title"
 msgstr "לחלק מההגוונים יש מאפיינים וערכים זהים"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:443
+#, fuzzy
 msgid "workspace.options.component.variant.duplicated.copy.locate"
 msgstr "מעבר לרכיב הראשי"
 
@@ -7767,6 +7778,7 @@ msgid "subscription.settings.editors"
 msgstr "(× %s עורכים)"
 
 #: src/app/main/ui/settings/subscription.cljs:269, src/app/main/ui/settings/subscription.cljs:318
+#, fuzzy
 msgid "subscription.settings.enterprise.capped-bill"
 msgstr "חשבונית חודשית מוגבלת"
 
@@ -7831,7 +7843,7 @@ msgstr ""
 "החזרת השינויים תשחזר אותו."
 
 #: src/app/main/ui/dashboard/subscription.cljs:74
-#, markdown
+#, fuzzy, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
 "קבלת עורכים נוספים, יותר גיבויים, אחסון בלתי מוגבל ועוד. "
