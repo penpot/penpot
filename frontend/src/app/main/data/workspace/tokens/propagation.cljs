@@ -22,38 +22,6 @@
    [clojure.set :as set]
    [potok.v2.core :as ptk]))
 
-;; Constants -------------------------------------------------------------------
-
-(def ^:private filter-existing-values? false)
-
-(def ^:private attributes->shape-update
-  {ctt/border-radius-keys dwta/update-shape-radius-for-corners
-   ctt/color-keys dwta/update-fill-stroke
-   ctt/stroke-width-keys dwta/update-stroke-width
-   ctt/sizing-keys dwta/update-shape-dimensions
-   ctt/opacity-keys dwta/update-opacity
-   #{:line-height} dwta/update-line-height
-   #{:font-size} dwta/update-font-size
-   #{:letter-spacing} dwta/update-letter-spacing
-   #{:font-family} dwta/update-font-family
-   #{:text-case} dwta/update-text-case
-   #{:text-decoration} dwta/update-text-decoration
-   #{:font-weight} dwta/update-font-weight
-   #{:typography} dwta/update-typography
-   #{:x :y} dwta/update-shape-position
-   #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
-   #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
-   #{:column-gap :row-gap} dwta/update-layout-spacing
-   #{:width :height} dwta/update-shape-dimensions
-   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits
-   ctt/rotation-keys dwta/update-rotation})
-
-(def attribute-actions-map
-  (reduce
-   (fn [acc [ks action]]
-     (into acc (map (fn [k] [k action]) ks)))
-   {} attributes->shape-update))
-
 ;; Helpers ---------------------------------------------------------------------
 
 ;; TODO: see if this can be replaced by more standard functions
@@ -66,6 +34,56 @@
      :else b))
   ([a b & rest]
    (reduce deep-merge a (cons b rest))))
+
+(defn- flatten-set-keyed-map
+  "Flattens a map where the keys are sets of keywords."
+  [m into-m]
+  (reduce
+   (fn [acc [ks action]]
+     (into acc (map (fn [k] [k action]) ks)))
+   into-m m))
+
+;; Constants -------------------------------------------------------------------
+
+(def ^:private filter-existing-values? false)
+
+(def ^:private attributes->shape-update
+  {ctt/border-radius-keys dwta/update-shape-radius-for-corners
+   ctt/color-keys dwta/update-fill-stroke
+   ctt/stroke-width-keys dwta/update-stroke-width
+   ctt/sizing-keys dwta/update-shape-dimensions
+   ctt/opacity-keys dwta/update-opacity
+   ctt/rotation-keys dwta/update-rotation
+
+   ;; Typography
+   ctt/font-family-keys dwta/update-font-family
+   ctt/font-size-keys dwta/update-font-size
+   ctt/font-weight-keys dwta/update-font-weight
+   ctt/letter-spacing-keys dwta/update-letter-spacing
+   ctt/text-case-keys dwta/update-text-case
+   ctt/text-decoration-keys dwta/update-text-decoration
+   ctt/typography-token-keys dwta/update-typography
+   #{:line-height} dwta/update-line-height
+
+   ;; Layout
+   #{:x :y} dwta/update-shape-position
+   #{:p1 :p2 :p3 :p4} dwta/update-layout-padding
+   #{:m1 :m2 :m3 :m4} dwta/update-layout-item-margin
+   #{:column-gap :row-gap} dwta/update-layout-spacing
+   #{:width :height} dwta/update-shape-dimensions
+   #{:layout-item-min-w :layout-item-min-h :layout-item-max-w :layout-item-max-h} dwta/update-layout-sizing-limits})
+
+(def ^:private attribute-actions-map
+  (flatten-set-keyed-map attributes->shape-update {}))
+
+(def ^:private interactive-attributes->shape-update
+  {ctt/font-family-keys dwta/update-font-family-interactive
+   ctt/font-weight-keys dwta/update-font-weight-interactive
+   ctt/text-decoration-keys dwta/update-text-decoration-interactive
+   ctt/typography-token-keys dwta/update-typography-interactive})
+
+(def ^:private interactive-attribute-actions-map
+  (flatten-set-keyed-map interactive-attributes->shape-update attribute-actions-map))
 
 ;; Data flows ------------------------------------------------------------------
 
@@ -130,19 +148,26 @@
 
       [tokens frame-ids text-ids])))
 
-(defn- actionize-shapes-update-info [page-id shapes-update-info]
-  (mapcat (fn [[attrs update-infos]]
-            (let [action (some attribute-actions-map attrs)]
-              (assert (fn? action) "missing action function on attributes->shape-update")
-              (map
-               (fn [[v shape-ids]]
-                 (action v shape-ids attrs page-id))
-               update-infos)))
-          shapes-update-info))
+(defn- actionize-shapes-update-info
+  [page-id shapes-update-info interactive?]
+  (let [attribute-actions (if interactive?
+                            interactive-attribute-actions-map
+                            attribute-actions-map)]
+    (mapcat (fn [[attrs update-infos]]
+              (let [action (some attribute-actions attrs)]
+                (assert (fn? action) "missing action function on attributes->shape-update")
+                (map
+                 (fn [[v shape-ids]]
+                   (action v shape-ids attrs page-id))
+                 update-infos)))
+            shapes-update-info)))
 
 (defn propagate-tokens
-  "Propagate tokens values to all shapes where they are applied"
-  [state resolved-tokens]
+  "Propagate tokens values to all shapes where they are applied
+
+  Pass `interactive?` to indicate the propagation was triggered by a user interaction
+  and should use update functions that may execute ui side-effects like showing warnings."
+  [state resolved-tokens interactive?]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
@@ -162,7 +187,7 @@
                   (collect-shapes-update-info resolved-tokens (:objects page))
 
                   actions
-                  (actionize-shapes-update-info page-id attrs)
+                  (actionize-shapes-update-info page-id attrs interactive?)
 
                   ;; Composed updates return observables and need to be executed differently
                   {:keys [observable normal]} (group-by #(if (rx/observable? %) :observable :normal) actions)]
@@ -193,7 +218,11 @@
               (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
 (defn propagate-workspace-tokens
-  []
+  "Updates styles for tokens.
+
+  Pass `interactive?` to indicate the propagation was triggered by a user interaction
+  and should use update functions that may execute ui side-effects like showing warnings."
+  [& {:keys [interactive?]}]
   (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
@@ -205,5 +234,5 @@
                           (let [undo-id (js/Symbol)]
                             (rx/concat
                              (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                             (propagate-tokens state sd-tokens)
+                             (propagate-tokens state sd-tokens interactive?)
                              (rx/of (dwu/commit-undo-transaction undo-id)))))))))))

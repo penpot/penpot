@@ -10,6 +10,7 @@
    [app.common.files.tokens :as cft]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
+   [app.common.types.shape.token :as ctst]
    [app.common.types.stroke :as cts]
    [app.common.types.text :as txt]
    [app.common.types.token :as ctt]
@@ -284,53 +285,71 @@
    (when (number? value)
      (generate-text-shape-update {:letter-spacing (str value)} shape-ids page-id))))
 
-(defn- generate-font-variant-text-shape-update
-  "Generate shape update for either updating `:font-family` or `font-weight`.
-  Try to find the closest weight variant."
+(defn warn-font-variant-not-found! []
+  (st/emit!
+   (ntf/show {:content (tr "workspace.tokens.font-variant-not-found")
+              :type :toast
+              :level :warning
+              :timeout 7000})))
+
+(defn- update-closest-font-variant-id-by-weight
+  [txt-attrs target-variant font-id on-mismatch]
+  (let [font (fonts/get-font-data font-id)
+        variant (when font
+                  (fonts/find-closest-variant font (:weight target-variant) (:style target-variant)))
+        call-on-mismatch? (when (and (fn? on-mismatch) variant)
+                            (or
+                             (not= (:font-weight target-variant) (:weight variant))
+                             (when (:font-style target-variant)
+                               (not= (:font-style target-variant) (:style variant)))))]
+    (when call-on-mismatch?
+      (on-mismatch))
+    (cond-> txt-attrs
+      (:id variant) (assoc :font-variant-id (:id variant)))))
+
+(defn- generate-font-family-text-shape-update
   [txt-attrs shape-ids page-id on-mismatch]
-  (let [update-node? (fn [node]
+  (let [not-found-font (= (:font-id txt-attrs) (str uuid/zero))
+        update-node? (fn [node]
                        (or (txt/is-text-node? node)
                            (txt/is-paragraph-node? node)))
-        update-fn (fn [node _]
-                    (let [font (if (= (:font-id txt-attrs) (str uuid/zero))
-                                 (fonts/get-font-data (:font-id node))
-                                 (fonts/get-font-data (:font-id txt-attrs)))
-                          variant (when font
-                                    (fonts/find-closest-variant font (:weight node) (:style node)))
+        update-fn (fn [node find-closest-weight?]
+                    (let [font-id (if not-found-font (:font-id node) (:font-id txt-attrs))
                           txt-attrs (cond-> txt-attrs
-                                      (:id variant) (assoc :font-variant-id (:id variant)))
-                          call-on-mismatch? (when (and (fn? on-mismatch) variant)
-                                              (or
-                                               (not= (:weight txt-attrs) (:weight variant))
-                                               (when (:style txt-attrs)
-                                                 (not= (:style txt-attrs) (:style variant)))))]
-                      (if (or variant (not font))
-                        (do
-                          (when call-on-mismatch? (on-mismatch variant))
-                          (-> node
-                              (d/txt-merge txt-attrs)
-                              (cty/remove-typography-from-node)))
-                        node)))]
+                                      find-closest-weight? (update-closest-font-variant-id-by-weight node font-id on-mismatch))]
+                      (-> node
+                          (d/txt-merge txt-attrs)
+                          (cty/remove-typography-from-node))))]
     (dwsh/update-shapes shape-ids
-                        #(txt/update-text-content % update-node? update-fn nil)
+                        (fn [shape]
+                          (txt/update-text-content shape update-node? #(update-fn %1 (ctst/font-weight-applied? shape)) nil))
                         {:ignore-touched true
                          :page-id page-id})))
+
+(defn- create-font-family-text-attrs
+  [value]
+  (let [font-family (-> (first value)
+                        ;; Strip quotes around font-family like `"Inter"`
+                        (str/trim #"[\"']"))
+        font (some-> font-family
+                     (fonts/find-font-family))]
+    (if font
+      {:font-id (:id font)
+       :font-family (:family font)}
+      {:font-id (str uuid/zero)
+       :font-family font-family})))
 
 (defn update-font-family
   ([value shape-ids attributes] (update-font-family value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [font-family (-> (first value)
-                         ;; Strip quotes around font-family like `"Inter"`
-                         (str/trim #"[\"']"))
-         font-family (some-> font-family
-                             (fonts/find-font-family))
-         text-attrs (if font-family
-                      {:font-id (:id font-family)
-                       :font-family (:family font-family)}
-                      {:font-id (str uuid/zero)
-                       :font-family font-family})]
-     (when text-attrs
-       (generate-font-variant-text-shape-update text-attrs shape-ids page-id nil)))))
+   (when-let [text-attrs (create-font-family-text-attrs value)]
+     (generate-font-family-text-shape-update text-attrs shape-ids page-id nil))))
+
+(defn update-font-family-interactive
+  ([value shape-ids attributes] (update-font-family-interactive value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (when-let [text-attrs (create-font-family-text-attrs value)]
+     (generate-font-family-text-shape-update text-attrs shape-ids page-id warn-font-variant-not-found!))))
 
 (defn update-font-size
   ([value shape-ids attributes] (update-font-size value shape-ids attributes nil))
@@ -360,22 +379,35 @@
      (st/emit! (ptk/data-event :expand-text-more-options))
      (update-text-decoration value shape-ids attributes page-id))))
 
+(defn- generate-font-weight-text-shape-update
+  [font-variant shape-ids page-id on-mismatch]
+  (let [font-variant (assoc font-variant
+                            :font-weight (:weight font-variant)
+                            :font-style (:style font-variant))
+        update-node? (fn [node]
+                       (or (txt/is-text-node? node)
+                           (txt/is-paragraph-node? node)))
+        update-fn (fn [node _]
+                    (let [txt-attrs (update-closest-font-variant-id-by-weight font-variant font-variant (:font-id node) on-mismatch)]
+                      (-> node
+                          (d/txt-merge txt-attrs)
+                          (cty/remove-typography-from-node))))]
+    (dwsh/update-shapes shape-ids
+                        #(txt/update-text-content % update-node? update-fn nil)
+                        {:ignore-touched true
+                         :page-id page-id})))
 
 (defn update-font-weight
   ([value shape-ids attributes] (update-font-weight value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
    (when-let [font-variant (ctt/valid-font-weight-variant value)]
-     (generate-font-variant-text-shape-update font-variant shape-ids page-id nil))))
+     (generate-font-weight-text-shape-update font-variant shape-ids page-id nil))))
 
 (defn update-font-weight-interactive
   ([value shape-ids attributes] (update-font-weight-interactive value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
    (when-let [font-variant (ctt/valid-font-weight-variant value)]
-     (let [on-mismatch #(st/emit! (ntf/show {:content (tr "workspace.tokens.font-variant-not-found")
-                                             :type :toast
-                                             :level :warning
-                                             :timeout 7000}))]
-       (generate-font-variant-text-shape-update font-variant shape-ids page-id on-mismatch)))))
+     (generate-font-weight-text-shape-update font-variant shape-ids page-id warn-font-variant-not-found!))))
 
 (defn- apply-functions-map
   "Apply map of functions `fs` to a map of values `vs` using `args`.
@@ -401,6 +433,21 @@
         :letter-spacing update-letter-spacing
         :text-case update-text-case
         :text-decoration update-text-decoration}
+       value
+       [shape-ids attributes page-id])))))
+
+(defn update-typography-interactive
+  ([value shape-ids attributes] (update-typography value shape-ids attributes nil))
+  ([value shape-ids attributes page-id]
+   (when (map? value)
+     (rx/merge
+      (apply-functions-map
+       {:font-size update-font-size
+        :font-family update-font-family-interactive
+        :font-weight update-font-weight-interactive
+        :letter-spacing update-letter-spacing
+        :text-case update-text-case
+        :text-decoration update-text-decoration-interactive}
        value
        [shape-ids attributes page-id])))))
 
@@ -579,7 +626,7 @@
    :font-family
    {:title "Font Family"
     :attributes ctt/font-family-keys
-    :on-update-shape update-font-family
+    :on-update-shape update-font-family-interactive
     :modal {:key :tokens/font-family
             :fields [{:label "Font Family"
                       :key :font-family}]}}

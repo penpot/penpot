@@ -908,7 +908,7 @@
              (t/is (= (:typography (:applied-tokens text-1')) "typography.heading"))
 
              (t/is (= (:font-size style-text-blocks) "24"))
-             (t/is (= (:font-weight style-text-blocks) "400"))
+             (t/is (= (:font-weight style-text-blocks) "700"))
              (t/is (= (:font-family style-text-blocks) "sourcesanspro"))
              (t/is (= (:letter-spacing style-text-blocks) "2"))
              (t/is (= (:text-transform style-text-blocks) "uppercase"))
