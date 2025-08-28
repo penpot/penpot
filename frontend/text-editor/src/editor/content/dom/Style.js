@@ -9,8 +9,10 @@
 import { getFills } from "./Color.js";
 
 const DEFAULT_FONT_SIZE = "16px";
+const DEFAULT_FONT_SIZE_VALUE = parseFloat(DEFAULT_FONT_SIZE);
 const DEFAULT_LINE_HEIGHT = "1.2";
 const DEFAULT_FONT_WEIGHT = "400";
+
 /**
  * Merges two style declarations. `source` -> `target`.
  *
@@ -220,10 +222,13 @@ export function setStyle(element, styleName, styleValue, styleUnit) {
  */
 function getStyleFontSize(styleValueAsNumber, styleValue) {
   if (styleValue.endsWith("pt")) {
-    return (styleValueAsNumber * 1.3333).toFixed();
+    const baseSize = 1.3333;
+    return (styleValueAsNumber * baseSize).toFixed();
   } else if (styleValue.endsWith("em")) {
+    const baseSize = DEFAULT_FONT_SIZE_VALUE;
     return (styleValueAsNumber * baseSize).toFixed();
   } else if (styleValue.endsWith("%")) {
+    const baseSize = DEFAULT_FONT_SIZE_VALUE;
     return ((styleValueAsNumber / 100) * baseSize).toFixed();
   }
   return styleValueAsNumber.toFixed();
