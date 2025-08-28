@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-08-28 10:46+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/hi/"
 ">\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.13\n"
 
 #: src/app/main/ui/auth/register.cljs:208, src/app/main/ui/static.cljs:155, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4913,6 +4913,7 @@ msgstr ""
 "इतिहास है।"
 
 #: src/app/main/ui/settings/subscription.cljs:126
+#, fuzzy
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr "(अभी कोई भुगतान नहीं किया जाएगा)"
 
@@ -4993,6 +4994,7 @@ msgid "subscription.settings.unlimited-trial"
 msgstr "असीमित (परीक्षण)"
 
 #: src/app/main/ui/settings/subscription.cljs:249, src/app/main/ui/settings/subscription.cljs:260, src/app/main/ui/settings/subscription.cljs:305
+#, fuzzy
 msgid "subscription.settings.unlimited.bill"
 msgstr "मासिक बिल की सीमा"
 
