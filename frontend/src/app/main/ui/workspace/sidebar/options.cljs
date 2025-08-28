@@ -53,7 +53,8 @@
         modifiers  (mf/deref refs/workspace-modifiers)
         modifiers  (dm/get-in modifiers [shape-id :modifiers])
 
-        shape      (gsh/transform-shape shape modifiers)]
+        shape      (gsh/transform-shape shape modifiers)
+        props      (mf/spread-props props {:shape shape})]
 
     (case shape-type
       :frame   [:> frame/options* props]
