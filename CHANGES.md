@@ -17,6 +17,7 @@
 - New text case token [Taiga #10942](https://tree.taiga.io/project/penpot/us/10942)
 - New text-decoration token [Taiga #10941](https://tree.taiga.io/project/penpot/us/10941)
 - New letter spacing token [Taiga #10940](https://tree.taiga.io/project/penpot/us/10940)
+- New font weight token [Taiga #10939](https://tree.taiga.io/project/penpot/us/10939)
 
 ### :bug: Bugs fixed
 
