@@ -22,7 +22,9 @@
 (def ^:private schema:feedback-form
   [:map {:title "FeedbackForm"}
    [:subject [::sm/text {:max 250}]]
-   [:content [::sm/text {:max 5000}]]])
+   [:type  [:string {:max 250}]]
+   [:content [::sm/text {:max 5000}]]
+   [:penpot-link [::sm/text {:max 2048}]]])
 
 (mf/defc feedback-form
   {::mf/private true}
@@ -62,18 +64,36 @@
                  :form form}
 
        ;; --- Feedback section
-     [:h2 {:class (stl/css :field-title)} (tr "feedback.title")]
-     [:p {:class (stl/css :field-text)} (tr "feedback.subtitle")]
+     [:h2 {:class (stl/css :field-title :feedback-title)} (tr "feedback.title-contact-us")]
+     [:p {:class (stl/css :field-text :feedback-title)} (tr "feedback.subtitle")]
 
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:label (tr "feedback.subject")
                     :name :subject
                     :show-success? true}]]
+
+     [:div {:class (stl/css :fields-row)}
+      [:label {:class (stl/css :field-label)} (tr "feedback.type")]
+      [:& fm/select {:label (tr "feedback.type")
+                     :name :type
+                     :default ""
+                     :options [{:label (tr "feedback.type.idea") :value "idea"}
+                               {:label (tr "feedback.type.issue") :value "issue"}
+                               {:label (tr "feedback.type.doubt") :value "doubt"}]}]]
+
      [:div {:class (stl/css :fields-row :description)}
       [:& fm/textarea
        {:label (tr "feedback.description")
         :name :content
+        :placeholder (tr "feedback.description-placeholder")
         :rows 5}]]
+
+     [:div {:class (stl/css :fields-row)}
+      [:p {:class (stl/css :field-text)} (tr "feedback.penpot.link")]
+      [:& fm/input {:label ""
+                    :name :penpot-link
+                    :placeholder "https://penpot.app/"
+                    :show-success? true}]]
 
      [:> fm/submit-button*
       {:label (if @loading (tr "labels.sending") (tr "labels.send"))
@@ -82,24 +102,23 @@
 
      [:hr]
 
-     [:h2 {:class (stl/css :field-title)} (tr "feedback.discourse-title")]
-     [:p {:class (stl/css :field-text)} (tr "feedback.discourse-subtitle1")]
+     [:h2 {:class (stl/css :field-title)} (tr "feedback.other-ways-contact")]
 
-     [:a
-      {:class (stl/css :feedback-button-link)
+
+     [:a {:class (stl/css :feedback-link)
        :href "https://community.penpot.app"
        :target "_blank"}
-      (tr "feedback.discourse-go-to")]
+      (tr "feedback.discourse-title")]
+     [:p {:class (stl/css :field-text)} (tr "feedback.discourse-subtitle1")] 
+
      [:hr]
 
-     [:h2 {:class (stl/css :field-title)} (tr "feedback.twitter-title")]
-     [:p {:class (stl/css :field-text)} (tr "feedback.twitter-subtitle1")]
-
-     [:a
-      {:class (stl/css :feedback-button-link)
+     [:a {:class (stl/css :feedback-link)
        :href "https://twitter.com/penpotapp"
        :target "_blank"}
-      (tr "feedback.twitter-go-to")]]))
+      (tr "feedback.twitter-title")]
+     [:p {:class (stl/css :field-text)} (tr "feedback.twitter-subtitle1")]
+     ]))
 
 (mf/defc feedback-page
   []

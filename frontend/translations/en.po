@@ -1522,15 +1522,17 @@ msgstr "Old password is incorrect"
 msgid "feedback.description"
 msgstr "Description"
 
-#: src/app/main/ui/settings/feedback.cljs:92
-msgid "feedback.discourse-go-to"
-msgstr "Go to Penpot forum"
+msgid "feedback.description-placeholder"
+msgstr "Please describe the reason of your feedback"
 
 #: src/app/main/ui/settings/feedback.cljs:86
 msgid "feedback.discourse-subtitle1"
 msgstr ""
 "We're happy to have you here. If you need help, please search before you "
 "post."
+
+msgid "feedback.other-ways-contact"
+msgstr "Other ways to contact us"
 
 #: src/app/main/ui/settings/feedback.cljs:85
 msgid "feedback.discourse-title"
@@ -1540,6 +1542,21 @@ msgstr "Penpot community"
 msgid "feedback.subject"
 msgstr "Subject"
 
+msgid "feedback.type"
+msgstr "Type"
+
+msgid "feedback.type.idea"
+msgstr "Idea"
+
+msgid "feedback.type.issue"
+msgstr "Issue"
+
+msgid "feedback.type.doubt"
+msgstr "Doubt"
+
+msgid "feedback.penpot.link"
+msgstr "If the feedback is something related with a file or a project, add the penpot link in here:"
+
 #: src/app/main/ui/settings/feedback.cljs:66
 msgid "feedback.subtitle"
 msgstr ""
@@ -1547,12 +1564,8 @@ msgstr ""
 "idea or a doubt. A member of our team will respond as soon as possible."
 
 #: src/app/main/ui/settings/feedback.cljs:65
-msgid "feedback.title"
-msgstr "Email"
-
-#: src/app/main/ui/settings/feedback.cljs:102
-msgid "feedback.twitter-go-to"
-msgstr "Go to X"
+msgid "feedback.title-contact-us"
+msgstr "Contact us"
 
 #: src/app/main/ui/settings/feedback.cljs:96
 msgid "feedback.twitter-subtitle1"
