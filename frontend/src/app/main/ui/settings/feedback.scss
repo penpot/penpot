@@ -6,24 +6,50 @@
 
 @use "common/refactor/common-refactor" as *;
 @use "./profile";
+@use "../ds/typography.scss" as t;
 
 .feedback-form {
+  .fields-row {
+    margin-block-end: $s-32;
+  }
+
   textarea {
+    @include bodyMediumTypography;
     border-radius: $br-8;
-    padding: $br-12;
+    padding: $s-12;
     background-color: var(--color-background-tertiary);
     color: var(--color-foreground-primary);
     border: none;
 
     ::placeholder {
-      color: var(--color-background-disabled);
+      color: var(--input-placeholder-color);
     }
     &:focus {
       outline: $s-1 solid var(--color-accent-primary);
     }
   }
-}
 
-.feedback-button-link {
-  @extend .button-primary;
+  .field-label {
+    @include headlineSmallTypography;
+    height: $s-32;
+    color: var(--color-foreground-primary);
+    margin-block-end: $s-16;
+  }
+
+  .feedback-button-link {
+    @extend .button-primary;
+  }
+
+  .feedback-title {
+    margin-block-end: $s-32;
+  }
+
+  .field-text {
+    @include bodyMediumTypography;
+  }
+
+  a.feedback-link {
+    @include t.use-typography("body-medium");
+    color: var(--color-accent-tertiary);
+  }
 }
