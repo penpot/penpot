@@ -32,6 +32,7 @@
 - Fix parsing rx and ry SVG values for rect radius [Taiga #11861](https://tree.taiga.io/project/penpot/issue/11861)
 - Misleading affordance in saved versions [Taiga #11887](https://tree.taiga.io/project/penpot/issue/11887)
 - Fix pasting RTF text crashes penpot [Taiga #11717](https://tree.taiga.io/project/penpot/issue/11717)
+- Fix navigation arrows in Libraries & Templates carousel [Taiga #10609](https://tree.taiga.io/project/penpot/issue/10609)
 
 ## 2.9.0
 
