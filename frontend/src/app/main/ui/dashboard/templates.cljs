@@ -227,10 +227,18 @@
                                :right (> scroll-available client-width)}))))
 
         on-move-left
-        (mf/use-fn #(dom/scroll-by! (mf/ref-val content-ref) -300 0))
+        (mf/use-fn
+         (fn [event]
+           (if (kbd/right-arrow? event)
+             (dom/scroll-by! (mf/ref-val content-ref) 300 0)
+             (dom/scroll-by! (mf/ref-val content-ref) -300 0))))
 
         on-move-right
-        (mf/use-fn #(dom/scroll-by! (mf/ref-val content-ref) 300 0))
+        (mf/use-fn
+         (fn [event]
+           (if (kbd/left-arrow? event)
+             (dom/scroll-by! (mf/ref-val content-ref) -300 0)
+             (dom/scroll-by! (mf/ref-val content-ref) 300 0))))
 
         on-import-template
         (mf/use-fn
