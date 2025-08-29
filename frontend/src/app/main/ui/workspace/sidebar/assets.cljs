@@ -178,17 +178,18 @@
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
          i/filter-icon]]
-       [:> context-menu*
-        {:on-close on-menu-close
-         :selectable true
-         :selected section
-         :show menu-open?
-         :fixed true
-         :min-width true
-         :width size
-         :top 158
-         :left 18
-         :options options}]
+       (when menu-open?
+         [:> context-menu*
+          {:on-close on-menu-close
+           :selectable true
+           :selected section
+           :show true
+           :fixed true
+           :min-width true
+           :width size
+           :top 158
+           :left 18
+           :options options}])
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.assets.sort")
                          :on-click toggle-ordering
