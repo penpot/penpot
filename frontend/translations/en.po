@@ -1790,9 +1790,8 @@ msgid "inspect.subtitle.main"
 msgstr "Main component"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:65
-#, fuzzy
 msgid "inspect.subtitle.variant"
-msgstr ""
+msgstr "Variant"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
 msgid "inspect.tabs.code"
