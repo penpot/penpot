@@ -182,12 +182,17 @@ test("Gradient stops limit", async ({ page }) => {
   const workspacePage = new WorkspacePage(page);
   await workspacePage.mockConfigFlags(["enable-frontend-binary-fills"]);
   await workspacePage.setupEmptyFile(page);
+
   await workspacePage.mockRPC(
     "get-file-fragment?file-id=*&fragment-id=*",
     "workspace/get-file-fragment-gradient-limits.json",
   );
 
-  await workspacePage.goToWorkspace();
+  await workspacePage.goToWorkspace({
+    fileId: "c7ce0794-0992-8105-8004-38f280443849",
+    pageId: "66697432-c33d-8055-8006-2c62cc084cad",
+  });
+
   await workspacePage.clickLeafLayer("Rectangle");
 
   const swatch = workspacePage.page.getByRole("button", {

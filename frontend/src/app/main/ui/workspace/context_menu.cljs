@@ -628,11 +628,10 @@
 
 (mf/defc shape-context-menu*
   {::mf/wrap [mf/memo]
-   ::mf/private true
-   ::mf/props :obj}
+   ::mf/private true}
   [{:keys [mdata]}]
   (let [{:keys [disable-booleans disable-flatten]} mdata
-        shapes (mf/deref refs/selected-objects)
+        shapes (mf/deref refs/selected-shapes)
         is-not-variant-container? (->> shapes (d/seek #(not (ctk/is-variant-container? %))))
         props  (mf/props
                 {:shapes shapes
@@ -828,8 +827,8 @@
        (if ^boolean read-only?
          [:> viewport-context-menu* {:mdata mdata}]
          (case (:kind mdata)
-           :shape [:> shape-context-menu* {:mdata mdata}]
-           :page [:> page-item-context-menu* {:mdata mdata}]
+           :shape      [:> shape-context-menu* {:mdata mdata}]
+           :page       [:> page-item-context-menu* {:mdata mdata}]
            :grid-track [:> grid-track-context-menu* {:mdata mdata}]
            :grid-cells [:> grid-cells-context-menu* {:mdata mdata}]
            [:> viewport-context-menu* {:mdata mdata}]))]]]))

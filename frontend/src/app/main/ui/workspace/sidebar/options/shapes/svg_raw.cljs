@@ -13,6 +13,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
@@ -87,8 +88,7 @@
     stroke-values))
 
 (mf/defc options*
-  {::mf/wrap [mf/memo]}
-  [{:keys [shape] :as props}]
+  [{:keys [shape file-id page-id]}]
 
   (let [id     (dm/get-prop shape :id)
         type   (dm/get-prop shape :type)
@@ -196,4 +196,11 @@
                       :values (select-keys shape [:blur])}]
 
        [:& svg-attrs-menu {:ids ids
-                           :values (select-keys shape [:svg-attrs])}]])))
+                           :values (select-keys shape [:svg-attrs])}]
+       [:> exports-menu* {:type type
+                          :ids ids
+                          :shapes shapes
+                          :values (select-keys shape exports-attrs)
+                          :page-id page-id
+                          :file-id file-id}]])))
+

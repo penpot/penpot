@@ -27,7 +27,7 @@ export default {
   args: {
     label: "Milestone 1",
     active: false,
-    snapshots: [1737452413841, 1737452422063, 1737452431603]
+    snapshots: [1737452413841, 1737452422063, 1737452431603],
   },
   render: ({ ...args }) => {
     return <MilestoneGroup {...args} />;

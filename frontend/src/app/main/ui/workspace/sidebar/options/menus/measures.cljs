@@ -92,7 +92,7 @@
 
 (mf/defc measures-menu*
   {::mf/memo true}
-  [{:keys [ids ids-with-children values type shapes]}]
+  [{:keys [ids values type shapes]}]
   (let [all-types
         (mf/with-memo [type shapes]
           ;; We only need this when multiple type is used
@@ -104,9 +104,6 @@
           (if (= type :multiple)
             (into #{} xf:mapcat-type-to-options all-types)
             (type->options type)))
-
-        ids-with-children
-        (d/nilv ids-with-children ids)
 
         frames
         (mf/with-memo [shapes]
@@ -466,7 +463,6 @@
         (when (options :radius)
           [:> border-radius-menu* {:class (stl/css :border-radius)
                                    :ids ids
-                                   :ids-with-children ids-with-children
                                    :values values
                                    :shape shape}])])
      (when (or (options :clip-content) (options :show-in-viewer))

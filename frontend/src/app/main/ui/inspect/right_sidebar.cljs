@@ -39,11 +39,11 @@
           (assoc id {:id id
                      :data local})))))
 
-(mf/defc right-sidebar
+(mf/defc right-sidebar*
   [{:keys [frame page objects file selected shapes page-id file-id share-id from on-change-section on-expand]
     :or {from :viewer}}]
   (let [color-space*   (mf/use-state "hex")
-        color-space   (deref color-space*)
+        color-space    (deref color-space*)
 
         section        (mf/use-state #(if (contains? cf/flags :inspect-styles) :styles :info))
         objects        (or objects (:objects page))

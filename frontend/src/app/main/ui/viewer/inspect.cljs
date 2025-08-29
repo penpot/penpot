@@ -14,7 +14,7 @@
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.inspect.left-sidebar :refer [left-sidebar]]
    [app.main.ui.inspect.render :refer [render-frame-svg]]
-   [app.main.ui.inspect.right-sidebar :refer [right-sidebar]]
+   [app.main.ui.inspect.right-sidebar :refer [right-sidebar*]]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [goog.events :as events]
@@ -112,10 +112,10 @@
                :on-pointer-down on-pointer-down
                :on-lost-pointer-capture on-lost-pointer-capture
                :on-pointer-move on-pointer-move}])
-      [:& right-sidebar {:frame frame
-                         :selected (:selected local)
-                         :page page
-                         :file file
-                         :on-change-section handle-change-section
-                         :on-expand handle-expand
-                         :share-id share-id}]]]))
+      [:> right-sidebar* {:frame frame
+                          :selected (:selected local)
+                          :page page
+                          :file file
+                          :on-change-section handle-change-section
+                          :on-expand handle-expand
+                          :share-id share-id}]]]))

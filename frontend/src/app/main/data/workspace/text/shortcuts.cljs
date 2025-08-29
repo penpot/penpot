@@ -16,7 +16,8 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [okulary.core :as l]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Shortcuts
@@ -111,7 +112,6 @@
        :font-weight (:weight new-variant)
        :font-style (:style new-variant)})))
 
-
 (defn calculate-text-values
   [shape]
   (let [state-map    (if (features/active-feature? @st/state "text-editor/v2")
@@ -196,13 +196,26 @@
       :else
       props)))
 
+(def ^:private selected-shapes-with-children
+  "A derived state that resolves to a lazy sequence of all selected
+  shapes and its children."
+  (l/derived
+   (fn [{:keys [objects selected]}]
+     (let [xform (comp (remove nil?)
+                       (mapcat #(cfh/get-children-ids objects %)))
+           shapes (into selected xform selected)]
+       (sequence (keep (d/getf objects)) shapes)))
+   ;; WORKAROUND: we should not use it here, but util we restructure
+   ;; this, the simplest way is just deref private var
+   @#'refs/selected-shapes-data))
+
 (defn- update-attrs-when-no-readonly [props]
   (let [undo-id     (js/Symbol)
 
         can-edit?   (:can-edit (deref refs/permissions))
         read-only?  (deref refs/workspace-read-only?)
 
-        text-shapes (->> (deref refs/selected-shapes-with-children)
+        text-shapes (->> (deref selected-shapes-with-children)
                          (filter cfh/text-shape?)
                          (not-empty))
 

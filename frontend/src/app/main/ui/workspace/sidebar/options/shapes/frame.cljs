@@ -15,10 +15,11 @@
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
    [app.main.ui.workspace.sidebar.options.menus.frame-grid :refer [frame-grid]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
-   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.layer :refer [layer-attrs layer-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [layout-container-flex-attrs layout-container-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-item :refer [layout-item-attrs layout-item-menu]]
    [app.main.ui.workspace.sidebar.options.menus.measures :refer [select-measure-keys measures-menu*]]
@@ -27,17 +28,11 @@
    [rumext.v2 :as mf]))
 
 (mf/defc options*
-  [{:keys [shape file-id shapes-with-children libraries] :as props}]
+  [{:keys [shape shapes-with-children libraries file-id page-id] :as props}]
   (let [shape-id   (dm/get-prop shape :id)
         shape-type (dm/get-prop shape :type)
-
-        ids
-        (mf/with-memo [shape-id]
-          [shape-id])
-
-        shapes
-        (mf/with-memo [shape]
-          [shape])
+        ids        (mf/with-memo [shape-id] [shape-id])
+        shapes     (mf/with-memo [shape] [shape])
 
         stroke-values
         (select-keys shape stroke-attrs)
@@ -104,9 +99,9 @@
         (when variants? (ctk/is-variant-container? shape))]
 
     [:*
-     [:& layer-menu {:ids ids
-                     :type shape-type
-                     :values layer-values}]
+     [:> layer-menu* {:ids ids
+                      :type shape-type
+                      :values layer-values}]
      [:> measures-menu* {:ids ids
                          :values measure-values
                          :type shape-type
@@ -160,4 +155,10 @@
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]
-     [:& frame-grid {:shape shape}]]))
+     [:& frame-grid {:shape shape}]
+     [:> exports-menu* {:type type
+                        :ids ids
+                        :shapes shapes
+                        :values (select-keys shape exports-attrs)
+                        :page-id page-id
+                        :file-id file-id}]]))

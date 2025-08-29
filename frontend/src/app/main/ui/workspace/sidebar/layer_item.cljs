@@ -35,16 +35,14 @@
    [rumext.v2 :as mf]))
 
 (mf/defc layer-item-inner
-  {::mf/wrap-props false
-   ::mf/forward-ref true}
-  [{:keys [item depth parent-size name-ref children
+  {::mf/wrap-props false}
+  [{:keys [item depth parent-size name-ref children ref
            ;; Flags
            read-only? highlighted? selected? component-tree?
            filtered? expanded? dnd-over? dnd-over-top? dnd-over-bot? hide-toggle?
            ;; Callbacks
            on-select-shape on-context-menu on-pointer-enter on-pointer-leave on-zoom-to-selected
-           on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}
-   dref]
+           on-toggle-collapse on-enable-drag on-disable-drag on-toggle-visibility on-toggle-blocking]}]
 
   (let [id                    (:id item)
         name                  (:name item)
@@ -67,9 +65,10 @@
         component             (ctkl/get-component data (:component-id item))
         variant-properties    (:variant-properties component)
         icon-shape            (usi/get-shape-icon item)]
+
     [:*
      [:div {:id id
-            :ref dref
+            :ref ref
             :on-click on-select-shape
             :on-context-menu on-context-menu
             :data-testid "layer-row"

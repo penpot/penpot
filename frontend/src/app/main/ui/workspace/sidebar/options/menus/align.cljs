@@ -9,7 +9,6 @@
   (:require
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.shortcuts :as sc]
-   [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.icons :as i]
    [app.util.dom :as dom]
@@ -17,14 +16,12 @@
    [rumext.v2 :as mf]))
 
 (mf/defc align-options*
-  {::mf/memo true}
-  []
-  (let [selected            (mf/deref refs/selected-shapes)
-        ;; don't need to watch objects, only read the value
-        objects             (deref refs/workspace-page-objects)
+  [{:keys [shapes objects]}]
+  (let [disabled-align
+        (not (dw/can-align? shapes objects))
 
-        disabled-align      (not (dw/can-align? selected objects))
-        disabled-distribute (not (dw/can-distribute? selected))
+        disabled-distribute
+        (not (dw/can-distribute? shapes))
 
         align-objects
         (mf/use-fn
@@ -42,7 +39,7 @@
                            (keyword))]
              (st/emit! (dw/distribute-objects value)))))]
 
-    (when (not  (and disabled-align disabled-distribute))
+    (when-not (and disabled-align disabled-distribute)
       [:div {:class (stl/css :align-options)}
        [:div {:class (stl/css :align-group-horizontal)}
         [:button {:class (stl/css-case :align-button true

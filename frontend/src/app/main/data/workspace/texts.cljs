@@ -422,8 +422,9 @@
                 (txt/update-text-content shape txt/is-root-node? d/txt-merge attrs)
                 (assoc shape :content (d/txt-merge {:type "root"} attrs))))
 
-            shape-ids (cond (cfh/text-shape? shape)  [id]
-                            (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
+            shape-ids
+            (cond (cfh/text-shape? shape)  [id]
+                  (cfh/group-shape? shape) (cfh/get-children-ids objects id))]
 
         (rx/of (dwsh/update-shapes shape-ids update-fn))))))
 

@@ -27,17 +27,17 @@ export default {
     variant: "S",
     selected: false,
   },
-  render: ({name, url, ...args }) => {
+  render: ({ name, url, ...args }) => {
     const profile = {
       id: "00000000-0000-0000-0000-000000000000",
-      fullname: name
+      fullname: name,
     };
     if (url) {
       profile.photoUrl = url;
-    };
+    }
 
     return <Avatar profile={profile} {...args} />;
-  }
+  },
 };
 
 export const Default = {};
