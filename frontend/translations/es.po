@@ -1787,6 +1787,10 @@ msgstr "Copia"
 msgid "inspect.subtitle.main"
 msgstr "Componente principal"
 
+#: src/app/main/ui/inspect/right_sidebar.cljs:65
+msgid "inspect.subtitle.variant"
+msgstr "Variante"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
 msgid "inspect.tabs.code"
 msgstr "Código"
