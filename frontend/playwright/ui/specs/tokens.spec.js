@@ -402,6 +402,35 @@ test.describe("Tokens: Tokens Tab", () => {
     await expect(tokensTabPanel.getByLabel("color.dark.primary")).toBeEnabled();
   });
 
+  test("User cant create regular token with value missing", async ({
+    page,
+  }) => {
+    const { tokensUpdateCreateModal } = await setupEmptyTokensFile(page);
+
+    const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+    await tokensTabPanel
+      .getByRole("button", { name: "Add Token: Color" })
+      .click();
+
+    await expect(tokensUpdateCreateModal).toBeVisible();
+
+    const nameField = tokensUpdateCreateModal.getByLabel("Name");
+    const valueField = tokensUpdateCreateModal.getByLabel("Value");
+    const submitButton = tokensUpdateCreateModal.getByRole("button", {
+      name: "Save",
+    });
+
+    // Initially submit button should be disabled
+    await expect(submitButton).toBeDisabled();
+
+    // Fill in name but leave value empty
+    await nameField.click();
+    await nameField.fill("color.primary");
+
+    // Submit button should remain disabled when value is empty
+    await expect(submitButton).toBeDisabled();
+  });
+
   test("User changes color token color while keeping custom color space", async ({
     page,
   }) => {
