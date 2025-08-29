@@ -9,15 +9,15 @@
 @use "../typography.scss" as *;
 
 .select-wrapper {
-  --select-icon-fg-color: var(--color-foreground-secondary);
-  --select-fg-color: var(--color-foreground-primary);
-  --select-fg-color-dimmed: var(--color-foreground-secondary);
-  --select-bg-color: var(--color-background-tertiary);
+  --select-icon-color: var(--color-icon-default);
+  --select-text-color: var(--color-foreground-primary);
+  --select-text-color-dimmed: var(--color-foreground-secondary);
+  --select-background-color: var(--color-background-tertiary);
   --select-outline-color: none;
   --select-border-color: none;
 
   &:hover {
-    --select-bg-color: var(--color-background-quaternary);
+    --select-background-color: var(--color-background-quaternary);
   }
 
   @include use-typography("body-small");
@@ -30,13 +30,14 @@
 
 .select {
   &:focus-visible {
+    --select-background-color: var(--color-background-quaternary);
     --select-outline-color: var(--color-accent-primary);
   }
 
   &:disabled {
-    --select-bg-color: var(--color-background-primary);
+    --select-background-color: var(--color-background-primary);
     --select-border-color: var(--color-background-quaternary);
-    --select-fg-color: var(--color-foreground-secondary);
+    --select-text-color: var(--color-foreground-secondary);
   }
 
   display: grid;
@@ -49,14 +50,13 @@
   border-radius: $br-8;
   outline: $b-1 solid var(--select-outline-color);
   border: $b-1 solid var(--select-border-color);
-  background: var(--select-bg-color);
-  color: var(--select-fg-color);
+  background: var(--select-background-color);
+  color: var(--select-text-color);
   appearance: none;
 }
 
 .arrow {
-  color: var(--select-icon-fg-color);
-  transform: rotate(90deg);
+  color: var(--select-icon-color);
 }
 
 .select-header {
@@ -74,14 +74,14 @@
   min-width: 0;
   padding-inline-start: var(--sp-xxs);
   text-align: left;
-  color: var(--select-fg-color);
+  color: var(--select-text-color);
 }
 
 .header-label-dimmed {
-  color: var(--select-fg-color-dimmed);
+  color: var(--select-text-color-dimmed);
 }
 
 .header-icon {
   grid-template-columns: auto 1fr;
-  color: var(--select-icon-fg-color);
+  color: var(--select-icon-color);
 }

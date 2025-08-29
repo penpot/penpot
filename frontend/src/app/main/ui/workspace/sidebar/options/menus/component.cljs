@@ -32,10 +32,9 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.select :refer [select*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.options.menus.variants-help-modal]
    [app.util.debug :as dbg]
@@ -381,8 +380,8 @@
 
      (if malformed-msg
        [:div {:class (stl/css :variant-warning-wrapper)}
-        [:> icon* {:icon-id "msg-neutral"
-                   :class (stl/css :variant-warning-darken)}]
+        [:> i/icon* {:icon-id i/msg-neutral
+                     :class (stl/css :variant-warning-darken)}]
         [:div {:class (stl/css :variant-warning-highlight)}
          (str malformed-msg " " (tr "workspace.options.component.variant.malformed.structure.title"))]
         [:div {:class (stl/css :variant-warning-darken)}
@@ -390,8 +389,8 @@
 
        (when duplicated-msg
          [:div {:class (stl/css :variant-warning-wrapper)}
-          [:> icon* {:icon-id "msg-neutral"
-                     :class (stl/css :variant-warning-darken)}]
+          [:> i/icon* {:icon-id i/msg-neutral
+                       :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
            (str duplicated-msg)]]))]))
 
@@ -479,8 +478,8 @@
 
      (if (seq malformed-comps)
        [:div {:class (stl/css :variant-warning-wrapper)}
-        [:> icon* {:icon-id "msg-neutral"
-                   :class (stl/css :variant-warning-darken)}]
+        [:> i/icon* {:icon-id i/msg-neutral
+                     :class (stl/css :variant-warning-darken)}]
         [:div {:class (stl/css :variant-warning-highlight)}
          (tr "workspace.options.component.variant.malformed.copy")]
         [:button {:class (stl/css :variant-warning-button)
@@ -489,8 +488,8 @@
 
        (when (seq duplicated-comps)
          [:div {:class (stl/css :variant-warning-wrapper)}
-          [:> icon* {:icon-id "msg-neutral"
-                     :class (stl/css :variant-warning-darken)}]
+          [:> i/icon* {:icon-id i/msg-neutral
+                       :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
            (tr "workspace.options.component.variant.duplicated.copy.title")]
           [:button {:class (stl/css :variant-warning-button)
@@ -532,7 +531,7 @@
        [:span {:class (stl/css-case :variant-mark-cell listing-thumbs
                                     :variant-icon true)
                :title (tr "workspace.assets.components.num-variants" num-variants)}
-        [:> icon* {:icon-id "variant" :size "s"}]])]))
+        [:> i/icon* {:icon-id i/variant :size "s"}]])]))
 
 (mf/defc component-group-item*
   [{:keys [item on-enter-group]}]
@@ -712,7 +711,7 @@
                          :id "swap-component-search-filter"
                          :value (:term filters)
                          :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
-                         :icon-id "search"}]]
+                         :icon-id i/search}]]
 
        [:& select {:class (stl/css :select-library)
                    :default-value current-library-id
@@ -915,8 +914,8 @@
         (if swap-opened?
           [:button {:class (stl/css :title-back)
                     :on-click on-component-back}
-           [:> icon* {:icon-id "arrow-left"
-                      :size "s"}]
+           [:> i/icon* {:icon-id i/arrow-left
+                        :size "s"}]
            [:span (tr "workspace.options.component")]]
 
           [:*
@@ -952,16 +951,16 @@
            [:div {:class (stl/css :component-wrapper)}
 
             [:button {:class (stl/css-case :component-name-wrapper true
-                                           :without-menu (not show-menu?)
-                                           :swappeable (and can-swap? (not swap-opened?)))
+                                           :without-menu (not show-menu?))
                       :data-testid "swap-component-btn"
-                      :on-click open-component-panel}
+                      :on-click open-component-panel
+                      :disabled (or swap-opened? (not can-swap?))}
 
              [:div {:class (stl/css :component-icon)}
-              [:> icon* {:size "s"
-                         :icon-id (if main-instance?
-                                    (if is-variant? "variant" "component")
-                                    "component-copy")}]]
+              [:> i/icon* {:size "s"
+                           :icon-id (if main-instance?
+                                      (if is-variant? i/variant i/component)
+                                      i/component-copy)}]]
 
              [:div {:class (stl/css :component-name-outside)}
               [:div {:class (stl/css :component-name)}
@@ -981,7 +980,7 @@
                [:button {:class (stl/css-case :component-menu-btn true
                                               :selected menu-open?)
                          :on-click on-menu-click}
-                [:> icon* {:icon-id "menu"}]]
+                [:> i/icon* {:icon-id i/menu}]]
 
                [:> component-ctx-menu* {:show menu-open?
                                         :on-close on-menu-close
@@ -1171,11 +1170,12 @@
 
            [:div {:class (stl/css :component-wrapper)}
 
-            [:button {:class (stl/css :component-name-wrapper)}
+            [:button {:class (stl/css :component-name-wrapper)
+                      :disabled true}
 
              [:div {:class (stl/css :component-icon)}
-              [:> icon* {:size "s"
-                         :icon-id "component"}]]
+              [:> i/icon* {:size "s"
+                           :icon-id i/component}]]
 
              [:div {:class (stl/css :component-name-outside)}
               [:div {:class (stl/css :component-name)}
@@ -1190,7 +1190,7 @@
                [:button {:class (stl/css-case :component-menu-btn true
                                               :selected menu-open?)
                          :on-click on-menu-click}
-                [:> icon* {:icon-id "menu"}]]
+                [:> i/icon* {:icon-id i/menu}]]
 
                [:> component-ctx-menu* {:show menu-open?
                                         :on-close on-menu-close
@@ -1230,8 +1230,8 @@
 
           (if malformed?
             [:div {:class (stl/css :variant-warning-wrapper)}
-             [:> icon* {:icon-id "msg-neutral"
-                        :class (stl/css :variant-warning-darken)}]
+             [:> i/icon* {:icon-id i/msg-neutral
+                          :class (stl/css :variant-warning-darken)}]
              [:div {:class (stl/css :variant-warning-highlight)}
               (tr "workspace.options.component.variant.malformed.group.title")]
              [:button {:class (stl/css :variant-warning-button)
@@ -1240,8 +1240,8 @@
 
             (when duplicated?
               [:div {:class (stl/css :variant-warning-wrapper)}
-               [:> icon* {:icon-id "msg-neutral"
-                          :class (stl/css :variant-warning-darken)}]
+               [:> i/icon* {:icon-id i/msg-neutral
+                            :class (stl/css :variant-warning-darken)}]
                [:div {:class (stl/css :variant-warning-highlight)}
                 (tr "workspace.options.component.variant.duplicated.group.title")]
                [:button {:class (stl/css :variant-warning-button)

@@ -204,9 +204,9 @@
                                     :header-label-dimmed empty-selected-id?)}
         (if ^boolean empty-selected-id? "--" label)]]
 
-      [:> i/icon* {:icon-id i/arrow
+      [:> i/icon* {:icon-id i/arrow-down
                    :class (stl/css :arrow)
-                   :size "m"
+                   :size "s"
                    :aria-hidden true}]]
 
      (when ^boolean is-open

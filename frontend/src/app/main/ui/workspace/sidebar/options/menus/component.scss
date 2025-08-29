@@ -91,11 +91,13 @@
     border-radius: $br-8;
   }
 
-  &.swappeable {
-    &:hover {
-      background-color: var(--assets-item-background-color-hover);
-      color: var(--assets-item-name-foreground-color-hover);
-    }
+  &:focus {
+    outline: $s-1 solid var(--color-accent-primary);
+  }
+
+  &:hover:not(:disabled) {
+    background-color: var(--assets-item-background-color-hover);
+    color: var(--assets-item-name-foreground-color-hover);
   }
 }
 
@@ -749,6 +751,7 @@
 .combine-variant-button {
   @include buttonStyle;
   @include uppercaseTitleTipography;
+  grid-column: span 8;
   cursor: default;
   display: flex;
   justify-content: center;
@@ -762,5 +765,9 @@
   &:hover {
     background-color: var(--assets-item-background-color-hover);
     color: var(--color-foreground-primary);
+  }
+
+  &:focus {
+    outline: $s-1 solid var(--color-accent-primary);
   }
 }
