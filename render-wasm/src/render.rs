@@ -13,7 +13,7 @@ mod surfaces;
 mod text;
 mod ui;
 
-use skia_safe::{self as skia, Matrix, Rect};
+use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 
@@ -22,7 +22,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, SolidColor, StructureEntry, Type};
+use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
@@ -367,17 +367,13 @@ impl RenderState {
     pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
         performance::begin_measure!("apply_drawing_to_render_canvas");
 
-        self.surfaces.draw_into(
-            SurfaceId::DropShadows,
-            SurfaceId::Current,
-            Some(&skia::Paint::default()),
-        );
+        let paint = skia::Paint::default();
 
-        self.surfaces.draw_into(
-            SurfaceId::Fills,
-            SurfaceId::Current,
-            Some(&skia::Paint::default()),
-        );
+        self.surfaces
+            .draw_into(SurfaceId::DropShadows, SurfaceId::Current, Some(&paint));
+
+        self.surfaces
+            .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
 
         let mut render_overlay_below_strokes = false;
         if let Some(shape) = shape {
@@ -385,26 +381,18 @@ impl RenderState {
         }
 
         if render_overlay_below_strokes {
-            self.surfaces.draw_into(
-                SurfaceId::InnerShadows,
-                SurfaceId::Current,
-                Some(&skia::Paint::default()),
-            );
+            self.surfaces
+                .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        self.surfaces.draw_into(
-            SurfaceId::Strokes,
-            SurfaceId::Current,
-            Some(&skia::Paint::default()),
-        );
+        self.surfaces
+            .draw_into(SurfaceId::Strokes, SurfaceId::Current, Some(&paint));
 
         if !render_overlay_below_strokes {
-            self.surfaces.draw_into(
-                SurfaceId::InnerShadows,
-                SurfaceId::Current,
-                Some(&skia::Paint::default()),
-            );
+            self.surfaces
+                .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
+
         let surface_ids = SurfaceId::Strokes as u32
             | SurfaceId::Fills as u32
             | SurfaceId::DropShadows as u32
@@ -430,6 +418,7 @@ impl RenderState {
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
         scale_content: Option<&f32>,
+        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
     ) {
         let shape = if let Some(scale_content) = scale_content {
             &shape.scale_content(*scale_content)
@@ -446,6 +435,43 @@ impl RenderState {
         });
 
         let antialias = shape.should_use_antialias(self.get_scale());
+
+        // set clipping
+        if let Some((bounds, corners, transform)) = clip_bounds {
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas().concat(&transform);
+            });
+
+            if let Some(corners) = corners {
+                let rrect = RRect::new_rect_radii(bounds, &corners);
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas()
+                        .clip_rrect(rrect, skia::ClipOp::Intersect, antialias);
+                });
+            } else {
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas()
+                        .clip_rect(bounds, skia::ClipOp::Intersect, antialias);
+                });
+            }
+
+            // This renders a red line around clipped
+            // shapes (frames).
+            if self.options.is_debug_visible() {
+                let mut paint = skia::Paint::default();
+                paint.set_style(skia::PaintStyle::Stroke);
+                paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
+                paint.set_stroke_width(4.);
+                self.surfaces
+                    .canvas(SurfaceId::Fills)
+                    .draw_rect(bounds, &paint);
+            }
+
+            self.surfaces.apply_mut(surface_ids, |s| {
+                s.canvas()
+                    .concat(&transform.invert().unwrap_or(Matrix::default()));
+            });
+        }
 
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
@@ -602,7 +628,10 @@ impl RenderState {
 
                 for stroke in shape.visible_strokes().rev() {
                     shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
-                    strokes::render(self, shape, stroke, None, None, None, antialias, None);
+                    //In clipped content strokes are drawn over the contained elements in a subsequent step
+                    if !shape.clip() {
+                        strokes::render(self, shape, stroke, None, None, None, antialias, None);
+                    }
                     shadows::render_stroke_inner_shadows(self, shape, stroke, antialias);
                 }
 
@@ -869,37 +898,22 @@ impl RenderState {
             _ => {}
         }
 
-        // Detect clipping and apply it properly
-        if let Type::Frame(_) = &element.shape_type {
-            if element.clip() {
-                let mut layer_paint = skia::Paint::default();
-                layer_paint.set_blend_mode(skia::BlendMode::DstIn);
-                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&layer_paint);
-                self.surfaces
-                    .canvas(SurfaceId::Current)
-                    .save_layer(&layer_rec);
-
-                // We clip only the fills content
-                let mut element_fills: Cow<Shape> = Cow::Borrowed(element);
-                element_fills.to_mut().clear_strokes();
-                element_fills.to_mut().clear_shadows();
-                // We use the white color as the mask selection one
-                element_fills
-                    .to_mut()
-                    .set_fills([Fill::Solid(SolidColor(skia::Color::WHITE))].to_vec());
-                self.render_shape(tree, modifiers, structure, &element_fills, scale_content);
-
-                self.surfaces.canvas(SurfaceId::Current).restore();
-
-                // Now we paint the strokes - in clipped content strokes are drawn over the contained elements
-                let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
-                element_strokes.to_mut().clear_fills();
-                element_strokes.to_mut().clear_shadows();
-                self.render_shape(tree, modifiers, structure, &element_strokes, scale_content);
-
-                // TODO: drop shadows. With thos approach actually drop shadows for frames with clipped content are lost.
-            }
+        //In clipped content strokes are drawn over the contained elements
+        if element.clip() {
+            let mut element_strokes: Cow<Shape> = Cow::Borrowed(element);
+            element_strokes.to_mut().clear_fills();
+            element_strokes.to_mut().clear_shadows();
+            element_strokes.to_mut().clip_content = false;
+            self.render_shape(
+                tree,
+                modifiers,
+                structure,
+                &element_strokes,
+                scale_content,
+                None,
+            );
         }
+
         self.surfaces.canvas(SurfaceId::Current).restore();
         self.focus_mode.exit(&element.id);
     }
@@ -957,7 +971,7 @@ impl RenderState {
             let NodeRenderState {
                 id: node_id,
                 visited_children,
-                clip_bounds: _,
+                clip_bounds,
                 visited_mask,
                 mask,
             } = node_render_state;
@@ -1026,6 +1040,7 @@ impl RenderState {
                     structure,
                     element,
                     scale_content.get(&element.id),
+                    clip_bounds,
                 );
             } else if visited_children {
                 self.apply_drawing_to_render_canvas(Some(element));
@@ -1035,7 +1050,7 @@ impl RenderState {
             self.pending_nodes.push(NodeRenderState {
                 id: node_id,
                 visited_children: true,
-                clip_bounds: None,
+                clip_bounds,
                 visited_mask: false,
                 mask,
             });
