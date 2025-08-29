@@ -404,7 +404,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
            (on-update-value-debounced next-value)))
 
         value-error? (seq (:errors token-resolve-result))
-        valid-value-field? (not value-error?)
+        valid-value-field? (and token-resolve-result (not value-error?))
 
         ;; Description
         description-ref (mf/use-var (:description token))
