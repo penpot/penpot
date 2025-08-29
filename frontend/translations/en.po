@@ -1789,10 +1789,6 @@ msgstr "Copy"
 msgid "inspect.subtitle.main"
 msgstr "Main component"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:65
-msgid "inspect.subtitle.variant"
-msgstr "Variant"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
 msgid "inspect.tabs.code"
 msgstr "Code"
@@ -2582,6 +2578,10 @@ msgstr "Your account"
 #, unused
 msgid "labels.youtube"
 msgstr "YouTube"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variant"
 
 #: src/app/main/ui/ds/product/loader.cljs:21
 msgid "loader.tips.01.message"
@@ -4986,10 +4986,6 @@ msgstr "Font"
 msgid "workspace.assets.typography.font-size"
 msgstr "Size"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Variant"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Go to style library file to edit"
@@ -5562,10 +5558,6 @@ msgstr "There are no assets in this library yet"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
 msgstr "Unlinked"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:929
-msgid "workspace.options.component.variant"
-msgstr "Variant"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
 msgid "workspace.options.component.variant.duplicated.copy.locate"

@@ -62,7 +62,7 @@
                           (and (not (ctk/is-variant? first-shape)) main-instance?))
                          (tr "inspect.subtitle.main")
                          (and (ctk/is-variant? first-shape) main-instance?)
-                         (tr "inspect.subtitle.variant")
+                         (tr "labels.variant")
                          (ctk/instance-head? first-shape)
                          (tr "inspect.subtitle.copy"))
 
