@@ -16,20 +16,37 @@
    [app.main.ui.components.forms :as fm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
+   [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [rumext.v2 :as mf]))
 
-(def ^:private schema:feedback-form
+(defn schema:feedback-form [url-error]
   [:map {:title "FeedbackForm"}
    [:subject [::sm/text {:max 250}]]
-   [:content [::sm/text {:max 5000}]]])
+   [:type [:string {:max 250}]]
+   [:content [::sm/text {:max 5000}]]
+   [:penpot-link [::sm/text {:max 2048 :value (or url-error "") :optional true}]]])
 
 (mf/defc feedback-form
   {::mf/private true}
-  []
-  (let [profile (mf/deref refs/profile)
-        form    (fm/use-form :schema schema:feedback-form)
-        loading (mf/use-state false)
+  [{:keys [report type url-error]}]
+  (let [profile    (mf/deref refs/profile)
+        initial    (mf/with-memo [url-error]
+                     {:subject ""
+                      :type (or type "")
+                      :content ""
+                      :penpot-link url-error})
+        form       (fm/use-form :schema (schema:feedback-form url-error) :initial initial)
+        loading    (mf/use-state false)
+        report     (wapi/create-blob report "text/plain")
+        report-uri (wapi/create-uri report)
+
+        on-download
+        (mf/use-fn
+         (mf/deps report)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/trigger-download-uri "report" "text/plain" report-uri)))
 
         on-succes
         (mf/use-fn
@@ -62,18 +79,40 @@
                  :form form}
 
        ;; --- Feedback section
-     [:h2 {:class (stl/css :field-title)} (tr "feedback.title")]
-     [:p {:class (stl/css :field-text)} (tr "feedback.subtitle")]
+     [:h2 {:class (stl/css :field-title :feedback-title)} (tr "feedback.title-contact-us")]
+     [:p {:class (stl/css :field-text :feedback-title)} (tr "feedback.subtitle")]
 
      [:div {:class (stl/css :fields-row)}
       [:& fm/input {:label (tr "feedback.subject")
                     :name :subject
                     :show-success? true}]]
+
+     [:div {:class (stl/css :fields-row)}
+      [:label {:class (stl/css :field-label)} (tr "feedback.type")]
+      [:& fm/select {:label (tr "feedback.type")
+                     :name :type
+                     :options [{:label (tr "feedback.type.idea") :value "idea"}
+                               {:label (tr "feedback.type.issue") :value "issue"}
+                               {:label (tr "feedback.type.doubt") :value "doubt"}]}]]
+
      [:div {:class (stl/css :fields-row :description)}
       [:& fm/textarea
-       {:label (tr "feedback.description")
+       {:class (stl/css :feedback-description)
+        :label (tr "feedback.description")
         :name :content
+        :placeholder (tr "feedback.description-placeholder")
         :rows 5}]]
+
+     [:div {:class (stl/css :fields-row)}
+      [:p {:class (stl/css :field-text)} (tr "feedback.penpot.link")]
+      [:& fm/input {:label ""
+                    :name :penpot-link
+                    :placeholder "https://penpot.app/"
+                    :show-success? true}]
+
+      (when report
+        [:a {:class (stl/css :link :download-button) :on-click on-download}
+         (tr "labels.download" "report.txt")])]
 
      [:> fm/submit-button*
       {:label (if @loading (tr "labels.sending") (tr "labels.send"))
@@ -82,30 +121,28 @@
 
      [:hr]
 
-     [:h2 {:class (stl/css :field-title)} (tr "feedback.discourse-title")]
-     [:p {:class (stl/css :field-text)} (tr "feedback.discourse-subtitle1")]
+     [:h2 {:class (stl/css :feedback-title)} (tr "feedback.other-ways-contact")]
 
-     [:a
-      {:class (stl/css :feedback-button-link)
-       :href "https://community.penpot.app"
-       :target "_blank"}
-      (tr "feedback.discourse-go-to")]
-     [:hr]
 
-     [:h2 {:class (stl/css :field-title)} (tr "feedback.twitter-title")]
-     [:p {:class (stl/css :field-text)} (tr "feedback.twitter-subtitle1")]
+     [:a {:class (stl/css :link)
+          :href "https://community.penpot.app"
+          :target "_blank"}
+      (tr "feedback.discourse-title")]
+     [:p {:class (stl/css :field-text :bottom-margin)} (tr "feedback.discourse-subtitle1")]
 
-     [:a
-      {:class (stl/css :feedback-button-link)
-       :href "https://twitter.com/penpotapp"
-       :target "_blank"}
-      (tr "feedback.twitter-go-to")]]))
+     [:a {:class (stl/css :link)
+          :href "https://x.com/penpotapp"
+          :target "_blank"}
+      (tr "feedback.twitter-title")]
+     [:p {:class (stl/css :field-text)} (tr "feedback.twitter-subtitle1")]]))
 
 (mf/defc feedback-page
-  []
+  [{:keys [type report-id url-error]}]
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.feedback")))
-
-  [:div {:class (stl/css :dashboard-settings)}
-   [:div {:class (stl/css :form-container)}
-    [:& feedback-form]]])
+  (let [report (.getItem js/localStorage report-id)]
+    [:div {:class (stl/css :dashboard-settings)}
+     [:div {:class (stl/css :form-container)}
+      [:& feedback-form {:report report
+                         :type type
+                         :url-error url-error}]]]))

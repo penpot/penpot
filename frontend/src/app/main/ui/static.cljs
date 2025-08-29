@@ -22,6 +22,7 @@
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as deprecated-icon]
@@ -351,7 +352,16 @@
 (mf/defc internal-error*
   [{:keys [on-reset report] :as props}]
   (let [report-uri (mf/use-ref nil)
-        on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
+        on-reset (or on-reset #(st/emit! (rt/assign-exception nil)))
+
+        support-contact-click
+        (mf/use-fn
+         (fn []
+           (let [report-id (str "report-" (random-uuid))]
+             (.setItem js/localStorage report-id report)
+             (st/emit! (rt/nav :settings-feedback {:type "issue"
+                                                   :report-id report-id
+                                                   :url-error (rt/get-current-href)})))))
 
         on-download
         (mf/use-fn
@@ -370,11 +380,23 @@
 
     [:> error-container* {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
-     [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
+
+     [:div {:class (stl/css :desc-message)}
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-first")]
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-second")]]
+
      (when (some? report)
-       [:a {:on-click on-download} "Download report.txt"])
-     [:div {:class (stl/css :sign-info)}
-      [:button {:on-click on-reset} (tr "labels.retry")]]]))
+       [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
+
+     [:div {:class (stl/css :buttons-container)}
+      [:> button* {:variant "secondary"
+                   :type "button"
+                   :class (stl/css :support-btn)
+                   :on-click support-contact-click} (tr "labels.contact-support")]
+      [:> button* {:variant "primary"
+                   :type "button"
+                   :class (stl/css :retry-btn)
+                   :on-click on-reset} (tr "labels.retry")]]]))
 
 (defn- load-info
   "Load exception page info"

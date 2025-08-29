@@ -1556,15 +1556,17 @@ msgstr "La contraseña anterior no es correcta"
 msgid "feedback.description"
 msgstr "Descripción"
 
-#: src/app/main/ui/settings/feedback.cljs:92
-msgid "feedback.discourse-go-to"
-msgstr "Ir al foro de Penpot"
+msgid "feedback.description-placeholder"
+msgstr "Describe el motivo de tu comentario"
 
 #: src/app/main/ui/settings/feedback.cljs:86
 msgid "feedback.discourse-subtitle1"
 msgstr ""
 "Estamos encantados de tenerte por aquí. Si necesitas ayuda, busca, escribe "
 "o pregunta lo que necesites."
+
+msgid "feedback.other-ways-contact"
+msgstr "Otras formas de contactarnos"
 
 #: src/app/main/ui/settings/feedback.cljs:85
 msgid "feedback.discourse-title"
@@ -1574,6 +1576,21 @@ msgstr "Comunidad de Penpot"
 msgid "feedback.subject"
 msgstr "Asunto"
 
+msgid "feedback.type"
+msgstr "Tipo"
+
+msgid "feedback.type.idea"
+msgstr "Idea"
+
+msgid "feedback.type.issue"
+msgstr "Problema"
+
+msgid "feedback.type.doubt"
+msgstr "Duda"
+
+msgid "feedback.penpot.link"
+msgstr "Si el comentario está relacionado con un archivo o un proyecto, añade aquí el enlace de Penpot:"
+
 #: src/app/main/ui/settings/feedback.cljs:66
 msgid "feedback.subtitle"
 msgstr ""
@@ -1582,12 +1599,8 @@ msgstr ""
 "pronto como sea posible."
 
 #: src/app/main/ui/settings/feedback.cljs:65
-msgid "feedback.title"
-msgstr "Correo electrónico"
-
-#: src/app/main/ui/settings/feedback.cljs:102
-msgid "feedback.twitter-go-to"
-msgstr "Ir a X"
+msgid "feedback.title-contact-us"
+msgstr "Contáctanos"
 
 #: src/app/main/ui/settings/feedback.cljs:96
 msgid "feedback.twitter-subtitle1"
@@ -2195,6 +2208,9 @@ msgstr "Repositorio de Github"
 msgid "labels.give-feedback"
 msgstr "Danos tu opinión"
 
+msgid "labels.contact-us"
+msgstr "Contáctanos"
+
 #: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:170, src/app/main/ui/viewer/login.cljs:111
 msgid "labels.go-back"
 msgstr "Volver"
@@ -2232,10 +2248,11 @@ msgid "labels.installed-fonts"
 msgstr "Fuentes instaladas"
 
 #: src/app/main/ui/static.cljs:373
-msgid "labels.internal-error.desc-message"
-msgstr ""
-"Ha ocurrido algo extraño. Por favor, reintenta la operación, y si el "
-"problema persiste, contacta con el servicio técnico."
+msgid "labels.internal-error.desc-message-first"
+msgstr "Ha ocurrido algo extraño."
+
+msgid "labels.internal-error.desc-message-second"
+msgstr "Puedes reintentar la operación o contacta con soporte para reportar el error."
 
 #: src/app/main/ui/static.cljs:372
 msgid "labels.internal-error.main-message"
@@ -2494,6 +2511,12 @@ msgstr "Restaurar"
 #: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
 msgid "labels.retry"
 msgstr "Reintentar"
+
+msgid "labels.download"
+msgstr "Descargar %s"
+
+msgid "labels.contact-support"
+msgstr "Contacta con soporte"
 
 #: src/app/main/ui/dashboard/team.cljs:513, src/app/main/ui/dashboard/team.cljs:945
 msgid "labels.role"

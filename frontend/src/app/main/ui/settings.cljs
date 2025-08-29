@@ -34,7 +34,7 @@
     [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
 
 (mf/defc settings
-  [{:keys [route] :as props}]
+  [{:keys [route type report-id url-error]}]
   (let [section (get-in route [:data :name])
         profile (mf/deref refs/profile)]
 
@@ -60,7 +60,9 @@
           [:& profile-page]
 
           :settings-feedback
-          [:& feedback-page]
+          [:& feedback-page {:type type
+                             :report-id report-id
+                             :url-error url-error}]
 
           :settings-password
           [:& password-page]
