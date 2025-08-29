@@ -1,6 +1,7 @@
 use crate::{
     math::{Matrix, Rect},
     render::{default_font, filters::compose_filters, DEFAULT_EMOJI_FONT},
+    textlayout::{auto_height, auto_width},
 };
 use skia_safe::{
     self as skia,
@@ -41,30 +42,6 @@ pub struct TextContent {
     pub grow_type: GrowType,
 }
 
-pub fn build_paragraphs_with_width(
-    paragraphs: &mut [Vec<ParagraphBuilder>],
-    width: f32,
-) -> Vec<Vec<skia_safe::textlayout::Paragraph>> {
-    paragraphs
-        .iter_mut()
-        .map(|builders| {
-            builders
-                .iter_mut()
-                .map(|builder| {
-                    let mut paragraph = builder.build();
-                    // For auto-width, always layout with infinite width first to get intrinsic width
-                    paragraph.layout(f32::MAX);
-                    let intrinsic_width = paragraph.max_intrinsic_width().ceil();
-                    // Use the larger of the requested width or intrinsic width to prevent line breaks
-                    let final_width = f32::max(width, intrinsic_width);
-                    paragraph.layout(final_width);
-                    paragraph
-                })
-                .collect()
-        })
-        .collect()
-}
-
 impl TextContent {
     pub fn new(bounds: Rect, grow_type: GrowType) -> Self {
         Self {
@@ -89,11 +66,6 @@ impl TextContent {
     }
 
     #[allow(dead_code)]
-    pub fn width(&self) -> f32 {
-        self.bounds.width()
-    }
-
-    #[allow(dead_code)]
     pub fn x(&self) -> f32 {
         self.bounds.x()
     }
@@ -107,7 +79,7 @@ impl TextContent {
         self.paragraphs.push(paragraph);
     }
 
-    pub fn to_paragraphs(
+    pub fn to_paragraph_builders(
         &self,
         blur: Option<&ImageFilter>,
         blur_mask: Option<&MaskFilter>,
@@ -131,7 +103,7 @@ impl TextContent {
         paragraph_group
     }
 
-    pub fn to_stroke_paragraphs(
+    pub fn to_stroke_paragraph_builders(
         &self,
         stroke: &Stroke,
         bounds: &Rect,
@@ -185,13 +157,12 @@ impl TextContent {
         paragraph_group
     }
 
-    pub fn get_width(&self) -> f32 {
+    pub fn width(&self) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
-            let temp_paragraphs = self.to_paragraphs(None, None);
-            let mut temp_paragraphs = temp_paragraphs;
-            auto_width(&mut temp_paragraphs, f32::MAX).ceil()
+            let mut paragraphs = self.to_paragraph_builders(None, None);
+            auto_width(&mut paragraphs, f32::MAX).ceil()
         } else {
-            self.width()
+            self.bounds.width()
         }
     }
 
@@ -204,8 +175,8 @@ impl TextContent {
     }
 
     pub fn visual_bounds(&self) -> (f32, f32) {
-        let paragraph_width = self.get_width();
-        let mut paragraphs = self.to_paragraphs(None, None);
+        let paragraph_width = self.width();
+        let mut paragraphs = self.to_paragraph_builders(None, None);
         let paragraph_height = auto_height(&mut paragraphs, paragraph_width);
         (paragraph_width, paragraph_height)
     }
@@ -704,34 +675,6 @@ impl From<&Vec<u8>> for RawTextData {
 
         Self { paragraph }
     }
-}
-
-pub fn get_built_paragraphs(
-    paragraphs: &mut [Vec<ParagraphBuilder>],
-    width: f32,
-) -> Vec<Vec<skia_safe::textlayout::Paragraph>> {
-    build_paragraphs_with_width(paragraphs, width)
-}
-
-pub fn auto_width(paragraphs: &mut [Vec<ParagraphBuilder>], width: f32) -> f32 {
-    let built_paragraphs = get_built_paragraphs(paragraphs, width);
-
-    built_paragraphs
-        .iter()
-        .flatten()
-        .fold(0.0, |auto_width, p| {
-            f32::max(p.max_intrinsic_width(), auto_width)
-        })
-}
-
-pub fn auto_height(paragraphs: &mut [Vec<ParagraphBuilder>], width: f32) -> f32 {
-    paragraphs.iter_mut().fold(0.0, |auto_height, p| {
-        p.iter_mut().fold(auto_height, |auto_height, paragraph| {
-            let mut paragraph = paragraph.build();
-            paragraph.layout(width);
-            auto_height + paragraph.height()
-        })
-    })
 }
 
 fn get_text_stroke_paints(

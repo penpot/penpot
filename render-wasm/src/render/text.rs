@@ -1,6 +1,6 @@
 use super::{RenderState, Shape, SurfaceId};
-use crate::shapes::VerticalAlign;
 use crate::utils::get_font_collection;
+use crate::{shapes::VerticalAlign, textlayout::layout_paragraph_with_style};
 use skia_safe::{textlayout::ParagraphBuilder, Paint, Path};
 
 pub fn render(
@@ -17,7 +17,7 @@ pub fn render(
 
     // Width
     let paragraph_width = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
-        text_content.get_width()
+        text_content.width()
     } else {
         shape.width()
     };
@@ -40,18 +40,13 @@ pub fn render(
         for (index, builder) in group.iter_mut().enumerate() {
             let mut skia_paragraph = builder.build();
 
-            if paint.is_some() && index == 0 {
-                let text = builder.get_text().to_string();
-                let mut paragraph_builder =
-                    ParagraphBuilder::new(&builder.get_paragraph_style(), fonts);
-                let mut text_style: skia_safe::Handle<_> = builder.peek_style();
-                text_style.set_foreground_paint(paint.unwrap());
-                paragraph_builder.reset();
-                paragraph_builder.push_style(&text_style);
-                paragraph_builder.add_text(&text);
-                skia_paragraph = paragraph_builder.build();
-            } else if paint.is_some() && index > 0 {
-                continue;
+            if let Some(paint) = paint {
+                if index == 0 {
+                    skia_paragraph =
+                        layout_paragraph_with_style(builder, paint, paragraph_width, fonts);
+                } else {
+                    continue;
+                }
             }
 
             skia_paragraph.layout(paragraph_width);

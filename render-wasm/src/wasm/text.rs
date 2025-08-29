@@ -1,6 +1,7 @@
 use crate::mem;
-use crate::shapes::{auto_height, build_paragraphs_with_width, GrowType, RawTextData, Type};
 
+use crate::shapes::{GrowType, RawTextData, Type};
+use crate::textlayout::{auto_height, build_paragraphs_with_width};
 use crate::STATE;
 use crate::{with_current_shape, with_current_shape_mut};
 
@@ -44,8 +45,8 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 
         if let Type::Text(content) = &shape.shape_type {
             // 1. Reset Paragraphs
-            let paragraph_width = content.get_width();
-            let mut paragraphs = content.to_paragraphs(None, None);
+            let paragraph_width = content.width();
+            let mut paragraphs = content.to_paragraph_builders(None, None);
             let built_paragraphs = build_paragraphs_with_width(&mut paragraphs, paragraph_width);
 
             // 2. Max Width Calculation
@@ -57,12 +58,12 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
             // 3. Width and Height Calculation
             match content.grow_type() {
                 GrowType::AutoHeight => {
-                    let mut paragraph_height = content.to_paragraphs(None, None);
+                    let mut paragraph_height = content.to_paragraph_builders(None, None);
                     height = auto_height(&mut paragraph_height, paragraph_width).ceil();
                 }
                 GrowType::AutoWidth => {
                     width = paragraph_width;
-                    let mut paragraph_height = content.to_paragraphs(None, None);
+                    let mut paragraph_height = content.to_paragraph_builders(None, None);
                     height = auto_height(&mut paragraph_height, paragraph_width).ceil();
                 }
                 GrowType::Fixed => {}
