@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
+"PO-Revision-Date: 2025-08-29 15:01+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
-"Language-Team: Latvian "
-"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
+"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
+"lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
-"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.13\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4382,8 +4382,9 @@ msgstr "Neierobežots plāns"
 #, markdown
 msgid "subscription.dashboard.power-up.unlimited.bottom-text"
 msgstr ""
-"Iegūsti papildu redaktorus, vairāk rezerves kopēšanas, neierobežotu krātuvi "
-"un vēl. [Ieskaties uzņēmējdarbības plānā!|target:self](%s)"
+"Iegūsti papildu krātuvi, paplašinātu datņu atkopi un neierobežotu redaktoru "
+"skaitu visām savām komandām par noteiktu cenu! "
+"[Ieskaties uzņēmējdarbības plānā!|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:70
 #, unused
@@ -4443,7 +4444,7 @@ msgstr "90 dienu automātiski saglabātas versijas un datņu atkope"
 
 #: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/settings/subscription.cljs:456
 msgid "subscription.settings.enterprise.capped-bill"
-msgstr "Ierobežots ikmēneša rēķins"
+msgstr "Noteikts ikmēneša rēķins"
 
 #: src/app/main/ui/dashboard/subscription.cljs:124, src/app/main/ui/settings/subscription.cljs:371, src/app/main/ui/settings/subscription.cljs:383, src/app/main/ui/settings/subscription.cljs:395, src/app/main/ui/settings/subscription.cljs:405
 msgid "subscription.settings.manage-your-subscription"
@@ -4457,12 +4458,14 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:177
 msgid "subscription.settings.management.dialog.payment-explanation"
-msgstr "(Tagad netiks veikts maksājums)"
+msgstr ""
+"Pēc izmēģinājuma tiks ieturēta maksa. Šobrīd nav nepieciešama maksājumu "
+"karte."
 
 #: src/app/main/ui/settings/subscription.cljs:170, src/app/main/ui/settings/subscription.cljs:174
 #, markdown
 msgid "subscription.settings.management.dialog.price-month"
-msgstr "**$%s**  mēnesī"
+msgstr "**$%s**/mēnesī"
 
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.title"
@@ -4519,7 +4522,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Tu esi %s."
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Tu atbalsti mūs ar šo plānu kopš: %s"
 
@@ -4537,7 +4539,7 @@ msgstr "Neierobežots (izmēģinājuma)"
 
 #: src/app/main/ui/settings/subscription.cljs:370, src/app/main/ui/settings/subscription.cljs:382, src/app/main/ui/settings/subscription.cljs:442
 msgid "subscription.settings.unlimited.bill"
-msgstr "Ierobežots ikmēneša rēķins"
+msgstr "Ikmēneša rēķins ierobežots līdz $175"
 
 #: src/app/main/ui/dashboard/subscription.cljs:147, src/app/main/ui/workspace/main_menu.cljs:933
 msgid "subscription.workspace.header.menu.option.power-up"
@@ -5447,7 +5449,7 @@ msgstr "Variants"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
 msgid "workspace.options.component.variant.duplicated.copy.locate"
-msgstr "Doties uz galveno sastāvdaļu"
+msgstr "Noteikt nesaderīgus variantus"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496
 msgid "workspace.options.component.variant.duplicated.copy.title"
@@ -5465,15 +5467,21 @@ msgstr "Dažiem variantiem ir vienādas īpašības un vērtības"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:267
 msgid "workspace.options.component.variant.duplicated.single.all"
-msgstr "Šiem variantiem ir vienādas īpašības un vērtības."
+msgstr ""
+"Šiem variantiem ir vienādas īpašības un vērtības. Jāpielāgo vērtības, lai "
+"tās varētu iegūt."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:264
 msgid "workspace.options.component.variant.duplicated.single.one"
-msgstr "Šim variantam ir tādas pašas īpašības un vērtības kā citam."
+msgstr ""
+"Šim variantam ir tādas pašas īpašības un vērtības kā citam. Jāpielāgo "
+"vērtības, lai tās varētu iegūt."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:270
 msgid "workspace.options.component.variant.duplicated.single.some"
-msgstr "Dažiem no šiem variantiem ir vienādas īpašības un vērtības."
+msgstr ""
+"Dažiem no šiem variantiem ir vienādas īpašības un vērtības. Jāpielāgo "
+"vērtības, lai tās varētu iegūt."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1236
 msgid "workspace.options.component.variant.malformed.group.locate"
@@ -5515,7 +5523,7 @@ msgstr "ir tāds pats nosaukums;"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "ir vienāds veids;"
+msgstr "Ir vienāds veids."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
@@ -5525,7 +5533,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "ir tāds pats hierarhijas līmenis."
+msgstr "Ir tāds pats hierarhijas līmenis."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
@@ -7394,7 +7402,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "Necaurspīdīgumam ir jābūt starp 0 un 100 % vai 0 un 1 (piem., 50% jeb 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Sākotnējā vērtība: %s"
 
@@ -7416,7 +7423,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Atsauču kļūdas: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Atrisinātā vērtība: %s"
 
@@ -7482,7 +7488,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "Izskatu saraksts"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:589, src/app/main/ui/workspace/tokens/management/create/form.cljs:590
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Apraksts"
 
@@ -7853,3 +7858,67 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Aktīvajās kopās vai izskatos nav pielietojamu tekstvienību."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Netika atrasts nekas atbilstošs."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Atvērt tekstvienību sarakstu"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Atdalīt tekstvienību"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Šī tekstvienība nav pieejama nevienā aktīvajā kopā vai izskatā."
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Aprēķinātās"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "Stili"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Informācija par slāni"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:591
+msgid "labels.mixed-values"
+msgstr "Jauktās"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:750
+msgid "labels.pinned-projects"
+msgstr "Piepsraustie projekti"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:729
+msgid "labels.sources"
+msgstr "Avoti"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr ""
+"Iegūsti savām komandām papildu krātuvi, datņu atkopi un vēl ar neierobežoto "
+"plānu. [Iegūsti vairāk!|target:self](%s)"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "Pašreiz ir %s cilvēku Tavās komandās, kuri var labot."
+msgstr[1] "Pašreiz ir %s cilvēks Tavās komandās, kas var labot."
+msgstr[2] "Pašreiz ir %s cilvēki Tavās komandās, kuri var labot."
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Tev piederošajās komandās ir %s redaktoru, bet profesionālais plāns "
+"nodrošina līdz 8."
