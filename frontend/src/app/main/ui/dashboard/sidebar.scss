@@ -4,35 +4,34 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/typography.scss" as *;
+@use "../ds/typography.scss" as t;
 @use "../ds/colors.scss" as *;
 @use "../ds/spacing.scss" as *;
-@use "common/refactor/common-refactor.scss" as *;
+@use "../ds/_borders.scss" as *;
+@use "../ds/_sizes.scss" as *;
 @use "common/refactor/common-dashboard";
-@use "../ds/typography.scss" as t;
-
-@import "../ds/_borders.scss";
+@use "common/refactor/common-refactor.scss" as deprecated;
 
 // SIDEBAR COMPONENT
 .dashboard-sidebar {
+  display: grid;
   grid-row: 1 / span 2;
   grid-column: 1 / span 2;
-  display: grid;
   grid-template-rows: 1fr auto;
   height: 100%;
   width: 100%;
-  padding: $s-16 0 0 0;
-  margin: 0 $s-16 0 0;
-  border-right: $s-1 solid var(--panel-border-color);
+  padding: var(--sp-l) 0 0 0;
+  margin: 0 var(--sp-l) 0 0;
+  border-right: $b-1 solid var(--panel-border-color);
   background-color: var(--panel-background-color);
-  z-index: $z-index-1;
+  z-index: deprecated.$z-index-1;
 }
 
 //SIDEBAR CONTENT COMPONENT
 .sidebar-content {
   display: grid;
   grid-template-rows: auto auto auto auto 1fr;
-  gap: $s-24;
+  gap: var(--sp-xxl);
   height: 100%;
   padding: 0;
   overflow-x: hidden;
@@ -50,7 +49,7 @@
 }
 
 .sidebar-section-title {
-  @include use-typography("headline-small");
+  @include t.use-typography("headline-small");
   padding: 0 var(--sp-s) var(--sp-s) var(--sp-xxl);
   color: var(--color-foreground-secondary);
 }
@@ -58,41 +57,41 @@
 // SIDEBAR TEAM SWITCH
 .sidebar-team-switch {
   position: relative;
-  margin: $s-4 $s-16;
+  margin: var(--sp-xs) var(--sp-l);
 }
 
 .switch-content {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  height: $s-48;
+  height: $sz-48;
   width: 100%;
   border-radius: $br-8;
-  border: $s-1 solid var(--menu-background-color);
+  border: $b-1 solid var(--menu-background-color);
   background-color: var(--menu-background-color);
 }
 
 .current-team {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: grid;
   align-items: center;
   grid-template-columns: 1fr auto;
-  gap: $s-8;
+  gap: var(--sp-s);
   height: 100%;
-  padding: 0 $s-12;
+  padding: 0 var(---sp-m);
 }
 
 .team-name {
   display: grid;
   align-items: center;
   grid-template-columns: auto 1fr;
-  gap: $s-12;
-  height: $s-40;
+  gap: var(---sp-m);
+  height: $sz-40;
 }
 
 .team-text {
-  @include textEllipsis;
-  @include smallTitleTipography;
+  @include deprecated.textEllipsis;
+  @include t.use-typography("title-small");
   width: auto;
   text-align: left;
   color: var(--menu-foreground-color-hover);
@@ -100,27 +99,27 @@
 
 .team-text-with-icon {
   display: flex;
-  gap: $s-8;
+  gap: var(--sp-s);
   max-width: 100%;
   overflow: hidden;
 }
 
 // This icon still use the old svg
 .penpot-icon {
-  @include flexCenter;
+  @include deprecated.flexCenter;
 
   svg {
     fill: var(--icon-foreground);
-    width: $s-24;
-    height: $s-24;
+    width: var(--sp-xxl);
+    height: var(--sp-xxl);
   }
 }
 
 .team-picture {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   border-radius: 50%;
-  height: $s-24;
-  width: $s-24;
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
 }
 
 .arrow-icon {
@@ -130,12 +129,12 @@
 }
 
 .switch-options {
-  @include buttonStyle;
-  @include flexCenter;
-  max-width: $s-24;
-  min-width: $s-28;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+  max-width: var(--sp-xxl);
+  min-width: deprecated.$s-28;
   height: 100%;
-  border-left: $s-1 solid var(--panel-background-color);
+  border-left: $b-1 solid var(--panel-background-color);
   background-color: transparent;
 }
 
@@ -149,10 +148,10 @@
 .teams-dropdown {
   @extend .menu-dropdown;
   left: 0;
-  top: $s-52;
+  top: deprecated.$s-52;
   height: fit-content;
-  max-height: $s-480;
-  min-width: $s-248;
+  max-height: $sz-480;
+  min-width: deprecated.$s-248;
   width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
@@ -161,9 +160,9 @@
 .team-dropdown-item {
   @extend .menu-item-base;
   display: grid;
-  grid-template-columns: $s-24 1fr auto;
-  gap: $s-8;
-  height: $s-40;
+  grid-template-columns: var(--sp-xxl) 1fr auto;
+  gap: var(--sp-s);
+  height: $sz-40;
 }
 
 .action {
@@ -177,23 +176,23 @@
 }
 
 .icon-wrapper {
-  @include flexCenter;
-  width: $s-24;
-  height: $s-24;
-  margin-right: $s-12;
+  @include deprecated.flexCenter;
+  width: var(--sp-xxl);
+  height: var(--sp-xxl);
+  margin-right: var(---sp-m);
   border-radius: 50%;
   background-color: var(--sidebar-icon-backgroun-color);
 }
 
 .add-icon {
   @extend .button-icon;
-  width: $s-24;
-  height: $s-24;
+  width: var(--sp-xxl);
+  height: var(--sp-xxl);
   stroke: var(--sidebar-action-icon-color);
 }
 
 .team-separator {
-  border-top: $s-1 solid var(--dropdown-separator-color);
+  border-top: $b-1 solid var(--dropdown-separator-color);
   margin: 0;
 }
 
@@ -204,24 +203,24 @@
 
 .options-dropdown {
   @extend .menu-dropdown;
-  right: $s-2;
-  top: $s-52;
-  max-height: $s-480;
+  right: var(--sp-xxs);
+  top: deprecated.$s-52;
+  max-height: $sz-480;
 
   &:not(.teams-dropdown) {
-    min-width: $s-160;
+    min-width: var(--sp-l) 0;
   }
 }
 
 .team-options-item {
   @extend .menu-item-base;
-  height: $s-40;
+  height: $sz-40;
 }
 
 .team-option-separator {
-  height: $s-1;
+  height: deprecated.$s-1;
   margin: 0;
-  border-top: $s-1 solid var(--dropdown-separator-color);
+  border-top: $b-1 solid var(--dropdown-separator-color);
 }
 
 // Sections
@@ -261,8 +260,8 @@
 
 .sidebar-link {
   display: block;
-  padding: $s-8 $s-8 $s-8 $s-24;
-  font-weight: $fw400;
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-xxl);
+  font-weight: deprecated.$fw400;
   width: 100%;
 
   &:hover {
@@ -271,20 +270,20 @@
 }
 
 .project-element {
-  padding: $s-8 $s-8 $s-8 $s-24;
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-xxl);
 }
 
 .element-title {
-  @include textEllipsis;
-  width: $s-256;
+  @include deprecated.textEllipsis;
+  width: deprecated.$s-256;
   color: var(--color-foreground-primary);
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
 }
 
 // Pinned projects
 
 .sidebar-empty-placeholder {
-  padding: $s-12;
+  padding: var(---sp-m);
   color: var(--empty-message-foreground-color);
   display: flex;
   align-items: center;
@@ -293,11 +292,11 @@
 .pin-icon {
   @extend .button-icon-small;
   stroke: var(--icon-foreground);
-  margin: 0 $s-12;
+  margin: 0 var(---sp-m);
 }
 
 .empty-text {
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
 }
 
 // Search
@@ -307,17 +306,17 @@
   display: grid;
   grid-template-columns: 1fr;
   align-items: center;
-  border: $s-1 solid transparent;
-  margin: 0 $s-16;
+  border: $b-1 solid transparent;
+  margin: 0 var(--sp-l);
   border-radius: $br-8;
   background-color: var(--search-bar-input-background-color);
 }
 
 .input-text {
-  @include smallTitleTipography;
-  height: $s-40;
+  @include t.use-typography("title-small");
+  height: $sz-40;
   width: 100%;
-  padding: $s-6 $s-12;
+  padding: $sz-6 var(---sp-m);
   margin: 0;
   border: transparent;
   border-radius: $br-8;
@@ -328,7 +327,7 @@
   &:focus-within,
   &:focus-visible {
     outline: none;
-    border: $s-1 solid var(--search-bar-input-border-color-focus);
+    border: $b-1 solid var(--search-bar-input-border-color-focus);
   }
 
   ::placeholder {
@@ -337,13 +336,13 @@
 }
 
 .search-btn {
-  @include buttonStyle;
-  @include flexCenter;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
   position: absolute;
   right: 0;
-  height: $s-24;
-  width: $s-32;
-  padding: 0 $s-8;
+  height: var(--sp-xxl);
+  width: var(--sp-xxxl);
+  padding: 0 var(--sp-s);
 }
 
 .search-icon,
@@ -362,59 +361,59 @@
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
-  padding: $s-12 $s-16;
-  border-top: $s-1 solid var(--panel-border-color);
+  padding: var(---sp-m) var(--sp-l);
+  border-top: $b-1 solid var(--panel-border-color);
   background-color: var(--profile-section-background-color);
   cursor: pointer;
 }
 
 .profile {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: $s-8;
+  gap: var(--sp-s);
   cursor: pointer;
   text-align: left;
 }
 
 .profile-fullname {
-  @include smallTitleTipography;
-  @include textEllipsis;
+  @include t.use-typography("title-small");
+  @include deprecated.textEllipsis;
   align-self: center;
-  max-width: $s-160;
+  max-width: var(--sp-l) 0;
   color: var(--profile-foreground-color);
 }
 
 .profile-img {
-  height: $s-40;
-  width: $s-40;
+  height: $sz-40;
+  width: $sz-40;
   border-radius: $br-circle;
 }
 
 .profile-dropdown {
   @extend .menu-dropdown;
-  left: $s-16;
-  bottom: $s-72;
-  min-width: $s-252;
+  left: var(--sp-l);
+  bottom: deprecated.$s-72;
+  min-width: $sz-252;
   // TODO ADD animation fadeInUp
 }
 
 .profile-dropdown-item {
   @extend .menu-item-base;
-  @include smallTitleTipography;
-  height: $s-40;
-  padding: $s-8 $s-16;
+  @include t.use-typography("title-small");
+  height: $sz-40;
+  padding: var(--sp-s) var(--sp-l);
 }
 
 .profile-separator {
-  height: $s-6;
-  border-top: solid $s-1 var(--color-background-quaternary);
+  height: $sz-6;
+  border-top: $b-1 solid var(--color-background-quaternary);
 }
 
 .item-with-icon {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: $s-8;
+  gap: var(--sp-s);
 }
 
 .exit-icon {
@@ -423,7 +422,7 @@
 }
 
 .upgrade-plan-section {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: flex;
   justify-content: space-between;
   border: $b-1 solid var(--color-background-quaternary);
