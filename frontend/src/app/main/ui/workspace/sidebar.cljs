@@ -138,6 +138,7 @@
                 :id "layers"}
                {:label (tr "workspace.toolbar.assets")
                 :id "assets"}
+               ;; This string is intentionally not translated.
                {:label "Tokens"
                 :id "tokens"}]
               [{:label (tr "workspace.sidebar.layers")
