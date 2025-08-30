@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-29 15:01+0000\n"
+"PO-Revision-Date: 2025-08-31 06:05+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -4477,7 +4477,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/subscription.cljs:177
 msgid "subscription.settings.management.dialog.payment-explanation"
-msgstr "(Er wordt nu geen betaling gedaan)"
+msgstr "Berekend na proefperiode. Nu geen creditcard nodig."
 
 #: src/app/main/ui/settings/subscription.cljs:170, src/app/main/ui/settings/subscription.cljs:174
 #, markdown
@@ -5562,7 +5562,7 @@ msgstr "Dezelfde naam delen."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "Van hetzelfde type zijn"
+msgstr "Zijn hetzelfde type."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
 msgid "workspace.options.component.variants-help-modal.rule2.detail"
@@ -5572,7 +5572,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "Hetzelfde hiërarchische niveau hebben"
+msgstr "Heben hetzelfde hiërarchieniveau."
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
 msgid "workspace.options.component.variants-help-modal.rule3.detail"
@@ -8158,3 +8158,7 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/errors.cljs:69
 msgid "workspace.tokens.value-with-percent"
 msgstr "Ongeldige waarde: % is niet toegestaan."
+
+#: src/app/main/ui/inspect/attributes/text.cljs:143
+msgid "inspect.attributes.typography.text-decoration.strikethrough"
+msgstr ""
