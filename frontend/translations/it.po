@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
+"PO-Revision-Date: 2025-09-01 09:02+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -7796,3 +7796,77 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Apri elenco token"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Nessun token applicabile nei set o temi attivi."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Nessuna corrispondenza trovata."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Scollega token"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Questo token non è disponibile in nessun set o tema attivo."
+
+#: src/app/main/ui/auth/register.cljs:89
+msgid "errors.email-does-not-match-invitation"
+msgstr "L’email non corrisponde all’invito."
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Calcolato"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "Stili"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Informazioni livello"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:591
+msgid "labels.mixed-values"
+msgstr "Misto"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:750
+msgid "labels.pinned-projects"
+msgstr "Progetti in evidenza"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:729
+msgid "labels.sources"
+msgstr "Fonti"
+
+#: src/app/main/ui/dashboard/subscription.cljs:85
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Piano Enterprise (prova)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr ""
+"Ottieni spazio extra, recupero file e altro per i tuoi team con il piano "
+"Unlimited. [Potenzia ora!|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:78
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Ottieni spazio illimitato, recupero file esteso ed editor illimitati per "
+"tutti i tuoi team, ad un prezzo fisso. "
+"[Dai un’occhiata al piano Enterprise.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+#, fuzzy
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Hai %s editor nei team di cui sei proprietario, mentre il tuo piano "
+"Professional copre fino a 8."
