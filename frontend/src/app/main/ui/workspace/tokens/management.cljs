@@ -81,8 +81,8 @@
         ;; If we have not selected any set explicitly we just
         ;; select the first one from the list of sets
         selected-token-set-tokens
-        (when selected-token-set
-          (ctob/get-tokens-map selected-token-set))
+        (when selected-token-set-id
+          (some-> tokens-lib (ctob/get-tokens-map selected-token-set-id)))
 
         tokens
         (mf/with-memo [active-tokens selected-token-set-tokens]

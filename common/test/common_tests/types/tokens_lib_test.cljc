@@ -81,11 +81,11 @@
     (t/is (= (ctob/get-name token-set1) "test-token-set-1"))
     (t/is (= (ctob/get-description token-set1) ""))
     (t/is (some? (ctob/get-modified-at token-set1)))
-    (t/is (empty? (ctob/get-tokens-map token-set1)))
+    (t/is (empty? (ctob/get-tokens-map- token-set1)))
     (t/is (= (ctob/get-name token-set2) "test-token-set-2"))
     (t/is (= (ctob/get-description token-set2) "test description"))
     (t/is (= (ctob/get-modified-at token-set2) now))
-    (t/is (empty? (ctob/get-tokens-map token-set2)))))
+    (t/is (empty? (ctob/get-tokens-map- token-set2)))))
 
 (t/deftest make-invalid-token-set
   (let [params {:name 777 :description 999}]
@@ -189,8 +189,8 @@
                                                                    "baz.boo" (ctob/make-token :name "baz.boo"
                                                                                               :type :boolean
                                                                                               :value true)})))
-        expected (-> (ctob/get-set tokens-lib (thi/id :test-token-set))
-                     (ctob/get-tokens-map)
+        expected (-> tokens-lib
+                     (ctob/get-tokens-map (thi/id :test-token-set))
                      (ctob/tokens-tree))]
     (t/is (= (get-in expected ["foo" "bar" "baz" :name]) "foo.bar.baz"))
     (t/is (= (get-in expected ["foo" "bar" "bam" :name]) "foo.bar.bam"))
@@ -316,11 +316,11 @@
                                                                                      :type :boolean
                                                                                      :value true)})))
         token-set-copy (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"})
-        token (ctob/get-token token-set-copy (thi/id :test-token))]
+        token (ctob/get-token- token-set-copy (thi/id :test-token))]
 
     (t/is (some? token-set-copy))
     (t/is (= (ctob/get-name token-set-copy) "test-token-set-copy"))
-    (t/is (= (count (ctob/get-tokens-map token-set-copy)) 1))
+    (t/is (= (count (ctob/get-tokens-map- token-set-copy)) 1))
     (t/is (= (:name token) "test-token"))))
 
 (t/deftest duplicate-token-set-twice
@@ -336,11 +336,11 @@
         tokens-lib (ctob/add-set tokens-lib (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"}))
 
         token-set-copy (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"})
-        token (ctob/get-token token-set-copy (thi/id :test-token))]
+        token (ctob/get-token- token-set-copy (thi/id :test-token))]
 
     (t/is (some? token-set-copy))
     (t/is (= (ctob/get-name token-set-copy) "test-token-set-copy-2"))
-    (t/is (= (count (ctob/get-tokens-map token-set-copy)) 1))
+    (t/is (= (count (ctob/get-tokens-map- token-set-copy)) 1))
     (t/is (= (:name token) "test-token"))))
 
 (t/deftest duplicate-empty-token-set
@@ -349,11 +349,11 @@
                                                                :name "test-token-set")))
 
         token-set-copy (ctob/duplicate-set (thi/id :test-token-set) tokens-lib {:suffix "copy"})
-        tokens         (ctob/get-tokens-map token-set-copy)]
+        tokens         (ctob/get-tokens-map- token-set-copy)]
 
     (t/is (some? token-set-copy))
     (t/is (= (ctob/get-name token-set-copy) "test-token-set-copy"))
-    (t/is (= (count (ctob/get-tokens-map token-set-copy)) 0))
+    (t/is (= (count (ctob/get-tokens-map- token-set-copy)) 0))
     (t/is (= (count tokens) 0))))
 
 (t/deftest duplicate-not-existing-token-set
@@ -372,15 +372,17 @@
                                      :type :boolean
                                      :value true)
         tokens-lib' (-> tokens-lib
-                        (ctob/add-token-in-set (thi/id :test-token-set) token)
-                        (ctob/add-token-in-set (uuid/next) token))
+                        (ctob/add-token (thi/id :test-token-set) token)
+                        (ctob/add-token (uuid/next) token))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token'      (ctob/get-token token-set' (thi/id :token))]
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :token))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 1))
+    (t/is (= (count (ctob/get-tokens-map tokens-lib' (thi/id :test-token-set))) 1))
     (t/is (= (:name token') "test-token"))
     (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
@@ -388,40 +390,46 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                            :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-1)
-                                                                :name "test-token-1"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-2)
-                                                                :name "test-token-2"
-                                                                :type :boolean
-                                                                :value true)))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-1)
+                                                         :name "test-token-1"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-2)
+                                                         :name "test-token-2"
+                                                         :type :boolean
+                                                         :value true)))
 
         tokens-lib' (-> tokens-lib
-                        (ctob/update-token-in-set (thi/id :test-token-set) (thi/id :test-token-1)
-                                                  (fn [token]
-                                                    (assoc token
-                                                           :description "some description"
-                                                           :value false)))
-                        (ctob/update-token-in-set (uuid/next) (thi/id :test-token-1)
-                                                  (fn [token]
-                                                    (assoc token
-                                                           :name "no-effect")))
-                        (ctob/update-token-in-set (thi/id :test-token-set) (uuid/next)
-                                                  (fn [token]
-                                                    (assoc token
-                                                           :name "no-effect"))))
+                        (ctob/update-token (thi/id :test-token-set) (thi/id :test-token-1)
+                                           (fn [token]
+                                             (assoc token
+                                                    :description "some description"
+                                                    :value false)))
+                        (ctob/update-token (uuid/next) (thi/id :test-token-1)
+                                           (fn [token]
+                                             (assoc token
+                                                    :name "no-effect")))
+                        (ctob/update-token (thi/id :test-token-set) (uuid/next)
+                                           (fn [token]
+                                             (assoc token
+                                                    :name "no-effect"))))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-1))
-        token'      (ctob/get-token token-set' (thi/id :test-token-1))]
+        token       (ctob/get-token tokens-lib
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-1))
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-1))
+        tokens'     (ctob/get-tokens-map tokens-lib'
+                                         (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 2))
-    (t/is (= (d/index-of (keys (ctob/get-tokens-map token-set')) "test-token-1") 0))
+    (t/is (= (count tokens') 2))
+    (t/is (= (d/index-of (keys tokens') "test-token-1") 0))
     (t/is (= (:name token') "test-token-1"))
     (t/is (= (:description token') "some description"))
     (t/is (= (:value token') false))
@@ -432,31 +440,37 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                            :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-1)
-                                                                :name "test-token-1"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-2)
-                                                                :name "test-token-2"
-                                                                :type :boolean
-                                                                :value true)))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-1)
+                                                         :name "test-token-1"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-2)
+                                                         :name "test-token-2"
+                                                         :type :boolean
+                                                         :value true)))
 
         tokens-lib' (-> tokens-lib
-                        (ctob/update-token-in-set (thi/id :test-token-set) (thi/id :test-token-1)
-                                                  (fn [token]
-                                                    (assoc token
-                                                           :name "updated-name"))))
+                        (ctob/update-token (thi/id :test-token-set) (thi/id :test-token-1)
+                                           (fn [token]
+                                             (assoc token
+                                                    :name "updated-name"))))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-1))
-        token'      (ctob/get-token token-set' (thi/id :test-token-1))]
+        token       (ctob/get-token tokens-lib
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-1))
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-1))
+        tokens'     (ctob/get-tokens-map tokens-lib'
+                                         (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 2))
-    (t/is (= (d/index-of (keys (ctob/get-tokens-map token-set')) "updated-name") 0))
+    (t/is (= (count tokens') 2))
+    (t/is (= (d/index-of (keys tokens') "updated-name") 0))
     (t/is (= (:name token') "updated-name"))
     (t/is (= (:description token') ""))
     (t/is (= (:value token') true))
@@ -467,22 +481,26 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                            :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token)
-                                                                :name "test-token"
-                                                                :type :boolean
-                                                                :value true)))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token)
+                                                         :name "test-token"
+                                                         :type :boolean
+                                                         :value true)))
         tokens-lib' (-> tokens-lib
-                        (ctob/delete-token-from-set (thi/id :test-token-set) (thi/id :test-token))
-                        (ctob/delete-token-from-set (uuid/next) (thi/id :test-token))
-                        (ctob/delete-token-from-set (thi/id :test-token-set) (uuid/next)))
+                        (ctob/delete-token (thi/id :test-token-set) (thi/id :test-token))
+                        (ctob/delete-token (uuid/next) (thi/id :test-token))
+                        (ctob/delete-token (thi/id :test-token-set) (uuid/next)))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token'      (ctob/get-token token-set' (thi/id :test-token))]
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token))
+        tokens'     (ctob/get-tokens-map tokens-lib'
+                                         (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 0))
+    (t/is (= (count tokens') 0))
     (t/is (nil? token'))
     (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
@@ -821,10 +839,10 @@
 (t/deftest transit-serialization
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :name "test-token"
-                                                                :type :boolean
-                                                                :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :name "test-token"
+                                                         :type :boolean
+                                                         :value true))
                         (ctob/add-theme (ctob/make-token-theme :name "test-token-theme"))
                         (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
         encoded-str (tr/encode-str tokens-lib)
@@ -839,10 +857,10 @@
      (let [tokens-lib   (-> (ctob/make-tokens-lib)
                             (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                                :name "test-token-set"))
-                            (ctob/add-token-in-set (thi/id :test-token-set)
-                                                   (ctob/make-token :name "test-token"
-                                                                    :type :boolean
-                                                                    :value true))
+                            (ctob/add-token (thi/id :test-token-set)
+                                            (ctob/make-token :name "test-token"
+                                                             :type :boolean
+                                                             :value true))
                             (ctob/add-theme (ctob/make-token-theme :name "test-token-theme"))
                             (ctob/toggle-set-in-theme "" "test-token-theme" "test-token-set"))
            encoded-blob (fres/encode tokens-lib)
@@ -872,29 +890,28 @@
   (let [tokens-lib (-> (ctob/make-tokens-lib)
                        (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                           :name "test-token-set"))
-                       (ctob/add-token-in-set (thi/id :test-token-set)
-                                              (ctob/make-token :name "token1"
-                                                               :type :boolean
-                                                               :value true))
-                       (ctob/add-token-in-set (thi/id :test-token-set)
-                                              (ctob/make-token :name "group1.token2"
-                                                               :type :boolean
-                                                               :value true))
-                       (ctob/add-token-in-set (thi/id :test-token-set)
-                                              (ctob/make-token :name "group1.token3"
-                                                               :type :boolean
-                                                               :value true))
-                       (ctob/add-token-in-set (thi/id :test-token-set)
-                                              (ctob/make-token :name "group1.subgroup11.token4"
-                                                               :type :boolean
-                                                               :value true))
-                       (ctob/add-token-in-set (thi/id :test-token-set)
-                                              (ctob/make-token :name "group2.token5"
-                                                               :type :boolean
-                                                               :value true)))
+                       (ctob/add-token (thi/id :test-token-set)
+                                       (ctob/make-token :name "token1"
+                                                        :type :boolean
+                                                        :value true))
+                       (ctob/add-token (thi/id :test-token-set)
+                                       (ctob/make-token :name "group1.token2"
+                                                        :type :boolean
+                                                        :value true))
+                       (ctob/add-token (thi/id :test-token-set)
+                                       (ctob/make-token :name "group1.token3"
+                                                        :type :boolean
+                                                        :value true))
+                       (ctob/add-token (thi/id :test-token-set)
+                                       (ctob/make-token :name "group1.subgroup11.token4"
+                                                        :type :boolean
+                                                        :value true))
+                       (ctob/add-token (thi/id :test-token-set)
+                                       (ctob/make-token :name "group2.token5"
+                                                        :type :boolean
+                                                        :value true)))
 
-        set             (ctob/get-set tokens-lib (thi/id :test-token-set))
-        tokens-list     (ctob/get-tokens set)]
+        tokens-list    (ctob/get-tokens-seq tokens-lib (thi/id :test-token-set))]
 
     (t/is (= (count tokens-list) 5))
     (t/is (= (:name (nth tokens-list 0)) "token1"))
@@ -907,33 +924,37 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                            :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-1)
-                                                                :name "test-token-1"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-2)
-                                                                :name "group1.test-token-2"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-3)
-                                                                :name "group1.test-token-3"
-                                                                :type :boolean
-                                                                :value true)))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-1)
+                                                         :name "test-token-1"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-2)
+                                                         :name "group1.test-token-2"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-3)
+                                                         :name "group1.test-token-3"
+                                                         :type :boolean
+                                                         :value true)))
 
         tokens-lib' (-> tokens-lib
-                        (ctob/update-token-in-set (thi/id :test-token-set) (thi/id :test-token-2)
-                                                  (fn [token]
-                                                    (assoc token
-                                                           :description "some description"
-                                                           :value false))))
+                        (ctob/update-token (thi/id :test-token-set) (thi/id :test-token-2)
+                                           (fn [token]
+                                             (assoc token
+                                                    :description "some description"
+                                                    :value false))))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-2))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token       (ctob/get-token tokens-lib
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-2))
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-2))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (:name token') "group1.test-token-2"))
@@ -946,32 +967,36 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                            :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-1)
-                                                                :name "test-token-1"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-2)
-                                                                :name "group1.test-token-2"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-3)
-                                                                :name "group1.test-token-3"
-                                                                :type :boolean
-                                                                :value true)))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-1)
+                                                         :name "test-token-1"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-2)
+                                                         :name "group1.test-token-2"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-3)
+                                                         :name "group1.test-token-3"
+                                                         :type :boolean
+                                                         :value true)))
 
         tokens-lib' (-> tokens-lib
-                        (ctob/update-token-in-set (thi/id :test-token-set) (thi/id :test-token-2)
-                                                  (fn [token]
-                                                    (assoc token
-                                                           :name "group1.updated-name"))))
+                        (ctob/update-token (thi/id :test-token-set) (thi/id :test-token-2)
+                                           (fn [token]
+                                             (assoc token
+                                                    :name "group1.updated-name"))))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-2))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token       (ctob/get-token tokens-lib
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-2))
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-2))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
     (t/is (= (:name token') "group1.updated-name"))
@@ -984,35 +1009,41 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                            :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-1)
-                                                                :name "test-token-1"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-2)
-                                                                :name "group1.test-token-2"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-3)
-                                                                :name "group1.test-token-3"
-                                                                :type :boolean
-                                                                :value true)))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-1)
+                                                         :name "test-token-1"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-2)
+                                                         :name "group1.test-token-2"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-3)
+                                                         :name "group1.test-token-3"
+                                                         :type :boolean
+                                                         :value true)))
 
         tokens-lib' (-> tokens-lib
-                        (ctob/update-token-in-set (thi/id :test-token-set) (thi/id :test-token-2)
-                                                  (fn [token]
-                                                    (assoc token
-                                                           :name "group2.updated-name"))))
+                        (ctob/update-token (thi/id :test-token-set) (thi/id :test-token-2)
+                                           (fn [token]
+                                             (assoc token
+                                                    :name "group2.updated-name"))))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token       (ctob/get-token token-set (thi/id :test-token-2))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token       (ctob/get-token tokens-lib
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-2))
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-2))
+        tokens'     (ctob/get-tokens-map tokens-lib'
+                                         (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (d/index-of (keys (ctob/get-tokens-map token-set')) "group2.updated-name") 1))
+    (t/is (= (d/index-of (keys tokens') "group2.updated-name") 1))
     (t/is (= (:name token') "group2.updated-name"))
     (t/is (= (:description token') ""))
     (t/is (= (:value token') true))
@@ -1023,25 +1054,29 @@
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
                         (ctob/add-set (ctob/make-token-set :id (thi/new-id! :test-token-set)
                                                            :name "test-token-set"))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-1)
-                                                                :name "test-token-1"
-                                                                :type :boolean
-                                                                :value true))
-                        (ctob/add-token-in-set (thi/id :test-token-set)
-                                               (ctob/make-token :id (thi/new-id! :test-token-2)
-                                                                :name "group1.test-token-2"
-                                                                :type :boolean
-                                                                :value true)))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-1)
+                                                         :name "test-token-1"
+                                                         :type :boolean
+                                                         :value true))
+                        (ctob/add-token (thi/id :test-token-set)
+                                        (ctob/make-token :id (thi/new-id! :test-token-2)
+                                                         :name "group1.test-token-2"
+                                                         :type :boolean
+                                                         :value true)))
         tokens-lib' (-> tokens-lib
-                        (ctob/delete-token-from-set (thi/id :test-token-set) (thi/id :test-token-2)))
+                        (ctob/delete-token (thi/id :test-token-set) (thi/id :test-token-2)))
 
         token-set   (ctob/get-set tokens-lib (thi/id :test-token-set))
         token-set'  (ctob/get-set tokens-lib' (thi/id :test-token-set))
-        token'      (ctob/get-token token-set' (thi/id :test-token-2))]
+        token'      (ctob/get-token tokens-lib'
+                                    (thi/id :test-token-set)
+                                    (thi/id :test-token-2))
+        tokens'     (ctob/get-tokens-map tokens-lib'
+                                         (thi/id :test-token-set))]
 
     (t/is (= (ctob/set-count tokens-lib') 1))
-    (t/is (= (count (ctob/get-tokens-map token-set')) 1))
+    (t/is (= (count tokens') 1))
     (t/is (nil? token'))
     (t/is (ct/is-after? (ctob/get-modified-at token-set') (ctob/get-modified-at token-set)))))
 
@@ -1269,85 +1304,79 @@
    (t/deftest parse-single-set-legacy-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-single-set-legacy-example.json")
                     (json/decode {:key-fn identity}))
-           lib (ctob/parse-decoded-json json "single_set")
-           token-set (ctob/get-set-by-name lib "single_set")]
+           lib (ctob/parse-decoded-json json "single_set")]
        (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
        (t/testing "token added"
-         (t/is (some? (ctob/get-token-in-set-by-name lib (ctob/get-id token-set) "color.red.100")))))))
+         (t/is (some? (ctob/get-token-by-name lib "single_set" "color.red.100")))))))
 
 #?(:clj
    (t/deftest parse-single-set-dtcg-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-single-set-dtcg-example.json")
                     (json/decode {:key-fn identity}))
-           lib (ctob/parse-decoded-json json "single_set")
-           token-set (ctob/get-set-by-name lib "single_set")]
+           lib (ctob/parse-decoded-json json "single_set")]
        (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
        (t/testing "token added"
-         (t/is (some? (ctob/get-token-in-set-by-name lib (ctob/get-id token-set) "color.red.100")))))))
+         (t/is (some? (ctob/get-token-by-name lib "single_set" "color.red.100")))))))
 
 #?(:clj
    (t/deftest parse-multi-set-legacy-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-legacy-example.json")
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "")
-           token-theme (ctob/get-theme lib "group-1" "theme-1")
-           core-set (ctob/get-set-by-name lib "core")
-           theme-set (ctob/get-set-by-name lib "theme")]
+           token-theme (ctob/get-theme lib "group-1" "theme-1")]
        (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
        (t/testing "set exists in theme"
          (t/is (= (:group token-theme) "group-1"))
          (t/is (= (:name token-theme) "theme-1"))
          (t/is (= (:sets token-theme) #{"light"})))
        (t/testing "tokens exist in core set"
-         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "colors.red.600")
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "core" "colors.red.600")
                                    {:name "colors.red.600"
                                     :type :color
                                     :value "#e53e3e"
                                     :description ""}))
-         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "spacing.multi-value")
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "core" "spacing.multi-value")
                                    {:name "spacing.multi-value"
                                     :type :spacing
                                     :value "{dimension.sm} {dimension.xl}"
                                     :description "You can have multiple values in a single spacing token"}))
-         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "button.primary.background")
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "theme" "button.primary.background")
                                    {:name "button.primary.background"
                                     :type :color
                                     :value "{accent.default}"
                                     :description ""})))
        (t/testing "invalid tokens got discarded"
-         (t/is (nil? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "boxShadow.default")))))))
+         (t/is (nil? (ctob/get-token-by-name lib "theme" "boxShadow.default")))))))
 
 #?(:clj
    (t/deftest parse-multi-set-dtcg-json
      (let [json (-> (slurp "test/common_tests/types/data/tokens-multi-set-example.json")
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "")
-           token-theme (ctob/get-theme lib "group-1" "theme-1")
-           core-set (ctob/get-set-by-name lib "core")
-           theme-set (ctob/get-set-by-name lib "theme")]
+           token-theme (ctob/get-theme lib "group-1" "theme-1")]
        (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
        (t/testing "set exists in theme"
          (t/is (= (:group token-theme) "group-1"))
          (t/is (= (:name token-theme) "theme-1"))
          (t/is (= (:sets token-theme) #{"light"})))
        (t/testing "tokens exist in core set"
-         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "colors.red.600")
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "core" "colors.red.600")
                                    {:name "colors.red.600"
                                     :type :color
                                     :value "#e53e3e"
                                     :description ""}))
-         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id core-set) "spacing.multi-value")
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "core" "spacing.multi-value")
                                    {:name "spacing.multi-value"
                                     :type :spacing
                                     :value "{dimension.sm} {dimension.xl}"
                                     :description "You can have multiple values in a single spacing token"}))
-         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "button.primary.background")
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "theme" "button.primary.background")
                                    {:name "button.primary.background"
                                     :type :color
                                     :value "{accent.default}"
                                     :description ""})))
        (t/testing "invalid tokens got discarded"
-         (t/is (nil? (ctob/get-token-in-set-by-name lib (ctob/get-id theme-set) "boxShadow.default")))))))
+         (t/is (nil? (ctob/get-token-by-name lib "theme" "boxShadow.default")))))))
 
 #?(:clj
    (t/deftest parse-multi-set-dtcg-json-default-team
@@ -1355,15 +1384,14 @@
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "")
            themes (ctob/get-themes lib)
-           first-theme (first themes)
-           dark-set (ctob/get-set-by-name lib "dark")]
+           first-theme (first themes)]
        (t/is (= '("dark") (ctob/get-ordered-set-names lib)))
        (t/is (= 1 (count themes)))
        (t/testing "existing theme is default theme"
          (t/is (= (:group first-theme) ""))
          (t/is (= (:name first-theme) ctob/hidden-theme-name)))
        (t/testing "token exist in dark set"
-         (t/is (tht/token-data-eq? (ctob/get-token-in-set-by-name lib (ctob/get-id dark-set) "small")
+         (t/is (tht/token-data-eq? (ctob/get-token-by-name lib "dark" "small")
                                    {:name "small"
                                     :value "8"
                                     :type :border-radius
@@ -1599,11 +1627,10 @@
    (t/deftest parse-typography-tokens
      (let [json (-> (slurp "test/common_tests/types/data/tokens-typography-example.json")
                     (json/decode {:key-fn identity}))
-           lib (ctob/parse-decoded-json json "typography-test")
-           set (ctob/get-set-by-name lib "typography-test")]
+           lib (ctob/parse-decoded-json json "typography-test")]
 
        (t/testing "typography token with composite value"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.typo")]
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo")]
            (t/is (some? token))
            (t/is (= (:type token) :typography))
            (t/is (= (:value token) {:font-weight "100"
@@ -1612,28 +1639,28 @@
            (t/is (= (:description token) ""))))
 
        (t/testing "typography token with string reference"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.typo2")]
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo2")]
            (t/is (some? token))
            (t/is (= (:type token) :typography))
            (t/is (= (:value token) "{typo}"))
            (t/is (= (:description token) ""))))
 
        (t/testing "typography token referencing single token"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.typo-to-single")]
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo-to-single")]
            (t/is (some? token))
            (t/is (= (:type token) :typography))
            (t/is (= (:value token) "{font-weight}"))
            (t/is (= (:description token) ""))))
 
        (t/testing "typography token with empty value"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.test-empty")]
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.test-empty")]
            (t/is (some? token))
            (t/is (= (:type token) :typography))
            (t/is (= (:value token) {}))
            (t/is (= (:description token) ""))))
 
        (t/testing "typography token with complex value and description"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.typo-complex")]
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo-complex")]
            (t/is (some? token))
            (t/is (= (:type token) :typography))
            (t/is (= (:value token) {:font-weight "bold"
@@ -1645,8 +1672,8 @@
            (t/is (= (:description token) "A complex typography token"))))
 
        (t/testing "individual font tokens still work"
-         (let [font-weight-token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.font-weight")
-               font-size-token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.font-size")]
+         (let [font-weight-token (ctob/get-token-by-name lib "typography-test" "test.font-weight")
+               font-size-token (ctob/get-token-by-name lib "typography-test" "test.font-size")]
            (t/is (some? font-weight-token))
            (t/is (= (:type font-weight-token) :font-weight))
            (t/is (= (:value font-weight-token) "200"))
@@ -1656,7 +1683,7 @@
            (t/is (= (:value font-size-token) "18px"))))
 
        (t/testing "typography token with string font family gets transformed to array"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "test.typo-with-string-font-family")]
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo-with-string-font-family")]
            (t/is (some? token))
            (t/is (= (:type token) :typography))
            (t/is (= (:value token) {:font-weight "600"
@@ -1732,20 +1759,18 @@
            ;; Export to JSON format
            exported (ctob/export-dtcg-json original-lib)
            ;; Import back
-           imported-lib (ctob/parse-decoded-json exported "")
-           original-set (ctob/get-set-by-name original-lib "test-set")
-           imported-set (ctob/get-set-by-name imported-lib "test-set")]
+           imported-lib (ctob/parse-decoded-json exported "")]
 
        (t/testing "round trip preserves typography tokens"
-         (let [original-token (ctob/get-token-in-set-by-name original-lib (ctob/get-id original-set) "typo.test")
-               imported-token (ctob/get-token-in-set-by-name imported-lib (ctob/get-id imported-set) "typo.test")]
+         (let [original-token (ctob/get-token-by-name original-lib "test-set" "typo.test")
+               imported-token (ctob/get-token-by-name imported-lib "test-set" "typo.test")]
            (t/is (some? imported-token))
            (t/is (= (:type imported-token) (:type original-token)))
            (t/is (= (:value imported-token) (:value original-token)))
            (t/is (= (:description imported-token) (:description original-token))))
 
-         (let [original-ref (ctob/get-token-in-set-by-name original-lib (ctob/get-id original-set) "typo.ref")
-               imported-ref (ctob/get-token-in-set-by-name imported-lib (ctob/get-id imported-set) "typo.ref")]
+         (let [original-ref (ctob/get-token-by-name original-lib "test-set" "typo.ref")
+               imported-ref (ctob/get-token-by-name imported-lib "test-set" "typo.ref")]
            (t/is (some? imported-ref))
            (t/is (= (:type imported-ref) (:type original-ref)))
            (t/is (= (:value imported-ref) (:value original-ref))))))))
@@ -1754,32 +1779,31 @@
    (t/deftest parse-font-family-tokens
      (let [json (-> (slurp "test/common_tests/types/data/tokens-font-family-example.json")
                     (json/decode {:key-fn identity}))
-           lib (ctob/parse-decoded-json json "font-family-test")
-           set (ctob/get-set-by-name lib "font-family-test")]
+           lib (ctob/parse-decoded-json json "font-family-test")]
 
        (t/testing "string font family token gets split into array"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "fonts.string-font-family")]
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.string-font-family")]
            (t/is (some? token))
            (t/is (= (:type token) :font-family))
            (t/is (= (:value token) ["Arial" "Helvetica" "sans-serif"]))
            (t/is (= (:description token) "A font family defined as a string"))))
 
        (t/testing "array font family token stays as array"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "fonts.array-font-family")]
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.array-font-family")]
            (t/is (some? token))
            (t/is (= (:type token) :font-family))
            (t/is (= (:value token) ["Inter" "system-ui" "sans-serif"]))
            (t/is (= (:description token) "A font family defined as an array"))))
 
        (t/testing "single font family string gets converted to array"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "fonts.single-font-family")]
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.single-font-family")]
            (t/is (some? token))
            (t/is (= (:type token) :font-family))
            (t/is (= (:value token) ["Georgia"]))
            (t/is (= (:description token) ""))))
 
        (t/testing "complex font names with spaces handled correctly"
-         (let [token (ctob/get-token-in-set-by-name lib (ctob/get-id set) "fonts.font-with-spaces")]
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.font-with-spaces")]
            (t/is (some? token))
            (t/is (= (:type token) :font-family))
            (t/is (= (:value token) ["Source Sans Pro" "Arial" "sans-serif"])))))))
@@ -1834,20 +1858,18 @@
            ;; Export to JSON format
            exported (ctob/export-dtcg-json original-lib)
            ;; Import back
-           imported-lib (ctob/parse-decoded-json exported "")
-           original-set (ctob/get-set-by-name original-lib "test-set")
-           imported-set (ctob/get-set-by-name imported-lib "test-set")]
+           imported-lib (ctob/parse-decoded-json exported "")]
 
        (t/testing "round trip preserves font family tokens"
-         (let [original-token (ctob/get-token-in-set-by-name original-lib (ctob/get-id original-set) "fonts.test-array")
-               imported-token (ctob/get-token-in-set-by-name imported-lib (ctob/get-id imported-set) "fonts.test-array")]
+         (let [original-token (ctob/get-token-by-name original-lib "test-set" "fonts.test-array")
+               imported-token (ctob/get-token-by-name imported-lib "test-set" "fonts.test-array")]
            (t/is (some? imported-token))
            (t/is (= (:type imported-token) (:type original-token)))
            (t/is (= (:value imported-token) (:value original-token)))
            (t/is (= (:description imported-token) (:description original-token))))
 
-         (let [original-single (ctob/get-token-in-set-by-name original-lib (ctob/get-id original-set) "fonts.test-single")
-               imported-single (ctob/get-token-in-set-by-name imported-lib (ctob/get-id imported-set) "fonts.test-single")]
+         (let [original-single (ctob/get-token-by-name original-lib "test-set" "fonts.test-single")
+               imported-single (ctob/get-token-by-name imported-lib "test-set" "fonts.test-single")]
            (t/is (some? imported-single))
            (t/is (= (:type imported-single) (:type original-single)))
            (t/is (= (:value imported-single) (:value original-single))))))))

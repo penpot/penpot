@@ -19,26 +19,26 @@
       (let [tokens (-> (ctob/make-tokens-lib)
                        (ctob/add-set (ctob/make-token-set :id (cthi/new-id! :core-set)
                                                           :name "core"))
-                       (ctob/add-token-in-set (cthi/id :core-set)
-                                              (ctob/make-token {:name "borderRadius.sm"
-                                                                :value "12px"
-                                                                :type :border-radius}))
-                       (ctob/add-token-in-set (cthi/id :core-set)
-                                              (ctob/make-token {:value "{borderRadius.sm} * 2"
-                                                                :name "borderRadius.md-with-dashes"
-                                                                :type :border-radius}))
-                       (ctob/add-token-in-set (cthi/id :core-set)
-                                              (ctob/make-token {:name "borderRadius.large"
-                                                                :value "123456789012345"
-                                                                :type :border-radius}))
-                       (ctob/add-token-in-set (cthi/id :core-set)
-                                              (ctob/make-token {:name "borderRadius.largePx"
-                                                                :value "123456789012345px"
-                                                                :type :border-radius}))
-                       (ctob/add-token-in-set (cthi/id :core-set)
-                                              (ctob/make-token {:name "borderRadius.largeFn"
-                                                                :value "{borderRadius.sm} * 200000000"
-                                                                :type :border-radius}))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:name "borderRadius.sm"
+                                                         :value "12px"
+                                                         :type :border-radius}))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:value "{borderRadius.sm} * 2"
+                                                         :name "borderRadius.md-with-dashes"
+                                                         :type :border-radius}))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:name "borderRadius.large"
+                                                         :value "123456789012345"
+                                                         :type :border-radius}))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:name "borderRadius.largePx"
+                                                         :value "123456789012345px"
+                                                         :type :border-radius}))
+                       (ctob/add-token (cthi/id :core-set)
+                                       (ctob/make-token {:name "borderRadius.largeFn"
+                                                         :value "{borderRadius.sm} * 200000000"
+                                                         :type :border-radius}))
                        (ctob/get-all-tokens))]
         (-> (sd/resolve-tokens tokens)
             (rx/sub!
