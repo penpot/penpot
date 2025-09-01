@@ -48,7 +48,7 @@
     @include bodyMediumTypography;
   }
 
-  a.feedback-link {
+  .feedback-link {
     @include t.use-typography("body-medium");
     color: var(--color-accent-tertiary);
   }
