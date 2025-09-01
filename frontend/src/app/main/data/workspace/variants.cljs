@@ -30,7 +30,6 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.transforms :as dwt]
    [app.main.data.workspace.undo :as dwu]
-   [app.main.features :as features]
    [app.util.dom :as dom]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -446,19 +445,16 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [variants?             (features/active-feature? state "variants/v1")
-            objects               (dsh/lookup-page-objects state)
+      (let [objects               (dsh/lookup-page-objects state)
             selected-ids          (dsh/lookup-selected state)
             selected-shapes       (map (d/getf objects) selected-ids)
             single?               (= 1 (count selected-ids))
             first-shape          (first selected-shapes)
 
-            transform-in-variant? (and variants?
-                                       single?
+            transform-in-variant? (and single?
                                        (not (ctc/is-variant? first-shape))
                                        (ctc/main-instance? first-shape))
-            add-new-variant?      (and variants?
-                                       (every? ctc/is-variant? selected-shapes))
+            add-new-variant?      (every? ctc/is-variant? selected-shapes)
             undo-id              (js/Symbol)]
         (cond
           transform-in-variant?
@@ -479,12 +475,10 @@
   (ptk/reify ::duplicate-or-add-variant
     ptk/WatchEvent
     (watch [_ state _]
-      (let [variants?             (features/active-feature? state "variants/v1")
-            objects               (dsh/lookup-page-objects state)
+      (let [objects               (dsh/lookup-page-objects state)
             selected-ids          (dsh/lookup-selected state)
             selected-shapes       (map (d/getf objects) selected-ids)
-            add-new-variant?      (and variants?
-                                       (every? ctc/is-variant? selected-shapes))
+            add-new-variant?      (every? ctc/is-variant? selected-shapes)
             undo-id              (js/Symbol)]
         (if add-new-variant?
           (rx/concat

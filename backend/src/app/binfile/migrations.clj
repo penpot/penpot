@@ -36,11 +36,6 @@
       "fdata/shape-data-type"
       nil
 
-      ;; There is no migration needed, but we don't want to allow
-      ;; copy paste nor import of variant files into no-variant teams
-      "variants/v1"
-      nil
-
       (ex/raise :type :internal
                 :code :no-migration-defined
                 :hint (str/ffmt "no migation for feature '%' on file importation" feature)

@@ -21,7 +21,6 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.specialized-panel :as dwsp]
    [app.main.data.workspace.variants :as dwv]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
@@ -833,8 +832,7 @@
                                                libraries
                                                {:include-deleted? true})
         data            (dm/get-in libraries [(:component-file shape) :data])
-        variants?       (features/use-feature "variants/v1")
-        is-variant?     (when variants? (ctk/is-variant? component))
+        is-variant?     (ctk/is-variant? component)
 
         main-instance?  (ctk/main-instance? shape)
 

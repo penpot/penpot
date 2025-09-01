@@ -9,7 +9,6 @@
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctl]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
@@ -92,11 +91,8 @@
         is-layout-child-absolute?
         (ctl/item-absolute? shape)
 
-        variants?
-        (features/use-feature "variants/v1")
-
         is-variant?
-        (when variants? (ctk/is-variant-container? shape))]
+        (ctk/is-variant-container? shape)]
 
     [:*
      [:> layer-menu* {:ids ids

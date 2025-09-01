@@ -23,7 +23,6 @@
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.undo :as dwu]
    [app.main.data.workspace.variants :as dwv]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.render :refer [component-svg component-svg-thumbnail]]
    [app.main.store :as st]
@@ -382,8 +381,6 @@
         can-detach? (and (seq copies)
                          (every? #(not (ctn/has-any-copy-parent? objects %)) copies))
 
-        variants? (features/use-feature "variants/v1")
-
         same-variant? (ctv/same-variant? shapes)
 
         is-restorable-variant?
@@ -401,8 +398,7 @@
                 parent    (get objects (:parent-id main))]
             (and (:deleted component) (ctk/is-variant? component) parent)))
 
-        restorable-variants? (and variants?
-                                  (every? is-restorable-variant? restorable-copies))
+        restorable-variants? (every? is-restorable-variant? restorable-copies)
 
         do-detach-component
         #(st/emit! (dwl/detach-components (map :id copies)))
@@ -437,10 +433,9 @@
         #(st/emit! (dw/set-annotations-id-for-create id))
 
         do-add-variant
-        #(when variants?
-           (if (ctk/is-variant? shape)
-             (st/emit! (dwv/add-new-variant id))
-             (st/emit! (dwv/transform-in-variant id))))
+        #(if (ctk/is-variant? shape)
+           (st/emit! (dwv/add-new-variant id))
+           (st/emit! (dwv/transform-in-variant id)))
 
         do-add-new-property
         #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"
@@ -501,11 +496,11 @@
                       (when can-update-main?
                         {:title (tr "workspace.shape.menu.update-main")
                          :action do-update-component})
-                      (when (and variants? (or (not multi) same-variant?) main-instance?)
+                      (when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
                          :shortcut :create-component
                          :action do-add-variant})
-                      (when (and variants? same-variant? main-instance? variant-id)
+                      (when (and same-variant? main-instance? variant-id)
                         {:title (tr "workspace.shape.menu.add-variant-property")
                          :action do-add-new-property})]]
     (filter (complement nil?) menu-entries)))
