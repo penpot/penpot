@@ -2,225 +2,551 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Playwrite+ES:wght@100..400&family=Playwrite+NZ:wght@100..400&family=Playwrite+US+Trad:wght@100..400&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/javascript.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Penpot - Text Editor Playground</title>
-    <style>
-      #output {
-        white-space: pre-wrap;
-      }
-    </style>
   </head>
   <body>
-    <form>
-      <fieldset>
-        <legend>Styles</legend>
-        <!-- Font -->
-        <div class="form-group">
-          <label for="font-family">Font family</label>
-          <select id="font-family">
-            <option value="Open+Sans">Open Sans</option>
-            <option value="sourcesanspro">Source Sans Pro</option>
-            <option value="whatever">Whatever</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="font-size">Font size</label>
-          <input id="font-size" type="number" value="14" />
-        </div>
-        <div class="form-group">
-          <label for="font-weight">Font weight</label>
-          <select id="font-weight">
-            <option value="100">100</option>
-            <option value="200">200</option>
-            <option value="300">300</option>
-            <option value="400">400 (normal)</option>
-            <option value="500">500</option>
-            <option value="600">600</option>
-            <option value="700">700 (bold)</option>
-            <option value="800">800</option>
-            <option value="900">900</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="font-style">Font style</label>
-          <select id="font-style">
-            <option value="normal">normal</option>
-            <option value="italic">italic</option>
-            <option value="oblique">oblique</option>
-          </select>
-        </div>
-        <!-- Text attributes -->
-        <div class="form-group">
-          <label for="line-height">Line height</label>
-          <input id="line-height" type="number" value="1.0" />
-        </div>
-        <div class="form-group">
-          <label for="letter-spacing">Letter spacing</label>
-          <input id="letter-spacing" type="number" value="0.0" />
-        </div>
-        <div class="form-group">
-          <label for="direction-ltr">LTR</label>
-          <input id="direction-ltr" type="radio" name="direction" value="ltr" checked />
-        </div>
-        <div class="form-group">
-          <label for="direction-rtl">RTL</label>
-          <input id="direction-rtl" type="radio" name="direction" value="rtl" />
-        </div>
-        <!-- Text Align -->
-        <div class="form-group">
-          <label for="text-align-left">Align left</label>
-          <input id="text-align-left" type="radio" name="text-align" value="left" checked />
-        </div>
-        <div class="form-group">
-          <label for="text-align-center">Align center</label>
-          <input id="text-align-center" type="radio" name="text-align" value="center" />
-        </div>
-        <div class="form-group">
-          <label for="text-align-right">Align right</label>
-          <input id="text-align-right" type="radio" name="text-align" value="right" />
-        </div>
-        <div class="form-group">
-          <label for="text-align-justify">Align justify</label>
-          <input id="text-align-justify" type="radio" name="text-align" value="justify" />
-        </div>
-        <!-- Text Transform -->
-        <div class="form-group">
-          <label for="text-transform-none">None</label>
-          <input id="text-transform-none" type="radio" name="text-transform" value="none" checked />
-        </div>
-        <div class="form-group">
-          <label for="text-transform-uppercase">Uppercase</label>
-          <input id="text-transform-uppercase" type="radio" name="text-transform" value="uppercase" checked />
-        </div>
-        <div class="form-group">
-          <label for="text-transform-capitalize">Capitalize</label>
-          <input id="text-transform-capitalize" type="radio" name="text-transform" value="capitalize" />
-        </div>
-        <div class="form-group">
-          <label for="text-transform-lowercase">Lowercase</label>
-          <input id="text-transform-lowercase" type="radio" name="text-transform" value="lowercase" />
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Debug</legend>
-        <div class="form-group">
-          <label for="direction">Direction</label>
-          <input id="direction" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="focus-node">Focus Node</label>
-          <input id="focus-node" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="focus-offset">Focus offset</label>
-          <input id="focus-offset" readonly type="number">
-        </div>
-        <div class="form-group">
-          <label for="focus-inline">Focus Inline</label>
-          <input id="focus-inline" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="focus-paragraph">Focus Paragraph</label>
-          <input id="focus-paragraph" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="anchor-node">Anchor Node</label>
-          <input id="anchor-node" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="anchor-offset">Anchor offset</label>
-          <input id="anchor-offset" readonly type="number">
-        </div>
-        <div class="form-group">
-          <label for="anchor-inline">Anchor Inline</label>
-          <input id="anchor-inline" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="anchor-paragraph">Anchor Paragraph</label>
-          <input id="anchor-paragraph" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="start-container">Start container</label>
-          <input id="start-container" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="start-offset">Start offset</label>
-          <input id="start-offset" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="end-container">End container</label>
-          <input id="end-container" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="end-offset">End offset</label>
-          <input id="end-offset" readonly type="text" />
-        </div>
-        <div class="form-group">
-          <label for="multi">Multi?</label>
-          <input id="multi" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="multi-inline">Multi inline?</label>
-          <input id="multi-inline" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="multi-paragraph">Multi paragraph?</label>
-          <input id="multi-paragraph" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="is-text-focus">Is text focus?</label>
-          <input id="is-text-focus" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="is-text-anchor">Is text anchor?</label>
-          <input id="is-text-anchor" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="is-paragraph-start">Is paragraph start?</label>
-          <input id="is-paragraph-start" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="is-paragraph-end">Is paragraph end?</label>
-          <input id="is-paragraph-end" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="is-inline-start">Is inline start?</label>
-          <input id="is-inline-start" readonly type="checkbox" />
-        </div>
-        <div class="form-group">
-          <label for="is-inline-end">Is inline end?</label>
-          <input id="is-inline-end" readonly type="checkbox">
-        </div>
-      </fieldset>
-    </form>
-    <!--
+    <div class="playground">
+      <form>
+        <fieldset>
+          <legend>Styles</legend>
+          <!-- Font -->
+          <div class="form-group">
+            <label for="font-family">Font family</label>
+            <select id="font-family">
+              <option value="Open+Sans">Open Sans</option>
+              <option value="sourcesanspro">Source Sans Pro</option>
+              <option value="whatever">Whatever</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="font-size">Font size</label>
+            <input id="font-size" type="number" value="14" />
+          </div>
+          <div class="form-group">
+            <label for="font-weight">Font weight</label>
+            <select id="font-weight">
+              <option value="100">100</option>
+              <option value="200">200</option>
+              <option value="300">300</option>
+              <option value="400">400 (normal)</option>
+              <option value="500">500</option>
+              <option value="600">600</option>
+              <option value="700">700 (bold)</option>
+              <option value="800">800</option>
+              <option value="900">900</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="font-style">Font style</label>
+            <select id="font-style">
+              <option value="normal">normal</option>
+              <option value="italic">italic</option>
+              <option value="oblique">oblique</option>
+            </select>
+          </div>
+          <!-- Text attributes -->
+          <div class="form-group">
+            <label for="line-height">Line height</label>
+            <input id="line-height" type="number" value="1.0" />
+          </div>
+          <div class="form-group">
+            <label for="letter-spacing">Letter spacing</label>
+            <input id="letter-spacing" type="number" value="0.0" />
+          </div>
+          <div class="form-group">
+            <label for="direction-ltr">LTR</label>
+            <input id="direction-ltr" type="radio" name="direction" value="ltr" checked />
+          </div>
+          <div class="form-group">
+            <label for="direction-rtl">RTL</label>
+            <input id="direction-rtl" type="radio" name="direction" value="rtl" />
+          </div>
+          <!-- Text Align -->
+          <div class="form-group">
+            <label for="text-align-left">Align left</label>
+            <input id="text-align-left" type="radio" name="text-align" value="left" checked />
+          </div>
+          <div class="form-group">
+            <label for="text-align-center">Align center</label>
+            <input id="text-align-center" type="radio" name="text-align" value="center" />
+          </div>
+          <div class="form-group">
+            <label for="text-align-right">Align right</label>
+            <input id="text-align-right" type="radio" name="text-align" value="right" />
+          </div>
+          <div class="form-group">
+            <label for="text-align-justify">Align justify</label>
+            <input id="text-align-justify" type="radio" name="text-align" value="justify" />
+          </div>
+          <!-- Text Transform -->
+          <div class="form-group">
+            <label for="text-transform-none">None</label>
+            <input id="text-transform-none" type="radio" name="text-transform" value="none" checked />
+          </div>
+          <div class="form-group">
+            <label for="text-transform-uppercase">Uppercase</label>
+            <input id="text-transform-uppercase" type="radio" name="text-transform" value="uppercase" checked />
+          </div>
+          <div class="form-group">
+            <label for="text-transform-capitalize">Capitalize</label>
+            <input id="text-transform-capitalize" type="radio" name="text-transform" value="capitalize" />
+          </div>
+          <div class="form-group">
+            <label for="text-transform-lowercase">Lowercase</label>
+            <input id="text-transform-lowercase" type="radio" name="text-transform" value="lowercase" />
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Debug</legend>
+          <div class="form-group">
+            <label for="direction">Direction</label>
+            <input id="direction" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="focus-node">Focus Node</label>
+            <input id="focus-node" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="focus-offset">Focus offset</label>
+            <input id="focus-offset" readonly type="number">
+          </div>
+          <div class="form-group">
+            <label for="focus-inline">Focus Inline</label>
+            <input id="focus-inline" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="focus-paragraph">Focus Paragraph</label>
+            <input id="focus-paragraph" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="anchor-node">Anchor Node</label>
+            <input id="anchor-node" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="anchor-offset">Anchor offset</label>
+            <input id="anchor-offset" readonly type="number">
+          </div>
+          <div class="form-group">
+            <label for="anchor-inline">Anchor Inline</label>
+            <input id="anchor-inline" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="anchor-paragraph">Anchor Paragraph</label>
+            <input id="anchor-paragraph" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="start-container">Start container</label>
+            <input id="start-container" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="start-offset">Start offset</label>
+            <input id="start-offset" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="end-container">End container</label>
+            <input id="end-container" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="end-offset">End offset</label>
+            <input id="end-offset" readonly type="text" />
+          </div>
+          <div class="form-group">
+            <label for="multi">Multi?</label>
+            <input id="multi" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="multi-inline">Multi inline?</label>
+            <input id="multi-inline" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="multi-paragraph">Multi paragraph?</label>
+            <input id="multi-paragraph" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="is-text-focus">Is text focus?</label>
+            <input id="is-text-focus" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="is-text-anchor">Is text anchor?</label>
+            <input id="is-text-anchor" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="is-paragraph-start">Is paragraph start?</label>
+            <input id="is-paragraph-start" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="is-paragraph-end">Is paragraph end?</label>
+            <input id="is-paragraph-end" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="is-inline-start">Is inline start?</label>
+            <input id="is-inline-start" readonly type="checkbox" />
+          </div>
+          <div class="form-group">
+            <label for="is-inline-end">Is inline end?</label>
+            <input id="is-inline-end" readonly type="checkbox">
+          </div>
+        </fieldset>
+      </form>
+      <!--
 
-      Editor
+        Editor
 
-    -->
-    <div class="text-editor-container align-top">
-      <div
-        id="text-editor-selection-imposter"
-        class="text-editor-selection-imposter"></div>
-      <div
-        class="text-editor-content"
-        contenteditable="true"
-        role="textbox"
-        aria-multiline="true"
-        aria-autocomplete="none"
-        spellcheck="false"
-        autocapitalize="false"></div>
+      -->
+      <div class="text-editor-container align-top">
+        <div
+          id="text-editor-selection-imposter"
+          class="text-editor-selection-imposter"></div>
+        <div
+          class="text-editor-content"
+          contenteditable="true"
+          role="textbox"
+          aria-multiline="true"
+          aria-autocomplete="none"
+          spellcheck="false"
+          autocapitalize="false"></div>
+      </div>
+      <!--
+
+        Text output
+
+      -->
+      <canvas id="canvas"></canvas>
     </div>
-    <!--
+    <script type="module">
+        import "./style.css";
+        import "./fonts.css";
+        import "./editor/TextEditor.css";
+        import { TextEditor } from "./editor/TextEditor";
+        import { SelectionControllerDebug } from "./editor/debug/SelectionControllerDebug";
+        import initWasmModule from './wasm/render_wasm.js';
+        import {
+          init, assignCanvas, render, setupInteraction, useShape, setShapeChildren, addTextShape, updateTextShape, hexToU32ARGB,getRandomInt, getRandomColor, getRandomFloat, addShapeSolidFill, addShapeSolidStrokeFill, storeFonts
+        } from './wasm/lib.js';
 
-      Text output
+        async function loadFontList() {
+          const response = await fetch('fonts/fonts.txt')
+          const text = await response.text()
+          const fonts = text.split('\n').filter(l => !!l)
+          return fonts
+        }
 
-    -->
-    <div id="output"></div>
-    <script type="module" src="/main.js"></script>
+        function getFontStyleWeight(fontStyleName) {
+          if (fontStyleName.startsWith('Thin')) {
+            return 100
+          } else if (fontStyleName.startsWith('ExtraLight')) {
+            return 200
+          } else if (fontStyleName.startsWith('Light')) {
+            return 300
+          } else if (fontStyleName.startsWith('Regular')) {
+            return 400
+          } else if (fontStyleName.startsWith('Medium')) {
+            return 500
+          } else if (fontStyleName.startsWith('SemiBold')) {
+            return 600
+          } else if (fontStyleName.startsWith('Bold')) {
+            return 700
+          } else if (fontStyleName.startsWith('ExtraBold')) {
+            return 800
+          } else if (fontStyleName.startsWith('Black')) {
+            return 900
+          } else {
+            return 400
+          }
+        }
+
+        async function loadFonts() {
+          const fontData = new Map()
+          const fonts = await loadFontList()
+          for (const font of fonts) {
+            const response = await fetch(`fonts/${font}`)
+            const arrayBuffer = await response.arrayBuffer()
+            const [fontName, fontStyleNameAndExtension] = font.split('-')
+            const [fontStyleName, extension] = fontStyleNameAndExtension.split('.')
+            if (!fontData.has(fontName)) {
+              fontData.set(fontName, [])
+            }
+            const id = crypto.randomUUID()
+            const weight = getFontStyleWeight(fontStyleName)
+            const isItalic = (fontStyleName.endsWith('Italic'))
+            const currentFontData = fontData.get(fontName)
+            currentFontData.push({
+              id,
+              url: `fonts/${font}`,
+              name: fontName,
+              weight: weight,
+              style: isItalic ? 'italic' : 'normal',
+              arrayBuffer,
+            })
+          }
+          return fontData
+        }
+
+        const searchParams = new URLSearchParams(location.search);
+        const debug = searchParams.has("debug")
+          ? searchParams.get("debug").split(",")
+          : [];
+
+        const textEditorSelectionImposterElement = document.getElementById(
+          "text-editor-selection-imposter",
+        );
+
+        const textEditorElement = document.querySelector(".text-editor-content");
+        const textEditor = new TextEditor(textEditorElement, {
+          styleDefaults: {
+            "font-family": "MontserratAlternates",
+            "font-size": "14",
+            "font-weight": "500",
+            "font-style": "normal",
+            "line-height": "1.2",
+            "letter-spacing": "0",
+            direction: "ltr",
+            "text-align": "left",
+            "text-transform": "none",
+            "text-decoration": "none",
+            "--typography-ref-id": '["~#\'",null]',
+            "--typography-ref-file": '["~#\'",null]',
+            "--font-id": '["~#\'","MontserratAlternates"]',
+            "--fills": '[["^ ","~:fill-color","#000000","~:fill-opacity",1]]',
+          },
+          selectionImposterElement: textEditorSelectionImposterElement,
+          debug: new SelectionControllerDebug({
+            direction: document.getElementById("direction"),
+            multiElement: document.getElementById("multi"),
+            multiInlineElement: document.getElementById("multi-inline"),
+            multiParagraphElement: document.getElementById("multi-paragraph"),
+            isParagraphStart: document.getElementById("is-paragraph-start"),
+            isParagraphEnd: document.getElementById("is-paragraph-end"),
+            isInlineStart: document.getElementById("is-inline-start"),
+            isInlineEnd: document.getElementById("is-inline-end"),
+            isTextAnchor: document.getElementById("is-text-anchor"),
+            isTextFocus: document.getElementById("is-text-focus"),
+            focusNode: document.getElementById("focus-node"),
+            focusOffset: document.getElementById("focus-offset"),
+            focusInline: document.getElementById("focus-inline"),
+            focusParagraph: document.getElementById("focus-paragraph"),
+            anchorNode: document.getElementById("anchor-node"),
+            anchorOffset: document.getElementById("anchor-offset"),
+            anchorInline: document.getElementById("anchor-inline"),
+            anchorParagraph: document.getElementById("anchor-paragraph"),
+            startContainer: document.getElementById("start-container"),
+            startOffset: document.getElementById("start-offset"),
+            endContainer: document.getElementById("end-container"),
+            endOffset: document.getElementById("end-offset"),
+          }),
+        });
+
+        const fontFamilyElement = document.getElementById("font-family");
+        const fontSizeElement = document.getElementById("font-size");
+        const fontWeightElement = document.getElementById("font-weight");
+        const fontStyleElement = document.getElementById("font-style");
+
+        const directionLTRElement = document.getElementById("direction-ltr");
+        const directionRTLElement = document.getElementById("direction-rtl");
+
+        const lineHeightElement = document.getElementById("line-height");
+        const letterSpacingElement = document.getElementById("letter-spacing");
+
+        const textAlignLeftElement = document.getElementById("text-align-left");
+        const textAlignCenterElement = document.getElementById("text-align-center");
+        const textAlignRightElement = document.getElementById("text-align-right");
+        const textAlignJustifyElement = document.getElementById("text-align-justify");
+
+        const fonts = await loadFonts()
+        console.log(fonts)
+        const fontFamiliesFragment = document.createDocumentFragment()
+        for (const [font, fontData] of fonts) {
+          const fontFamilyOptionElement = document.createElement('option')
+          fontFamilyOptionElement.value = font
+          fontFamilyOptionElement.textContent = font
+          fontFamiliesFragment.appendChild(fontFamilyOptionElement)
+        }
+        fontFamilyElement.replaceChildren(fontFamiliesFragment)
+
+        function onDirectionChange(e) {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          if (e.target.checked) {
+            textEditor.applyStylesToSelection({
+              direction: e.target.value,
+            });
+          }
+        }
+
+        directionLTRElement.addEventListener("change", onDirectionChange);
+        directionRTLElement.addEventListener("change", onDirectionChange);
+
+        function onTextAlignChange(e) {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          if (e.target.checked) {
+            textEditor.applyStylesToSelection({
+              "text-align": e.target.value,
+            });
+          }
+        }
+
+        textAlignLeftElement.addEventListener("change", onTextAlignChange);
+        textAlignCenterElement.addEventListener("change", onTextAlignChange);
+        textAlignRightElement.addEventListener("change", onTextAlignChange);
+        textAlignJustifyElement.addEventListener("change", onTextAlignChange);
+
+        fontFamilyElement.addEventListener("change", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          const fontStyles = fonts.get(e.target.value)
+          console.log('fontStyles', fontStyles)
+          textEditor.applyStylesToSelection({
+            "font-family": e.target.value,
+          });
+        });
+
+        fontWeightElement.addEventListener("change", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          textEditor.applyStylesToSelection({
+            "font-weight": e.target.value,
+          });
+        });
+
+        fontSizeElement.addEventListener("change", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          textEditor.applyStylesToSelection({
+            "font-size": e.target.value,
+          });
+        });
+
+        lineHeightElement.addEventListener("change", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          textEditor.applyStylesToSelection({
+            "line-height": e.target.value,
+          });
+        });
+
+        letterSpacingElement.addEventListener("change", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          textEditor.applyStylesToSelection({
+            "letter-spacing": e.target.value,
+          });
+        });
+
+        fontStyleElement.addEventListener("change", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          textEditor.applyStylesToSelection({
+            "font-style": e.target.value,
+          });
+        });
+
+        function formatHTML(html, options) {
+          const spaces = options?.spaces ?? 4;
+          let indent = 0;
+          return html.replace(/<\/?(.*?)>/g, (fullMatch) => {
+            let str = fullMatch + "\n";
+            if (fullMatch.startsWith("</")) {
+              --indent;
+              str = " ".repeat(indent * spaces) + str;
+            } else {
+              str = " ".repeat(indent * spaces) + str;
+              ++indent;
+              if (fullMatch === "<br>") --indent;
+            }
+            return str;
+          });
+        }
+
+        const fontSize = 14;
+        const children = [];
+        const uuid = crypto.randomUUID();
+        children.push(uuid);
+        const outputElement = document.getElementById("output");
+        textEditorElement.addEventListener("input", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          outputElement.textContent = formatHTML(textEditor.element.innerHTML);
+        });
+
+        textEditor.addEventListener("needslayout", (e) => {
+          useShape(uuid);
+          updateTextShape(textEditor.root, fonts);
+          render();
+        })
+
+        textEditor.addEventListener("stylechange", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          const fontSize = parseInt(e.detail.getPropertyValue("font-size"), 10);
+          const fontWeight = e.detail.getPropertyValue("font-weight");
+          const fontStyle = e.detail.getPropertyValue("font-style");
+          const fontFamily = e.detail.getPropertyValue("font-family");
+
+          fontFamilyElement.value = fontFamily;
+          fontSizeElement.value = fontSize;
+          fontStyleElement.value = fontStyle;
+          fontWeightElement.value = fontWeight;
+
+          const textAlign = e.detail.getPropertyValue("text-align");
+          textAlignLeftElement.checked = textAlign === "left";
+          textAlignCenterElement.checked = textAlign === "center";
+          textAlignRightElement.checked = textAlign === "right";
+          textAlignJustifyElement.checked = textAlign === "justify";
+
+          const direction = e.detail.getPropertyValue("direction");
+          directionLTRElement.checked = direction === "ltr";
+          directionRTLElement.checked = direction === "rtl";
+        });
+
+        const canvas = document.getElementById("canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const MIN_LINES = 1;
+        const MAX_LINES = 5;
+        const MIN_WORDS = 1;
+        const MAX_WORDS = 10;
+
+        initWasmModule().then(Module => {
+          init(Module);
+          assignCanvas(canvas);
+          Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
+          Module._set_view(1, 0, 0);
+          Module._init_shapes_pool(1);
+          setupInteraction(canvas);
+
+          storeFonts(fonts)
+
+          useShape(uuid);
+          Module._set_parent(0, 0, 0, 0);
+          Module._set_shape_type(5);
+
+          const x1 = 0;
+          const y1 = 0;
+          const width = canvas.width;
+          const height = canvas.height;
+          Module._set_shape_selrect(x1, y1, x1 + width, y1 + height);
+
+          addTextShape("", fonts);
+
+          useShape("00000000-0000-0000-0000-000000000000");
+          setShapeChildren(children);
+          render()
+        });
+      </script>
+
   </body>
 </html>
