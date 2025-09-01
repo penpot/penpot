@@ -78,14 +78,14 @@
   grid-template-columns: 1fr auto;
   gap: var(--sp-s);
   height: 100%;
-  padding: 0 var(---sp-m);
+  padding: 0 var(--sp-m);
 }
 
 .team-name {
   display: grid;
   align-items: center;
   grid-template-columns: auto 1fr;
-  gap: var(---sp-m);
+  gap: var(--sp-m);
   height: $sz-40;
 }
 
@@ -179,7 +179,7 @@
   @include deprecated.flexCenter;
   width: var(--sp-xxl);
   height: var(--sp-xxl);
-  margin-right: var(---sp-m);
+  margin-right: var(--sp-m);
   border-radius: 50%;
   background-color: var(--sidebar-icon-backgroun-color);
 }
@@ -283,7 +283,7 @@
 // Pinned projects
 
 .sidebar-empty-placeholder {
-  padding: var(---sp-m);
+  padding: var(--sp-m);
   color: var(--empty-message-foreground-color);
   display: flex;
   align-items: center;
@@ -292,7 +292,7 @@
 .pin-icon {
   @extend .button-icon-small;
   stroke: var(--icon-foreground);
-  margin: 0 var(---sp-m);
+  margin: 0 var(--sp-m);
 }
 
 .empty-text {
@@ -316,7 +316,7 @@
   @include t.use-typography("title-small");
   height: $sz-40;
   width: 100%;
-  padding: $sz-6 var(---sp-m);
+  padding: $sz-6 var(--sp-m);
   margin: 0;
   border: transparent;
   border-radius: $br-8;
@@ -361,7 +361,7 @@
   position: relative;
   display: grid;
   grid-template-columns: 1fr auto;
-  padding: var(---sp-m) var(--sp-l);
+  padding: var(--sp-m) var(--sp-l);
   border-top: $b-1 solid var(--panel-border-color);
   background-color: var(--profile-section-background-color);
   cursor: pointer;
