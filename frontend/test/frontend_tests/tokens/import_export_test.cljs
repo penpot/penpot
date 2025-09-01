@@ -24,8 +24,8 @@
              (dwti/import-file-stream "core")
              (rx/subs! (fn [tokens-lib]
                          (t/is (instance? ctob/TokensLib tokens-lib))
-                         (t/is (= "red" (-> (ctob/get-set-by-name tokens-lib "core")
-                                            (ctob/get-token-by-name "color")
+                         (t/is (= "red" (-> tokens-lib
+                                            (ctob/get-token-by-name "core" "color")
                                             (:value))))
                          (done))))))))
 
@@ -96,7 +96,6 @@ color.value tries to reference missing, which is not defined.")))
         (->> (rx/of json)
              (dwti/import-file-stream "")
              (rx/subs! (fn [tokens-lib]
-                         (let [token-set (ctob/get-set-by-name tokens-lib "core")]
-                           (t/is (instance? ctob/TokensLib tokens-lib))
-                           (t/is (= "{missing}" (:value (ctob/get-token-in-set-by-name tokens-lib (ctob/get-id token-set) "color"))))
-                           (done)))))))))
+                         (t/is (instance? ctob/TokensLib tokens-lib))
+                         (t/is (= "{missing}" (:value (ctob/get-token-by-name tokens-lib "core" "color"))))
+                         (done))))))))

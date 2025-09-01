@@ -31,9 +31,7 @@
   [file set-id token-id]
   (let [tokens-lib (:tokens-lib (:data file))]
     (when tokens-lib
-      (-> tokens-lib
-          (ctob/get-set set-id)
-          (ctob/get-token token-id)))))
+      (ctob/get-token tokens-lib set-id token-id))))
 
 (defn token-data-eq?
   "Compare token data without comparing unstable fields."

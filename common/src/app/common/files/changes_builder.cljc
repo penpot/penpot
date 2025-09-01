@@ -803,8 +803,9 @@
   [changes active-theme-paths]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
-        prev-active-theme-paths (some-> (get library-data :tokens-lib)
-                                        (ctob/get-active-theme-paths))]
+        prev-active-theme-paths (d/nilv (some-> (get library-data :tokens-lib)
+                                                (ctob/get-active-theme-paths))
+                                        #{})]
     (-> changes
         (update :redo-changes conj {:type :update-active-token-themes :theme-paths active-theme-paths})
         (update :undo-changes conj {:type :update-active-token-themes :theme-paths prev-active-theme-paths})
@@ -889,8 +890,7 @@
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-token (some-> (get library-data :tokens-lib)
-                           (ctob/get-set set-id)
-                           (ctob/get-token token-id))]
+                           (ctob/get-token set-id token-id))]
     (-> changes
         (update :redo-changes conj {:type :set-token
                                     :set-id set-id

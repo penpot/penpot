@@ -213,13 +213,16 @@
 ;; === Token Set
 
 (defprotocol ITokenSet
-  (add-token [_ token] "add a token at the end of the list")
-  (update-token [_ id f] "update a token in the list")
-  (delete-token [_ id] "delete a token from the list")
-  (get-token [_ id] "get a token by its id")
-  (get-token-by-name [_ name] "get a token by its name")
-  (get-tokens [_] "return an ordered sequence of all tokens in the set")
-  (get-tokens-map [_] "return a map of tokens in the set, indexed by token-name"))
+  ;; TODO: the tokens tree is planned to be moved to the TokensLib. So this protocol will be no
+  ;; longer needed. For now, it's kept but it should only be used internally in the TokensLib.
+  ;; The - suffix is to remind it.
+  (add-token- [_ token] "add a token at the end of the list")
+  (update-token- [_ id f] "update a token in the list")
+  (delete-token- [_ id] "delete a token from the list")
+  (get-token- [_ id] "get a token by its id")
+  (get-token-by-name- [_ name] "get a token by its name")
+  (get-tokens-seq- [_] "return an ordered sequence of all tokens in the set")
+  (get-tokens-map- [_] "return a map of tokens in the set, indexed by token-name"))
 
 ;; TODO: this structure is temporary. It's needed to be able to migrate TokensLib
 ;; from 1.2 to 1.3 when TokenSet datatype was changed to a deftype. This should
@@ -286,7 +289,7 @@
                tokens))
 
   ITokenSet
-  (add-token [_ token]
+  (add-token- [_ token]
     (let [token (check-token token)]
       (TokenSet. id
                  name
@@ -294,9 +297,9 @@
                  (ct/now)
                  (assoc tokens (:name token) token))))
 
-  (update-token [this token-id f]
+  (update-token- [this token-id f]
     (assert (uuid? token-id) "expected uuid for `token-id`")
-    (if-let [token (get-token this token-id)]
+    (if-let [token (get-token- this token-id)]
       (let [token' (-> (make-token (f token))
                        (assoc :modified-at (ct/now)))]
         (TokenSet. id
@@ -310,28 +313,28 @@
                          (dissoc (:name token))))))
       this))
 
-  (delete-token [this token-id]
+  (delete-token- [this token-id]
     (assert (uuid? token-id) "expected uuid for `token-id`")
-    (let [token (get-token this token-id)]
+    (let [token (get-token- this token-id)]
       (TokenSet. id
                  name
                  description
                  (ct/now)
                  (dissoc tokens (:name token)))))
 
-  (get-token [_ token-id]
+  (get-token- [_ token-id]
     (assert (uuid? token-id) "expected uuid for `token-id`")
     (some #(when (= (:id %) token-id) %) ;; TODO: this will be made in an efficient way when
           (vals tokens)))                ;;       we refactor the tokens lib internal structure
 
-  (get-token-by-name [_ name]
+  (get-token-by-name- [_ name]
     (assert (string? name) "expected string for `name`")
     (get tokens name))
 
-  (get-tokens [_]
+  (get-tokens-seq- [_]
     (vals tokens))
 
-  (get-tokens-map [_]
+  (get-tokens-map- [_]
     tokens))
 
 (defmethod pp/simple-dispatch TokenSet [^TokenSet obj]
@@ -940,11 +943,11 @@
   (empty-lib? [_] "True if the lib does not contain any token, set or theme")
   (set-path-exists? [_ path] "if a set at `path` exists")
   (set-group-path-exists? [_ path] "if a set group at `path` exists")
-  (add-token-in-set [_ set-id token] "add token to a set")
-  (get-token-in-set [_ set-id token-id] "get token in a set")
-  (get-token-in-set-by-name [_ set-id token-name] "get token in a set searching by token name")
-  (update-token-in-set [_ set-id token-id f] "update a token in a set")
-  (delete-token-from-set [_ set-id token-id] "delete a token from a set")
+  (add-token [_ set-id token] "add token to a set")
+  (get-token [_ set-id token-id] "get token in a set")
+  (get-token-by-name [_ set-name token-name] "get token in a set searching by set and token names")
+  (update-token [_ set-id token-id f] "update a token in a set")
+  (delete-token [_ set-id token-id] "delete a token from a set")
   (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
   (sets-at-path-all-active? [_ group-path] "compute active state for child sets at `group-path`.
@@ -954,6 +957,8 @@ Will return a value that matches this schema:
 `:partial` Mixed active state of nested sets")
   (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
   (get-all-tokens [_] "all tokens in the lib")
+  (get-tokens-seq [_ set-id] "return an ordered sequence of all tokens in a set")
+  (get-tokens-map [_ set-id] "return a map of tokens in the set, indexed by token-name")
   (validate [_]))
 
 (declare parse-multi-set-dtcg-json)
@@ -1262,24 +1267,24 @@ Will return a value that matches this schema:
   (set-group-path-exists? [_ set-path]
     (some? (get-in sets (set-group-path->set-group-prefixed-path set-path))))
 
-  (add-token-in-set [this set-id token]
-    (update-set this set-id #(add-token % token)))
+  (add-token [this set-id token]
+    (update-set this set-id #(add-token- % token)))
 
-  (get-token-in-set [this set-id token-id]
+  (get-token [this set-id token-id]
     (some-> this
             (get-set set-id)
-            (get-token token-id)))
+            (get-token- token-id)))
 
-  (get-token-in-set-by-name [this set-id token-name]
+  (get-token-by-name [this set-name token-name]
     (some-> this
-            (get-set set-id)
-            (get-token-by-name token-name)))
+            (get-set-by-name set-name)
+            (get-token-by-name- token-name)))
 
-  (update-token-in-set [this set-id token-id f]
-    (update-set this set-id #(update-token % token-id f)))
+  (update-token [this set-id token-id f]
+    (update-set this set-id #(update-token- % token-id f)))
 
-  (delete-token-from-set [this set-id token-id]
-    (update-set this set-id #(delete-token % token-id)))
+  (delete-token [this set-id token-id]
+    (update-set this set-id #(delete-token- % token-id)))
 
   (toggle-set-in-theme [this theme-group theme-name set-name]
     (if-let [_theme (get-in themes theme-group theme-name)]
@@ -1314,7 +1319,7 @@ Will return a value that matches this schema:
           active-set-names (filter theme-set-names all-set-names)
           tokens           (reduce (fn [tokens set-name]
                                      (let [set (get-set-by-name this set-name)]
-                                       (merge tokens (get-tokens-map set))))
+                                       (merge tokens (get-tokens-map- set))))
                                    (d/ordered-map)
                                    active-set-names)]
       tokens))
@@ -1322,9 +1327,19 @@ Will return a value that matches this schema:
   (get-all-tokens [this]
     (reduce
      (fn [tokens' set]
-       (into tokens' (map (fn [x] [(:name x) x]) (get-tokens set))))
+       (into tokens' (map (fn [x] [(:name x) x]) (get-tokens-seq- set))))
      {}
      (get-sets this)))
+
+  (get-tokens-seq [this set-id]
+    (some-> this
+            (get-set set-id)
+            (get-tokens-seq-)))
+
+  (get-tokens-map [this set-id]
+    (some-> this
+            (get-set set-id)
+            (get-tokens-map-)))
 
   (validate [_]
     (and (valid-token-sets? sets)
@@ -1776,7 +1791,7 @@ Will return a value that matches this schema:
         sets (->> (get-sets tokens-lib)
                   (map (fn [token-set]
                          (let [name   (get-name token-set)
-                               tokens (get-tokens-map token-set)]
+                               tokens (get-tokens-map- token-set)]
                            [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
                   (into {}))]
     (-> sets
@@ -1796,7 +1811,7 @@ Will return a value that matches this schema:
              (filter (partial instance? TokenSet))
              (map (fn [set]
                     [(get-name set)
-                     (tokens-tree (get-tokens-map set) :update-token-fn token->dtcg-token)])))
+                     (tokens-tree (get-tokens-map- set) :update-token-fn token->dtcg-token)])))
 
         ordered-set-names
         (mapv first name-set-tuples)
