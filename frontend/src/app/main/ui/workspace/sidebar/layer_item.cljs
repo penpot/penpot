@@ -17,7 +17,6 @@
    [app.common.uuid :as uuid]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.collapse :as dwc]
-   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
@@ -53,10 +52,8 @@
         parent-board?         (and (cfh/frame-shape? item)
                                    (= uuid/zero (:parent-id item)))
         absolute?             (ctl/item-absolute? item)
-
-        variants?             (features/use-feature "variants/v1")
-        is-variant?           (when variants? (ctk/is-variant? item))
-        is-variant-container? (when variants? (ctk/is-variant-container? item))
+        is-variant?           (ctk/is-variant? item)
+        is-variant-container? (ctk/is-variant-container? item)
         variant-id            (when is-variant? (:variant-id item))
         variant-name          (when is-variant? (:variant-name item))
         variant-error         (when is-variant? (:variant-error item))

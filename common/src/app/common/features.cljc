@@ -64,7 +64,8 @@
     "layout/grid"
     "components/v2"
     "plugins/runtime"
-    "design-tokens/v1"})
+    "design-tokens/v1"
+    "variants/v1"})
 
 ;; A set of features that should not be propagated to team on creating
 ;; or modifying a file
@@ -95,7 +96,8 @@
   (-> #{"layout/grid"
         "design-tokens/v1"
         "fdata/shape-data-type"
-        "fdata/path-data"}
+        "fdata/path-data"
+        "variants/v1"}
       (into frontend-only-features)
       (into backend-only-features)))
 
