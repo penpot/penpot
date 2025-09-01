@@ -466,7 +466,12 @@
    (dm/assert! (#{:width :height} attr))
    (dm/assert! (number? value))
 
-   (let [{:keys [proportion proportion-lock]} shape
+   (let [;; Avoid havig shapes with zero size
+         value (if (< (mth/abs value) 0.01)
+                 0.01
+                 value)
+
+         {:keys [proportion proportion-lock]} shape
          size (select-keys (:selrect shape) [:width :height])
          new-size (if-not (and (not ignore-lock?) proportion-lock)
                     (assoc size attr value)
