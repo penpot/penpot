@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-29 15:01+0000\n"
+"PO-Revision-Date: 2025-09-01 09:02+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -7965,3 +7965,45 @@ msgstr[0] "נכון לעכשיו, יש משתמש/ת %s על פני הצוותי
 msgstr[1] "נכון לעכשיו, יש %s משתמשים/ות על פני הצוותים שלך שיכולים לערוך."
 msgstr[2] "נכון לעכשיו, יש %s משתמשים/ות על פני הצוותים שלך שיכולים לערוך."
 msgstr[3] "נכון לעכשיו, יש %s משתמשים/ות על פני הצוותים שלך שיכולים לערוך."
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"נא לשדרג כעת לתוכנית הבלתי מוגבלת או למסחרית כדי לאפשר יותר עורכים, אחסון "
+"ושחזור קבצים. [להירשם כעת.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"נא לשדרג כעת כדי לעמוד במכסת העורכים הנוכחית שלך. [להירשם כעת.|target:self]"
+"(%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "הזמנת אנשים תוך השתתפות בתוכנית הבלתי מוגבלת"
+
+#: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "אחסון בלתי מוגבל"
+
+#: src/app/main/ui/settings/subscription.cljs:181
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"אי אפשר להגדיר פחות עורכים ממה שיש לך כרגע. יש לשנות את התפקיד (עריכה/הנהלה "
+"לצפייה) לאנשים שלא עורכים קבצים בפועל דרך הגדרות הצוות."
+
+#: src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:427
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "גרסאות שנשמרות אוטומטית 7 ימים אחורה ושחזור קבצים"
+
+#: src/app/main/ui/settings/subscription.cljs:369, src/app/main/ui/settings/subscription.cljs:381, src/app/main/ui/settings/subscription.cljs:441
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "גרסאות שנשמרות אוטומטית 30 ימים אחורה ושחזור קבצים"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:486
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"לרכיב הזה יש הגוונים עם שמות שגויים. נא לוודא שכל אחד מההגוונים מיושר עם "
+"המבנה הנכון."
