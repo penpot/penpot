@@ -983,15 +983,15 @@
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
                 (not token)
-                (ctob/delete-token-from-set lib' set-id token-id)
+                (ctob/delete-token lib' set-id token-id)
 
-                (not (ctob/get-token-in-set lib' set-id token-id))
-                (ctob/add-token-in-set lib' set-id (ctob/make-token token))
+                (not (ctob/get-token lib' set-id token-id))
+                (ctob/add-token lib' set-id (ctob/make-token token))
 
                 :else
-                (ctob/update-token-in-set lib' set-id token-id
-                                          (fn [prev-token]
-                                            (ctob/make-token (merge prev-token token)))))))))
+                (ctob/update-token lib' set-id token-id
+                                   (fn [prev-token]
+                                     (ctob/make-token (merge prev-token token)))))))))
 
 (defmethod process-change :set-token-set
   [data {:keys [id token-set]}]

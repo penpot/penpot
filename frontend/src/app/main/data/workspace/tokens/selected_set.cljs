@@ -26,9 +26,13 @@
             (ctob/get-set set-id))))
 
 (defn get-token-in-selected-set [state token-id]
-  (some-> (get-selected-token-set state)
-          (ctob/get-token token-id)))
+  (when-let [set-id (get-selected-token-set-id state)]
+    (some-> (dsh/lookup-file-data state)
+            (get :tokens-lib)
+            (ctob/get-token set-id token-id))))
 
 (defn get-all-tokens-in-selected-set [state]
-  (some-> (get-selected-token-set state)
-          (ctob/get-tokens-map)))
+  (when-let [set-id (get-selected-token-set-id state)]
+    (some-> (dsh/lookup-file-data state)
+            (get :tokens-lib)
+            (ctob/get-tokens-map set-id))))
