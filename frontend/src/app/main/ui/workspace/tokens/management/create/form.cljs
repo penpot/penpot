@@ -469,7 +469,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                                              {:name final-name
                                               :value (:value valid-token)
                                               :description final-description}))
-                        (dwtp/propagate-workspace-tokens :interactive? true)
+                        (dwtp/propagate-workspace-tokens)
                         (modal/hide)))))))))
 
         on-delete-token
