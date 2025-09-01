@@ -16,7 +16,6 @@
   &.valid {
     input {
       border: $s-1 solid var(--input-border-color-success);
-      @extend .disabled-input;
       &:hover,
       &:focus {
         border: $s-1 solid var(--input-border-color-success);
