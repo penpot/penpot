@@ -931,7 +931,7 @@
             [:span {:class (stl/css :copy-text)}
              (if main-instance?
                (if is-variant?
-                 (tr "workspace.options.component.variant")
+                 (tr "labels.variant")
                  (tr "workspace.options.component.main"))
                (tr "workspace.options.component.copy"))]]
 
