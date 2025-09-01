@@ -5607,6 +5607,9 @@ msgstr "Swap component"
 msgid "workspace.options.component.swap.empty"
 msgstr "There are no assets in this library yet"
 
+msgid "workspace.component.swap.loop-error"
+msgstr "A component can't be a child of itself"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
 msgstr "Unlinked"

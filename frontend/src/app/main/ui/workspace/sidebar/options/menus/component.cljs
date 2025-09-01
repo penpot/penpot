@@ -7,6 +7,7 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
+
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -15,8 +16,10 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]
+   [app.common.uuid :as uuid]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
+   [app.main.data.notifications :as ntf]
    [app.main.data.workspace :as dw]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.specialized-panel :as dwsp]
@@ -397,7 +400,8 @@
 
 (mf/defc component-variant-copy*
   [{:keys [component shape data current-file-id]}]
-  (let [component-id (:id component)
+  (let [page-objects (mf/deref refs/workspace-page-objects)
+        component-id (:id component)
         properties   (:variant-properties component)
         variant-id   (:variant-id component)
         objects      (-> (dsh/get-page data (:main-instance-page component))
@@ -444,6 +448,10 @@
                (st/emit! (dwl/go-to-local-component :id (first ids) :additional-ids (rest ids)))
                (st/emit! (dwl/go-to-component-file (:component-file shape) (first malformed-comps) false))))))
 
+        ;; Used to force a remount after an error
+        key*     (mf/use-state (uuid/next))
+        key      (deref key*)
+
         switch-component
         (mf/use-fn
          (mf/deps shape component component-id variant-comps)
@@ -455,9 +463,17 @@
                                      (remove #(= (:id %) component-id))
                                      (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
                                      (reverse))
-                   nearest-comp (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)]
+                   nearest-comp (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
+                   parents (cfh/get-parents-with-self page-objects (:parent-id shape))
+                   children (cfh/get-children-with-self objects (:main-instance-id nearest-comp))
+                   comps-nesting-loop? (seq? (cfh/components-nesting-loop? children parents))]
+
                (when nearest-comp
-                 (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)))))))]
+                 (if comps-nesting-loop?
+                   (do
+                     (st/emit! (ntf/error (tr "workspace.component.swap.loop-error")))
+                     (reset! key* (uuid/next)))
+                   (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true))))))))]
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
@@ -474,7 +490,8 @@
           [:> select* {:default-selected (:value prop)
                        :options (get-options (:name prop))
                        :empty-to-end true
-                       :on-change (partial switch-component pos)}]]])]
+                       :on-change (partial switch-component pos)
+                       :key (str (:value prop) "-" key)}]]])]
 
      (if (seq malformed-comps)
        [:div {:class (stl/css :variant-warning-wrapper)}

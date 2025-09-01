@@ -434,9 +434,9 @@
       (mapcat collect-main-shapes children objects)
       [])))
 
-(defn- invalid-structure-for-component?
+(defn invalid-structure-for-component?
   "Check if the structure generated nesting children in parent is invalid in terms of nested components"
-  [objects parent children pasting? all-comp-cut? libraries]
+  [objects parent children pasting? libraries]
   (let [; If the original shapes had been cutted, and we are pasting them now, they aren't
         ; in objects. We can add them to locate later
         objects (merge objects
@@ -457,11 +457,7 @@
         parent-in-component?    (in-any-component? objects parent)
         comps-nesting-loop?     (not (->> children
                                           (map #(cfh/components-nesting-loop? objects (:id %) (:id parent)))
-                                          (every? nil?)))
-
-        variants-nesting-loop? (not (->> children
-                                         (map #(cfh/variants-nesting-loop? objects libraries % parent (and pasting? all-comp-cut?)))
-                                         (every? nil?)))]
+                                          (every? nil?)))]
     (or
       ;;We don't want to change the structure of component copies
      (ctk/in-component-copy? parent)
@@ -470,8 +466,7 @@
      (and selected-main-instance? parent-in-component?)
       ;; Avoid placing a shape as a direct or indirect child of itself,
       ;; or inside its main component if it's in a copy.
-     comps-nesting-loop?
-     variants-nesting-loop?)))
+     comps-nesting-loop?)))
 
 (defn find-valid-parent-and-frame-ids
   "Navigate trough the ancestors until find one that is valid. Returns [ parent-id frame-id ]"
@@ -511,7 +506,7 @@
                                             true))
                   (every? :deleted)))]
        (if (or no-changes?
-               (and (not (invalid-structure-for-component? objects parent children pasting? all-comp-cut? libraries))
+               (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
                     ;; If we are moving into a main component, no descendant can be main
                     (or (nil? any-main-descendant) (not (ctk/main-instance? parent)))
                     ;; If we are moving into a variant-container, all the items should be main
