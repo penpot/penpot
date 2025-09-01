@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## 2.11.0 (Unreleased)
+
+### :rocket: Epics and highlights
+
+### :boom: Breaking changes & Deprecations
+
+### :heart: Community contributions (Thank you!)
+
+### :sparkles: New features & Enhancements
+
+### :bug: Bugs fixed
+
 ## 2.10.0 (Unreleased)
 
 ### :rocket: Epics and highlights
