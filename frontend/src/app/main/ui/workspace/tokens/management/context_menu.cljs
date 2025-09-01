@@ -273,6 +273,7 @@
         text-case (partial generic-attribute-actions #{:text-case} "Text Case")
         text-decoration (partial generic-attribute-actions #{:text-decoration} "Text Decoration")
         font-weight (partial generic-attribute-actions #{:font-weight} "Font Weight")
+        typography (partial generic-attribute-actions #{:typography} "Typography")
         border-radius (partial all-or-separate-actions {:attribute-labels {:r1 "Top Left"
                                                                            :r2 "Top Right"
                                                                            :r4 "Bottom Left"
@@ -302,6 +303,7 @@
      :text-case text-case
      :text-decoration text-decoration
      :font-weight font-weight
+     :typography typography
      :dimensions (fn [context-data]
                    (-> (concat
                         (when (seq (sizing-attribute-actions context-data)) [{:title "Sizing" :submenu :sizing}])
