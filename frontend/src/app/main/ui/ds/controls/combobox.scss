@@ -9,12 +9,21 @@
 @use "../typography.scss" as *;
 
 .wrapper {
-  --combobox-icon-fg-color: var(--color-foreground-secondary);
-  --combobox-fg-color: var(--color-foreground-primary);
-  --combobox-bg-color: var(--color-background-tertiary);
+  --combobox-icon-color: var(--color-icon-default);
+  --combobox-text-color: var(--color-foreground-primary);
+  --combobox-background-color: var(--color-background-tertiary);
   --combobox-outline-color: none;
   --combobox-border-color: none;
   --combobox-error-outline-color: var(--color-accent-error);
+
+  &:hover:not(.disabled) {
+    --combobox-background-color: var(--color-background-quaternary);
+  }
+
+  &:focus-within:not(.disabled) {
+    --combobox-outline-color: var(--color-accent-primary);
+    --combobox-background-color: var(--color-background-primary);
+  }
 
   @include use-typography("body-small");
   position: relative;
@@ -22,15 +31,6 @@
   grid-template-rows: auto;
   gap: var(--sp-xxs);
   width: 100%;
-
-  &:hover:not(.disabled) {
-    --combobox-bg-color: var(--color-background-quaternary);
-  }
-
-  &:focus-within:not(.disabled) {
-    --combobox-outline-color: var(--color-accent-primary);
-    --combobox-bg-color: var(--color-background-primary);
-  }
 }
 
 .combobox {
@@ -44,14 +44,13 @@
   border-radius: $br-8;
   outline: $b-1 solid var(--combobox-outline-color);
   border: $b-1 solid var(--combobox-border-color);
-  background: var(--combobox-bg-color);
-  color: var(--combobox-fg-color);
+  background: var(--combobox-background-color);
+  color: var(--combobox-text-color);
   appearance: none;
 }
 
 .arrow {
-  color: var(--combobox-icon-fg-color);
-  transform: rotate(90deg);
+  color: var(--combobox-icon-color);
 }
 
 .header {
@@ -62,7 +61,7 @@
 
 .header-icon {
   grid-template-columns: auto 1fr;
-  color: var(--combobox-icon-fg-color);
+  color: var(--combobox-icon-color);
 }
 
 .input {
@@ -74,7 +73,7 @@
   text-align: left;
   inline-size: 100%;
   padding-inline-start: var(--sp-xxs);
-  color: var(--combobox-fg-color);
+  color: var(--combobox-text-color);
 
   &::placeholder {
     color: var(--input-placeholder-color);
@@ -88,9 +87,10 @@
 }
 
 .disabled {
-  --combobox-bg-color: var(--color-background-primary);
+  cursor: default;
+  --combobox-background-color: var(--color-background-primary);
   --combobox-border-color: var(--color-background-quaternary);
-  --combobox-fg-color: var(--color-foreground-secondary);
+  --combobox-text-color: var(--color-foreground-secondary);
 }
 
 .has-error {
