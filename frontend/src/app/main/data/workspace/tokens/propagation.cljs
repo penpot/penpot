@@ -76,15 +76,6 @@
 (def ^:private attribute-actions-map
   (flatten-set-keyed-map attributes->shape-update {}))
 
-(def ^:private interactive-attributes->shape-update
-  {ctt/font-family-keys dwta/update-font-family-interactive
-   ctt/font-weight-keys dwta/update-font-weight-interactive
-   ctt/text-decoration-keys dwta/update-text-decoration-interactive
-   ctt/typography-token-keys dwta/update-typography-interactive})
-
-(def ^:private interactive-attribute-actions-map
-  (flatten-set-keyed-map interactive-attributes->shape-update attribute-actions-map))
-
 ;; Data flows ------------------------------------------------------------------
 
 (defn- invert-collect-key-vals
@@ -148,26 +139,19 @@
 
       [tokens frame-ids text-ids])))
 
-(defn- actionize-shapes-update-info
-  [page-id shapes-update-info interactive?]
-  (let [attribute-actions (if interactive?
-                            interactive-attribute-actions-map
-                            attribute-actions-map)]
-    (mapcat (fn [[attrs update-infos]]
-              (let [action (some attribute-actions attrs)]
-                (assert (fn? action) "missing action function on attributes->shape-update")
-                (map
-                 (fn [[v shape-ids]]
-                   (action v shape-ids attrs page-id))
-                 update-infos)))
-            shapes-update-info)))
+(defn- actionize-shapes-update-info [page-id shapes-update-info]
+  (mapcat (fn [[attrs update-infos]]
+            (let [action (some attribute-actions-map attrs)]
+              (assert (fn? action) "missing action function on attributes->shape-update")
+              (map
+               (fn [[v shape-ids]]
+                 (action v shape-ids attrs page-id))
+               update-infos)))
+          shapes-update-info))
 
 (defn propagate-tokens
-  "Propagate tokens values to all shapes where they are applied
-
-  Pass `interactive?` to indicate the propagation was triggered by a user interaction
-  and should use update functions that may execute ui side-effects like showing warnings."
-  [state resolved-tokens interactive?]
+  "Propagate tokens values to all shapes where they are applied"
+  [state resolved-tokens]
   (let [file-id         (get state :current-file-id)
         current-page-id (get state :current-page-id)
         fdata           (dsh/lookup-file-data state file-id)
@@ -187,7 +171,7 @@
                   (collect-shapes-update-info resolved-tokens (:objects page))
 
                   actions
-                  (actionize-shapes-update-info page-id attrs interactive?)
+                  (actionize-shapes-update-info page-id attrs)
 
                   ;; Composed updates return observables and need to be executed differently
                   {:keys [observable normal]} (group-by #(if (rx/observable? %) :observable :normal) actions)]
@@ -218,11 +202,7 @@
               (l/inf :status "END" :hint "propagate-tokens" :elapsed elapsed)))))))
 
 (defn propagate-workspace-tokens
-  "Updates styles for tokens.
-
-  Pass `interactive?` to indicate the propagation was triggered by a user interaction
-  and should use update functions that may execute ui side-effects like showing warnings."
-  [& {:keys [interactive?]}]
+  []
   (ptk/reify ::propagate-workspace-tokens
     ptk/WatchEvent
     (watch [_ state _]
@@ -234,5 +214,5 @@
                           (let [undo-id (js/Symbol)]
                             (rx/concat
                              (rx/of (dwu/start-undo-transaction undo-id :timeout false))
-                             (propagate-tokens state sd-tokens interactive?)
+                             (propagate-tokens state sd-tokens)
                              (rx/of (dwu/commit-undo-transaction undo-id)))))))))))
