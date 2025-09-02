@@ -212,7 +212,7 @@ fn propagate_transform(
                 transform.post_concat(&resize_transform);
             }
             GrowType::AutoWidth => {
-                let paragraph_width = content.get_width();
+                let paragraph_width = content.width();
                 let mut paragraphs = content.to_paragraphs(None, None, None);
                 let height = auto_height(&mut paragraphs, paragraph_width);
                 let resize_transform = math::resize_matrix(

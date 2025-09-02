@@ -67,11 +67,6 @@ impl TextContent {
     }
 
     #[allow(dead_code)]
-    pub fn width(&self) -> f32 {
-        self.bounds.width()
-    }
-
-    #[allow(dead_code)]
     pub fn x(&self) -> f32 {
         self.bounds.x()
     }
@@ -178,13 +173,13 @@ impl TextContent {
         paragraph_group
     }
 
-    pub fn get_width(&self) -> f32 {
+    pub fn width(&self) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
             let temp_paragraphs = self.to_paragraphs(None, None, None);
             let mut temp_paragraphs = temp_paragraphs;
             auto_width(&mut temp_paragraphs, f32::MAX).ceil()
         } else {
-            self.width()
+            self.bounds.width()
         }
     }
 
@@ -197,7 +192,7 @@ impl TextContent {
     }
 
     pub fn visual_bounds(&self) -> (f32, f32) {
-        let paragraph_width = self.get_width();
+        let paragraph_width = self.width();
         let mut paragraphs = self.to_paragraphs(None, None, None);
         let paragraph_height = auto_height(&mut paragraphs, paragraph_width);
         (paragraph_width, paragraph_height)

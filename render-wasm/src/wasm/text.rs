@@ -43,7 +43,7 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 
         if let Type::Text(content) = &shape.shape_type {
             // 1. Reset Paragraphs
-            let paragraph_width = content.get_width();
+            let paragraph_width = content.width();
             let mut paragraphs = content.to_paragraphs(None, None, None);
             let built_paragraphs = build_paragraphs_with_width(&mut paragraphs, paragraph_width);
 

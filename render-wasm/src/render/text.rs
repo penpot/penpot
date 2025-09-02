@@ -19,7 +19,7 @@ pub fn render(
 
     // Width
     let paragraph_width = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
-        text_content.get_width()
+        text_content.width()
     } else {
         shape.width()
     };
