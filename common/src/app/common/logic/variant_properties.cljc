@@ -146,8 +146,8 @@
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
   (let [component (ctcl/get-component data (:component-id shape) true)
-
-        add-name? (not= (:name component) container-name)
+        component-full-name (cfh/merge-path-item (:path component) (:name component))
+        add-name? (not= component-full-name container-name)
         props     (ctv/merge-properties base-properties
                                         (:variant-properties component))
         new-props (- min-props
