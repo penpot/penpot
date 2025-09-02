@@ -64,7 +64,7 @@ pub fn paragraph_builders_from_text(
     for paragraph in text_content.paragraphs() {
         let paragraph_style = paragraph.paragraph_to_style();
         let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-        for leaf in paragraph.get_children() {
+        for leaf in paragraph.children() {
             let text_style = leaf.to_style(
                 &text_content.bounds(),
                 fallback_fonts,
@@ -99,7 +99,7 @@ pub fn stroke_paragraph_builders_from_text(
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
-        for leaf in paragraph.get_children().iter() {
+        for leaf in paragraph.children().iter() {
             let mut text_paint = merge_fills(leaf.fills(), *bounds);
             if let Some(blur_mask) = blur_mask {
                 text_paint.set_mask_filter(blur_mask.clone());

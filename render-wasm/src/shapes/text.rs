@@ -80,7 +80,7 @@ impl TextContent {
         self.paragraphs.push(paragraph);
     }
 
-    pub fn paragraphs(&self) -> &Vec<Paragraph> {
+    pub fn paragraphs(&self) -> &[Paragraph] {
         &self.paragraphs
     }
 
@@ -194,8 +194,7 @@ impl Paragraph {
         self.children = children;
     }
 
-    #[allow(dead_code)]
-    pub fn get_children(&self) -> &Vec<TextLeaf> {
+    pub fn children(&self) -> &[TextLeaf] {
         &self.children
     }
 
