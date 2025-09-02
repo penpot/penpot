@@ -592,6 +592,7 @@
                                                  position
                                                  page
                                                  libraries)
+             component (get-in libraries [(:component-file new-shape) :data :components component-id])
 
              undo-id (js/Symbol)]
 
@@ -601,7 +602,8 @@
          (rx/of (ptk/event ::ev/event
                            {::ev/name "use-library-component"
                             ::ev/origin origin
-                            :external-library (not= file-id current-file-id)})
+                            :external-library (not= file-id current-file-id)
+                            :is-variant (ctk/is-variant? component)})
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})

@@ -895,6 +895,7 @@
                 (rx/map (fn [shape]
                           (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
                                 external-lib? (not= file-id (:component-file shape))
+                                component     (get-in libraries [(:component-file shape) :data :components (:component-id shape)])
                                 origin        "workspace:paste"]
 
                             ;; NOTE: we don't emit the create-shape event all the time for
@@ -905,7 +906,8 @@
                                          ::ev/origin origin
                                          :is-external-library external-lib?
                                          :type (get shape :type)
-                                         :parent-type parent-type})
+                                         :parent-type parent-type
+                                         :is-variant (ctc/is-variant? component)})
                               (if (cfh/has-layout? objects (:parent-id shape))
                                 (ev/event {::ev/name "layout-add-element"
                                            ::ev/origin origin

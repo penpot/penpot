@@ -21,6 +21,7 @@
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.common :as dcm]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.colors :as cl]
    [app.main.data.workspace.libraries :as dwl]
@@ -85,6 +86,12 @@
             undo-id (js/Symbol)]
 
         (rx/of
+         (when (seq properties-to-remove)
+           (ptk/event ::ev/event {::ev/name "variant-edit-property-value" :trigger "rename-in-layers"}))
+         (when (seq properties-to-update)
+           (ptk/event ::ev/event {::ev/name "variant-edit-property-value" :trigger "rename-in-layers"}))
+         (when (seq properties-to-add)
+           (ptk/event ::ev/event {::ev/name "variant-add-property" :trigger "rename-in-layers"}))
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
@@ -221,10 +228,12 @@
 
             undo-id (js/Symbol)]
 
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (dwu/commit-undo-transaction undo-id))))))
+        (when (seq (:redo-changes changes))
+          (rx/of
+           (ptk/event ::ev/event {::ev/name "variant-remove-property" :trigger "rename-in-layers"})
+           (dwu/start-undo-transaction undo-id)
+           (dch/commit-changes changes)
+           (dwu/commit-undo-transaction undo-id)))))))
 
 
 (defn add-new-property
@@ -458,11 +467,16 @@
             undo-id              (js/Symbol)]
         (cond
           transform-in-variant?
-          (rx/of (transform-in-variant (:id first-shape)))
+          (rx/of
+           (ptk/event ::ev/event {::ev/name "transform-in-variant" :trigger "shortcut"})
+           (transform-in-variant (:id first-shape)))
+
 
           add-new-variant?
           (rx/concat
-           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/of
+            (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "shortcut-create-component"})
+            (dwu/start-undo-transaction undo-id))
            (rx/from (map add-new-variant selected-ids))
            (rx/of (dwu/commit-undo-transaction undo-id)))
 
@@ -482,7 +496,9 @@
             undo-id              (js/Symbol)]
         (if add-new-variant?
           (rx/concat
-           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/of
+            (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "shortcut-duplicate"})
+            (dwu/start-undo-transaction undo-id))
            (rx/from (map add-new-variant selected-ids))
            (rx/of (dwu/commit-undo-transaction undo-id)))
           (rx/of (dws/duplicate-selected true)))))))

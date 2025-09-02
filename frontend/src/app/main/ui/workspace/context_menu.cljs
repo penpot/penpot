@@ -580,7 +580,9 @@
         do-combine-as-variants     (mf/use-fn #(st/emit! (dwv/combine-as-variants)))
         do-add-variant             (mf/use-fn
                                     (mf/deps shapes)
-                                    #(st/emit! (dwv/add-new-variant (:id (first shapes)))))]
+                                    #(st/emit!
+                                      (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "context-menu-component"})
+                                      (dwv/add-new-variant (:id (first shapes)))))]
     [:*
      (when can-make-component ;; We don't want to change the structure of component copies
        [:*
