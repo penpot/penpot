@@ -102,11 +102,9 @@ pub fn render_text_drop_shadows(
     shape: &Shape,
     paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
-    shadows: Vec<Shadow>,
-    surface_id: SurfaceId,
 ) {
-    for shadow in shadows.iter().rev().filter(|s| !s.hidden()) {
-        render_text_drop_shadow(render_state, shape, shadow, paragraphs, antialias, surface_id);
+    for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+        render_text_drop_shadow(render_state, shape, shadow, paragraphs, antialias);
     }
 }
 
@@ -139,7 +137,6 @@ pub fn render_text_drop_shadow(
     shadow: &Shadow,
     paragraphs: &mut [Vec<ParagraphBuilder>],
     antialias: bool,
-    surface_id: SurfaceId,
 ) {
     let paint = shadow.get_drop_shadow_paint(antialias, shape.image_filter(1.).as_ref());
 
@@ -147,7 +144,7 @@ pub fn render_text_drop_shadow(
         render_state,
         shape,
         paragraphs,
-        Some(surface_id),
+        Some(SurfaceId::DropShadows),
         Some(&paint),
     );
 }

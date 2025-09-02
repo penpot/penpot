@@ -443,75 +443,6 @@ impl RenderState {
 
         let antialias = shape.should_use_antialias(self.get_scale());
 
-        // We don't want to change the value in the global state
-        let mut shape: Cow<Shape> = Cow::Borrowed(shape);
-
-        if let Some(shape_modifiers) = modifiers.get(&shape.id) {
-            shape.to_mut().apply_transform(shape_modifiers);
-        }
-
-        let mut nested_blur_value = 0.;
-        for nested_blur in self.nested_blurs.iter().flatten() {
-            if !nested_blur.hidden && nested_blur.blur_type == BlurType::Layer {
-                nested_blur_value += nested_blur.value.powf(2.);
-            }
-        }
-
-        if !shape.blur.hidden && shape.blur.blur_type == BlurType::Layer {
-            nested_blur_value += shape.blur.value.powf(2.);
-        }
-
-        if nested_blur_value > 0. {
-            shape
-                .to_mut()
-                .set_blur(BlurType::Layer as u8, false, nested_blur_value.sqrt());
-        }
-
-        let center = shape.center();
-        let mut matrix = shape.transform;
-        matrix.post_translate(center);
-        matrix.pre_translate(-center);
-
-        let mut nested_shadows_context = vec![];
-        if let Some(origin_shape) = self.nested_shadows_context.last() {
-            if let Type::Frame(_) = &origin_shape.shape_type {
-                nested_shadows_context = origin_shape.drop_shadows().cloned().collect();
-
-                let mut origin_shape: Cow<Shape> = Cow::Borrowed(origin_shape);
-                if let Some(shape_modifiers) = modifiers.get(&origin_shape.id) {
-                    origin_shape.to_mut().apply_transform(shape_modifiers);
-                }
-
-                // Rotate the nested shadow surface if the origin_shape had a rotation
-                let shadow_bounds = origin_shape.get_frame_shadows_bounds();
-                let mut rotation_matrix = Matrix::default();
-                rotation_matrix.set_rotate(origin_shape.rotation, None);
-                rotation_matrix.post_translate(center);
-                rotation_matrix.pre_translate(-center);
-
-                self.surfaces.canvas(SurfaceId::NestedShadows).save();
-                self.surfaces
-                    .canvas(SurfaceId::NestedShadows)
-                    .concat(&rotation_matrix);
-
-                if origin_shape.clip() {
-                    self.surfaces.canvas(SurfaceId::NestedShadows).clip_rect(
-                        shadow_bounds,
-                        skia::ClipOp::Intersect,
-                        true,
-                    );
-                }
-            }
-        }
-
-        let surface_ids = SurfaceId::Strokes as u32
-        | SurfaceId::Fills as u32
-        | SurfaceId::DropShadows as u32
-        | SurfaceId::InnerShadows as u32;
-        self.surfaces.apply_mut(surface_ids, |s| {
-            s.canvas().concat(&matrix);
-        });
-
         // set clipping
         if let Some((bounds, corners, transform)) = clip_bounds {
             self.surfaces.apply_mut(surface_ids, |s| {
@@ -549,8 +480,43 @@ impl RenderState {
             });
         }
 
+        // We don't want to change the value in the global state
+        let mut shape: Cow<Shape> = Cow::Borrowed(shape);
+
+        if let Some(shape_modifiers) = modifiers.get(&shape.id) {
+            shape.to_mut().apply_transform(shape_modifiers);
+        }
+
+        let mut nested_blur_value = 0.;
+        for nested_blur in self.nested_blurs.iter().flatten() {
+            if !nested_blur.hidden && nested_blur.blur_type == BlurType::Layer {
+                nested_blur_value += nested_blur.value.powf(2.);
+            }
+        }
+
+        if !shape.blur.hidden && shape.blur.blur_type == BlurType::Layer {
+            nested_blur_value += shape.blur.value.powf(2.);
+        }
+
+        if nested_blur_value > 0. {
+            shape
+                .to_mut()
+                .set_blur(BlurType::Layer as u8, false, nested_blur_value.sqrt());
+        }
+
+        let center = shape.center();
+        let mut matrix = shape.transform;
+        matrix.post_translate(center);
+        matrix.pre_translate(-center);
+
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
+                if let Some(shape_modifiers) = modifiers.get(&shape.id) {
+                    self.surfaces
+                        .canvas(SurfaceId::Fills)
+                        .concat(shape_modifiers);
+                }
+                self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas(SurfaceId::Fills))
                 } else {
@@ -569,6 +535,14 @@ impl RenderState {
             }
 
             Type::Text(text_content) => {
+                let surface_ids = SurfaceId::Strokes as u32
+                    | SurfaceId::Fills as u32
+                    | SurfaceId::DropShadows as u32
+                    | SurfaceId::InnerShadows as u32;
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().concat(&matrix);
+                });
+
                 let text_content = text_content.new_bounds(shape.selrect());
                 let mut paragraphs = text_content.get_skia_paragraphs(
                     shape.image_filter(1.).as_ref(),
@@ -576,8 +550,7 @@ impl RenderState {
                 );
 
                 if !shape.has_visible_strokes() {
-                    shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias, nested_shadows_context.clone(), SurfaceId::NestedShadows);
-                    shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias, shape.drop_shadows().cloned().collect(), SurfaceId::DropShadows);
+                    shadows::render_text_drop_shadows(self, &shape, &mut paragraphs, antialias);
                 }
 
                 text::render(self, &shape, &mut paragraphs, None, None);
@@ -594,16 +567,6 @@ impl RenderState {
                         &shape,
                         &mut stroke_paragraphs,
                         antialias,
-                        nested_shadows_context.clone(), 
-                        SurfaceId::NestedShadows,
-                    );
-                    shadows::render_text_drop_shadows(
-                        self,
-                        &shape,
-                        &mut stroke_paragraphs,
-                        antialias,
-                        shape.drop_shadows().cloned().collect(), 
-                        SurfaceId::DropShadows,
                     );
                     strokes::render(
                         self,
@@ -626,6 +589,14 @@ impl RenderState {
                 shadows::render_text_inner_shadows(self, &shape, &mut paragraphs, antialias);
             }
             _ => {
+                let surface_ids = SurfaceId::Strokes as u32
+                    | SurfaceId::Fills as u32
+                    | SurfaceId::DropShadows as u32
+                    | SurfaceId::InnerShadows as u32;
+                self.surfaces.apply_mut(surface_ids, |s| {
+                    s.canvas().concat(&matrix);
+                });
+
                 let shape = if let Type::Bool(_) = &shape.shape_type {
                     // If any child transform doesn't match the parent transform means
                     // that the children is transformed and we need to recalculate the
@@ -657,6 +628,38 @@ impl RenderState {
                 } else {
                     for fill in shape.fills().rev() {
                         fills::render(self, shape, fill, antialias);
+                    }
+                }
+
+                let mut nested_shadows_context = vec![];
+                if let Some(origin_shape) = self.nested_shadows_context.last() {
+                    if let Type::Frame(_) = &origin_shape.shape_type {
+                        nested_shadows_context = origin_shape.drop_shadows().cloned().collect();
+
+                        let mut origin_shape: Cow<Shape> = Cow::Borrowed(origin_shape);
+                        if let Some(shape_modifiers) = modifiers.get(&origin_shape.id) {
+                            origin_shape.to_mut().apply_transform(shape_modifiers);
+                        }
+
+                        // Rotate the nested shadow surface if the origin_shape had a rotation
+                        let shadow_bounds = origin_shape.get_frame_shadows_bounds();
+                        let mut rotation_matrix = Matrix::default();
+                        rotation_matrix.set_rotate(origin_shape.rotation, None);
+                        rotation_matrix.post_translate(center);
+                        rotation_matrix.pre_translate(-center);
+
+                        self.surfaces.canvas(SurfaceId::NestedShadows).save();
+                        self.surfaces
+                            .canvas(SurfaceId::NestedShadows)
+                            .concat(&rotation_matrix);
+
+                        if origin_shape.clip() {
+                            self.surfaces.canvas(SurfaceId::NestedShadows).clip_rect(
+                                shadow_bounds,
+                                skia::ClipOp::Intersect,
+                                true,
+                            );
+                        }
                     }
                 }
 
