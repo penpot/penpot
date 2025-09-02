@@ -1,7 +1,7 @@
 use crate::{
     math::{Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
-    textlayout::paragraph_builders_from_text,
+    textlayout::paragraph_builder_group_from_text,
 };
 
 use skia_safe::{self as skia, paint::Paint, textlayout::ParagraphStyle, ImageFilter, MaskFilter};
@@ -86,7 +86,7 @@ impl TextContent {
 
     pub fn width(&self) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
-            let temp_paragraphs = paragraph_builders_from_text(self, None, None, None);
+            let temp_paragraphs = paragraph_builder_group_from_text(self, None, None, None);
             let mut temp_paragraphs = temp_paragraphs;
             auto_width(&mut temp_paragraphs, f32::MAX).ceil()
         } else {
@@ -104,7 +104,7 @@ impl TextContent {
 
     pub fn visual_bounds(&self) -> (f32, f32) {
         let paragraph_width = self.width();
-        let mut paragraphs = paragraph_builders_from_text(self, None, None, None);
+        let mut paragraphs = paragraph_builder_group_from_text(self, None, None, None);
         let paragraph_height = auto_height(&mut paragraphs, paragraph_width);
         (paragraph_width, paragraph_height)
     }

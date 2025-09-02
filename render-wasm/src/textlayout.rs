@@ -51,12 +51,14 @@ pub fn build_paragraphs_with_width(
         .collect()
 }
 
-pub fn paragraph_builders_from_text(
+type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
+
+pub fn paragraph_builder_group_from_text(
     text_content: &TextContent,
     blur: Option<&ImageFilter>,
     blur_mask: Option<&MaskFilter>,
     shadow: Option<&Paint>,
-) -> Vec<Vec<ParagraphBuilder>> {
+) -> Vec<ParagraphBuilderGroup> {
     let fonts = get_font_collection();
     let fallback_fonts = get_fallback_fonts();
     let mut paragraph_group = Vec::new();
@@ -82,7 +84,7 @@ pub fn paragraph_builders_from_text(
     paragraph_group
 }
 
-pub fn stroke_paragraph_builders_from_text(
+pub fn stroke_paragraph_builder_group_from_text(
     text_content: &TextContent,
     stroke: &Stroke,
     bounds: &Rect,
@@ -90,7 +92,7 @@ pub fn stroke_paragraph_builders_from_text(
     blur_mask: Option<&MaskFilter>,
     shadow: Option<&Paint>,
     count_inner_strokes: usize,
-) -> Vec<Vec<ParagraphBuilder>> {
+) -> Vec<ParagraphBuilderGroup> {
     let fallback_fonts = get_fallback_fonts();
     let fonts = get_font_collection();
     let mut paragraph_group = Vec::new();

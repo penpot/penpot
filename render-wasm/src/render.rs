@@ -24,7 +24,9 @@ pub use surfaces::{SurfaceId, Surfaces};
 use crate::performance;
 use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, StructureEntry, Type};
 use crate::state::ShapesPool;
-use crate::textlayout::{paragraph_builders_from_text, stroke_paragraph_builders_from_text};
+use crate::textlayout::{
+    paragraph_builder_group_from_text, stroke_paragraph_builder_group_from_text,
+};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -542,7 +544,7 @@ impl RenderState {
                 let inner_shadows = shape.inner_shadow_paints();
                 let blur_filter = shape.image_filter(1.);
                 let blur_mask = shape.mask_filter(1.);
-                let mut paragraphs = paragraph_builders_from_text(
+                let mut paragraphs = paragraph_builder_group_from_text(
                     &text_content,
                     blur_filter.as_ref(),
                     blur_mask.as_ref(),
@@ -552,7 +554,7 @@ impl RenderState {
                 // Render all drop shadows if there are no visible strokes
                 if !shape.has_visible_strokes() && !drop_shadows.is_empty() {
                     for drop_shadow in &drop_shadows {
-                        let mut paragraphs_with_drop_shadows = paragraph_builders_from_text(
+                        let mut paragraphs_with_drop_shadows = paragraph_builder_group_from_text(
                             &text_content,
                             blur_filter.as_ref(),
                             blur_mask.as_ref(),
@@ -571,7 +573,7 @@ impl RenderState {
                 for stroke in shape.visible_strokes().rev() {
                     for drop_shadow in &drop_shadows {
                         let mut stroke_paragraphs_with_drop_shadows =
-                            stroke_paragraph_builders_from_text(
+                            stroke_paragraph_builder_group_from_text(
                                 &text_content,
                                 stroke,
                                 &shape.selrect(),
@@ -587,7 +589,7 @@ impl RenderState {
                         );
                     }
 
-                    let mut stroke_paragraphs = stroke_paragraph_builders_from_text(
+                    let mut stroke_paragraphs = stroke_paragraph_builder_group_from_text(
                         &text_content,
                         stroke,
                         &shape.selrect(),
@@ -609,7 +611,7 @@ impl RenderState {
 
                     for inner_shadow in &inner_shadows {
                         let mut stroke_paragraphs_with_inner_shadows =
-                            stroke_paragraph_builders_from_text(
+                            stroke_paragraph_builder_group_from_text(
                                 &text_content,
                                 stroke,
                                 &shape.selrect(),
@@ -627,7 +629,7 @@ impl RenderState {
                 }
 
                 for inner_shadow in &inner_shadows {
-                    let mut paragraphs_with_inner_shadows = paragraph_builders_from_text(
+                    let mut paragraphs_with_inner_shadows = paragraph_builder_group_from_text(
                         &text_content,
                         blur_filter.as_ref(),
                         blur_mask.as_ref(),
