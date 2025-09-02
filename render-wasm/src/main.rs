@@ -7,6 +7,7 @@ mod performance;
 mod render;
 mod shapes;
 mod state;
+mod textlayout;
 mod tiles;
 mod utils;
 mod uuid;

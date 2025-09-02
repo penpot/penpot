@@ -1,20 +1,20 @@
 use std::collections::{HashMap, HashSet, VecDeque};
-pub mod common;
+
 mod constraints;
 mod flex_layout;
+
+pub mod common;
 pub mod grid_layout;
 
+use crate::math::{self as math, bools, identitish, Bounds, Matrix, Point};
 use common::GetBounds;
 
-use crate::math::bools;
-use crate::math::{self as math, identitish, Bounds, Matrix, Point};
-
 use crate::shapes::{
-    auto_height, ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape,
-    StructureEntry, TransformEntry, Type,
+    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, StructureEntry,
+    TransformEntry, Type,
 };
-use crate::state::ShapesPool;
-use crate::state::State;
+use crate::state::{ShapesPool, State};
+use crate::textlayout::{auto_height, paragraph_builder_group_from_text};
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
@@ -200,7 +200,7 @@ fn propagate_transform(
         match content.grow_type() {
             GrowType::AutoHeight => {
                 let paragraph_width = shape_bounds_after.width();
-                let mut paragraphs = content.to_paragraphs(None, None, None);
+                let mut paragraphs = paragraph_builder_group_from_text(content, None, None, None);
                 let height = auto_height(&mut paragraphs, paragraph_width);
                 let resize_transform = math::resize_matrix(
                     &shape_bounds_after,
@@ -212,8 +212,8 @@ fn propagate_transform(
                 transform.post_concat(&resize_transform);
             }
             GrowType::AutoWidth => {
-                let paragraph_width = content.get_width();
-                let mut paragraphs = content.to_paragraphs(None, None, None);
+                let paragraph_width = content.width();
+                let mut paragraphs = paragraph_builder_group_from_text(content, None, None, None);
                 let height = auto_height(&mut paragraphs, paragraph_width);
                 let resize_transform = math::resize_matrix(
                     &shape_bounds_after,
