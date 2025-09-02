@@ -20,7 +20,7 @@ impl TextPaths {
         let mut paths = Vec::new();
 
         let mut offset_y = self.bounds.y();
-        let mut paragraphs = self.to_paragraphs(None, None);
+        let mut paragraphs = self.to_paragraphs(None, None, None);
 
         for paragraphs in paragraphs.iter_mut() {
             for paragraph_builder in paragraphs.iter_mut() {
