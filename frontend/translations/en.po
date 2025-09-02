@@ -1853,6 +1853,10 @@ msgstr "Info"
 msgid "labels.styles"
 msgstr "Styles"
 
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Layer info"
+
 #: src/app/main/ui/inspect/styles/style_box.cljs:10
 msgid "inspect.tabs.styles.panel.variant"
 msgstr "Variant properties"

@@ -4,11 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as *;
+@use "../../ds/typography.scss" as *;
 
 // TOKENS ROW
 
-.attribute-row {
+.property-row {
   --term-color: var(--color-foreground-secondary);
   --detail-color: var(--color-foreground-primary);
 
@@ -16,17 +16,17 @@
   padding-block: var(--sp-s);
 }
 
-.attribute-term,
-.attribute-detail {
+.property-term,
+.property-detail {
   @include use-typography("body-small");
 }
 
-.attribute-term {
+.property-term {
   color: var(--term-color);
   flex: 1;
 }
 
-.attribute-detail {
+.property-detail {
   flex: 2;
   color: var(--detail-color);
 }

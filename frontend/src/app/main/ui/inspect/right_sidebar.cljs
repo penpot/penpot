@@ -104,7 +104,7 @@
         tabs
         (mf/with-memo []
           (if (contains? cf/flags :inspect-styles)
-            [{:label (tr "inspect.tabs.styles")
+            [{:label (tr "labels.styles")
               :id "styles"}
              {:label (tr "inspect.tabs.computed")
               :id "computed"}
@@ -179,6 +179,7 @@
             (case @section
               :styles
               [:> styles-tab* {:color-space color-space
+                               :objects objects
                                :shapes shapes
                                :libraries libraries
                                :file-id file-id}]
