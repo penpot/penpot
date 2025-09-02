@@ -972,10 +972,141 @@ test.describe("Tokens: Themes modal", () => {
       await fontSizeField.fill("");
       await expect(saveButton).toBeEnabled();
 
+      // Fill in values for all fields and verify they persist when switching tabs
+      await fontSizeField.fill("16");
+
+      const fontFamilyField = tokensUpdateCreateModal
+        .getByLabel(/Font Family/i)
+        .first();
+      const fontWeightField =
+        tokensUpdateCreateModal.getByLabel(/Font Weight/i);
+      const letterSpacingField =
+        tokensUpdateCreateModal.getByLabel(/Letter Spacing/i);
+      const textCaseField = tokensUpdateCreateModal.getByLabel(/Text Case/i);
+      const textDecorationField =
+        tokensUpdateCreateModal.getByLabel(/Text Decoration/i);
+
+      // Capture all values before switching tabs
+      const originalValues = {
+        fontSize: await fontSizeField.inputValue(),
+        fontFamily: await fontFamilyField.inputValue(),
+        fontWeight: await fontWeightField.inputValue(),
+        letterSpacing: await letterSpacingField.inputValue(),
+        textCase: await textCaseField.inputValue(),
+        textDecoration: await textDecorationField.inputValue(),
+      };
+
+      // Switch to reference tab and back to composite tab
+      const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Reference",
+      });
+      await referenceTabButton.click();
+      const compositeTabButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Composite",
+      });
+      await compositeTabButton.click();
+
+      // Verify all values are preserved after switching tabs
+      await expect(fontSizeField).toHaveValue(originalValues.fontSize);
+      await expect(fontFamilyField).toHaveValue(originalValues.fontFamily);
+      await expect(fontWeightField).toHaveValue(originalValues.fontWeight);
+      await expect(letterSpacingField).toHaveValue(
+        originalValues.letterSpacing,
+      );
+      await expect(textCaseField).toHaveValue(originalValues.textCase);
+      await expect(textDecorationField).toHaveValue(
+        originalValues.textDecoration,
+      );
+
       await saveButton.click();
 
       // Modal should close, token should be visible (with new name) in sidebar
       await expect(tokensUpdateCreateModal).not.toBeVisible();
+    });
+
+    test("User cant submit empty typography token or reference", async ({
+      page,
+    }) => {
+      const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+        await setupTypographyTokensFile(page);
+
+      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+      await tokensTabPanel
+        .getByRole("button", { name: "Add Token: Typography" })
+        .click();
+
+      await expect(tokensUpdateCreateModal).toBeVisible();
+
+      const nameField = tokensUpdateCreateModal.getByLabel("Name");
+      await nameField.fill("typography.empty");
+
+      const valueField = tokensUpdateCreateModal.getByLabel("Font Size");
+
+      // Insert a value and then delete it
+      await valueField.fill("1");
+      await valueField.fill("");
+
+      // Submit button should be disabled when field is empty
+      const submitButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Save",
+      });
+      await expect(submitButton).toBeDisabled();
+
+      // Switch to reference tab, should not be submittable either
+      const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Reference",
+      });
+      await referenceTabButton.click();
+      await expect(submitButton).toBeDisabled();
+    });
+
+    test("User adds typography token with reference", async ({ page }) => {
+      const { tokensUpdateCreateModal, tokenThemesSetsSidebar, tokensSidebar } =
+        await setupTypographyTokensFile(page);
+
+      const newTokenTitle = "NewReference";
+
+      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+      await tokensTabPanel
+        .getByRole("button", { name: "Add Token: Typography" })
+        .click();
+
+      await expect(tokensUpdateCreateModal).toBeVisible();
+
+      const nameField = tokensUpdateCreateModal.getByLabel("Name");
+      await nameField.fill(newTokenTitle);
+
+      const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Reference",
+      });
+      referenceTabButton.click();
+
+      const referenceField = tokensUpdateCreateModal.getByLabel("Reference");
+      await referenceField.fill("{Full}");
+
+      const submitButton = tokensUpdateCreateModal.getByRole("button", {
+        name: "Save",
+      });
+
+      const resolvedValue =
+        await tokensUpdateCreateModal.getByText("Resolved value:");
+      await expect(resolvedValue).toBeVisible();
+      await expect(resolvedValue).toContainText("Font Family: 42dot Sans");
+      await expect(resolvedValue).toContainText("Font Size: 100");
+      await expect(resolvedValue).toContainText("Font Weight: 300");
+      await expect(resolvedValue).toContainText("Letter Spacing: 2");
+      await expect(resolvedValue).toContainText("Text Case: uppercase");
+      await expect(resolvedValue).toContainText("Text Decoration: underline");
+
+      await expect(submitButton).toBeEnabled();
+      await submitButton.click();
+
+      await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+      const newToken = tokensSidebar.getByRole("button", {
+        name: newTokenTitle,
+      });
+      await expect(newToken).toBeVisible();
     });
   });
 });

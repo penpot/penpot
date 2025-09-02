@@ -14,6 +14,7 @@
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon-list]]
+   [app.main.ui.workspace.tokens.management.tooltip :as wtmt]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -41,7 +42,7 @@
                                 (str/join "\n"))
                   errors (->> (wte/humanize-errors errors)
                               (str/join "\n"))
-                  :else (tr "workspace.tokens.resolved-value" (or resolved-value result)))
+                  :else (tr "workspace.tokens.resolved-value" (wtmt/format-token-value (or resolved-value result))))
         type (cond
                empty-message? "hint"
                errors "error"

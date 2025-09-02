@@ -207,15 +207,27 @@
               (assoc err :typography-key k)))
           token-values)))
 
+(defn invalidate-empty-typography-token [token]
+  (when (empty? (:value token))
+    (wte/get-error-code :error.token/empty-input)))
+
 (defn validate-typography-token
-  [props]
-  (-> props
-      (update :token-value
-              (fn [v]
-                (-> (or v {})
-                    (d/update-when :font-family #(if (string? %) (ctt/split-font-family %) %)))))
-      (assoc :validators [invalidate-typography-token-self-reference])
-      (default-validate-token)))
+  [{:keys [token-value] :as props}]
+  (cond
+    ;; Entering form without a value - show no error just resolve nil
+    (nil? token-value) (rx/of nil)
+    ;; Validate refrence string
+    (ctt/typography-composite-token-reference? token-value) (default-validate-token props)
+    ;; Validate composite token
+    :else
+    (-> props
+        (update :token-value
+                (fn [v]
+                  (-> (or v {})
+                      (d/update-when :font-family #(if (string? %) (ctt/split-font-family %) %)))))
+        (assoc :validators [invalidate-empty-typography-token
+                            invalidate-typography-token-self-reference])
+        (default-validate-token))))
 
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
@@ -365,6 +377,11 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
         token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
         token-resolve-result (deref token-resolve-result*)
 
+        clear-resolve-value
+        (mf/use-fn
+         (fn []
+           (reset! token-resolve-result* nil)))
+
         set-resolve-value
         (mf/use-fn
          (mf/deps on-value-resolve)
@@ -399,7 +416,6 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
         (mf/use-fn
          (mf/deps on-update-value-debounced)
          (fn [next-value]
-           (dom/set-value! (mf/ref-val value-input-ref) next-value)
            (mf/set-ref-val! value-ref next-value)
            (on-update-value-debounced next-value)))
 
@@ -576,7 +592,8 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              :on-update-value on-update-value
              :on-external-update-value on-external-update-value
              :custom-input-token-value-props custom-input-token-value-props
-             :token-resolve-result token-resolve-result}]
+             :token-resolve-result token-resolve-result
+             :clear-resolve-value clear-resolve-value}]
            [:> input-tokens-value*
             {:placeholder placeholder
              :label label
@@ -716,6 +733,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                  color-value (-> (tinycolor/valid-color hex-value)
                                  (tinycolor/set-alpha (or alpha 1))
                                  (tinycolor/->string format))]
+             (dom/set-value! (mf/ref-val input-ref) color-value)
              (on-external-update-value color-value))))]
 
     [:*
@@ -897,7 +915,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
     {:label "Text Decoration"
      :placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
 
-(mf/defc typography-inputs*
+(mf/defc typography-value-inputs*
   [{:keys [default-value on-blur on-update-value token-resolve-result]}]
   (let [typography-inputs (mf/use-memo typography-inputs)
         errors-by-key (sd/collect-typography-errors token-resolve-result)]
@@ -928,12 +946,12 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                 (-> (obj/set! e "tokenType" k)
                     (on-update-value))))]
 
-         [:div {:class (stl/css :input-row)}
+         [:div {:key (str k)
+                :class (stl/css :input-row)}
           (case k
             :font-family
             [:> font-picker*
-             {:key (str k)
-              :label label
+             {:label label
               :placeholder placeholder
               :input-ref input-ref
               :default-value (when value (ctt/join-font-family value))
@@ -942,13 +960,70 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
               :on-external-update-value on-external-update-value
               :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}]
             [:> input-tokens-value*
-             {:key (str k)
-              :label label
+             {:label label
               :placeholder placeholder
               :default-value value
               :on-blur on-blur
               :on-change on-change
               :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}])]))]))
+
+(mf/defc typography-reference-input*
+  [{:keys [default-value on-blur on-update-value token-resolve-result]}]
+  [:> input-tokens-value*
+   {:label "Reference"
+    :placeholder "Reference"
+    :default-value (when (ctt/typography-composite-token-reference? default-value) default-value)
+    :on-blur on-blur
+    :on-change on-update-value
+    :token-resolve-result (when (or
+                                 (:errors token-resolve-result)
+                                 (string? (:value token-resolve-result)))
+                            token-resolve-result)}])
+
+(mf/defc typography-inputs*
+  [{:keys [default-value on-update-value on-external-update-value on-value-resolve clear-resolve-value] :rest props}]
+  (let [;; Active Tab State
+        active-tab* (mf/use-state (if (ctt/typography-composite-token-reference? default-value) :reference :composite))
+        active-tab (deref active-tab*)
+        reference-tab-active? (= :reference active-tab)
+        ;; Backup value ref
+        ;; Used to restore the previously entered value when switching tabs
+        ;; Uses ref to not trigger state updates during update
+        backup-state-ref (mf/use-var
+                          (if reference-tab-active?
+                            {:reference default-value}
+                            {:composite default-value}))
+        default-value (get @backup-state-ref active-tab)
+
+        on-toggle-tab
+        (mf/use-fn
+         (mf/deps active-tab on-external-update-value on-value-resolve clear-resolve-value)
+         (fn []
+           (let [next-tab (if (= active-tab :composite) :reference :composite)]
+             ;; Clear the resolved value so it wont show up before the next-tab value has resolved
+             (clear-resolve-value)
+             ;; Restore the internal value from backup
+             (on-external-update-value (get @backup-state-ref next-tab))
+             (reset! active-tab* next-tab))))
+
+        ;; Store token value in the backup-state-ref
+        on-update-reference-value
+        (mf/use-fn
+         (mf/deps on-update-value active-tab)
+         (fn [e]
+           (if reference-tab-active?
+             (swap! backup-state-ref assoc :reference (dom/get-target-val e))
+             (swap! backup-state-ref assoc-in [:composite (obj/get e "tokenType")] (dom/get-target-val e)))
+           (on-update-value e)))
+
+        input-props (mf/spread-props props {:default-value default-value
+                                            :on-update-value on-update-reference-value})]
+    [:div {:class (stl/css :nested-input-row)}
+     [:button {:on-click on-toggle-tab :type "button"}
+      (if reference-tab-active? "Composite" "Reference")]
+     (if reference-tab-active?
+       [:> typography-reference-input* input-props]
+       [:> typography-value-inputs* input-props])]))
 
 (mf/defc typography-form*
   [{:keys [token] :rest props}]
@@ -956,10 +1031,13 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
         (mf/use-callback
          (fn [e prev-value]
            (let [token-type (obj/get e "tokenType")
-                 input-value (dom/get-target-val e)]
-             (if (empty? input-value)
-               (dissoc prev-value token-type)
-               (assoc prev-value token-type input-value)))))]
+                 input-value (dom/get-target-val e)
+                 reference-value-input? (not token-type)]
+             (cond
+               reference-value-input? input-value
+
+               (empty? input-value) (dissoc prev-value token-type)
+               :else (assoc prev-value token-type input-value)))))]
     [:> form*
      (mf/spread-props props {:token token
                              :custom-input-token-value typography-inputs*

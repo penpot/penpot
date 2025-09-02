@@ -7523,6 +7523,10 @@ msgstr ""
 "Invalid font weight value: use numeric values (100-950) or standard names "
 "(thin, light, regular, bold, etc.) optionally followed by 'Italic'"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:91
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "Invalid typography value: this should be a reference value to another composite typography token."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:23
 msgid "workspace.tokens.invalid-json"
 msgstr "Import Error: Invalid token data in JSON."

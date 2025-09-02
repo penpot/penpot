@@ -12,6 +12,7 @@
 
   @include use-typography("body-small");
   color: var(--hint-color);
+  white-space: pre;
 }
 
 .type-hint {

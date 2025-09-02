@@ -441,3 +441,8 @@
     (when (font-weight-values weight)
       (cond-> {:weight weight}
         italic? (assoc :style "italic")))))
+
+(defn typography-composite-token-reference?
+  "Predicate if a typography composite token is a reference value - a string pointing to another reference token."
+  [token-value]
+  (string? token-value))
