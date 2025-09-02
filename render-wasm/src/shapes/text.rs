@@ -163,7 +163,7 @@ impl TextContent {
                         blur,
                         blur_mask,
                         shadow,
-                        !leaf.is_transparent(),
+                        leaf.is_transparent(),
                     )
                 } else {
                     get_text_stroke_paints(
@@ -784,7 +784,6 @@ fn get_text_stroke_paints_with_shadows(
             let mut paint = skia_safe::Paint::default();
             paint.set_style(skia::PaintStyle::Fill);
             paint.set_anti_alias(true);
-            paint.set_stroke_width(stroke.width * 2.0);
 
             if let Some(blur) = blur {
                 paint.set_image_filter(blur.clone());
@@ -796,7 +795,7 @@ fn get_text_stroke_paints_with_shadows(
 
             paints.push(paint.clone());
 
-            if !is_transparent {
+            if is_transparent {
                 let image_filter = skia_safe::image_filters::erode(
                     (stroke.width, stroke.width),
                     paint.image_filter(),
@@ -821,9 +820,9 @@ fn get_text_stroke_paints_with_shadows(
             }
 
             if is_transparent {
-                paint.set_style(skia::PaintStyle::StrokeAndFill);
-            } else {
                 paint.set_style(skia::PaintStyle::Stroke);
+            } else {
+                paint.set_style(skia::PaintStyle::StrokeAndFill);
             }
 
             paints.push(paint);
@@ -844,7 +843,7 @@ fn get_text_stroke_paints_with_shadows(
 
             paints.push(paint.clone());
 
-            if !is_transparent {
+            if is_transparent {
                 let image_filter = skia_safe::image_filters::erode(
                     (stroke.width, stroke.width),
                     paint.image_filter(),

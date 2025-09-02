@@ -550,7 +550,7 @@ impl RenderState {
                         let mut paragraphs_with_drop_shadows = text_content.to_paragraphs(
                             blur_filter.as_ref(),
                             blur_mask.as_ref(),
-                            Some(&drop_shadow),
+                            Some(drop_shadow),
                         );
                         shadows::render_text_drop_shadows(
                             self,
@@ -570,7 +570,7 @@ impl RenderState {
                                 &shape.selrect(),
                                 blur_filter.as_ref(),
                                 blur_mask.as_ref(),
-                                Some(&drop_shadow),
+                                Some(drop_shadow),
                                 count_inner_strokes,
                             );
                         shadows::render_text_drop_shadows(
@@ -606,7 +606,7 @@ impl RenderState {
                                 &shape.selrect(),
                                 blur_filter.as_ref(),
                                 blur_mask.as_ref(),
-                                Some(&inner_shadow),
+                                Some(inner_shadow),
                                 count_inner_strokes,
                             );
                         shadows::render_text_inner_shadows(
@@ -621,7 +621,7 @@ impl RenderState {
                     let mut paragraphs_with_inner_shadows = text_content.to_paragraphs(
                         blur_filter.as_ref(),
                         blur_mask.as_ref(),
-                        Some(&inner_shadow),
+                        Some(inner_shadow),
                     );
                     shadows::render_text_inner_shadows(
                         self,
