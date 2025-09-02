@@ -1,20 +1,20 @@
 use std::collections::{HashMap, HashSet, VecDeque};
-pub mod common;
+
 mod constraints;
 mod flex_layout;
+
+pub mod common;
 pub mod grid_layout;
 
+use crate::math::{self as math, bools, identitish, Bounds, Matrix, Point};
 use common::GetBounds;
 
-use crate::math::bools;
-use crate::math::{self as math, identitish, Bounds, Matrix, Point};
-
 use crate::shapes::{
-    auto_height, ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape,
-    StructureEntry, TransformEntry, Type,
+    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, StructureEntry,
+    TransformEntry, Type,
 };
-use crate::state::ShapesPool;
-use crate::state::State;
+use crate::state::{ShapesPool, State};
+use crate::textlayout::auto_height;
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
