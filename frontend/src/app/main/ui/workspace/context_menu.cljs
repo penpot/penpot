@@ -568,6 +568,7 @@
   [{:keys [shapes]}]
   (let [single?                    (= (count shapes) 1)
         objects                    (deref refs/workspace-page-objects)
+        shapes                     (keep (d/getf objects) shapes)
         can-make-component         (every? true? (map #(ctn/valid-shape-for-component? objects %) shapes))
         heads                      (filter ctk/instance-head? shapes)
         components-menu-entries    (cmm/generate-components-menu-entries heads)
