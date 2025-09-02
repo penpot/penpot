@@ -8,12 +8,13 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.refs :as refs]
    [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
+   [app.main.ui.inspect.styles.panels.variants-panel :refer [variants-panel*]]
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 
-(def type->options
+(def type->panel-group
   {:multiple [:fill :stroke :text :shadow :blur :layout-element]
    :frame    [:visibility :geometry :fill :stroke :shadow :blur :layout :layout-element]
    :group    [:visibility :geometry :svg :layout-element]
@@ -34,27 +35,31 @@
     :multiple))
 
 (mf/defc styles-tab*
-  [{:keys [color-space shapes libraries file-id]}]
+  [{:keys [color-space shapes libraries objects file-id]}]
   (let [data               (dm/get-in libraries [file-id :data])
         first-shape        (first shapes)
-        first-component    (mf/with-memo (ctkl/get-component data (:component-id first-shape)))
-        type               (mf/with-memo (get-shape-type shapes first-shape first-component))
-
-        ;; Must be reviewed for performance and code clarity
+        first-component    (ctkl/get-component data (:component-id first-shape))
+        type               (get-shape-type shapes first-shape first-component)
         tokens-lib         (mf/deref refs/tokens-lib)
         active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
         active-sets
         (mf/with-memo [tokens-lib]
           (some-> tokens-lib (ctob/get-active-themes-set-names)))
-        options            (type->options type)]
+        panels            (type->panel-group type)]
     [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
      (when (or active-themes active-sets)
        [:li
-        [:> style-box* {:attribute :token}
-         [:> tokens-panel* {:themes active-themes :sets active-sets}]]])
-     (for [option options]
-       [:li {:key (d/name option)}
-        [:> style-box* {:attribute option} color-space]])]))
+        [:> style-box* {:panel :token}
+         [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
+     (for [panel panels]
+       [:li {:key (d/name panel)}
+        [:> style-box* {:panel panel}
+         (case panel
+           :variant          [:> variants-panel* {:component first-component
+                                                  :objects objects
+                                                  :shape first-shape
+                                                  :data data}]
+           color-space)]])]))
 
 
 ;; WIP

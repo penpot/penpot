@@ -5,9 +5,10 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.util.i18n :refer [tr]]
+   [app.util.webapi :as wapi]
    [rumext.v2 :as mf]))
 
-(defn- attribute->title
+(defn- panel->title
   [type]
   (case type
     :variant    (tr "inspect.tabs.styles.panel.variant")
@@ -25,11 +26,11 @@
     nil))
 
 (mf/defc style-box*
-  [{:keys [attribute shorthand children]}]
+  [{:keys [panel shorthand children]}]
   (let [expanded* (mf/use-state true)
         expanded (deref expanded*)
 
-        title (attribute->title attribute)
+        title (panel->title panel)
 
         toggle-panel
         (mf/use-fn
@@ -40,12 +41,12 @@
         copy-shorthand
         (mf/use-fn
          (fn []
-           (js/navigator.clipboard.writeText (str "Style: " title))))]
+           (wapi/write-to-clipboard (str "Style: " title))))]
     [:article {:class (stl/css :style-box)}
      [:header {:class (stl/css :disclosure-header)}
       [:button {:class (stl/css :disclosure-button)
                 :aria-expanded expanded
-                :aria-controls (str "style-box-" (d/name attribute))
+                :aria-controls (str "style-box-" (d/name panel))
                 :on-click toggle-panel
                 :aria-label (tr "inspect.tabs.styles.panel.toggle-style" title)}
        [:> icon* {:icon-id (if expanded "arrow-down" "arrow")
@@ -58,5 +59,5 @@
                           :on-click copy-shorthand
                           :icon "clipboard"}])]
      (when expanded
-       [:div {:class (stl/css :style-box-content) :id (str "style-box-" (d/name attribute))}
+       [:div {:class (stl/css :style-box-content) :id (str "style-box-" (d/name panel))}
         [:div {:class (stl/css :style-box-panel-wrapper)} children]])]))
