@@ -57,6 +57,7 @@
     :not-component-not-allowed
     :component-nil-objects-not-allowed
     :instance-head-not-frame
+    :invalid-text-touched
     :misplaced-slot
     :missing-slot
     :shape-ref-cycle
@@ -328,6 +329,20 @@
                   "This shape has children with the same swap slot"
                   shape file page)))
 
+(defn- check-valid-touched
+  "Validate that the text touched flags are coherent."
+  [shape file page]
+  (let [touched-groups (ctk/normal-touched-groups shape)
+        content-touched? (touched-groups :content-group)
+        text-touched?    (or (touched-groups :text-content-text)
+                             (touched-groups :text-content-attribute)
+                             (touched-groups :text-content-structure))]
+    ;; For now we only check this combination, that has been reported in some bugs
+    (when (and text-touched? (not content-touched?))
+      (report-error :invalid-text-touched
+                    "This thape has text type touched but not content touched"
+                    shape file page))))
+
 (defn- check-shape-main-root-top
   "Root shape of a top main instance:
 
@@ -369,6 +384,7 @@
     (check-component-ref shape file page libraries)
     (check-empty-swap-slot shape file page)
     (check-duplicate-swap-slot shape file page)
+    (check-valid-touched shape file page)
     (run! #(check-shape % file page libraries :context :copy-top :library-exists library-exists) (:shapes shape))))
 
 (defn- check-shape-copy-root-nested
@@ -379,6 +395,7 @@
   [shape file page libraries library-exists]
   (check-component-not-main-head shape file page libraries)
   (check-component-not-root shape file page)
+  (check-valid-touched shape file page)
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists
@@ -401,6 +418,7 @@
   (check-component-not-root shape file page)
   (check-component-ref shape file page libraries)
   (check-empty-swap-slot shape file page)
+  (check-valid-touched shape file page)
   (run! #(check-shape % file page libraries :context :copy-any) (:shapes shape)))
 
 (defn- check-shape-not-component

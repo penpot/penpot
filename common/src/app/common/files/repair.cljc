@@ -491,6 +491,19 @@
         (pcb/with-library-data file-data)
         (pcb/update-component (:id shape) repair-component))))
 
+(defmethod repair-error :invalid-text-touched
+  [_ {:keys [shape page-id] :as error} file-data _]
+  (let [repair-shape
+        (fn [shape]
+          ;; Add content group
+          (log/debug :hint "  -> add :content-group to :touched-groups")
+          (update shape :touched ctk/set-touched-group :content-group))]
+
+    (log/dbg :hint "repairing shape :invalid-text-touched" :id (:id shape) :name (:name shape) :page-id page-id)
+    (-> (pcb/empty-changes nil page-id)
+        (pcb/with-file-data file-data)
+        (pcb/update-shapes [(:id shape)] repair-shape))))
+
 (defmethod repair-error :misplaced-slot
   [_ {:keys [shape page-id] :as error} file-data _]
   (let [repair-shape
