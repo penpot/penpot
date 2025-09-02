@@ -15,7 +15,7 @@ use crate::shapes::{
 };
 use crate::state::ShapesPool;
 use crate::state::State;
-use crate::textlayout::auto_height;
+use crate::textlayout::{auto_height, paragraph_builders_from_text_content};
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
@@ -201,7 +201,7 @@ fn propagate_transform(
         match content.grow_type() {
             GrowType::AutoHeight => {
                 let paragraph_width = shape_bounds_after.width();
-                let mut paragraphs = content.to_paragraph_builders(None, None);
+                let mut paragraphs = paragraph_builders_from_text_content(content, None, None);
                 let height = auto_height(&mut paragraphs, paragraph_width);
                 let resize_transform = math::resize_matrix(
                     &shape_bounds_after,
@@ -214,7 +214,7 @@ fn propagate_transform(
             }
             GrowType::AutoWidth => {
                 let paragraph_width = content.width();
-                let mut paragraphs = content.to_paragraph_builders(None, None);
+                let mut paragraphs = paragraph_builders_from_text_content(content, None, None);
                 let height = auto_height(&mut paragraphs, paragraph_width);
                 let resize_transform = math::resize_matrix(
                     &shape_bounds_after,

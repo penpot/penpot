@@ -24,6 +24,9 @@ pub use surfaces::{SurfaceId, Surfaces};
 use crate::performance;
 use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, SolidColor, StructureEntry, Type};
 use crate::state::ShapesPool;
+use crate::textlayout::{
+    paragraph_builders_from_text_content, stroke_paragraph_builders_from_text_content,
+};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -511,7 +514,8 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let mut paragraphs = text_content.to_paragraph_builders(
+                let mut paragraphs = paragraph_builders_from_text_content(
+                    &text_content,
                     shape.image_filter(1.).as_ref(),
                     shape.mask_filter(1.).as_ref(),
                 );
@@ -524,7 +528,8 @@ impl RenderState {
                 text::render(self, &shape, &mut paragraphs, None, None);
 
                 for stroke in shape.visible_strokes().rev() {
-                    let mut stroke_paragraphs = text_content.to_stroke_paragraph_builders(
+                    let mut stroke_paragraphs = stroke_paragraph_builders_from_text_content(
+                        &text_content,
                         stroke,
                         &shape.selrect(),
                         shape.image_filter(1.).as_ref(),

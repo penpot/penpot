@@ -1,4 +1,4 @@
-use crate::shapes::text::TextContent;
+use crate::{shapes::text::TextContent, textlayout::paragraph_builders_from_text_content};
 use skia_safe::{
     self as skia, textlayout::Paragraph as SkiaParagraph, FontMetrics, Point, Rect, TextBlob,
 };
@@ -20,7 +20,7 @@ impl TextPaths {
         let mut paths = Vec::new();
 
         let mut offset_y = self.bounds.y();
-        let mut paragraphs = self.to_paragraph_builders(None, None);
+        let mut paragraphs = paragraph_builders_from_text_content(&self.0, None, None);
 
         for paragraphs in paragraphs.iter_mut() {
             for paragraph_builder in paragraphs.iter_mut() {
