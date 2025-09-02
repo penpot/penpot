@@ -178,9 +178,16 @@
   min-width: deprecated.$s-300;
 }
 
-.title-field-roles {
+.title-field-role {
   position: relative;
   cursor: default;
+}
+
+.title-field-role,
+.title-field-status {
+  display: flex;
+  align-items: center;
+  gap: $s-8;
 }
 
 .field-name {
@@ -274,6 +281,11 @@
   @include deprecated.buttonStyle;
 }
 
+.input-checkbox {
+  @extend .input-checkbox;
+  cursor: pointer;
+}
+
 .actions-dropdown {
   @extend .menu-dropdown;
   bottom: calc(-1 * deprecated.$s-32);
@@ -308,8 +320,23 @@
   width: 100%;
 }
 
+.invitations-actions {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  gap: $s-16;
+  color: var(--title-foreground-color);
+  font-size: $fs-14;
+  height: $s-40;
+  margin-block-end: $s-36;
+}
+
+.error-notification {
+  margin-block-end: $s-24;
+}
+
 .table-row-invitations {
-  grid-template-columns: 43% 1fr deprecated.$s-108 deprecated.$s-12;
+  grid-template-columns: 43% 1fr deprecated.$s-88 deprecated.$s-24;
   align-items: center;
 }
 
@@ -337,10 +364,19 @@
   cursor: default;
 }
 
+.sort-inactive {
+  opacity: 0.5;
+}
+
+.sort-active {
+  opacity: 1;
+}
+
 .field-email {
   @include deprecated.textEllipsis;
   @include deprecated.bodyLargeTypography;
-  display: grid;
+  display: flex;
+  gap: deprecated.$s-16;
   align-items: center;
 }
 
@@ -587,4 +623,28 @@
   @extend .input-base;
   @include deprecated.bodySmallTypography;
   height: auto;
+}
+.input-wrapper {
+  @extend .input-checkbox;
+}
+
+// INVITATION MODAL
+
+.modal-invitation-container {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-invitation-content {
+  overflow: auto;
+}
+
+.invitation-list p {
+  margin: 0;
+}
+
+.modal-invitation-action-buttons {
+  margin-block-start: $s-32;
+  gap: $s-8;
 }
