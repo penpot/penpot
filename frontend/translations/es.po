@@ -1891,6 +1891,14 @@ msgstr "Layout de elemento"
 msgid "inspect.tabs.styles.panel.toggle-style"
 msgstr "Alternar panel %s"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Copiar al portapapeles"
+
+#: src/app/main/ui/inspect/styles/properties_row.cljs:48
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Valor resuelto:"
+
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"
 msgstr "Marcar todo como leído"
@@ -2600,6 +2608,10 @@ msgstr "Tu cuenta"
 #, unused
 msgid "labels.youtube"
 msgstr "YouTube"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variante"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "labels.fill"

@@ -6,7 +6,9 @@
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
    [app.common.types.tokens-lib :as ctob]
+   [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
+   [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
    [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
    [app.main.ui.inspect.styles.panels.variants-panel :refer [variants-panel*]]
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
@@ -45,6 +47,13 @@
         active-sets
         (mf/with-memo [tokens-lib]
           (some-> tokens-lib (ctob/get-active-themes-set-names)))
+        active-tokens
+        (mf/with-memo [tokens-lib]
+          (if tokens-lib
+            (ctob/get-tokens-in-active-sets tokens-lib)
+            {}))
+        resolved-active-tokens
+        (sd/use-resolved-tokens* active-tokens)
         panels            (type->panel-group type)]
     [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
      (when (or active-themes active-sets)
@@ -59,6 +68,9 @@
                                                   :objects objects
                                                   :shape first-shape
                                                   :data data}]
+           :geometry         [:> geometry-panel* {:shapes shapes
+                                                  :objects objects
+                                                  :resolved-tokens resolved-active-tokens}]
            color-space)]])]))
 
 

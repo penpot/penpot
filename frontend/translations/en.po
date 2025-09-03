@@ -1885,6 +1885,14 @@ msgstr "Layout Element"
 msgid "inspect.tabs.styles.panel.toggle-style"
 msgstr "Toggle panel %s"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Copy to clipboard"
+
+#: src/app/main/ui/inspect/styles/properties_row.cljs:48
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Resolved value:"
+
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"
 msgstr "Mark all as read"
