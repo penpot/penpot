@@ -822,6 +822,7 @@
      [:div {:class (stl/css :workspace-context-menu)
             :ref dropdown-ref
             :style {:top top :left left}
+            :data-testid "context-menu"
             :on-context-menu prevent-default}
 
       [:ul {:class (stl/css :context-list)}
