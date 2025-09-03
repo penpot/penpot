@@ -382,7 +382,7 @@
 
      (when (some? report)
        [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
-     
+
      [:div {:class (stl/css :buttons-container)}
       [:button {:class (stl/css :support-btn)
                 :on-click support-contact-click} (tr "labels.contact-support")]

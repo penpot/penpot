@@ -109,7 +109,7 @@
        :href "https://community.penpot.app"
        :target "_blank"}
       (tr "feedback.discourse-title")]
-     [:p {:class (stl/css :field-text :bottom-margin)} (tr "feedback.discourse-subtitle1")] 
+     [:p {:class (stl/css :field-text :bottom-margin)} (tr "feedback.discourse-subtitle1")]
 
      [:a {:class (stl/css :link)
        :href "https://twitter.com/penpotapp"
