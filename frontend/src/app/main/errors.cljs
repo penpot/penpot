@@ -286,7 +286,7 @@
       (st/emit! (modal/show {:type :alert :message message :on-accept redirect-to-dashboard})))
 
     (= :max-quote-reached code)
-    (let [message (tr "errors.max-quote-reached" (:target error))]
+    (let [message (tr "errors.max-quota-reached" (:target error))]
       (st/emit! (modal/show {:type :alert :message message})))
 
     (or (= :paste-feature-not-enabled code)

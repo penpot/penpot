@@ -102,7 +102,7 @@
 
                (and (= :restriction type)
                     (= :max-quote-reached code))
-               (swap! error* (tr "errors.max-quote-reached" (:target error)))
+               (swap! error* (tr "errors.max-quota-reached" (:target error)))
 
                (or (= :member-is-muted code)
                    (= :email-has-permanent-bounces code)

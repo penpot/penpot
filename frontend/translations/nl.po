@@ -1357,7 +1357,7 @@ msgid "errors.ldap-disabled"
 msgstr "LDAP-authenticatie is uitgeschakeld."
 
 #: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
-msgid "errors.max-quote-reached"
+msgid "errors.max-quota-reached"
 msgstr "Je hebt de limiet van '%s' bereikt. Neem contact op met support."
 
 #: src/app/main/ui/dashboard/team.cljs:185, src/app/main/ui/onboarding/team_choice.cljs:101

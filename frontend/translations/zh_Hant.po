@@ -1172,7 +1172,7 @@ msgid "errors.ldap-disabled"
 msgstr "LDAP 驗證已停用。"
 
 #: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
-msgid "errors.max-quote-reached"
+msgid "errors.max-quota-reached"
 msgstr "你已達「%s」上限。請聯絡支援。"
 
 #: src/app/main/ui/dashboard/team.cljs:185, src/app/main/ui/onboarding/team_choice.cljs:101
