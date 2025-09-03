@@ -351,7 +351,12 @@
 (mf/defc internal-error*
   [{:keys [on-reset report] :as props}]
   (let [report-uri (mf/use-ref nil)
-        on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
+        on-reset (or on-reset #(st/emit! (rt/assign-exception nil)))
+
+        support-contact-click
+        (mf/use-fn
+         (fn []
+           (st/emit! (rt/nav :settings-feedback))))
 
         on-download
         (mf/use-fn
@@ -370,11 +375,19 @@
 
     [:> error-container* {}
      [:div {:class (stl/css :main-message)} (tr "labels.internal-error.main-message")]
-     [:div {:class (stl/css :desc-message)} (tr "labels.internal-error.desc-message")]
+
+     [:div {:class (stl/css :desc-message)}
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-first")]
+      [:p {:class (stl/css :desc-text)} (tr "labels.internal-error.desc-message-second")]]
+
      (when (some? report)
-       [:a {:on-click on-download} "Download report.txt"])
-     [:div {:class (stl/css :sign-info)}
-      [:button {:on-click on-reset} (tr "labels.retry")]]]))
+       [:a {:class (stl/css :download-link) :on-click on-download} (tr "labels.download" "report.txt")])
+     
+     [:div {:class (stl/css :buttons-container)}
+      [:button {:class (stl/css :support-btn)
+                :on-click support-contact-click} (tr "labels.contact-support")]
+      [:button {:class (stl/css :retry-btn)
+                :on-click on-reset} (tr "labels.retry")]]]))
 
 (defn- load-info
   "Load exception page info"

@@ -2222,10 +2222,11 @@ msgid "labels.installed-fonts"
 msgstr "Installed fonts"
 
 #: src/app/main/ui/static.cljs:373
-msgid "labels.internal-error.desc-message"
-msgstr ""
-"Something bad happened. Please retry the operation and if the problem "
-"persists, contact support."
+msgid "labels.internal-error.desc-message-first"
+msgstr "Something bad happened."
+
+msgid "labels.internal-error.desc-message-second"
+msgstr "You can retry the operation or contact support to report the error."
 
 #: src/app/main/ui/static.cljs:372
 msgid "labels.internal-error.main-message"
@@ -2468,6 +2469,12 @@ msgstr "Restore"
 #: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
 msgid "labels.retry"
 msgstr "Retry"
+
+msgid "labels.download"
+msgstr "Download %s"
+
+msgid "labels.contact-support"
+msgstr "Contact support"
 
 #: src/app/main/ui/dashboard/team.cljs:511, src/app/main/ui/dashboard/team.cljs:785
 msgid "labels.role"
