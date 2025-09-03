@@ -39,6 +39,7 @@
 - Fix typo [Taiga #11969](https://tree.taiga.io/project/penpot/issue/11969)
 - Fix typo [Taiga #11970](https://tree.taiga.io/project/penpot/issue/11970)
 - Fix typos [Taiga #11971](https://tree.taiga.io/project/penpot/issue/11971)
+- Fix inconsistent naming for "Flatten" [Taiga #8371](https://tree.taiga.io/project/penpot/issue/8371)
 
 ## 2.9.0
 
