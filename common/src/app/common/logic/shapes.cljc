@@ -405,9 +405,10 @@
                             (remove #(= % parent-id) all-parents))]
 
     (-> changes
-        ;; Remove layout-item properties when moving a shape outside a layout
+        ;; Remove layout-item properties and tokens when moving a shape outside a layout
         (cond-> (not (ctl/any-layout? parent))
-          (pcb/update-shapes ids ctl/remove-layout-item-data))
+          (-> (pcb/update-shapes ids ctl/remove-layout-item-data)
+              (pcb/update-shapes ids cto/unapply-layout-item-tokens)))
 
         ;; Remove the hide in viewer flag
         (cond-> (and (not= uuid/zero parent-id) (cfh/frame-shape? parent))

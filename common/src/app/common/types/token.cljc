@@ -83,14 +83,24 @@
 
 (def stroke-width-keys (schema-keys schema:stroke-width))
 
-(def ^:private schema:sizing
-  [:map {:title "SizingTokenAttrs"}
+(def ^:private schema:sizing-base
+  [:map {:title "SizingBaseTokenAttrs"}
    [:width {:optional true} token-name-ref]
-   [:height {:optional true} token-name-ref]
+   [:height {:optional true} token-name-ref]])
+
+(def ^:private schema:sizing-layout-item
+  [:map {:title "SizingLayoutItemTokenAttrs"}
    [:layout-item-min-w {:optional true} token-name-ref]
    [:layout-item-max-w {:optional true} token-name-ref]
    [:layout-item-min-h {:optional true} token-name-ref]
    [:layout-item-max-h {:optional true} token-name-ref]])
+
+(def ^:private schema:sizing
+  (-> (reduce mu/union [schema:sizing-base
+                        schema:sizing-layout-item])
+      (mu/update-properties assoc :title "SizingTokenAttrs")))
+
+(def sizing-layout-item-keys (schema-keys schema:sizing-layout-item))
 
 (def sizing-keys (schema-keys schema:sizing))
 
@@ -377,6 +387,13 @@
 
 (defn unapply-token-id [shape attributes]
   (update shape :applied-tokens d/without-keys attributes))
+
+(defn unapply-layout-item-tokens
+  "Unapplies all layout item related tokens from shape."
+  [shape]
+  (let [layout-item-attrs (set/union sizing-layout-item-keys
+                                     spacing-margin-keys)]
+    (unapply-token-id shape layout-item-attrs)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TYPOGRAPHY
