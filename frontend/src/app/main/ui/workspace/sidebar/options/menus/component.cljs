@@ -35,9 +35,10 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.select :refer [select*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.hooks :as h]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.options.menus.variants-help-modal]
    [app.util.debug :as dbg]
@@ -189,7 +190,7 @@
            [:span {:class (stl/css-case
                            :icon-arrow true
                            :expanded expanded?)}
-            i/arrow]
+            deprecated-icon/arrow]
            [:span {:class (stl/css :annotation-text)}
             (tr "workspace.options.component.annotation")]])
 
@@ -207,21 +208,21 @@
                              :icon true
                              :icon-tick true
                              :invalid invalid-text?)}
-               i/tick]
+               deprecated-icon/tick]
               [:div {:class (stl/css :icon :icon-cross)
                      :title (tr "labels.discard")
                      :on-click on-discard}
-               i/close]]
+               deprecated-icon/close]]
 
              [:*
               [:div {:class (stl/css :icon :icon-edit)
                      :title (tr "labels.edit")
                      :on-click on-edit}
-               i/curve]
+               deprecated-icon/curve]
               [:div {:class (stl/css :icon :icon-trash)
                      :title (tr "labels.delete")
                      :on-click on-delete-annotation}
-               i/delete]]))]]
+               deprecated-icon/delete]]))]]
 
        [:div {:class (stl/css-case :hidden (not expanded?))}
         [:div {:class (stl/css :grow-wrap)}
@@ -383,8 +384,8 @@
 
      (if malformed-msg
        [:div {:class (stl/css :variant-warning-wrapper)}
-        [:> i/icon* {:icon-id i/msg-neutral
-                     :class (stl/css :variant-warning-darken)}]
+        [:> icon* {:icon-id i/msg-neutral
+                   :class (stl/css :variant-warning-darken)}]
         [:div {:class (stl/css :variant-warning-highlight)}
          (str malformed-msg " " (tr "workspace.options.component.variant.malformed.structure.title"))]
         [:div {:class (stl/css :variant-warning-darken)}
@@ -392,8 +393,8 @@
 
        (when duplicated-msg
          [:div {:class (stl/css :variant-warning-wrapper)}
-          [:> i/icon* {:icon-id i/msg-neutral
-                       :class (stl/css :variant-warning-darken)}]
+          [:> icon* {:icon-id i/msg-neutral
+                     :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
            (str duplicated-msg)]]))]))
 
@@ -495,8 +496,8 @@
 
      (if (seq malformed-comps)
        [:div {:class (stl/css :variant-warning-wrapper)}
-        [:> i/icon* {:icon-id i/msg-neutral
-                     :class (stl/css :variant-warning-darken)}]
+        [:> icon* {:icon-id i/msg-neutral
+                   :class (stl/css :variant-warning-darken)}]
         [:div {:class (stl/css :variant-warning-highlight)}
          (tr "workspace.options.component.variant.malformed.copy")]
         [:button {:class (stl/css :variant-warning-button)
@@ -505,8 +506,8 @@
 
        (when (seq duplicated-comps)
          [:div {:class (stl/css :variant-warning-wrapper)}
-          [:> i/icon* {:icon-id i/msg-neutral
-                       :class (stl/css :variant-warning-darken)}]
+          [:> icon* {:icon-id i/msg-neutral
+                     :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
            (tr "workspace.options.component.variant.duplicated.copy.title")]
           [:button {:class (stl/css :variant-warning-button)
@@ -548,7 +549,8 @@
        [:span {:class (stl/css-case :variant-mark-cell listing-thumbs
                                     :variant-icon true)
                :title (tr "workspace.assets.components.num-variants" num-variants)}
-        [:> i/icon* {:icon-id i/variant :size "s"}]])]))
+        [:> icon* {:icon-id i/variant
+                   :size "s"}]])]))
 
 (mf/defc component-group-item*
   [{:keys [item on-enter-group]}]
@@ -561,8 +563,10 @@
      [:span {:class (stl/css :component-group-name)}
       (cfh/last-path group-name)]
 
-     [:span {:class (stl/css :arrow-icon)}
-      i/arrow]]))
+     [:> icon* {:class (stl/css :component-group-icon)
+                :variant "ghost"
+                :icon-id i/arrow-right
+                :size "s"}]]))
 
 (defn- find-common-path
   ([components]
@@ -744,10 +748,10 @@
                             :selected (if (:listing-thumbs? filters) "grid" "list")
                             :on-change toggle-list-style
                             :name "swap-listing-style"}
-          [:& radio-button {:icon i/view-as-list
+          [:& radio-button {:icon deprecated-icon/view-as-list
                             :value "list"
                             :id "swap-opt-list"}]
-          [:& radio-button {:icon i/flex-grid
+          [:& radio-button {:icon deprecated-icon/flex-grid
                             :value "grid"
                             :id "swap-opt-grid"}]]]]
 
@@ -755,7 +759,8 @@
          [:button {:class (stl/css :component-path)
                    :on-click on-go-back
                    :title filter-path-with-dots}
-          [:span {:class (stl/css :back-arrow)} i/arrow]
+          [:> icon* {:icon-id i/arrow-left
+                     :size "s"}]
           [:span {:class (stl/css :path-name)}
            filter-path-with-dots]])
 
@@ -931,8 +936,8 @@
         (if swap-opened?
           [:button {:class (stl/css :title-back)
                     :on-click on-component-back}
-           [:> i/icon* {:icon-id i/arrow-left
-                        :size "s"}]
+           [:> icon* {:icon-id i/arrow-left
+                      :size "s"}]
            [:span (tr "workspace.options.component")]]
 
           [:*
@@ -953,13 +958,13 @@
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.options.component.variants-help-modal.title")
                                :on-click on-click-variant-title-help
-                               :icon "help"}])
+                               :icon i/help}])
 
            (when main-instance?
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant")
                                :on-click (if is-variant? create-variant transform-into-variant)
-                               :icon "variant"}])])]
+                               :icon i/variant}])])]
 
        (when open?
          [:div {:class (stl/css :element-content)}
@@ -974,10 +979,10 @@
                       :disabled (or swap-opened? (not can-swap?))}
 
              [:div {:class (stl/css :component-icon)}
-              [:> i/icon* {:size "s"
-                           :icon-id (if main-instance?
-                                      (if is-variant? i/variant i/component)
-                                      i/component-copy)}]]
+              [:> icon* {:size "s"
+                         :icon-id (if main-instance?
+                                    (if is-variant? i/variant i/component)
+                                    i/component-copy)}]]
 
              [:div {:class (stl/css :component-name-outside)}
               [:div {:class (stl/css :component-name)}
@@ -997,7 +1002,7 @@
                [:button {:class (stl/css-case :component-menu-btn true
                                               :selected menu-open?)
                          :on-click on-menu-click}
-                [:> i/icon* {:icon-id i/menu}]]
+                [:> icon* {:icon-id i/menu}]]
 
                [:> component-ctx-menu* {:show menu-open?
                                         :on-close on-menu-close
@@ -1008,7 +1013,7 @@
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant-property")
                                :on-click add-new-property
-                               :icon "add"}])]
+                               :icon i/add}])]
 
           (when swap-opened?
             [:> component-swap* {:shapes copies}])
@@ -1175,11 +1180,11 @@
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.component.variants-help-modal.title")
                             :on-click on-click-variant-title-help
-                            :icon "help"}]
+                            :icon i/help}]
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.shape.menu.add-variant")
                             :on-click create-variant
-                            :icon "variant"}]]]]
+                            :icon i/variant}]]]]
 
        (when open?
          [:div {:class (stl/css :element-content)}
@@ -1191,8 +1196,8 @@
                       :disabled true}
 
              [:div {:class (stl/css :component-icon)}
-              [:> i/icon* {:size "s"
-                           :icon-id i/component}]]
+              [:> icon* {:size "s"
+                         :icon-id i/component}]]
 
              [:div {:class (stl/css :component-name-outside)}
               [:div {:class (stl/css :component-name)}
@@ -1207,7 +1212,7 @@
                [:button {:class (stl/css-case :component-menu-btn true
                                               :selected menu-open?)
                          :on-click on-menu-click}
-                [:> i/icon* {:icon-id i/menu}]]
+                [:> icon* {:icon-id i/menu}]]
 
                [:> component-ctx-menu* {:show menu-open?
                                         :on-close on-menu-close
@@ -1217,7 +1222,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.shape.menu.add-variant-property")
                              :on-click add-new-property
-                             :icon "add"}]]
+                             :icon i/add}]]
 
           (when-not multi?
             [:div {:class (stl/css :variant-property-list)}
@@ -1242,13 +1247,13 @@
                                                   (tr "workspace.shape.menu.remove-variant-property"))
                                     :on-click remove-property
                                     :data-position pos
-                                    :icon "remove"
+                                    :icon i/remove
                                     :disabled last-prop?}]]))])
 
           (if malformed?
             [:div {:class (stl/css :variant-warning-wrapper)}
-             [:> i/icon* {:icon-id i/msg-neutral
-                          :class (stl/css :variant-warning-darken)}]
+             [:> icon* {:icon-id i/msg-neutral
+                        :class (stl/css :variant-warning-darken)}]
              [:div {:class (stl/css :variant-warning-highlight)}
               (tr "workspace.options.component.variant.malformed.group.title")]
              [:button {:class (stl/css :variant-warning-button)
@@ -1257,8 +1262,8 @@
 
             (when duplicated?
               [:div {:class (stl/css :variant-warning-wrapper)}
-               [:> i/icon* {:icon-id i/msg-neutral
-                            :class (stl/css :variant-warning-darken)}]
+               [:> icon* {:icon-id i/msg-neutral
+                          :class (stl/css :variant-warning-darken)}]
                [:div {:class (stl/css :variant-warning-highlight)}
                 (tr "workspace.options.component.variant.duplicated.group.title")]
                [:button {:class (stl/css :variant-warning-button)
