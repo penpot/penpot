@@ -77,22 +77,25 @@
   [file shape-label token-name token-attrs shape-attrs resolved-value]
   (let [page   (thf/current-page file)
         shape  (ths/get-shape file shape-label)
-        shape' (as-> shape $
-                 (cto/apply-token-to-shape {:shape $
-                                            :token {:name token-name}
-                                            :attributes token-attrs})
-                 (reduce (fn [shape attr]
-                           (case attr
-                             :stroke-width (set-stroke-width shape resolved-value)
-                             :stroke-color (set-stroke-color shape resolved-value)
-                             :fill (set-fill-color shape resolved-value)
-                             (ctn/set-shape-attr shape attr resolved-value {:ignore-touched true})))
-                         $
-                         shape-attrs))]
+        shape' (when shape
+                 (as-> shape $
+                   (cto/apply-token-to-shape {:shape $
+                                              :token {:name token-name}
+                                              :attributes token-attrs})
+                   (reduce (fn [shape attr]
+                             (case attr
+                               :stroke-width (set-stroke-width shape resolved-value)
+                               :stroke-color (set-stroke-color shape resolved-value)
+                               :fill (set-fill-color shape resolved-value)
+                               (ctn/set-shape-attr shape attr resolved-value {:ignore-touched true})))
+                           $
+                           shape-attrs)))]
 
-    (ctf/update-file-data
-     file
-     (fn [file-data]
-       (ctpl/update-page file-data
-                         (:id page)
-                         #(ctst/set-shape % shape'))))))
+    (if shape'
+      (ctf/update-file-data
+       file
+       (fn [file-data]
+         (ctpl/update-page file-data
+                           (:id page)
+                           #(ctst/set-shape % shape'))))
+      file)))
