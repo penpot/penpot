@@ -47,6 +47,7 @@
 - Misleading affordance in saved versions [Taiga #11887](https://tree.taiga.io/project/penpot/issue/11887)
 - Fix pasting RTF text crashes penpot [Taiga #11717](https://tree.taiga.io/project/penpot/issue/11717)
 - Fix navigation arrows in Libraries & Templates carousel [Taiga #10609](https://tree.taiga.io/project/penpot/issue/10609)
+- Fix incorrect date displayed for support plan [Taiga #11986](https://tree.taiga.io/project/penpot/issue/11986)
 
 ## 2.9.0
 
