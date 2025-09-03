@@ -38,6 +38,7 @@
 
   .feedback-button-link {
     @extend .button-primary;
+    margin-block-end: $s-72;
   }
 
   .feedback-title {
@@ -48,8 +49,13 @@
     @include bodyMediumTypography;
   }
 
-  .feedback-link {
-    @include t.use-typography("body-medium");
+  .bottom-margin {
+    margin-block-end: $s-32;
+  }
+
+  .link {
+    @include t.use-typography("headline-small");
     color: var(--color-accent-tertiary);
+    margin-block-end: $s-8;
   }
 }

@@ -2239,10 +2239,11 @@ msgid "labels.installed-fonts"
 msgstr "Fuentes instaladas"
 
 #: src/app/main/ui/static.cljs:373
-msgid "labels.internal-error.desc-message"
-msgstr ""
-"Ha ocurrido algo extraño. Por favor, reintenta la operación, y si el "
-"problema persiste, contacta con el servicio técnico."
+msgid "labels.internal-error.desc-message-first"
+msgstr "Ha ocurrido algo extraño."
+
+msgid "labels.internal-error.desc-message-second"
+msgstr "Puedes reintentar la operación o contacta con soporte para reportar el error."
 
 #: src/app/main/ui/static.cljs:372
 msgid "labels.internal-error.main-message"
@@ -2487,6 +2488,12 @@ msgstr "Restaurar"
 #: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
 msgid "labels.retry"
 msgstr "Reintentar"
+
+msgid "labels.download"
+msgstr "Descargar %s"
+
+msgid "labels.contact-support"
+msgstr "Contacta con soporte"
 
 #: src/app/main/ui/dashboard/team.cljs:511, src/app/main/ui/dashboard/team.cljs:785
 msgid "labels.role"

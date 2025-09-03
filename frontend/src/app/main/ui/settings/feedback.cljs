@@ -102,18 +102,16 @@
 
      [:hr]
 
-     [:h2 {:class (stl/css :field-title)} (tr "feedback.other-ways-contact")]
+     [:h2 {:class (stl/css :feedback-title)} (tr "feedback.other-ways-contact")]
 
 
-     [:a {:class (stl/css :feedback-link)
+     [:a {:class (stl/css :link)
        :href "https://community.penpot.app"
        :target "_blank"}
       (tr "feedback.discourse-title")]
-     [:p {:class (stl/css :field-text)} (tr "feedback.discourse-subtitle1")] 
+     [:p {:class (stl/css :field-text :bottom-margin)} (tr "feedback.discourse-subtitle1")] 
 
-     [:hr]
-
-     [:a {:class (stl/css :feedback-link)
+     [:a {:class (stl/css :link)
        :href "https://twitter.com/penpotapp"
        :target "_blank"}
       (tr "feedback.twitter-title")]
