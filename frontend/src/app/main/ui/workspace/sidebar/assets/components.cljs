@@ -505,7 +505,9 @@
                  ids     (into #{} (map :main-instance-id comps))
                  page-id (->> comps first :main-instance-page)]
 
-             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))
+             (st/emit!
+              (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-assets-group"})
+              (dwv/combine-as-variants ids {:page-id page-id})))))
 
 
         on-drag-start
@@ -554,7 +556,9 @@
            (let [page-id (->> selected-and-current-full first :main-instance-page)
                  ids (into #{} (map :main-instance-id selected-full))]
 
-             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))]
+             (st/emit!
+              (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-assets"})
+              (dwv/combine-as-variants ids {:page-id page-id})))))]
 
     [:& cmm/asset-section {:file-id file-id
                            :title (tr "workspace.assets.components")

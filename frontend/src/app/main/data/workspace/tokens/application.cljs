@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.files.tokens :as cft]
+   [app.common.types.component :as ctk]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.shape.radius :as ctsr]
    [app.common.types.shape.token :as ctst]
@@ -481,14 +482,14 @@
                           objects (dsh/lookup-page-objects state)
                           selected-shapes (select-keys objects shape-ids)
 
-                          shape-ids (or (->> selected-shapes
-                                             (filter (fn [[_ shape]]
-                                                       (or
-                                                        (and (ctsl/any-layout-immediate-child? objects shape)
-                                                             (some ctt/spacing-margin-keys attributes))
-                                                        (ctt/any-appliable-attr? attributes (:type shape)))))
-                                             (keys))
-                                        [])
+                          shapes (->> selected-shapes
+                                      (filter (fn [[_ shape]]
+                                                (or
+                                                 (and (ctsl/any-layout-immediate-child? objects shape)
+                                                      (some ctt/spacing-margin-keys attributes))
+                                                 (ctt/any-appliable-attr? attributes (:type shape))))))
+                          shape-ids (d/nilv (keys shapes)  [])
+                          any-variant? (->> shapes (some ctk/is-variant?) boolean)
 
                           resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
                           tokenized-attributes (cft/attributes-map attributes token)
@@ -497,7 +498,8 @@
                        (rx/of
                         (st/emit! (ev/event {::ev/name "apply-tokens"
                                              :type type
-                                             :applyed-to attributes}))
+                                             :applyed-to attributes
+                                             :applied-to-variant any-variant?}))
                         (dwu/start-undo-transaction undo-id)
                         (dwsh/update-shapes shape-ids (fn [shape]
                                                         (cond-> shape

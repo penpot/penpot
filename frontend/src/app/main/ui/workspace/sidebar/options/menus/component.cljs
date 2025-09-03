@@ -909,7 +909,9 @@
 
         on-combine-as-variants
         (mf/use-fn
-         #(st/emit! (dwv/combine-as-variants)))
+         #(st/emit!
+           (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "button-design-tab"})
+           (dwv/combine-as-variants)))
 
         ;; NOTE: function needed for force rerender from the bottom
         ;; components. This is because `component-annotation`

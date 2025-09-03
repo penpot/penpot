@@ -486,7 +486,11 @@
                                   parent-type (cfh/get-shape-type objects (:parent-id shape))
                                   external-lib? (not= file-id (:component-file shape))
                                   component     (ctn/get-component-from-shape shape libraries)
-                                  origin        "workspace:duplicate-shapes"]
+                                  origin        "workspace:duplicate-shapes"
+
+                                  any-parent-is-variant (->> (cfh/get-parents-with-self objects (:parent-id shape))
+                                                             (some ctk/is-variant?)
+                                                             boolean)]
 
                               ;; NOTE: we don't emit the create-shape event all the time for
                               ;; avoid send a lot of events (that are not necessary); this
@@ -497,7 +501,8 @@
                                            :is-external-library external-lib?
                                            :type (get shape :type)
                                            :parent-type parent-type
-                                           :is-variant (ctk/is-variant? component)})
+                                           :is-variant (ctk/is-variant? component)
+                                           :any-parent-is-variant any-parent-is-variant})
                                 (if (cfh/has-layout? objects (:parent-id shape))
                                   (ev/event {::ev/name "layout-add-element"
                                              ::ev/origin origin
