@@ -281,7 +281,7 @@
         (ct/format-inst (:created-at profile) "d MMMM, yyyy")
 
         subscribed-since
-        (ct/format-inst (:start-date profile) "d MMMM, yyyy")
+        (ct/format-inst (:start-date subscription) "d MMMM, yyyy")
 
         go-to-pricing-page
         (mf/use-fn

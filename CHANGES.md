@@ -41,6 +41,7 @@
 - Fix typos [Taiga #11971](https://tree.taiga.io/project/penpot/issue/11971)
 - Fix inconsistent naming for "Flatten" [Taiga #8371](https://tree.taiga.io/project/penpot/issue/8371)
 - Layout item tokens should be unapplied when moving out of a layout [Taiga #11012](https://tree.taiga.io/project/penpot/issue/11012)
+- Fix incorrect date displayed for support plan [Taiga #11986](https://tree.taiga.io/project/penpot/issue/11986)
 
 ## 2.9.0
 
