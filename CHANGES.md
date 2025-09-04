@@ -12,6 +12,8 @@
 
 ### :bug: Bugs fixed
 
+- Fix selection problems when devtools open [Taiga #11950](https://tree.taiga.io/project/penpot/issue/11950)
+
 ## 2.10.0 (Unreleased)
 
 ### :rocket: Epics and highlights
