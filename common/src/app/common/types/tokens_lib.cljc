@@ -1501,6 +1501,29 @@ Will return a value that matches this schema:
   (and (not (contains? decoded-json "$metadata"))
        (not (contains? decoded-json "$themes"))))
 
+(defn- convert-dtcg-font-family
+  "Convert font-family token value from DTCG format to internal format.
+   - If value is a string, split it into a collection of font families
+   - If value is already an array, keep it as is
+   - Otherwise keep as is"
+  [value]
+  (cond
+    (string? value) (cto/split-font-family value)
+    (sequential? value) value
+    :else value))
+
+(defn- convert-dtcg-typography-composite
+  "Convert typography token value keys from DTCG format to internal format."
+  [value]
+  (if (map? value)
+    (-> value
+        (set/rename-keys cto/dtcg-token-type->token-type)
+        (select-keys cto/typography-keys)
+        ;; Convert font-family values within typography composite tokens
+        (d/update-when :font-family convert-dtcg-font-family))
+    ;; Reference value
+    value))
+
 (defn- flatten-nested-tokens-json
   "Convert a tokens tree in the decoded json fragment into a flat map,
    being the keys the token paths after joining the keys with '.'."
@@ -1518,16 +1541,12 @@ Will return a value that matches this schema:
              (assoc tokens child-path (make-token
                                        :name child-path
                                        :type token-type
-                                       :value (cond-> (get v "$value")
-                                                ;; Split string of font-families
-                                                (and (= :font-family token-type)
-                                                     (string? (get v "$value")))
-                                                cto/split-font-family
-
-                                                ;; Keep array of font-families
-                                                (and (= :font-family token-type)
-                                                     (sequential? (get v "$value")))
-                                                identity)
+                                       :value
+                                       (let [token-value (get v "$value")]
+                                         (case token-type
+                                           :font-family (convert-dtcg-font-family token-value)
+                                           :typography (convert-dtcg-typography-composite token-value)
+                                           token-value))
                                        :description (get v "$description")))
              ;; Discard unknown type tokens
              tokens)))))
@@ -1680,8 +1699,22 @@ Will return a value that matches this schema:
       :else
       (parse-multi-set-dtcg-json decoded-json))))
 
+(defn- typography-token->dtcg-token
+  [value]
+  (if (map? value)
+    (reduce-kv
+     (fn [acc k v]
+       (if (contains? cto/typography-keys k)
+         (assoc acc (cto/token-type->dtcg-token-type k) v)
+         acc))
+     {} value)
+    value))
+
 (defn- token->dtcg-token [token]
-  (cond-> {"$value" (:value token)
+  (cond-> {"$value" (cond-> (:value token)
+                      ;; Transform typography token values
+                      (= :typography (:type token))
+                      typography-token->dtcg-token)
            "$type" (cto/token-type->dtcg-token-type (:type token))}
     (:description token) (assoc "$description" (:description token))))
 
