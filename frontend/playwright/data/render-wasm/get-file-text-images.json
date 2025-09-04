@@ -4,6 +4,7 @@
             "fdata/path-data",
             "plugins/runtime",
             "design-tokens/v1",
+            "variants/v1",
             "layout/grid",
             "styles/v2",
             "fdata/pointer-map",
@@ -25,8 +26,8 @@
     "~:has-media-trimmed": false,
     "~:comment-thread-seqn": 0,
     "~:name": "New File 7 (copy)",
-    "~:revn": 233,
-    "~:modified-at": "~m1753186774115",
+    "~:revn": 318,
+    "~:modified-at": "~m1757071793227",
     "~:vern": 0,
     "~:id": "~u4f89252d-ebbc-813e-8006-8699e4149b9a",
     "~:is-shared": false,
@@ -99,7 +100,8 @@
             "0004-clean-shadow-color",
             "0008-fix-library-colors-v4",
             "0003-convert-path-content-v2",
-            "0009-clean-library-colors"
+            "0009-clean-library-colors",
+            "0010-fix-swap-slots-pointing-non-existent-shapes"
         ]
     },
     "~:version": 67,
@@ -329,13 +331,13 @@
                                 {
                                     "~#point": {
                                         "~:x": 359.0000047683716,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 },
                                 {
                                     "~#point": {
                                         "~:x": 188.99999672174454,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 }
                             ],
@@ -351,6 +353,42 @@
                             },
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e977f9e30ea",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 364.349979565588,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 169.36666870117188,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 188.99999672174454,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-opacity": 1,
+                                                "~:fill-image": {
+                                                    "~:id": "~u4f89252d-ebbc-813e-8006-8699e4170e18",
+                                                    "~:width": 443,
+                                                    "~:height": 441,
+                                                    "~:mtype": "image/png",
+                                                    "~:name": "pattern.png",
+                                                    "~:keep-aspect-ratio": true
+                                                }
+                                            }
+                                        ],
+                                        "~:x2": 169.36666870117188,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "hello world"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -367,15 +405,15 @@
                                     "~:x": 188.99999672174454,
                                     "~:y": 318.9999734620724,
                                     "~:width": 170.00000804662704,
-                                    "~:height": 42.99999797344208,
+                                    "~:height": 44,
                                     "~:x1": 188.99999672174454,
                                     "~:y1": 318.9999734620724,
                                     "~:x2": 359.0000047683716,
-                                    "~:y2": 361.99997143551445
+                                    "~:y2": 362.9999734620724
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 42.99999797344208,
+                            "~:height": 44,
                             "~:flip-y": null
                         }
                     },
@@ -474,13 +512,13 @@
                                 {
                                     "~#point": {
                                         "~:x": 359.0000047683716,
-                                        "~:y": 305.999979064909
+                                        "~:y": 306.9999810914669
                                     }
                                 },
                                 {
                                     "~#point": {
                                         "~:x": 188.99999672174454,
-                                        "~:y": 305.999979064909
+                                        "~:y": 306.9999810914669
                                     }
                                 }
                             ],
@@ -496,6 +534,35 @@
                             },
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e968ea9bb4b",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 308.34998719498253,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 169.36666870117188,
+                                        "~:text-decoration": "rgb(21, 209, 46)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 188.99999672174454,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#15d12e",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 169.36666870117188,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "hello world"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -519,21 +586,21 @@
                                     "~:x": 188.99999672174454,
                                     "~:y": 262.9999810914669,
                                     "~:width": 170.00000804662704,
-                                    "~:height": 42.99999797344208,
+                                    "~:height": 44,
                                     "~:x1": 188.99999672174454,
                                     "~:y1": 262.9999810914669,
                                     "~:x2": 359.0000047683716,
-                                    "~:y2": 305.999979064909
+                                    "~:y2": 306.9999810914669
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 42.99999797344208,
+                            "~:height": 44,
                             "~:flip-y": null
                         }
                     },
                     "~u8e0276b0-5131-8065-8006-87c8c98fa23d": {
                         "~#shape": {
-                            "~:y": 601.000025231285,
+                            "~:y": 579.9999966210555,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -692,26 +759,26 @@
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 533.9999873919224,
-                                        "~:y": 601.0000252312851
+                                        "~:x": 669.0000026507115,
+                                        "~:y": 579.9999966210556
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 818.0000525145931,
-                                        "~:y": 601.0000252312851
+                                        "~:x": 953.0000677733822,
+                                        "~:y": 579.9999966210556
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 818.0000525145931,
-                                        "~:y": 690.9999714607172
+                                        "~:x": 953.0000677733822,
+                                        "~:y": 669.9999428504877
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 533.9999873919224,
-                                        "~:y": 690.9999714607172
+                                        "~:x": 669.0000026507115,
+                                        "~:y": 669.9999428504877
                                     }
                                 }
                             ],
@@ -729,8 +796,120 @@
                             "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~u8e0276b0-5131-8065-8006-87c8c98fa23d",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 625.3500027245711,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 669.0000026507116,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 45,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🔥"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 625.3500027245711,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 714.0000026507116,
+                                        "~:x1": 45,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 90,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👩🏿\u200d🚀"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 625.3500027245711,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 759.0000026507116,
+                                        "~:x1": 90,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 135,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👺"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 625.3500027245711,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 804.0000026507116,
+                                        "~:x1": 135,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 180,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🚀"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 668.5499996728133,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 41.05000305175781,
+                                        "~:width": 7.26666259765625,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 669.0000026507116,
+                                        "~:x1": 0,
+                                        "~:y2": 88.55000305175781,
+                                        "~:fills": [],
+                                        "~:x2": 7.26666259765625,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": " "
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
-                            "~:x": 533.9999873919226,
+                            "~:x": 669.0000026507116,
                             "~:shadow": [
                                 {
                                     "~:color": {
@@ -748,14 +927,14 @@
                             ],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 533.9999873919226,
-                                    "~:y": 601.000025231285,
+                                    "~:x": 669.0000026507116,
+                                    "~:y": 579.9999966210555,
                                     "~:width": 284.00006512267055,
                                     "~:height": 89.99994622943211,
-                                    "~:x1": 533.9999873919226,
-                                    "~:y1": 601.000025231285,
-                                    "~:x2": 818.0000525145931,
-                                    "~:y2": 690.9999714607171
+                                    "~:x1": 669.0000026507116,
+                                    "~:y1": 579.9999966210555,
+                                    "~:x2": 953.0000677733822,
+                                    "~:y2": 669.9999428504876
                                 }
                             },
                             "~:flip-x": null,
@@ -871,6 +1050,30 @@
                             },
                             "~:id": "~uef609b51-0d34-80f3-8006-5e99460c12bb",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 596.1000958619669,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -9.649993896484375,
+                                        "~:width": 144,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 185.92164040549193,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 144,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 55,
+                                        "~:text": "萎ポくろ"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -953,7 +1156,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#2244ab",
+                                                                "~:fill-opacity": 0.6166666666666667
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "萎ポくろ"
                                                     }
@@ -971,7 +1179,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#2244ab",
+                                                        "~:fill-opacity": 0.6166666666666667
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             }
                                         ]
@@ -1020,8 +1233,70 @@
                                     "~:f": 0
                                 }
                             },
+                            "~:blur": {
+                                "~:id": "~ufcdfaec2-c882-800a-8006-bdfe640d48c0",
+                                "~:type": "~:layer-blur",
+                                "~:value": 1,
+                                "~:hidden": false
+                            },
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e980c195547",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 468.3500178775157,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -9.649993896484375,
+                                        "~:width": 72,
+                                        "~:text-decoration": "rgba(34, 68, 171, 0.617)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 192.5000022321518,
+                                        "~:x1": 9.5,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#2244ab",
+                                                "~:fill-opacity": 0.6166666666666667
+                                            }
+                                        ],
+                                        "~:x2": 81.5,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 55,
+                                        "~:text": "萎ポ"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 511.5500148257579,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 33.55000305175781,
+                                        "~:width": 72,
+                                        "~:text-decoration": "rgba(34, 68, 171, 0.617)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 192.5000022321518,
+                                        "~:x1": 9.5,
+                                        "~:y2": 88.55000305175781,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#2244ab",
+                                                "~:fill-opacity": 0.6166666666666667
+                                            }
+                                        ],
+                                        "~:x2": 81.5,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 55,
+                                        "~:text": "くろ"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -1077,6 +1352,28 @@
                                                 "~:font-style": "normal",
                                                 "~:children": [
                                                     {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "1f62xcal6hw",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "none",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#cf2222",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "🔥"
+                                                    },
+                                                    {
                                                         "~:line-height": "",
                                                         "~:font-style": "normal",
                                                         "~:typography-ref-id": null,
@@ -1096,7 +1393,7 @@
                                                             }
                                                         ],
                                                         "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
-                                                        "~:text": "❤️ "
+                                                        "~:text": " "
                                                     },
                                                     {
                                                         "~:line-height": "",
@@ -1127,7 +1424,7 @@
                                                         "~:text-transform": "none",
                                                         "~:font-id": "sourcesanspro",
                                                         "~:key": "59c3kg7hq8",
-                                                        "~:font-size": "24",
+                                                        "~:font-size": "0",
                                                         "~:font-weight": "normal",
                                                         "~:typography-ref-file": null,
                                                         "~:font-variant-id": "regular",
@@ -1206,15 +1503,37 @@
                                                             }
                                                         ],
                                                         "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
-                                                        "~:text": " unicode ❤️"
+                                                        "~:text": " unicode "
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "vff0hj0mq3",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "line-through",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#cf2222",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "🔥"
                                                     }
                                                 ],
                                                 "~:typography-ref-id": null,
                                                 "~:text-transform": "none",
                                                 "~:text-align": "left",
                                                 "~:font-id": "sourcesanspro",
-                                                "~:key": "2bd6up3z17w",
-                                                "~:font-size": "0",
+                                                "~:key": "1gghvlvyoud",
+                                                "~:font-size": "24",
                                                 "~:font-weight": "normal",
                                                 "~:typography-ref-file": null,
                                                 "~:text-direction": "ltr",
@@ -1278,6 +1597,143 @@
                             "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~u8e0276b0-5131-8065-8006-87c89da3209e",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 415.6499997209809,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 34.83332824707031,
+                                        "~:text-decoration": "rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 528.9999767398235,
+                                        "~:x1": 0,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 34.83332824707031,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "❤️ "
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 415.6499997209809,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 11.133331298828125,
+                                        "~:text-decoration": "rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 563.8333049868938,
+                                        "~:x1": 34.83332824707031,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 45.96665954589844,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "I "
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 415.6499997209809,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 6.116668701171875,
+                                        "~:text-decoration": "rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 574.966636285722,
+                                        "~:x1": 45.96665954589844,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 52.08332824707031,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "l"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 415.6499997209809,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 35.93333435058594,
+                                        "~:text-decoration": "line-through rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 581.0833049868938,
+                                        "~:x1": 52.08332824707031,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 88.01666259765625,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "ove"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 415.6499997209809,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 120.41667175292969,
+                                        "~:text-decoration": "line-through rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 617.0166393374798,
+                                        "~:x1": 88.01666259765625,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 208.43333435058594,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": " unicode ❤️"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [],
                             "~:x": 528.9999767398235,
@@ -1407,13 +1863,13 @@
                                 {
                                     "~#point": {
                                         "~:x": 359.0000047683716,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 },
                                 {
                                     "~#point": {
                                         "~:x": 188.99999672174454,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 }
                             ],
@@ -1429,6 +1885,42 @@
                             },
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e9771af0c6e",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 364.349979565588,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 169.36666870117188,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 188.99999672174454,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-opacity": 1,
+                                                "~:fill-image": {
+                                                    "~:id": "~u4f89252d-ebbc-813e-8006-8699e4170e18",
+                                                    "~:width": 443,
+                                                    "~:height": 441,
+                                                    "~:mtype": "image/png",
+                                                    "~:name": "pattern.png",
+                                                    "~:keep-aspect-ratio": true
+                                                }
+                                            }
+                                        ],
+                                        "~:x2": 169.36666870117188,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "hello world"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -1445,15 +1937,15 @@
                                     "~:x": 188.99999672174454,
                                     "~:y": 318.9999734620724,
                                     "~:width": 170.00000804662704,
-                                    "~:height": 42.99999797344208,
+                                    "~:height": 44,
                                     "~:x1": 188.99999672174454,
                                     "~:y1": 318.9999734620724,
                                     "~:x2": 359.0000047683716,
-                                    "~:y2": 361.99997143551445
+                                    "~:y2": 362.9999734620724
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 42.99999797344208,
+                            "~:height": 44,
                             "~:flip-y": null
                         }
                     },
@@ -1566,13 +2058,13 @@
                                 {
                                     "~#point": {
                                         "~:x": 359.0000047683716,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 },
                                 {
                                     "~#point": {
                                         "~:x": 188.99999672174454,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 }
                             ],
@@ -1588,6 +2080,42 @@
                             },
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e9775677e20",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 364.349979565588,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 169.36666870117188,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 188.99999672174454,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-opacity": 1,
+                                                "~:fill-image": {
+                                                    "~:id": "~u4f89252d-ebbc-813e-8006-8699e4170e18",
+                                                    "~:width": 443,
+                                                    "~:height": 441,
+                                                    "~:mtype": "image/png",
+                                                    "~:name": "pattern.png",
+                                                    "~:keep-aspect-ratio": true
+                                                }
+                                            }
+                                        ],
+                                        "~:x2": 169.36666870117188,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "hello world"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -1604,21 +2132,21 @@
                                     "~:x": 188.99999672174454,
                                     "~:y": 318.9999734620724,
                                     "~:width": 170.00000804662704,
-                                    "~:height": 42.99999797344208,
+                                    "~:height": 44,
                                     "~:x1": 188.99999672174454,
                                     "~:y1": 318.9999734620724,
                                     "~:x2": 359.0000047683716,
-                                    "~:y2": 361.99997143551445
+                                    "~:y2": 362.9999734620724
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 42.99999797344208,
+                            "~:height": 44,
                             "~:flip-y": null
                         }
                     },
                     "~u2e773f0c-bc2a-8063-8006-75d73e978b13": {
                         "~#shape": {
-                            "~:y": 271.0000103742148,
+                            "~:y": 271.00000374648164,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -1630,7 +2158,7 @@
                                 }
                             },
                             "~:rotation": 0,
-                            "~:grow-type": "~:fixed",
+                            "~:grow-type": "~:auto-width",
                             "~:content": {
                                 "~:type": "root",
                                 "~:key": "23iz9tepv1l",
@@ -1648,7 +2176,7 @@
                                                         "~:typography-ref-id": null,
                                                         "~:text-transform": "none",
                                                         "~:font-id": "sourcesanspro",
-                                                        "~:key": "t8mkaljm92",
+                                                        "~:key": "16puxcfnj7p",
                                                         "~:font-size": "24",
                                                         "~:font-weight": "normal",
                                                         "~:typography-ref-file": null,
@@ -1662,15 +2190,37 @@
                                                             }
                                                         ],
                                                         "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
-                                                        "~:text": "❤️ I love unicode ❤️"
+                                                        "~:text": "🦍 I love unicode "
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "23z3cwj10cs",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "underline",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "🦍"
                                                     }
                                                 ],
                                                 "~:typography-ref-id": null,
                                                 "~:text-transform": "none",
                                                 "~:text-align": "center",
                                                 "~:font-id": "sourcesanspro",
-                                                "~:key": "2bd6up3z17w",
-                                                "~:font-size": "24",
+                                                "~:key": "xvgbdzwpy1",
+                                                "~:font-size": "0",
                                                 "~:font-weight": "normal",
                                                 "~:typography-ref-file": null,
                                                 "~:text-direction": "ltr",
@@ -1692,31 +2242,31 @@
                                 "~:vertical-align": "center"
                             },
                             "~:name": "❤️ I hate emoji ❤️",
-                            "~:width": 337.10167609832115,
+                            "~:width": 209.00000677171096,
                             "~:type": "~:text",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 401.0000094603646,
-                                        "~:y": 271.0000103742148
+                                        "~:x": 401.00001987243246,
+                                        "~:y": 271.00000374648164
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 738.1016855586857,
-                                        "~:y": 271.0000103742148
+                                        "~:x": 610.0000266441434,
+                                        "~:y": 271.00000374648164
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 738.1016855586857,
-                                        "~:y": 427.0000100565906
+                                        "~:x": 610.0000266441434,
+                                        "~:y": 300.00000428348255
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 401.0000094603646,
-                                        "~:y": 427.0000100565906
+                                        "~:x": 401.00001987243246,
+                                        "~:y": 300.00000428348255
                                     }
                                 }
                             ],
@@ -1734,6 +2284,35 @@
                             "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~u2e773f0c-bc2a-8063-8006-75d73e978b13",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 365.2500103742148,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 61.75,
+                                        "~:width": 208.43333435058594,
+                                        "~:text-decoration": "underline rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 465.3333377074349,
+                                        "~:x1": 64.33332824707031,
+                                        "~:y2": 94.25,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#000000",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 272.76666259765625,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "❤️ I love unicode ❤️"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -1744,7 +2323,7 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 401.0000094603646,
+                            "~:x": 401.0000198724324,
                             "~:shadow": [
                                 {
                                     "~:color": {
@@ -1762,18 +2341,18 @@
                             ],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 401.0000094603646,
-                                    "~:y": 271.0000103742148,
-                                    "~:width": 337.10167609832115,
-                                    "~:height": 155.9999996823758,
-                                    "~:x1": 401.0000094603646,
-                                    "~:y1": 271.0000103742148,
-                                    "~:x2": 738.1016855586857,
-                                    "~:y2": 427.0000100565906
+                                    "~:x": 401.0000198724324,
+                                    "~:y": 271.00000374648164,
+                                    "~:width": 209.00000677171096,
+                                    "~:height": 29.000000537000915,
+                                    "~:x1": 401.0000198724324,
+                                    "~:y1": 271.00000374648164,
+                                    "~:x2": 610.0000266441434,
+                                    "~:y2": 300.00000428348255
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 155.9999996823758,
+                            "~:height": 29.000000537000915,
                             "~:flip-y": null
                         }
                     },
@@ -1975,6 +2554,118 @@
                             "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~uef609b51-0d34-80f3-8006-5e995b054836",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 684.6584327431164,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 339.16327306897387,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 45,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🔥"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 684.6584327431164,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 384.16327306897387,
+                                        "~:x1": 45,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 90,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👩🏿\u200d🚀"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 684.6584327431164,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 429.16327306897387,
+                                        "~:x1": 90,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 135,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👺"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 684.6584327431164,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 474.16327306897387,
+                                        "~:x1": 135,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 180,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🚀"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 727.8584296913585,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 41.05000305175781,
+                                        "~:width": 7.26666259765625,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 339.16327306897387,
+                                        "~:x1": 0,
+                                        "~:y2": 88.55000305175781,
+                                        "~:fills": [],
+                                        "~:x2": 7.26666259765625,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": " "
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:x": 339.16327306897387,
                             "~:selrect": {
@@ -2021,6 +2712,28 @@
                                                 "~:font-style": "normal",
                                                 "~:children": [
                                                     {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "16xfalefku7",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "line-through",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#cf2222",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "🔥"
+                                                    },
+                                                    {
                                                         "~:line-height": "",
                                                         "~:font-style": "normal",
                                                         "~:typography-ref-id": null,
@@ -2040,7 +2753,7 @@
                                                             }
                                                         ],
                                                         "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
-                                                        "~:text": "❤️ I "
+                                                        "~:text": " I "
                                                     },
                                                     {
                                                         "~:line-height": "",
@@ -2084,15 +2797,37 @@
                                                             }
                                                         ],
                                                         "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
-                                                        "~:text": " unicode ❤️"
+                                                        "~:text": " unicode "
+                                                    },
+                                                    {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "20mlxdc1w6k",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "line-through",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#cf2222",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "🔥"
                                                     }
                                                 ],
                                                 "~:typography-ref-id": null,
                                                 "~:text-transform": "none",
                                                 "~:text-align": "left",
                                                 "~:font-id": "sourcesanspro",
-                                                "~:key": "2bd6up3z17w",
-                                                "~:font-size": "0",
+                                                "~:key": "26o9ihmqfo3",
+                                                "~:font-size": "24",
                                                 "~:font-weight": "normal",
                                                 "~:typography-ref-file": null,
                                                 "~:text-direction": "ltr",
@@ -2156,6 +2891,89 @@
                             "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~uef609b51-0d34-80f3-8006-5e98ba9c0e14",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 459.6499959062836,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 45.96665954589844,
+                                        "~:text-decoration": "line-through rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 528.9999767398235,
+                                        "~:x1": 0,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 45.96665954589844,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "❤️ I "
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 459.6499959062836,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 42.05000305175781,
+                                        "~:text-decoration": "line-through rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 574.966636285722,
+                                        "~:x1": 45.96665954589844,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 88.01666259765625,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "love"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 459.6499959062836,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 120.41667175292969,
+                                        "~:text-decoration": "line-through rgb(207, 34, 34)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 617.0166393374798,
+                                        "~:x1": 88.01666259765625,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#cf2222",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 208.43333435058594,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": " unicode ❤️"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [],
                             "~:x": 528.9999767398235,
@@ -2282,13 +3100,65 @@
                                     "~:f": 0
                                 }
                             },
+                            "~:blur": {
+                                "~:id": "~u8df74ea5-9311-8065-8006-bdfdeeb5d79d",
+                                "~:type": "~:layer-blur",
+                                "~:value": 1,
+                                "~:hidden": false
+                            },
                             "~:id": "~uef609b51-0d34-80f3-8006-5e9934d0368b",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 468.3500177125625,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -9.649993896484375,
+                                        "~:width": 72,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 276.4999941259201,
+                                        "~:x1": 9.5,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 81.5,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 55,
+                                        "~:text": "萎ポ"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 511.55001466080466,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 33.55000305175781,
+                                        "~:width": 72,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 276.4999941259201,
+                                        "~:x1": 9.5,
+                                        "~:y2": 88.55000305175781,
+                                        "~:fills": [],
+                                        "~:x2": 81.5,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 55,
+                                        "~:text": "くろ"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
                                     "~:stroke-style": "~:solid",
-                                    "~:stroke-alignment": "~:outer",
+                                    "~:stroke-alignment": "~:inner",
                                     "~:stroke-width": 1,
                                     "~:stroke-color": "#13a9f5",
                                     "~:stroke-opacity": 1
@@ -2304,7 +3174,7 @@
                                     "~:spread": 0,
                                     "~:offset-y": 4,
                                     "~:style": "~:drop-shadow",
-                                    "~:blur": 4,
+                                    "~:blur": 2,
                                     "~:hidden": false,
                                     "~:id": "~uef609b51-0d34-80f3-8006-5e99383d5786",
                                     "~:offset-x": 4
@@ -2329,7 +3199,7 @@
                     },
                     "~uef609b51-0d34-80f3-8006-5e9880f79b0b": {
                         "~#shape": {
-                            "~:y": 269.00000893934515,
+                            "~:y": 236.99999557797076,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -2354,6 +3224,28 @@
                                                 "~:font-style": "normal",
                                                 "~:children": [
                                                     {
+                                                        "~:line-height": "1.2",
+                                                        "~:font-style": "normal",
+                                                        "~:typography-ref-id": null,
+                                                        "~:text-transform": "none",
+                                                        "~:font-id": "sourcesanspro",
+                                                        "~:key": "1mn62cp66z5",
+                                                        "~:font-size": "24",
+                                                        "~:font-weight": "normal",
+                                                        "~:typography-ref-file": null,
+                                                        "~:font-variant-id": "regular",
+                                                        "~:text-decoration": "line-through",
+                                                        "~:letter-spacing": "0",
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#000000",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
+                                                        "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
+                                                        "~:text": "🦍 I love unicode 🦍"
+                                                    },
+                                                    {
                                                         "~:line-height": "",
                                                         "~:font-style": "normal",
                                                         "~:typography-ref-id": null,
@@ -2373,14 +3265,14 @@
                                                             }
                                                         ],
                                                         "~:font-family": "\"Droid Sans Mono\", \"monospace\", monospace",
-                                                        "~:text": "❤️ I love unicode ❤️"
+                                                        "~:text": ""
                                                     }
                                                 ],
                                                 "~:typography-ref-id": null,
                                                 "~:text-transform": "none",
                                                 "~:text-align": "right",
                                                 "~:font-id": "sourcesanspro",
-                                                "~:key": "2bd6up3z17w",
+                                                "~:key": "1igf9c5g7qb",
                                                 "~:font-size": "24",
                                                 "~:font-weight": "normal",
                                                 "~:typography-ref-file": null,
@@ -2408,26 +3300,26 @@
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 439.0000065171845,
-                                        "~:y": 269.00000893934515
+                                        "~:x": 459.9999940731069,
+                                        "~:y": 236.99999557797076
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 737.9999993406883,
-                                        "~:y": 269.00000893934515
+                                        "~:x": 758.9999868966107,
+                                        "~:y": 236.99999557797076
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 737.9999993406883,
-                                        "~:y": 298.0000082477825
+                                        "~:x": 758.9999868966107,
+                                        "~:y": 265.99999056507147
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 439.0000065171845,
-                                        "~:y": 298.0000082477825
+                                        "~:x": 459.9999940731069,
+                                        "~:y": 265.99999056507147
                                     }
                                 }
                             ],
@@ -2445,6 +3337,35 @@
                             "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~uef609b51-0d34-80f3-8006-5e9880f79b0b",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 299.6499723182514,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "24px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -1.850006103515625,
+                                        "~:width": 208.43333435058594,
+                                        "~:text-decoration": "line-through rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 529.5666721665986,
+                                        "~:x1": 90.56666564941406,
+                                        "~:y2": 30.649993896484375,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#000000",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 299,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 32.5,
+                                        "~:text": "❤️ I love unicode ❤️"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -2455,21 +3376,21 @@
                                     "~:stroke-opacity": 1
                                 }
                             ],
-                            "~:x": 439.0000065171845,
+                            "~:x": 459.9999940731069,
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 439.0000065171845,
-                                    "~:y": 269.00000893934515,
+                                    "~:x": 459.9999940731069,
+                                    "~:y": 236.99999557797076,
                                     "~:width": 298.9999928235038,
-                                    "~:height": 28.99999930843734,
-                                    "~:x1": 439.0000065171845,
-                                    "~:y1": 269.00000893934515,
-                                    "~:x2": 737.9999993406883,
-                                    "~:y2": 298.0000082477825
+                                    "~:height": 28.999994987100706,
+                                    "~:x1": 459.9999940731069,
+                                    "~:y1": 236.99999557797076,
+                                    "~:x2": 758.9999868966107,
+                                    "~:y2": 265.99999056507147
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 28.99999930843734,
+                            "~:height": 28.999994987100706,
                             "~:flip-y": null
                         }
                     },
@@ -2672,6 +3593,96 @@
                             "~:hidden": false,
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e98597c0d17",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 522.3500189623526,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 528.9999944726542,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 45,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🔥"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 522.3500189623526,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 573.9999944726542,
+                                        "~:x1": 45,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 90,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👩🏿\u200d🚀"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 522.3500189623526,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 618.9999944726542,
+                                        "~:x1": 90,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 135,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👺"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 522.3500189623526,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 663.9999944726542,
+                                        "~:x1": 135,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 180,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🚀"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:x": 528.9999944726542,
                             "~:selrect": {
@@ -2800,13 +3811,13 @@
                                 {
                                     "~#point": {
                                         "~:x": 359.0000047683716,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 },
                                 {
                                     "~#point": {
                                         "~:x": 188.99999672174454,
-                                        "~:y": 361.99997143551445
+                                        "~:y": 362.9999734620724
                                     }
                                 }
                             ],
@@ -2822,6 +3833,42 @@
                             },
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e974ec5dede",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 364.349979565588,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 169.36666870117188,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 188.99999672174454,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-opacity": 1,
+                                                "~:fill-image": {
+                                                    "~:id": "~u4f89252d-ebbc-813e-8006-8699e4170e18",
+                                                    "~:width": 443,
+                                                    "~:height": 441,
+                                                    "~:mtype": "image/png",
+                                                    "~:name": "pattern.png",
+                                                    "~:keep-aspect-ratio": true
+                                                }
+                                            }
+                                        ],
+                                        "~:x2": 169.36666870117188,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "hello world"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -2838,15 +3885,15 @@
                                     "~:x": 188.99999672174454,
                                     "~:y": 318.9999734620724,
                                     "~:width": 170.00000804662704,
-                                    "~:height": 42.99999797344208,
+                                    "~:height": 44,
                                     "~:x1": 188.99999672174454,
                                     "~:y1": 318.9999734620724,
                                     "~:x2": 359.0000047683716,
-                                    "~:y2": 361.99997143551445
+                                    "~:y2": 362.9999734620724
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 42.99999797344208,
+                            "~:height": 44,
                             "~:flip-y": null
                         }
                     },
@@ -2958,6 +4005,30 @@
                             },
                             "~:id": "~u4b4f5ff7-44ac-808a-8006-5e979761b8f6",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 416.3500138978643,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -9.649993896484375,
+                                        "~:width": 144,
+                                        "~:text-decoration": "rgb(0, 0, 0)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 188.99999416516704,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [],
+                                        "~:x2": 144,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 55,
+                                        "~:text": "萎ポくろ"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -2988,7 +4059,7 @@
                     },
                     "~uef609b51-0d34-80f3-8006-5e9929d3fa47": {
                         "~#shape": {
-                            "~:y": 537.9999565667342,
+                            "~:y": 526.9999908990096,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -3025,7 +4096,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🔥"
                                                     },
@@ -3042,7 +4118,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👩🏿\u200d🚀"
                                                     },
@@ -3059,7 +4140,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "👺"
                                                     },
@@ -3076,7 +4162,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": "🚀"
                                                     }
@@ -3094,7 +4185,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             },
                                             {
@@ -3114,7 +4210,12 @@
                                                         "~:font-variant-id": "regular",
                                                         "~:text-decoration": "none",
                                                         "~:letter-spacing": "0",
-                                                        "~:fills": [],
+                                                        "~:fills": [
+                                                            {
+                                                                "~:fill-color": "#B1B2B5",
+                                                                "~:fill-opacity": 1
+                                                            }
+                                                        ],
                                                         "~:font-family": "sourcesanspro",
                                                         "~:text": ""
                                                     }
@@ -3132,7 +4233,12 @@
                                                 "~:font-variant-id": "regular",
                                                 "~:text-decoration": "none",
                                                 "~:letter-spacing": "0",
-                                                "~:fills": [],
+                                                "~:fills": [
+                                                    {
+                                                        "~:fill-color": "#B1B2B5",
+                                                        "~:fill-opacity": 1
+                                                    }
+                                                ],
                                                 "~:font-family": "sourcesanspro"
                                             }
                                         ]
@@ -3147,26 +4253,26 @@
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 441.9999797625279,
-                                        "~:y": 537.9999565667343
+                                        "~:x": 450.0000245852208,
+                                        "~:y": 526.9999908990097
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 726.0000448851986,
-                                        "~:y": 537.9999565667343
+                                        "~:x": 734.0000897078914,
+                                        "~:y": 526.9999908990097
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 726.0000448851986,
-                                        "~:y": 627.9999027961665
+                                        "~:x": 734.0000897078914,
+                                        "~:y": 616.9999371284418
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 441.9999797625279,
-                                        "~:y": 627.9999027961665
+                                        "~:x": 450.0000245852208,
+                                        "~:y": 616.9999371284418
                                     }
                                 }
                             ],
@@ -3184,8 +4290,145 @@
                             "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~uef609b51-0d34-80f3-8006-5e9929d3fa47",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 572.3499970025252,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(177, 178, 181)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 450.00002458522084,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#B1B2B5",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 45,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🔥"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 572.3499970025252,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(177, 178, 181)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 495.00002458522084,
+                                        "~:x1": 45,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#B1B2B5",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 90,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👩🏿\u200d🚀"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 572.3499970025252,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(177, 178, 181)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 540.0000245852209,
+                                        "~:x1": 90,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#B1B2B5",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 135,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "👺"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 572.3499970025252,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 45,
+                                        "~:text-decoration": "rgb(177, 178, 181)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 585.0000245852209,
+                                        "~:x1": 135,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#B1B2B5",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 180,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "🚀"
+                                    }
+                                },
+                                {
+                                    "~#rect": {
+                                        "~:y": 615.5499939507674,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": 41.05000305175781,
+                                        "~:width": 7.26666259765625,
+                                        "~:text-decoration": "rgb(177, 178, 181)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 450.00002458522084,
+                                        "~:x1": 0,
+                                        "~:y2": 88.55000305175781,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#B1B2B5",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 7.26666259765625,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": " "
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
-                            "~:x": 441.99997976252797,
+                            "~:x": 450.00002458522084,
                             "~:shadow": [
                                 {
                                     "~:color": {
@@ -3203,14 +4446,14 @@
                             ],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 441.99997976252797,
-                                    "~:y": 537.9999565667342,
+                                    "~:x": 450.00002458522084,
+                                    "~:y": 526.9999908990096,
                                     "~:width": 284.0000651226706,
                                     "~:height": 89.99994622943211,
-                                    "~:x1": 441.99997976252797,
-                                    "~:y1": 537.9999565667342,
-                                    "~:x2": 726.0000448851986,
-                                    "~:y2": 627.9999027961663
+                                    "~:x1": 450.00002458522084,
+                                    "~:y1": 526.9999908990096,
+                                    "~:x2": 734.0000897078914,
+                                    "~:y2": 616.9999371284417
                                 }
                             },
                             "~:flip-x": null,
@@ -3220,7 +4463,7 @@
                     },
                     "~u8e0276b0-5131-8065-8006-87c8d5780f60": {
                         "~#shape": {
-                            "~:y": 213.00001923843956,
+                            "~:y": 166.00000568175594,
                             "~:transform": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -3295,34 +4538,35 @@
                             },
                             "~:hide-in-viewer": false,
                             "~:name": "Text",
-                            "~:width": 170.00000804662704,
+                            "~:width": 170,
                             "~:type": "~:text",
                             "~:points": [
                                 {
                                     "~#point": {
-                                        "~:x": 186.99999576807022,
-                                        "~:y": 213.00001923843956
+                                        "~:x": 372.0000051221425,
+                                        "~:y": 166.00000568175594
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 357.00000381469727,
-                                        "~:y": 213.00001923843956
+                                        "~:x": 542.0000051221425,
+                                        "~:y": 166.00000568175594
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 357.00000381469727,
-                                        "~:y": 256.00001721188164
+                                        "~:x": 542.0000051221425,
+                                        "~:y": 210.00000568175594
                                     }
                                 },
                                 {
                                     "~#point": {
-                                        "~:x": 186.99999576807022,
-                                        "~:y": 256.00001721188164
+                                        "~:x": 372.0000051221425,
+                                        "~:y": 210.00000568175594
                                     }
                                 }
                             ],
+                            "~:layout-item-h-sizing": "~:fix",
                             "~:transform-inverse": {
                                 "~#matrix": {
                                     "~:a": 1,
@@ -3333,8 +4577,38 @@
                                     "~:f": 0
                                 }
                             },
+                            "~:layout-item-v-sizing": "~:fix",
                             "~:id": "~u8e0276b0-5131-8065-8006-87c8d5780f60",
                             "~:parent-id": "~u00000000-0000-0000-0000-000000000000",
+                            "~:position-data": [
+                                {
+                                    "~#rect": {
+                                        "~:y": 211.35001178527156,
+                                        "~:font-style": "normal",
+                                        "~:text-transform": "none",
+                                        "~:font-size": "36px",
+                                        "~:font-weight": "400",
+                                        "~:y1": -2.149993896484375,
+                                        "~:width": 169.36666870117188,
+                                        "~:text-decoration": "rgb(21, 209, 46)",
+                                        "~:letter-spacing": "normal",
+                                        "~:x": 372.0000051221425,
+                                        "~:x1": 0,
+                                        "~:y2": 45.350006103515625,
+                                        "~:fills": [
+                                            {
+                                                "~:fill-color": "#15d12e",
+                                                "~:fill-opacity": 1
+                                            }
+                                        ],
+                                        "~:x2": 169.36666870117188,
+                                        "~:direction": "ltr",
+                                        "~:font-family": "\"sourcesanspro\"",
+                                        "~:height": 47.5,
+                                        "~:text": "hello world"
+                                    }
+                                }
+                            ],
                             "~:frame-id": "~u00000000-0000-0000-0000-000000000000",
                             "~:strokes": [
                                 {
@@ -3352,7 +4626,7 @@
                                     }
                                 }
                             ],
-                            "~:x": 186.99999576807022,
+                            "~:x": 372.0000051221425,
                             "~:shadow": [
                                 {
                                     "~:color": {
@@ -3370,18 +4644,18 @@
                             ],
                             "~:selrect": {
                                 "~#rect": {
-                                    "~:x": 186.99999576807022,
-                                    "~:y": 213.00001923843956,
-                                    "~:width": 170.00000804662704,
-                                    "~:height": 42.99999797344208,
-                                    "~:x1": 186.99999576807022,
-                                    "~:y1": 213.00001923843956,
-                                    "~:x2": 357.00000381469727,
-                                    "~:y2": 256.00001721188164
+                                    "~:x": 372.0000051221425,
+                                    "~:y": 166.00000568175594,
+                                    "~:width": 170,
+                                    "~:height": 44,
+                                    "~:x1": 372.0000051221425,
+                                    "~:y1": 166.00000568175594,
+                                    "~:x2": 542.0000051221425,
+                                    "~:y2": 210.00000568175594
                                 }
                             },
                             "~:flip-x": null,
-                            "~:height": 42.99999797344208,
+                            "~:height": 44,
                             "~:flip-y": null
                         }
                     }

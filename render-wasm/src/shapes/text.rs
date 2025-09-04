@@ -4,7 +4,11 @@ use crate::{
     textlayout::paragraph_builder_group_from_text,
 };
 
-use skia_safe::{self as skia, paint::Paint, textlayout::ParagraphStyle, ImageFilter, MaskFilter};
+use skia_safe::{
+    self as skia,
+    paint::{self, Paint},
+    textlayout::ParagraphStyle,
+};
 use std::collections::HashSet;
 
 use super::FontFamily;
@@ -86,7 +90,7 @@ impl TextContent {
 
     pub fn width(&self) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
-            let temp_paragraphs = paragraph_builder_group_from_text(self, None, None, None);
+            let temp_paragraphs = paragraph_builder_group_from_text(self, None);
             let mut temp_paragraphs = temp_paragraphs;
             auto_width(&mut temp_paragraphs, f32::MAX).ceil()
         } else {
@@ -104,7 +108,7 @@ impl TextContent {
 
     pub fn visual_bounds(&self) -> (f32, f32) {
         let paragraph_width = self.width();
-        let mut paragraphs = paragraph_builder_group_from_text(self, None, None, None);
+        let mut paragraphs = paragraph_builder_group_from_text(self, None);
         let paragraph_height = auto_height(&mut paragraphs, paragraph_width);
         (paragraph_width, paragraph_height)
     }
@@ -308,26 +312,20 @@ impl TextLeaf {
         &self,
         content_bounds: &Rect,
         fallback_fonts: &HashSet<String>,
-        _blur: Option<&ImageFilter>,
-        blur_mask: Option<&MaskFilter>,
-        shadow: Option<&Paint>,
+        remove_alpha: bool,
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
 
-        if shadow.is_some() {
-            let paint = shadow.unwrap().clone();
-            style.set_foreground_paint(&paint);
+        let mut paint = paint::Paint::default();
+
+        if remove_alpha {
+            paint.set_color(skia::Color::BLACK);
+            paint.set_alpha(255);
         } else {
-            let paint = merge_fills(&self.fills, *content_bounds);
-            style.set_foreground_paint(&paint);
+            paint = merge_fills(&self.fills, *content_bounds);
         }
 
-        if let Some(blur_mask) = blur_mask {
-            let mut paint = skia::Paint::default();
-            paint.set_mask_filter(blur_mask.clone());
-            style.set_foreground_paint(&paint);
-        }
-
+        style.set_foreground_paint(&paint);
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
         style.set_half_leading(false);
@@ -359,12 +357,20 @@ impl TextLeaf {
         &self,
         stroke_paint: &Paint,
         fallback_fonts: &HashSet<String>,
-        blur: Option<&ImageFilter>,
-        blur_mask: Option<&MaskFilter>,
-        shadow: Option<&Paint>,
+        remove_alpha: bool,
     ) -> skia::textlayout::TextStyle {
-        let mut style = self.to_style(&Rect::default(), fallback_fonts, blur, blur_mask, shadow);
-        style.set_foreground_paint(stroke_paint);
+        let mut style = self.to_style(&Rect::default(), fallback_fonts, remove_alpha);
+        if remove_alpha {
+            let mut paint = skia::Paint::default();
+            paint.set_style(stroke_paint.style());
+            paint.set_stroke_width(stroke_paint.stroke_width());
+            paint.set_color(skia::Color::BLACK);
+            paint.set_alpha(255);
+            style.set_foreground_paint(&paint);
+        } else {
+            style.set_foreground_paint(stroke_paint);
+        }
+
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
         style.set_decoration_type(match self.text_decoration {
@@ -406,9 +412,6 @@ impl TextLeaf {
     }
 
     pub fn is_transparent(&self) -> bool {
-        if self.fills.is_empty() {
-            return true;
-        }
         self.fills.iter().all(|fill| match fill {
             shapes::Fill::Solid(shapes::SolidColor(color)) => color.a() == 0,
             _ => false,

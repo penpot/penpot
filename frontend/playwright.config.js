@@ -23,6 +23,7 @@ export default defineConfig({
   expect: {
     timeout: process.env.CI ? 20000 : 5000,
   },
+
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -62,7 +63,9 @@ export default defineConfig({
       },
       testDir: "./playwright/ui/render-wasm-specs",
       snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}.png",
+      timeout: 2 * 60 * 1000,
       expect: {
+        timeout: process.env.CI ? 20000 : 10000,
         toHaveScreenshot: {
           maxDiffPixelRatio: 0.001,
         },

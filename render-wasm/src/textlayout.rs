@@ -1,7 +1,6 @@
-use skia_safe::{self as skia, textlayout::ParagraphBuilder, ImageFilter, MaskFilter, Paint, Rect};
+use skia_safe::{self as skia, textlayout::ParagraphBuilder, Paint, Rect};
 
 use crate::{
-    render::filters::compose_filters,
     shapes::{merge_fills, set_paint_fill, Stroke, StrokeKind, TextContent},
     utils::{get_fallback_fonts, get_font_collection},
 };
@@ -51,13 +50,11 @@ pub fn build_paragraphs_with_width(
         .collect()
 }
 
-type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
+pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
 
 pub fn paragraph_builder_group_from_text(
     text_content: &TextContent,
-    blur: Option<&ImageFilter>,
-    blur_mask: Option<&MaskFilter>,
-    shadow: Option<&Paint>,
+    use_shadow: Option<bool>,
 ) -> Vec<ParagraphBuilderGroup> {
     let fonts = get_font_collection();
     let fallback_fonts = get_fallback_fonts();
@@ -67,13 +64,8 @@ pub fn paragraph_builder_group_from_text(
         let paragraph_style = paragraph.paragraph_to_style();
         let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
         for leaf in paragraph.children() {
-            let text_style = leaf.to_style(
-                &text_content.bounds(),
-                fallback_fonts,
-                blur,
-                blur_mask,
-                shadow,
-            );
+            let remove_alpha = use_shadow.unwrap_or(false) && !leaf.is_transparent();
+            let text_style = leaf.to_style(&text_content.bounds(), fallback_fonts, remove_alpha);
             let text = leaf.apply_text_transform();
             builder.push_style(&text_style);
             builder.add_text(&text);
@@ -88,43 +80,27 @@ pub fn stroke_paragraph_builder_group_from_text(
     text_content: &TextContent,
     stroke: &Stroke,
     bounds: &Rect,
-    blur: Option<&ImageFilter>,
-    blur_mask: Option<&MaskFilter>,
-    shadow: Option<&Paint>,
     count_inner_strokes: usize,
+    use_shadow: Option<bool>,
 ) -> Vec<ParagraphBuilderGroup> {
     let fallback_fonts = get_fallback_fonts();
     let fonts = get_font_collection();
     let mut paragraph_group = Vec::new();
+    let remove_stroke_alpha = use_shadow.unwrap_or(false) && !stroke.is_transparent();
 
     for paragraph in text_content.paragraphs() {
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
         for leaf in paragraph.children().iter() {
-            let mut text_paint = merge_fills(leaf.fills(), *bounds);
-            if let Some(blur_mask) = blur_mask {
-                text_paint.set_mask_filter(blur_mask.clone());
-            }
-
-            let stroke_paints = if shadow.is_some() {
-                get_text_stroke_paints_with_shadows(
-                    stroke,
-                    blur,
-                    blur_mask,
-                    shadow,
-                    leaf.is_transparent(),
-                )
-            } else {
-                get_text_stroke_paints(
-                    stroke,
-                    bounds,
-                    &text_paint,
-                    blur,
-                    blur_mask,
-                    count_inner_strokes,
-                )
-            };
+            let text_paint: skia_safe::Handle<_> = merge_fills(leaf.fills(), *bounds);
+            let stroke_paints = get_text_stroke_paints(
+                stroke,
+                bounds,
+                &text_paint,
+                count_inner_strokes,
+                remove_stroke_alpha,
+            );
 
             let text: String = leaf.apply_text_transform();
 
@@ -134,8 +110,9 @@ pub fn stroke_paragraph_builder_group_from_text(
                     ParagraphBuilder::new(&paragraph_style, fonts)
                 });
                 let stroke_paint = stroke_paint.clone();
+                let remove_alpha = use_shadow.unwrap_or(false) && !leaf.is_transparent();
                 let stroke_style =
-                    leaf.to_stroke_style(&stroke_paint, fallback_fonts, blur, blur_mask, None);
+                    leaf.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha);
                 builder.push_style(&stroke_style);
                 builder.add_text(&text);
             }
@@ -158,101 +135,12 @@ fn get_built_paragraphs(
     build_paragraphs_with_width(paragraphs, width)
 }
 
-fn get_text_stroke_paints_with_shadows(
-    stroke: &Stroke,
-    blur: Option<&ImageFilter>,
-    blur_mask: Option<&MaskFilter>,
-    shadow: Option<&Paint>,
-    is_transparent: bool,
-) -> Vec<Paint> {
-    let mut paints = Vec::new();
-
-    match stroke.kind {
-        StrokeKind::Inner => {
-            let mut paint = Paint::default();
-            paint.set_style(skia::PaintStyle::Fill);
-            paint.set_anti_alias(true);
-
-            if let Some(blur) = blur {
-                paint.set_image_filter(blur.clone());
-            }
-
-            if let Some(shadow) = shadow {
-                paint.set_image_filter(shadow.image_filter());
-            }
-
-            paints.push(paint.clone());
-
-            if is_transparent {
-                let image_filter = skia_safe::image_filters::erode(
-                    (stroke.width, stroke.width),
-                    paint.image_filter(),
-                    None,
-                );
-                paint.set_image_filter(image_filter);
-                paint.set_blend_mode(skia::BlendMode::DstOut);
-                paints.push(paint.clone());
-            }
-        }
-        StrokeKind::Center => {
-            let mut paint = skia_safe::Paint::default();
-            paint.set_anti_alias(true);
-            paint.set_stroke_width(stroke.width);
-
-            if let Some(blur) = blur {
-                paint.set_image_filter(blur.clone());
-            }
-
-            if let Some(shadow) = shadow {
-                paint.set_image_filter(shadow.image_filter());
-            }
-
-            if is_transparent {
-                paint.set_style(skia::PaintStyle::Stroke);
-            } else {
-                paint.set_style(skia::PaintStyle::StrokeAndFill);
-            }
-
-            paints.push(paint);
-        }
-        StrokeKind::Outer => {
-            let mut paint = skia_safe::Paint::default();
-            paint.set_style(skia::PaintStyle::StrokeAndFill);
-            paint.set_anti_alias(true);
-            paint.set_stroke_width(stroke.width * 2.0);
-
-            if let Some(blur_mask) = blur_mask {
-                paint.set_mask_filter(blur_mask.clone());
-            }
-
-            if let Some(shadow) = shadow {
-                paint.set_image_filter(shadow.image_filter());
-            }
-
-            paints.push(paint.clone());
-
-            if is_transparent {
-                let image_filter = skia_safe::image_filters::erode(
-                    (stroke.width, stroke.width),
-                    paint.image_filter(),
-                    None,
-                );
-                paint.set_image_filter(image_filter);
-                paint.set_blend_mode(skia::BlendMode::DstOut);
-                paints.push(paint.clone());
-            }
-        }
-    }
-    paints
-}
-
 fn get_text_stroke_paints(
     stroke: &Stroke,
     bounds: &Rect,
     text_paint: &Paint,
-    blur: Option<&ImageFilter>,
-    blur_mask: Option<&MaskFilter>,
     count_inner_strokes: usize,
+    remove_stroke_alpha: bool,
 ) -> Vec<Paint> {
     let mut paints = Vec::new();
 
@@ -269,34 +157,37 @@ fn get_text_stroke_paints(
                 let mut paint = text_paint.clone();
                 paint.set_style(skia::PaintStyle::Fill);
                 paint.set_anti_alias(true);
-                if let Some(blur) = blur {
-                    paint.set_image_filter(blur.clone());
-                }
                 paints.push(paint);
+
                 let mut paint = skia::Paint::default();
                 paint.set_style(skia::PaintStyle::Stroke);
                 paint.set_blend_mode(skia::BlendMode::SrcIn);
                 paint.set_anti_alias(true);
                 paint.set_stroke_width(stroke.width * 2.0);
-                set_paint_fill(&mut paint, &stroke.fill, bounds);
-                if let Some(blur) = blur {
-                    paint.set_image_filter(blur.clone());
-                }
+                set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
                 paints.push(paint);
             } else {
-                let mut paint = text_paint.clone();
+                let mut paint = skia::Paint::default();
+                if remove_stroke_alpha {
+                    paint.set_color(skia::Color::BLACK);
+                    paint.set_alpha(255);
+                } else {
+                    paint = text_paint.clone();
+                    set_paint_fill(&mut paint, &stroke.fill, bounds, false);
+                }
+
                 paint.set_style(skia::PaintStyle::Fill);
                 paint.set_anti_alias(false);
-                set_paint_fill(&mut paint, &stroke.fill, bounds);
                 paints.push(paint);
 
                 let mut paint = skia::Paint::default();
                 let image_filter =
                     skia_safe::image_filters::erode((stroke.width, stroke.width), None, None);
 
-                let filter = compose_filters(blur, image_filter.as_ref());
-                paint.set_image_filter(filter);
+                paint.set_image_filter(image_filter);
                 paint.set_anti_alias(false);
+                paint.set_color(skia::Color::BLACK);
+                paint.set_alpha(255);
                 paint.set_blend_mode(skia::BlendMode::DstOut);
                 paints.push(paint);
             }
@@ -306,12 +197,7 @@ fn get_text_stroke_paints(
             paint.set_style(skia::PaintStyle::Stroke);
             paint.set_anti_alias(true);
             paint.set_stroke_width(stroke.width);
-
-            set_paint_fill(&mut paint, &stroke.fill, bounds);
-            if let Some(blur) = blur {
-                paint.set_image_filter(blur.clone());
-            }
-
+            set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
             paints.push(paint);
         }
         StrokeKind::Outer => {
@@ -320,10 +206,7 @@ fn get_text_stroke_paints(
             paint.set_blend_mode(skia::BlendMode::DstOver);
             paint.set_anti_alias(true);
             paint.set_stroke_width(stroke.width * 2.0);
-            set_paint_fill(&mut paint, &stroke.fill, bounds);
-            if let Some(blur_mask) = blur_mask {
-                paint.set_mask_filter(blur_mask.clone());
-            }
+            set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
             paints.push(paint);
 
             let mut paint = skia::Paint::default();

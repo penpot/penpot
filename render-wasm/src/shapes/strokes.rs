@@ -264,4 +264,11 @@ impl Stroke {
 
         paint
     }
+
+    pub fn is_transparent(&self) -> bool {
+        match &self.fill {
+            Fill::Solid(SolidColor(color)) => color.a() == 0,
+            _ => false,
+        }
+    }
 }

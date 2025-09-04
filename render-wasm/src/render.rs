@@ -437,6 +437,9 @@ impl RenderState {
         let paint = skia::Paint::default();
 
         self.surfaces
+            .draw_into(SurfaceId::TextDropShadows, SurfaceId::Current, Some(&paint));
+
+        self.surfaces
             .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
 
         let mut render_overlay_below_strokes = false;
@@ -457,8 +460,10 @@ impl RenderState {
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        let surface_ids =
-            SurfaceId::Strokes as u32 | SurfaceId::Fills as u32 | SurfaceId::InnerShadows as u32;
+        let surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::InnerShadows as u32
+            | SurfaceId::TextDropShadows as u32;
 
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
@@ -485,8 +490,10 @@ impl RenderState {
         fills_surface_id: SurfaceId,
         strokes_surface_id: SurfaceId,
         innershadows_surface_id: SurfaceId,
+        text_drop_shadows_surface_id: SurfaceId,
         apply_to_current_surface: bool,
         offset: Option<(f32, f32)>,
+        parent_shadows: Option<Vec<skia_safe::Paint>>,
     ) {
         let shape = if let Some(scale_content) = scale_content {
             &shape.scale_content(*scale_content)
@@ -494,8 +501,10 @@ impl RenderState {
             shape
         };
 
-        let surface_ids =
-            fills_surface_id as u32 | strokes_surface_id as u32 | innershadows_surface_id as u32;
+        let surface_ids = fills_surface_id as u32
+            | strokes_surface_id as u32
+            | innershadows_surface_id as u32
+            | text_drop_shadows_surface_id as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().save();
         });
@@ -604,72 +613,139 @@ impl RenderState {
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
+                let drop_shadows = shape.drop_shadow_paints();
                 let inner_shadows = shape.inner_shadow_paints();
                 let blur_filter = shape.image_filter(1.);
-                let blur_mask = shape.mask_filter(1.);
-                let mut paragraphs = paragraph_builder_group_from_text(
-                    &text_content,
-                    blur_filter.as_ref(),
-                    blur_mask.as_ref(),
-                    None,
-                );
-
                 let count_inner_strokes = shape.count_visible_inner_strokes();
-                text::render(self, &shape, &mut paragraphs, Some(fills_surface_id));
-                for stroke in shape.visible_strokes().rev() {
-                    let mut stroke_paragraphs = stroke_paragraph_builder_group_from_text(
-                        &text_content,
-                        stroke,
-                        &shape.selrect(),
-                        blur_filter.as_ref(),
-                        blur_mask.as_ref(),
-                        None,
-                        count_inner_strokes,
-                    );
+                let mut paragraphs = paragraph_builder_group_from_text(&text_content, None);
+                let mut paragraphs_with_shadows =
+                    paragraph_builder_group_from_text(&text_content, Some(true));
+                let mut stroke_paragraphs_list = shape
+                    .visible_strokes()
+                    .map(|stroke| {
+                        stroke_paragraph_builder_group_from_text(
+                            &text_content,
+                            stroke,
+                            &shape.selrect(),
+                            count_inner_strokes,
+                            None,
+                        )
+                    })
+                    .collect::<Vec<_>>();
 
-                    strokes::render(
-                        self,
-                        &shape,
-                        stroke,
-                        Some(strokes_surface_id),
-                        None,
-                        Some(&mut stroke_paragraphs),
-                        antialias,
-                    );
+                let mut stroke_paragraphs_with_shadows_list = shape
+                    .visible_strokes()
+                    .map(|stroke| {
+                        stroke_paragraph_builder_group_from_text(
+                            &text_content,
+                            stroke,
+                            &shape.selrect(),
+                            count_inner_strokes,
+                            Some(true),
+                        )
+                    })
+                    .collect::<Vec<_>>();
 
-                    for inner_shadow in &inner_shadows {
-                        let mut stroke_paragraphs_with_inner_shadows =
-                            stroke_paragraph_builder_group_from_text(
-                                &text_content,
-                                stroke,
-                                &shape.selrect(),
+                if let Some(parent_shadows) = parent_shadows {
+                    if !shape.has_visible_strokes() {
+                        for shadow in &parent_shadows {
+                            text::render(
+                                Some(self),
+                                None,
+                                &shape,
+                                &mut paragraphs_with_shadows,
+                                text_drop_shadows_surface_id.into(),
+                                Some(shadow),
                                 blur_filter.as_ref(),
-                                blur_mask.as_ref(),
-                                Some(inner_shadow),
-                                count_inner_strokes,
                             );
-                        shadows::render_text_inner_shadows(
+                        }
+                    } else {
+                        shadows::render_text_shadows(
                             self,
                             &shape,
-                            &mut stroke_paragraphs_with_inner_shadows,
-                            innershadows_surface_id,
+                            &mut paragraphs_with_shadows,
+                            &mut stroke_paragraphs_with_shadows_list,
+                            text_drop_shadows_surface_id.into(),
+                            &parent_shadows,
+                            &blur_filter,
                         );
                     }
-                }
+                } else {
+                    // 1. Text drop shadows
+                    if !shape.has_visible_strokes() {
+                        for shadow in &drop_shadows {
+                            text::render(
+                                Some(self),
+                                None,
+                                &shape,
+                                &mut paragraphs_with_shadows,
+                                text_drop_shadows_surface_id.into(),
+                                Some(shadow),
+                                blur_filter.as_ref(),
+                            );
+                        }
+                    }
 
-                for inner_shadow in &inner_shadows {
-                    let mut paragraphs_with_inner_shadows = paragraph_builder_group_from_text(
-                        &text_content,
+                    // 2. Text fills
+                    text::render(
+                        Some(self),
+                        None,
+                        &shape,
+                        &mut paragraphs,
+                        Some(fills_surface_id),
+                        None,
                         blur_filter.as_ref(),
-                        blur_mask.as_ref(),
-                        Some(inner_shadow),
                     );
-                    shadows::render_text_inner_shadows(
+
+                    // 3. Stroke drop shadows
+                    shadows::render_text_shadows(
                         self,
                         &shape,
-                        &mut paragraphs_with_inner_shadows,
-                        innershadows_surface_id,
+                        &mut paragraphs_with_shadows,
+                        &mut stroke_paragraphs_with_shadows_list,
+                        text_drop_shadows_surface_id.into(),
+                        &drop_shadows,
+                        &blur_filter,
                     );
+
+                    // 4. Stroke fills
+                    for stroke_paragraphs in stroke_paragraphs_list.iter_mut() {
+                        text::render(
+                            Some(self),
+                            None,
+                            &shape,
+                            stroke_paragraphs,
+                            Some(strokes_surface_id),
+                            None,
+                            blur_filter.as_ref(),
+                        );
+                    }
+
+                    // 5. Stroke inner shadows
+                    shadows::render_text_shadows(
+                        self,
+                        &shape,
+                        &mut paragraphs_with_shadows,
+                        &mut stroke_paragraphs_with_shadows_list,
+                        Some(innershadows_surface_id),
+                        &inner_shadows,
+                        &blur_filter,
+                    );
+
+                    // 6. Fill Inner shadows
+                    if !shape.has_visible_strokes() {
+                        for shadow in &inner_shadows {
+                            text::render(
+                                Some(self),
+                                None,
+                                &shape,
+                                &mut paragraphs_with_shadows,
+                                Some(innershadows_surface_id),
+                                Some(shadow),
+                                blur_filter.as_ref(),
+                            );
+                        }
+                    }
                 }
             }
             _ => {
@@ -717,7 +793,6 @@ impl RenderState {
                         shape,
                         stroke,
                         Some(strokes_surface_id),
-                        None,
                         None,
                         antialias,
                     );
@@ -815,8 +890,10 @@ impl RenderState {
         performance::begin_measure!("start_render_loop");
 
         self.reset_canvas();
-        let surface_ids =
-            SurfaceId::Strokes as u32 | SurfaceId::Fills as u32 | SurfaceId::InnerShadows as u32;
+        let surface_ids = SurfaceId::Strokes as u32
+            | SurfaceId::Fills as u32
+            | SurfaceId::InnerShadows as u32
+            | SurfaceId::TextDropShadows as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().scale((scale, scale));
         });
@@ -997,7 +1074,9 @@ impl RenderState {
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
                 SurfaceId::InnerShadows,
+                SurfaceId::TextDropShadows,
                 true,
+                None,
                 None,
             );
         }
@@ -1098,7 +1177,6 @@ impl RenderState {
         self.surfaces
             .canvas(SurfaceId::DropShadows)
             .save_layer(&layer_rec);
-
         self.surfaces
             .canvas(SurfaceId::DropShadows)
             .scale((scale, scale));
@@ -1116,8 +1194,10 @@ impl RenderState {
             SurfaceId::DropShadows,
             SurfaceId::DropShadows,
             SurfaceId::DropShadows,
+            SurfaceId::DropShadows,
             false,
             Some((shadow.offset.0, shadow.offset.1)),
+            None,
         );
 
         self.surfaces.canvas(SurfaceId::DropShadows).restore();
@@ -1133,6 +1213,7 @@ impl RenderState {
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
         let mut is_empty = true;
+
         while let Some(node_render_state) = self.pending_nodes.pop() {
             let NodeRenderState {
                 id: node_id,
@@ -1199,80 +1280,128 @@ impl RenderState {
             }
 
             self.render_shape_enter(element, mask);
+
             if !node_render_state.is_root() && self.focus_mode.is_active() {
-                let scale = self.get_scale();
+                let scale: f32 = self.get_scale();
                 let translation = self
                     .surfaces
                     .get_render_context_translation(self.render_area, scale);
 
-                // Shadow rendering technique: Two-pass approach for proper opacity handling
-                //
-                // The shadow rendering uses a two-pass technique to ensure that overlapping
-                // shadow areas maintain correct opacity without unwanted darkening:
-                //
-                // 1. First pass: Render shadow shape in pure black (alpha channel preserved)
-                //    - This creates the shadow silhouette with proper alpha gradients
-                //    - The black color acts as a mask for the final shadow color
-                //
-                // 2. Second pass: Apply actual shadow color using SrcIn blend mode
-                //    - SrcIn preserves the alpha channel from the black shadow
-                //    - Only the color channels are replaced, maintaining transparency
-                //    - This prevents overlapping shadows from accumulating opacity
-                //
-                // This approach is essential for complex shapes with transparency where
-                // multiple shadow areas might overlap, ensuring visual consistency.
-                for shadow in element.drop_shadows().rev().filter(|s| !s.hidden()) {
-                    let paint = skia::Paint::default();
-                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
-                    self.surfaces
-                        .canvas(SurfaceId::DropShadows)
-                        .save_layer(&layer_rec);
+                // For text shapes, render drop shadow using text rendering logic
+                if !matches!(element.shape_type, Type::Text(_)) {
+                    // Shadow rendering technique: Two-pass approach for proper opacity handling
+                    //
+                    // The shadow rendering uses a two-pass technique to ensure that overlapping
+                    // shadow areas maintain correct opacity without unwanted darkening:
+                    //
+                    // 1. First pass: Render shadow shape in pure black (alpha channel preserved)
+                    //    - This creates the shadow silhouette with proper alpha gradients
+                    //    - The black color acts as a mask for the final shadow color
+                    //
+                    // 2. Second pass: Apply actual shadow color using SrcIn blend mode
+                    //    - SrcIn preserves the alpha channel from the black shadow
+                    //    - Only the color channels are replaced, maintaining transparency
+                    //    - This prevents overlapping shadows from accumulating opacity
+                    //
+                    // This approach is essential for complex shapes with transparency where
+                    // multiple shadow areas might overlap, ensuring visual consistency.
+                    for shadow in element.drop_shadows_visible() {
+                        let paint = skia::Paint::default();
+                        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
 
-                    // First pass: Render shadow in black to establish alpha mask
-                    self.render_drop_black_shadow(
-                        tree,
-                        modifiers,
-                        structure,
-                        element,
-                        shadow,
-                        scale_content.get(&element.id),
-                        clip_bounds,
-                        scale,
-                        translation,
-                    );
+                        self.surfaces
+                            .canvas(SurfaceId::DropShadows)
+                            .save_layer(&layer_rec);
 
-                    // Nested shapes shadowing - apply black shadow to child shapes too
-                    for shadow_shape_id in element.children.iter() {
-                        let shadow_shape = tree.get(shadow_shape_id).unwrap();
-                        let clip_bounds = node_render_state.get_shadow_clip_bounds(
-                            element,
-                            modifiers.get(&element.id),
-                            shadow,
-                        );
+                        // First pass: Render shadow in black to establish alpha mask
                         self.render_drop_black_shadow(
                             tree,
                             modifiers,
                             structure,
-                            shadow_shape,
+                            element,
                             shadow,
                             scale_content.get(&element.id),
                             clip_bounds,
                             scale,
                             translation,
                         );
+
+                        // Nested shapes shadowing - apply black shadow to child shapes too
+                        for shadow_shape_id in element.children.iter() {
+                            let shadow_shape = tree.get(shadow_shape_id).unwrap();
+                            let clip_bounds = node_render_state.get_shadow_clip_bounds(
+                                element,
+                                modifiers.get(&element.id),
+                                shadow,
+                            );
+
+                            if !matches!(shadow_shape.shape_type, Type::Text(_)) {
+                                self.render_drop_black_shadow(
+                                    tree,
+                                    modifiers,
+                                    structure,
+                                    shadow_shape,
+                                    shadow,
+                                    scale_content.get(&element.id),
+                                    clip_bounds,
+                                    scale,
+                                    translation,
+                                );
+                            } else {
+                                let paint = skia::Paint::default();
+                                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+
+                                self.surfaces
+                                    .canvas(SurfaceId::DropShadows)
+                                    .save_layer(&layer_rec);
+                                self.surfaces
+                                    .canvas(SurfaceId::DropShadows)
+                                    .scale((scale, scale));
+                                self.surfaces
+                                    .canvas(SurfaceId::DropShadows)
+                                    .translate(translation);
+
+                                let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
+                                // transformed_shadow.to_mut().offset = (0., 0.);
+                                transformed_shadow.to_mut().color = skia::Color::BLACK;
+                                transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
+
+                                let mut new_shadow_paint = skia::Paint::default();
+                                new_shadow_paint
+                                    .set_image_filter(transformed_shadow.get_drop_shadow_filter());
+                                new_shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+                                self.render_shape(
+                                    tree,
+                                    modifiers,
+                                    structure,
+                                    shadow_shape,
+                                    scale_content.get(&element.id),
+                                    clip_bounds,
+                                    SurfaceId::DropShadows,
+                                    SurfaceId::DropShadows,
+                                    SurfaceId::DropShadows,
+                                    SurfaceId::DropShadows,
+                                    true,
+                                    None,
+                                    Some(vec![new_shadow_paint.clone()]),
+                                );
+                                self.surfaces.canvas(SurfaceId::DropShadows).restore();
+                            }
+                        }
+
+                        // Second pass: Apply actual shadow color using SrcIn blend mode
+                        // This preserves the alpha channel from the black shadow while
+                        // replacing only the color channels, preventing opacity accumulation
+                        let mut paint = skia::Paint::default();
+                        paint.set_color(shadow.color);
+                        paint.set_blend_mode(skia::BlendMode::SrcIn);
+                        self.surfaces
+                            .canvas(SurfaceId::DropShadows)
+                            .draw_paint(&paint);
+
+                        self.surfaces.canvas(SurfaceId::DropShadows).restore();
                     }
-
-                    // Second pass: Apply actual shadow color using SrcIn blend mode
-                    // This preserves the alpha channel from the black shadow while
-                    // replacing only the color channels, preventing opacity accumulation
-                    let mut paint = skia::Paint::default();
-                    paint.set_color(shadow.color);
-                    paint.set_blend_mode(skia::BlendMode::SrcIn);
-                    self.surfaces
-                        .canvas(SurfaceId::DropShadows)
-                        .draw_paint(&paint);
-
-                    self.surfaces.canvas(SurfaceId::DropShadows).restore();
                 }
 
                 self.surfaces
@@ -1292,7 +1421,9 @@ impl RenderState {
                     SurfaceId::Fills,
                     SurfaceId::Strokes,
                     SurfaceId::InnerShadows,
+                    SurfaceId::TextDropShadows,
                     true,
+                    None,
                     None,
                 );
 

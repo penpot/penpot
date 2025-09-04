@@ -200,7 +200,7 @@ fn propagate_transform(
         match content.grow_type() {
             GrowType::AutoHeight => {
                 let paragraph_width = shape_bounds_after.width();
-                let mut paragraphs = paragraph_builder_group_from_text(content, None, None, None);
+                let mut paragraphs = paragraph_builder_group_from_text(content, None);
                 let height = auto_height(&mut paragraphs, paragraph_width);
                 let resize_transform = math::resize_matrix(
                     &shape_bounds_after,
@@ -213,7 +213,7 @@ fn propagate_transform(
             }
             GrowType::AutoWidth => {
                 let paragraph_width = content.width();
-                let mut paragraphs = paragraph_builder_group_from_text(content, None, None, None);
+                let mut paragraphs = paragraph_builder_group_from_text(content, None);
                 let height = auto_height(&mut paragraphs, paragraph_width);
                 let resize_transform = math::resize_matrix(
                     &shape_bounds_after,

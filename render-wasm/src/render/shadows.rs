@@ -1,9 +1,10 @@
 use super::{RenderState, SurfaceId};
 use crate::render::strokes;
-use crate::render::text::{self};
 use crate::shapes::{Shadow, Shape, Stroke, Type};
-use skia_safe::textlayout::ParagraphBuilder;
-use skia_safe::{Paint, Path};
+use skia_safe::{canvas::SaveLayerRec, Paint, Path};
+
+use crate::render::text;
+use crate::textlayout::ParagraphBuilderGroup;
 
 // Fill Shadows
 pub fn render_fill_inner_shadows(
@@ -46,7 +47,6 @@ pub fn render_stroke_inner_shadows(
                 stroke,
                 Some(surface_id),
                 filter.as_ref(),
-                None,
                 antialias,
             )
         }
@@ -74,15 +74,6 @@ pub fn render_text_path_stroke_drop_shadows(
             antialias,
         );
     }
-}
-
-pub fn render_text_inner_shadows(
-    render_state: &mut RenderState,
-    shape: &Shape,
-    paragraphs: &mut [Vec<ParagraphBuilder>],
-    surface_id: SurfaceId,
-) {
-    text::render(render_state, shape, paragraphs, Some(surface_id));
 }
 
 // Render text paths (unused)
@@ -127,5 +118,52 @@ fn render_shadow_paint(
             render_state.surfaces.draw_path_to(surface_id, shape, paint);
         }
         _ => {}
+    }
+}
+
+pub fn render_text_shadows(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    paragraphs: &mut [ParagraphBuilderGroup],
+    stroke_paragraphs_group: &mut [Vec<ParagraphBuilderGroup>],
+    surface_id: Option<SurfaceId>,
+    shadows: &[Paint],
+    blur_filter: &Option<skia_safe::ImageFilter>,
+) {
+    if stroke_paragraphs_group.is_empty() {
+        return;
+    }
+
+    let canvas = render_state
+        .surfaces
+        .canvas(surface_id.unwrap_or(SurfaceId::TextDropShadows));
+
+    for shadow in shadows {
+        let shadow_layer = SaveLayerRec::default().paint(shadow);
+        canvas.save_layer(&shadow_layer);
+
+        text::render(
+            None,
+            Some(canvas),
+            shape,
+            paragraphs,
+            surface_id,
+            None,
+            blur_filter.as_ref(),
+        );
+
+        for stroke_paragraphs in stroke_paragraphs_group.iter_mut() {
+            text::render(
+                None,
+                Some(canvas),
+                shape,
+                stroke_paragraphs,
+                surface_id,
+                None,
+                blur_filter.as_ref(),
+            );
+        }
+
+        canvas.restore();
     }
 }
