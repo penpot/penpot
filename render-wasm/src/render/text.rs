@@ -1,6 +1,14 @@
 use super::{RenderState, Shape, SurfaceId};
-use crate::shapes::VerticalAlign;
+use crate::{
+    math::Rect,
+    shapes::{
+        merge_fills, set_paint_fill, ParagraphBuilderGroup, Stroke, StrokeKind, TextContent,
+        VerticalAlign,
+    },
+    utils::{get_fallback_fonts, get_font_collection},
+};
 use skia_safe::{
+    self as skia,
     canvas::SaveLayerRec,
     textlayout::{
         LineMetrics, Paragraph, ParagraphBuilder, RectHeightStyle, RectWidthStyle, StyleMetrics,
@@ -9,11 +17,149 @@ use skia_safe::{
     Canvas, ImageFilter, Paint, Path,
 };
 
+pub fn stroke_paragraph_builder_group_from_text(
+    text_content: &TextContent,
+    stroke: &Stroke,
+    bounds: &Rect,
+    count_inner_strokes: usize,
+    use_shadow: Option<bool>,
+) -> Vec<ParagraphBuilderGroup> {
+    let fallback_fonts = get_fallback_fonts();
+    let fonts = get_font_collection();
+    let mut paragraph_group = Vec::new();
+    let remove_stroke_alpha = use_shadow.unwrap_or(false) && !stroke.is_transparent();
+
+    for paragraph in text_content.paragraphs() {
+        let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
+            std::collections::HashMap::new();
+
+        for leaf in paragraph.children().iter() {
+            let text_paint: skia_safe::Handle<_> = merge_fills(leaf.fills(), *bounds);
+            let stroke_paints = get_text_stroke_paints(
+                stroke,
+                bounds,
+                &text_paint,
+                count_inner_strokes,
+                remove_stroke_alpha,
+            );
+
+            let text: String = leaf.apply_text_transform();
+
+            for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
+                let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
+                    let paragraph_style = paragraph.paragraph_to_style();
+                    ParagraphBuilder::new(&paragraph_style, fonts)
+                });
+                let stroke_paint = stroke_paint.clone();
+                let remove_alpha = use_shadow.unwrap_or(false) && !leaf.is_transparent();
+                let stroke_style =
+                    leaf.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha);
+                builder.push_style(&stroke_style);
+                builder.add_text(&text);
+            }
+        }
+
+        let stroke_paragraphs: Vec<ParagraphBuilder> = (0..stroke_paragraphs_map.len())
+            .map(|i| stroke_paragraphs_map.remove(&i).unwrap())
+            .collect();
+
+        paragraph_group.push(stroke_paragraphs);
+    }
+
+    paragraph_group
+}
+
+fn get_text_stroke_paints(
+    stroke: &Stroke,
+    bounds: &Rect,
+    text_paint: &Paint,
+    count_inner_strokes: usize,
+    remove_stroke_alpha: bool,
+) -> Vec<Paint> {
+    let mut paints = Vec::new();
+
+    match stroke.kind {
+        StrokeKind::Inner => {
+            let shader = text_paint.shader();
+            let mut is_opaque = true;
+
+            if shader.is_some() {
+                is_opaque = shader.unwrap().is_opaque();
+            }
+
+            if is_opaque && count_inner_strokes == 1 {
+                let mut paint = text_paint.clone();
+                paint.set_style(skia::PaintStyle::Fill);
+                paint.set_anti_alias(true);
+                paints.push(paint);
+
+                let mut paint = skia::Paint::default();
+                paint.set_style(skia::PaintStyle::Stroke);
+                paint.set_blend_mode(skia::BlendMode::SrcIn);
+                paint.set_anti_alias(true);
+                paint.set_stroke_width(stroke.width * 2.0);
+                set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
+                paints.push(paint);
+            } else {
+                let mut paint = skia::Paint::default();
+                if remove_stroke_alpha {
+                    paint.set_color(skia::Color::BLACK);
+                    paint.set_alpha(255);
+                } else {
+                    paint = text_paint.clone();
+                    set_paint_fill(&mut paint, &stroke.fill, bounds, false);
+                }
+
+                paint.set_style(skia::PaintStyle::Fill);
+                paint.set_anti_alias(false);
+                paints.push(paint);
+
+                let mut paint = skia::Paint::default();
+                let image_filter =
+                    skia_safe::image_filters::erode((stroke.width, stroke.width), None, None);
+
+                paint.set_image_filter(image_filter);
+                paint.set_anti_alias(false);
+                paint.set_color(skia::Color::BLACK);
+                paint.set_alpha(255);
+                paint.set_blend_mode(skia::BlendMode::DstOut);
+                paints.push(paint);
+            }
+        }
+        StrokeKind::Center => {
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_anti_alias(true);
+            paint.set_stroke_width(stroke.width);
+            set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
+            paints.push(paint);
+        }
+        StrokeKind::Outer => {
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Stroke);
+            paint.set_blend_mode(skia::BlendMode::DstOver);
+            paint.set_anti_alias(true);
+            paint.set_stroke_width(stroke.width * 2.0);
+            set_paint_fill(&mut paint, &stroke.fill, bounds, remove_stroke_alpha);
+            paints.push(paint);
+
+            let mut paint = skia::Paint::default();
+            paint.set_style(skia::PaintStyle::Fill);
+            paint.set_blend_mode(skia::BlendMode::Clear);
+            paint.set_color(skia::Color::TRANSPARENT);
+            paint.set_anti_alias(true);
+            paints.push(paint);
+        }
+    }
+
+    paints
+}
+
 pub fn render(
     render_state: Option<&mut RenderState>,
     canvas: Option<&Canvas>,
     shape: &Shape,
-    paragraphs: &mut [Vec<ParagraphBuilder>],
+    paragraph_builders: &mut [Vec<ParagraphBuilder>],
     surface_id: Option<SurfaceId>,
     shadow: Option<&Paint>,
     blur: Option<&ImageFilter>,
@@ -36,10 +182,10 @@ pub fn render(
     if let Some(shadow_paint) = shadow {
         let layer_rec = SaveLayerRec::default().paint(shadow_paint);
         render_canvas.save_layer(&layer_rec);
-        draw_text(render_canvas, shape, paragraphs);
+        draw_text(render_canvas, shape, paragraph_builders);
         render_canvas.restore();
     } else {
-        draw_text(render_canvas, shape, paragraphs);
+        draw_text(render_canvas, shape, paragraph_builders);
     }
 
     if blur.is_some() {
@@ -49,7 +195,7 @@ pub fn render(
     render_canvas.restore();
 }
 
-fn draw_text(canvas: &Canvas, shape: &Shape, paragraphs: &mut [Vec<ParagraphBuilder>]) {
+fn draw_text(canvas: &Canvas, shape: &Shape, paragraph_builders: &mut [Vec<ParagraphBuilder>]) {
     // Width
     let paragraph_width = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
         text_content.width()
@@ -59,7 +205,7 @@ fn draw_text(canvas: &Canvas, shape: &Shape, paragraphs: &mut [Vec<ParagraphBuil
 
     // Height
     let container_height = shape.selrect().height();
-    let total_content_height = calculate_all_paragraphs_height(paragraphs, paragraph_width);
+    let total_content_height = calculate_all_paragraphs_height(paragraph_builders, paragraph_width);
     let mut global_offset_y = match shape.vertical_align() {
         VerticalAlign::Center => (container_height - total_content_height) / 2.0,
         VerticalAlign::Bottom => container_height - total_content_height,
@@ -68,7 +214,7 @@ fn draw_text(canvas: &Canvas, shape: &Shape, paragraphs: &mut [Vec<ParagraphBuil
 
     let layer_rec = SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
-    for group in paragraphs {
+    for group in paragraph_builders {
         let mut group_offset_y = global_offset_y;
         let group_len = group.len();
 
