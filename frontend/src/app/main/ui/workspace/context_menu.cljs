@@ -433,7 +433,7 @@
                         :on-click do-start-editing}])
 
      (when-not (or disable-flatten has-frame? has-path?)
-       [:> menu-entry* {:title (tr "workspace.shape.menu.transform-to-path")
+       [:> menu-entry* {:title (tr "workspace.shape.menu.flatten")
                         :on-click do-transform-to-path}])
 
      (when (and (not disable-booleans)
@@ -822,6 +822,7 @@
      [:div {:class (stl/css :workspace-context-menu)
             :ref dropdown-ref
             :style {:top top :left left}
+            :data-testid "context-menu"
             :on-context-menu prevent-default}
 
       [:ul {:class (stl/css :context-list)}
