@@ -426,7 +426,8 @@
                  (into acc (zipmap vs (repeat k)))) {})))
 
 (defn parse-font-weight [font-weight]
-  (let [[_ variant italic] (->> (str/lower font-weight)
+  (let [[_ variant italic] (->> (str font-weight)
+                                (str/lower)
                                 (re-find #"^(.+?)\s*(italic)?$"))]
     {:variant variant
      :italic? (some? italic)}))
