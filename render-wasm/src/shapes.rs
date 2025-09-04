@@ -45,8 +45,7 @@ pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
 
-use crate::math;
-use crate::math::{Bounds, Matrix, Point};
+use crate::math::{self, Bounds, Matrix, Point};
 use indexmap::IndexSet;
 
 use crate::state::ShapesPool;
@@ -655,12 +654,17 @@ impl Shape {
             Point::new(self.selrect.x(), self.selrect.y() + self.selrect.height()),
         );
 
-        let center = self.center();
-        let mut matrix = self.transform;
-        matrix.post_translate(center);
-        matrix.pre_translate(-center);
-
-        bounds.transform_mut(&matrix);
+        // Apply this transformation only when self.transform
+        // is not the identity matrix because if it is,
+        // the result of applying this transformations would be
+        // the same identity matrix.
+        if !self.transform.is_identity() {
+            let mut matrix = self.transform;
+            let center = self.center();
+            matrix.post_translate(center);
+            matrix.pre_translate(-center);
+            bounds.transform_mut(&matrix);
+        }
 
         bounds
     }
@@ -829,6 +833,10 @@ impl Shape {
         rect
     }
 
+    pub fn left_top(&self) -> Point {
+        Point::new(self.selrect.left, self.selrect.top)
+    }
+
     pub fn center(&self) -> Point {
         self.selrect.center()
     }
@@ -918,11 +926,40 @@ impl Shape {
                 ancestors.insert(parent_id);
                 current_id = parent_id;
             } else {
-                break;
+                // FIXME: This should panic! I've removed it temporarily until
+                // we fix the problems with shapes without parents.
+                // panic!("Parent can't be found");
             }
         }
 
         ancestors
+    }
+
+    pub fn get_matrix(&self) -> Matrix {
+        let mut matrix = Matrix::new_identity();
+        matrix.post_translate(self.left_top());
+        matrix.post_rotate(self.rotation, self.center());
+        matrix
+    }
+
+    pub fn get_concatenated_matrix(&self, shapes: &ShapesPool) -> Matrix {
+        let mut matrix = Matrix::new_identity();
+        let mut current_id = self.id;
+        while let Some(parent_id) = shapes.get(&current_id).and_then(|s| s.parent_id) {
+            if parent_id == Uuid::nil() {
+                break;
+            }
+
+            if let Some(parent) = shapes.get(&parent_id) {
+                matrix.pre_concat(&parent.get_matrix());
+                current_id = parent_id;
+            } else {
+                // FIXME: This should panic! I've removed it temporarily until
+                // we fix the problems with shapes without parents.
+                // panic!("Parent can't be found");
+            }
+        }
+        matrix
     }
 
     pub fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {

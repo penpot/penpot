@@ -195,7 +195,11 @@ pub fn render(
     render_canvas.restore();
 }
 
-fn draw_text(canvas: &Canvas, shape: &Shape, paragraph_builders: &mut [Vec<ParagraphBuilder>]) {
+fn draw_text(
+    canvas: &Canvas,
+    shape: &Shape,
+    paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
+) {
     // Width
     let paragraph_width = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
         text_content.width()
@@ -205,7 +209,8 @@ fn draw_text(canvas: &Canvas, shape: &Shape, paragraph_builders: &mut [Vec<Parag
 
     // Height
     let container_height = shape.selrect().height();
-    let total_content_height = calculate_all_paragraphs_height(paragraph_builders, paragraph_width);
+    let total_content_height =
+        calculate_all_paragraphs_height(paragraph_builder_groups, paragraph_width);
     let mut global_offset_y = match shape.vertical_align() {
         VerticalAlign::Center => (container_height - total_content_height) / 2.0,
         VerticalAlign::Bottom => container_height - total_content_height,
@@ -214,19 +219,19 @@ fn draw_text(canvas: &Canvas, shape: &Shape, paragraph_builders: &mut [Vec<Parag
 
     let layer_rec = SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
-    for group in paragraph_builders {
+    for paragraph_builder_group in paragraph_builder_groups {
         let mut group_offset_y = global_offset_y;
-        let group_len = group.len();
+        let group_len = paragraph_builder_group.len();
 
-        for builder in group.iter_mut() {
-            let mut skia_paragraph = builder.build();
-            skia_paragraph.layout(paragraph_width);
-            let paragraph_height = skia_paragraph.height();
+        for paragraph_builder in paragraph_builder_group.iter_mut() {
+            let mut paragraph = paragraph_builder.build();
+            paragraph.layout(paragraph_width);
+            let paragraph_height = paragraph.height();
             let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);
-            skia_paragraph.paint(canvas, xy);
+            paragraph.paint(canvas, xy);
 
-            for line_metrics in skia_paragraph.get_line_metrics().iter() {
-                render_text_decoration(canvas, &skia_paragraph, builder, line_metrics, xy);
+            for line_metrics in paragraph.get_line_metrics().iter() {
+                render_text_decoration(canvas, &paragraph, paragraph_builder, line_metrics, xy);
             }
 
             if group_len == 1 {
@@ -235,7 +240,7 @@ fn draw_text(canvas: &Canvas, shape: &Shape, paragraph_builders: &mut [Vec<Parag
         }
 
         if group_len > 1 {
-            let mut first_paragraph = group[0].build();
+            let mut first_paragraph = paragraph_builder_group[0].build();
             first_paragraph.layout(paragraph_width);
             global_offset_y += first_paragraph.height();
         } else {
