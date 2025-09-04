@@ -86,9 +86,7 @@
             undo-id (js/Symbol)]
 
         (rx/of
-         (when (seq properties-to-remove)
-           (ptk/event ::ev/event {::ev/name "variant-edit-property-value" :trigger "rename-in-layers"}))
-         (when (seq properties-to-update)
+         (when (or (seq properties-to-remove) (seq properties-to-update))
            (ptk/event ::ev/event {::ev/name "variant-edit-property-value" :trigger "rename-in-layers"}))
          (when (seq properties-to-add)
            (ptk/event ::ev/event {::ev/name "variant-add-property" :trigger "rename-in-layers"}))
@@ -139,7 +137,6 @@
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
 
-
 (defn update-error
   "Sets or unsets an error for a component"
   ([component-id]
@@ -163,7 +160,6 @@
           (dch/commit-changes changes)
           (dwu/commit-undo-transaction undo-id)))))))
 
-
 (defn remove-property
   "Remove the variant property on the position pos
    in all the components with this variant-id"
@@ -186,7 +182,6 @@
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
-
 
 (defn remove-empty-properties
   "Remove every empty property for all components when their respective values are empty
@@ -235,7 +230,6 @@
            (dch/commit-changes changes)
            (dwu/commit-undo-transaction undo-id)))))))
 
-
 (defn add-new-property
   "Add a new variant property to all the components with this variant-id"
   [variant-id & [options]]
@@ -282,7 +276,6 @@
     (effect [_ _ _]
       (dom/focus! (dom/get-element (str "variant-prop-" shape-id prop-num))))))
 
-
 (defn- resposition-and-resize-variant
   "Resize the variant container, and move the shape (that is a variant) to the right"
   [shape-id]
@@ -300,7 +293,6 @@
          (dwt/update-position shape-id
                               {:x x}
                               {:absolute? false}))))))
-
 
 (defn add-new-variant
   "Create a new variant and add it to the variant-container"
@@ -412,6 +404,8 @@
 
         ;;TODO Refactor all called methods in order to be able to
         ;;generate changes instead of call the events
+
+
          (rx/concat
           (rx/of
            (dwu/start-undo-transaction undo-id)
@@ -471,7 +465,6 @@
            (ptk/event ::ev/event {::ev/name "transform-in-variant" :trigger "shortcut"})
            (transform-in-variant (:id first-shape)))
 
-
           add-new-variant?
           (rx/concat
            (rx/of
@@ -503,7 +496,6 @@
            (rx/of (dwu/commit-undo-transaction undo-id)))
           (rx/of (dws/duplicate-selected true)))))))
 
-
 (defn rename-variant
   "Rename the variant container and all components belonging to this variant"
   [variant-id name]
@@ -527,7 +519,6 @@
                    variant-components))
          (rx/of (dwu/commit-undo-transaction undo-id)))))))
 
-
 (defn rename-comp-or-variant-and-main
   "If the component is in a variant, rename the variant.
    If it is not, rename the component and its main"
@@ -541,7 +532,6 @@
         (if (ctc/is-variant? component)
           (rx/of (rename-variant (:variant-id component) name))
           (rx/of (dwl/rename-component-and-main-instance component-id name)))))))
-
 
 (defn- bounding-rect
   "Receives a list of frames (with X, y, width and height) and

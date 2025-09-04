@@ -241,7 +241,6 @@
         (when (or editing? creating?)
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
-
 (defn- get-variant-malformed-warning-message
   "Receive a list of booleans, one for each selected variant, indicating if that variant
    is malformed, and generate a warning message accordingly"
@@ -258,7 +257,6 @@
 
     :else nil))
 
-
 (defn- get-variant-duplicated-warning-message
   "Receive a list of booleans, one for each selected variant, indicating if that variant
    is duplicated, and generate a warning message accordingly"
@@ -274,7 +272,6 @@
     (tr "workspace.options.component.variant.duplicated.single.some")
 
     :else nil))
-
 
 (defn- get-components-with-duplicated-variant-props-and-values
   "Get a list of components whose property names and values are duplicated"
@@ -295,7 +292,6 @@
        get-components-with-duplicated-variant-props-and-values
        (map :main-instance-id)))
 
-
 (defn- get-variant-options
   "Get variant options for a given property name"
   [prop-name prop-vals]
@@ -304,7 +300,6 @@
        :value
        (mapv (fn [val] {:id val
                         :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
-
 
 (mf/defc component-variant-main-instance*
   [{:keys [components shapes data]}]
@@ -403,7 +398,6 @@
                      :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
            (str duplicated-msg)]]))]))
-
 
 (mf/defc component-variant-copy*
   [{:keys [component shape data current-file-id]}]
@@ -520,7 +514,6 @@
                     :on-click select-duplicated-comps}
            (tr "workspace.options.component.variant.duplicated.copy.locate")]]))]))
 
-
 (mf/defc component-swap-item*
   [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs num-variants]}]
   (let [on-select
@@ -633,7 +626,6 @@
 
         is-search?          (not (str/blank? (:term filters)))
 
-
         current-library-id  (if (contains? libraries (:file-id filters))
                               (:file-id filters)
                               current-file-id)
@@ -643,7 +635,6 @@
                               (dm/get-in libraries [current-library-id :name]))
 
         current-lib-data    (get-in libraries [current-library-id :data])
-
 
         components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
@@ -694,7 +685,6 @@
         ;; Get the ids of the components that are parents of the shapes, to avoid loops
         parent-components (mapcat find-parent-components shapes)
 
-
         libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
                                 (vals libraries))
 
@@ -707,7 +697,6 @@
         (mf/use-fn
          (fn [term]
            (swap! filters* assoc :term term)))
-
 
         on-search-clear-click
         (mf/use-fn #(swap! filters* assoc :term ""))
@@ -823,8 +812,6 @@
                 :on-click (partial do-action action)}
            [:span {:class (stl/css :dropdown-label)} title]]))]]))
 
-
-
 (mf/defc component-menu
   {::mf/props :obj}
   [{:keys [shapes swap-opened?]}]
@@ -832,7 +819,6 @@
 
         libraries       (mf/deref refs/files)
         current-file    (get libraries current-file-id)
-
 
         state*          (mf/use-state
                          #(do {:show-content true
@@ -1057,14 +1043,12 @@
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))
 
-
 (defn- move-empty-items-to-end
   "Creates a new vector with the empty items at the end"
   [v]
   (-> []
       (into (remove empty?) v)
       (into (filter empty?) v)))
-
 
 (mf/defc variant-menu*
   [{:keys [shapes]}]

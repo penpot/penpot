@@ -16,6 +16,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
@@ -484,8 +485,7 @@
                             (let [shape       (get objects shape-id)
                                   parent-type (cfh/get-shape-type objects (:parent-id shape))
                                   external-lib? (not= file-id (:component-file shape))
-                                  component     (get-in libraries [(:component-file shape)
-                                                                   :data :components (:component-id shape)])
+                                  component     (ctn/get-component-from-shape shape libraries)
                                   origin        "workspace:duplicate-shapes"]
 
                               ;; NOTE: we don't emit the create-shape event all the time for
