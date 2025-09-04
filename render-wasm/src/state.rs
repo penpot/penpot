@@ -1,12 +1,13 @@
 use skia_safe::{self as skia, textlayout::FontCollection, Path, Point};
 use std::collections::HashMap;
+use std::error::Error;
 
 mod shapes_pool;
 pub use shapes_pool::*;
 
 use crate::render::RenderState;
-use crate::shapes::Shape;
 use crate::shapes::StructureEntry;
+use crate::shapes::{Shape, Type};
 use crate::tiles;
 use crate::uuid::Uuid;
 

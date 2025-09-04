@@ -1,6 +1,7 @@
+use crate::math::{Matrix, Point};
 use crate::mem;
 use crate::shapes::{GrowType, RawTextData, Type};
-use crate::{with_current_shape_mut, STATE};
+use crate::{with_current_shape, with_current_shape_mut, STATE};
 
 #[no_mangle]
 pub extern "C" fn clear_shape_text() {
@@ -59,4 +60,34 @@ pub extern "C" fn update_shape_text_layout() {
             text_content.update_layout(shape.selrect);
         }
     });
+}
+
+#[no_mangle]
+pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
+    with_current_shape!(state, |shape: &Shape| {
+        if let Type::Text(text_content) = &shape.shape_type {
+            let mut matrix = Matrix::new_identity();
+            let shape_matrix = shape.get_concatenated_matrix(&state.shapes);
+            let view_matrix = state.render_state.viewbox.get_matrix();
+            if let Some(inv_view_matrix) = view_matrix.invert() {
+                matrix.post_concat(&inv_view_matrix);
+                matrix.post_concat(&shape_matrix);
+                println!("{:?} {:?} {:?}", shape_matrix, view_matrix, inv_view_matrix);
+                let mapped_point = matrix.map_point(Point::new(x, y));
+
+                // TODO: Esta función debería retornar la posición y
+                // que se actualice en el estado del editor
+                // en qué coordenadas nos encontramos.
+                if let Some(position_with_affinity) =
+                    text_content.get_caret_position_at(&mapped_point)
+                {
+                    println!("position_with_affinity {:?}", position_with_affinity);
+                    return position_with_affinity.position;
+                }
+            }
+        } else {
+            panic!("Trying to update grow type in a shape that it's not a text shape");
+        }
+    });
+    return -1;
 }
