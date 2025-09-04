@@ -301,7 +301,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search
-                             :icon "close"}]]
+                             :icon i/close}]]
 
           [:div {:class (stl/css :active-filters)}
            (for [fkey current-filters]

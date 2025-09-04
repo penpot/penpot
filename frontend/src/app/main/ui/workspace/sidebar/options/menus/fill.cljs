@@ -16,6 +16,7 @@
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
@@ -195,7 +196,7 @@
                            :on-click on-add
                            :data-testid "add-fill"
                            :disabled (not can-add-fills?)
-                           :icon "add"}])]]
+                           :icon i/add}])]]
 
      (when open?
        [:div {:class (stl/css :element-content)}
@@ -207,7 +208,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.fill.remove-fill")
                              :on-click on-remove-all
-                             :icon "remove"}]]
+                             :icon i/remove}]]
 
           (some? fills)
           [:& h/sortable-container {}

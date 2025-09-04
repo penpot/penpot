@@ -80,7 +80,7 @@
       [:div {:class (stl/css :milestone-buttons)}
        [:> icon-button* {:class (stl/css :menu-button)
                          :variant "ghost"
-                         :icon "menu"
+                         :icon i/menu
                          :aria-label (tr "workspace.versions.version-menu")
                          :on-click on-open-menu}]]]]))
 

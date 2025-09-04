@@ -17,6 +17,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -127,7 +128,7 @@
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "labels.close")
                         :on-click close-section
-                        :icon "close"}]]
+                        :icon i/close}]]
 
      [:button {:class (stl/css :mode-dropdown-wrapper)
                :on-click toggle-mode-selector}

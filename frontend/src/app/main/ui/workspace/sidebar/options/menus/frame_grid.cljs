@@ -17,6 +17,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
@@ -186,7 +187,7 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.guides.remove-guide")
                          :on-click on-remove
-                         :icon "remove"}]]]
+                         :icon i/remove}]]]
 
      (when (:display grid)
        [:& advanced-options {:class (stl/css :grid-advanced-options)
@@ -322,7 +323,7 @@
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "workspace.options.guides.add-guide")
                         :on-click handle-create-grid
-                        :icon "add"}]]
+                        :icon i/add}]]
 
      (when (and open? (seq frame-grids))
        [:div  {:class (stl/css :element-set-content)}

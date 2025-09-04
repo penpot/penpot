@@ -152,7 +152,7 @@
               [:> icon-button* {:on-click delete-theme
                                 :variant "ghost"
                                 :aria-label (tr "workspace.tokens.delete-theme-title")
-                                :icon "delete"}]]])]])]
+                                :icon i/delete}]]])]])]
 
      [:div {:class (stl/css :button-footer)}
       [:> button* {:variant "secondary"
@@ -357,7 +357,7 @@
         (when is-editing
           [:> button* {:variant "secondary"
                        :type "button"
-                       :icon "delete"
+                       :icon i/delete
                        :on-click on-delete-theme}
            (tr "labels.delete")])
         [:div {:class (stl/css :button-footer)}
@@ -441,5 +441,5 @@
                       :on-click modal/hide!
                       :aria-label (tr "labels.close")
                       :variant "action"
-                      :icon "close"}]
+                      :icon i/close}]
     [:> themes-modal-body*]]])

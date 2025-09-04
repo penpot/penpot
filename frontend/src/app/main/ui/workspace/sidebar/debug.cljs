@@ -12,6 +12,7 @@
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -39,7 +40,7 @@
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "labels.close")
                         :on-click handle-close
-                        :icon "close"}]]
+                        :icon i/close}]]
 
      [:div {:class (stl/css :debug-panel-inner)}
       (for [option (sort-by d/name dbg/options)]

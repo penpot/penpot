@@ -82,7 +82,7 @@
            [:> date* {:date d :class (stl/css :date) :typography t/body-small}]
            [:> icon-button* {:class (stl/css :entry-button)
                              :variant "ghost"
-                             :icon "menu"
+                             :icon i/menu
                              :aria-label (tr "workspace.versions.version-menu")
                              :data-index idx
                              :on-click on-menu-click}]]))]]))

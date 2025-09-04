@@ -22,6 +22,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
@@ -177,7 +178,7 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.options.shadow-options.remove-shadow")
                           :on-click on-remove
-                          :icon "remove"}]]]
+                          :icon i/remove}]]]
       (when is-open
         [:& advanced-options {:class (stl/css :shadow-advanced-options)
                               :visible? is-open
@@ -334,7 +335,7 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.shadow-options.add-shadow")
                            :on-click on-add-shadow
-                           :icon "add"
+                           :icon i/add
                            :data-testid "add-shadow"}])]]
 
      (when show-content?
@@ -347,7 +348,7 @@
             [:> icon-button* {:variant "ghost"
                               :aria-label (tr "workspace.options.shadow-options.remove-shadow")
                               :on-click on-remove-all
-                              :icon "remove"}]]]]
+                              :icon i/remove}]]]]
 
          (some? shadows)
          [:& h/sortable-container {}

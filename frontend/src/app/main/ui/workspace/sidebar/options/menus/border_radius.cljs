@@ -150,4 +150,4 @@
                        :aria-label (if radius-expanded
                                      (tr "workspace.options.radius.hide-all-corners")
                                      (tr "workspace.options.radius.show-single-corners"))
-                       :icon "corner-radius"}]]))
+                       :icon i/corner-radius}]]))

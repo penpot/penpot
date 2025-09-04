@@ -19,10 +19,11 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
-   [app.main.ui.components.radio-buttons :refer [radio-buttons radio-button]]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -153,7 +154,7 @@
      [:> icon-button* {:variant "ghost"
                        :aria-label (tr "workspace.options.flows.remove-flow")
                        :on-click remove-flow
-                       :icon "remove"}]]))
+                       :icon i/remove}]]))
 
 (mf/defc page-flows
   {::mf/props :obj}
@@ -181,7 +182,7 @@
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.flows.add-flow-start")
                             :on-click add-flow
-                            :icon "add"}])]
+                            :icon i/add}])]
 
        (when (some? flow)
          [:& flow-item {:flow flow :key (dm/str (:id flow))}])])))
@@ -734,7 +735,7 @@
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.options.interactions.add-interaction")
                             :on-click add-interaction
-                            :icon "add"}]]])
+                            :icon i/add}]]])
 
       (when (= (count interactions) 0)
         [:div {:class (stl/css :help-content)}

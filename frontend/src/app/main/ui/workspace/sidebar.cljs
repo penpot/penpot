@@ -243,7 +243,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click on-close-document-history
-                             :icon "close"}]))]
+                             :icon i/close}]))]
 
     [:> tab-switcher* {:tabs tabs
                        :selected selected

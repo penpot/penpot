@@ -105,7 +105,7 @@
 (mf/defc add-button*
   []
   [:> icon-button* {:variant "ghost"
-                    :icon "add"
+                    :icon i/add
                     :on-click on-start-creation
                     :aria-label (tr "workspace.tokens.add set")}])
 

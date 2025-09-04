@@ -19,6 +19,7 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
@@ -85,7 +86,7 @@
      [:> icon-button* {:variant "ghost"
                        :aria-label (tr "workspace.plugins.remove-plugin")
                        :on-click handle-delete-click
-                       :icon "delete"}]]))
+                       :icon i/delete}]]))
 
 (mf/defc plugin-management-dialog
   {::mf/register modal/components

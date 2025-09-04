@@ -28,10 +28,13 @@
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.dropdown-menu :refer [dropdown-menu* dropdown-menu-item*]]
+   [app.main.ui.components.dropdown-menu :refer [dropdown-menu*
+                                                 dropdown-menu-item*]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.dashboard.subscription :refer [main-menu-power-up* get-subscription-type]]
+   [app.main.ui.dashboard.subscription :refer [get-subscription-type
+                                               main-menu-power-up*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks.resize :as r]
    [app.main.ui.icons :as deprecated-icon]
    [app.plugins.register :as preg]
@@ -844,7 +847,7 @@
      [:> icon-button* {:variant "ghost"
                        :aria-label (tr "shortcut-subsection.main-menu")
                        :on-click open-menu
-                       :icon "menu"}]
+                       :icon i/menu}]
 
      [:> dropdown-menu* {:show show-menu?
                          :id "workspace-menu"

@@ -264,11 +264,11 @@
                   :aria-controls listbox-id
                   :class (stl/css :button-toggle-list)
                   :on-click on-click}
-         [:> i/icon* {:icon-id i/arrow-down
-                      :class (stl/css :arrow)
-                      :size "s"
-                      :aria-hidden true
-                      :data-testid "combobox-open-button"}]])]
+         [:> icon* {:icon-id i/arrow-down
+                    :class (stl/css :arrow)
+                    :size "s"
+                    :aria-hidden true
+                    :data-testid "combobox-open-button"}]])]
 
      (when (and ^boolean is-open
                 ^boolean dropdown-options)

@@ -388,7 +388,7 @@
          {:variant "ghost"
           :aria-label (tr "workspace.options.fit-content")
           :on-pointer-down handle-fit-content
-          :icon "fit-content"}]])
+          :icon i/fit-content}]])
 
      (when (options :size)
        [:div {:class (stl/css :size)}

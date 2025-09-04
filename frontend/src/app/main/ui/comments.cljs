@@ -583,7 +583,7 @@
       :on-key-down handle-key-down
       :icon-class (stl/css-case :open-mentions-button true
                                 :is-toggled @display-mentions*)
-      :icon "at"}]))
+      :icon i/at}]))
 
 (def ^:private schema:comment-avatar
   [:map
@@ -922,7 +922,7 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "labels.options")
                           :on-click on-toggle-options
-                          :icon "menu"}])]
+                          :icon i/menu}])]
      [:& dropdown {:show (= options uuid/zero)
                    :on-close on-hide-options}
       [:ul {:class (stl/css :dropdown-menu)}
@@ -987,7 +987,7 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
                            :on-click on-toggle-options
-                           :icon "menu"}])]
+                           :icon i/menu}])]
 
       [:div {:class (stl/css :item)}
        (if @edition?

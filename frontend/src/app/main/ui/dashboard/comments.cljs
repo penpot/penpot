@@ -15,6 +15,7 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [potok.v2.core :as ptk]
@@ -43,7 +44,7 @@
                        :data-testid "open-comments"
                        :aria-label (tr "dashboard.notifications.view")
                        :on-click on-show-comments
-                       :icon "comments"}
+                       :icon i/comments}
       (when (seq tgroups)
         [:div {:class (stl/css :unread)}])]]))
 
@@ -94,14 +95,14 @@
                             :tab-index (if show? "0" "-1")
                             :aria-label (tr "label.mark-all-as-read")
                             :on-click on-read-all
-                            :icon "tick"}])
+                            :icon i/tick}])
 
         [:> icon-button* {:class (stl/css :notifications-button)
                           :variant "action"
                           :tab-index (if show? "0" "-1")
                           :aria-label (tr "labels.close")
                           :on-click on-hide-comments
-                          :icon "close"}]]
+                          :icon i/close}]]
 
        (if (seq tgroups)
          [:div {:class (stl/css :thread-groups)}

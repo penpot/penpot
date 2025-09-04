@@ -24,6 +24,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
@@ -780,7 +781,7 @@
                        :on-click remove-element
                        :data-type type
                        :data-index index
-                       :icon "remove"}]]))
+                       :icon i/remove}]]))
 
 (mf/defc grid-columns-row
   {::mf/props :obj}
@@ -1014,7 +1015,7 @@
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.shape.menu.add-layout")
                             :on-click on-toggle-dropdown-visibility
-                            :icon "menu"}]
+                            :icon i/menu}]
 
           [:& dropdown {:show show-dropdown?
                         :on-close on-hide-dropdown}
@@ -1032,13 +1033,13 @@
             [:> icon-button* {:variant "ghost"
                               :aria-label (tr "workspace.shape.menu.remove-layout")
                               :on-click on-remove-layout
-                              :icon "remove"}])]
+                              :icon i/remove}])]
 
          [:div {:class (stl/css :title-actions)}
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.shape.menu.add-layout")
                             :on-click on-toggle-dropdown-visibility
-                            :icon "add"}]
+                            :icon i/add}]
 
           [:& dropdown {:show show-dropdown?
                         :on-close on-hide-dropdown}
@@ -1056,7 +1057,7 @@
             [:> icon-button* {:variant "ghost"
                               :aria-label (tr "workspace.shape.menu.delete")
                               :on-click on-remove-layout
-                              :icon "remove"}])])]]
+                              :icon i/remove}])])]]
 
      (when (and ^boolean open?
                 ^boolean has-layout?
@@ -1083,7 +1084,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.help-center")
                              :on-click open-flex-help
-                             :icon "help"}]]
+                             :icon i/help}]]
           (when (= :wrap wrap-type)
             [:div {:class (stl/css :third-row)}
              [:& align-content-row {:is-column is-column
@@ -1108,7 +1109,7 @@
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "labels.help-center")
                                :on-click open-grid-help
-                               :icon "help"}]])
+                               :icon i/help}]])
 
           [:div {:class (stl/css :first-row)}
            [:div {:class (stl/css :direction-edit)}
@@ -1294,7 +1295,7 @@
                         :class (stl/css :help-button)
                         :aria-label (tr "labels.help-center")
                         :on-click open-grid-help
-                        :icon "help"}]
+                        :icon i/help}]
       [:button {:class (stl/css :exit-btn)
                 :on-click #(st/emit! (udw/clear-edition-mode))}
        (tr "workspace.layout_grid.editor.options.exit")]]
@@ -1325,7 +1326,7 @@
                         :class (stl/css :locate-button)
                         :aria-label (tr "workspace.layout_grid.editor.top-bar.locate.tooltip")
                         :on-click handle-locate-grid
-                        :icon "locate"}]]
+                        :icon i/locate}]]
 
      [:div {:class (stl/css :gap-row)}
       [:& gap-section {:on-change on-gap-change

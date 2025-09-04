@@ -16,6 +16,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.render-wasm.api :as wasm.api]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -203,23 +204,23 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
                           :on-click handle-set-hidden
-                          :icon "shown"}]
+                          :icon i/shown}]
 
         :else
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.options.layer-options.toggle-layer")
                           :on-click handle-set-visible
-                          :icon "hide"}])
+                          :icon i/hide}])
 
       (cond
         (or (= :multiple blocked?) (not blocked?))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.shape.menu.lock")
                           :on-click handle-set-blocked
-                          :icon "unlock"}]
+                          :icon i/unlock}]
 
         :else
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.shape.menu.unlock")
                           :on-click handle-set-unblocked
-                          :icon "lock"}])]]))
+                          :icon i/lock}])]]))

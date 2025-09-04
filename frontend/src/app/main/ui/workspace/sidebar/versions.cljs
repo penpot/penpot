@@ -395,7 +395,7 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.versions.button.save")
                            :on-click on-create-version
-                           :icon "pin"}]]
+                           :icon i/pin}]]
 
         (if (empty? data)
           [:div {:class (stl/css :versions-entry-empty)}

@@ -22,6 +22,7 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [text-options
@@ -308,7 +309,7 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
                            :on-click on-convert-to-typography
-                           :icon "add"}])]]
+                           :icon i/add}])]]
 
      (when main-menu-open?
        [:div {:class (stl/css :element-content)}
@@ -338,7 +339,7 @@
                            :aria-label (tr "labels.options")
                            :data-testid "text-align-options-button"
                            :on-click toggle-more-options
-                           :icon "menu"}]]
+                           :icon i/menu}]]
 
         (when more-options-open?
           [:div  {:class (stl/css :text-decoration-options)}

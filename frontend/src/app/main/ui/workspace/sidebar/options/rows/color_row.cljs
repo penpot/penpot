@@ -20,6 +20,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
@@ -282,10 +283,10 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.remove-color")
                          :on-click on-remove'
-                         :icon "remove"}])
+                         :icon i/remove}])
      (when select-only
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "settings.select-this-color")
                          :on-click handle-select
-                         :icon "move"}])]))
+                         :icon i/move}])]))
 

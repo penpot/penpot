@@ -580,7 +580,7 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.assets.components.add-component")
                           :on-click add-component
-                          :icon "add"}
+                          :icon i/add}
          [:& file-uploader {:accept dwm/accept-image-types
                             :multi true
                             :ref input-ref

@@ -21,6 +21,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.icons :as deprecated-icon]
@@ -83,12 +84,12 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "shortcuts.decrease-zoom")
                            :on-click on-decrease
-                           :icon "remove"}]
+                           :icon i/remove}]
          [:p {:class (stl/css :zoom-text)} zoom]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "shortcuts.increase-zoom")
                            :on-click on-increase
-                           :icon "add"}]]
+                           :icon i/add}]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]

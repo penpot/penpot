@@ -825,7 +825,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
          [:> icon-button*
           {:on-click on-click-dropdown-button
            :aria-label (tr "workspace.tokens.token-font-family-select")
-           :icon "arrow-down"
+           :icon i/arrow-down
            :variant "action"
            :type "button"}])]
     [:*
@@ -836,7 +836,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
        :ref input-ref
        :on-blur on-blur
        :on-change on-update-value'
-       :icon "text-font-family"
+       :icon i/text-font-family
        :slot-end font-selector-button
        :token-resolve-result token-resolve-result}]
      (when font-selector-open?

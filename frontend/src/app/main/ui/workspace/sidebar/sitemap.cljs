@@ -18,6 +18,7 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
@@ -247,7 +248,7 @@
                           :class (stl/css :add-page)
                           :aria-label (tr "workspace.sidebar.sitemap.add-page")
                           :on-click on-create
-                          :icon "add"}])]
+                          :icon i/add}])]
 
      (when-not ^boolean collapsed
        [:div {:class (stl/css :tool-window-content)}
