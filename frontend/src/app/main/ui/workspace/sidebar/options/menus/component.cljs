@@ -17,6 +17,7 @@
    [app.common.types.file :as ctf]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
    [app.main.data.notifications :as ntf]
@@ -47,6 +48,7 @@
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [okulary.core :as l]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ref:annotations-state
@@ -239,7 +241,6 @@
         (when (or editing? creating?)
           [:div {:class (stl/css  :counter)} (str size "/300")])]])))
 
-
 (defn- get-variant-malformed-warning-message
   "Receive a list of booleans, one for each selected variant, indicating if that variant
    is malformed, and generate a warning message accordingly"
@@ -256,7 +257,6 @@
 
     :else nil))
 
-
 (defn- get-variant-duplicated-warning-message
   "Receive a list of booleans, one for each selected variant, indicating if that variant
    is duplicated, and generate a warning message accordingly"
@@ -272,7 +272,6 @@
     (tr "workspace.options.component.variant.duplicated.single.some")
 
     :else nil))
-
 
 (defn- get-components-with-duplicated-variant-props-and-values
   "Get a list of components whose property names and values are duplicated"
@@ -293,7 +292,6 @@
        get-components-with-duplicated-variant-props-and-values
        (map :main-instance-id)))
 
-
 (defn- get-variant-options
   "Get variant options for a given property name"
   [prop-name prop-vals]
@@ -302,7 +300,6 @@
        :value
        (mapv (fn [val] {:id val
                         :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
-
 
 (mf/defc component-variant-main-instance*
   [{:keys [components shapes data]}]
@@ -345,7 +342,9 @@
          (fn [pos value]
            (let [value (d/nilv (str/trim value) "")]
              (doseq [id component-ids]
-               (st/emit! (dwv/update-property-value id pos value))
+               (st/emit!
+                (ptk/event ::ev/event {::ev/name "variant-edit-property-value" :trigger "combo-design-tab"})
+                (dwv/update-property-value id pos value))
                (st/emit! (dwv/update-error id))))))
 
         update-property-name
@@ -357,7 +356,9 @@
                            (dom/get-data "position")
                            int)]
              (when (seq value)
-               (st/emit! (dwv/update-property-name variant-id pos value))))))]
+               (st/emit!
+                (ptk/event ::ev/event {::ev/name "variant-edit-property-name" :trigger "design-tab-variant"})
+                (dwv/update-property-name variant-id pos value))))))]
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
@@ -397,7 +398,6 @@
                      :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
            (str duplicated-msg)]]))]))
-
 
 (mf/defc component-variant-copy*
   [{:keys [component shape data current-file-id]}]
@@ -514,7 +514,6 @@
                     :on-click select-duplicated-comps}
            (tr "workspace.options.component.variant.duplicated.copy.locate")]]))]))
 
-
 (mf/defc component-swap-item*
   [{:keys [item loop shapes file-id root-shape container component-id is-search listing-thumbs num-variants]}]
   (let [on-select
@@ -627,7 +626,6 @@
 
         is-search?          (not (str/blank? (:term filters)))
 
-
         current-library-id  (if (contains? libraries (:file-id filters))
                               (:file-id filters)
                               current-file-id)
@@ -637,7 +635,6 @@
                               (dm/get-in libraries [current-library-id :name]))
 
         current-lib-data    (get-in libraries [current-library-id :data])
-
 
         components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
@@ -688,7 +685,6 @@
         ;; Get the ids of the components that are parents of the shapes, to avoid loops
         parent-components (mapcat find-parent-components shapes)
 
-
         libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
                                 (vals libraries))
 
@@ -701,7 +697,6 @@
         (mf/use-fn
          (fn [term]
            (swap! filters* assoc :term term)))
-
 
         on-search-clear-click
         (mf/use-fn #(swap! filters* assoc :term ""))
@@ -817,8 +812,6 @@
                 :on-click (partial do-action action)}
            [:span {:class (stl/css :dropdown-label)} title]]))]]))
 
-
-
 (mf/defc component-menu
   {::mf/props :obj}
   [{:keys [shapes swap-opened?]}]
@@ -826,7 +819,6 @@
 
         libraries       (mf/deref refs/files)
         current-file    (get libraries current-file-id)
-
 
         state*          (mf/use-state
                          #(do {:show-content true
@@ -903,13 +895,17 @@
         create-variant
         (mf/use-fn
          (mf/deps id)
-         #(st/emit! (dwv/add-new-variant id)))
+         #(st/emit!
+           (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "button-design-tab-variant"})
+           (dwv/add-new-variant id)))
 
         add-new-property
         (mf/use-fn
          (mf/deps shape)
-         #(st/emit! (dwv/add-new-property (:variant-id shape) {:property-value "Value 1"
-                                                               :editing? true})))
+         #(st/emit!
+           (ptk/event ::ev/event {::ev/name "add-new-property" :trigger "button-design-tab-variant"})
+           (dwv/add-new-property (:variant-id shape) {:property-value "Value 1"
+                                                      :editing? true})))
 
         on-combine-as-variants
         (mf/use-fn
@@ -926,7 +922,7 @@
          (fn []
            (swap! state* update :render inc)))
 
-        menu-entries (cmm/generate-components-menu-entries shapes)
+        menu-entries (cmm/generate-components-menu-entries shapes {:for-design-tab? true})
         show-menu?   (seq menu-entries)
         path         (->> component (:path) (cfh/split-path) (cfh/join-path-with-dot))]
 
@@ -1047,14 +1043,12 @@
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))
 
-
 (defn- move-empty-items-to-end
   "Creates a new vector with the empty items at the end"
   [v]
   (-> []
       (into (remove empty?) v)
       (into (filter empty?) v)))
-
 
 (mf/defc variant-menu*
   [{:keys [shapes]}]
@@ -1095,18 +1089,23 @@
         create-variant
         (mf/use-fn
          (mf/deps shape)
-         #(st/emit! (dwv/add-new-variant (:id shape))))
+         (fn [trigger]
+           (st/emit! (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger trigger})
+                     (dwv/add-new-variant (:id shape)))))
 
         add-new-property
         (mf/use-fn
          (mf/deps variant-id)
-         #(st/emit! (dwv/add-new-property variant-id {:property-value "Value 1"
-                                                      :editing? true})))
+         (fn [trigger]
+           (st/emit!
+            (ptk/event ::ev/event {::ev/name "add-new-property" :trigger trigger})
+            (dwv/add-new-property variant-id {:property-value "Value 1"
+                                              :editing? true}))))
 
         menu-entries [{:title (tr "workspace.shape.menu.add-variant-property")
-                       :action add-new-property}
+                       :action (partial add-new-property "design-tab-menu-component")}
                       {:title (tr "workspace.shape.menu.add-variant")
-                       :action create-variant}]
+                       :action (partial create-variant "design-tab-menu-component")}]
 
         toggle-content
         (mf/use-fn
@@ -1140,7 +1139,9 @@
                            (dom/get-data "position")
                            int)]
              (when (seq value)
-               (st/emit! (dwv/update-property-name variant-id pos value))))))
+               (st/emit!
+                (ptk/event ::ev/event {::ev/name "variant-edit-property-name" :trigger "design-tab-component"})
+                (dwv/update-property-name variant-id pos value))))))
 
         remove-property
         (mf/use-fn
@@ -1150,7 +1151,9 @@
                          (dom/get-data "position")
                          int)]
              (when (> (count properties) 1)
-               (st/emit! (dwv/remove-property variant-id pos))))))
+               (st/emit!
+                (ptk/event ::ev/event {::ev/name "variant-remove-property" :trigger "button-design-tab"})
+                (dwv/remove-property variant-id pos))))))
 
         select-shapes-with-malformed
         (mf/use-fn
@@ -1183,7 +1186,7 @@
                             :icon i/help}]
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.shape.menu.add-variant")
-                            :on-click create-variant
+                            :on-click (partial create-variant "button-design-tab-component")
                             :icon i/variant}]]]]
 
        (when open?
@@ -1221,7 +1224,7 @@
 
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.shape.menu.add-variant-property")
-                             :on-click add-new-property
+                             :on-click (partial add-new-property "button-design-tab-component")
                              :icon i/add}]]
 
           (when-not multi?

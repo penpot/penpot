@@ -426,13 +426,16 @@
    (not (has-any-main? objects shape))
    (not (has-any-copy-parent? objects shape))))
 
-
 (defn collect-main-shapes [shape objects]
   (if (ctk/main-instance? shape)
     [shape]
     (if-let [children (cfh/get-children objects (:id shape))]
       (mapcat collect-main-shapes children objects)
       [])))
+
+(defn get-component-from-shape
+  [shape libraries]
+  (get-in libraries [(:component-file shape) :data :components (:component-id shape)]))
 
 (defn invalid-structure-for-component?
   "Check if the structure generated nesting children in parent is invalid in terms of nested components"
@@ -446,7 +449,7 @@
         ; original component doesn't exist or is deleted. So for this function purposes, they
         ; are removed from the list
         remove? (fn [shape]
-                  (let [component (get-in libraries [(:component-file shape) :data :components (:component-id shape)])]
+                  (let [component (get-component-from-shape shape libraries)]
                     (and component (not (:deleted component)))))
 
         selected-components (cond->> (mapcat collect-main-shapes children objects)

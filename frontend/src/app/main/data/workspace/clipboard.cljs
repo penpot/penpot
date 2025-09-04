@@ -121,6 +121,8 @@
           ;; Collects all the items together and split images into a
           ;; separated data structure for a more easy paste process.
           ;; Also collects the variant properties of the copied variants
+
+
           (collect-data [state result {:keys [id ::images] :as item}]
             (cond-> result
               :always
@@ -131,8 +133,6 @@
 
               (ctc/is-variant-container? item)
               (update :variant-properties merge (collect-variants state item))))
-
-
 
           (maybe-translate [shape objects parent-frame-id]
             (if (= parent-frame-id uuid/zero)
@@ -829,7 +829,6 @@
 
               variant-props (:variant-properties pdata)
 
-
               position     (deref ms/mouse-position)
 
               ;; Calculate position for the pasted elements
@@ -895,6 +894,7 @@
                 (rx/map (fn [shape]
                           (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
                                 external-lib? (not= file-id (:component-file shape))
+                                component     (ctn/get-component-from-shape shape libraries)
                                 origin        "workspace:paste"]
 
                             ;; NOTE: we don't emit the create-shape event all the time for
@@ -905,7 +905,8 @@
                                          ::ev/origin origin
                                          :is-external-library external-lib?
                                          :type (get shape :type)
-                                         :parent-type parent-type})
+                                         :parent-type parent-type
+                                         :is-variant (ctc/is-variant? component)})
                               (if (cfh/has-layout? objects (:parent-id shape))
                                 (ev/event {::ev/name "layout-add-element"
                                            ::ev/origin origin

@@ -549,7 +549,6 @@
                (when local?
                  (ptk/data-event :layout/update {:page-id page-id :ids frames})))))))
 
-
 (defn restore-components
   "Restore multiple deleted component definded by a map with the component id as key and the component library as value"
   [components-data]
@@ -592,6 +591,7 @@
                                                  position
                                                  page
                                                  libraries)
+             component (ctn/get-component-from-shape new-shape libraries)
 
              undo-id (js/Symbol)]
 
@@ -601,7 +601,8 @@
          (rx/of (ptk/event ::ev/event
                            {::ev/name "use-library-component"
                             ::ev/origin origin
-                            :external-library (not= file-id current-file-id)})
+                            :external-library (not= file-id current-file-id)
+                            :is-variant (ctk/is-variant? component)})
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
@@ -703,7 +704,6 @@
       (let [current-page-id (:current-page-id state)
             data            (dsh/lookup-file-data state)
             objects         (dsh/lookup-page-objects state current-page-id)
-
 
             select-and-zoom
             (fn [ids]
@@ -1158,6 +1158,7 @@
 
 ;; FIXME: the data should be set on the backend for clock consistency
 
+
 (def ignore-sync
   "Mark the file as ignore syncs. All library changes before this moment will not
    ber notified to sync."
@@ -1225,7 +1226,6 @@
                   :accept {:label (tr "workspace.updates.update")
                            :callback do-update}
                   :tag :sync-dialog)))))))
-
 
 (defn touch-component
   "Update the modified-at attribute of the component to now"
