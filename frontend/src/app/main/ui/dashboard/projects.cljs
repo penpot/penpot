@@ -22,7 +22,7 @@
    [app.main.ui.dashboard.project-menu :refer [project-menu*]]
    [app.main.ui.ds.product.empty-placeholder :refer [empty-placeholder*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -33,16 +33,16 @@
    [rumext.v2 :as mf]))
 
 (def ^:private show-more-icon
-  (i/icon-xref :arrow (stl/css :show-more-icon)))
+  (deprecated-icon/icon-xref :arrow (stl/css :show-more-icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private add-icon
-  (i/icon-xref :add (stl/css :add-icon)))
+  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc header*
   {::mf/wrap [mf/memo]

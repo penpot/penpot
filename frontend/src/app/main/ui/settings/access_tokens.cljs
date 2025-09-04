@@ -15,7 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.components.context-menu-a11y :refer [context-menu*]]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -24,13 +24,13 @@
    [rumext.v2 :as mf]))
 
 (def ^:private clipboard-icon
-  (i/icon-xref :clipboard (stl/css :clipboard-icon)))
+  (deprecated-icon/icon-xref :clipboard (stl/css :clipboard-icon)))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (def tokens-ref
   (l/derived :access-tokens st/state))

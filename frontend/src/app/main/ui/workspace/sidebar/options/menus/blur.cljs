@@ -14,7 +14,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -105,7 +105,7 @@
           [:button {:class (stl/css-case :show-more true
                                          :selected more-options?)
                     :on-click toggle-more-options}
-           i/menu]
+           deprecated-icon/menu]
           [:span {:class (stl/css :label)}
            (tr "workspace.options.blur-options.title")]]
          [:div {:class (stl/css :actions)}

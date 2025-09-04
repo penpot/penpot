@@ -27,7 +27,7 @@
                                                show-subscription-members-banner?]]
    [app.main.ui.dashboard.team-form]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
@@ -37,28 +37,28 @@
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
-  (i/icon-xref :arrow (stl/css :arrow-icon)))
+  (deprecated-icon/icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (def ^:private warning-icon
-  (i/icon-xref :msg-warning (stl/css :warning-icon)))
+  (deprecated-icon/icon-xref :msg-warning (stl/css :warning-icon)))
 
 (def ^:private success-icon
-  (i/icon-xref :msg-success (stl/css :success-icon)))
+  (deprecated-icon/icon-xref :msg-success (stl/css :success-icon)))
 
 (def ^:private image-icon
-  (i/icon-xref :img (stl/css :image-icon)))
+  (deprecated-icon/icon-xref :img (stl/css :image-icon)))
 
 (def ^:private user-icon
-  (i/icon-xref :user (stl/css :user-icon)))
+  (deprecated-icon/icon-xref :user (stl/css :user-icon)))
 
 (def ^:private document-icon
-  (i/icon-xref :document (stl/css :document-icon)))
+  (deprecated-icon/icon-xref :document (stl/css :document-icon)))
 
 (def ^:private group-icon
-  (i/icon-xref :group (stl/css :group-icon)))
+  (deprecated-icon/icon-xref :group (stl/css :group-icon)))
 
 (mf/defc header
   {::mf/wrap [mf/memo]
@@ -914,7 +914,7 @@
            (tr "modals.create-webhook.title"))]
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click modal/hide!} i/close]]
+                  :on-click modal/hide!} deprecated-icon/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:div {:class (stl/css :fields-row)}

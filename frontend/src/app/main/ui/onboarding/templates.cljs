@@ -12,7 +12,7 @@
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.webapi :as wapi]
@@ -70,7 +70,7 @@
       [:div.modal-header
        [:div.modal-close-button
         {:on-click modal/hide!
-         :data-testid "close-templates-btn"} i/close]]
+         :data-testid "close-templates-btn"} deprecated-icon/close]]
 
       [:div.modal-content
        [:h3 (tr "onboarding.templates.title")]

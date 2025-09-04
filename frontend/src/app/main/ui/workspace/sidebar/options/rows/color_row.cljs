@@ -22,14 +22,14 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (def ^:private detach-icon
-  (i/icon-xref :detach (stl/css :detach-icon)))
+  (deprecated-icon/icon-xref :detach (stl/css :detach-icon)))
 
 (defn opacity->string
   [opacity]

@@ -15,13 +15,13 @@
    [app.main.ui.comments :as cmt]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private comments-icon-svg
-  (i/icon-xref :comments (stl/css :comments-icon)))
+  (deprecated-icon/icon-xref :comments (stl/css :comments-icon)))
 
 (mf/defc comments-icon*
   {::mf/props :obj}

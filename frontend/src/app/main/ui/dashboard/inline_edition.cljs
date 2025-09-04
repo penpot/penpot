@@ -7,7 +7,7 @@
 (ns app.main.ui.dashboard.inline-edition
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
@@ -70,5 +70,5 @@
               :on-blur     on-blur
               :max-length  max-length}]
      [:span {:class (stl/css :close)
-             :on-click on-cancel} i/close]]))
+             :on-click on-cancel} deprecated-icon/close]]))
 

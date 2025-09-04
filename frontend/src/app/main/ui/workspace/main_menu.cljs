@@ -33,7 +33,7 @@
    [app.main.ui.dashboard.subscription :refer [main-menu-power-up* get-subscription-type]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks.resize :as r]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.plugins.register :as preg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -752,7 +752,7 @@
             [:span {:class (stl/css :item-name)} name]
             (when-not can-open?
               [:span {:class (stl/css :item-icon)
-                      :title (tr "workspace.plugins.error.need-editor")} i/help])]))])))
+                      :title (tr "workspace.plugins.error.need-editor")} deprecated-icon/help])]))])))
 
 (mf/defc menu
   {::mf/props :obj}
@@ -859,7 +859,7 @@
                                :data-testid   "file"
                                :id          "file-menu-file"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.file")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]
+       [:span {:class (stl/css :open-arrow)} deprecated-icon/arrow]]
 
       [:> dropdown-menu-item* {:class (stl/css :menu-item)
                                :on-click    on-menu-click
@@ -870,7 +870,7 @@
                                :data-testid   "edit"
                                :id          "file-menu-edit"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.edit")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]
+       [:span {:class (stl/css :open-arrow)} deprecated-icon/arrow]]
 
       [:> dropdown-menu-item* {:class (stl/css :menu-item)
                                :on-click    on-menu-click
@@ -881,7 +881,7 @@
                                :data-testid   "view"
                                :id          "file-menu-view"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.view")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]
+       [:span {:class (stl/css :open-arrow)} deprecated-icon/arrow]]
 
       [:> dropdown-menu-item* {:class (stl/css :menu-item)
                                :on-click    on-menu-click
@@ -892,7 +892,7 @@
                                :data-testid   "preferences"
                                :id          "file-menu-preferences"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.preferences")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]
+       [:span {:class (stl/css :open-arrow)} deprecated-icon/arrow]]
 
       (when (features/active-feature? @st/state "plugins/runtime")
         [:> dropdown-menu-item* {:class (stl/css :menu-item)
@@ -904,7 +904,7 @@
                                  :data-testid   "plugins"
                                  :id          "file-menu-plugins"}
          [:span {:class (stl/css :item-name)} (tr "workspace.plugins.menu.title")]
-         [:span {:class (stl/css :open-arrow)} i/arrow]])
+         [:span {:class (stl/css :open-arrow)} deprecated-icon/arrow]])
 
       [:div {:class (stl/css :separator)}]
       [:> dropdown-menu-item* {:class (stl/css-case :menu-item true)
@@ -916,7 +916,7 @@
                                :data-testid   "help-info"
                                :id          "file-menu-help-info"}
        [:span {:class (stl/css :item-name)} (tr "workspace.header.menu.option.help-info")]
-       [:span {:class (stl/css :open-arrow)} i/arrow]]
+       [:span {:class (stl/css :open-arrow)} deprecated-icon/arrow]]
 
       (when (and (contains? cf/flags :subscriptions) (not= "enterprise" subscription-type))
         [:> main-menu-power-up* {:close-sub-menu close-sub-menu}])

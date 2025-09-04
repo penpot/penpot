@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.constants :refer [max-input-length]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.timers :as timers]
@@ -99,7 +99,7 @@
 
        [:span {:class (stl/css :editable-label-close)
                :on-click cancel-edition}
-        i/delete-text]]
+        deprecated-icon/delete-text]]
 
       [:span {:class final-class
               :title tooltip

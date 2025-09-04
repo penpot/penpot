@@ -27,7 +27,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -917,7 +917,7 @@
                :title (tr "labels.comment.mark-as-solved")
                :on-click toggle-resolved}
          [:span {:class (stl/css-case :checkbox true
-                                      :global/checked (:is-resolved thread))} i/tick]])
+                                      :global/checked (:is-resolved thread))} deprecated-icon/tick]])
       (when (= (:id profile) (:id owner))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "labels.options")

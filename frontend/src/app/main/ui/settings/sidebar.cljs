@@ -15,17 +15,17 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.dashboard.sidebar :refer [profile-section*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ^:private arrow-icon
-  (i/icon-xref :arrow (stl/css :arrow-icon)))
+  (deprecated-icon/icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private feedback-icon
-  (i/icon-xref :feedback (stl/css :feedback-icon)))
+  (deprecated-icon/icon-xref :feedback (stl/css :feedback-icon)))
 
 ;; FIXME: move to common
 (def ^:private go-settings-profile

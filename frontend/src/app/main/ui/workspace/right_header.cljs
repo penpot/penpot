@@ -23,7 +23,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -220,7 +220,7 @@
                 :on-click toggle-comments
                 :data-tool "comments"
                 :style {:position "relative"}}
-       i/comments
+       deprecated-icon/comments
        (when ^boolean has-unread-comments?
          [:div {:class (stl/css :unread)}])]]
 
@@ -232,16 +232,16 @@
           :class (stl/css-case :selected (contains? layout :document-history)
                                :history-button true)
           :on-click toggle-history}
-         i/history]])
+         deprecated-icon/history]])
 
      (when display-share-button?
        [:a {:class (stl/css :viewer-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}
-        i/share])
+        deprecated-icon/share])
 
      [:a {:class (stl/css :viewer-btn)
           :title (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
           :on-click nav-to-viewer}
-      i/play]]))
+      deprecated-icon/play]]))
 

@@ -30,7 +30,7 @@
    [app.main.ui.ds.foundations.assets.icon :as ic]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.colorpicker.color-inputs :refer [color-inputs]]
    [app.main.ui.workspace.colorpicker.gradients :refer [gradients*]]
    [app.main.ui.workspace.colorpicker.harmony :refer [harmony-selector]]
@@ -405,7 +405,7 @@
          [:button {:class (stl/css-case :picker-btn true
                                         :selected picking-color?)
                    :on-click handle-click-picker}
-          i/picker])]
+          deprecated-icon/picker])]
 
       (when (= selected-mode :gradient)
         [:> gradients*
@@ -438,7 +438,7 @@
                        :class (stl/css-case  :global/checked keep-aspect-ratio?)}
                [:span {:class (stl/css-case :global/checked keep-aspect-ratio?)}
                 (when keep-aspect-ratio?
-                  i/status-tick)]
+                  deprecated-icon/status-tick)]
                (tr "media.keep-aspect-ratio")
                [:input {:type "checkbox"
                         :id "keep-aspect-ratio"

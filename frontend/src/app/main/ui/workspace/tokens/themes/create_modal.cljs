@@ -25,7 +25,7 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.tokens.sets.lists :as wts]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -69,11 +69,11 @@
                        :name name}
      [:& radio-button {:id :on
                        :value :on
-                       :icon i/tick
+                       :icon deprecated-icon/tick
                        :label ""}]
      [:& radio-button {:id :off
                        :value :off
-                       :icon i/close
+                       :icon deprecated-icon/close
                        :label ""}]]))
 
 (mf/defc themes-overview

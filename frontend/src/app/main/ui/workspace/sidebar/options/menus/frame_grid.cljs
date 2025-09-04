@@ -17,7 +17,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -150,7 +150,7 @@
        [:button {:class (stl/css-case :show-options true
                                       :selected open?)
                  :on-click toggle-advanced-options}
-        i/menu]
+        deprecated-icon/menu]
        [:div {:class (stl/css :type-select-wrapper)}
         [:& select
          {:class (stl/css :grid-type-select)
@@ -205,7 +205,7 @@
             [:button {:class (stl/css-case :show-more-options true
                                            :selected show-more-options?)
                       :on-click toggle-more-options}
-             i/menu]]
+             deprecated-icon/menu]]
            (when show-more-options?
              [:div {:class (stl/css :second-row)}
               [:button {:class (stl/css-case :btn-options true
@@ -263,7 +263,7 @@
                    :title (tr "workspace.options.grid.params.gutter")}
              [:span {:class (stl/css-case :icon true
                                           :rotated (= type :row))}
-              i/gap-horizontal]
+              deprecated-icon/gap-horizontal]
              [:> numeric-input* {:placeholder "0"
                                  :on-change (handle-change :params :gutter)
                                  :nillable true
@@ -274,7 +274,7 @@
                    :title (tr "workspace.options.grid.params.margin")}
              [:span {:class (stl/css-case :icon true
                                           :rotated (= type :column))}
-              i/grid-margin]
+              deprecated-icon/grid-margin]
              [:> numeric-input* {:placeholder "0"
                                  :on-change (handle-change :params :margin)
                                  :nillable true
@@ -285,7 +285,7 @@
                                            :selected show-more-options?)
                       :on-click toggle-more-options
                       :disabled is-default}
-             i/menu]
+             deprecated-icon/menu]
             (when show-more-options?
               [:div {:class (stl/css :more-options)}
                [:button {:class (stl/css :option-btn)

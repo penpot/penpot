@@ -27,7 +27,7 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as ds-i]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -347,7 +347,7 @@
                                      :opened show-presets-dropdown?)
                :on-click open-presets}
          [:span {:class (stl/css :select-name)} (tr "workspace.options.size-presets")]
-         [:span {:class (stl/css :collapsed-icon)} i/arrow]
+         [:span {:class (stl/css :collapsed-icon)} deprecated-icon/arrow]
 
          [:& dropdown {:show show-presets-dropdown?
                        :on-close close-presets}
@@ -371,17 +371,17 @@
                    [:span {:class (stl/css :preset-name)} (:name size-preset)]
                    [:span {:class (stl/css :preset-size)} (:width size-preset) " x " (:height size-preset)]]
                   (when preset-match
-                    [:span {:class (stl/css :check-icon)} i/tick])])))]]]
+                    [:span {:class (stl/css :check-icon)} deprecated-icon/tick])])))]]]
 
         [:& radio-buttons {:selected (or (d/name orientation) "")
                            :on-change on-orientation-change
                            :name "frame-orientation"
                            :wide true
                            :class (stl/css :radio-buttons)}
-         [:& radio-button {:icon i/size-vertical
+         [:& radio-button {:icon deprecated-icon/size-vertical
                            :value "vert"
                            :id "size-vertical"}]
-         [:& radio-button {:icon i/size-horizontal
+         [:& radio-button {:icon deprecated-icon/size-horizontal
                            :value "horiz"
                            :id "size-horizontal"}]]
         [:> icon-button*
@@ -450,7 +450,7 @@
         (when (options :rotation)
           [:div {:class (stl/css :rotation)
                  :title (tr "workspace.options.rotation")}
-           [:span {:class (stl/css :icon)}  i/rotation]
+           [:span {:class (stl/css :icon)}  deprecated-icon/rotation]
            [:> numeric-input*
             {:no-validate true
              :min -359

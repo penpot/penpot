@@ -23,7 +23,7 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -162,7 +162,7 @@
         [:button {:class (stl/css-case :more-options true
                                        :selected is-open)
                   :on-click on-toggle-open}
-         i/menu]
+         deprecated-icon/menu]
         [:div {:class (stl/css :type-select)}
          [:& select
           {:class (stl/css :shadow-type-select)

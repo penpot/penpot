@@ -19,7 +19,7 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.plugins.register :as preg]
    [app.util.avatars :as avatars]
    [app.util.dom :as dom]
@@ -30,7 +30,7 @@
    [rumext.v2 :as mf]))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (defn icon-url
   "Creates an sanitizes de icon URL to display"
@@ -200,13 +200,13 @@
 
        (if (empty? plugins-state)
          [:div {:class (stl/css :plugins-empty)}
-          [:div {:class (stl/css :plugins-empty-logo)} i/puzzle]
+          [:div {:class (stl/css :plugins-empty-logo)} deprecated-icon/puzzle]
           [:div {:class (stl/css :plugins-empty-text)} (tr "workspace.plugins.empty-plugins")]
           [:a {:class (stl/css :plugins-link)
                :href cfg/plugins-list-uri
                :target "_blank"
                :on-click #(st/emit! (ptk/event ::ev/event {::ev/name "open-plugins-list"}))}
-           (tr "workspace.plugins.plugin-list-link") i/external-link]]
+           (tr "workspace.plugins.plugin-list-link") deprecated-icon/external-link]]
 
          [:*
           [:> title-bar* {:collapsable false
@@ -227,60 +227,60 @@
    (cond
      (contains? permissions "content:write")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-1
+      deprecated-icon/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.content-write")]]
 
      (contains? permissions "content:read")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-1
+      deprecated-icon/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.content-read")]])
 
    (cond
      (contains? permissions "user:read")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-2
+      deprecated-icon/oauth-2
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.user-read")]])
 
    (cond
      (contains? permissions "library:write")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-3
+      deprecated-icon/oauth-3
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.library-write")]]
 
      (contains? permissions "library:read")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-3
+      deprecated-icon/oauth-3
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.library-read")]])
 
    (cond
      (contains? permissions "comment:write")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-1
+      deprecated-icon/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.comment-write")]]
 
      (contains? permissions "comment:read")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-1
+      deprecated-icon/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.comment-read")]])
 
    (cond
      (contains? permissions "allow:downloads")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-1
+      deprecated-icon/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.allow-download")]])
 
    (cond
      (contains? permissions "allow:localstorage")
      [:div {:class (stl/css :permissions-list-entry)}
-      i/oauth-1
+      deprecated-icon/oauth-1
       [:p {:class (stl/css :permissions-list-text)}
        (tr "workspace.plugins.permissions.allow-localstorage")]])])
 

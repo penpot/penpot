@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -50,7 +50,7 @@
          {:on-click handle-collapse
           :class (stl/css :collapse-sidebar)
           :aria-label (tr "workspace.sidebar.collapse")}
-         i/arrow])
+         deprecated-icon/arrow])
       [:div  {:class (stl/css :tab-container-tab-wrapper)}
        (for [tab children]
          (let [props (.-props tab)

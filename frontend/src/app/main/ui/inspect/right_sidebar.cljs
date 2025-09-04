@@ -15,7 +15,7 @@
    [app.main.ui.ds.controls.select :refer [select*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.inspect.attributes :refer [attributes]]
    [app.main.ui.inspect.code :refer [code]]
    [app.main.ui.inspect.selection-feedback :refer [resolve-shapes]]
@@ -220,12 +220,12 @@
        [:div {:class (stl/css :empty)}
         [:div {:class (stl/css :code-info)}
          [:span {:class (stl/css :placeholder-icon)}
-          i/code]
+          deprecated-icon/code]
          [:span {:class (stl/css :placeholder-label)}
           (tr "inspect.empty.select")]]
         [:div {:class (stl/css :help-info)}
          [:span {:class (stl/css :placeholder-icon)}
-          i/help]
+          deprecated-icon/help]
          [:span {:class (stl/css :placeholder-label)}
           (tr "inspect.empty.help")]]
         [:button {:class (stl/css :more-info-btn)

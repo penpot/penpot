@@ -18,7 +18,7 @@
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.strings :refer [matches-search]]
@@ -292,7 +292,7 @@
                   (stl/css :subsection-title)
                   (stl/css :section-title))}
    [:span {:class (stl/css-case :open is-visible?
-                                :collapsed-shortcuts true)} i/arrow]
+                                :collapsed-shortcuts true)} deprecated-icon/arrow]
    [:span {:class (if is-sub?
                     (stl/css :subsection-name)
                     (stl/css :section-name))} name]])
@@ -497,7 +497,7 @@
       [:div {:class (stl/css :shortcuts-title)} (tr "shortcuts.title")]
       [:div {:class (stl/css :shortcuts-close-button)
              :on-click close-fn}
-       i/close]]
+       deprecated-icon/close]]
      [:div {:class (stl/css :search-field)}
 
       [:> search-bar* {:on-change on-search-term-change-2

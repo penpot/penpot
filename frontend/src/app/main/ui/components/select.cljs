@@ -11,7 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.uuid :as uuid]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
@@ -100,7 +100,7 @@
 
     (let [selected-option (first (filter #(= (:value %) default-value) options))
           current-icon (:icon selected-option)
-          current-icon-ref (i/key->icon current-icon)]
+          current-icon-ref (deprecated-icon/key->icon current-icon)]
       [:div {:on-click open-dropdown
              :role "combobox"
              :class (dm/str (stl/css-case :custom-select true
@@ -110,7 +110,7 @@
        (when (and current-icon current-icon-ref)
          [:span {:class (stl/css :current-icon)} current-icon-ref])
        [:span {:class (stl/css :current-label)} current-label]
-       [:span {:class (stl/css :dropdown-button)} i/arrow]
+       [:span {:class (stl/css :dropdown-button)} deprecated-icon/arrow]
        [:& dropdown {:show is-open? :on-close close-dropdown}
         [:ul {:ref dropdown-element* :data-direction (or data-direction @dropdown-direction*)
               :class (dm/str dropdown-class " " (stl/css :custom-select-dropdown))}
@@ -120,7 +120,7 @@
                    :role "option"
                    :key (dm/str current-id "-" index)}]
              (let [[value label icon] (as-key-value item)
-                   icon-ref (i/key->icon icon)]
+                   icon-ref (deprecated-icon/key->icon icon)]
                [:li
                 {:key (dm/str current-id "-" index)
                  :role "option"
@@ -134,4 +134,4 @@
                  :on-click select-item}
                 (when (and icon icon-ref) [:span {:class (stl/css :icon)} icon-ref])
                 [:span {:class (stl/css :label)} label]
-                [:span {:class (stl/css :check-icon)} i/tick]])))]]])))
+                [:span {:class (stl/css :check-icon)} deprecated-icon/tick]])))]]])))

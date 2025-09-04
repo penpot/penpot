@@ -13,7 +13,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -68,7 +68,7 @@
       [:span {:class (stl/css :select-name)}
        (or selected-preset-name
            (tr "workspace.options.size-presets"))]
-      [:span {:class (stl/css :collapsed-icon)} i/arrow]
+      [:span {:class (stl/css :collapsed-icon)} deprecated-icon/arrow]
       [:& dropdown {:show show?
                     :on-close on-close}
        [:ul {:class (stl/css :custom-select-dropdown)}
@@ -92,17 +92,17 @@
                 [:span {:class (stl/css :preset-name)} (:name preset)]
                 [:span {:class (stl/css :preset-size)} (:width preset) " x " (:height preset)]]
                (when preset-match
-                 [:span {:class (stl/css :check-icon)} i/tick])])))]]]
+                 [:span {:class (stl/css :check-icon)} deprecated-icon/tick])])))]]]
 
      [:& radio-buttons {:selected (or (d/name orientation) "")
                         :on-change on-orientation-change
                         :name "frame-orientation"
                         :wide true
                         :class (stl/css :radio-buttons)}
-      [:& radio-button {:icon i/size-vertical
+      [:& radio-button {:icon deprecated-icon/size-vertical
                         :value "vertical"
                         :id "size-vertical"}]
-      [:& radio-button {:icon i/size-horizontal
+      [:& radio-button {:icon deprecated-icon/size-horizontal
                         :value "horizontal"
                         :id "size-horizontal"}]]]))
 

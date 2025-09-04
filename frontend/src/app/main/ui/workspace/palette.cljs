@@ -19,7 +19,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.color-palette :refer [color-palette*]]
    [app.main.ui.workspace.color-palette-ctx-menu :refer [color-palette-ctx-menu*]]
    [app.main.ui.workspace.text-palette :refer [text-palette]]
@@ -169,7 +169,7 @@
                     :class (stl/css-case :palette-btn true
                                          :selected color-palette?)
                     :on-click on-select-color-palette}
-           i/drop-icon]]
+           deprecated-icon/drop-icon]]
 
          [:li {:class (stl/css :palette-item)}
           [:button {:title (tr "workspace.toolbar.text-palette" (sc/get-tooltip :toggle-textpalette))
@@ -177,14 +177,14 @@
                     :class (stl/css-case :palette-btn true
                                          :selected text-palette?)
                     :on-click on-select-text-palette}
-           i/text-palette]]]
+           deprecated-icon/text-palette]]]
 
 
         (if any-palette?
           [:*
            [:button {:class (stl/css :palette-actions)
                      :on-click #(swap! state* update :show-menu not)}
-            i/menu]
+            deprecated-icon/menu]
            [:div {:class (stl/css :palette)
                   :ref container}
             (when text-palette?

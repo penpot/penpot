@@ -16,7 +16,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.main-menu :as main-menu]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -92,7 +92,7 @@
 
     [:header {:class (dm/str class " " (stl/css :workspace-header-left))}
      [:a {:on-click go-back
-          :class (stl/css :main-icon)} i/logo-icon]
+          :class (stl/css :main-icon)} deprecated-icon/logo-icon]
      [:div {:alt (tr "workspace.sitemap")
             :class (stl/css :project-tree)}
       [:div
@@ -126,14 +126,14 @@
                          :error (tr "workspace.header.save-error")
                          nil)}
           (case persistence-status
-            :pending i/status-alert
-            :saving i/status-alert
-            :saved i/status-tick
-            :error i/status-wrong
+            :pending deprecated-icon/status-alert
+            :saving deprecated-icon/status-alert
+            :saved deprecated-icon/status-tick
+            :error deprecated-icon/status-wrong
             nil)]
          [:div {:class (stl/css :file-name-label)} file-name]])]
      (when ^boolean shared?
-       [:span {:class (stl/css :shared-badge)} i/library])
+       [:span {:class (stl/css :shared-badge)} deprecated-icon/library])
      [:div {:class (stl/css :menu-section)}
       [:& main-menu/menu
        {:layout layout

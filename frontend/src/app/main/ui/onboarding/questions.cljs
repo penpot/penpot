@@ -15,7 +15,7 @@
    [app.main.data.profile :as du]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]
@@ -163,7 +163,7 @@
                          :value "canva" :image "images/form/canva.png"}
                         {:label (tr "labels.invision")  :img-width "48px" :img-height "60px"
                          :value "invision" :image "images/form/invision.png"}])
-              (conj {:label (tr "labels.other-short")  :value "other" :icon i/curve})))
+              (conj {:label (tr "labels.other-short")  :value "other" :icon deprecated-icon/curve})))
 
         current-experience
         (dm/get-in @form [:data :experience-design-tool])
@@ -321,7 +321,7 @@
                          :value "ds" :image "images/form/components.png"}
                         {:label (tr "onboarding.questions.start-with.code")
                          :value "code" :image "images/form/design-and-dev.png"}])
-              (conj {:label (tr "labels.other-short") :value "other" :icon i/curve})))
+              (conj {:label (tr "labels.other-short") :value "other" :icon deprecated-icon/curve})))
 
         current-start (dm/get-in @form [:data :start-with])
 

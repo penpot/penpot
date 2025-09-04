@@ -26,7 +26,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -36,10 +36,10 @@
 (defn- dir-icons-refactor
   [val]
   (case val
-    :row            i/grid-row
-    :row-reverse    i/row-reverse
-    :column         i/column
-    :column-reverse i/column-reverse))
+    :row            deprecated-icon/grid-row
+    :row-reverse    deprecated-icon/row-reverse
+    :column         deprecated-icon/column
+    :column-reverse deprecated-icon/column-reverse))
 
 ;; FLEX COMPONENTS
 
@@ -67,63 +67,63 @@
     :align-items
     (if column?
       (case val
-        :start    i/align-items-column-start
-        :end      i/align-items-column-end
-        :center   i/align-items-column-center)
+        :start    deprecated-icon/align-items-column-start
+        :end      deprecated-icon/align-items-column-end
+        :center   deprecated-icon/align-items-column-center)
       (case val
-        :start    i/align-items-row-start
-        :end      i/align-items-row-end
-        :center   i/align-items-row-center))
+        :start    deprecated-icon/align-items-row-start
+        :end      deprecated-icon/align-items-row-end
+        :center   deprecated-icon/align-items-row-center))
 
     :justify-content
     (if column?
       (case val
-        :start         i/justify-content-column-start
-        :end           i/justify-content-column-end
-        :center        i/justify-content-column-center
-        :space-around  i/justify-content-column-around
-        :space-evenly  i/justify-content-column-evenly
-        :space-between i/justify-content-column-between)
+        :start         deprecated-icon/justify-content-column-start
+        :end           deprecated-icon/justify-content-column-end
+        :center        deprecated-icon/justify-content-column-center
+        :space-around  deprecated-icon/justify-content-column-around
+        :space-evenly  deprecated-icon/justify-content-column-evenly
+        :space-between deprecated-icon/justify-content-column-between)
       (case val
-        :start         i/justify-content-row-start
-        :end           i/justify-content-row-end
-        :center        i/justify-content-row-center
-        :space-around  i/justify-content-row-around
-        :space-evenly  i/justify-content-row-evenly
-        :space-between i/justify-content-row-between))
+        :start         deprecated-icon/justify-content-row-start
+        :end           deprecated-icon/justify-content-row-end
+        :center        deprecated-icon/justify-content-row-center
+        :space-around  deprecated-icon/justify-content-row-around
+        :space-evenly  deprecated-icon/justify-content-row-evenly
+        :space-between deprecated-icon/justify-content-row-between))
 
     :align-content
     (if column?
       (case val
-        :start         i/align-content-column-start
-        :end           i/align-content-column-end
-        :center        i/align-content-column-center
-        :space-around  i/align-content-column-around
-        :space-evenly  i/align-content-column-evenly
-        :space-between i/align-content-column-between
+        :start         deprecated-icon/align-content-column-start
+        :end           deprecated-icon/align-content-column-end
+        :center        deprecated-icon/align-content-column-center
+        :space-around  deprecated-icon/align-content-column-around
+        :space-evenly  deprecated-icon/align-content-column-evenly
+        :space-between deprecated-icon/align-content-column-between
         :stretch nil)
 
       (case val
-        :start         i/align-content-row-start
-        :end           i/align-content-row-end
-        :center        i/align-content-row-center
-        :space-around  i/align-content-row-around
-        :space-evenly  i/align-content-row-evenly
-        :space-between i/align-content-row-between
+        :start         deprecated-icon/align-content-row-start
+        :end           deprecated-icon/align-content-row-end
+        :center        deprecated-icon/align-content-row-center
+        :space-around  deprecated-icon/align-content-row-around
+        :space-evenly  deprecated-icon/align-content-row-evenly
+        :space-between deprecated-icon/align-content-row-between
         :stretch nil))
 
     :align-self
     (if column?
       (case val
-        :auto     i/remove-icon
-        :start    i/align-self-row-left
-        :end      i/align-self-row-right
-        :center   i/align-self-row-center)
+        :auto     deprecated-icon/remove-icon
+        :start    deprecated-icon/align-self-row-left
+        :end      deprecated-icon/align-self-row-right
+        :center   deprecated-icon/align-self-row-center)
       (case val
-        :auto     i/remove-icon
-        :start    i/align-self-column-top
-        :end      i/align-self-column-bottom
-        :center   i/align-self-column-center))))
+        :auto     deprecated-icon/remove-icon
+        :start    deprecated-icon/align-self-column-top
+        :end      deprecated-icon/align-self-column-bottom
+        :center   deprecated-icon/align-self-column-center))))
 
 (defn get-layout-grid-icon
   [type val ^boolean column?]
@@ -131,32 +131,32 @@
     :align-items
     (if column?
       (case val
-        :auto     i/remove-icon
-        :start    i/align-self-row-left
-        :end      i/align-self-row-right
-        :center   i/align-self-row-center)
+        :auto     deprecated-icon/remove-icon
+        :start    deprecated-icon/align-self-row-left
+        :end      deprecated-icon/align-self-row-right
+        :center   deprecated-icon/align-self-row-center)
       (case val
-        :auto     i/remove-icon
-        :start    i/align-self-column-top
-        :end      i/align-self-column-bottom
-        :center   i/align-self-column-center))
+        :auto     deprecated-icon/remove-icon
+        :start    deprecated-icon/align-self-column-top
+        :end      deprecated-icon/align-self-column-bottom
+        :center   deprecated-icon/align-self-column-center))
 
     :justify-items
     (if (not column?)
       (case val
-        :start         i/align-content-column-start
-        :center        i/align-content-column-center
-        :end           i/align-content-column-end
-        :space-around  i/align-content-column-around
-        :space-between i/align-content-column-between
-        :stretch       i/align-content-column-stretch)
+        :start         deprecated-icon/align-content-column-start
+        :center        deprecated-icon/align-content-column-center
+        :end           deprecated-icon/align-content-column-end
+        :space-around  deprecated-icon/align-content-column-around
+        :space-between deprecated-icon/align-content-column-between
+        :stretch       deprecated-icon/align-content-column-stretch)
       (case val
-        :start         i/align-content-row-start
-        :center        i/align-content-row-center
-        :end           i/align-content-row-end
-        :space-around  i/align-content-row-around
-        :space-between i/align-content-row-between
-        :stretch       i/align-content-row-stretch))))
+        :start         deprecated-icon/align-content-row-start
+        :center        deprecated-icon/align-content-row-center
+        :end           deprecated-icon/align-content-row-end
+        :space-around  deprecated-icon/align-content-row-around
+        :space-between deprecated-icon/align-content-row-between
+        :stretch       deprecated-icon/align-content-row-stretch))))
 
 (mf/defc direction-row-flex
   {::mf/props :obj
@@ -193,7 +193,7 @@
                      "No wrap"
                      "Wrap")
             :on-click on-click}
-   i/wrap])
+   deprecated-icon/wrap])
 
 (mf/defc align-row
   {::mf/props :obj}
@@ -339,7 +339,7 @@
      [:div {:class (stl/css :padding-simple)
             :title (tr "workspace.layout_grid.editor.padding.vertical")}
       [:span {:class (stl/css :icon)}
-       i/padding-top-bottom]
+       deprecated-icon/padding-top-bottom]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder (tr "settings.multiple")
@@ -354,7 +354,7 @@
             :title (tr "workspace.layout_grid.editor.padding.horizontal")}
 
       [:span {:class (stl/css :icon)}
-       i/padding-left-right]
+       deprecated-icon/padding-left-right]
       [:> numeric-input*
        {:className (stl/css :numeric-input)
         :placeholder (tr "settings.multiple")
@@ -398,7 +398,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title (tr "workspace.layout_grid.editor.padding.top")}
       [:span {:class (stl/css :icon)}
-       i/padding-top]
+       deprecated-icon/padding-top]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -413,7 +413,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title (tr "workspace.layout_grid.editor.padding.right")}
       [:span {:class (stl/css :icon)}
-       i/padding-right]
+       deprecated-icon/padding-right]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -428,7 +428,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title (tr "workspace.layout_grid.editor.padding.bottom")}
       [:span {:class (stl/css :icon)}
-       i/padding-bottom]
+       deprecated-icon/padding-bottom]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -443,7 +443,7 @@
      [:div {:class (stl/css :padding-multiple)
             :title (tr "workspace.layout_grid.editor.padding.left")}
       [:span {:class (stl/css :icon)}
-       i/padding-left]
+       deprecated-icon/padding-left]
       [:> numeric-input*
        {:class (stl/css :numeric-input)
         :placeholder "--"
@@ -490,7 +490,7 @@
                :aria-label (tr "workspace.layout_grid.editor.padding.expand")
                :data-type (d/name type)
                :on-click on-type-change'}
-      i/padding-extended]]))
+      deprecated-icon/padding-extended]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GAP
@@ -547,7 +547,7 @@
                     :row-gap true
                     :disabled row-gap-disabled?)
             :title "Row gap"}
-      [:span {:class (stl/css :icon)} i/gap-vertical]
+      [:span {:class (stl/css :icon)} deprecated-icon/gap-vertical]
       [:> numeric-input*
        {:class (stl/css :numeric-input true)
         :no-validate true
@@ -566,7 +566,7 @@
                     :column-gap true
                     :disabled col-gap-disabled?)
             :title "Column gap"}
-      [:span {:class (stl/css :icon)} i/gap-horizontal]
+      [:span {:class (stl/css :icon)} deprecated-icon/gap-horizontal]
       [:> numeric-input*
        {:class (stl/css :numeric-input true)
         :no-validate true
@@ -756,7 +756,7 @@
      [:div {:class (stl/css :track-info-container)}
       [:div {:class (stl/css :track-info-dir-icon)
              :on-click handle-select-track}
-       (if is-column i/flex-vertical i/flex-horizontal)]
+       (if is-column deprecated-icon/flex-vertical deprecated-icon/flex-horizontal)]
 
       [:div {:class (stl/css :track-info-value)}
        [:> numeric-input* {:no-validate true
@@ -804,11 +804,11 @@
 
     [:div {:class (stl/css :grid-tracks) :data-testid testid}
      [:div {:class (stl/css :grid-track-header)}
-      [:button {:class (stl/css :expand-icon) :on-click toggle} i/menu]
+      [:button {:class (stl/css :expand-icon) :on-click toggle} deprecated-icon/menu]
       [:div {:class (stl/css :track-title) :on-click toggle}
        [:div {:class (stl/css :track-name) :title track-name} track-name]
        [:div {:class (stl/css :track-detail) :title track-detail} track-detail]]
-      [:button {:class (stl/css :add-column) :on-click add-track} i/add]]
+      [:button {:class (stl/css :add-column) :on-click add-track} deprecated-icon/add]]
 
      (when expanded?
        [:& h/sortable-container {}

@@ -15,7 +15,7 @@
    [app.main.data.team :as dtm]
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -100,7 +100,7 @@
            (tr "labels.create-team")])
 
         [:button {:class (stl/css :modal-close-btn)
-                  :on-click modal/hide!} i/close]]
+                  :on-click modal/hide!} deprecated-icon/close]]
 
        [:div {:class (stl/css :modal-content)}
         [:& fm/input {:type "text"

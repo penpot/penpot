@@ -15,7 +15,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -140,7 +140,7 @@
           (tr "workspace.assets.create-group")
           (tr "workspace.assets.rename-group"))]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click modal/hide!} i/close]]
+                 :on-click modal/hide!} deprecated-icon/close]]
 
       [:div {:class (stl/css :modal-content)}
        [:& fm/form {:form form :on-submit on-accept}

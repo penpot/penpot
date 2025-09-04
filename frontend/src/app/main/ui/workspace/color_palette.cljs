@@ -17,7 +17,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -134,7 +134,7 @@
      (when show-arrows?
        [:button {:class (stl/css :left-arrow)
                  :disabled (= offset 0)
-                 :on-click on-left-arrow-click} i/arrow])
+                 :on-click on-left-arrow-click} deprecated-icon/arrow])
      [:div {:class (stl/css :color-palette-content)
             :ref container
             :on-wheel on-scroll}
@@ -155,7 +155,7 @@
      (when show-arrows?
        [:button {:class (stl/css :right-arrow)
                  :disabled (= offset max-offset)
-                 :on-click on-right-arrow-click} i/arrow])]))
+                 :on-click on-right-arrow-click} deprecated-icon/arrow])]))
 
 (mf/defc recent-colors-palette*
   {::mf/private true}
