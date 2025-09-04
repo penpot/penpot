@@ -832,22 +832,22 @@ a[href].post-tag:visited {
   padding-left: 14.6rem;
 }
 .illus-userguide {
-  background-image: url(/img/home-userguide.png);
+  background-image: url(/img/home-user-guide.webp);
 }
 .illus-faq {
-  background-image: url(/img/home-faq.png);
+  background-image: url(/img/home-faq.webp);
 }
 .illus-techguide {
-  background-image: url(/img/home-techguide.png);
+  background-image: url(/img/home-technical-guide.webp);
 }
 .illus-plugins {
-  background-image: url(/img/home-plugins.png);
+  background-image: url(/img/home-plugins.webp);
 }
 .illus-contributing {
-  background-image: url(/img/home-contributing.png);
+  background-image: url(/img/home-contribution.webp);
 }
 .illus-contact {
-  background-image: url(/img/home-contact.png);
+  background-image: url(/img/home-contact.webp);
 }
 .illus-libraries {
   padding-left: 13rem;
@@ -924,7 +924,7 @@ a[href].post-tag:visited {
   background-size: auto 75%;
   background-position: center top;
   background-repeat: no-repeat;
-  background-image: url(/img/home-contact.png);
+  background-image: url(/img/home-contact.webp);
 }
 .contact-block p,
 .contact-block h2,
@@ -992,22 +992,22 @@ a[href].post-tag:visited {
 }
 
 .plugins .illus-getting-started {
-  background-image: url(/img/plugins/getting_started.png);
+  background-image: url(/img/plugins/plugins-getting-started.webp);
 }
 .plugins .illus-create-plugin {
-  background-image: url(/img/plugins/create_plugin.png);
+  background-image: url(/img/plugins/plugins-create.webp);
 }
 .plugins .illus-deployment {
-  background-image: url(/img/plugins/deployment.png);
+  background-image: url(/img/plugins/plugins-deploy.webp);
 }
 .plugins .illus-api {
-  background-image: url(/img/plugins/api.png);
+  background-image: url(/img/plugins/plugins-api.webp);
 }
 .plugins .illus-examples {
-  background-image: url(/img/plugins/examples.png);
+  background-image: url(/img/plugins/plugins-examples-templates.webp);
 }
 .plugins .illus-faq {
-  background-image: url(/img/plugins/faqs.png);
+  background-image: url(/img/plugins/plugins-faqs.webp);
 }
 
 table, tr, th, td {
