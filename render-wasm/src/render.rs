@@ -25,9 +25,6 @@ use crate::shapes::{
     Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, StructureEntry, Type,
 };
 use crate::state::ShapesPool;
-use crate::textlayout::{
-    paragraph_builder_group_from_text, stroke_paragraph_builder_group_from_text,
-};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -622,13 +619,13 @@ impl RenderState {
                 let inner_shadows = shape.inner_shadow_paints();
                 let blur_filter = shape.image_filter(1.);
                 let count_inner_strokes = shape.count_visible_inner_strokes();
-                let mut paragraphs = paragraph_builder_group_from_text(&text_content, None);
+                let mut paragraphs = text_content.paragraph_builder_group_from_text(None);
                 let mut paragraphs_with_shadows =
-                    paragraph_builder_group_from_text(&text_content, Some(true));
+                    text_content.paragraph_builder_group_from_text(Some(true));
                 let mut stroke_paragraphs_list = shape
                     .visible_strokes()
                     .map(|stroke| {
-                        stroke_paragraph_builder_group_from_text(
+                        text::stroke_paragraph_builder_group_from_text(
                             &text_content,
                             stroke,
                             &shape.selrect(),
@@ -641,7 +638,7 @@ impl RenderState {
                 let mut stroke_paragraphs_with_shadows_list = shape
                     .visible_strokes()
                     .map(|stroke| {
-                        stroke_paragraph_builder_group_from_text(
+                        text::stroke_paragraph_builder_group_from_text(
                             &text_content,
                             stroke,
                             &shape.selrect(),

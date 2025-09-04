@@ -7,7 +7,6 @@ mod performance;
 mod render;
 mod shapes;
 mod state;
-mod textlayout;
 mod tiles;
 mod utils;
 mod uuid;
@@ -373,21 +372,6 @@ pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) {
 }
 
 #[no_mangle]
-pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
-    let bytes = mem::bytes();
-
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
-        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
-        .collect();
-
-    with_state!(state, {
-        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
-        mem::write_vec(result)
-    })
-}
-
-#[no_mangle]
 pub extern "C" fn get_selection_rect() -> *mut u8 {
     let bytes = mem::bytes();
 
@@ -481,6 +465,21 @@ pub extern "C" fn clean_modifiers() {
         state.scale_content.clear();
         state.modifiers.clear();
     });
+}
+
+#[no_mangle]
+pub extern "C" fn propagate_modifiers(pixel_precision: bool) -> *mut u8 {
+    let bytes = mem::bytes();
+
+    let entries: Vec<_> = bytes
+        .chunks(size_of::<<TransformEntry as SerializableResult>::BytesType>())
+        .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    with_state!(state, {
+        let result = shapes::propagate_modifiers(state, &entries, pixel_precision);
+        mem::write_vec(result)
+    })
 }
 
 #[no_mangle]
