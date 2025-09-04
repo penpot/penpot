@@ -179,3 +179,19 @@ test("Renders a file with blurs applied to any kind of shape", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a file with shadows applied to any kind of shape", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-shadows.json");
+
+  await workspace.goToWorkspace({
+    id: "9502081a-e1a4-80bc-8006-c2b968723199",
+    pageId: "9502081a-e1a4-80bc-8006-c2b96872319a",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});

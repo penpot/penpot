@@ -719,6 +719,65 @@ impl Shape {
             .get_or_init(|| self.calculate_extrect(shapes_pool, modifiers))
     }
 
+    /// Calculates the bounding rectangle for a frame shape's shadow, taking into account
+    /// stroke widths and shadow properties.
+    ///
+    /// This method computes the expanded bounds that would be needed to fully render
+    /// the shadow effect for a frame shape. It considers:
+    /// - The base frame bounds (selection rectangle)
+    /// - Maximum stroke width across all strokes, accounting for stroke rendering kind
+    /// - Shadow offset (x, y displacement)
+    /// - Shadow blur radius (expands bounds outward)
+    /// - Whether the shadow is hidden
+    ///
+    /// # Arguments
+    /// * `shadow` - The shadow configuration containing offset, blur, and visibility
+    ///
+    /// # Returns
+    /// A `math::Rect` representing the bounding rectangle that encompasses the shadow.
+    /// Returns an empty rectangle if the shadow is hidden.
+    pub fn get_frame_shadow_bounds(&self, shadow: &Shadow) -> math::Rect {
+        assert!(
+            self.is_frame(),
+            "This method can only be called on frame shapes"
+        );
+
+        let base_bounds = self.selrect();
+        let mut rect = skia::Rect::new_empty();
+
+        let mut max_stroke: Option<f32> = None;
+        for stroke in self.strokes.iter() {
+            let width = match stroke.render_kind(false) {
+                StrokeKind::Inner => -stroke.width / 2.,
+                StrokeKind::Center => 0.,
+                StrokeKind::Outer => stroke.width,
+            };
+            max_stroke = Some(max_stroke.unwrap_or(f32::MIN).max(width));
+        }
+        if !shadow.hidden() {
+            let (x, y) = shadow.offset;
+            let mut shadow_rect = base_bounds;
+            shadow_rect.left += x;
+            shadow_rect.right += x;
+            shadow_rect.top += y;
+            shadow_rect.bottom += y;
+
+            shadow_rect.left += shadow.blur;
+            shadow_rect.top += shadow.blur;
+            shadow_rect.right -= shadow.blur;
+            shadow_rect.bottom -= shadow.blur;
+
+            if let Some(max_stroke) = max_stroke {
+                shadow_rect.left -= max_stroke;
+                shadow_rect.right += max_stroke;
+                shadow_rect.top -= max_stroke;
+                shadow_rect.bottom += max_stroke;
+            }
+            rect.join(shadow_rect);
+        }
+        rect
+    }
+
     pub fn calculate_extrect(
         &self,
         shapes_pool: &ShapesPool,
@@ -762,22 +821,24 @@ impl Shape {
         }
 
         for shadow in self.shadows.iter() {
-            let (x, y) = shadow.offset;
-            let mut shadow_rect = rect;
-            shadow_rect.left += x;
-            shadow_rect.right += x;
-            shadow_rect.top += y;
-            shadow_rect.bottom += y;
+            if !shadow.hidden() {
+                let (x, y) = shadow.offset;
+                let mut shadow_rect = rect;
+                shadow_rect.left += x;
+                shadow_rect.right += x;
+                shadow_rect.top += y;
+                shadow_rect.bottom += y;
 
-            shadow_rect.left -= shadow.blur;
-            shadow_rect.top -= shadow.blur;
-            shadow_rect.right += shadow.blur;
-            shadow_rect.bottom += shadow.blur;
+                shadow_rect.left -= shadow.blur;
+                shadow_rect.top -= shadow.blur;
+                shadow_rect.right += shadow.blur;
+                shadow_rect.bottom += shadow.blur;
 
-            rect.join(shadow_rect);
+                rect.join(shadow_rect);
+            }
         }
 
-        if self.blur.blur_type != blurs::BlurType::None {
+        if self.blur.blur_type != blurs::BlurType::None && !self.blur.hidden {
             rect.left -= self.blur.value;
             rect.top -= self.blur.value;
             rect.right += self.blur.value;
@@ -1101,10 +1162,6 @@ impl Shape {
         !self.fills.is_empty()
     }
 
-    pub fn has_visible_strokes(&self) -> bool {
-        self.visible_strokes().next().is_some()
-    }
-
     #[allow(dead_code)]
     pub fn has_visible_inner_strokes(&self) -> bool {
         self.visible_strokes().any(|s| s.kind == StrokeKind::Inner)
@@ -1151,20 +1208,6 @@ impl Shape {
         } else {
             self.children_ids(include_hidden)
         }
-    }
-
-    pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
-        let drop_shadows: Vec<&crate::shapes::shadows::Shadow> =
-            self.drop_shadows().filter(|s| !s.hidden()).collect();
-        drop_shadows
-            .into_iter()
-            .map(|shadow| {
-                let mut paint = skia_safe::Paint::default();
-                let filter = shadow.get_drop_shadow_filter();
-                paint.set_image_filter(filter);
-                paint
-            })
-            .collect()
     }
 
     pub fn inner_shadow_paints(&self) -> Vec<skia_safe::Paint> {

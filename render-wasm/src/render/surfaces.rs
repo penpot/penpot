@@ -175,16 +175,21 @@ impl Surfaces {
         performance::begin_measure!("apply_mut::flags");
     }
 
-    pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
-        let translation = (
+    pub fn get_render_context_translation(
+        &mut self,
+        render_area: skia::Rect,
+        scale: f32,
+    ) -> (f32, f32) {
+        (
             -render_area.left() + self.margins.width as f32 / scale,
             -render_area.top() + self.margins.height as f32 / scale,
-        );
+        )
+    }
+
+    pub fn update_render_context(&mut self, render_area: skia::Rect, scale: f32) {
+        let translation = self.get_render_context_translation(render_area, scale);
         self.apply_mut(
-            SurfaceId::Fills as u32
-                | SurfaceId::Strokes as u32
-                | SurfaceId::DropShadows as u32
-                | SurfaceId::InnerShadows as u32,
+            SurfaceId::Fills as u32 | SurfaceId::Strokes as u32 | SurfaceId::InnerShadows as u32,
             |s| {
                 s.canvas().restore();
                 s.canvas().save();
@@ -251,7 +256,6 @@ impl Surfaces {
 
     pub fn reset(&mut self, color: skia::Color) {
         self.canvas(SurfaceId::Fills).restore_to_count(1);
-        self.canvas(SurfaceId::DropShadows).restore_to_count(1);
         self.canvas(SurfaceId::InnerShadows).restore_to_count(1);
         self.canvas(SurfaceId::Strokes).restore_to_count(1);
         self.canvas(SurfaceId::Current).restore_to_count(1);
@@ -259,7 +263,6 @@ impl Surfaces {
             SurfaceId::Fills as u32
                 | SurfaceId::Strokes as u32
                 | SurfaceId::Current as u32
-                | SurfaceId::DropShadows as u32
                 | SurfaceId::InnerShadows as u32,
             |s| {
                 s.canvas().clear(color).reset_matrix();

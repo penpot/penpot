@@ -63,19 +63,6 @@ impl Shadow {
         self.hidden
     }
 
-    pub fn get_drop_shadow_paint(
-        &self,
-        antialias: bool,
-        blur_filter: Option<&ImageFilter>,
-    ) -> Paint {
-        let mut paint = Paint::default();
-        let shadow_filter = self.get_drop_shadow_filter();
-        let filter = compose_filters(blur_filter, shadow_filter.as_ref());
-        paint.set_image_filter(filter);
-        paint.set_anti_alias(antialias);
-        paint
-    }
-
     pub fn get_drop_shadow_filter(&self) -> Option<ImageFilter> {
         let mut filter = image_filters::drop_shadow_only(
             (self.offset.0, self.offset.1),
