@@ -1134,7 +1134,7 @@ msgid "errors.ldap-disabled"
 msgstr "Autentificarea cu LDAP este dezactivată."
 
 #: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
-msgid "errors.max-quote-reached"
+msgid "errors.max-quota-reached"
 msgstr "Ați ajuns la cota \"%s\". Luați legătura cu serviciul de asistență."
 
 #: src/app/main/data/workspace/media.cljs:190

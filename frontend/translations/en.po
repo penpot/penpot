@@ -880,7 +880,7 @@ msgstr "The plugin URL is incorrect"
 
 #: src/app/main/ui/dashboard.cljs:205
 msgid "dashboard.plugins.parse-error"
-msgstr "Cannot parser the plugin manifest"
+msgstr "Cannot parse the plugin manifest"
 
 #: src/app/main/ui/dashboard.cljs:168
 msgid "dashboard.plugins.try-plugin"
@@ -1358,8 +1358,8 @@ msgid "errors.ldap-disabled"
 msgstr "LDAP authentication is disabled."
 
 #: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
-msgid "errors.max-quote-reached"
-msgstr "You have reached the '%s' quote. Contact with support."
+msgid "errors.max-quota-reached"
+msgstr "You have reached the '%s' quota. Contact support."
 
 #: src/app/main/ui/dashboard/team.cljs:185, src/app/main/ui/onboarding/team_choice.cljs:101
 msgid "errors.maximum-invitations-by-request-reached"
@@ -2384,7 +2384,7 @@ msgstr "Product or UX design"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
 msgid "labels.product-management"
-msgstr "Product Managment"
+msgstr "Product Management"
 
 #: src/app/main/ui/settings/profile.cljs:128, src/app/main/ui/settings/sidebar.cljs:93
 msgid "labels.profile"

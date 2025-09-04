@@ -36,6 +36,9 @@
 - Fix pasting RTF text crashes penpot [Taiga #11717](https://tree.taiga.io/project/penpot/issue/11717)
 - Fix navigation arrows in Libraries & Templates carousel [Taiga #10609](https://tree.taiga.io/project/penpot/issue/10609)
 - Fix applying tokens with zero value to size [Taiga #11618](https://tree.taiga.io/project/penpot/issue/11618)
+- Fix typo [Taiga #11969](https://tree.taiga.io/project/penpot/issue/11969)
+- Fix typo [Taiga #11970](https://tree.taiga.io/project/penpot/issue/11970)
+- Fix typos [Taiga #11971](https://tree.taiga.io/project/penpot/issue/11971)
 
 ## 2.9.0
 
