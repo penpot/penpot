@@ -52,7 +52,11 @@
    :typography      "typography"})
 
 (def dtcg-token-type->token-type
-  (set/map-invert token-type->dtcg-token-type))
+  (-> (set/map-invert token-type->dtcg-token-type)
+      ;; Allow these properties to be imported with singular key names for backwards compability
+      (assoc "fontWeight" :font-weight
+             "fontSize" :font-size
+             "fontFamily" :font-family)))
 
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))

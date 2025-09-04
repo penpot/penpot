@@ -1580,3 +1580,254 @@
                                                 "$type" "color"
                                                 "$description" ""}}}}}]
        (t/is (= expected result)))))
+
+#?(:clj
+   (t/deftest parse-typography-tokens
+     (let [json (-> (slurp "test/common_tests/types/data/tokens-typography-example.json")
+                    (json/decode {:key-fn identity}))
+           lib (ctob/parse-decoded-json json "typography-test")
+           set (ctob/get-set lib "typography-test")]
+
+       (t/testing "typography token with composite value"
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo")]
+           (t/is (some? token))
+           (t/is (= (:type token) :typography))
+           (t/is (= (:value token) {:font-weight "100"
+                                    :font-size "16px"
+                                    :letter-spacing "0.1em"}))
+           (t/is (= (:description token) ""))))
+
+       (t/testing "typography token with string reference"
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo2")]
+           (t/is (some? token))
+           (t/is (= (:type token) :typography))
+           (t/is (= (:value token) "{typo}"))
+           (t/is (= (:description token) ""))))
+
+       (t/testing "typography token referencing single token"
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo-to-single")]
+           (t/is (some? token))
+           (t/is (= (:type token) :typography))
+           (t/is (= (:value token) "{font-weight}"))
+           (t/is (= (:description token) ""))))
+
+       (t/testing "typography token with empty value"
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.test-empty")]
+           (t/is (some? token))
+           (t/is (= (:type token) :typography))
+           (t/is (= (:value token) {}))
+           (t/is (= (:description token) ""))))
+
+       (t/testing "typography token with complex value and description"
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo-complex")]
+           (t/is (some? token))
+           (t/is (= (:type token) :typography))
+           (t/is (= (:value token) {:font-weight "bold"
+                                    :font-size "24px"
+                                    :letter-spacing "0.05em"
+                                    :font-family ["Arial", "sans-serif"]
+                                    :text-case "uppercase"}))
+           (t/is (= (:description token) "A complex typography token"))))
+
+       (t/testing "individual font tokens still work"
+         (let [font-weight-token (ctob/get-token-by-name lib "typography-test" "test.font-weight")
+               font-size-token (ctob/get-token-by-name lib "typography-test" "test.font-size")]
+           (t/is (some? font-weight-token))
+           (t/is (= (:type font-weight-token) :font-weight))
+           (t/is (= (:value font-weight-token) "200"))
+
+           (t/is (some? font-size-token))
+           (t/is (= (:type font-size-token) :font-size))
+           (t/is (= (:value font-size-token) "18px"))))
+
+       (t/testing "typography token with string font family gets transformed to array"
+         (let [token (ctob/get-token-by-name lib "typography-test" "test.typo-with-string-font-family")]
+           (t/is (some? token))
+           (t/is (= (:type token) :typography))
+           (t/is (= (:value token) {:font-weight "600"
+                                    :font-size "20px"
+                                    :font-family ["Roboto" "Helvetica" "sans-serif"]}))
+           (t/is (= (:description token) "Typography token with string font family")))))))
+
+#?(:clj
+   (t/deftest export-typography-tokens
+     (let [tokens-lib (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set
+                                         :name "typography-set"
+                                         :tokens {"typo.composite"
+                                                  (ctob/make-token
+                                                   {:name "typo.composite"
+                                                    :type :typography
+                                                    :value {:font-weight "bold"
+                                                            :font-size "16px"
+                                                            :letter-spacing "0.1em"}
+                                                    :description "A composite typography token"})
+                                                  "typo.reference"
+                                                  (ctob/make-token
+                                                   {:name "typo.reference"
+                                                    :type :typography
+                                                    :value "{other-token}"})
+                                                  "typo.empty"
+                                                  (ctob/make-token
+                                                   {:name "typo.empty"
+                                                    :type :typography
+                                                    :value {}})})))
+           result (ctob/export-dtcg-json tokens-lib)
+           typography-set (get result "typography-set")]
+
+       (t/testing "composite typography token export"
+         (let [composite-token (get-in typography-set ["typo" "composite"])]
+           (t/is (= (get composite-token "$type") "typography"))
+           (t/is (= (get composite-token "$value") {"fontWeights" "bold"
+                                                    "fontSizes" "16px"
+                                                    "letterSpacing" "0.1em"}))
+           (t/is (= (get composite-token "$description") "A composite typography token"))))
+
+       (t/testing "reference typography token export"
+         (let [reference-token (get-in typography-set ["typo" "reference"])]
+           (t/is (= (get reference-token "$type") "typography"))
+           (t/is (= (get reference-token "$value") "{other-token}"))
+           (t/is (= (get reference-token "$description") ""))))
+
+       (t/testing "empty typography token export"
+         (let [empty-token (get-in typography-set ["typo" "empty"])]
+           (t/is (= (get empty-token "$type") "typography"))
+           (t/is (= (get empty-token "$value") {}))
+           (t/is (= (get empty-token "$description") "")))))))
+
+#?(:clj
+   (t/deftest typography-token-round-trip
+     (let [original-lib (-> (ctob/make-tokens-lib)
+                            (ctob/add-set (ctob/make-token-set
+                                           :name "test-set"
+                                           :tokens {"typo.test"
+                                                    (ctob/make-token
+                                                     {:name "typo.test"
+                                                      :type :typography
+                                                      :value {:font-weight "700"
+                                                              :font-size "20px"
+                                                              :letter-spacing "0.05em"
+                                                              :font-family ["Helvetica", "sans-serif"]}
+                                                      :description "Round trip test"})
+                                                    "typo.ref"
+                                                    (ctob/make-token
+                                                     {:name "typo.ref"
+                                                      :type :typography
+                                                      :value "{typo.test}"})})))
+           ;; Export to JSON format
+           exported (ctob/export-dtcg-json original-lib)
+           ;; Import back
+           imported-lib (ctob/parse-decoded-json exported "")]
+
+       (t/testing "round trip preserves typography tokens"
+         (let [original-token (ctob/get-token-by-name original-lib "test-set" "typo.test")
+               imported-token (ctob/get-token-by-name imported-lib "test-set" "typo.test")]
+           (t/is (some? imported-token))
+           (t/is (= (:type imported-token) (:type original-token)))
+           (t/is (= (:value imported-token) (:value original-token)))
+           (t/is (= (:description imported-token) (:description original-token))))
+
+         (let [original-ref (ctob/get-token-by-name original-lib "test-set" "typo.ref")
+               imported-ref (ctob/get-token-by-name imported-lib "test-set" "typo.ref")]
+           (t/is (some? imported-ref))
+           (t/is (= (:type imported-ref) (:type original-ref)))
+           (t/is (= (:value imported-ref) (:value original-ref))))))))
+
+#?(:clj
+   (t/deftest parse-font-family-tokens
+     (let [json (-> (slurp "test/common_tests/types/data/tokens-font-family-example.json")
+                    (json/decode {:key-fn identity}))
+           lib (ctob/parse-decoded-json json "font-family-test")]
+
+       (t/testing "string font family token gets split into array"
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.string-font-family")]
+           (t/is (some? token))
+           (t/is (= (:type token) :font-family))
+           (t/is (= (:value token) ["Arial" "Helvetica" "sans-serif"]))
+           (t/is (= (:description token) "A font family defined as a string"))))
+
+       (t/testing "array font family token stays as array"
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.array-font-family")]
+           (t/is (some? token))
+           (t/is (= (:type token) :font-family))
+           (t/is (= (:value token) ["Inter" "system-ui" "sans-serif"]))
+           (t/is (= (:description token) "A font family defined as an array"))))
+
+       (t/testing "single font family string gets converted to array"
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.single-font-family")]
+           (t/is (some? token))
+           (t/is (= (:type token) :font-family))
+           (t/is (= (:value token) ["Georgia"]))
+           (t/is (= (:description token) ""))))
+
+       (t/testing "complex font names with spaces handled correctly"
+         (let [token (ctob/get-token-by-name lib "font-family-test" "fonts.font-with-spaces")]
+           (t/is (some? token))
+           (t/is (= (:type token) :font-family))
+           (t/is (= (:value token) ["Source Sans Pro" "Arial" "sans-serif"])))))))
+
+#?(:clj
+   (t/deftest export-font-family-tokens
+     (let [tokens-lib (-> (ctob/make-tokens-lib)
+                          (ctob/add-set (ctob/make-token-set
+                                         :name "font-family-set"
+                                         :tokens {"fonts.array-family"
+                                                  (ctob/make-token
+                                                   {:name "fonts.array-family"
+                                                    :type :font-family
+                                                    :value ["Roboto" "sans-serif"]
+                                                    :description "An array font family token"})
+                                                  "fonts.single-family"
+                                                  (ctob/make-token
+                                                   {:name "fonts.single-family"
+                                                    :type :font-family
+                                                    :value ["Georgia"]})})))
+           result (ctob/export-dtcg-json tokens-lib)
+           font-family-set (get result "font-family-set")]
+
+       (t/testing "array font family token export"
+         (let [array-token (get-in font-family-set ["fonts" "array-family"])]
+           (t/is (= (get array-token "$type") "fontFamilies"))
+           (t/is (= (get array-token "$value") ["Roboto" "sans-serif"]))
+           (t/is (= (get array-token "$description") "An array font family token"))))
+
+       (t/testing "single font family token export"
+         (let [single-token (get-in font-family-set ["fonts" "single-family"])]
+           (t/is (= (get single-token "$type") "fontFamilies"))
+           (t/is (= (get single-token "$value") ["Georgia"]))
+           (t/is (= (get single-token "$description") "")))))))
+
+#?(:clj
+   (t/deftest font-family-token-round-trip
+     (let [original-lib (-> (ctob/make-tokens-lib)
+                            (ctob/add-set (ctob/make-token-set
+                                           :name "test-set"
+                                           :tokens {"fonts.test-array"
+                                                    (ctob/make-token
+                                                     {:name "fonts.test-array"
+                                                      :type :font-family
+                                                      :value ["Arial" "Helvetica" "sans-serif"]
+                                                      :description "Round trip test"})
+                                                    "fonts.test-single"
+                                                    (ctob/make-token
+                                                     {:name "fonts.test-single"
+                                                      :type :font-family
+                                                      :value ["Times New Roman"]})})))
+           ;; Export to JSON format
+           exported (ctob/export-dtcg-json original-lib)
+           ;; Import back
+           imported-lib (ctob/parse-decoded-json exported "")]
+
+       (t/testing "round trip preserves font family tokens"
+         (let [original-token (ctob/get-token-by-name original-lib "test-set" "fonts.test-array")
+               imported-token (ctob/get-token-by-name imported-lib "test-set" "fonts.test-array")]
+           (t/is (some? imported-token))
+           (t/is (= (:type imported-token) (:type original-token)))
+           (t/is (= (:value imported-token) (:value original-token)))
+           (t/is (= (:description imported-token) (:description original-token))))
+
+         (let [original-single (ctob/get-token-by-name original-lib "test-set" "fonts.test-single")
+               imported-single (ctob/get-token-by-name imported-lib "test-set" "fonts.test-single")]
+           (t/is (some? imported-single))
+           (t/is (= (:type imported-single) (:type original-single)))
+           (t/is (= (:value imported-single) (:value original-single))))))))
