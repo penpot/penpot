@@ -22,7 +22,7 @@
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
@@ -49,7 +49,7 @@
       [:> raw-svg* {:id "penpot-logo-icon" :class (stl/css :penpot-logo)}]
       (when profile-id
         [:div {:class (stl/css :go-back-wrapper)}
-         [:> icon* {:icon-id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
+         [:> icon* {:icon-id i/arrow :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
      [:div {:class (stl/css :deco-before)} deprecated-icon/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)

@@ -7,7 +7,7 @@
    [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.util.i18n :as i18n :refer [tr]]
    [beicon.v2.core :as rx]
@@ -95,7 +95,7 @@
      (if (not radius-expanded)
        [:div {:class (stl/css :radius-1)
               :title (tr "workspace.options.radius")}
-        [:> icon* {:icon-id "corner-radius"
+        [:> icon* {:icon-id i/corner-radius
                    :size "s"
                    :class (stl/css :icon)}]
         [:> numeric-input*

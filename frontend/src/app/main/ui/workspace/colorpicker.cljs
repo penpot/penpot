@@ -27,7 +27,7 @@
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.select :refer [select]]
-   [app.main.ui.ds.foundations.assets.icon :as ic]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.icons :as deprecated-icon]
@@ -344,13 +344,13 @@
         tabs
         (mf/with-memo []
           [{:aria-label (tr "workspace.libraries.colors.rgba")
-            :icon ic/rgba
+            :icon i/rgba
             :id "ramp"}
            {:aria-label "Harmony"
-            :icon ic/rgba-complementary
+            :icon i/rgba-complementary
             :id "harmony"}
            {:aria-label "HSVA"
-            :icon ic/hsva
+            :icon i/hsva
             :id "hsva"}])]
 
     ;; Initialize colorpicker state

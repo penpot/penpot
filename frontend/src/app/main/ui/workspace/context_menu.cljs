@@ -32,7 +32,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
@@ -110,7 +110,7 @@
        [:span
         {:class (stl/css :icon-wrapper)}
         (if is-selected [:span {:class (stl/css :selected-icon)}
-                         [:> icon* {:icon-id "tick" :size "s"}]]
+                         [:> icon* {:icon-id i/tick :size "s"}]]
             [:span {:class (stl/css :selected-icon)}])
         [:span {:class (stl/css :shape-icon)}
          [:> icon* {:icon-id icon :size "s"}]]]
@@ -131,7 +131,7 @@
 
        (when (> (count children) 1)
          [:span {:class (stl/css :submenu-icon)}
-          [:> icon* {:icon-id "arrow" :size "s"}]])
+          [:> icon* {:icon-id i/arrow :size "s"}]])
 
        (when (> (count children) 1)
          [:ul {:class (stl/css :workspace-context-submenu)

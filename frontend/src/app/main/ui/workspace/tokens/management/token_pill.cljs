@@ -17,7 +17,7 @@
    [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.refs :as refs]
    [app.main.ui.components.color-bullet :refer [color-bullet]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -319,7 +319,7 @@
      (cond
        errors?
        [:> icon*
-        {:icon-id "broken-link"
+        {:icon-id i/broken-link
          :class (stl/css :token-pill-icon)}]
 
        color

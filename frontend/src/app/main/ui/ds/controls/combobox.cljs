@@ -12,7 +12,7 @@
    [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.controls.select :refer [get-option handle-focus-change]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -234,9 +234,9 @@
       [:span {:class (stl/css-case :header true
                                    :header-icon (some? icon))}
        (when icon
-         [:> i/icon* {:icon-id icon
-                      :size "s"
-                      :aria-hidden true}])
+         [:> icon* {:icon-id icon
+                    :size "s"
+                    :aria-hidden true}])
        [:input {:id id
                 :ref input-ref
                 :type "text"

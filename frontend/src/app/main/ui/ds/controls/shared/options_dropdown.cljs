@@ -12,7 +12,7 @@
    [app.common.weak :refer [weak-key]]
    [app.main.ui.ds.controls.shared.option :refer [option*]]
    [app.main.ui.ds.controls.shared.token-option :refer [token-option*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
@@ -61,7 +61,7 @@
        :group
        [:li {:class (stl/css :group-option)
              :key (weak-key option)}
-        [:> i/icon*
+        [:> icon*
          {:icon-id i/arrow-down
           :size "m"
           :class (stl/css :option-check)

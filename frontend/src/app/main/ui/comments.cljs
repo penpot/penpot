@@ -25,7 +25,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -1368,7 +1368,7 @@
            :on-click on-click*}
      [:div {:class (stl/css :location)}
       [:div {:class (stl/css :location-icon)}
-       [:> icon* {:icon-id "comments"}]]
+       [:> icon* {:icon-id i/comments}]]
       [:div {:class (stl/css :location-text)}
        (str "#" (:seqn item))
        (str " " (:file-name item))

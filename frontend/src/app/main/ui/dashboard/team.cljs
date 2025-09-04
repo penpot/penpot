@@ -26,7 +26,7 @@
                                                members-cta*
                                                show-subscription-members-banner?]]
    [app.main.ui.dashboard.team-form]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
@@ -981,7 +981,7 @@
 
       [:span {:title (tr "dashboard.webhooks.cant-edit")
               :class (stl/css :menu-disabled)}
-       [:> icon* {:icon-id "menu"}]])))
+       [:> icon* {:icon-id i/menu}]])))
 
 (mf/defc webhook-item*
   {::mf/wrap [mf/memo]

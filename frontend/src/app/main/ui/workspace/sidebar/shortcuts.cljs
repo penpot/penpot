@@ -18,6 +18,7 @@
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -504,7 +505,7 @@
                        :on-clear on-search-clear-click
                        :value @filter-term
                        :placeholder (tr "shortcuts.title")
-                       :icon-id "search"}]]
+                       :icon-id i/search}]]
 
      (if match-any?
        [:div {:class (stl/css :shortcuts-list)}

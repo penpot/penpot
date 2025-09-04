@@ -29,6 +29,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
@@ -332,7 +333,7 @@
       [:> search-bar* {:on-change change-search-term
                        :value search-term
                        :placeholder (tr "workspace.libraries.search-shared-libraries")
-                       :icon-id "search"}]
+                       :icon-id i/search}]
 
       (if (seq shared-libraries)
         [:div {:class (stl/css :section-list-shared)}

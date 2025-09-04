@@ -22,7 +22,7 @@
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.icons :as deprecated-icon]
@@ -102,7 +102,7 @@
                          :class (stl/css :theme-group-label)
                          :typography "body-large"}
             [:div {:class (stl/css :group-title) :title (str (tr "workspace.tokens.group-name") ": " group)}
-             [:> icon* {:icon-id "group" :class (stl/css :group-title-icon)}]
+             [:> icon* {:icon-id i/group :class (stl/css :group-title-icon)}]
              [:> text* {:as "span" :typography "body-medium" :class (stl/css :group-title-name)} group]]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
           (for [[_ {:keys [group name] :as theme}] themes
@@ -147,7 +147,7 @@
                    (if sets-count
                      (tr "workspace.tokens.num-active-sets" sets-count)
                      (tr "workspace.tokens.no-active-sets"))]
-                  [:> icon* {:icon-id "arrow-right"}]]])
+                  [:> icon* {:icon-id i/arrow-right}]]])
 
               [:> icon-button* {:on-click delete-theme
                                 :variant "ghost"
@@ -334,7 +334,7 @@
          [:button {:on-click on-back
                    :class (stl/css :back-btn)
                    :type "button"}
-          [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
+          [:> icon* {:icon-id i/arrow-left :aria-hidden true}]
           (tr "workspace.tokens.back-to-themes")])
 
        [:> theme-inputs* {:theme current-theme

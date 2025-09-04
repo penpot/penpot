@@ -13,7 +13,7 @@
    [app.common.types.profile :refer [schema:profile]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.product.avatar :refer [avatar*]]
@@ -70,7 +70,7 @@
        [:div {:class (stl/css :name-wrapper)}
         [:> text*  {:as "span" :typography t/body-small :class (stl/css :name)} label]
         (when locked
-          [:> i/icon* {:icon-id i/lock :class (stl/css :lock-icon)}])])
+          [:> icon* {:icon-id i/lock :class (stl/css :lock-icon)}])])
 
      [:*
       [:time {:date-time (ct/format-inst created-at :iso)

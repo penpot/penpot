@@ -26,7 +26,7 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
@@ -174,7 +174,7 @@
                                        :variant-mark true
                                        :component-icon true)
                   :title (tr "workspace.assets.components.num-variants" num-variants)}
-           [:> icon* {:icon-id "variant" :size "s"}]])])]))
+           [:> icon* {:icon-id i/variant :size "s"}]])])]))
 
 
 (defn- count-leaves

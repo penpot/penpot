@@ -20,7 +20,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as timers]
@@ -418,12 +418,12 @@
      (when hint
        [:span {:class (stl/css :context-menu-item-hint)} hint])
      (when (not no-selectable)
-       [:> icon* {:icon-id "tick" :size "s" :class (stl/css :icon-wrapper)}])
+       [:> icon* {:icon-id i/tick :size "s" :class (stl/css :icon-wrapper)}])
      [:span {:class (stl/css :item-text)}
       title]
      (when children
        [:*
-        [:> icon* {:icon-id "arrow" :size "s"}]
+        [:> icon* {:icon-id i/arrow :size "s"}]
         [:ul {:ref submenu-ref
               :class (stl/css-case
                       :token-context-submenu true

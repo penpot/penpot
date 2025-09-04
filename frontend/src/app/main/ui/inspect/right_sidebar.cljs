@@ -13,7 +13,7 @@
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.controls.select :refer [select*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.inspect.attributes :refer [attributes]]
@@ -132,7 +132,7 @@
          (if (> (count shapes) 1)
            [:*
             [:div {:class (stl/css :layers-icon)}
-             [:> icon* {:icon-id "layers" :size "s"}]]
+             [:> icon* {:icon-id i/layers :size "s"}]]
             [:span {:class (stl/css :layer-title)} (tr "inspect.tabs.code.selected.multiple" (count shapes))]]
            [:*
             [:div {:class (stl/css :shape-icon)}

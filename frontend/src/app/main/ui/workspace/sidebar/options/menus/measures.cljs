@@ -26,7 +26,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as ds-i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.border-radius :refer  [border-radius-menu*]]
    [app.util.dom :as dom]
@@ -481,7 +481,7 @@
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:show-content values)))}
 
-            [:> ds-i/icon* {:icon-id ds-i/clip-content}]]])
+            [:> icon* {:icon-id i/clip-content}]]])
         (when (options :show-in-viewer)
           [:div {:class (stl/css :show-in-viewer)}
            [:input {:type "checkbox"
@@ -495,4 +495,4 @@
                     :title (tr "workspace.options.show-in-viewer")
                     :class (stl/css-case  :clip-content-label true
                                           :selected (not (:hide-in-viewer values)))}
-            [:> ds-i/icon* {:icon-id ds-i/play}]]])])]))
+            [:> icon* {:icon-id i/play}]]])])]))

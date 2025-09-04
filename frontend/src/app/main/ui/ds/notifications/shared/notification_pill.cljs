@@ -10,7 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -50,7 +50,7 @@
         icon-id (icons-by-level level)]
     [:div {:class (dm/str class " " (stl/css :notification-pill))}
      [:div {:class (stl/css :error-message)}
-      [:> i/icon* {:icon-id icon-id :class (stl/css :icon)}]
+      [:> icon* {:icon-id icon-id :class (stl/css :icon)}]
       ;; The content can arrive in markdown format, in these cases
       ;;  we will use the prop is-html to true to indicate it and
       ;; that the html injection is performed and the necessary css classes are applied.

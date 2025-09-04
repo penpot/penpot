@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
@@ -53,7 +53,7 @@
   ;; NOTE: This custom button may be replace by an action button when this variant is designed
   [:button {:class (stl/css :collapse-sidebar-button)
             :on-click on-collapse-left-sidebar}
-   [:> icon* {:icon-id "arrow"
+   [:> icon* {:icon-id i/arrow
               :size "s"
               :aria-label (tr "workspace.sidebar.collapse")}]])
 
