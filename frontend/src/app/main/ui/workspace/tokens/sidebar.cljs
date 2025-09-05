@@ -137,7 +137,7 @@
        (tr "labels.export")]]
 
 
-     (when (and can-edit? (contains? cf/flags :token-units))
+     (when (and can-edit? (contains? cf/flags :token-base-font-size))
        [:> icon-button* {:variant "secondary"
                          :icon "settings"
                          :aria-label "Settings"

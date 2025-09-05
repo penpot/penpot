@@ -119,6 +119,7 @@
     ;; Only for developtment.
     :tiered-file-data-storage
     :token-units
+    :token-base-font-size
     :token-typography-types
     :token-typography-composite
     :transit-readable-response
