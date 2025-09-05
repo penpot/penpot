@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-09-04 17:01+0000\n"
+"PO-Revision-Date: 2025-09-06 07:02+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -4486,7 +4486,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Sei %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Ci supporti con questo piano dal %s"
 
@@ -7865,11 +7864,10 @@ msgstr ""
 "[Dai un’occhiata al piano Enterprise.|target:self](%s)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:168
-#, fuzzy
 msgid "subscription.dashboard.professional-dashboard-cta-title"
 msgstr ""
-"Hai %s editor nei team di cui sei proprietario, mentre il tuo piano "
-"Professional copre fino a 8."
+"Hai %s editor nei team di tua proprietà, mentre il tuo piano Professional ne "
+"copre fino a 8."
 
 #: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
 msgid "subscription.settings.enterprise.unlimited-storage-benefit"
@@ -8051,3 +8049,140 @@ msgstr "Seleziona famiglia di caratteri"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:834, src/app/main/ui/workspace/tokens/management/create/form.cljs:885
 msgid "workspace.tokens.token-font-family-value"
 msgstr "Famiglia di caratteri"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"Esegui subito l’upgrade a Unlimited o Enterprise per sbloccare più editor, "
+"spazio di archiviazione e recupero file. [Abbonati ora.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"Il tuo team continua a crescere! Il tuo piano Unlimited copre fino a %s "
+"editor, ma ora ne hai %s."
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"Esegui subito l’upgrade per adeguarti al numero attuale di editor. "
+"[Abbonati ora.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Solo i nuovi editor nei team di tua proprietà verranno conteggiati per la "
+"fatturazione futura. Rimane valido un costo fisso di 175 $/mese per oltre 25 "
+"editor."
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Invita persone con il piano Unlimited"
+
+#: src/app/main/ui/settings/subscription.cljs:39
+msgid "subscription.settings.editors"
+msgstr "(x %s editor)"
+
+#: src/app/main/ui/settings/subscription.cljs:393, src/app/main/ui/settings/subscription.cljs:403, src/app/main/ui/settings/subscription.cljs:455
+msgid "subscription.settings.enterprise.autosave"
+msgstr "Versioni di salvataggio automatico a 90 giorni e recupero file"
+
+#: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/settings/subscription.cljs:456
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Fattura mensile fissa"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "Attualmente hai %s persona nei tuoi team che può modificare."
+msgstr[1] "Attualmente hai %s persone nei tuoi team che possono modificare."
+
+#: src/app/main/ui/settings/subscription.cljs:138
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr ""
+"(Proprietari, Amministratore ed Editor. I Visualizzatori non vengono "
+"considerati Editor)"
+
+#: src/app/main/ui/settings/subscription.cljs:181
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Non puoi impostare un numero di editor inferiore a quello attuale. Modifica "
+"il ruolo (editor/admin in visualizzatore) per le persone che non modificano "
+"effettivamente i file nelle impostazioni del team."
+
+#: src/app/main/ui/settings/subscription.cljs:184
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"Suggerimento: puoi aumentare ora il numero di posti per anticipare gli "
+"inviti. Con oltre 25 editor nei team, pagherai un costo fisso di 175 $/mese."
+
+#: src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:427
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "Versioni di salvataggio automatico a 7 giorni e recupero file"
+
+#: src/app/main/ui/settings/subscription.cljs:359, src/app/main/ui/settings/subscription.cljs:426
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10GB di spazio di archiviazione"
+
+#: src/app/main/ui/settings/subscription.cljs:361, src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "Team illimitati. Fino a 8 editor nei team di tua proprietà."
+
+#: src/app/main/ui/settings/subscription.cljs:238
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "Grazie per aver scelto il piano Penpot %s!"
+
+#: src/app/main/ui/settings/subscription.cljs:369, src/app/main/ui/settings/subscription.cljs:381, src/app/main/ui/settings/subscription.cljs:441
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "Versioni di salvataggio automatico a 30 giorni e recupero file"
+
+#: src/app/main/ui/settings/subscription.cljs:368, src/app/main/ui/settings/subscription.cljs:380, src/app/main/ui/settings/subscription.cljs:440
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25GB di spazio di archiviazione"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:56
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "Se desideri aumentare questo limite, scrivici a [%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"Se desideri aumentare questo limite, scrivi al proprietario del team [%s]"
+"(mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:57
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Se desideri aumentare questo limite, "
+"[esegui l'upgrade del tuo piano|target:self](%s)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:833, src/app/main/ui/workspace/tokens/management/create/form.cljs:886
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Famiglia di caratteri o elenco di caratteri separati da virgola (,)"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:47
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr ""
+"L’importazione è stata completata con successo. Alcuni token non sono stati "
+"inclusi."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Valore non valido: % non è consentito."
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr "Questa versione è bloccata da %s e non può essere modificata"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "Questa versione è bloccata da te"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Versione bloccata - può essere modificata solo dal creatore"
