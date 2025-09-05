@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
-"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
-"Language-Team: Chinese (Simplified Han script) "
-"<https://hosted.weblate.org/projects/penpot/frontend/zh_Hans/>\n"
+"PO-Revision-Date: 2025-09-06 07:01+0000\n"
+"Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
+"Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
+"projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.13.1-rc\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4217,9 +4217,8 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "你是 %s！"
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
-msgstr "您一直支持我们的这个计划自从：%s"
+msgstr "您自从 %s 一直支持我们的这个计划"
 
 #: src/app/main/ui/settings/subscription.cljs:443, src/app/main/ui/settings/subscription.cljs:457
 msgid "subscription.settings.try-it-free"
@@ -5183,11 +5182,11 @@ msgstr "共享相同的名字。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
 msgid "workspace.options.component.variants-help-modal.rule2"
-msgstr "是相同的类型"
+msgstr "是相同的类型。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
 msgid "workspace.options.component.variants-help-modal.rule3"
-msgstr "存在相同的层级"
+msgstr "存在相同的层级。"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:935, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
 msgid "workspace.options.component.variants-help-modal.title"
@@ -6918,7 +6917,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "参考错误： "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "解析的值：%s"
 
@@ -6943,7 +6941,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "主题列表"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:589, src/app/main/ui/workspace/tokens/management/create/form.cljs:590
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "描述"
 
@@ -7257,3 +7254,313 @@ msgstr "打开版本菜单"
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "单击以闭合路径"
+
+#: src/app/main/ui/dashboard/placeholder.cljs:118
+#, markdown
+msgid "dashboard.empty-placeholder-libraries"
+msgstr ""
+"添加至项目的库将显示在这里。您可以尝试共享您的文件，或从我们的[库和模板]"
+"(https://penpot.app/libraries-templates)添加。"
+
+#: src/app/main/ui/dashboard/placeholder.cljs
+#, markdown, unused
+msgid "dashboard.empty-placeholder-libraries-subtitle"
+msgstr ""
+"添加至项目的库将显示在这里。您可以尝试共享您的文件，或从我们的[库和模板]"
+"(https://penpot.app/libraries-templates)添加。"
+
+#: src/app/main/ui/dashboard/import.cljs:479
+msgid "dashboard.import.import-message"
+msgid_plural "dashboard.import.import-message"
+msgstr[0] "1个文件导入成功。"
+msgstr[1] "%s 个文件导入成功。"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "打开token列表"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "无匹配项。"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "该token于任意活动集合或主题皆不可用。"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "活动集合或主题中无可用token。"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "分离token"
+
+#: src/app/main/errors.cljs:300
+msgid "errors.deprecated"
+msgstr "抱歉！这是一个使用了已弃用的 Penpot 资源类型的旧文件，您无法打开它。"
+
+#: src/app/main/ui/dashboard/team.cljs:185, src/app/main/ui/onboarding/team_choice.cljs:101
+msgid "errors.maximum-invitations-by-request-reached"
+msgstr "已达到单次请求中可邀请的电子邮件数量上限（%s）"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "计算"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "样式"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "图层信息"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:591
+msgid "labels.mixed-values"
+msgstr "混合"
+
+#: src/app/main/ui/ds/product/loader.cljs:29
+msgid "loader.tips.05.message"
+msgstr "共享资产和风格以保持一致性。"
+
+#: src/app/main/ui/ds/product/loader.cljs:31
+msgid "loader.tips.06.message"
+msgstr "通过动画和过渡让您的想法变为现实。"
+
+#: src/app/main/ui/ds/product/loader.cljs:33
+msgid "loader.tips.07.message"
+msgstr "Penpot 使用 SVG 和 CSS 进行无缝开发。"
+
+#: src/app/main/ui/ds/product/loader.cljs:35
+msgid "loader.tips.08.message"
+msgstr "使用便捷的快捷键（例如 Shift + A 用于自动布局）来加快您的工作流程。"
+
+#: src/app/main/ui/ds/product/loader.cljs:39
+msgid "loader.tips.10.message"
+msgstr "使用社区构建的插件扩展 Penpot 以获得额外的功能。"
+
+#: src/app/main/ui/dashboard/team.cljs:220
+msgid "modals.invite-team-member.text"
+msgstr "您可以邀请成员加入团队，以便他们可以访问此文件和所有团队文件。"
+
+#: src/app/main/ui/static.cljs:65
+msgid "not-found.made-with-love"
+msgstr "用爱和开源制作"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "目前，您的团队中有 %s 人可以编辑。"
+msgstr[1] "目前，您的团队中有 %s 人可以编辑。"
+
+#: src/app/main/data/common.cljs:89
+msgid "notifications.by-code.maintenance"
+msgstr "维护中断：我们将在5分钟内进行短暂维护。"
+
+#: src/app/main/ui/onboarding/questions.cljs:243
+msgid "onboarding.questions.reasons.exploring"
+msgstr "仅浏览"
+
+#: src/app/main/ui/onboarding/questions.cljs:112
+msgid "onboarding.questions.step1.subtitle"
+msgstr "请告诉我们一些关于您的信息，帮助我们完善 "
+"Penpot。您的回答将帮助我们确定新功能的优先级，并指导您如何开始使用。"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr "获取无限套餐，为您的团队提供额外存储空间、文件恢复等更多功能。"
+"[Power up!|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:72
+#, markdown
+msgid "subscription.dashboard.power-up.trial.bottom-description"
+msgstr "试用体验良好？永久解锁完整访问权限。[订阅|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:78
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr "以固定价格为您的所有团队提供无限存储空间、扩展文件恢复能力和无限编辑器。"
+"[查看企业版。|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:68
+#, unused
+msgid "subscription.dashboard.power-up.unlimited.top-description"
+msgstr "额外的编辑器、存储和自动保存的版本、文件备份等等。"
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr "您所拥有的团队共有 %s 名编辑，而您的专业计划最多可拥有 8 名编辑。"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr "请升级到无限版或企业版，以解锁更多编辑席位、存储空间和文件恢复功能。"
+"[立即订阅。|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr "您的团队不断壮大！您的无限套餐最多可容纳 %s 位编辑，但现在您有 %s 位。"
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr "请升级以匹配您当前的编辑数量。[立即订阅。|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr "只有您自有团队中的新编辑人员才会被计入未来账单。25 "
+"名及以上编辑人员仍需支付每月 175 美元的固定费用。"
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "在无限套餐期间邀请他人"
+
+#: src/app/main/ui/settings/subscription.cljs:373, src/app/main/ui/settings/subscription.cljs:397
+msgid "subscription.settings.add-payment-to-continue"
+msgstr "添加付款方式以便在试用后继续"
+
+#: src/app/main/ui/settings/subscription.cljs:367, src/app/main/ui/settings/subscription.cljs:439
+msgid "subscription.settings.benefits.all-professional-benefits"
+msgstr "所有专业计划权益以及："
+
+#: src/app/main/ui/settings/subscription.cljs:379, src/app/main/ui/settings/subscription.cljs:391, src/app/main/ui/settings/subscription.cljs:401, src/app/main/ui/settings/subscription.cljs:453
+msgid "subscription.settings.benefits.all-unlimited-benefits"
+msgstr "所有无限计划权益以及："
+
+#: src/app/main/ui/settings/subscription.cljs:39
+msgid "subscription.settings.editors"
+msgstr "（x %s 位编辑）"
+
+#: src/app/main/ui/settings/subscription.cljs:393, src/app/main/ui/settings/subscription.cljs:403, src/app/main/ui/settings/subscription.cljs:455
+msgid "subscription.settings.enterprise.autosave"
+msgstr "90 天自动保存版本和文件恢复"
+
+#: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/settings/subscription.cljs:456
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "每月固定费用"
+
+#: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "无限存储空间"
+
+#: src/app/main/ui/settings/subscription.cljs:149
+msgid "subscription.settings.management.dialog.downgrade"
+msgstr "注意：切换到较低的计划意味着更少的存储空间和更短的备份和版本历史记录。"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
+msgid "workspace.tokens.original-value"
+msgstr "原始值：%s"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:205
+msgid "workspace.tokens.paddings"
+msgstr "内边距"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:153
+msgid "workspace.tokens.ref-not-valid"
+msgstr "引用无效或不在任何活动集中"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:45
+msgid "workspace.tokens.self-reference"
+msgstr "Token存在自我引用"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:64
+msgid "workspace.tokens.set-edit-placeholder"
+msgstr "输入名称（组名使用“/”）"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:343
+msgid "workspace.tokens.set-selection-theme"
+msgstr "定义应使用哪些 token 集作为此主题选项的一部分："
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.tokens.set.not-active"
+msgstr "Token 集未激活"
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:53
+msgid "workspace.tokens.no-permission-themes"
+msgstr "您需要成为一名编辑才能使用主题"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:76
+msgid "workspace.tokens.no-permisions-set"
+msgstr "您需要成为编辑才能激活/停用集合"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:149
+msgid "workspace.tokens.no-active-sets"
+msgstr "没有活动集"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:148
+msgid "workspace.tokens.more-options"
+msgstr "右键单击查看选项"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.missing-references"
+msgstr "缺少token引用： "
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:251
+msgid "workspace.tokens.min-size"
+msgstr "最小尺寸"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:257
+msgid "workspace.tokens.max-size"
+msgstr "最大尺寸"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:221
+msgid "workspace.tokens.margins"
+msgstr "边距"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr "无效的token值：仅接受无、下划线和删除线"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr "无效的token值：仅接受无、大写、小写或大写"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"“%s” 不是有效的 token 名称。\n"
+"token 名称只能包含字母和数字，并以 . 字符分隔，并且不能以 $ 符号开头。"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr "字体粗细值无效：使用数值（100-950）或标准名称（细、亮、常规、粗体等），后跟可"
+"选的“斜体”"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:132
+msgid "workspace.tokens.inactive-set-description"
+msgstr "此设置未启用。请更改主题或启用此设置以在视口中查看更改"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:141
+msgid "workspace.tokens.inactive-set"
+msgstr "不激活"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:246
+msgid "workspace.tokens.import-warning"
+msgstr "导入 token 将覆盖您当前的所有令牌、集合和主题。"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+#, unused
+msgid "workspace.tokens.import-tooltip"
+msgstr "导入 JSON 文件将覆盖所有当前令牌、集合和主题"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:148
+msgid "workspace.tokens.num-active-sets"
+msgstr "%s 个活跃集"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "在此文件中未找到任何标记、集合或主题。"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49
+msgid "workspace.tokens.no-themes-currently"
+msgstr "您目前没有主题。"
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:40
+msgid "workspace.tokens.no-themes"
+msgstr "目前没有主题。"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:480
+msgid "workspace.tokens.no-sets-create"
+msgstr "尚未定义任何集合。请先创建一个。"
