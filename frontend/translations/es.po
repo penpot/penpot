@@ -5615,7 +5615,7 @@ msgid "workspace.options.component.swap.empty"
 msgstr "Aún no hay recursos en esta biblioteca"
 
 msgid "workspace.component.swap.loop-error"
-msgstr "Un componente no puede ser hijo de si mismo"
+msgstr "Los componentes no pueden anidarse dentro de sí mismos"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
