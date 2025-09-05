@@ -102,19 +102,19 @@
 
 ;; Validation ------------------------------------------------------------------
 
-(defn invalidate-empty-value [token-value]
+(defn check-empty-value [token-value]
   (when (empty? (str/trim token-value))
     (wte/get-error-code :error.token/empty-input)))
 
-(defn invalidate-token-empty-value [token]
-  (invalidate-empty-value (:value token)))
+(defn check-token-empty-value [token]
+  (check-empty-value (:value token)))
 
-(defn invalidate-self-reference [token-name token-value]
+(defn check-self-reference [token-name token-value]
   (when (ctob/token-value-self-reference? token-name token-value)
     (wte/get-error-code :error.token/direct-self-reference)))
 
-(defn invalidate-token-self-reference [token]
-  (invalidate-self-reference (:name token) (:value token)))
+(defn check-token-self-reference [token]
+  (check-self-reference (:name token) (:value token)))
 
 (defn validate-resolve-token
   [token prev-token tokens]
@@ -146,7 +146,7 @@
     (rx/of token)))
 
 (def default-validators
-  [invalidate-token-empty-value invalidate-token-self-reference])
+  [check-token-empty-value check-self-reference])
 
 (defn default-validate-token
   "Validates a token by confirming a list of `validator` predicates and resolving the token using `tokens` with StyleDictionary.
@@ -176,14 +176,14 @@
          ;; Resolving token via StyleDictionary
          (rx/mapcat #(validate-resolve-token % prev-token tokens)))))
 
-(defn invalidate-coll-self-reference
+(defn check-coll-self-reference
   "Invalidate a collection of `token-vals` for a self-refernce against `token-name`.,"
   [token-name token-vals]
   (when (some #(ctob/token-value-self-reference? token-name %) token-vals)
     (wte/get-error-code :error.token/direct-self-reference)))
 
-(defn invalidate-font-family-token-self-reference [token]
-  (invalidate-coll-self-reference (:name token) (:value token)))
+(defn check-font-family-token-self-reference [token]
+  (check-coll-self-reference (:name token) (:value token)))
 
 (defn validate-font-family-token
   [props]
@@ -192,22 +192,22 @@
       (assoc :validators [(fn [token]
                             (when (empty? (:value token))
                               (wte/get-error-code :error.token/empty-input)))
-                          invalidate-font-family-token-self-reference])
+                          check-font-family-token-self-reference])
       (default-validate-token)))
 
-(defn invalidate-typography-token-self-reference
-  "Invalidate token when any of the attributes in token value have a self refernce."
+(defn check-typography-token-self-reference
+  "Check token when any of the attributes in token value have a self-reference."
   [token]
   (let [token-name (:name token)
         token-values (:value token)]
     (some (fn [[k v]]
             (when-let [err (case k
-                             :font-family (invalidate-coll-self-reference token-name v)
-                             (invalidate-self-reference token-name v))]
+                             :font-family (check-coll-self-reference token-name v)
+                             (check-self-reference token-name v))]
               (assoc err :typography-key k)))
           token-values)))
 
-(defn invalidate-empty-typography-token [token]
+(defn check-empty-typography-token [token]
   (when (empty? (:value token))
     (wte/get-error-code :error.token/empty-input)))
 
@@ -225,8 +225,8 @@
                 (fn [v]
                   (-> (or v {})
                       (d/update-when :font-family #(if (string? %) (ctt/split-font-family %) %)))))
-        (assoc :validators [invalidate-empty-typography-token
-                            invalidate-typography-token-self-reference])
+        (assoc :validators [check-empty-typography-token
+                            check-typography-token-self-reference])
         (default-validate-token))))
 
 (defn use-debonced-resolve-callback
