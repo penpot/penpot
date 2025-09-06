@@ -199,8 +199,18 @@
         changed-width? (> (mth/abs (- (:width shape) (:width old-shape))) 0.1)
         changed-height? (> (mth/abs (- (:height shape) (:height old-shape))) 0.1)
 
-        change-to-fixed? (or (and auto-width? (or changed-height? changed-width?))
-                             (and auto-height? changed-height?))]
+        ;; Check if the shape is in a flex layout context that might cause layout-driven changes
+        ;; We should be more conservative about converting auto-width to fixed when the shape
+        ;; is part of a layout system that could cause automatic resizing
+        has-layout-item-sizing? (or (:layout-item-h-sizing shape) (:layout-item-v-sizing shape))
+
+        ;; Only convert auto-width to fixed if:
+        ;; 1. For auto-width: both width AND height changed (indicating user manipulation, not layout)
+        ;; 2. For auto-height: only height changed
+        ;; 3. The shape is not in a layout context where automatic sizing changes are expected
+        change-to-fixed? (and (not has-layout-item-sizing?)
+                              (or (and auto-width? changed-width? changed-height?)
+                                  (and auto-height? changed-height?)))]
     (cond-> shape
       change-to-fixed?
       (assoc :grow-type :fixed))))
