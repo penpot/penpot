@@ -768,7 +768,7 @@
     (empty? selected) false
     (> (count selected) 1) true
     :else
-    (not= uuid/zero (:parent-id (get objects (first selected))))))
+    (not= uuid/zero (:parent-id (get objects (:id (first selected)))))))
 
 (defn align-object-to-parent
   [objects object-id axis]

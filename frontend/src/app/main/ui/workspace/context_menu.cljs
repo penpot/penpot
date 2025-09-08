@@ -149,7 +149,7 @@
 (mf/defc context-menu-edit*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
+  [{:keys [shape-ids]}]
   (let [do-copy           #(st/emit! (dw/copy-selected))
         do-copy-link      #(st/emit! (dw/copy-link-to-clipboard))
 
@@ -228,7 +228,7 @@
 
       [:> menu-entry* {:title (tr "workspace.shape.menu.copy-props")
                        :shortcut (sc/get-tooltip :copy-props)
-                       :disabled (> (count shapes) 1)
+                       :disabled (> (count shape-ids) 1)
                        :on-click handle-copy-props}]
       [:> menu-entry* {:title (tr "workspace.shape.menu.paste-props")
                        :shortcut (sc/get-tooltip :paste-props)
@@ -240,7 +240,7 @@
 (mf/defc context-menu-layer-position*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
+  [{:keys [shape-ids]}]
   (let [do-bring-forward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :up)))
         do-bring-to-front (mf/use-fn #(st/emit! (dw/vertical-order-selected :top)))
         do-send-backward  (mf/use-fn #(st/emit! (dw/vertical-order-selected :down)))
@@ -263,7 +263,7 @@
         (for [object hover-objs]
           [:> menu-entry* {:title (:name object)
                            :key (dm/str (:id object))
-                           :is-selected (some #(= object %) shapes)
+                           :is-selected (some #(= object %) shape-ids)
                            :on-click (select-shapes (:id object))
                            :on-pointer-enter (on-pointer-enter (:id object))
                            :on-pointer-leave (on-pointer-leave (:id object))
@@ -303,13 +303,13 @@
 (mf/defc context-menu-thumbnail*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
-  (let [single?    (= (count shapes) 1)
-        has-frame? (some cfh/frame-shape? shapes)
+  [{:keys [shape-ids]}]
+  (let [single?    (= (count shape-ids) 1)
+        has-frame? (some cfh/frame-shape? shape-ids)
         do-toggle-thumbnail #(st/emit! (dw/toggle-file-thumbnail-selected))]
     (when (and single? has-frame?)
       [:*
-       (if (every? :use-for-thumbnail shapes)
+       (if (every? :use-for-thumbnail shape-ids)
          [:> menu-entry* {:title (tr "workspace.shape.menu.thumbnail-remove")
                           :on-click do-toggle-thumbnail}]
          [:> menu-entry* {:title (tr "workspace.shape.menu.thumbnail-set")
@@ -320,9 +320,9 @@
 (mf/defc context-menu-rename*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
+  [{:keys [shape-ids]}]
   (let [do-rename #(st/emit! (dw/start-rename-selected))]
-    (when (= (count shapes) 1)
+    (when (= (count shape-ids) 1)
       [:*
        [:> menu-separator* {}]
        [:> menu-entry* {:title (tr "workspace.shape.menu.rename")
@@ -332,19 +332,18 @@
 (mf/defc context-menu-group*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
-  (let [multiple?       (> (count shapes) 1)
-        single?         (= (count shapes) 1)
-
+  [{:keys [shape-ids shapes]}]
+  (let [multiple?       (> (count shape-ids) 1)
+        single?         (= (count shape-ids) 1)
         objects         (deref refs/workspace-page-objects)
-        any-in-copy?    (some #(ctn/has-any-copy-parent? objects %) shapes)
-        any-is-variant? (some ctk/is-variant? shapes)
+        any-in-copy?    (some #(ctn/has-any-copy-parent? objects %) shape-ids)
+        any-is-variant? (some ctk/is-variant? shape-ids)
 
         ;; components can't be ungrouped
-        has-frame? (->> shapes (d/seek #(and (cfh/frame-shape? %) (not (ctk/instance-head? %)) (not (ctk/is-variant-container? %)))))
-        has-group? (->> shapes (d/seek #(and (cfh/group-shape? %) (not (ctk/instance-head? %)) (not (ctk/is-variant-container? %)))))
-        has-bool?  (->> shapes (d/seek cfh/bool-shape?))
-        has-mask?  (->> shapes (d/seek :masked-group))
+        has-frame? (->> shape-ids (d/seek #(and (cfh/frame-shape? %) (not (ctk/instance-head? %)) (not (ctk/is-variant-container? %)))))
+        has-group? (->> shapes (d/seek #(and (cfh/group-shape? %) (not (ctk/instance-head? (:id %))) (not (ctk/is-variant-container? (:id %))))))
+        has-bool?  (->> shape-ids (d/seek cfh/bool-shape?))
+        has-mask?  (->> shape-ids (d/seek :masked-group))
 
         is-group?  (and single? has-group?)
         is-bool?   (and single? has-bool?)
@@ -399,14 +398,14 @@
 (mf/defc context-menu-path*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes disable-flatten disable-booleans]}]
-  (let [multiple?            (> (count shapes) 1)
-        single?              (= (count shapes) 1)
+  [{:keys [shape-ids disable-flatten disable-booleans]}]
+  (let [multiple?            (> (count shape-ids) 1)
+        single?              (= (count shape-ids) 1)
 
-        has-group?           (->> shapes (d/seek cfh/group-shape?))
-        has-bool?            (->> shapes (d/seek cfh/bool-shape?))
-        has-frame?           (->> shapes (d/seek cfh/frame-shape?))
-        has-path?            (->> shapes (d/seek cfh/path-shape?))
+        has-group?           (->> shape-ids (d/seek cfh/group-shape?))
+        has-bool?            (->> shape-ids (d/seek cfh/bool-shape?))
+        has-frame?           (->> shape-ids (d/seek cfh/frame-shape?))
+        has-path?            (->> shape-ids (d/seek cfh/path-shape?))
 
         is-group?            (and single? has-group?)
         is-bool?             (and single? has-bool?)
@@ -422,10 +421,10 @@
              (st/emit! (dw/create-bool bool-type))
 
              is-group?
-             (st/emit! (dw/group-to-bool (-> shapes first :id) bool-type))
+             (st/emit! (dw/group-to-bool (-> shape-ids first :id) bool-type))
 
              is-bool?
-             (st/emit! (dw/change-bool-type (-> shapes first :id) bool-type))))]
+             (st/emit! (dw/change-bool-type (-> shape-ids first :id) bool-type))))]
     [:*
      (when (and single? (not is-frame?))
        [:> menu-entry* {:title (tr "workspace.shape.menu.edit")
@@ -461,14 +460,14 @@
 (mf/defc context-menu-layer-options*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
-  (let [ids (mapv :id shapes)
+  [{:keys [shape-ids]}]
+  (let [ids (mapv :id shape-ids)
         do-show-shape #(st/emit! (dw/update-shape-flags ids {:hidden false}))
         do-hide-shape #(st/emit! (dw/update-shape-flags ids {:hidden true}))
         do-lock-shape #(st/emit! (dw/update-shape-flags ids {:blocked true}))
         do-unlock-shape #(st/emit! (dw/update-shape-flags ids {:blocked false}))]
     [:*
-     (if (every? :hidden shapes)
+     (if (every? :hidden shape-ids)
        [:> menu-entry* {:title (tr "workspace.shape.menu.show")
                         :shortcut (sc/get-tooltip :toggle-visibility)
                         :on-click do-show-shape}]
@@ -476,7 +475,7 @@
                         :shortcut (sc/get-tooltip :toggle-visibility)
                         :on-click do-hide-shape}])
 
-     (if (every? :blocked shapes)
+     (if (every? :blocked shape-ids)
        [:> menu-entry* {:title (tr "workspace.shape.menu.unlock")
                         :shortcut (sc/get-tooltip :toggle-lock)
                         :on-click do-unlock-shape}]
@@ -487,20 +486,20 @@
 (mf/defc context-menu-prototype*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
+  [{:keys [shape-ids]}]
   (let [flows           (mf/deref refs/workspace-page-flows)
         options-mode    (mf/deref refs/options-mode-global)
         do-add-flow     #(st/emit! (dwi/add-flow-selected-frame))
         do-remove-flow  #(st/emit! (dwi/remove-flow (:id %)))
 
         prototype?      (= options-mode :prototype)
-        single?         (= (count shapes) 1)
+        single?         (= (count shape-ids) 1)
 
-        has-frame?      (d/seek cfh/frame-shape? shapes)
+        has-frame?      (d/seek cfh/frame-shape? shape-ids)
         is-frame?       (and single? has-frame?)]
 
     (when (and prototype? is-frame?)
-      (if-let [flow (ctp/get-frame-flow flows (-> shapes first :id))]
+      (if-let [flow (ctp/get-frame-flow flows (-> shape-ids first :id))]
         [:> menu-entry* {:title (tr "workspace.shape.menu.delete-flow-start")
                          :on-click (do-remove-flow flow)}]
         [:> menu-entry* {:title (tr "workspace.shape.menu.flow-start")
@@ -509,18 +508,18 @@
 (mf/defc context-menu-layout*
   {::mf/props :obj
    ::mf/private true}
-  [{:keys [shapes]}]
-  (let [single?      (= (count shapes) 1)
+  [{:keys [shape-ids]}]
+  (let [single?      (= (count shape-ids) 1)
         objects      (deref refs/workspace-page-objects)
-        any-in-copy? (some true? (map #(ctn/has-any-copy-parent? objects %) shapes))
+        any-in-copy? (some true? (map #(ctn/has-any-copy-parent? objects %) shape-ids))
 
         has-flex?
-        (and single? (every? ctl/flex-layout? shapes))
+        (and single? (every? ctl/flex-layout? shape-ids))
 
         has-grid?
-        (and single? (every? ctl/grid-layout? shapes))
+        (and single? (every? ctl/grid-layout? shape-ids))
 
-        any-is-variant? (some ctk/is-variant? shapes)
+        any-is-variant? (some ctk/is-variant? shape-ids)
 
         on-add-layout
         (mf/use-fn
@@ -533,9 +532,9 @@
 
         on-remove-layout
         (mf/use-fn
-         (mf/deps shapes)
+         (mf/deps shape-ids)
          (fn [_event]
-           (let [ids (map :id shapes)]
+           (let [ids (map :id shape-ids)]
              (st/emit! (dwsl/remove-layout ids)))))]
     [:*
      (when (not any-in-copy?)
@@ -565,10 +564,9 @@
 
 (mf/defc context-menu-component*
   {:mf/private true}
-  [{:keys [shapes]}]
-  (let [single?                    (= (count shapes) 1)
+  [{:keys [shape-ids shapes]}]
+  (let [single?                    (= (count shape-ids) 1)
         objects                    (deref refs/workspace-page-objects)
-        shapes                     (keep (d/getf objects) shapes)
         can-make-component         (every? true? (map #(ctn/valid-shape-for-component? objects %) shapes))
         heads                      (filter ctk/instance-head? shapes)
         components-menu-entries    (cmm/generate-components-menu-entries heads)
@@ -634,13 +632,15 @@
    ::mf/private true}
   [{:keys [mdata]}]
   (let [{:keys [disable-booleans disable-flatten]} mdata
-        shapes (mf/deref refs/selected-shapes)
-        is-not-variant-container? (->> shapes (d/seek #(not (ctk/is-variant-container? %))))
+        shape-ids                 (mf/deref refs/selected-shapes)
+        is-not-variant-container? (->> shape-ids (d/seek #(not (ctk/is-variant-container? %))))
+        objects                   (deref refs/workspace-page-objects)
         props  (mf/props
-                {:shapes shapes
+                {:shape-ids shape-ids
+                 :shapes (map (d/getf objects) shape-ids)
                  :disable-booleans disable-booleans
                  :disable-flatten disable-flatten})]
-    (when-not (empty? shapes)
+    (when-not (empty? shape-ids)
       [:*
        [:> context-menu-edit* props]
        [:> context-menu-layer-position* props]
