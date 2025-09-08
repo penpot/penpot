@@ -13,6 +13,7 @@
 ### :bug: Bugs fixed
 
 - Fix selection problems when devtools open [Taiga #11950](https://tree.taiga.io/project/penpot/issue/11950)
+- Fix long font names overlap [Taiga #11844](https://tree.taiga.io/project/penpot/issue/11844)
 
 ## 2.10.0 (Unreleased)
 
@@ -46,7 +47,7 @@
 - Fix issue where Alt + arrow keys shortcut interferes with letter-spacing when moving text layers [Taiga #11552](https://tree.taiga.io/project/penpot/issue/11771)
 - Fix consistency issues on how font variants are visualized [Taiga #11499](https://tree.taiga.io/project/penpot/us/11499)
 - Fix parsing rx and ry SVG values for rect radius [Taiga #11861](https://tree.taiga.io/project/penpot/issue/11861)
-- Misleading affordance in saved versions [Taiga #11887](https://tree.taiga.io/project/penpot/issue/11887)
+- Fix misleading affordance in saved versions [Taiga #11887](https://tree.taiga.io/project/penpot/issue/11887)
 - Fix pasting RTF text crashes penpot [Taiga #11717](https://tree.taiga.io/project/penpot/issue/11717)
 - Fix navigation arrows in Libraries & Templates carousel [Taiga #10609](https://tree.taiga.io/project/penpot/issue/10609)
 
