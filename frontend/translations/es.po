@@ -7475,6 +7475,10 @@ msgstr ""
 "estándar (thin, light, regular, bold, etc.) opcionalmente seguidos de "
 "'Italic'"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:91
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "Valor no válido: debe hacer referencia a un token tipográfico compuesto."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:23
 msgid "workspace.tokens.invalid-json"
 msgstr "Error al importar: Datos de token no válidos en JSON."

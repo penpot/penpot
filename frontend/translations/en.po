@@ -7525,7 +7525,7 @@ msgstr ""
 
 #: src/app/main/data/workspace/tokens/errors.cljs:91
 msgid "workspace.tokens.invalid-token-value-typography"
-msgstr "Invalid typography value: this should be a reference value to another composite typography token."
+msgstr "Invalid value: must reference a composite typography token."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:23
 msgid "workspace.tokens.invalid-json"
