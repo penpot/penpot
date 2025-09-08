@@ -14,7 +14,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.tokens.sets.helpers :as sets-helpers]
@@ -86,7 +86,7 @@
         {:aria-label aria-label
          :class (stl/css :check-icon)
          :size "s"
-         :icon-id (if mixed? ic/remove ic/tick)}])]))
+         :icon-id (if mixed? i/remove i/tick)}])]))
 
 (mf/defc inline-add-button*
   []
@@ -105,7 +105,7 @@
 (mf/defc add-button*
   []
   [:> icon-button* {:variant "ghost"
-                    :icon "add"
+                    :icon i/add
                     :on-click on-start-creation
                     :aria-label (tr "workspace.tokens.add set")}])
 
@@ -298,7 +298,7 @@
            :aria-checked is-active}
 
      [:> icon*
-      {:icon-id "document"
+      {:icon-id i/document
        :class (stl/css-case :icon true
                             :root-icon (not tree-depth))}]
      (if is-editing

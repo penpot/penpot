@@ -21,7 +21,7 @@
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.shapes.text.fontfaces :refer [shapes->fonts]]
    [app.util.code-beautify :as cb]
    [app.util.code-gen :as cg]
@@ -277,7 +277,7 @@
         [:span {:class (stl/css-case
                         :collapsabled-icon true
                         :rotated collapsed-css?)}
-         i/arrow]]
+         deprecated-icon/arrow]]
 
        [:div {:class (stl/css :code-lang-option)}
         "CSS"]
@@ -290,7 +290,7 @@
        [:div {:class (stl/css :action-btns)}
         [:button {:class (stl/css :expand-button)
                   :on-click on-expand}
-         i/code]
+         deprecated-icon/code]
 
         [:> copy-button* {:data copy-css-fn
                           :class (stl/css :css-copy-btn)
@@ -316,7 +316,7 @@
         [:span {:class (stl/css-case
                         :collapsabled-icon true
                         :rotated collapsed-markup?)}
-         i/arrow]]
+         deprecated-icon/arrow]]
 
        [:& radio-buttons {:selected markup-type
                           :on-change set-markup
@@ -331,7 +331,7 @@
        [:div {:class (stl/css :action-btns)}
         [:button {:class (stl/css :expand-button)
                   :on-click on-expand}
-         i/code]
+         deprecated-icon/code]
 
         [:> copy-button* {:data copy-html-fn
                           :class (stl/css :html-copy-btn)

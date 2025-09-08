@@ -15,7 +15,7 @@
    [app.main.data.modal :as modal]
    [app.main.store :as st]
    [app.main.ui.ds.product.loader :refer [loader*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.worker :as mw]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer  [tr]]
@@ -61,8 +61,8 @@
       [:> loader*  {:width 16
                     :title (tr "labels.loading")}]
       [:span {:class (stl/css :file-icon)}
-       (cond (:export-success? file) i/tick
-             (:export-error? file)   i/close)])
+       (cond (:export-success? file) deprecated-icon/tick
+             (:export-error? file)   deprecated-icon/close)])
 
     [:div {:class (stl/css :file-name-label)}
      (:name file)]]])
@@ -146,7 +146,7 @@
        [:h2 {:class (stl/css :modal-title)}
         (tr "dashboard.export.title")]
        [:button {:class (stl/css :modal-close-btn)
-                 :on-click on-cancel} i/close]]
+                 :on-click on-cancel} deprecated-icon/close]]
 
       (cond
         (= status :prepare)
@@ -169,7 +169,7 @@
               ;;   (tr "dashboard.export.options.merge.title")
               [:span {:class (stl/css-case :global/checked (= selected type))}
                (when (= selected type)
-                 i/status-tick)]
+                 deprecated-icon/status-tick)]
               [:div {:class (stl/css :option-content)}
                [:h3 {:class (stl/css :modal-subtitle)}
                 (tr (dm/str "dashboard.export.options." (d/name type) ".title"))]

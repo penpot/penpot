@@ -14,7 +14,7 @@
    [app.main.data.viewer :as dv]
    [app.main.render :as render]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.object :as obj]
@@ -64,9 +64,9 @@
 
       [:div {:class (stl/css :thumbnails-content)}
        [:button {:class (stl/css :left-scroll-handler)
-                 :on-click on-left-arrow-click} i/arrow]
+                 :on-click on-left-arrow-click} deprecated-icon/arrow]
        [:button {:class (stl/css :right-scroll-handler)
-                 :on-click on-right-arrow-click} i/arrow]
+                 :on-click on-right-arrow-click} deprecated-icon/arrow]
 
        [:div {:class (stl/css :thumbnails-list)
               :ref container
@@ -82,9 +82,9 @@
     (tr "labels.num-of-frames" (i18n/c total))]
    [:span {:class (stl/css :actions)}
     [:button {:class (stl/css :expand-btn)
-              :on-click on-toggle-expand} i/arrow]
+              :on-click on-toggle-expand} deprecated-icon/arrow]
     [:button {:class (stl/css :close-btn)
-              :on-click on-close} i/close]]])
+              :on-click on-close} deprecated-icon/close]]])
 
 (mf/defc thumbnail-item
   {::mf/wrap [mf/memo

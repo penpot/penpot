@@ -18,7 +18,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.file-library :refer [file-library*]]
    [app.util.dom :as dom]
@@ -177,7 +177,7 @@
           :title (tr "workspace.assets.filter")
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
-         i/filter-icon]]
+         deprecated-icon/filter-icon]]
        (when menu-open?
          [:> context-menu*
           {:on-close on-menu-close

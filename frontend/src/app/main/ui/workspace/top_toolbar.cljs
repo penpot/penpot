@@ -19,7 +19,7 @@
    [app.main.store :as st]
    [app.main.ui.components.file-uploader :refer [file-uploader]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.timers :as ts]
@@ -58,7 +58,7 @@
        :aria-label (tr "workspace.toolbar.image" (sc/get-tooltip :insert-image))
        :on-click on-click
        :class (stl/css :main-toolbar-options-button)}
-      i/img
+      deprecated-icon/img
       [:& file-uploader
        {:input-id "image-upload"
         :accept dwm/accept-image-types
@@ -143,7 +143,7 @@
                                 :selected (and (nil? drawtool)
                                                (not edition)))
            :on-click interrupt}
-          i/move]]
+          deprecated-icon/move]]
         [:*
          [:li
           [:button
@@ -153,7 +153,7 @@
             :on-click select-drawtool
             :data-tool "frame"
             :data-testid "artboard-btn"}
-           i/board]]
+           deprecated-icon/board]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.rect" (sc/get-tooltip :draw-rect))
@@ -162,7 +162,7 @@
             :on-click select-drawtool
             :data-tool "rect"
             :data-testid "rect-btn"}
-           i/rectangle]]
+           deprecated-icon/rectangle]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.ellipse" (sc/get-tooltip :draw-ellipse))
@@ -171,7 +171,7 @@
             :on-click select-drawtool
             :data-tool "circle"
             :data-testid "ellipse-btn"}
-           i/elipse]]
+           deprecated-icon/elipse]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.text" (sc/get-tooltip :draw-text))
@@ -179,7 +179,7 @@
             :class (stl/css-case :main-toolbar-options-button true :selected (= drawtool :text))
             :on-click select-drawtool
             :data-tool "text"}
-           i/text]]
+           deprecated-icon/text]]
 
          [:& image-upload]
 
@@ -191,7 +191,7 @@
             :on-click select-drawtool
             :data-tool "curve"
             :data-testid "curve-btn"}
-           i/curve]]
+           deprecated-icon/curve]]
          [:li
           [:button
            {:title (tr "workspace.toolbar.path" (sc/get-tooltip :draw-path))
@@ -200,7 +200,7 @@
             :on-click select-drawtool
             :data-tool "path"
             :data-testid "path-btn"}
-           i/path]]
+           deprecated-icon/path]]
 
          (when (features/active-feature? @st/state "plugins/runtime")
            [:li
@@ -214,7 +214,7 @@
                           (modal/show :plugin-management {}))
               :data-tool "plugins"
               :data-testid "plugins-btn"}
-             i/puzzle]])
+             deprecated-icon/puzzle]])
 
          (when *assert*
            [:li
@@ -222,7 +222,7 @@
              {:title "Debugging tool"
               :class (stl/css-case :main-toolbar-options-button true :selected (contains? layout :debug-panel))
               :on-click toggle-debug-panel}
-             i/bug]])]]
+             deprecated-icon/bug]])]]
 
        [:button {:title (tr "workspace.toolbar.toggle-toolbar")
                  :aria-label (tr "workspace.toolbar.toggle-toolbar")

@@ -28,7 +28,7 @@
    [app.main.store :as st]
    [app.main.ui.css-cursors :as cur]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.viewport.viewport-ref :as uwvv]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -915,7 +915,7 @@
             :on-blur handle-blur-track-input}]
           (when (and hovering? (not medium?) (not small?))
             [:button {:class (stl/css :grid-editor-button)
-                      :on-click handle-show-track-menu} i/menu])]])]
+                      :on-click handle-show-track-menu} deprecated-icon/menu])]])]
 
      [:g {:transform (when (= type :row) (dm/fmt "rotate(-90 % %)" (:x marker-p) (:y marker-p)))}
       [:& track-marker

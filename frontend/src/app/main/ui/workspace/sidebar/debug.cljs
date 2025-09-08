@@ -12,7 +12,8 @@
    [app.main.data.workspace :as dw]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -39,14 +40,14 @@
       [:> icon-button* {:variant "ghost"
                         :aria-label (tr "labels.close")
                         :on-click handle-close
-                        :icon "close"}]]
+                        :icon i/close}]]
 
      [:div {:class (stl/css :debug-panel-inner)}
       (for [option (sort-by d/name dbg/options)]
         [:div {:key (d/name option) :class (stl/css :checkbox-wrapper)}
          [:span {:class (stl/css-case :checkbox-icon true :global/checked (dbg/enabled? option))
                  :on-click #(on-toggle-enabled % option)}
-          (when (dbg/enabled? option) i/status-tick)]
+          (when (dbg/enabled? option) deprecated-icon/status-tick)]
 
          [:input {:type "checkbox"
                   :id (d/name option)

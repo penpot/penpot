@@ -12,7 +12,7 @@
    [app.main.data.profile :as du]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [potok.v2.core :as ptk]
@@ -71,7 +71,7 @@
         [:div {:class (stl/css :input-wrapper)}
          [:label {:for "newsletter-updates"}
           [:span {:class (stl/css-case :global/checked (:newsletter-updates state))}
-           i/status-tick]
+           deprecated-icon/status-tick]
 
           (tr "onboarding-v2.newsletter.updates")
           [:input {:type "checkbox"
@@ -83,7 +83,7 @@
         [:div {:class (stl/css :input-wrapper)}
          [:label {:for "newsletter-news"}
           [:span {:class (stl/css-case :global/checked (:newsletter-news state))}
-           i/status-tick]
+           deprecated-icon/status-tick]
 
           (tr "onboarding-v2.newsletter.news")
           [:input {:type "checkbox"

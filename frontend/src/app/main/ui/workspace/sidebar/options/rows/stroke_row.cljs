@@ -13,7 +13,7 @@
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -165,7 +165,7 @@
       [:div {:class (stl/css :stroke-width-input-element)
              :title (tr "workspace.options.stroke-width")}
        [:span {:class (stl/css :icon)}
-        i/stroke-size]
+        deprecated-icon/stroke-size]
        [:> numeric-input*
         {:min 0
          :className (stl/css :stroke-width-input)
@@ -203,7 +203,7 @@
 
         [:button {:class (stl/css :swap-caps-btn)
                   :on-click on-cap-switch}
-         i/switch]
+         deprecated-icon/switch]
 
         [:div {:class (stl/css :cap-select)}
          [:& select

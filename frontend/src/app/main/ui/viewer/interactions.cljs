@@ -20,7 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.shapes :as shapes]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -249,9 +249,9 @@
     (when flows
       [:div {:on-click toggle-dropdown
              :class (stl/css :view-options)}
-       [:span {:class (stl/css :icon)} i/play]
+       [:span {:class (stl/css :icon)} deprecated-icon/play]
        [:span {:class (stl/css :dropdown-title)} (:name current-flow)]
-       [:span {:class (stl/css :icon-dropdown)}  i/arrow]
+       [:span {:class (stl/css :icon-dropdown)}  deprecated-icon/arrow]
        [:& dropdown {:show show-dropdown?
                      :on-close hide-dropdown}
         [:ul {:class (stl/css :dropdown)}
@@ -265,7 +265,7 @@
                  :on-click select-flow}
             [:span {:class (stl/css :label)} (:name flow)]
             (when (= flow-id (:id current-flow))
-              [:span {:class (stl/css :icon)} i/tick])])]]])))
+              [:span {:class (stl/css :icon)} deprecated-icon/tick])])]]])))
 
 (mf/defc interactions-menu*
   {::mf/props :obj}
@@ -286,7 +286,7 @@
     [:div {:on-click toggle-dropdown
            :class (stl/css :view-options)}
      [:span {:class (stl/css :dropdown-title)} (tr "viewer.header.interactions")]
-     [:span {:class (stl/css :icon-dropdown)} i/arrow]
+     [:span {:class (stl/css :icon-dropdown)} deprecated-icon/arrow]
      [:& dropdown {:show @show-dropdown?
                    :on-close hide-dropdown}
       [:ul {:class (stl/css :dropdown)}
@@ -297,7 +297,7 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.dont-show-interactions")]
         (when (= interactions-mode :hide)
-          [:span {:class (stl/css :icon)}  i/tick])]
+          [:span {:class (stl/css :icon)}  deprecated-icon/tick])]
 
        [:li {:class (stl/css-case :dropdown-element true
                                   :selected (= interactions-mode :show))
@@ -305,7 +305,7 @@
              :data-mode "show"}
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions")]
         (when (= interactions-mode :show)
-          [:span {:class (stl/css :icon)}  i/tick])]
+          [:span {:class (stl/css :icon)}  deprecated-icon/tick])]
 
 
 
@@ -316,7 +316,7 @@
 
         [:span {:class (stl/css :label)} (tr "viewer.header.show-interactions-on-click")]
         (when (= interactions-mode :show-on-click)
-          [:span {:class (stl/css :icon)}  i/tick])]]]]))
+          [:span {:class (stl/css :icon)}  deprecated-icon/tick])]]]]))
 
 (defn animate-go-to-frame
   [animation current-viewport orig-viewport current-size orig-size wrapper-size]

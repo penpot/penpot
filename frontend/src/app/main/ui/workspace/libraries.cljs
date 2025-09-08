@@ -29,9 +29,10 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -41,16 +42,16 @@
    [rumext.v2 :as mf]))
 
 (def ^:private close-icon
-  (i/icon-xref :close (stl/css :close-icon)))
+  (deprecated-icon/icon-xref :close (stl/css :close-icon)))
 
 (def ^:private add-icon
-  (i/icon-xref :add (stl/css :add-icon)))
+  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
 
 (def ^:private detach-icon
-  (i/icon-xref :detach (stl/css :detach-icon)))
+  (deprecated-icon/icon-xref :detach (stl/css :detach-icon)))
 
 (def ^:private library-icon
-  (i/icon-xref :library (stl/css :library-icon)))
+  (deprecated-icon/icon-xref :library (stl/css :library-icon)))
 
 (defn- get-library-summary
   "Given a library data return a summary representation of this library"
@@ -332,7 +333,7 @@
       [:> search-bar* {:on-change change-search-term
                        :value search-term
                        :placeholder (tr "workspace.libraries.search-shared-libraries")
-                       :icon-id "search"}]
+                       :icon-id i/search}]
 
       (if (seq shared-libraries)
         [:div {:class (stl/css :section-list-shared)}
@@ -658,7 +659,7 @@
       [:div  {:class (stl/css :modal-content)}
        [:div {:class (stl/css :info-content)}
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-1]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-1]
          [:div {:class (stl/css :info-block-title)}
           "One physical source of truth"]
          [:div {:class (stl/css :info-block-content)}
@@ -667,7 +668,7 @@
           "allows better control and synchronization."]]
 
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-2]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-2]
          [:div {:class (stl/css :info-block-title)}
           "Swap components"]
          [:div {:class (stl/css :info-block-content)}
@@ -676,7 +677,7 @@
           "variations, or updating elements without extensive manual adjustments."]]
 
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-3]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-3]
          [:div {:class (stl/css :info-block-title)}
           "Graphic assets no longer exist"]
          [:div {:class (stl/css :info-block-content)}
@@ -685,7 +686,7 @@
           "what should go in each typology."]]
 
         [:div {:class (stl/css :info-block)}
-         [:div {:class (stl/css :info-icon)} i/v2-icon-4]
+         [:div {:class (stl/css :info-icon)} deprecated-icon/v2-icon-4]
          [:div {:class (stl/css :info-block-title)}
           "Main components page"]
          [:div {:class (stl/css :info-block-content)}

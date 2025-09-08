@@ -15,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.tokens.management.token-pill :refer [token-pill*]]
    [app.util.dom :as dom]
@@ -109,7 +110,7 @@
        (when can-edit?
          [:> icon-button* {:on-click on-popover-open-click
                            :variant "ghost"
-                           :icon "add"
+                           :icon i/add
                            :aria-label (tr "workspace.tokens.add-token" title)}])]
       (when is-open
         [:& cmm/asset-section-block {:role :content}

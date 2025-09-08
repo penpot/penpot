@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.event :as-alias ev]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.timers :as tm]
@@ -44,5 +44,5 @@
      children
      [:span {:class (stl/css :icon-btn)}
       (if active?
-        i/tick
-        i/clipboard)]]))
+        deprecated-icon/tick
+        deprecated-icon/clipboard)]]))

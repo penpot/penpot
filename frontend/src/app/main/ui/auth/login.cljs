@@ -19,7 +19,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.components.link :as lk]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.context-notification :refer [context-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -212,25 +212,25 @@
     [:div {:class (stl/css :auth-buttons)}
      (when (contains? cf/flags :login-with-google)
        [:& bl/button-link {:on-click login-with-google
-                           :icon i/brand-google
+                           :icon deprecated-icon/brand-google
                            :label (tr "auth.login-with-google-submit")
                            :class (stl/css :login-btn :btn-google-auth)}])
 
      (when (contains? cf/flags :login-with-github)
        [:& bl/button-link {:on-click login-with-github
-                           :icon i/brand-github
+                           :icon deprecated-icon/brand-github
                            :label (tr "auth.login-with-github-submit")
                            :class (stl/css :login-btn :btn-github-auth)}])
 
      (when (contains? cf/flags :login-with-gitlab)
        [:& bl/button-link {:on-click login-with-gitlab
-                           :icon i/brand-gitlab
+                           :icon deprecated-icon/brand-gitlab
                            :label (tr "auth.login-with-gitlab-submit")
                            :class (stl/css :login-btn :btn-gitlab-auth)}])
 
      (when (contains? cf/flags :login-with-oidc)
        [:& bl/button-link {:on-click login-with-oidc
-                           :icon i/brand-openid
+                           :icon deprecated-icon/brand-openid
                            :label (tr "auth.login-with-oidc-submit")
                            :class (stl/css :login-btn :btn-oidc-auth)}])]))
 

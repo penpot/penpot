@@ -22,6 +22,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.color :as uc]
@@ -492,7 +493,7 @@
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.assets.colors.add-color")
                             :on-click add-color-clicked
-                            :icon "add"}])])
+                            :icon i/add}])])
 
 
      [:& cmm/asset-section-block {:role :content}

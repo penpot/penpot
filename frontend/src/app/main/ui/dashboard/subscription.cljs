@@ -10,7 +10,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -41,7 +41,7 @@
       [:div {:class (stl/css :content)}
        [:span {:class (stl/css :cta-title)} top-title]
        [:span {:class (stl/css :cta-text) :data-testid "subscription-name"} top-description]]
-      (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  i/arrow])]
+      (when has-dropdown [:span {:class (stl/css :icon-dropdown)}  deprecated-icon/arrow])]
 
      (when (and has-dropdown show-data)
        [:div {:class (stl/css :cta-bottom-section)}
@@ -131,8 +131,8 @@
                    (tr "subscription.dashboard.power-up.enterprise-plan"))
           :data-testid "subscription-icon"}
    (case subscription-type
-     "unlimited" i/character-u
-     "enterprise" i/character-e)])
+     "unlimited" deprecated-icon/character-u
+     "enterprise" deprecated-icon/character-e)])
 
 (mf/defc main-menu-power-up*
   [{:keys [close-sub-menu]}]

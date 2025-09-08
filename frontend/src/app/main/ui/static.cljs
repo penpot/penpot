@@ -22,9 +22,9 @@
    [app.main.ui.auth.recovery-request :refer [recovery-request-page recovery-sent-page]]
    [app.main.ui.auth.register :as register]
    [app.main.ui.dashboard.sidebar :refer [sidebar*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.assets.raw-svg :refer [raw-svg*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -49,8 +49,8 @@
       [:> raw-svg* {:id "penpot-logo-icon" :class (stl/css :penpot-logo)}]
       (when profile-id
         [:div {:class (stl/css :go-back-wrapper)}
-         [:> icon* {:icon-id "arrow" :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
-     [:div {:class (stl/css :deco-before)} i/logo-error-screen]
+         [:> icon* {:icon-id i/arrow :class (stl/css :back-arrow)}] [:span (tr "not-found.no-permission.go-dashboard")]])]
+     [:div {:class (stl/css :deco-before)} deprecated-icon/logo-error-screen]
      (when-not profile-id
        [:button {:class (stl/css :login-header)
                  :on-click on-nav-root}
@@ -61,7 +61,7 @@
 
      [:div {:class (stl/css :deco-after2)}
       [:span (tr "labels.copyright")]
-      i/logo-error-screen
+      deprecated-icon/logo-error-screen
       [:span (tr "not-found.made-with-love")]]]))
 
 (mf/defc invalid-token
@@ -122,9 +122,9 @@
       [:div {:class (stl/css :modal-close)}
        [:button {:class (stl/css :modal-close-button)
                  :on-click on-nav-root}
-        i/close]]
+        deprecated-icon/close]]
       [:div {:class (stl/css :login)}
-       [:div {:class (stl/css :logo)} i/logo]
+       [:div {:class (stl/css :logo)} deprecated-icon/logo]
 
        (case @current-section
          :login
@@ -189,7 +189,7 @@
      [:div {:class (stl/css :dialog)}
       [:div {:class (stl/css :modal-close)}
        [:button {:class (stl/css :modal-close-button) :on-click on-close}
-        i/close]]
+        deprecated-icon/close]]
       [:div {:class (stl/css :dialog-title)} title]
       (for [[index content] (d/enumerate content)]
         [:div {:key index} content])
@@ -444,7 +444,7 @@
      is-workspace
      [:div {:class (stl/css :workspace)}
       [:div {:class (stl/css :workspace-left)}
-       i/logo-icon
+       deprecated-icon/logo-icon
        [:div
         [:div {:class (stl/css :project-name)} (tr "not-found.no-permission.project-name")]
         [:div {:class (stl/css :file-name)} (tr "not-found.no-permission.penpot-file")]]]

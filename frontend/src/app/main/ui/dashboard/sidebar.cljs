@@ -33,7 +33,7 @@
                                                show-subscription-dashboard-banner?
                                                get-subscription-type]]
    [app.main.ui.dashboard.team-form]
-   [app.main.ui.icons :as i :refer [icon-xref]]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
    [app.util.i18n :as i18n :refer [tr]]
@@ -46,31 +46,31 @@
    [rumext.v2 :as mf]))
 
 (def ^:private clear-search-icon
-  (icon-xref :delete-text (stl/css :clear-search-icon)))
+  (deprecated-icon/icon-xref :delete-text (stl/css :clear-search-icon)))
 
 (def ^:private search-icon
-  (icon-xref :search (stl/css :search-icon)))
+  (deprecated-icon/icon-xref :search (stl/css :search-icon)))
 
 (def ^:private tick-icon
-  (icon-xref :tick (stl/css :tick-icon)))
+  (deprecated-icon/icon-xref :tick (stl/css :tick-icon)))
 
 (def ^:private logo-icon
-  (icon-xref :logo (stl/css :logo-icon)))
+  (deprecated-icon/icon-xref :logo (stl/css :logo-icon)))
 
 (def ^:private add-icon
-  (icon-xref :add (stl/css :add-icon)))
+  (deprecated-icon/icon-xref :add (stl/css :add-icon)))
 
 (def ^:private arrow-icon
-  (icon-xref :arrow (stl/css :arrow-icon)))
+  (deprecated-icon/icon-xref :arrow (stl/css :arrow-icon)))
 
 (def ^:private menu-icon
-  (icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (def ^:private pin-icon
-  (icon-xref :pin (stl/css :pin-icon)))
+  (deprecated-icon/icon-xref :pin (stl/css :pin-icon)))
 
 (def ^:private exit-icon
-  (icon-xref :exit (stl/css :exit-icon)))
+  (deprecated-icon/icon-xref :exit (stl/css :exit-icon)))
 
 (mf/defc sidebar-project*
   {::mf/private true}
@@ -296,7 +296,7 @@
      [:> dropdown-menu-item* {:on-click    on-team-click
                               :data-value  (:default-team-id profile)
                               :class       (stl/css :team-dropdown-item)}
-      [:span {:class (stl/css :penpot-icon)} i/logo-icon]
+      [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
 
       [:span {:class (stl/css :team-text)} (tr "dashboard.your-penpot")]
       (when (= (:default-team-id profile) (:id team))
@@ -544,7 +544,7 @@
        (cond
          (:is-default team)
          [:div {:class (stl/css :team-name)}
-          [:span {:class (stl/css :penpot-icon)} i/logo-icon]
+          [:span {:class (stl/css :penpot-icon)} deprecated-icon/logo-icon]
           [:span {:class (stl/css :team-text)} (tr "dashboard.default-team-name")]]
 
          (and (contains? cf/flags :subscriptions)

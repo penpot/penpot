@@ -20,6 +20,7 @@
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [typography-entry]]
@@ -403,7 +404,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.assets.typography.add-typography")
                              :on-click add-typography
-                             :icon "add"}])])
+                             :icon i/add}])])
 
       [:& cmm/asset-section-block {:role :content}
        [:& typographies-group {:file-id file-id

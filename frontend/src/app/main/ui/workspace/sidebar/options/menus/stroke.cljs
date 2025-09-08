@@ -15,6 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row]]
    [app.util.dom :as dom]
@@ -179,7 +180,7 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.stroke.add-stroke")
                            :on-click on-add-stroke
-                           :icon "add"
+                           :icon i/add
                            :data-testid "add-stroke"}])]]
      (when open?
        [:div {:class (stl/css-case :element-content true
@@ -192,7 +193,7 @@
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.stroke.remove-stroke")
                              :on-click handle-remove-all
-                             :icon "remove"}]]
+                             :icon i/remove}]]
           (seq strokes)
           [:& h/sortable-container {}
            (for [[index value] (d/enumerate (:strokes values []))]

@@ -13,7 +13,7 @@
    [app.common.schema :as sm]
    [app.common.time :as cm]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography :as t]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.utilities.date :refer [date*]]
@@ -66,14 +66,14 @@
       [:button {:class (stl/css :toggle-snapshots)
                 :aria-label (tr "workspace.versions.expand-snapshot")
                 :on-click on-toggle-visibility}
-       [:> i/icon* {:icon-id i/clock :class (stl/css :icon-clock)}]
+       [:> icon* {:icon-id i/clock :class (stl/css :icon-clock)}]
        [:> text* {:as "span"
                   :typography t/body-medium
                   :class (stl/css :toggle-message)}
         (tr "workspace.versions.autosaved.entry" (count snapshots))]
-       [:> i/icon* {:icon-id i/arrow
-                    :class (stl/css-case :icon-arrow true
-                                         :icon-arrow-toggled open?)}]]
+       [:> icon* {:icon-id i/arrow
+                  :class (stl/css-case :icon-arrow true
+                                       :icon-arrow-toggled open?)}]]
 
       (when ^boolean open?
         (for [[idx d] (d/enumerate snapshots)]
@@ -82,7 +82,7 @@
            [:> date* {:date d :class (stl/css :date) :typography t/body-small}]
            [:> icon-button* {:class (stl/css :entry-button)
                              :variant "ghost"
-                             :icon "menu"
+                             :icon i/menu
                              :aria-label (tr "workspace.versions.version-menu")
                              :data-index idx
                              :on-click on-menu-click}]]))]]))

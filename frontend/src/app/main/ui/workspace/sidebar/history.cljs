@@ -12,7 +12,7 @@
    [app.main.data.workspace.undo :as dwu]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
    [cuerdas.core :as str]
@@ -148,20 +148,20 @@
 
 (defn entry->icon [{:keys [type]}]
   (case type
-    :page i/document
-    :shape i/svg
-    :rect i/rectangle
-    :circle i/elipse
-    :text i/text
-    :path i/path
-    :frame i/board
-    :group i/group
-    :color i/drop-icon
-    :typography i/text-palette
-    :component i/component
-    :media i/img
-    :image i/img
-    i/svg))
+    :page deprecated-icon/document
+    :shape deprecated-icon/svg
+    :rect deprecated-icon/rectangle
+    :circle deprecated-icon/elipse
+    :text deprecated-icon/text
+    :path deprecated-icon/path
+    :frame deprecated-icon/board
+    :group deprecated-icon/group
+    :color deprecated-icon/drop-icon
+    :typography deprecated-icon/text-palette
+    :component deprecated-icon/component
+    :media deprecated-icon/img
+    :image deprecated-icon/img
+    deprecated-icon/svg))
 
 (defn is-shape? [type]
   (contains? #{:shape :rect :circle :text :path :frame :group} type))
@@ -314,7 +314,7 @@
                                     :button-opened @show-detail?)
                :on-click toggle-show-detail
                :data-has-entry (dm/str (not (nil? (:detail entry))))}
-         i/arrow])]
+         deprecated-icon/arrow])]
 
      (when @show-detail?
        [:& history-entry-details {:entry entry}])]))
@@ -327,7 +327,7 @@
     [:div {:class (stl/css :history-toolbox)}
      (if (empty? entries)
        [:div {:class (stl/css :history-entry-empty)}
-        [:div {:class (stl/css :history-entry-empty-icon)} i/history]
+        [:div {:class (stl/css :history-entry-empty-icon)} deprecated-icon/history]
         [:div {:class (stl/css :history-entry-empty-msg)} (tr "workspace.undo.empty")]]
        [:ul {:class (stl/css :history-entries)}
         (for [[idx-entry entry] (->> entries (map-indexed vector) reverse)] #_[i (range 0 10)]

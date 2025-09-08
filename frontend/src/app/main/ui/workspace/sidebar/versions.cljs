@@ -19,7 +19,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.ds.product.milestone :refer [milestone*]]
    [app.main.ui.ds.product.milestone-group :refer [milestone-group*]]
@@ -395,11 +395,11 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.versions.button.save")
                            :on-click on-create-version
-                           :icon "pin"}]]
+                           :icon i/pin}]]
 
         (if (empty? data)
           [:div {:class (stl/css :versions-entry-empty)}
-           [:div {:class (stl/css :versions-entry-empty-icon)} [:> i/icon* {:icon-id i/history}]]
+           [:div {:class (stl/css :versions-entry-empty-icon)} [:> icon* {:icon-id i/history}]]
            [:div {:class (stl/css :versions-entry-empty-msg)} (tr "workspace.versions.empty")]]
 
           [:ul {:class (stl/css :versions-entries)}

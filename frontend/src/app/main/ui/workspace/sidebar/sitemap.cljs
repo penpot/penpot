@@ -18,8 +18,9 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -158,7 +159,7 @@
             :on-double-click on-double-click
             :on-context-menu on-context-menu}
       [:div {:class (stl/css :page-icon)}
-       i/document]
+       deprecated-icon/document]
 
       (if editing?
         [:*
@@ -175,7 +176,7 @@
          [:div {:class  (stl/css :page-actions)}
           (when (and deletable? (not read-only?))
             [:button {:on-click on-delete}
-             i/delete])]])]]))
+             deprecated-icon/delete])]])]]))
 
 ;; --- Page Item Wrapper
 
@@ -247,7 +248,7 @@
                           :class (stl/css :add-page)
                           :aria-label (tr "workspace.sidebar.sitemap.add-page")
                           :on-click on-create
-                          :icon "add"}])]
+                          :icon i/add}])]
 
      (when-not ^boolean collapsed
        [:div {:class (stl/css :tool-window-content)}

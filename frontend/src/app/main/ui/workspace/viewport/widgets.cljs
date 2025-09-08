@@ -23,7 +23,7 @@
    [app.main.streams :as ms]
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -330,7 +330,7 @@
              :on-double-click on-double-click
              :on-pointer-enter on-pointer-enter
              :on-pointer-leave on-pointer-leave}
-       i/play
+       deprecated-icon/play
        [:span flow-name]]]]))
 
 (mf/defc frame-flows*
