@@ -22,7 +22,7 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Blur, BlurType, Corners, Fill, Shape, StructureEntry, Type};
+use crate::shapes::{Blur, BlurType, Corners, Fill, Shadow, Shape, StructureEntry, Type};
 use crate::state::ShapesPool;
 use crate::textlayout::{
     paragraph_builder_group_from_text, stroke_paragraph_builder_group_from_text,
@@ -61,19 +61,81 @@ impl NodeRenderState {
         self.id.is_nil()
     }
 
+    /// Calculates the clip bounds for child elements of a given shape.
+    ///
+    /// This function determines the clipping region that should be applied to child elements
+    /// when rendering. It takes into account the element's selection rectangle, transform,
+    /// and any additional modifiers.
+    ///
+    /// # Parameters
+    ///
+    /// * `element` - The shape element for which to calculate clip bounds
+    /// * `modifiers` - Optional transformation matrix to apply to the bounds
+    /// * `offset` - Optional offset (x, y) to adjust the bounds position. When provided,
+    ///   the bounds are translated by the negative of this offset, effectively moving
+    ///   the clipping region to compensate for coordinate system transformations.
+    ///   This is useful for nested coordinate systems or when elements are grouped
+    ///   and need relative positioning adjustments.
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
         modifiers: Option<&Matrix>,
+        offset: Option<(f32, f32)>,
     ) -> Option<(Rect, Option<Corners>, Matrix)> {
         if self.id.is_nil() || !element.clip() {
             return self.clip_bounds;
         }
 
-        let bounds = element.selrect();
+        let mut bounds = element.selrect();
+        if let Some(offset) = offset {
+            let x = bounds.x() - offset.0;
+            let y = bounds.y() - offset.1;
+            let width = bounds.width();
+            let height = bounds.height();
+            bounds.set_xywh(x, y, width, height);
+        }
         let mut transform = element.transform;
         transform.post_translate(bounds.center());
         transform.pre_translate(-bounds.center());
+
+        if let Some(modifier) = modifiers {
+            transform.post_concat(modifier);
+        }
+
+        let corners = match &element.shape_type {
+            Type::Rect(data) => data.corners,
+            Type::Frame(data) => data.corners,
+            _ => None,
+        };
+
+        Some((bounds, corners, transform))
+    }
+
+    /// Calculates the clip bounds for shadow rendering of a given shape.
+    ///
+    /// This function determines the clipping region that should be applied when rendering a
+    /// shadow for a shape element. It uses the shadow bounds but calculates the
+    /// transformation center based on the original shape, not the shadow bounds.
+    ///
+    /// # Parameters
+    ///
+    /// * `element` - The shape element for which to calculate shadow clip bounds
+    /// * `modifiers` - Optional transformation matrix to apply to the bounds
+    /// * `shadow` - The shadow configuration containing blur, offset, and other properties
+    pub fn get_shadow_clip_bounds(
+        &self,
+        element: &Shape,
+        modifiers: Option<&Matrix>,
+        shadow: &Shadow,
+    ) -> Option<(Rect, Option<Corners>, Matrix)> {
+        if self.id.is_nil() {
+            return self.clip_bounds;
+        }
+
+        let bounds = element.get_frame_shadow_bounds(shadow);
+        let mut transform = element.transform;
+        transform.post_translate(element.center());
+        transform.pre_translate(-element.center());
 
         if let Some(modifier) = modifiers {
             transform.post_concat(modifier);
@@ -373,9 +435,6 @@ impl RenderState {
         let paint = skia::Paint::default();
 
         self.surfaces
-            .draw_into(SurfaceId::DropShadows, SurfaceId::Current, Some(&paint));
-
-        self.surfaces
             .draw_into(SurfaceId::Fills, SurfaceId::Current, Some(&paint));
 
         let mut render_overlay_below_strokes = false;
@@ -396,10 +455,8 @@ impl RenderState {
                 .draw_into(SurfaceId::InnerShadows, SurfaceId::Current, Some(&paint));
         }
 
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::DropShadows as u32
-            | SurfaceId::InnerShadows as u32;
+        let surface_ids =
+            SurfaceId::Strokes as u32 | SurfaceId::Fills as u32 | SurfaceId::InnerShadows as u32;
 
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().clear(skia::Color::TRANSPARENT);
@@ -414,6 +471,7 @@ impl RenderState {
         self.focus_mode.set_shapes(shapes);
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn render_shape(
         &mut self,
         shapes: &ShapesPool,
@@ -422,6 +480,11 @@ impl RenderState {
         shape: &Shape,
         scale_content: Option<&f32>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+        fills_surface_id: SurfaceId,
+        strokes_surface_id: SurfaceId,
+        innershadows_surface_id: SurfaceId,
+        apply_to_current_surface: bool,
+        offset: Option<(f32, f32)>,
     ) {
         let shape = if let Some(scale_content) = scale_content {
             &shape.scale_content(*scale_content)
@@ -429,10 +492,8 @@ impl RenderState {
             shape
         };
 
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::DropShadows as u32
-            | SurfaceId::InnerShadows as u32;
+        let surface_ids =
+            fills_surface_id as u32 | strokes_surface_id as u32 | innershadows_surface_id as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().save();
         });
@@ -466,7 +527,7 @@ impl RenderState {
                 paint.set_color(skia::Color::from_argb(255, 255, 0, 0));
                 paint.set_stroke_width(4.);
                 self.surfaces
-                    .canvas(SurfaceId::Fills)
+                    .canvas(fills_surface_id)
                     .draw_rect(bounds, &paint);
             }
 
@@ -505,22 +566,27 @@ impl RenderState {
         matrix.post_translate(center);
         matrix.pre_translate(-center);
 
+        // Apply the additional transformation matrix if exists
+        if let Some(offset) = offset {
+            matrix.pre_translate(offset);
+        }
+
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
                 if let Some(shape_modifiers) = modifiers.get(&shape.id) {
                     self.surfaces
-                        .canvas(SurfaceId::Fills)
+                        .canvas(fills_surface_id)
                         .concat(shape_modifiers);
                 }
-                self.surfaces.canvas(SurfaceId::Fills).concat(&matrix);
+                self.surfaces.canvas(fills_surface_id).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
-                    svg.render(self.surfaces.canvas(SurfaceId::Fills))
+                    svg.render(self.surfaces.canvas(fills_surface_id))
                 } else {
                     let font_manager = skia::FontMgr::from(self.fonts().font_provider().clone());
                     let dom_result = skia::svg::Dom::from_str(&sr.content, font_manager);
                     match dom_result {
                         Ok(dom) => {
-                            dom.render(self.surfaces.canvas(SurfaceId::Fills));
+                            dom.render(self.surfaces.canvas(fills_surface_id));
                             shape.to_mut().set_svg(dom);
                         }
                         Err(e) => {
@@ -531,16 +597,11 @@ impl RenderState {
             }
 
             Type::Text(text_content) => {
-                let surface_ids = SurfaceId::Strokes as u32
-                    | SurfaceId::Fills as u32
-                    | SurfaceId::DropShadows as u32
-                    | SurfaceId::InnerShadows as u32;
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
 
                 let text_content = text_content.new_bounds(shape.selrect());
-                let drop_shadows = shape.drop_shadow_paints();
                 let inner_shadows = shape.inner_shadow_paints();
                 let blur_filter = shape.image_filter(1.);
                 let blur_mask = shape.mask_filter(1.);
@@ -551,44 +612,9 @@ impl RenderState {
                     None,
                 );
 
-                // Render all drop shadows if there are no visible strokes
-                if !shape.has_visible_strokes() && !drop_shadows.is_empty() {
-                    for drop_shadow in &drop_shadows {
-                        let mut paragraphs_with_drop_shadows = paragraph_builder_group_from_text(
-                            &text_content,
-                            blur_filter.as_ref(),
-                            blur_mask.as_ref(),
-                            Some(drop_shadow),
-                        );
-                        shadows::render_text_drop_shadows(
-                            self,
-                            &shape,
-                            &mut paragraphs_with_drop_shadows,
-                        );
-                    }
-                }
-
                 let count_inner_strokes = shape.count_visible_inner_strokes();
-                text::render(self, &shape, &mut paragraphs, None);
+                text::render(self, &shape, &mut paragraphs, Some(fills_surface_id));
                 for stroke in shape.visible_strokes().rev() {
-                    for drop_shadow in &drop_shadows {
-                        let mut stroke_paragraphs_with_drop_shadows =
-                            stroke_paragraph_builder_group_from_text(
-                                &text_content,
-                                stroke,
-                                &shape.selrect(),
-                                blur_filter.as_ref(),
-                                blur_mask.as_ref(),
-                                Some(drop_shadow),
-                                count_inner_strokes,
-                            );
-                        shadows::render_text_drop_shadows(
-                            self,
-                            &shape,
-                            &mut stroke_paragraphs_with_drop_shadows,
-                        );
-                    }
-
                     let mut stroke_paragraphs = stroke_paragraph_builder_group_from_text(
                         &text_content,
                         stroke,
@@ -603,7 +629,7 @@ impl RenderState {
                         self,
                         &shape,
                         stroke,
-                        None,
+                        Some(strokes_surface_id),
                         None,
                         Some(&mut stroke_paragraphs),
                         antialias,
@@ -624,6 +650,7 @@ impl RenderState {
                             self,
                             &shape,
                             &mut stroke_paragraphs_with_inner_shadows,
+                            innershadows_surface_id,
                         );
                     }
                 }
@@ -639,14 +666,11 @@ impl RenderState {
                         self,
                         &shape,
                         &mut paragraphs_with_inner_shadows,
+                        innershadows_surface_id,
                     );
                 }
             }
             _ => {
-                let surface_ids = SurfaceId::Strokes as u32
-                    | SurfaceId::Fills as u32
-                    | SurfaceId::DropShadows as u32
-                    | SurfaceId::InnerShadows as u32;
                 self.surfaces.apply_mut(surface_ids, |s| {
                     s.canvas().concat(&matrix);
                 });
@@ -676,34 +700,41 @@ impl RenderState {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
                         for fill in fills_to_render.iter() {
-                            fills::render(self, shape, fill, antialias);
+                            fills::render(self, shape, fill, antialias, fills_surface_id);
                         }
                     }
                 } else {
                     for fill in shape.fills().rev() {
-                        fills::render(self, shape, fill, antialias);
+                        fills::render(self, shape, fill, antialias, fills_surface_id);
                     }
                 }
 
                 for stroke in shape.visible_strokes().rev() {
-                    shadows::render_stroke_drop_shadows(self, shape, stroke, antialias);
-                    //In clipped content strokes are drawn over the contained elements in a subsequent step
-                    if !shape.clip() {
-                        strokes::render(self, shape, stroke, None, None, None, antialias);
-                    }
-                    shadows::render_stroke_inner_shadows(self, shape, stroke, antialias);
+                    strokes::render(
+                        self,
+                        shape,
+                        stroke,
+                        Some(strokes_surface_id),
+                        None,
+                        None,
+                        antialias,
+                    );
+                    shadows::render_stroke_inner_shadows(
+                        self,
+                        shape,
+                        stroke,
+                        antialias,
+                        innershadows_surface_id,
+                    );
                 }
 
-                shadows::render_fill_inner_shadows(self, shape, antialias);
-                shadows::render_fill_drop_shadows(self, shape, antialias);
+                shadows::render_fill_inner_shadows(self, shape, antialias, innershadows_surface_id);
                 // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
-        self.apply_drawing_to_render_canvas(Some(&shape));
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::DropShadows as u32
-            | SurfaceId::InnerShadows as u32;
+        if apply_to_current_surface {
+            self.apply_drawing_to_render_canvas(Some(&shape));
+        }
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().restore();
         });
@@ -782,10 +813,8 @@ impl RenderState {
         performance::begin_measure!("start_render_loop");
 
         self.reset_canvas();
-        let surface_ids = SurfaceId::Strokes as u32
-            | SurfaceId::Fills as u32
-            | SurfaceId::DropShadows as u32
-            | SurfaceId::InnerShadows as u32;
+        let surface_ids =
+            SurfaceId::Strokes as u32 | SurfaceId::Fills as u32 | SurfaceId::InnerShadows as u32;
         self.surfaces.apply_mut(surface_ids, |s| {
             s.canvas().scale((scale, scale));
         });
@@ -866,13 +895,6 @@ impl RenderState {
                     .canvas(SurfaceId::Current)
                     .save_layer(&layer_rec);
             }
-        }
-
-        match element.shape_type {
-            Type::Frame(_) | Type::Group(_) => {
-                self.nested_blurs.push(Some(element.blur));
-            }
-            _ => {}
         }
 
         let mut paint = skia::Paint::default();
@@ -970,6 +992,11 @@ impl RenderState {
                 &element_strokes,
                 scale_content,
                 None,
+                SurfaceId::Fills,
+                SurfaceId::Strokes,
+                SurfaceId::InnerShadows,
+                true,
+                None,
             );
         }
 
@@ -1014,6 +1041,61 @@ impl RenderState {
     /// consistent and predictable layout.
     pub fn get_current_aligned_tile_bounds(&mut self) -> Rect {
         self.get_aligned_tile_bounds(self.current_tile.unwrap())
+    }
+
+    /// Renders a drop shadow effect for the given shape.
+    ///
+    /// Creates a black shadow by converting the original shadow color to black,
+    /// scaling the blur radius, and rendering the shape with the shadow offset applied.
+    #[allow(clippy::too_many_arguments)]
+    fn render_drop_black_shadow(
+        &mut self,
+        shapes: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+        structure: &HashMap<Uuid, Vec<StructureEntry>>,
+        shape: &Shape,
+        shadow: &Shadow,
+        scale_content: Option<&f32>,
+        clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
+        scale: f32,
+        translation: (f32, f32),
+    ) {
+        let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
+        transformed_shadow.to_mut().offset = (0., 0.);
+        transformed_shadow.to_mut().color = skia::Color::from_argb(255, 0, 0, 0);
+        transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
+
+        let mut shadow_paint = skia::Paint::default();
+        shadow_paint.set_image_filter(transformed_shadow.get_drop_shadow_filter());
+        shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+        let layer_rec = skia::canvas::SaveLayerRec::default().paint(&shadow_paint);
+        self.surfaces
+            .canvas(SurfaceId::DropShadows)
+            .save_layer(&layer_rec);
+
+        self.surfaces
+            .canvas(SurfaceId::DropShadows)
+            .scale((scale, scale));
+        self.surfaces
+            .canvas(SurfaceId::DropShadows)
+            .translate(translation);
+
+        self.render_shape(
+            shapes,
+            modifiers,
+            structure,
+            shape,
+            scale_content,
+            clip_bounds,
+            SurfaceId::DropShadows,
+            SurfaceId::DropShadows,
+            SurfaceId::DropShadows,
+            false,
+            Some((shadow.offset.0, shadow.offset.1)),
+        );
+
+        self.surfaces.canvas(SurfaceId::DropShadows).restore();
     }
 
     pub fn render_shape_tree_partial_uncached(
@@ -1093,6 +1175,88 @@ impl RenderState {
 
             self.render_shape_enter(element, mask);
             if !node_render_state.is_root() && self.focus_mode.is_active() {
+                let scale = self.get_scale();
+                let translation = self
+                    .surfaces
+                    .get_render_context_translation(self.render_area, scale);
+
+                // Shadow rendering technique: Two-pass approach for proper opacity handling
+                //
+                // The shadow rendering uses a two-pass technique to ensure that overlapping
+                // shadow areas maintain correct opacity without unwanted darkening:
+                //
+                // 1. First pass: Render shadow shape in pure black (alpha channel preserved)
+                //    - This creates the shadow silhouette with proper alpha gradients
+                //    - The black color acts as a mask for the final shadow color
+                //
+                // 2. Second pass: Apply actual shadow color using SrcIn blend mode
+                //    - SrcIn preserves the alpha channel from the black shadow
+                //    - Only the color channels are replaced, maintaining transparency
+                //    - This prevents overlapping shadows from accumulating opacity
+                //
+                // This approach is essential for complex shapes with transparency where
+                // multiple shadow areas might overlap, ensuring visual consistency.
+                for shadow in element.drop_shadows().rev().filter(|s| !s.hidden()) {
+                    let paint = skia::Paint::default();
+                    let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
+                    self.surfaces
+                        .canvas(SurfaceId::DropShadows)
+                        .save_layer(&layer_rec);
+
+                    // First pass: Render shadow in black to establish alpha mask
+                    self.render_drop_black_shadow(
+                        tree,
+                        modifiers,
+                        structure,
+                        element,
+                        shadow,
+                        scale_content.get(&element.id),
+                        clip_bounds,
+                        scale,
+                        translation,
+                    );
+
+                    // Nested shapes shadowing - apply black shadow to child shapes too
+                    for shadow_shape_id in element.children.iter() {
+                        let shadow_shape = tree.get(shadow_shape_id).unwrap();
+                        let clip_bounds = node_render_state.get_shadow_clip_bounds(
+                            element,
+                            modifiers.get(&element.id),
+                            shadow,
+                        );
+                        self.render_drop_black_shadow(
+                            tree,
+                            modifiers,
+                            structure,
+                            shadow_shape,
+                            shadow,
+                            scale_content.get(&element.id),
+                            clip_bounds,
+                            scale,
+                            translation,
+                        );
+                    }
+
+                    // Second pass: Apply actual shadow color using SrcIn blend mode
+                    // This preserves the alpha channel from the black shadow while
+                    // replacing only the color channels, preventing opacity accumulation
+                    let mut paint = skia::Paint::default();
+                    paint.set_color(shadow.color);
+                    paint.set_blend_mode(skia::BlendMode::SrcIn);
+                    self.surfaces
+                        .canvas(SurfaceId::DropShadows)
+                        .draw_paint(&paint);
+
+                    self.surfaces.canvas(SurfaceId::DropShadows).restore();
+                }
+
+                self.surfaces
+                    .draw_into(SurfaceId::DropShadows, SurfaceId::Current, None);
+
+                self.surfaces
+                    .canvas(SurfaceId::DropShadows)
+                    .clear(skia::Color::TRANSPARENT);
+
                 self.render_shape(
                     tree,
                     modifiers,
@@ -1100,9 +1264,25 @@ impl RenderState {
                     element,
                     scale_content.get(&element.id),
                     clip_bounds,
+                    SurfaceId::Fills,
+                    SurfaceId::Strokes,
+                    SurfaceId::InnerShadows,
+                    true,
+                    None,
                 );
+
+                self.surfaces
+                    .canvas(SurfaceId::DropShadows)
+                    .clear(skia::Color::TRANSPARENT);
             } else if visited_children {
                 self.apply_drawing_to_render_canvas(Some(element));
+            }
+
+            match element.shape_type {
+                Type::Frame(_) | Type::Group(_) => {
+                    self.nested_blurs.push(Some(element.blur));
+                }
+                _ => {}
             }
 
             // Set the node as visited_children before processing children
@@ -1115,8 +1295,11 @@ impl RenderState {
             });
 
             if element.is_recursive() {
-                let children_clip_bounds =
-                    node_render_state.get_children_clip_bounds(element, modifiers.get(&element.id));
+                let children_clip_bounds = node_render_state.get_children_clip_bounds(
+                    element,
+                    modifiers.get(&element.id),
+                    None,
+                );
 
                 let mut children_ids =
                     element.modified_children_ids(structure.get(&element.id), false);

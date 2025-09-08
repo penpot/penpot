@@ -525,7 +525,7 @@ pub fn render(
     let scale = render_state.get_scale();
     let canvas = render_state
         .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::Strokes));
+        .canvas(surface_id.unwrap_or(surface_id.unwrap_or(SurfaceId::Strokes)));
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
     let svg_attrs = &shape.svg_attrs;
@@ -569,7 +569,7 @@ pub fn render(
                     render_state,
                     shape,
                     paragraphs.expect("Text shapes should have paragraphs"),
-                    Some(SurfaceId::Strokes),
+                    surface_id,
                 );
             }
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {

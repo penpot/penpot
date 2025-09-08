@@ -6,28 +6,15 @@ use skia_safe::textlayout::ParagraphBuilder;
 use skia_safe::{Paint, Path};
 
 // Fill Shadows
-pub fn render_fill_drop_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
-    if shape.has_fills() {
-        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            render_fill_drop_shadow(render_state, shape, shadow, antialias);
-        }
-    }
-}
-
-fn render_fill_drop_shadow(
+pub fn render_fill_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
-    shadow: &Shadow,
     antialias: bool,
+    surface_id: SurfaceId,
 ) {
-    let paint = &shadow.get_drop_shadow_paint(antialias, shape.image_filter(1.).as_ref());
-    render_shadow_paint(render_state, shape, paint, SurfaceId::DropShadows);
-}
-
-pub fn render_fill_inner_shadows(render_state: &mut RenderState, shape: &Shape, antialias: bool) {
     if shape.has_fills() {
         for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
-            render_fill_inner_shadow(render_state, shape, shadow, antialias);
+            render_fill_inner_shadow(render_state, shape, shadow, antialias, surface_id);
         }
     }
 }
@@ -37,31 +24,10 @@ fn render_fill_inner_shadow(
     shape: &Shape,
     shadow: &Shadow,
     antialias: bool,
+    surface_id: SurfaceId,
 ) {
     let paint = &shadow.get_inner_shadow_paint(antialias, shape.image_filter(1.).as_ref());
-    render_shadow_paint(render_state, shape, paint, SurfaceId::InnerShadows);
-}
-
-pub fn render_stroke_drop_shadows(
-    render_state: &mut RenderState,
-    shape: &Shape,
-    stroke: &Stroke,
-    antialias: bool,
-) {
-    if !shape.has_fills() {
-        for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
-            let filter = shadow.get_drop_shadow_filter();
-            strokes::render(
-                render_state,
-                shape,
-                stroke,
-                None,
-                filter.as_ref(),
-                None,
-                antialias,
-            )
-        }
-    }
+    render_shadow_paint(render_state, shape, paint, surface_id);
 }
 
 pub fn render_stroke_inner_shadows(
@@ -69,6 +35,7 @@ pub fn render_stroke_inner_shadows(
     shape: &Shape,
     stroke: &Stroke,
     antialias: bool,
+    surface_id: SurfaceId,
 ) {
     if !shape.has_fills() {
         for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
@@ -77,26 +44,13 @@ pub fn render_stroke_inner_shadows(
                 render_state,
                 shape,
                 stroke,
-                None,
+                Some(surface_id),
                 filter.as_ref(),
                 None,
                 antialias,
             )
         }
     }
-}
-
-pub fn render_text_drop_shadows(
-    render_state: &mut RenderState,
-    shape: &Shape,
-    paragraphs: &mut [Vec<ParagraphBuilder>],
-) {
-    text::render(
-        render_state,
-        shape,
-        paragraphs,
-        Some(SurfaceId::DropShadows),
-    );
 }
 
 // Render text paths (unused)
@@ -126,13 +80,9 @@ pub fn render_text_inner_shadows(
     render_state: &mut RenderState,
     shape: &Shape,
     paragraphs: &mut [Vec<ParagraphBuilder>],
+    surface_id: SurfaceId,
 ) {
-    text::render(
-        render_state,
-        shape,
-        paragraphs,
-        Some(SurfaceId::InnerShadows),
-    );
+    text::render(render_state, shape, paragraphs, Some(surface_id));
 }
 
 // Render text paths (unused)

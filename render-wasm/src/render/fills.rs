@@ -10,6 +10,7 @@ fn draw_image_fill(
     image_fill: &ImageFill,
     paint: &Paint,
     antialias: bool,
+    surface_id: SurfaceId,
 ) {
     let image = render_state.images.get(&image_fill.id());
     if image.is_none() {
@@ -17,7 +18,7 @@ fn draw_image_fill(
     }
 
     let size = image.unwrap().dimensions();
-    let canvas = render_state.surfaces.canvas(SurfaceId::Fills);
+    let canvas = render_state.surfaces.canvas(surface_id);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
 
@@ -90,7 +91,13 @@ fn draw_image_fill(
 /**
  * This SHOULD be the only public function in this module.
  */
-pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill, antialias: bool) {
+pub fn render(
+    render_state: &mut RenderState,
+    shape: &Shape,
+    fill: &Fill,
+    antialias: bool,
+    surface_id: SurfaceId,
+) {
     let mut paint = fill.to_paint(&shape.selrect, antialias);
     if let Some(image_filter) = shape.image_filter(1.) {
         paint.set_image_filter(image_filter);
@@ -98,22 +105,29 @@ pub fn render(render_state: &mut RenderState, shape: &Shape, fill: &Fill, antial
 
     match (fill, &shape.shape_type) {
         (Fill::Image(image_fill), _) => {
-            draw_image_fill(render_state, shape, image_fill, &paint, antialias);
+            draw_image_fill(
+                render_state,
+                shape,
+                image_fill,
+                &paint,
+                antialias,
+                surface_id,
+            );
         }
         (_, Type::Rect(_) | Type::Frame(_)) => {
             render_state
                 .surfaces
-                .draw_rect_to(SurfaceId::Fills, shape, &paint);
+                .draw_rect_to(surface_id, shape, &paint);
         }
         (_, Type::Circle) => {
             render_state
                 .surfaces
-                .draw_circle_to(SurfaceId::Fills, shape, &paint);
+                .draw_circle_to(surface_id, shape, &paint);
         }
         (_, Type::Path(_)) | (_, Type::Bool(_)) => {
             render_state
                 .surfaces
-                .draw_path_to(SurfaceId::Fills, shape, &paint);
+                .draw_path_to(surface_id, shape, &paint);
         }
         (_, Type::Group(_)) => {
             // Groups can have fills but they propagate them to their children
