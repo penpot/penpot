@@ -22,7 +22,9 @@ use options::RenderOptions;
 pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
-use crate::shapes::{Blur, BlurType, Corners, Fill, Shadow, Shape, StructureEntry, Type};
+use crate::shapes::{
+    Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, StructureEntry, Type,
+};
 use crate::state::ShapesPool;
 use crate::textlayout::{
     paragraph_builder_group_from_text, stroke_paragraph_builder_group_from_text,
@@ -1062,8 +1064,31 @@ impl RenderState {
     ) {
         let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
         transformed_shadow.to_mut().offset = (0., 0.);
-        transformed_shadow.to_mut().color = skia::Color::from_argb(255, 0, 0, 0);
+        transformed_shadow.to_mut().color = skia::Color::BLACK;
         transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
+
+        let mut plain_shape = Cow::Borrowed(shape);
+
+        // The opacity of fills and strokes shouldn't affect the shadow,
+        // so we paint everything black with the same opacity
+        plain_shape.to_mut().clear_fills();
+        if shape.has_fills() {
+            plain_shape
+                .to_mut()
+                .add_fill(Fill::Solid(SolidColor(skia::Color::BLACK)));
+        }
+
+        plain_shape.to_mut().clear_strokes();
+        for stroke in shape.strokes.iter() {
+            plain_shape.to_mut().add_stroke(Stroke {
+                fill: Fill::Solid(SolidColor(skia::Color::BLACK)),
+                width: stroke.width,
+                style: stroke.style.clone(),
+                cap_end: stroke.cap_end,
+                cap_start: stroke.cap_start,
+                kind: stroke.kind,
+            });
+        }
 
         let mut shadow_paint = skia::Paint::default();
         shadow_paint.set_image_filter(transformed_shadow.get_drop_shadow_filter());
@@ -1085,7 +1110,7 @@ impl RenderState {
             shapes,
             modifiers,
             structure,
-            shape,
+            &plain_shape,
             scale_content,
             clip_bounds,
             SurfaceId::DropShadows,
