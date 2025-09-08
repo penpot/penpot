@@ -282,7 +282,7 @@
      (font-size-keys shape-attr)       #{shape-attr :typography}
      (letter-spacing-keys shape-attr)  #{shape-attr :typography}
      (font-family-keys shape-attr)     #{shape-attr :typography}
-     (text-case-keys shape-attr)       #{shape-attr :typography}
+     (= :text-transform shape-attr)    #{:text-case :typography}
      (text-decoration-keys shape-attr) #{shape-attr :typography}
      (font-weight-keys shape-attr)     #{shape-attr :typography}
 
