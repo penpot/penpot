@@ -5,7 +5,7 @@ ENV LANG='C.UTF-8' \
     LC_ALL='C.UTF-8' \
     JAVA_HOME="/opt/jdk" \
     DEBIAN_FRONTEND=noninteractive \
-    NODE_VERSION=v22.16.0 \
+    NODE_VERSION=v22.18.0 \
     TZ=Etc/UTC
 
 RUN set -ex; \
