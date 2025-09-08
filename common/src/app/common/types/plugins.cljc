@@ -27,7 +27,7 @@
     schema:string
     schema:string]])
 
-(def ^:private schema:registry-entry
+(def schema:registry-entry
   [:map
    [:plugin-id :string]
    [:name :string]
