@@ -1,0 +1,101 @@
+name: DOCKER - Build and Push Penpot Images
+
+on:
+  workflow_dispatch:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref'
+        type: string
+        required: true
+        default: 'develop'
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Name of the branch or ref'
+        type: string
+        required: true
+        default: 'develop'
+
+jobs:
+  build-and-push:
+    name: Build and Push Penpot Docker Images
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.gh_ref }}
+
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
+      - name: Download Penpot Bundles
+        env:
+          FILE_NAME: penpot-${{ steps.vars.outputs.gh_ref }}.zip
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          pushd docker/images
+          aws s3 cp s3://${{ secrets.S3_BUCKET }}/$FILE_NAME .
+          unzip $FILE_NAME > /dev/null
+          mv penpot/backend bundle-backend
+          mv penpot/frontend bundle-frontend
+          mv penpot/exporter bundle-exporter
+          popd
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Backend Docker image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_IMAGE: 'penpotapp/backend'
+          BUNDLE_PATH: './bundle-backend'
+        with:
+          context: ./docker/images/
+          file: ./docker/images/Dockerfile.backend
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push Frontend Docker image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_IMAGE: 'penpotapp/frontend'
+          BUNDLE_PATH: './bundle-frontend'
+        with:
+          context: ./docker/images/
+          file: ./docker/images/Dockerfile.frontend
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push Exporter Docker image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_IMAGE: 'penpotapp/exporter'
+          BUNDLE_PATH: './bundle-exporter'
+        with:
+          context: ./docker/images/
+          file: ./docker/images/Dockerfile.exporter
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max

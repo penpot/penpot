@@ -265,21 +265,30 @@ function build-docs-bundle {
 function build-frontend-docker-image {
     rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
     pushd ./docker/images;
-    docker build -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest -f Dockerfile.frontend .;
+    docker build \
+        -t penpotapp/frontend:$CURRENT_BRANCH -t penpotapp/frontend:latest \
+        --build-arg BUNDLE_PATH="./bundle-frontend/" \
+        -f Dockerfile.frontend .;
     popd;
 }
 
 function build-backend-docker-image {
     rsync -avr --delete ./bundles/backend/ ./docker/images/bundle-backend/;
     pushd ./docker/images;
-    docker build -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest -f Dockerfile.backend .;
+    docker build \
+        -t penpotapp/backend:$CURRENT_BRANCH -t penpotapp/backend:latest \
+        --build-arg BUNDLE_PATH="./bundle-backend/" \
+        -f Dockerfile.backend .;
     popd;
 }
 
 function build-exporter-docker-image {
     rsync -avr --delete ./bundles/exporter/ ./docker/images/bundle-exporter/;
     pushd ./docker/images;
-    docker build -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest -f Dockerfile.exporter .;
+    docker build \
+        -t penpotapp/exporter:$CURRENT_BRANCH -t penpotapp/exporter:latest \
+        --build-arg BUNDLE_PATH="./bundle-exporter/" \
+        -f Dockerfile.exporter .;
     popd;
 }
 
