@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.main.data.workspace.tokens.errors :as wte]
+   [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.data.workspace.tokens.warnings :as wtw]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
@@ -41,7 +42,7 @@
                                 (str/join "\n"))
                   errors (->> (wte/humanize-errors errors)
                               (str/join "\n"))
-                  :else (tr "workspace.tokens.resolved-value" (or resolved-value result)))
+                  :else (tr "workspace.tokens.resolved-value" (dwtf/format-token-value (or resolved-value result))))
         type (cond
                empty-message? "hint"
                errors "error"

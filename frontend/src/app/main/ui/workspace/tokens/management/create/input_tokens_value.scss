@@ -31,3 +31,7 @@
   @include textEllipsis;
   color: var(--label-color);
 }
+
+.resolved-value {
+  white-space: pre;
+}

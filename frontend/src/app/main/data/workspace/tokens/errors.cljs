@@ -88,6 +88,10 @@
    {:error/code :error.style-dictionary/invalid-token-value-font-weight
     :error/fn #(tr "workspace.tokens.invalid-font-weight-token-value" %)}
 
+   :error.style-dictionary/invalid-token-value-typography
+   {:error/code :error.style-dictionary/invalid-token-value-typography
+    :error/fn #(tr "workspace.tokens.invalid-token-value-typography" %)}
+
    :error/unknown
    {:error/code :error/unknown
     :error/fn #(tr "labels.unknown-error")}})
