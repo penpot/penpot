@@ -42,6 +42,7 @@
 - Fix inconsistent naming for "Flatten" [Taiga #8371](https://tree.taiga.io/project/penpot/issue/8371)
 - Layout item tokens should be unapplied when moving out of a layout [Taiga #11012](https://tree.taiga.io/project/penpot/issue/11012)
 - Fix incorrect date displayed for support plan [Taiga #11986](https://tree.taiga.io/project/penpot/issue/11986)
+- Fix can't import 'borderWidth' type token [#132](https://github.com/tokens-studio/penpot/issues/132)
 
 ## 2.9.0
 
