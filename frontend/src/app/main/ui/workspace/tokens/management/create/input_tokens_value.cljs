@@ -21,7 +21,8 @@
 
 (def ^:private schema::input-tokens-value
   [:map
-   [:label :string]
+   [:label {:optional true} [:maybe :string]]
+   [:aria-label {:optional true} [:maybe :string]]
    [:placeholder {:optional true} :string]
    [:value {:optional true} [:maybe :string]]
    [:class {:optional true} :string]
@@ -58,7 +59,7 @@
   {::mf/props :obj
    ::mf/forward-ref true
    ::mf/schema schema::input-tokens-value}
-  [{:keys [class label placeholder value icon slot-start token-resolve-result] :rest props} ref]
+  [{:keys [class label placeholder value icon slot-start token-resolve-result aria-label] :rest props} ref]
   (let [error (not (nil? (:errors token-resolve-result)))
         id (mf/use-id)
         input-ref (mf/use-ref)
@@ -67,6 +68,7 @@
                                       :class (stl/css :input)
                                       :placeholder placeholder
                                       :value value
+                                      :aria-label aria-label
                                       :variant "comfortable"
                                       :hint-type (when error "error")
                                       :slot-start slot-start
@@ -75,7 +77,8 @@
     [:*
      [:div {:class (dm/str class " " (stl/css-case :wrapper true
                                                    :input-error error))}
-      [:> label* {:for id} label]
+      (when label
+        [:> label* {:for id} label])
       [:> input-field* props]]
      (when token-resolve-result
        [:> token-value-hint* {:result token-resolve-result}])]))

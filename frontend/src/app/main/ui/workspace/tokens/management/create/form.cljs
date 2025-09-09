@@ -24,6 +24,7 @@
    [app.main.fonts :as fonts]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
@@ -31,6 +32,7 @@
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.colorpicker :as colorpicker]
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
@@ -801,7 +803,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                          :full-size true}]]))
 
 (mf/defc font-picker*
-  [{:keys [default-value input-ref on-blur on-update-value on-external-update-value token-resolve-result]}]
+  [{:keys [default-value input-ref on-blur on-update-value on-external-update-value token-resolve-result aria-label placeholder]}]
   (let [font* (mf/use-state (fonts/find-font-family default-value))
         font (deref font*)
         set-font (mf/use-fn
@@ -848,8 +850,9 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
            :type "button"}])]
     [:*
      [:> input-tokens-value*
-      {:placeholder (tr "workspace.tokens.token-font-family-value-enter")
-       :label (tr "workspace.tokens.token-font-family-value")
+      {:placeholder (or placeholder (tr "workspace.tokens.token-font-family-value-enter"))
+       :label (when-not aria-label (tr "workspace.tokens.token-font-family-value"))
+       :aria-label aria-label
        :default-value default-value
        :ref input-ref
        :on-blur on-blur
@@ -896,23 +899,29 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
 (def ^:private typography-inputs
   #(d/ordered-map
-    :font-size
-    {:label "Font Size"
-     :placeholder (tr "workspace.tokens.token-value-enter")}
     :font-family
     {:label (tr "workspace.tokens.token-font-family-value")
+     :icon i/text-font-family
      :placeholder (tr "workspace.tokens.token-font-family-value-enter")}
+    :font-size
+    {:label "Font Size"
+     :icon i/text-font-size
+     :placeholder (tr "workspace.tokens.token-value-enter")}
     :font-weight
     {:label "Font Weight"
+     :icon i/text-font-weight
      :placeholder (tr "workspace.tokens.font-weight-value-enter")}
     :letter-spacing
     {:label "Letter Spacing"
-     :placeholder (tr "workspace.tokens.token-value-enter")}
+     :icon i/text-letterspacing
+     :placeholder (tr "workspace.tokens.letter-spacing-value-enter-composite")}
     :text-case
     {:label "Text Case"
+     :icon i/text-mixed
      :placeholder (tr "workspace.tokens.text-case-value-enter")}
     :text-decoration
     {:label "Text Decoration"
+     :icon i/text-underlined
      :placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
 
 (mf/defc typography-value-inputs*
@@ -920,7 +929,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
   (let [typography-inputs (mf/use-memo typography-inputs)
         errors-by-key (sd/collect-typography-errors token-resolve-result)]
     [:div {:class (stl/css :nested-input-row)}
-     (for [[k {:keys [label placeholder]}] typography-inputs]
+     (for [[k {:keys [label placeholder icon]}] typography-inputs]
        (let [value (get default-value k)
              token-resolve-result
              (-> {:resolved-value (let [v (get-in token-resolve-result [:resolved-value k])]
@@ -951,7 +960,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
           (case k
             :font-family
             [:> font-picker*
-             {:label label
+             {:aria-label label
               :placeholder placeholder
               :input-ref input-ref
               :default-value (when value (ctt/join-font-family value))
@@ -960,18 +969,20 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
               :on-external-update-value on-external-update-value
               :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}]
             [:> input-tokens-value*
-             {:label label
+             {:aria-label label
               :placeholder placeholder
               :default-value value
               :on-blur on-blur
+              :icon icon
               :on-change on-change
               :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}])]))]))
 
 (mf/defc typography-reference-input*
   [{:keys [default-value on-blur on-update-value token-resolve-result]}]
   [:> input-tokens-value*
-   {:label "Reference"
-    :placeholder "Reference"
+   {:aria-label (tr "labels.reference")
+    :placeholder (tr "workspace.tokens.reference-composite")
+    :icon i/text-typography
     :default-value (when (ctt/typography-composite-token-reference? default-value) default-value)
     :on-blur on-blur
     :on-change on-update-value
@@ -1018,12 +1029,26 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
         input-props (mf/spread-props props {:default-value default-value
                                             :on-update-value on-update-reference-value})]
-    [:div {:class (stl/css :nested-input-row)}
-     [:button {:on-click on-toggle-tab :type "button"}
-      (if reference-tab-active? "Composite" "Reference")]
-     (if reference-tab-active?
-       [:> typography-reference-input* input-props]
-       [:> typography-value-inputs* input-props])]))
+    [:div {:class (stl/css :typography-inputs-row)}
+     [:div {:class (stl/css :title-bar)}
+      [:div {:class (stl/css :title)}
+       (tr "labels.typography")]
+      [:& radio-buttons {:class (stl/css :listing-options)
+                         :selected (if reference-tab-active? "reference" "composite")
+                         :on-change on-toggle-tab
+                         :name "reference-composite-tab"}
+       [:& radio-button {:icon deprecated-icon/layers
+                         :value "composite"
+                         :title (tr "workspace.tokens.individual-tokens")
+                         :id "composite-opt"}]
+       [:& radio-button {:icon deprecated-icon/tokens
+                         :value "reference"
+                         :title (tr "workspace.tokens.use-reference")
+                         :id "reference-opt"}]]]
+     [:div {:class (stl/css :typography-inputs)}
+      (if reference-tab-active?
+        [:> typography-reference-input* input-props]
+        [:> typography-value-inputs* input-props])]]))
 
 (mf/defc typography-form*
   [{:keys [token] :rest props}]
