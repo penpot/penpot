@@ -186,7 +186,7 @@
           :title (tr "workspace.assets.filter")
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
-         i/filter-icon]]
+         deprecated-icon/filter-icon]]
 
        [:> context-menu*
         {:on-close on-menu-close
