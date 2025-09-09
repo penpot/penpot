@@ -233,12 +233,12 @@
                           :fn #(emit-when-no-readonly (dwt/move-selected :left true))}
 
    :move-unit-up         {:tooltip ds/up-arrow
-                          :command ["up"]
+                          :command ["up" "alt+up"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :up false))}
 
    :move-unit-down       {:tooltip ds/down-arrow
-                          :command ["down"]
+                          :command ["down" "alt+down"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down false))}
 
