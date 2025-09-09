@@ -1,4 +1,4 @@
-name: TAG - Build and Upload Penpot Bundle
+name: TAG - Build Bundle and Docker Image
 
 on:
   push:
@@ -6,10 +6,17 @@ on:
       - '*'
 
 jobs:
-  build-tag-bundle:
+  build-bundle:
     uses: ./.github/workflows/build-bundle.yml
     secrets: inherit
     with:
       gh_ref: ${{ github.ref_name }}
       build_wasm: "no"
       build_storybook: "yes"
+
+  # build-docker:
+  #   needs: build-bundle
+  #   uses: ./.github/workflows/build-docker.yml
+  #   secrets: inherit
+  #   with:
+  #     gh_ref: ${{ github.ref_name }}
