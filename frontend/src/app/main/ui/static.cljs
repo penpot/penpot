@@ -356,7 +356,9 @@
         support-contact-click
         (mf/use-fn
          (fn []
-           (st/emit! (rt/nav :settings-feedback))))
+           (st/emit! (rt/nav :settings-feedback {:report (mf/ref-val report-uri)
+                                                 :type "issue"
+                                                 :url-file "xxxx"}))))
 
         on-download
         (mf/use-fn
