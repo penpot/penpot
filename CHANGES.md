@@ -19,6 +19,8 @@
 - New text-decoration token [Taiga #10941](https://tree.taiga.io/project/penpot/us/10941)
 - New letter spacing token [Taiga #10940](https://tree.taiga.io/project/penpot/us/10940)
 - New font weight token [Taiga #10939](https://tree.taiga.io/project/penpot/us/10939)
+- Upgrade Node to v22.18.0 [Github #7283](https://github.com/penpot/penpot/pull/7283)
+- Upgrade the base docker image for penpot frontend to v1.29.1 [Github #7283](https://github.com/penpot/penpot/pull/7283)
 
 ### :bug: Bugs fixed
 
