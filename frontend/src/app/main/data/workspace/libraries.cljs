@@ -592,6 +592,9 @@
                                                  page
                                                  libraries)
              component (ctn/get-component-from-shape new-shape libraries)
+             any-parent-is-variant (->> (cfh/get-parents-with-self objects (:parent-id new-shape))
+                                        (some ctk/is-variant?)
+                                        boolean)
 
              undo-id (js/Symbol)]
 
@@ -602,7 +605,8 @@
                            {::ev/name "use-library-component"
                             ::ev/origin origin
                             :external-library (not= file-id current-file-id)
-                            :is-variant (ctk/is-variant? component)})
+                            :is-variant (ctk/is-variant? component)
+                            :any-parent-is-variant any-parent-is-variant})
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})
@@ -1364,10 +1368,19 @@
       (update-in state [:files id] assoc :is-shared is-shared))
 
     ptk/WatchEvent
-    (watch [_ _ _]
-      (let [params {:id id :is-shared is-shared}]
-        (->> (rp/cmd! :set-file-shared params)
-             (rx/ignore))))))
+    (watch [_ state _]
+      (let [params        {:id id :is-shared is-shared}]
+        (rx/concat
+         (->> (rp/cmd! :set-file-shared params)
+              (rx/ignore))
+         (when is-shared
+           (let [has-variants? (->> (dsh/lookup-file-data state)
+                                    :components
+                                    vals
+                                    (some ctk/is-variant?))]
+             (if has-variants?
+               (rx/of (ptk/event ::ev/event {::ev/name "set-file-variants-shared" ::ev/origin "workspace"}))
+               (rx/empty)))))))))
 
 ;; --- Link and unlink Files
 
@@ -1395,7 +1408,10 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [features (get state :features)]
+      (let [libraries (:shared-files state)
+            library   (get libraries library-id)
+            features (get state :features)
+            variants-count (-> library :library-summary :components :variants-count)]
         (rx/concat
          (rx/merge
           (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
@@ -1412,7 +1428,15 @@
                (rx/map (fn [thumbnails]
                          (fn [state]
                            (update state :thumbnails merge thumbnails))))))
-         (rx/of (ptk/reify ::attach-library-finished)))))))
+         (rx/of (ptk/reify ::attach-library-finished))
+         (when (pos? variants-count)
+           (->> (rp/cmd! :get-library-usage {:file-id library-id})
+                (rx/map (fn [library-usage]
+                          (ptk/event ::ev/event {::ev/name "attach-library-variants"
+                                                 :file-id file-id
+                                                 :library-id library-id
+                                                 :variants-count variants-count
+                                                 :library-used-in (:used-in library-usage)}))))))))))
 
 (defn unlink-file-from-library
   [file-id library-id]
