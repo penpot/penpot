@@ -124,7 +124,7 @@ impl NodeRenderState {
     /// * `element` - The shape element for which to calculate shadow clip bounds
     /// * `modifiers` - Optional transformation matrix to apply to the bounds
     /// * `shadow` - The shadow configuration containing blur, offset, and other properties
-    pub fn get_shadow_clip_bounds(
+    pub fn get_nested_shadow_clip_bounds(
         &self,
         element: &Shape,
         modifiers: Option<&Matrix>,
@@ -134,7 +134,13 @@ impl NodeRenderState {
             return self.clip_bounds;
         }
 
-        let bounds = element.get_frame_shadow_bounds(shadow);
+        // Assert that the shape is either a Frame or Group
+        assert!(
+            matches!(element.shape_type, Type::Frame(_) | Type::Group(_)),
+            "Shape must be a Frame or Group for nested shadow clip bounds calculation"
+        );
+
+        let bounds = element.get_selrect_shadow_bounds(shadow);
         let mut transform = element.transform;
         transform.post_translate(element.center());
         transform.pre_translate(-element.center());
@@ -753,6 +759,8 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
+                // For boolean shapes, there's no need to calculate children because
+                // when painting the shape, the necessary path is already calculated
                 let shape = if let Type::Bool(_) = &shape.shape_type {
                     // If any child transform doesn't match the parent transform means
                     // that the children is transformed and we need to recalculate the
@@ -1326,67 +1334,72 @@ impl RenderState {
                             translation,
                         );
 
-                        // Nested shapes shadowing - apply black shadow to child shapes too
-                        for shadow_shape_id in element.children.iter() {
-                            let shadow_shape = tree.get(shadow_shape_id).unwrap();
-                            let clip_bounds = node_render_state.get_shadow_clip_bounds(
-                                element,
-                                modifiers.get(&element.id),
-                                shadow,
-                            );
-
-                            if !matches!(shadow_shape.shape_type, Type::Text(_)) {
-                                self.render_drop_black_shadow(
-                                    tree,
-                                    modifiers,
-                                    structure,
-                                    shadow_shape,
+                        if !matches!(element.shape_type, Type::Bool(_)) {
+                            // Nested shapes shadowing - apply black shadow to child shapes too
+                            for shadow_shape_id in element.children.iter() {
+                                let shadow_shape = tree.get(shadow_shape_id).unwrap();
+                                let clip_bounds = node_render_state.get_nested_shadow_clip_bounds(
+                                    element,
+                                    modifiers.get(&element.id),
                                     shadow,
-                                    scale_content.get(&element.id),
-                                    clip_bounds,
-                                    scale,
-                                    translation,
                                 );
-                            } else {
-                                let paint = skia::Paint::default();
-                                let layer_rec = skia::canvas::SaveLayerRec::default().paint(&paint);
 
-                                self.surfaces
-                                    .canvas(SurfaceId::DropShadows)
-                                    .save_layer(&layer_rec);
-                                self.surfaces
-                                    .canvas(SurfaceId::DropShadows)
-                                    .scale((scale, scale));
-                                self.surfaces
-                                    .canvas(SurfaceId::DropShadows)
-                                    .translate(translation);
+                                if !matches!(shadow_shape.shape_type, Type::Text(_)) {
+                                    self.render_drop_black_shadow(
+                                        tree,
+                                        modifiers,
+                                        structure,
+                                        shadow_shape,
+                                        shadow,
+                                        scale_content.get(&element.id),
+                                        clip_bounds,
+                                        scale,
+                                        translation,
+                                    );
+                                } else {
+                                    let paint = skia::Paint::default();
+                                    let layer_rec =
+                                        skia::canvas::SaveLayerRec::default().paint(&paint);
 
-                                let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
-                                // transformed_shadow.to_mut().offset = (0., 0.);
-                                transformed_shadow.to_mut().color = skia::Color::BLACK;
-                                transformed_shadow.to_mut().blur = transformed_shadow.blur * scale;
+                                    self.surfaces
+                                        .canvas(SurfaceId::DropShadows)
+                                        .save_layer(&layer_rec);
+                                    self.surfaces
+                                        .canvas(SurfaceId::DropShadows)
+                                        .scale((scale, scale));
+                                    self.surfaces
+                                        .canvas(SurfaceId::DropShadows)
+                                        .translate(translation);
 
-                                let mut new_shadow_paint = skia::Paint::default();
-                                new_shadow_paint
-                                    .set_image_filter(transformed_shadow.get_drop_shadow_filter());
-                                new_shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+                                    let mut transformed_shadow: Cow<Shadow> = Cow::Borrowed(shadow);
+                                    // transformed_shadow.to_mut().offset = (0., 0.);
+                                    transformed_shadow.to_mut().color = skia::Color::BLACK;
+                                    transformed_shadow.to_mut().blur =
+                                        transformed_shadow.blur * scale;
 
-                                self.render_shape(
-                                    tree,
-                                    modifiers,
-                                    structure,
-                                    shadow_shape,
-                                    scale_content.get(&element.id),
-                                    clip_bounds,
-                                    SurfaceId::DropShadows,
-                                    SurfaceId::DropShadows,
-                                    SurfaceId::DropShadows,
-                                    SurfaceId::DropShadows,
-                                    true,
-                                    None,
-                                    Some(vec![new_shadow_paint.clone()]),
-                                );
-                                self.surfaces.canvas(SurfaceId::DropShadows).restore();
+                                    let mut new_shadow_paint = skia::Paint::default();
+                                    new_shadow_paint.set_image_filter(
+                                        transformed_shadow.get_drop_shadow_filter(),
+                                    );
+                                    new_shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
+
+                                    self.render_shape(
+                                        tree,
+                                        modifiers,
+                                        structure,
+                                        shadow_shape,
+                                        scale_content.get(&element.id),
+                                        clip_bounds,
+                                        SurfaceId::DropShadows,
+                                        SurfaceId::DropShadows,
+                                        SurfaceId::DropShadows,
+                                        SurfaceId::DropShadows,
+                                        true,
+                                        None,
+                                        Some(vec![new_shadow_paint.clone()]),
+                                    );
+                                    self.surfaces.canvas(SurfaceId::DropShadows).restore();
+                                }
                             }
                         }
 
