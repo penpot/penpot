@@ -22,16 +22,23 @@
 (def ^:private schema:feedback-form
   [:map {:title "FeedbackForm"}
    [:subject [::sm/text {:max 250}]]
-   [:type  [:string {:max 250}]]
+   [:type [:string {:max 250}]]
    [:content [::sm/text {:max 5000}]]
    [:penpot-link [::sm/text {:max 2048}]]])
 
 (mf/defc feedback-form
   {::mf/private true}
-  []
+  [{:keys [report type url-file]}]
   (let [profile (mf/deref refs/profile)
         form    (fm/use-form :schema schema:feedback-form)
         loading (mf/use-state false)
+
+        on-download
+        (mf/use-fn
+         (mf/deps report)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/trigger-download-uri "report" "text/plain" report)))
 
         on-succes
         (mf/use-fn
@@ -76,7 +83,7 @@
       [:label {:class (stl/css :field-label)} (tr "feedback.type")]
       [:& fm/select {:label (tr "feedback.type")
                      :name :type
-                     :default ""
+                     :default (or type "")
                      :options [{:label (tr "feedback.type.idea") :value "idea"}
                                {:label (tr "feedback.type.issue") :value "issue"}
                                {:label (tr "feedback.type.doubt") :value "doubt"}]}]]
@@ -93,7 +100,10 @@
       [:& fm/input {:label ""
                     :name :penpot-link
                     :placeholder "https://penpot.app/"
-                    :show-success? true}]]
+                    :show-success? true}]
+      (when report
+        [:a {:class (stl/css :download-button) :on-click on-download}
+         (tr "labels.download" "report.txt")])]
 
      [:> fm/submit-button*
       {:label (if @loading (tr "labels.sending") (tr "labels.send"))
@@ -119,10 +129,12 @@
      ]))
 
 (mf/defc feedback-page
-  []
+  [{:keys [report type url-file]}]
   (mf/with-effect []
     (dom/set-html-title (tr "title.settings.feedback")))
 
   [:div {:class (stl/css :dashboard-settings)}
    [:div {:class (stl/css :form-container)}
-    [:& feedback-form]]])
+    [:& feedback-form {:report report
+                       :type type
+                       :url-file url-file}]]])

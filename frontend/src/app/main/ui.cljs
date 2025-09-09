@@ -197,7 +197,14 @@
         :settings-subscription
         :settings-access-tokens
         :settings-notifications)
-       [:? [:& settings-page {:route route}]]
+       (let [params        (get params :query)
+             report        (some-> params :report)
+             type          (some-> params :type)
+             url-file      (some-> params :url-file)]
+       [:? [:& settings-page {:route route
+                              :report report
+                              :type type
+                              :url-file url-file}]])
 
        :debug-icons-preview
        (when *assert*
