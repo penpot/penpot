@@ -22,10 +22,10 @@
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as ic]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.tokens.sets.lists :as wts]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -69,11 +69,11 @@
                        :name name}
      [:& radio-button {:id :on
                        :value :on
-                       :icon i/tick
+                       :icon deprecated-icon/tick
                        :label ""}]
      [:& radio-button {:id :off
                        :value :off
-                       :icon i/close
+                       :icon deprecated-icon/close
                        :label ""}]]))
 
 (mf/defc themes-overview
@@ -102,7 +102,7 @@
                          :class (stl/css :theme-group-label)
                          :typography "body-large"}
             [:div {:class (stl/css :group-title) :title (str (tr "workspace.tokens.group-name") ": " group)}
-             [:> icon* {:icon-id "group" :class (stl/css :group-title-icon)}]
+             [:> icon* {:icon-id i/group :class (stl/css :group-title-icon)}]
              [:> text* {:as "span" :typography "body-medium" :class (stl/css :group-title-name)} group]]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
           (for [[_ {:keys [group name] :as theme}] themes
@@ -147,12 +147,12 @@
                    (if sets-count
                      (tr "workspace.tokens.num-active-sets" sets-count)
                      (tr "workspace.tokens.no-active-sets"))]
-                  [:> icon* {:icon-id "arrow-right"}]]])
+                  [:> icon* {:icon-id i/arrow-right}]]])
 
               [:> icon-button* {:on-click delete-theme
                                 :variant "ghost"
                                 :aria-label (tr "workspace.tokens.delete-theme-title")
-                                :icon "delete"}]]])]])]
+                                :icon i/delete}]]])]])]
 
      [:div {:class (stl/css :button-footer)}
       [:> button* {:variant "secondary"
@@ -334,7 +334,7 @@
          [:button {:on-click on-back
                    :class (stl/css :back-btn)
                    :type "button"}
-          [:> icon* {:icon-id ic/arrow-left :aria-hidden true}]
+          [:> icon* {:icon-id i/arrow-left :aria-hidden true}]
           (tr "workspace.tokens.back-to-themes")])
 
        [:> theme-inputs* {:theme current-theme
@@ -357,7 +357,7 @@
         (when is-editing
           [:> button* {:variant "secondary"
                        :type "button"
-                       :icon "delete"
+                       :icon i/delete
                        :on-click on-delete-theme}
            (tr "labels.delete")])
         [:div {:class (stl/css :button-footer)}
@@ -441,5 +441,5 @@
                       :on-click modal/hide!
                       :aria-label (tr "labels.close")
                       :variant "action"
-                      :icon "close"}]
+                      :icon i/close}]
     [:> themes-modal-body*]]])

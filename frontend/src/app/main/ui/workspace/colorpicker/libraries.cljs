@@ -21,7 +21,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :as r]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [potok.v2.core :as ptk]
@@ -132,11 +132,11 @@
       (when (= selected :file)
         [:button {:class (stl/css :add-color-btn)
                   :on-click on-add-library-color}
-         i/add])
+         deprecated-icon/add])
 
       [:button {:class (stl/css :palette-btn)
                 :on-click toggle-palette}
-       i/swatches]
+       deprecated-icon/swatches]
 
       (for [color current-colors]
         [:& cb/color-bullet

@@ -11,7 +11,7 @@
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
    [app.util.i18n :refer [tr]]
@@ -50,7 +50,7 @@
         [:div  {:class (stl/css :attr-actions)}
          [:button {:class (stl/css :attr-action-btn)
                    :on-click handle-delete}
-          i/remove-icon]]]
+          deprecated-icon/remove-icon]]]
        [:div {:class (stl/css :attr-nested-content)}
         [:div  {:class (stl/css :attr-title)}
          (str (d/name (last attr)))]

@@ -17,6 +17,7 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.notifications.context-notification :refer [context-notification*]]
@@ -103,7 +104,7 @@
      [:> button* {:variant "primary"
                   :type "button"
                   :class (stl/css :dropdown-trigger-btn)
-                  :icon "arrow-down"
+                  :icon i/arrow-down
                   :on-click toggle-dropdown
                   :aria-label "Show options"}]
 

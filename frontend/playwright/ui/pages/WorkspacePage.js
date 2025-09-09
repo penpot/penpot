@@ -109,6 +109,7 @@ export class WorkspacePage extends BaseWebSocketPage {
     this.tokenContextMenuForSet = page.getByTestId(
       "tokens-context-menu-for-set",
     );
+    this.contextMenuForShape = page.getByTestId("context-menu");
   }
 
   async goToWorkspace({

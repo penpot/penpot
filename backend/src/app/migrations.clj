@@ -444,7 +444,10 @@
     :fn (mg/resource "app/migrations/sql/0140-mod-file-change-table.sql")}
 
    {:name "0140-add-locked-by-column-to-file-change-table"
-    :fn (mg/resource "app/migrations/sql/0140-add-locked-by-column-to-file-change-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0140-add-locked-by-column-to-file-change-table.sql")}
+
+   {:name "0141-add-idx-to-file_library_rel"
+    :fn (mg/resource "app/migrations/sql/0141-add-idx-to-file_library_rel.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

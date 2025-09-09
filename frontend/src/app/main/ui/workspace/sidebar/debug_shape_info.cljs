@@ -13,7 +13,7 @@
    [app.main.data.workspace :as dw]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [debug :as dbg]
    [rumext.v2 :as mf]))
 
@@ -129,7 +129,7 @@
       [:span "Debug"]
       [:div {:class (stl/css :close-button)
              :on-click #(dbg/disable! :shape-panel)}
-       i/close]]
+       deprecated-icon/close]]
 
      (if (empty? selected)
        [:div {:class (stl/css :attrs-container)} "No shapes selected"]

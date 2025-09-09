@@ -47,13 +47,13 @@ Assuming the namespace is required as `i`:
 ```clj
 (ns app.main.ui.foo
   (:require
-   [app.main.ui.ds.foundations.assets.icon :as i]))
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]))
 ```
 
 You can now use the icon IDs defined in the namespace:
 
 ```clj
-[:> i/icon* {:icon-id i/pin}]
+[:> icon* {:icon-id i/pin}]
 ```
 
 ### Customizing colors
@@ -65,7 +65,7 @@ If you need to override this behavior, you can use a `class` in the `<Icon>`
 component and set `color` to whatever value you prefer:
 
 ```clj
-[:> i/icon* {:icon-id i/add :class (stl/css :toolbar-icon)}]
+[:> icon* {:icon-id i/add :class (stl/css :toolbar-icon)}]
 ```
 
 ```scss
@@ -80,7 +80,7 @@ By default, icons do not have any accessible text attached to them. You should
 add an `aria-label` attribute to set a proper text:
 
 ```clj
-[:> i/icon* {:icon-id i/add :aria-label (tr "foo.bar")}]
+[:> icon* {:icon-id i/add :aria-label (tr "foo.bar")}]
 ```
 
 ## Usage guidelines for design

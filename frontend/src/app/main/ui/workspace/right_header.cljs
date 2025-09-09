@@ -21,9 +21,10 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.dashboard.team]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets :refer [export-progress-widget]]
    [app.main.ui.formats :as fmt]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.presence :refer [active-sessions]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -83,12 +84,12 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "shortcuts.decrease-zoom")
                            :on-click on-decrease
-                           :icon "remove"}]
+                           :icon i/remove}]
          [:p {:class (stl/css :zoom-text)} zoom]
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "shortcuts.increase-zoom")
                            :on-click on-increase
-                           :icon "add"}]]
+                           :icon i/add}]]
         [:button {:class (stl/css :reset-btn)
                   :on-click on-zoom-reset}
          (tr "workspace.header.reset-zoom")]]
@@ -220,7 +221,7 @@
                 :on-click toggle-comments
                 :data-tool "comments"
                 :style {:position "relative"}}
-       i/comments
+       deprecated-icon/comments
        (when ^boolean has-unread-comments?
          [:div {:class (stl/css :unread)}])]]
 
@@ -232,16 +233,16 @@
           :class (stl/css-case :selected (contains? layout :document-history)
                                :history-button true)
           :on-click toggle-history}
-         i/history]])
+         deprecated-icon/history]])
 
      (when display-share-button?
        [:a {:class (stl/css :viewer-btn)
             :title (tr "workspace.header.share")
             :on-click open-share-dialog}
-        i/share])
+        deprecated-icon/share])
 
      [:a {:class (stl/css :viewer-btn)
           :title (tr "workspace.header.viewer" (sc/get-tooltip :open-viewer))
           :on-click nav-to-viewer}
-      i/play]]))
+      deprecated-icon/play]]))
 

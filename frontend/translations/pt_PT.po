@@ -1226,7 +1226,7 @@ msgid "errors.ldap-disabled"
 msgstr "Autenticação LDAP está desativada."
 
 #: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
-msgid "errors.max-quote-reached"
+msgid "errors.max-quota-reached"
 msgstr "Alcançou o máximo da quota '%s'. Contacte o suporte técnico."
 
 #: src/app/main/data/workspace/media.cljs:190

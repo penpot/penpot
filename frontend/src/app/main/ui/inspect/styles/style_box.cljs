@@ -3,7 +3,7 @@
   (:require
    [app.common.data :as d]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
    [rumext.v2 :as mf]))
@@ -57,7 +57,7 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "inspect.tabs.styles.panel.copy-style-shorthand")
                           :on-click copy-shorthand
-                          :icon "clipboard"}])]
+                          :icon i/clipboard}])]
      (when expanded
        [:div {:class (stl/css :style-box-content) :id (str "style-box-" (d/name panel))}
         [:div {:class (stl/css :style-box-panel-wrapper)} children]])]))

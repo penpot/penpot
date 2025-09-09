@@ -17,6 +17,7 @@
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
    [app.main.ui.hooks.resize :refer [use-resize-hook]]
    [app.main.ui.workspace.tokens.management :refer [tokens-section*]]
@@ -120,7 +121,7 @@
 
     [:div {:class (stl/css :import-export-button-wrapper)}
      [:> button* {:on-click open-menu
-                  :icon "import-export"
+                  :icon i/import-export
                   :variant "secondary"}
       (tr "workspace.tokens.tools")]
      [:> dropdown-menu* {:show show-menu?
@@ -137,9 +138,9 @@
        (tr "labels.export")]]
 
 
-     (when (and can-edit? (contains? cf/flags :token-units))
+     (when (and can-edit? (contains? cf/flags :token-base-font-size))
        [:> icon-button* {:variant "secondary"
-                         :icon "settings"
+                         :icon i/settings
                          :aria-label "Settings"
                          :on-click open-settings-modal}])]))
 

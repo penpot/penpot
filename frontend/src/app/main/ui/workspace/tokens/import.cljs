@@ -3,6 +3,7 @@
   (:require
    [app.main.data.modal :as modal]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.workspace.tokens.import.modal :refer [import-modal-body*]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -17,5 +18,5 @@
                       :on-click modal/hide!
                       :aria-label (tr "labels.close")
                       :variant "ghost"
-                      :icon "close"}]
+                      :icon i/close}]
     [:> import-modal-body*]]])

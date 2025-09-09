@@ -17,7 +17,7 @@
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.token-field :refer [token-field*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list] :as i]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.formats :as fmt]
    [app.util.dom :as dom]
@@ -606,7 +606,7 @@
                                 :slot-end (when-not disabled
                                             (when (some? tokens)
                                               (mf/html [:> icon-button* {:variant "action"
-                                                                         :icon "tokens"
+                                                                         :icon i/tokens
                                                                          :class (stl/css :invisible-button)
                                                                          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
                                                                          :ref open-dropdown-ref

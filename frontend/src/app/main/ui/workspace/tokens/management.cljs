@@ -11,7 +11,7 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
    [app.main.ui.workspace.tokens.management.group :refer [token-group*]]
@@ -136,7 +136,7 @@
        (when (and (some? selected-token-set-name)
                   (not (token-set-active? selected-token-set-name)))
          [:*
-          [:> i/icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
+          [:> icon* {:class (stl/css :sets-header-status-icon) :icon-id i/eye-off}]
           [:> text* {:as "span" :typography "body-small" :class (stl/css :sets-header-status-text)}
            (tr "workspace.tokens.inactive-set")]])]]
 

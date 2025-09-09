@@ -10,20 +10,20 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.components.link-button :as lb]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [rumext.v2 :as mf]))
 
 (def ^:private neutral-icon
-  (i/icon-xref :msg-neutral (stl/css :icon)))
+  (deprecated-icon/icon-xref :msg-neutral (stl/css :icon)))
 
 (def ^:private error-icon
-  (i/icon-xref :delete-text (stl/css :icon)))
+  (deprecated-icon/icon-xref :delete-text (stl/css :icon)))
 
 (def ^:private success-icon
-  (i/icon-xref :status-tick (stl/css :icon)))
+  (deprecated-icon/icon-xref :status-tick (stl/css :icon)))
 
 (def ^:private info-icon
-  (i/icon-xref :help (stl/css :icon)))
+  (deprecated-icon/icon-xref :help (stl/css :icon)))
 
 (defn get-icon-by-level
   [level]

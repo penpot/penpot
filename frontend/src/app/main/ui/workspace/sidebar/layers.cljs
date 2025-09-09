@@ -18,7 +18,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as hooks]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.main.ui.workspace.sidebar.layer-item :refer [layer-item]]
@@ -296,12 +296,12 @@
                               :filter-button true
                               :opened show-menu?
                               :active active?)}
-             [:> icon* {:icon-id "filter"}]]]
+             [:> icon* {:icon-id i/filter}]]]
 
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "labels.close")
                              :on-click toggle-search
-                             :icon "close"}]]
+                             :icon i/close}]]
 
           [:div {:class (stl/css :active-filters)}
            (for [fkey current-filters]
@@ -325,7 +325,7 @@
                 [:> icon* {:icon-id filter-icon :size "s" :class (stl/css :layer-filter-icon)}]
                 [:span {:class (stl/css :layer-filter-name)}
                  name]
-                [:> icon* {:icon-id "close-small" :class (stl/css :layer-filter-close)}]]))]
+                [:> icon* {:icon-id i/close-small :class (stl/css :layer-filter-close)}]]))]
 
           (when ^boolean show-menu?
             [:ul {:class (stl/css :filters-container)}
@@ -334,84 +334,84 @@
                    :data-filter "frame"
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
-               [:> icon* {:icon-id "board" :size "s" :class (stl/css :filter-menu-item-icon)}]
+               [:> icon* {:icon-id i/board :size "s" :class (stl/css :filter-menu-item-icon)}]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.frames")]]
 
               (when (contains? current-filters :frame)
-                [:> icon* {:icon-id "tick" :size "s" :class (stl/css :filter-menu-item-tick)}])]
+                [:> icon* {:icon-id i/tick :size "s" :class (stl/css :filter-menu-item-tick)}])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :group))
                    :data-filter "group"
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
-               [:> icon* {:icon-id "group" :size "s" :class (stl/css :filter-menu-item-icon)}]
+               [:> icon* {:icon-id i/group :size "s" :class (stl/css :filter-menu-item-icon)}]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.groups")]]
 
               (when (contains? current-filters :group)
-                [:> icon* {:icon-id "tick" :size "s" :class (stl/css :filter-menu-item-tick)}])]
+                [:> icon* {:icon-id i/tick :size "s" :class (stl/css :filter-menu-item-tick)}])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :mask))
                    :data-filter "mask"
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
-               [:> icon* {:icon-id "mask" :size "s" :class (stl/css :filter-menu-item-icon)}]
+               [:> icon* {:icon-id i/mask :size "s" :class (stl/css :filter-menu-item-icon)}]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.masks")]]
 
               (when (contains? current-filters :mask)
-                [:> icon* {:icon-id "tick" :size "s" :class (stl/css :filter-menu-item-tick)}])]
+                [:> icon* {:icon-id i/tick :size "s" :class (stl/css :filter-menu-item-tick)}])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :component))
                    :data-filter "component"
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
-               [:> icon* {:icon-id "component" :size "s" :class (stl/css :filter-menu-item-icon)}]
+               [:> icon* {:icon-id i/component :size "s" :class (stl/css :filter-menu-item-icon)}]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.components")]]
 
               (when (contains? current-filters :component)
-                [:> icon* {:icon-id "tick" :size "s" :class (stl/css :filter-menu-item-tick)}])]
+                [:> icon* {:icon-id i/tick :size "s" :class (stl/css :filter-menu-item-tick)}])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :text))
                    :data-filter "text"
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
-               [:> icon* {:icon-id "text" :size "s" :class (stl/css :filter-menu-item-icon)}]
+               [:> icon* {:icon-id i/text :size "s" :class (stl/css :filter-menu-item-icon)}]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.texts")]]
 
               (when (contains? current-filters :text)
-                [:> icon* {:icon-id "tick" :size "s" :class (stl/css :filter-menu-item-tick)}])]
+                [:> icon* {:icon-id i/tick :size "s" :class (stl/css :filter-menu-item-tick)}])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :image))
                    :data-filter "image"
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
-               [:> icon* {:icon-id "img" :size "s" :class (stl/css :filter-menu-item-icon)}]
+               [:> icon* {:icon-id i/img :size "s" :class (stl/css :filter-menu-item-icon)}]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.images")]]
 
               (when (contains? current-filters :image)
-                [:> icon* {:icon-id "tick" :size "s" :class (stl/css :filter-menu-item-tick)}])]
+                [:> icon* {:icon-id i/tick :size "s" :class (stl/css :filter-menu-item-tick)}])]
 
              [:li {:class (stl/css-case :filter-menu-item true
                                         :selected (contains? current-filters :shape))
                    :data-filter "shape"
                    :on-click add-filter}
               [:div {:class (stl/css :filter-menu-item-name-wrapper)}
-               [:> icon* {:icon-id "path" :size "s" :class (stl/css :filter-menu-item-icon)}]
+               [:> icon* {:icon-id i/path :size "s" :class (stl/css :filter-menu-item-icon)}]
                [:span {:class (stl/css :filter-menu-item-name)}
                 (tr "workspace.sidebar.layers.shapes")]]
 
               (when (contains? current-filters :shape)
-                [:> icon* {:icon-id "tick" :size "s" :class (stl/css :filter-menu-item-tick)}])]])]
+                [:> icon* {:icon-id i/tick :size "s" :class (stl/css :filter-menu-item-tick)}])]])]
 
          [:div {:class (stl/css :tool-window-bar)}
           [:> title-bar* {:collapsable  false
@@ -504,7 +504,7 @@
         [:button {:class (stl/css :focus-title)
                   :on-click toogle-focus-mode}
          [:span {:class (stl/css :back-button)}
-          [:> icon* {:icon-id "arrow"}]]
+          [:> icon* {:icon-id i/arrow}]]
 
          [:div {:class (stl/css :focus-name)}
           (or title (tr "workspace.sidebar.layers"))]

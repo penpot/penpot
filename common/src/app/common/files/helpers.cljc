@@ -426,38 +426,15 @@
 
 (defn components-nesting-loop?
   "Check if a nesting loop would be created if the given shape is moved below the given parent"
-  [objects shape-id parent-id]
-  (let [xf-get-component-id (keep :component-id)
-
-        children            (get-children-with-self objects shape-id)
-        child-components    (into #{} xf-get-component-id children)
-
-        parents             (get-parents-with-self objects parent-id)
-        parent-components   (into #{} xf-get-component-id parents)]
-    (seq (set/intersection child-components parent-components))))
-
-(defn variants-nesting-loop?
-  "Check if a variants nesting loop would be created if the given shape is moved below the given parent"
-  [objects libraries shape parent pasting-cutted-mains?]
-  ;; If we are cut-pasting mains into its own variant, it is ok
-  (if (and pasting-cutted-mains?
-           (:is-variant-container parent)
-           (= (:variant-id shape) (:id parent)))
-    nil
-    (let [get-variant-id #(or (:variant-id %)
-                              (when (:is-variant-container %) (:id %))
-                              (when (:component-id %)
-                                (dm/get-in libraries [(:component-file %)
-                                                      :data
-                                                      :components
-                                                      (:component-id %)
-                                                      :variant-id])))
-          child-variant-ids  (into #{} (keep get-variant-id)
-                                   (get-children-with-self objects (:id shape)))
-          parent-variant-ids (into #{} (keep get-variant-id)
-                                   (get-parents-with-self objects (:id parent)))]
-      (seq (set/intersection child-variant-ids parent-variant-ids)))))
-
+  ([objects shape-id parent-id]
+   (let [children (get-children-with-self objects shape-id)
+         parents  (get-parents-with-self objects parent-id)]
+     (components-nesting-loop? children parents)))
+  ([children parents]
+   (let [xf-get-component-id (keep :component-id)
+         child-components    (into #{} xf-get-component-id children)
+         parent-components   (into #{} xf-get-component-id parents)]
+     (seq (set/intersection child-components parent-components)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ALGORITHMS & TRANSFORMATIONS FOR SHAPES

@@ -22,7 +22,7 @@
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.components :refer [components-section]]
@@ -115,7 +115,7 @@
               :href (str "#" url)
               :target "_blank"
               :on-click on-click}
-          i/open-link]])]]))
+          deprecated-icon/open-link]])]]))
 
 (defn- extend-selected
   [selected type asset-groups asset-id file-id]
@@ -302,7 +302,7 @@
                    (not ^boolean show-typography?))
           [:div  {:class (stl/css :asset-title)}
            [:span {:class (stl/css :no-found-icon)}
-            i/search]
+            deprecated-icon/search]
            [:span {:class (stl/css :no-found-text)}
             (tr "workspace.assets.not-found")]])])]))
 

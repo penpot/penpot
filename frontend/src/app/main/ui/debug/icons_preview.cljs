@@ -2,7 +2,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.ui.cursors :as c]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.timers :as ts]
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
@@ -11,7 +11,7 @@
   {::mf/wrap-props false
    ::mf/private true}
   []
-  (let [entries   (->> (seq (js/Object.entries i/default))
+  (let [entries   (->> (seq (js/Object.entries deprecated-icon/default))
                        (sort-by first))]
     [:section {:class (stl/css :gallery)}
      (for [[key val] entries]

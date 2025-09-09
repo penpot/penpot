@@ -78,6 +78,7 @@
 
 ;; --- FILE PERMISSIONS
 
+
 (def ^:private sql:file-permissions
   "select fpr.is_owner,
           fpr.is_admin,
@@ -460,7 +461,41 @@
     (:has-libraries row)))
 
 
+;; --- COMMAND QUERY: get-library-usage
+
+
+(declare get-library-usage)
+
+(def schema:get-library-usage
+  [:map {:title "get-library-usage"}
+   [:file-id ::sm/uuid]])
+:sample
+(sv/defmethod ::get-library-usage
+  "Gets the number of files that use the specified library."
+  {::doc/added "2.10.0"
+   ::sm/params schema:get-library-usage
+   ::sm/result ::sm/int}
+  [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id file-id]}]
+  (dm/with-open [conn (db/open pool)]
+    (check-read-permissions! pool profile-id file-id)
+    (get-library-usage conn file-id)))
+
+(def ^:private sql:get-library-usage
+  "SELECT COUNT(*) AS used
+     FROM file_library_rel AS flr
+     JOIN file AS fl ON (flr.library_file_id = fl.id)
+    WHERE flr.library_file_id = ?::uuid
+      AND (fl.deleted_at IS NULL OR
+           fl.deleted_at > now())")
+
+(defn- get-library-usage
+  [conn file-id]
+  (let [row (db/exec-one! conn [sql:get-library-usage file-id])]
+    {:used-in (:used row)}))
+
+
 ;; --- QUERY COMMAND: get-page
+
 
 (defn- prune-objects
   "Given the page data and the object-id returns the page data with all
@@ -551,6 +586,24 @@
 
 ;; --- COMMAND QUERY: get-team-shared-files
 
+(defn- components-and-variants
+  "Return a set with all the variant-ids, and a list of components, but with
+   only one component by variant"
+  [components]
+  (let [{:keys [variant-ids components]}
+        (reduce (fn [{:keys [variant-ids components] :as acc} {:keys [variant-id] :as component}]
+                  (cond
+                    (nil? variant-id)
+                    {:variant-ids variant-ids :components (conj components component)}
+                    (contains? variant-ids variant-id)
+                    acc
+                    :else
+                    {:variant-ids (conj variant-ids variant-id) :components (conj components component)}))
+                {:variant-ids #{} :components []}
+                components)]
+    {:components components
+     :variant-ids variant-ids}))
+
 (def ^:private sql:team-shared-files
   "select f.id,
           f.revn,
@@ -584,10 +637,13 @@
                :sample (into [] (take limit sorted-assets))}))]
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-      (let [load-objects      (fn [component]
-                                (ctf/load-component-objects data component))
-            components-sample (-> (assets-sample (ctkl/components data) 4)
-                                  (update :sample #(mapv load-objects %)))]
+      (let [load-objects       (fn [component]
+                                 (ctf/load-component-objects data component))
+            comps-and-variants (components-and-variants (ctkl/components-seq data))
+            components         (into {} (map (juxt :id identity) (:components comps-and-variants)))
+            components-sample  (-> (assets-sample components 4)
+                                   (update :sample #(mapv load-objects %))
+                                   (assoc :variants-count (-> comps-and-variants :variant-ids count)))]
         {:components components-sample
          :media (assets-sample (:media data) 3)
          :colors (assets-sample (:colors data) 3)
@@ -640,6 +696,7 @@
 
 
 ;; --- COMMAND QUERY: Files that use this File library
+
 
 (def ^:private sql:library-using-files
   "SELECT f.id,
@@ -713,6 +770,7 @@
 
 ;; --- COMMAND QUERY: get-file-summary
 
+
 (defn- get-file-summary
   [{:keys [::db/conn] :as cfg} {:keys [profile-id id project-id] :as params}]
   (check-read-permissions! conn profile-id id)
@@ -730,11 +788,13 @@
         (cfeat/check-file-features! (:features file)))
 
     (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-      {:name             (:name file)
-       :components-count (count (ctkl/components-seq (:data file)))
-       :graphics-count   (count (get-in file [:data :media] []))
-       :colors-count     (count (get-in file [:data :colors] []))
-       :typography-count (count (get-in file [:data :typographies] []))})))
+      (let [components-and-variants (components-and-variants (ctkl/components-seq (:data file)))]
+        {:name             (:name file)
+         :components-count (-> components-and-variants :components count)
+         :variants-count   (-> components-and-variants :variant-ids count)
+         :graphics-count   (count (get-in file [:data :media] []))
+         :colors-count     (count (get-in file [:data :colors] []))
+         :typography-count (count (get-in file [:data :typographies] []))}))))
 
 (sv/defmethod ::get-file-summary
   "Retrieve a file summary by its ID. Only authenticated users."
@@ -745,6 +805,7 @@
 
 
 ;; --- COMMAND QUERY: get-file-info
+
 
 (defn- get-file-info
   [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]

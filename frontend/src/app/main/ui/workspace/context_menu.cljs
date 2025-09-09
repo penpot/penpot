@@ -32,7 +32,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr] :as i18n]
@@ -110,7 +110,7 @@
        [:span
         {:class (stl/css :icon-wrapper)}
         (if is-selected [:span {:class (stl/css :selected-icon)}
-                         [:> icon* {:icon-id "tick" :size "s"}]]
+                         [:> icon* {:icon-id i/tick :size "s"}]]
             [:span {:class (stl/css :selected-icon)}])
         [:span {:class (stl/css :shape-icon)}
          [:> icon* {:icon-id icon :size "s"}]]]
@@ -131,7 +131,7 @@
 
        (when (> (count children) 1)
          [:span {:class (stl/css :submenu-icon)}
-          [:> icon* {:icon-id "arrow" :size "s"}]])
+          [:> icon* {:icon-id i/arrow :size "s"}]])
 
        (when (> (count children) 1)
          [:ul {:class (stl/css :workspace-context-submenu)
@@ -433,7 +433,7 @@
                         :on-click do-start-editing}])
 
      (when-not (or disable-flatten has-frame? has-path?)
-       [:> menu-entry* {:title (tr "workspace.shape.menu.transform-to-path")
+       [:> menu-entry* {:title (tr "workspace.shape.menu.flatten")
                         :on-click do-transform-to-path}])
 
      (when (and (not disable-booleans)
@@ -568,6 +568,7 @@
   [{:keys [shapes]}]
   (let [single?                    (= (count shapes) 1)
         objects                    (deref refs/workspace-page-objects)
+        shapes                     (keep (d/getf objects) shapes)
         can-make-component         (every? true? (map #(ctn/valid-shape-for-component? objects %) shapes))
         heads                      (filter ctk/instance-head? shapes)
         components-menu-entries    (cmm/generate-components-menu-entries heads)
@@ -576,10 +577,14 @@
         any-variant?               (some ctk/is-variant? shapes)
         do-add-component           (mf/use-fn #(st/emit! (dwl/add-component)))
         do-add-multiple-components (mf/use-fn #(st/emit! (dwl/add-multiple-components)))
-        do-combine-as-variants     (mf/use-fn #(st/emit! (dwv/combine-as-variants)))
+        do-combine-as-variants     (mf/use-fn #(st/emit!
+                                                (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-component"})
+                                                (dwv/combine-as-variants)))
         do-add-variant             (mf/use-fn
                                     (mf/deps shapes)
-                                    #(st/emit! (dwv/add-new-variant (:id (first shapes)))))]
+                                    #(st/emit!
+                                      (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "context-menu-component"})
+                                      (dwv/add-new-variant (:id (first shapes)))))]
     [:*
      (when can-make-component ;; We don't want to change the structure of component copies
        [:*
@@ -631,7 +636,9 @@
    ::mf/private true}
   [{:keys [mdata]}]
   (let [{:keys [disable-booleans disable-flatten]} mdata
-        shapes (mf/deref refs/selected-shapes)
+        objects                   (deref refs/workspace-page-objects)
+        shape-ids                 (mf/deref refs/selected-shapes)
+        shapes                    (map (d/getf objects) shape-ids)
         is-not-variant-container? (->> shapes (d/seek #(not (ctk/is-variant-container? %))))
         props  (mf/props
                 {:shapes shapes
@@ -821,6 +828,7 @@
      [:div {:class (stl/css :workspace-context-menu)
             :ref dropdown-ref
             :style {:top top :left left}
+            :data-testid "context-menu"
             :on-context-menu prevent-default}
 
       [:ul {:class (stl/css :context-list)}

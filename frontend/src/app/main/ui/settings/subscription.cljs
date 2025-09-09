@@ -12,7 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr c]]
    [potok.v2.core :as ptk]
@@ -46,7 +46,7 @@
     (for [benefit  benefits]
       [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
    (when (and cta-link-with-icon cta-text-with-icon) [:button {:class (stl/css :cta-button :more-info)
-                                                               :on-click cta-link-with-icon} cta-text-with-icon i/open-link])
+                                                               :on-click cta-link-with-icon} cta-text-with-icon deprecated-icon/open-link])
    (when (and cta-link cta-text) [:button {:class (stl/css-case :cta-button true
                                                                 :bottom-link (not (and cta-link-trial cta-text-trial)))
                                            :on-click cta-link} cta-text])
@@ -121,7 +121,7 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} i/close]
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} deprecated-icon/close]
       [:div {:class (stl/css :modal-title :subscription-title)}
        (tr "subscription.settings.management.dialog.title" subscription-name)]
 
@@ -131,7 +131,7 @@
               (tr "subscription.settings.management.dialog.currently-editors-title" (c (count editors)))]
           [:button {:class (stl/css :cta-button :show-editors-button) :on-click handle-click}
            (tr "subscription.settings.management.dialog.editors")
-           [:span {:class (stl/css :icon-dropdown)}  i/arrow]]
+           [:span {:class (stl/css :icon-dropdown)}  deprecated-icon/arrow]]
           (when show-editors-list
             [:*
              [:p {:class (stl/css :editors-text :editors-list-warning)}
@@ -225,12 +225,12 @@
 
     [:div {:class (stl/css :modal-overlay)}
      [:div {:class (stl/css :modal-dialog :subscription-success)}
-      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} i/close]
+      [:button {:class (stl/css :close-btn) :on-click handle-close-dialog} deprecated-icon/close]
       [:div {:class (stl/css :modal-success-content)}
        [:div {:class (stl/css :modal-start)}
         (if (= "light" (:theme profile))
-          i/logo-subscription-light
-          i/logo-subscription)]
+          deprecated-icon/logo-subscription-light
+          deprecated-icon/logo-subscription)]
 
        [:div {:class (stl/css :modal-end)}
         [:div {:class (stl/css :modal-title)} (tr "subscription.settings.sucess.dialog.title" subscription-name)]
@@ -281,7 +281,7 @@
         (ct/format-inst (:created-at profile) "d MMMM, yyyy")
 
         subscribed-since
-        (ct/format-inst (:start-date profile) "d MMMM, yyyy")
+        (ct/format-inst (:start-date subscription) "d MMMM, yyyy")
 
         go-to-pricing-page
         (mf/use-fn
@@ -363,7 +363,7 @@
          "unlimited"
          (if subscription-is-trial?
            [:> plan-card* {:card-title (tr "subscription.settings.unlimited-trial")
-                           :card-title-icon i/character-u
+                           :card-title-icon deprecated-icon/character-u
                            :benefits-title (tr "subscription.settings.benefits.all-professional-benefits"),
                            :benefits [(tr "subscription.settings.unlimited.storage-benefit")
                                       (tr "subscription.settings.unlimited.autosave-benefit"),
@@ -375,7 +375,7 @@
                            :editors (-> profile :props :subscription :quantity)}]
 
            [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
-                           :card-title-icon i/character-u
+                           :card-title-icon deprecated-icon/character-u
                            :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")
                            :benefits [(tr "subscription.settings.unlimited.storage-benefit"),
                                       (tr "subscription.settings.unlimited.autosave-benefit"),
@@ -387,7 +387,7 @@
          "enterprise"
          (if subscription-is-trial?
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise-trial")
-                           :card-title-icon i/character-e
+                           :card-title-icon deprecated-icon/character-e
                            :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
                            :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
                                       (tr "subscription.settings.enterprise.autosave"),
@@ -397,7 +397,7 @@
                            :cta-text-trial (tr "subscription.settings.add-payment-to-continue")
                            :cta-link-trial go-to-payments}]
            [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
-                           :card-title-icon i/character-e
+                           :card-title-icon deprecated-icon/character-e
                            :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits"),
                            :benefits [(tr "subscription.settings.enterprise.unlimited-storage-benefit"),
                                       (tr "subscription.settings.enterprise.autosave"),
@@ -408,12 +408,12 @@
        [:div {:class (stl/css :membership-container)}
         (when (and subscribed-since (not= subscription-type "professional"))
           [:div {:class (stl/css :membership)}
-           [:span {:class (stl/css :subscription-member)} i/crown]
+           [:span {:class (stl/css :subscription-member)} deprecated-icon/crown]
            [:span {:class (stl/css :membership-date)}
             (tr "subscription.settings.support-us-since" subscribed-since)]])
 
         [:div {:class (stl/css :membership)}
-         [:span {:class (stl/css :penpot-member)} i/user]
+         [:span {:class (stl/css :penpot-member)} deprecated-icon/user]
          [:span {:class (stl/css :membership-date)}
           (tr "subscription.settings.member-since" member-since)]]]]
 
@@ -433,7 +433,7 @@
 
        (when (not= subscription-type "unlimited")
          [:> plan-card* {:card-title (tr "subscription.settings.unlimited")
-                         :card-title-icon i/character-u
+                         :card-title-icon deprecated-icon/character-u
                          :price-value "$7"
                          :price-period (tr "subscription.settings.price-editor-month")
                          :benefits-title (tr "subscription.settings.benefits.all-professional-benefits")
@@ -447,7 +447,7 @@
 
        (when (not= subscription-type "enterprise")
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
-                         :card-title-icon i/character-e
+                         :card-title-icon deprecated-icon/character-e
                          :price-value "$950"
                          :price-period (tr "subscription.settings.price-organization-month")
                          :benefits-title (tr "subscription.settings.benefits.all-unlimited-benefits")

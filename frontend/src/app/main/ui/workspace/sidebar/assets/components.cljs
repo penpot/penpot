@@ -26,9 +26,9 @@
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.context :as ctx]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
    [app.main.ui.workspace.sidebar.assets.groups :as grp]
    [app.util.dom :as dom]
@@ -174,7 +174,7 @@
                                        :variant-mark true
                                        :component-icon true)
                   :title (tr "workspace.assets.components.num-variants" num-variants)}
-           [:> icon* {:icon-id "variant" :size "s"}]])])]))
+           [:> icon* {:icon-id i/variant :size "s"}]])])]))
 
 
 (defn- count-leaves
@@ -505,7 +505,9 @@
                  ids     (into #{} (map :main-instance-id comps))
                  page-id (->> comps first :main-instance-page)]
 
-             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))
+             (st/emit!
+              (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-assets-group"})
+              (dwv/combine-as-variants ids {:page-id page-id})))))
 
 
         on-drag-start
@@ -554,7 +556,9 @@
            (let [page-id (->> selected-and-current-full first :main-instance-page)
                  ids (into #{} (map :main-instance-id selected-full))]
 
-             (st/emit! (dwv/combine-as-variants ids {:page-id page-id})))))]
+             (st/emit!
+              (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-assets"})
+              (dwv/combine-as-variants ids {:page-id page-id})))))]
 
     [:& cmm/asset-section {:file-id file-id
                            :title (tr "workspace.assets.components")
@@ -567,11 +571,11 @@
          [:& radio-buttons {:selected (if listing-thumbs? "grid" "list")
                             :on-change toggle-list-style
                             :name "listing-style"}
-          [:& radio-button {:icon i/view-as-list
+          [:& radio-button {:icon deprecated-icon/view-as-list
                             :value "list"
                             :title (tr "workspace.assets.list-view")
                             :id "opt-list"}]
-          [:& radio-button {:icon i/flex-grid
+          [:& radio-button {:icon deprecated-icon/flex-grid
                             :value "grid"
                             :title (tr "workspace.assets.grid-view")
                             :id "opt-grid"}]]])
@@ -580,7 +584,7 @@
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "workspace.assets.components.add-component")
                           :on-click add-component
-                          :icon "add"}
+                          :icon i/add}
          [:& file-uploader {:accept dwm/accept-image-types
                             :multi true
                             :ref input-ref

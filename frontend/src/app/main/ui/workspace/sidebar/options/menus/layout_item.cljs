@@ -16,7 +16,7 @@
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :refer [get-layout-flex-icon]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
@@ -81,7 +81,7 @@
      [:div {:class (stl/css :vertical-margin)
             :title "Vertical margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-top-bottom]
+       deprecated-icon/margin-top-bottom]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder m1-placeholder
                           :data-name "m1"
@@ -94,7 +94,7 @@
      [:div {:class (stl/css :horizontal-margin)
             :title "Horizontal margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-left-right]
+       deprecated-icon/margin-left-right]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder m2-placeholder
                           :data-name "m2"
@@ -133,7 +133,7 @@
      [:div {:class (stl/css :top-margin)
             :title "Top margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-top]
+       deprecated-icon/margin-top]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m1"
@@ -145,7 +145,7 @@
      [:div {:class (stl/css :right-margin)
             :title "Right margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-right]
+       deprecated-icon/margin-right]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m2"
@@ -158,7 +158,7 @@
      [:div {:class (stl/css :bottom-margin)
             :title "Bottom margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-bottom]
+       deprecated-icon/margin-bottom]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m3"
@@ -171,7 +171,7 @@
      [:div {:class (stl/css :left-margin)
             :title "Left margin"}
       [:span {:class (stl/css :icon)}
-       i/margin-left]
+       deprecated-icon/margin-left]
       [:> numeric-input* {:class (stl/css :numeric-input)
                           :placeholder "--"
                           :data-name "m4"
@@ -215,7 +215,7 @@
                        :selected (= type :multiple))
                :title "Margin - multiple"
                :on-click on-type-change'}
-      i/margin]]))
+      deprecated-icon/margin]]))
 
 (mf/defc element-behaviour-horizontal
   {::mf/props :obj
@@ -234,20 +234,20 @@
 
     [:& radio-button
      {:value "fix"
-      :icon  i/fixed-width
+      :icon  deprecated-icon/fixed-width
       :title "Fix width"
       :id    "behaviour-h-fix"}]
 
     (when has-fill
       [:& radio-button
        {:value "fill"
-        :icon  i/fill-content
+        :icon  deprecated-icon/fill-content
         :title "Width 100%"
         :id    "behaviour-h-fill"}])
     (when is-auto
       [:& radio-button
        {:value "auto"
-        :icon  i/hug-content
+        :icon  deprecated-icon/hug-content
         :title "Fit content (Horizontal)"
         :id    "behaviour-h-auto"}])]])
 
@@ -268,7 +268,7 @@
 
     [:& radio-button
      {:value      "fix"
-      :icon       i/fixed-width
+      :icon       deprecated-icon/fixed-width
       :icon-class (stl/css :rotated)
       :title      "Fix height"
       :id         "behaviour-v-fix"}]
@@ -276,14 +276,14 @@
     (when has-fill
       [:& radio-button
        {:value      "fill"
-        :icon       i/fill-content
+        :icon       deprecated-icon/fill-content
         :icon-class (stl/css :rotated)
         :title      "Height 100%"
         :id         "behaviour-v-fill"}])
     (when is-auto
       [:& radio-button
        {:value      "auto"
-        :icon       i/hug-content
+        :icon       deprecated-icon/hug-content
         :icon-class (stl/css :rotated)
         :title      "Fit content (Vertical)"
         :id         "behaviour-v-auto"}])]])

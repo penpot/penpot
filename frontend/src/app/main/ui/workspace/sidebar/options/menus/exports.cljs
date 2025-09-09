@@ -15,9 +15,10 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets]
    [app.util.dom :as dom]
-   [app.util.i18n :refer  [tr c]]
+   [app.util.i18n :refer [c tr]]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
 
@@ -212,7 +213,7 @@
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.options.export.add-export")
                          :on-click add-export
-                         :icon "add"}]]]
+                         :icon i/add}]]]
      (when open?
        [:div {:class (stl/css :element-set-content)}
 
@@ -224,7 +225,7 @@
             [:> icon-button* {:variant "ghost"
                               :aria-label (tr "workspace.options.export.remove-export")
                               :on-click on-remove-all
-                              :icon "remove"}]]]
+                              :icon i/remove}]]]
 
           (seq exports)
           [:*
@@ -260,7 +261,7 @@
                                 :aria-label (tr "workspace.options.export.remove-export")
                                 :on-click delete-export
                                 :data-value index
-                                :icon "remove"}]])])
+                                :icon i/remove}]])])
 
         (when (or (= :multiple exports) (seq exports))
           [:button

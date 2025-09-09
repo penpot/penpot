@@ -25,9 +25,9 @@
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -583,7 +583,7 @@
       :on-key-down handle-key-down
       :icon-class (stl/css-case :open-mentions-button true
                                 :is-toggled @display-mentions*)
-      :icon "at"}]))
+      :icon i/at}]))
 
 (def ^:private schema:comment-avatar
   [:map
@@ -917,12 +917,12 @@
                :title (tr "labels.comment.mark-as-solved")
                :on-click toggle-resolved}
          [:span {:class (stl/css-case :checkbox true
-                                      :global/checked (:is-resolved thread))} i/tick]])
+                                      :global/checked (:is-resolved thread))} deprecated-icon/tick]])
       (when (= (:id profile) (:id owner))
         [:> icon-button* {:variant "ghost"
                           :aria-label (tr "labels.options")
                           :on-click on-toggle-options
-                          :icon "menu"}])]
+                          :icon i/menu}])]
      [:& dropdown {:show (= options uuid/zero)
                    :on-close on-hide-options}
       [:ul {:class (stl/css :dropdown-menu)}
@@ -987,7 +987,7 @@
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "labels.options")
                            :on-click on-toggle-options
-                           :icon "menu"}])]
+                           :icon i/menu}])]
 
       [:div {:class (stl/css :item)}
        (if @edition?
@@ -1368,7 +1368,7 @@
            :on-click on-click*}
      [:div {:class (stl/css :location)}
       [:div {:class (stl/css :location-icon)}
-       [:> icon* {:icon-id "comments"}]]
+       [:> icon* {:icon-id i/comments}]]
       [:div {:class (stl/css :location-text)}
        (str "#" (:seqn item))
        (str " " (:file-name item))

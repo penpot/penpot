@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
@@ -79,7 +80,7 @@
      (when-not ^boolean disabled
        [:> icon-button* {:variant "action"
                          :class (stl/css :invisible-button)
-                         :icon "broken-link"
+                         :icon i/broken-link
                          :ref token-detach-btn-ref
                          :aria-label (tr "ds.inputs.token-field.detach-token")
                          :on-click detach-token}])]))

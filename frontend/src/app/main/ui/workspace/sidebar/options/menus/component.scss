@@ -193,18 +193,6 @@
   cursor: pointer;
 }
 
-.back-arrow {
-  @include flexCenter;
-  height: $s-32;
-
-  svg {
-    height: $s-12;
-    width: $s-12;
-    stroke: var(--icon-foreground);
-    transform: rotate(180deg);
-  }
-}
-
 .path-name {
   @include bodySmallTypography;
   @include textEllipsis;
@@ -441,6 +429,7 @@
   grid-template-columns: 1fr $s-12;
   height: $s-32;
   cursor: pointer;
+  align-items: center;
 
   .component-group-name {
     @include textEllipsis;
@@ -456,15 +445,8 @@
   }
 }
 
-.arrow-icon {
-  @include flexCenter;
-  height: $s-32;
-
-  svg {
-    height: $s-12;
-    width: $s-12;
-    stroke: var(--icon-foreground);
-  }
+.component-group-icon {
+  color: var(--icon-foreground);
 }
 
 .path-wrapper {
@@ -483,6 +465,7 @@
 
 .component-annotation {
   @include bodySmallTypography;
+  grid-column: span 8;
   color: var(--entry-foreground-color);
   border-radius: $br-8;
 

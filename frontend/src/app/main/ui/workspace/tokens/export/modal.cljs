@@ -15,7 +15,7 @@
    [app.main.store :as st]
    [app.main.ui.components.code-block :refer [code-block]]
    [app.main.ui.ds.buttons.button :refer [button*]]
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.heading :refer [heading*]]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
@@ -98,7 +98,7 @@
          [:li {:key path
                :class (stl/css :file-item)}
           [:div {:class (stl/css :file-icon)}
-           [:> icon* {:icon-id "document"}]]
+           [:> icon* {:icon-id i/document}]]
           [:div {:class (stl/css :file-name) :title path}
            path]])]]]))
 

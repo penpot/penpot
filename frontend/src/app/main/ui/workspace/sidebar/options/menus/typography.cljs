@@ -26,7 +26,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.context :as ctx]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -79,7 +79,7 @@
      [:div {:class  (stl/css-case :font-item true
                                   :selected is-current)}
       [:span {:class (stl/css :label)} (:name font)]
-      [:span {:class (stl/css :icon)} (when is-current i/tick)]]]))
+      [:span {:class (stl/css :icon)} (when is-current deprecated-icon/tick)]]]))
 
 (declare row-renderer)
 
@@ -311,7 +311,7 @@
          [:span {:class (stl/css :name)}
           (:name font)]
          [:span {:class (stl/css :icon)}
-          i/arrow]]
+          deprecated-icon/arrow]]
 
         :else
         (tr "dashboard.fonts.deleted-placeholder"))]
@@ -371,7 +371,7 @@
             :title (tr "inspect.attributes.typography.line-height")}
       [:span {:class (stl/css :icon)
               :alt (tr "workspace.options.text-options.line-height")}
-       i/text-lineheight]
+       deprecated-icon/text-lineheight]
       [:> numeric-input*
        {:min -200
         :max 200
@@ -389,7 +389,7 @@
       [:span
        {:class (stl/css :icon)
         :alt (tr "workspace.options.text-options.letter-spacing")}
-       i/text-letterspacing]
+       deprecated-icon/text-letterspacing]
       [:> numeric-input*
        {:min -200
         :max 200
@@ -418,17 +418,17 @@
      [:& radio-buttons {:selected text-transform
                         :on-change handle-change
                         :name "text-transform"}
-      [:& radio-button {:icon i/text-uppercase
+      [:& radio-button {:icon deprecated-icon/text-uppercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.uppercase")
                         :value "uppercase"
                         :id "text-transform-uppercase"}]
-      [:& radio-button {:icon i/text-mixed
+      [:& radio-button {:icon deprecated-icon/text-mixed
                         :type "checkbox"
                         :value "capitalize"
                         :title (tr "inspect.attributes.typography.text-transform.capitalize")
                         :id "text-transform-capitalize"}]
-      [:& radio-button {:icon i/text-lowercase
+      [:& radio-button {:icon deprecated-icon/text-lowercase
                         :type "checkbox"
                         :title (tr "inspect.attributes.typography.text-transform.lowercase")
                         :value "lowercase"
@@ -490,7 +490,7 @@
 
            [:div {:class (stl/css :action-btn)
                   :on-click on-close}
-            i/tick]]
+            deprecated-icon/tick]]
 
           [:& text-options {:values typography
                             :on-change on-change
@@ -512,7 +512,7 @@
             (:name font-data)]
            [:div {:class (stl/css :action-btn)
                   :on-click on-close}
-            i/menu]]
+            deprecated-icon/menu]]
 
           [:div {:class (stl/css :info-row)}
            [:span {:class (stl/css :info-label)}  (tr "labels.variant")]
@@ -643,10 +643,10 @@
        (when ^boolean on-detach
          [:button {:class (stl/css :element-set-actions-button)
                    :on-click on-detach}
-          i/detach])
+          deprecated-icon/detach])
        [:button {:class (stl/css :menu-btn)
                  :on-click on-open}
-        i/menu]]]
+        deprecated-icon/menu]]]
 
      [:& typography-advanced-options
       {:visible? open?

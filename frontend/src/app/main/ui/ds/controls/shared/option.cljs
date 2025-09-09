@@ -9,7 +9,7 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:option
@@ -50,7 +50,7 @@
           :data-testid "dropdown-option"}
 
      (when (some? icon)
-       [:> i/icon*
+       [:> icon*
         {:icon-id icon
          :size "s"
          :class (stl/css :option-icon)
@@ -62,7 +62,7 @@
       label]
 
      (when ^boolean selected
-       [:> i/icon*
+       [:> icon*
         {:icon-id i/tick
          :size "s"
          :class (stl/css :option-check)

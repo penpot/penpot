@@ -16,6 +16,7 @@
    [app.common.geom.shapes :as gsh]
    [app.common.logic.libraries :as cll]
    [app.common.types.component :as ctk]
+   [app.common.types.container :as ctn]
    [app.common.uuid :as uuid]
    [app.main.data.changes :as dch]
    [app.main.data.event :as ev]
@@ -484,7 +485,12 @@
                             (let [shape       (get objects shape-id)
                                   parent-type (cfh/get-shape-type objects (:parent-id shape))
                                   external-lib? (not= file-id (:component-file shape))
-                                  origin        "workspace:duplicate-shapes"]
+                                  component     (ctn/get-component-from-shape shape libraries)
+                                  origin        "workspace:duplicate-shapes"
+
+                                  any-parent-is-variant (->> (cfh/get-parents-with-self objects (:parent-id shape))
+                                                             (some ctk/is-variant?)
+                                                             boolean)]
 
                               ;; NOTE: we don't emit the create-shape event all the time for
                               ;; avoid send a lot of events (that are not necessary); this
@@ -494,7 +500,9 @@
                                            ::ev/origin origin
                                            :is-external-library external-lib?
                                            :type (get shape :type)
-                                           :parent-type parent-type})
+                                           :parent-type parent-type
+                                           :is-variant (ctk/is-variant? component)
+                                           :any-parent-is-variant any-parent-is-variant})
                                 (if (cfh/has-layout? objects (:parent-id shape))
                                   (ev/event {::ev/name "layout-add-element"
                                              ::ev/origin origin
@@ -555,10 +563,10 @@
             (assoc :workspace-focus-selected focus))))))
 
 (defn toggle-focus-mode
-  "Zoom in on and center viewport on selection; 
+  "Zoom in on and center viewport on selection;
    hide all other layers in viewport and layer panel.
 
-   When in focus mode, exit restoring previous viewport and selection. 
+   When in focus mode, exit restoring previous viewport and selection.
   "
   []
   (ptk/reify ::toggle-focus-mode
@@ -597,7 +605,7 @@
                 (rx/map (comp set keys))
                 (rx/buffer 2 1)
                 (rx/merge-map
-                ;; While focus is active, update it with any new and deleted shapes 
+                ;; While focus is active, update it with any new and deleted shapes
                  (fn [[old-keys new-keys]]
                    (let [removed (set/difference old-keys new-keys)
                          added (set/difference new-keys old-keys)]

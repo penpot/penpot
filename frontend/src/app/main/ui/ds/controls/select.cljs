@@ -10,7 +10,7 @@
   (:require
    [app.common.data :as d]
    [app.main.ui.ds.controls.shared.options-dropdown :refer [options-dropdown* schema:option]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [app.util.object :as obj]
@@ -197,17 +197,17 @@
       [:span {:class (stl/css-case :select-header true
                                    :header-icon has-icon?)}
        (when ^boolean has-icon?
-         [:> i/icon* {:icon-id icon
-                      :size "s"
-                      :aria-hidden true}])
+         [:> icon* {:icon-id icon
+                    :size "s"
+                    :aria-hidden true}])
        [:span {:class (stl/css-case :header-label true
                                     :header-label-dimmed empty-selected-id?)}
         (if ^boolean empty-selected-id? "--" label)]]
 
-      [:> i/icon* {:icon-id i/arrow-down
-                   :class (stl/css :arrow)
-                   :size "s"
-                   :aria-hidden true}]]
+      [:> icon* {:icon-id i/arrow-down
+                 :class (stl/css :arrow)
+                 :size "s"
+                 :aria-hidden true}]]
 
      (when ^boolean is-open
        [:> options-dropdown* {:on-click on-option-click

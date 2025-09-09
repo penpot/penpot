@@ -12,7 +12,7 @@
    [app.common.schema :as sm]
    [app.main.refs :as refs]
    [app.main.ui.components.dropdown :refer [dropdown-content*]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -251,7 +251,7 @@
                [:button {:class (stl/css :context-menu-action :submenu-back)
                          :data-no-close true
                          :on-click on-submenu-exit}
-                [:span {:class (stl/css :submenu-icon-back)} i/arrow]
+                [:span {:class (stl/css :submenu-icon-back)} deprecated-icon/arrow]
                 parent]]
 
               [:li {:class (stl/css :separator)}]])
@@ -289,11 +289,11 @@
                          name)
 
                        (when (and selected (= id selected))
-                         [:span {:class (stl/css :selected-icon)} i/tick])]
+                         [:span {:class (stl/css :selected-icon)} deprecated-icon/tick])]
 
                       [:a {:class (stl/css :context-menu-action :submenu)
                            :data-no-close true
                            :on-click (enter-submenu name sub-options)
                            :data-testid id}
                        name
-                       [:span {:class (stl/css :submenu-icon)} i/arrow]])]))))]])])))
+                       [:span {:class (stl/css :submenu-icon)} deprecated-icon/arrow]])]))))]])])))

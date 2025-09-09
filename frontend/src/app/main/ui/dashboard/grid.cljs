@@ -32,7 +32,7 @@
    [app.main.ui.dashboard.placeholder :refer [empty-grid-placeholder* loading-placeholder*]]
    [app.main.ui.ds.product.loader :refer [loader*]]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.main.worker :as mw]
    [app.util.color :as uc]
    [app.util.dom :as dom]
@@ -117,7 +117,7 @@
 ;; --- Grid Item Library
 
 (def ^:private menu-icon
-  (i/icon-xref :menu (stl/css :menu-icon)))
+  (deprecated-icon/icon-xref :menu (stl/css :menu-icon)))
 
 (mf/defc grid-item-library*
   {::mf/props :obj}
@@ -406,7 +406,7 @@
         [:> grid-item-thumbnail* {:file file :can-edit can-edit}])
 
       (when (and (:is-shared file) (not is-library-view?))
-        [:div {:class (stl/css :item-badge)} i/library])
+        [:div {:class (stl/css :item-badge)} deprecated-icon/library])
 
       [:div {:class (stl/css :info-wrapper)}
        [:div {:class (stl/css :item-info)}

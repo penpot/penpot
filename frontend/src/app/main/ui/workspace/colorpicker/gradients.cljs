@@ -18,6 +18,7 @@
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
@@ -338,16 +339,16 @@
                          :aria-label "Rotate gradient"
                          :on-click handle-rotate-gradient
                          :icon-class (stl/css :rotate-icon)
-                         :icon "reload"}]
+                         :icon i/reload}]
        [:> icon-button* {:variant "ghost"
                          :aria-label "Reverse gradient"
                          :on-click handle-reverse-gradient
-                         :icon "switch"}]
+                         :icon i/switch}]
        [:> icon-button* {:variant "ghost"
                          :aria-label "Add stop"
                          :disabled add-stop-disabled?
                          :on-click handle-add-stop
-                         :icon "add"}]]]
+                         :icon i/add}]]]
 
      [:div {:class (stl/css :gradient-stops-list)}
       [:& h/sortable-container {}

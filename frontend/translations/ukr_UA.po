@@ -1359,7 +1359,7 @@ msgid "errors.ldap-disabled"
 msgstr "Автентифікація через LDAP вимкнена."
 
 #: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
-msgid "errors.max-quote-reached"
+msgid "errors.max-quota-reached"
 msgstr "Ви досягли квоти \"%s\". Зв'яжіться із службою підтримки."
 
 #: src/app/main/ui/dashboard/team.cljs:185, src/app/main/ui/onboarding/team_choice.cljs:101

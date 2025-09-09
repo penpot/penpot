@@ -440,3 +440,31 @@ test("Bug 9877, user navigation to dashboard from header goes to blank page", as
     /&project-id=c7ce0794-0992-8105-8004-38e630f7920b/,
   );
 });
+
+test("Bug 8371 - Flatten option is not visible in context menu", async ({
+  page,
+}) => {
+  const workspacePage = new WorkspacePage(page);
+  await workspacePage.setupEmptyFile(page);
+  await workspacePage.mockGetFile("workspace/get-file-8371.json");
+  await workspacePage.goToWorkspace({
+    fileId: "7ce7750c-3efe-8009-8006-bf390a415df2",
+    pageId: "7ce7750c-3efe-8009-8006-bf390a415df3",
+  });
+
+  const shape = workspacePage.page.locator(
+    `[id="shape-40c555bd-1810-809a-8006-bf3912728203"]`,
+  );
+
+  await workspacePage.clickLeafLayer("Union");
+  await workspacePage.page
+    .locator(".viewport-selrect")
+    .click({ button: "right" });
+  await expect(workspacePage.contextMenuForShape).toBeVisible();
+  await expect(
+    workspacePage.contextMenuForShape
+      .getByText("Flatten")
+      // there are hidden elements in the context menu (in submenus) with "Flatten" text
+      .filter({ visible: true }),
+  ).toBeVisible();
+});

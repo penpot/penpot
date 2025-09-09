@@ -14,7 +14,7 @@
    [app.main.ui.auth.recovery :refer [recovery-page]]
    [app.main.ui.auth.recovery-request :refer [recovery-request-page]]
    [app.main.ui.auth.register :refer [register-page register-success-page register-validate-page terms-register]]
-   [app.main.ui.icons :as i]
+   [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -42,9 +42,9 @@
                     :auth-section true
                     :register is-register)}
      [:h1 {:class (stl/css :logo-container)}
-      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} i/logo]]
+      [:a {:href "#/" :title "Penpot" :class (stl/css :logo-btn)} deprecated-icon/logo]]
      [:div {:class (stl/css :login-illustration)}
-      i/login-illustration]
+      deprecated-icon/login-illustration]
 
      [:section {:class (stl/css :auth-content)}
 

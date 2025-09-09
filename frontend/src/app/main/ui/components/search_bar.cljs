@@ -7,7 +7,7 @@
 (ns app.main.ui.components.search-bar
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.dom :as dom]
    [app.util.keyboard :as kbd]
    [rumext.v2 :as mf]))
@@ -55,5 +55,5 @@
       (when (not= "" value)
         [:button {:class (stl/css :clear-icon)
                   :on-click handle-clear}
-         [:> icon* {:icon-id "delete-text"
+         [:> icon* {:icon-id i/delete-text
                     :size "s"}]])]]))

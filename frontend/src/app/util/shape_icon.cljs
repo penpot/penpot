@@ -60,7 +60,7 @@
                 "elipse")
       :path (if (cts/has-images? shape)
               "img"
-              "rectangle")
+              "path")
       :rect (if (cts/has-images? shape)
               "img"
               "rectangle")
