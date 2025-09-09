@@ -89,7 +89,10 @@ body {
    :gap
    :column-gap
    :row-gap
-   :padding
+   :padding-inline-start
+   :padding-inline-end
+   :padding-block-start
+   :padding-block-end
    :z-index
 
    ;; Flex related properties

@@ -1,4 +1,4 @@
-(ns app.main.ui.inspect.styles.panels.geometry
+(ns app.main.ui.inspect.styles.panels.layout
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
@@ -8,31 +8,54 @@
    [rumext.v2 :as mf]))
 
 (def ^:private properties
-  [:width
-   :height
-   :left
-   :top
-   :border-radius
-   :transform])
+  [:display
+   :flex-direction
+   :flex-wrap
+   :grid-template-rows
+   :grid-template-columns
+   :align-items
+   :align-content
+   :justify-items
+   :justify-content
+   :row-gap
+   :column-gap
+   :gap
+   :padding-inline-start
+   :padding-inline-end
+   :padding-block-start
+   :padding-block-end])
+
+(def ^:private shape-prop->padding-prop
+  {:padding-block-start :p1
+   :padding-inline-end :p2
+   :padding-block-end :p3
+   :padding-inline-start :p4})
+
+(defn- get-applied-tokens-in-shape
+  [shape-tokens property]
+  (let [padding-prop (get shape-prop->padding-prop property)]
+    (if padding-prop
+      (get shape-tokens padding-prop)
+      (get shape-tokens property))))
 
 (defn- get-resolved-token
   [property shape resolved-tokens]
   (let [shape-tokens (:applied-tokens shape)
-        applied-tokens-in-shape (get shape-tokens property)
+        applied-tokens-in-shape (get-applied-tokens-in-shape shape-tokens property)
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
-(mf/defc geometry-panel*
+(mf/defc layout-panel*
   [{:keys [shapes objects resolved-tokens]}]
-  [:div {:class (stl/css :geometry-panel)}
+  [:div {:class (stl/css :variants-panel)}
    (for [shape shapes]
-     [:div {:key (:id shape) :class "geometry-shape"}
+     [:div {:key (:id shape) :class "layout-shape"}
       (for [property properties]
         (when-let [value (css/get-css-value objects shape property)]
           (let [property-name (cmm/get-css-rule-humanized property)
                 resolved-token (get-resolved-token property shape resolved-tokens)
                 property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
-            [:> properties-row* {:key (dm/str "geometry-property-" property)
+            [:> properties-row* {:key (dm/str "layout-property-" property)
                                  :term property-name
                                  :detail value
                                  :token resolved-token

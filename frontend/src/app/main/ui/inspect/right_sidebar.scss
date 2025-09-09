@@ -145,6 +145,10 @@
 .viewer-tab-switcher {
   --tabs-nav-padding-inline-start: 0;
   --tabs-nav-padding-inline-end: var(--sp-m);
+  --max-inspect-tab-height: calc(100vh - 12rem);
+
+  max-block-size: var(--max-inspect-tab-height);
+  overflow: auto;
 }
 
 .viewer-tab-switcher-layout {
