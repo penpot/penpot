@@ -5,10 +5,12 @@
    [app.common.data.macros :as dm]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.shape.layout :as ctl]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
+   [app.main.ui.inspect.styles.panels.layout :refer [layout-panel*]]
    [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
    [app.main.ui.inspect.styles.panels.variants-panel :refer [variants-panel*]]
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
@@ -41,6 +43,7 @@
   (let [data               (dm/get-in libraries [file-id :data])
         first-shape        (first shapes)
         first-component    (ctkl/get-component data (:component-id first-shape))
+        layout-shapes      (->> shapes (filter ctl/any-layout?))
         type               (get-shape-type shapes first-shape first-component)
         tokens-lib         (mf/deref refs/tokens-lib)
         active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
@@ -62,16 +65,22 @@
          [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
      (for [panel panels]
        [:li {:key (d/name panel)}
-        [:> style-box* {:panel panel}
-         (case panel
-           :variant          [:> variants-panel* {:component first-component
-                                                  :objects objects
-                                                  :shape first-shape
-                                                  :data data}]
-           :geometry         [:> geometry-panel* {:shapes shapes
-                                                  :objects objects
-                                                  :resolved-tokens resolved-active-tokens}]
-           color-space)]])]))
+        (if (not (= panel :layout))
+          [:> style-box* {:panel panel}
+           (case panel
+             :variant          [:> variants-panel* {:component first-component
+                                                    :objects objects
+                                                    :shape first-shape
+                                                    :data data}]
+             :geometry         [:> geometry-panel* {:shapes shapes
+                                                    :objects objects
+                                                    :resolved-tokens resolved-active-tokens}]
+             color-space)]
+          (when (seq layout-shapes)
+            [:> style-box* {:panel :layout}
+             [:> layout-panel* {:shapes layout-shapes
+                                :objects objects
+                                :resolved-tokens resolved-active-tokens}]]))])]))
 
 
 ;; WIP

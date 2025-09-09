@@ -1,7 +1,7 @@
 (ns app.main.ui.inspect.styles.property-detail-copiable
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.main.ui.ds.foundations.assets.icon :refer [icon*]]
+   [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -22,6 +22,8 @@
      [:span {:class (stl/css :property-detail-text :property-detail-text-token)} (:name token)]
      [:span {:class (stl/css :property-detail-text)} detail])
    [:> icon* {:class (stl/css :property-detail-icon)
-              :icon-id (if copied "tick" "clipboard")
+              :icon-id (if copied i/tick i/clipboard)
               :size "s"
               :aria-label (tr "inspect.tabs.styles.panel.copy-to-clipboard")}]])
+
+

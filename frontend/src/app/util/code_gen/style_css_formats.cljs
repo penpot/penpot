@@ -33,6 +33,10 @@
    :row-gap               :size-array
    :column-gap            :size-array
    :padding               :size-array
+   :padding-inline-start  :size-array
+   :padding-inline-end    :size-array
+   :padding-block-start   :size-array
+   :padding-block-end     :size-array
    :margin                :size-array
    :grid-template-rows    :tracks
    :grid-template-columns :tracks})

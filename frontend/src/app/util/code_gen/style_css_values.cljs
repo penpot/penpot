@@ -282,6 +282,26 @@
       (when (or (not= p1 0) (not= p2 0) (not= p3 0) (not= p4 0))
         [p1 p2 p3 p4]))))
 
+(defmethod get-value :padding-block-start
+  [_ {:keys [layout-padding]} _ _]
+  (when (and (:p1 layout-padding) (not= (:p1 layout-padding) 0))
+    [(:p1 layout-padding)]))
+
+(defmethod get-value :padding-inline-end
+  [_ {:keys [layout-padding]} _ _]
+  (when (and (:p2 layout-padding) (not= (:p2 layout-padding) 0))
+    [(:p2 layout-padding)]))
+
+(defmethod get-value :padding-block-end
+  [_ {:keys [layout-padding]} _ _]
+  (when (and (:p3 layout-padding) (not= (:p3 layout-padding) 0))
+    [(:p3 layout-padding)]))
+
+(defmethod get-value :padding-inline-start
+  [_ {:keys [layout-padding]} _ _]
+  (when (and (:p4 layout-padding) (not= (:p4 layout-padding) 0))
+    [(:p4 layout-padding)]))
+
 (defmethod get-value :grid-template-rows
   [_ shape _ _]
   (:layout-grid-rows shape))
