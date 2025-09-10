@@ -19,7 +19,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(def ^:private schema::input-tokens-value
+(def ^:private schema::input-token
   [:map
    [:label {:optional true} [:maybe :string]]
    [:aria-label {:optional true} [:maybe :string]]
@@ -55,11 +55,10 @@
       :class (stl/css-case :resolved-value (not (or empty-message? (seq warnings) (seq errors))))
       :type type}]))
 
-(mf/defc input-tokens-value*
-  {::mf/props :obj
-   ::mf/forward-ref true
-   ::mf/schema schema::input-tokens-value}
-  [{:keys [class label placeholder value icon slot-start token-resolve-result aria-label] :rest props} ref]
+(mf/defc input-token*
+  {::mf/forward-ref true
+   ::mf/schema schema::input-token}
+  [{:keys [class label placeholder value icon slot-start token-resolve-result] :rest props} ref]
   (let [error (not (nil? (:errors token-resolve-result)))
         id (mf/use-id)
         input-ref (mf/use-ref)
@@ -68,7 +67,6 @@
                                       :class (stl/css :input)
                                       :placeholder placeholder
                                       :value value
-                                      :aria-label aria-label
                                       :variant "comfortable"
                                       :hint-type (when error "error")
                                       :slot-start slot-start

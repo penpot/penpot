@@ -19,6 +19,7 @@
 (def ^:private schema:input-field
   [:map
    [:class {:optional true} :string]
+   [:aria-label {:optional true} [:maybe :string]]
    [:id :string]
    [:icon {:optional true}
     [:maybe [:and :string [:fn #(contains? icon-list %)]]]]
@@ -76,11 +77,11 @@
      (when (some? slot-start)
        slot-start)
      (when (some? icon)
-       [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
-     (if aria-label
-       [:> tooltip* {:content aria-label
-                     :id tooltip-id}
-        [:> "input" props]]
-       [:> "input" props])
+       (if aria-label
+         [:> tooltip* {:content aria-label
+                       :id tooltip-id}
+          [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}]]
+         [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}]))
+     [:> "input" props]
      (when (some? slot-end)
        slot-end)]))

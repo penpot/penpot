@@ -37,7 +37,7 @@
    [app.main.ui.workspace.colorpicker.ramp :refer [ramp-selector*]]
    [app.main.ui.workspace.sidebar.options.menus.typography :refer [font-selector*]]
    [app.main.ui.workspace.tokens.management.create.input-token-color-bullet :refer [input-token-color-bullet*]]
-   [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-tokens-value*
+   [app.main.ui.workspace.tokens.management.create.input-tokens-value :refer [input-token*
                                                                               token-value-hint*]]
    [app.util.dom :as dom]
    [app.util.functions :as uf]
@@ -596,7 +596,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              :custom-input-token-value-props custom-input-token-value-props
              :token-resolve-result token-resolve-result
              :clear-resolve-value clear-resolve-value}]
-           [:> input-tokens-value*
+           [:> input-token*
             {:placeholder placeholder
              :label label
              :default-value default-value
@@ -739,7 +739,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              (on-external-update-value color-value))))]
 
     [:*
-     [:> input-tokens-value*
+     [:> input-token*
       {:placeholder placeholder
        :label label
        :default-value default-value
@@ -802,8 +802,8 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                          :on-close on-close-font-selector
                          :full-size true}]]))
 
-(mf/defc font-picker*
-  [{:keys [default-value input-ref on-blur on-update-value on-external-update-value token-resolve-result aria-label placeholder]}]
+(mf/defc font-picker-combobox*
+  [{:keys [default-value label aria-label input-ref on-blur on-update-value on-external-update-value token-resolve-result placeholder]}]
   (let [font* (mf/use-state (fonts/find-font-family default-value))
         font (deref font*)
         set-font (mf/use-fn
@@ -849,9 +849,9 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
            :variant "action"
            :type "button"}])]
     [:*
-     [:> input-tokens-value*
+     [:> input-token*
       {:placeholder (or placeholder (tr "workspace.tokens.token-font-family-value-enter"))
-       :label (when-not aria-label (tr "workspace.tokens.token-font-family-value"))
+       :label label
        :aria-label aria-label
        :default-value default-value
        :ref input-ref
@@ -875,7 +875,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              (ctt/join-font-family value))))]
     [:> form*
      (mf/spread-props props {:token (when token (update token :value ctt/join-font-family))
-                             :custom-input-token-value font-picker*
+                             :custom-input-token-value font-picker-combobox*
                              :on-value-resolve on-value-resolve
                              :validate-token validate-font-family-token})]))
 
@@ -959,7 +959,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                 :class (stl/css :input-row)}
           (case k
             :font-family
-            [:> font-picker*
+            [:> font-picker-combobox*
              {:aria-label label
               :placeholder placeholder
               :input-ref input-ref
@@ -968,7 +968,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
               :on-update-value on-change
               :on-external-update-value on-external-update-value
               :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}]
-            [:> input-tokens-value*
+            [:> input-token*
              {:aria-label label
               :placeholder placeholder
               :default-value value
@@ -979,7 +979,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
 (mf/defc typography-reference-input*
   [{:keys [default-value on-blur on-update-value token-resolve-result]}]
-  [:> input-tokens-value*
+  [:> input-token*
    {:aria-label (tr "labels.reference")
     :placeholder (tr "workspace.tokens.reference-composite")
     :icon i/text-typography
