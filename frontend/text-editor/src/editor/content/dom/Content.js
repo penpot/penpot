@@ -14,6 +14,11 @@ import {
 } from "./Paragraph.js";
 import { isDisplayBlock, normalizeStyles } from "./Style.js";
 
+const DEFAULT_FONT_SIZE = "14px";
+const DEFAULT_FONT_WEIGHT = 400;
+const DEFAULT_FONT_FAMILY = "sourcesanspro";
+const DEFAULT_FILLS = '[["^ ","~:fill-color", "#000000","~:fill-opacity", 1]]';
+
 /**
  * Returns if the content fragment should be treated as
  * inline content and not a paragraphed one.
@@ -72,11 +77,26 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
     }
     const inline = createInline(new Text(currentNode.nodeValue), currentStyle);
     const fontSize = inline.style.getPropertyValue("font-size");
-    if (!fontSize) console.warn("font-size", fontSize);
+    if (!fontSize) {
+      console.warn("font-size", fontSize);
+      inline.style.setProperty("font-size", styleDefaults?.getPropertyValue("font-size") ?? DEFAULT_FONT_SIZE);
+    }
     const fontFamily = inline.style.getPropertyValue("font-family");
-    if (!fontFamily) console.warn("font-family", fontFamily);
+    if (!fontFamily) {
+      console.warn("font-family", fontFamily);
+      inline.style.setProperty("font-family", styleDefaults?.getPropertyValue("font-family") ?? DEFAULT_FONT_FAMILY);
+    }
     const fontWeight = inline.style.getPropertyValue("font-weight");
-    if (!fontWeight) console.warn("font-weight", fontWeight);
+    if (!fontWeight) {
+      console.warn("font-weight", fontWeight);
+      inline.style.setProperty("font-weight", styleDefaults?.getPropertyValue("font-weight") ?? DEFAULT_FONT_WEIGHT)
+    }
+    const fills = inline.style.getPropertyValue('--fills');
+    if (!fills) {
+      console.warn("fills", fills);
+      inline.style.setProperty("--fills", styleDefaults?.getPropertyValue("--fills") ?? DEFAULT_FILLS);
+    }
+
     currentParagraph.appendChild(inline);
 
     currentNode = nodeIterator.nextNode();

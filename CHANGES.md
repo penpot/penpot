@@ -34,6 +34,8 @@
 - New text-decoration token [Taiga #10941](https://tree.taiga.io/project/penpot/us/10941)
 - New letter spacing token [Taiga #10940](https://tree.taiga.io/project/penpot/us/10940)
 - New font weight token [Taiga #10939](https://tree.taiga.io/project/penpot/us/10939)
+- Upgrade Node to v22.18.0 [Github #7283](https://github.com/penpot/penpot/pull/7283)
+- Upgrade the base docker image for penpot frontend to v1.29.1 [Github #7283](https://github.com/penpot/penpot/pull/7283)
 
 ### :bug: Bugs fixed
 
@@ -58,6 +60,7 @@
 - Layout item tokens should be unapplied when moving out of a layout [Taiga #11012](https://tree.taiga.io/project/penpot/issue/11012)
 - Fix incorrect date displayed for support plan [Taiga #11986](https://tree.taiga.io/project/penpot/issue/11986)
 - Fix can't import 'borderWidth' type token [#132](https://github.com/tokens-studio/penpot/issues/132)
+- Fix moving elements up or down while pressing alt [Taiga Issue #11992](https://tree.taiga.io/project/penpot/issue/11992)
 
 ## 2.9.0
 

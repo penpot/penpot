@@ -1,4 +1,4 @@
-FROM nginxinc/nginx-unprivileged:1.28.0
+FROM nginxinc/nginx-unprivileged:1.29.1
 LABEL maintainer="Penpot <docker@penpot.app>"
 
 USER root

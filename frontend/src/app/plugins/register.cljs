@@ -71,9 +71,9 @@
           :code code
           :icon icon
           :permissions (into #{} (map str) permissions)})]
-    (if (sm/validate ::ctp/registry-entry manifest)
+    (if (sm/validate ctp/schema:registry-entry manifest)
       manifest
-      (.error js/console (clj->js (sm/explain ::ctp/registry-entry manifest))))))
+      (.error js/console (clj->js (sm/explain ctp/schema:registry-entry manifest))))))
 
 (defn save-to-store
   []
