@@ -662,6 +662,20 @@
                          vec)})
          groups)))
 
+(defn- filter-non-empty-sets
+  "Removes sets that have no tokens.
+  
+   Input:
+   [{:set \"brand/light\" :tokens []}
+    {:set \"brand/dark\"  :tokens [{:name \"background\"}]}]
+  
+   Output:
+   [{:set \"brand/dark\" :tokens [{:name \"background\"}]}]"
+  [sets]
+  (filter (fn [{:keys [tokens]}]
+            (seq tokens))
+          sets))
+
 (defn- add-tokens-to-sets
   "Extracts set name and its tokens from raw set objects.
   
@@ -742,6 +756,7 @@
                   (ctob/get-sets)
                   (add-tokens-to-sets)
                   (filter-active-sets active-sets-names)
+                  (filter-non-empty-sets)
                   (group-sets)
                   (combine-groups-with-resolved color-tokens)))]
 
