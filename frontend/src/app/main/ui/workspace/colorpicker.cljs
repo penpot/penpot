@@ -600,31 +600,31 @@
              :maxHeight max-height-top}))))
 
 (defn- group-sets
-  "Groups sets by their top-level group name (prefix before '/') if present.
-  
-     Input: 
-     A vector of maps like:
-     [{:set \"brand/light\" :tokens [{:name \"background\"} ...]}
-      {:set \"primitivos\" :tokens [{:name \"blue-100\"} ...]}]
-  
-     Output: 
-     A vector of maps like:
-     [{:group \"brand\"
-       :sets [\"light\" \"dark\"]
-       :tokens [\"background\" \"foreground\"]}
-      {:group nil
-       :sets [\"primitivos\"]
-       :tokens [\"blue-100\" \"red-100\"]}]"
+  "Groups sets by their parent path (everything before the last '/') if present.
+   The set name is always the last part of the path.
+
+   Input:
+   [{:set \"brand/subgroup/one\" :tokens [{:name \"background\"}]}
+    {:set \"brand/subgroup/two\" :tokens [{:name \"foreground\"}]}
+    {:set \"primitives\" :tokens [{:name \"blue-100\"}]}]
+
+   Output:
+   [{:group \"brand/subgroup\"
+     :sets  [\"one\" \"two\"]
+     :tokens [\"background\" \"foreground\"]}
+    {:group nil
+     :sets  [\"primitives\"]
+     :tokens [\"blue-100\"]}]"
 
   [sets]
   (->> sets
        (group-by (fn [{:keys [set]}]
                    (when (str/includes? set "/")
-                     (first (str/split set #"/")))))
+                     (str/join "/" (butlast (str/split set #"/"))))))
        (map (fn [[group grouped-sets]]
               (if group
                 {:group group
-                 :sets  (map #(second (str/split (:set %) #"/")) grouped-sets)
+                 :sets  (map #(last (str/split (:set %) #"/")) grouped-sets)
                  :tokens (->> grouped-sets
                               (mapcat :tokens)
                               (map :name)

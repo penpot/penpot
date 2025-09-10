@@ -233,8 +233,19 @@
                                          tokens)]
                     (when (seq filtered)
                       (assoc entry :tokens filtered)))))
-           (remove nil?)
-           vec))))
+           (remove nil?)))))
+
+(defn- sort-combined-tokens
+  "Sorts tokens alphabetically by :name inside each group/set.
+   Input: 
+   [{:group \"brand\", :sets [\"light\" \"dark\"], :tokens [{:name \"foreground\"} {:name \"background\"}]}]
+   
+   Output:
+   [{:group \"brand\", :sets [\"light\" \"dark\"], :tokens [{:name \"background\"} {:name \"foreground\"}]}]"
+  [combined-tokens]
+  (map (fn [entry]
+         (update entry :tokens #(sort-by :name %)))
+       combined-tokens))
 
 (mf/defc token-section*
   {}
@@ -259,7 +270,8 @@
            (let [value (-> event (dom/get-target)
                            (dom/get-value))]
              (reset! filter-term* value))))
-        filtered-combined (filter-combined-tokens combined-tokens filter-term)]
+        filtered-combined (filter-combined-tokens combined-tokens filter-term)
+        sorted-tokens     (sort-combined-tokens filtered-combined)]
     (if combined-tokens
       [:div {:class (stl/css :color-tokens-section)}
        [:> input* {:placeholder "Search by token name"
@@ -269,7 +281,7 @@
                    :class (stl/css :search-input)
                    :default-value filter-term
                    :on-change on-filter-tokens}]
-       (for [combined-sets filtered-combined]
+       (for [combined-sets sorted-tokens]
          (let  [name (label-group-or-set combined-sets)]
            [:> set-section*
             {:collapsed (not (contains?  open-sets name))
