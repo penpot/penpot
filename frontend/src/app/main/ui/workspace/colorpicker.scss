@@ -86,13 +86,6 @@
   }
 }
 
-.color-token-empty-state {
-  @include t.use-typography("body-small");
-  padding: var(--sp-s) var(--sp-xxl);
-  text-align: center;
-  color: var(--color-foreground-secondary);
-}
-
 .gradient-buttons {
   display: flex;
   align-items: center;

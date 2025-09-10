@@ -34,6 +34,14 @@
   }
 }
 
+
+.color-token-empty-state {
+  @include t.use-typography("body-small");
+  padding: var(--sp-s) var(--sp-xxl);
+  text-align: center;
+  color: var(--color-foreground-secondary);
+}
+
 .color-token-selected {
   background-color: var(--color-background-tertiary);
 }
