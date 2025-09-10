@@ -35,7 +35,7 @@
 (def xf:map-shape-id
   (map :shape-id))
 
-(defn- generate-color-options
+(defn- generate-color-operations
   [groups old-color prev-colors]
   (let [old-color   (-> old-color
                         (dissoc :name :path)
@@ -76,7 +76,7 @@
                  groups      (mf/ref-val groups-ref)
                  prev-colors (mf/ref-val prev-colors-ref)
 
-                 [color-options old-color] (generate-color-options groups old-color prev-colors)]
+                 [color-options old-color] (generate-color-operations groups old-color prev-colors)]
 
              (when from-picker?
                (let [color (-> new-color
@@ -118,7 +118,7 @@
                  color (-> new-color
                            (dissoc :name :path)
                            (d/without-nils))
-                 [color-options _] (generate-color-options groups old-color prev-colors)]
+                 [color-options _] (generate-color-operations groups old-color prev-colors)]
              (mf/set-ref-val! prev-colors-ref
                               (conj prev-colors color))
              (st/emit! (dwta/apply-token-on-selected color-options token)))))]
