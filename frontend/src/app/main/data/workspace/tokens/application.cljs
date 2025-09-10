@@ -586,14 +586,14 @@
 
 
 (defn apply-token-on-selected
-  [color-options token]
+  [color-operations token]
   (ptk/reify ::apply-token-on-selected
     ptk/WatchEvent
     (watch [_ _ _]
       (let [undo-id (js/Symbol)]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (->> (rx/from color-options)
+         (->> (rx/from color-operations)
               (rx/map
                (fn [cop]
                  (let [shape-ids [(:shape-id cop)]]

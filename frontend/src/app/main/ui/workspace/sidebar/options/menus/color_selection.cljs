@@ -41,11 +41,11 @@
                         (dissoc :name :path)
                         (d/without-nils))
         prev-color  (d/seek (partial get groups) prev-colors)
-        color-options-old    (get groups old-color)
-        color-options-prev   (get groups prev-colors)
-        color-options        (or color-options-prev color-options-old)
+        color-operations-old    (get groups old-color)
+        color-operations-prev   (get groups prev-colors)
+        color-operations        (or color-operations-prev color-operations-old)
         old-color   (or prev-color old-color)]
-    [color-options old-color]))
+    [color-operations old-color]))
 
 (mf/defc color-selection-menu*
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
@@ -76,7 +76,7 @@
                  groups      (mf/ref-val groups-ref)
                  prev-colors (mf/ref-val prev-colors-ref)
 
-                 [color-options old-color] (generate-color-operations groups old-color prev-colors)]
+                 [color-operations old-color] (generate-color-operations groups old-color prev-colors)]
 
              (when from-picker?
                (let [color (-> new-color
@@ -85,7 +85,7 @@
                  (mf/set-ref-val! prev-colors-ref
                                   (conj prev-colors color))))
 
-             (st/emit! (dwc/change-color-in-selected color-options new-color old-color)))))
+             (st/emit! (dwc/change-color-in-selected color-operations new-color old-color)))))
 
         on-open
         (mf/use-fn #(mf/set-ref-val! prev-colors-ref []))
@@ -97,16 +97,16 @@
         (mf/use-fn
          (fn [color]
            (let [groups (mf/ref-val groups-ref)
-                 color-options   (get groups color)
+                 color-operations   (get groups color)
                  color' (dissoc color :id :file-id)]
-             (st/emit! (dwc/change-color-in-selected color-options color' color)))))
+             (st/emit! (dwc/change-color-in-selected color-operations color' color)))))
 
         select-only
         (mf/use-fn
          (fn [color]
            (let [groups (mf/ref-val groups-ref)
-                 color-options   (get groups color)
-                 ids    (into (d/ordered-set) xf:map-shape-id color-options)]
+                 color-operations   (get groups color)
+                 ids    (into (d/ordered-set) xf:map-shape-id color-operations)]
              (st/emit! (dws/select-shapes ids)))))
         on-token-change
         (mf/use-fn
@@ -118,10 +118,10 @@
                  color (-> new-color
                            (dissoc :name :path)
                            (d/without-nils))
-                 [color-options _] (generate-color-operations groups old-color prev-colors)]
+                 [color-operations _] (generate-color-operations groups old-color prev-colors)]
              (mf/set-ref-val! prev-colors-ref
                               (conj prev-colors color))
-             (st/emit! (dwta/apply-token-on-selected color-options token)))))]
+             (st/emit! (dwta/apply-token-on-selected color-operations token)))))]
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
