@@ -12,13 +12,29 @@
    :height
    :left
    :top
-   :border-radius
+   :border-start-start-radius
+   :border-start-end-radius
+   :border-end-start-radius
+   :border-end-end-radius
    :transform])
+
+(def ^:private shape-prop->border-radius-prop
+  {:border-start-start-radius :r1
+   :border-start-end-radius :r2
+   :border-end-start-radius :r3
+   :border-end-end-radius :r4})
+
+(defn- get-applied-tokens-in-shape
+  [shape-tokens property]
+  (let [border-prop (get shape-prop->border-radius-prop property)]
+    (if border-prop
+      (get shape-tokens border-prop)
+      (get shape-tokens property))))
 
 (defn- get-resolved-token
   [property shape resolved-tokens]
   (let [shape-tokens (:applied-tokens shape)
-        applied-tokens-in-shape (get shape-tokens property)
+        applied-tokens-in-shape (get-applied-tokens-in-shape shape-tokens property)
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 

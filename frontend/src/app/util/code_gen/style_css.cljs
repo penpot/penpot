@@ -73,7 +73,10 @@ body {
    :transform
    :background
    :border
-   :border-radius
+   :border-start-start-radius
+   :border-start-end-radius
+   :border-end-start-radius
+   :border-end-end-radius
    :box-shadow
    :filter
    :opacity

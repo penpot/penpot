@@ -195,6 +195,26 @@
     (every? some? [r1 r2 r3 r4])
     [r1 r2 r3 r4]))
 
+(defmethod get-value :border-start-start-radius
+  [_ {:keys [_ r1 _ _ _] :as shape} _ _]
+  (when (and r1 (not= r1 0))
+    [r1]))
+
+(defmethod get-value :border-start-end-radius
+  [_ {:keys [_ _ r2 _ _] :as shape} _ _]
+  (when (and r2 (not= r2 0))
+    [r2]))
+
+(defmethod get-value :border-end-start-radius
+  [_ {:keys [_ _ _ r3 _] :as shape} _ _]
+  (when (and r3 (not= r3 0))
+    [r3]))
+
+(defmethod get-value :border-end-end-radius
+  [_ {:keys [_ _ _ _ r4] :as shape} _ _]
+  (when (and r4 (not= r4 0))
+    [r4]))
+
 (defmethod get-value :border-style
   [_ stroke _ _]
   (when-not (cgc/svg-markup? stroke)
