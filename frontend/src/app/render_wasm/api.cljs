@@ -1042,6 +1042,7 @@
 
 (defn- calculate-bool*
   [bool-type]
+  (println "wiii" (cljs.core/unchecked-get wasm/internal-module "BOOL_TYPE"))
   (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
       (mem/->offset-32)))
 
@@ -1072,7 +1073,8 @@
       (let [uri (cf/resolve-static-asset "js/render_wasm.js")]
         (->> (js/dynamicImport (str uri))
              (p/mcat (fn [module]
-                       (let [default (unchecked-get module "default")]
+                       (let [default (unchecked-get module "default")
+                             _ (println "bool_type" (unchecked-get module "RAW_FILL_DATA"))]
                          (default))))
              (p/fmap (fn [module]
                        (set! wasm/internal-module module)
