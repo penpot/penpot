@@ -217,7 +217,7 @@
   (update-token [_ id f] "update a token in the list")
   (delete-token [_ id] "delete a token from the list")
   (get-token [_ id] "get a token by its id")
-  (get-token-by-name [_ id] "get a token by its name")
+  (get-token-by-name [_ name] "get a token by its name")
   (get-tokens [_] "return an ordered sequence of all tokens in the set")
   (get-tokens-map [_] "return a map of tokens in the set, indexed by token-name"))
 

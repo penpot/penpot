@@ -77,12 +77,12 @@
                                                                           :name "token-font-family"
                                                                           :type :font-family
                                                                           :value ["Helvetica" "Arial" "sans-serif"]))
-                                  (ctob/add-token-in-set "test-token-set"
+                                  (ctob/add-token-in-set (thi/id :test-token-set)
                                                          (ctob/make-token :id (thi/new-id! :token-sizing)
                                                                           :name "token-sizing"
                                                                           :type :sizing
                                                                           :value 10))
-                                  (ctob/add-token-in-set "test-token-set"
+                                  (ctob/add-token-in-set (thi/id :test-token-set)
                                                          (ctob/make-token :id (thi/new-id! :token-spacing)
                                                                           :name "token-spacing"
                                                                           :type :spacing
