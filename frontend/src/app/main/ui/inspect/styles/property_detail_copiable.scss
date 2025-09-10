@@ -22,6 +22,7 @@
   @include use-typography("code-font");
   --detail-color: var(--color-token-foreground);
 
+  line-height: 1.4;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;

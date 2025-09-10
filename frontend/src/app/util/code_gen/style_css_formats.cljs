@@ -14,32 +14,36 @@
    [cuerdas.core :as str]))
 
 (def css-formatters
-  {:left                  :position
-   :top                   :position
-   :width                 :size
-   :height                :size
-   :min-width             :size
-   :min-height            :size
-   :max-width             :size
-   :max-height            :size
-   :background            :color
-   :border                :border
-   :border-radius         :string-or-size-array
-   :border-width          :border-width
-   :border-style          :border-style
-   :box-shadow            :shadows
-   :filter                :blur
-   :gap                   :size-array
-   :row-gap               :size-array
-   :column-gap            :size-array
-   :padding               :size-array
-   :padding-inline-start  :size-array
-   :padding-inline-end    :size-array
-   :padding-block-start   :size-array
-   :padding-block-end     :size-array
-   :margin                :size-array
-   :grid-template-rows    :tracks
-   :grid-template-columns :tracks})
+  {:left                      :position
+   :top                       :position
+   :width                     :size
+   :height                    :size
+   :min-width                 :size
+   :min-height                :size
+   :max-width                 :size
+   :max-height                :size
+   :background                :color
+   :border                    :border
+   :border-radius             :string-or-size-array
+   :border-start-start-radius :string-or-size-array
+   :border-start-end-radius   :string-or-size-array
+   :border-end-start-radius   :string-or-size-array
+   :border-end-end-radius     :string-or-size-array
+   :border-width              :border-width
+   :border-style              :border-style
+   :box-shadow                :shadows
+   :filter                    :blur
+   :gap                       :size-array
+   :row-gap                   :size-array
+   :column-gap                :size-array
+   :padding                   :size-array
+   :padding-inline-start      :size-array
+   :padding-inline-end        :size-array
+   :padding-block-start       :size-array
+   :padding-block-end         :size-array
+   :margin                    :size-array
+   :grid-template-rows        :tracks
+   :grid-template-columns     :tracks})
 
 (defmulti format-value
   (fn [property _value _options] (css-formatters property)))
