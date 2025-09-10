@@ -10,11 +10,10 @@
   [{:keys [theme-paths set-names]}]
   [:div {:class (stl/css :tokens-panel)}
    (when (seq theme-paths)
-     (for [theme theme-paths]
-       [:> properties-row* {:key theme
-                            :class (stl/css :token-theme)
+     (let [theme-list (str/join ", " theme-paths)]
+       [:> properties-row* {:class (stl/css :token-theme)
                             :term (tr "inspect.tabs.styles.panel.tokens.active-themes")
-                            :detail theme}]))
+                            :detail theme-list}]))
    (when (seq set-names)
      (let [sets-list (str/join ", " set-names)]
        [:> properties-row* {:class (stl/css :token-theme)
