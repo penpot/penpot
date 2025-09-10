@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
+   [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
@@ -2514,9 +2515,10 @@
             frames)))
 
 (defn- duplicate-variant
-  [changes library component base-pos parent-id page-id]
+  [changes library component base-pos parent page-id into-new-variant?]
   (let [component-page   (ctpl/get-page (:data library) (:main-instance-page component))
-        component-shape  (dm/get-in component-page [:objects (:main-instance-id component)])
+        objects          (:objects component-page)
+        component-shape  (get objects (:main-instance-id component))
         orig-pos         (gpt/point (:x component-shape) (:y component-shape))
         delta            (gpt/subtract base-pos orig-pos)
         new-component-id (uuid/next)
@@ -2526,11 +2528,27 @@
                                                        new-component-id
                                                        {:apply-changes-local-library? true
                                                         :delta delta
-                                                        :new-variant-id parent-id
-                                                        :page-id page-id})]
+                                                        :new-variant-id (if into-new-variant? nil (:id parent))
+                                                        :page-id page-id})
+        value             (when into-new-variant?
+                            (str ctv/value-prefix
+                                 (-> (cfv/extract-properties-values (:data library) objects (:id parent))
+                                     last
+                                     :value
+                                     count
+                                     inc)))]
+
     [shape
-     (-> changes
-         (pcb/change-parent parent-id [shape]))]))
+     (cond-> changes
+       into-new-variant?
+       (clvp/generate-make-shapes-variant [shape] parent)
+
+       ;; If it has the same parent, update the value of the last property
+       (and into-new-variant? (= (:variant-id component) (:id parent)))
+       (clvp/generate-update-property-value new-component-id (-> component :variant-properties count dec) value)
+
+       :always
+       (pcb/change-parent (:id parent) [shape] 0))]))
 
 
 (defn generate-duplicate-component-change
@@ -2542,10 +2560,12 @@
         pos          (as-> (gsh/move main delta) $
                        (gpt/point (:x $) (:y $)))
 
+        parent       (get objects parent-id)
+
+
         ;; When we duplicate a variant alone, we will instanciate it
         ;; When we duplicate a variant along with its variant-container, we will duplicate it
         in-variant-container? (contains? ids-map (:variant-id main))
-
 
         restore-component
         #(let [{:keys [shape changes]}
@@ -2559,29 +2579,42 @@
                                           frame-id)]
            [shape changes])
 
-        [_shape changes]
-        (if (nil? component)
-          (restore-component)
-          (if (and (ctk/is-variant? main) in-variant-container?)
-            (duplicate-variant changes
-                               (get libraries file-id)
-                               component
-                               pos
-                               parent-id
-                               (:id page))
 
-            (generate-instantiate-component changes
-                                            objects
-                                            file-id
-                                            component-id
-                                            pos
-                                            page
-                                            libraries
-                                            main-id
-                                            parent-id
-                                            frame-id
-                                            ids-map
-                                            {})))]
+        [_shape changes]
+        (cond
+          (nil? component)
+          (restore-component)
+
+          (and (ctk/is-variant? main) in-variant-container?)
+          (duplicate-variant changes
+                             (get libraries file-id)
+                             component
+                             pos
+                             parent
+                             (:id page)
+                             false)
+
+          (ctk/is-variant-container? parent)
+          (duplicate-variant changes
+                             (get libraries file-id)
+                             component
+                             pos
+                             parent
+                             (:id page)
+                             true)
+          :else
+          (generate-instantiate-component changes
+                                          objects
+                                          file-id
+                                          component-id
+                                          pos
+                                          page
+                                          libraries
+                                          main-id
+                                          parent-id
+                                          frame-id
+                                          ids-map
+                                          {}))]
     changes))
 
 (defn generate-duplicate-shape-change
@@ -2740,7 +2773,8 @@
 
         changes (-> changes
                     (pcb/with-page page)
-                    (pcb/with-objects all-objects))
+                    (pcb/with-objects all-objects)
+                    (pcb/with-library-data library-data))
         changes
         (->> shapes
              (reduce #(generate-duplicate-shape-change %1

@@ -15,6 +15,7 @@
 
 - Fix selection problems when devtools open [Taiga #11950](https://tree.taiga.io/project/penpot/issue/11950)
 - Fix long font names overlap [Taiga #11844](https://tree.taiga.io/project/penpot/issue/11844)
+- Fix paste behavior according to the selected element [Taiga #11979](https://tree.taiga.io/project/penpot/issue/11979)
 
 ## 2.10.0 (Unreleased)
 

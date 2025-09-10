@@ -543,7 +543,7 @@
               ;; mains can't be nested into mains
               (if (or (= context :not-component) (= context :main-top))
                 (report-error :nested-main-not-allowed
-                              "Nested main component only allowed inside other component"
+                              "Component main not allowed inside other component"
                               shape file page)
                 (check-shape-main-root-nested shape file page libraries))
 
@@ -608,6 +608,20 @@
                     (str/ffmt "Shape % should be a variant" (:id main-component))
                     main-component file component-page))))
 
+(defn- check-main-inside-main
+  [component file]
+  (let [component-page (ctf/get-component-page (:data file) component)
+        main-instance  (ctst/get-shape component-page (:main-instance-id component))
+        main-parents?  (->> main-instance
+                            :id
+                            (cfh/get-parents (:objects component-page))
+                            (some ctk/main-instance?)
+                            boolean)]
+    (when main-parents?
+      (report-error :nested-main-not-allowed
+                    "Component main not allowed inside other component"
+                    main-instance file component-page))))
+
 (defn- check-component
   "Validate semantic coherence of a component. Report all errors found."
   [component file]
@@ -615,6 +629,8 @@
     (report-error :component-nil-objects-not-allowed
                   "Objects list cannot be nil"
                   component file nil))
+  (when-not (:deleted component)
+    (check-main-inside-main component file))
   (when (:deleted component)
     (check-component-duplicate-swap-slot component file)
     (check-ref-cycles component file))
