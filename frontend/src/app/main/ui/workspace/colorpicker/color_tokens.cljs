@@ -228,9 +228,9 @@
       (->> combined-tokens
            (map (fn [{:keys [tokens] :as entry}]
                   (let [filtered (filter #(str/includes?
-                                            (str/lower (:name %))
-                                            term)
-                                          tokens)]
+                                           (str/lower (:name %))
+                                           term)
+                                         tokens)]
                     (when (seq filtered)
                       (assoc entry :tokens filtered)))))
            (remove nil?)

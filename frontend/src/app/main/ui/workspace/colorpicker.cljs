@@ -630,10 +630,10 @@
                               (map :name)
                               distinct)}
                 (map (fn [{:keys [set tokens]}]
-                        {:group nil
-                         :sets [set]
-                         :tokens (map :name tokens)})
-                      grouped-sets))))
+                       {:group nil
+                        :sets [set]
+                        :tokens (map :name tokens)})
+                     grouped-sets))))
        flatten))
 
 (defn- combine-groups-with-resolved
@@ -654,13 +654,13 @@
   [groups resolved-tokens]
   (let [token-map (into {} (map (juxt :name identity) resolved-tokens))]
     (map (fn [{:keys [group sets tokens]}]
-            {:group group
-             :sets  sets
-             :tokens (->> tokens
-                          (map #(get token-map %))
-                          (remove nil?)
-                          vec)})
-          groups)))
+           {:group group
+            :sets  sets
+            :tokens (->> tokens
+                         (map #(get token-map %))
+                         (remove nil?)
+                         vec)})
+         groups)))
 
 (defn- add-tokens-to-sets
   "Extracts set name and its tokens from raw set objects.
@@ -674,9 +674,9 @@
      [{:set \"brand/light\" :tokens [{:name \"background\" ...} ...]}]"
   [sets]
   (map (fn [s]
-          {:set    (ctob/get-name s)
-           :tokens (ctob/get-tokens s)})
-        sets))
+         {:set    (ctob/get-name s)
+          :tokens (ctob/get-tokens s)})
+       sets))
 
 (defn- filter-active-sets
   "Filters sets to only include those whose :set value is in active-set-names.
