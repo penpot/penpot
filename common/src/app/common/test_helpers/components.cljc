@@ -72,6 +72,10 @@
   [file id]
   (ctkl/get-component (:data file) id))
 
+(defn get-components
+  [file]
+  (ctkl/components (:data file)))
+
 (defn- set-children-labels!
   [file shape-label children-labels]
   (doseq [[label id]
