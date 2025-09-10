@@ -573,6 +573,12 @@ impl Shape {
             .filter(|stroke| stroke.width > MIN_STROKE_WIDTH)
     }
 
+    pub fn has_visible_strokes(&self) -> bool {
+        self.strokes
+            .iter()
+            .any(|stroke| stroke.width > MIN_STROKE_WIDTH)
+    }
+
     pub fn add_stroke(&mut self, s: Stroke) {
         self.invalidate_extrect();
         self.strokes.push(s)
@@ -984,6 +990,7 @@ impl Shape {
         }
     }
 
+    #[allow(dead_code)]
     pub fn mask_filter(&self, scale: f32) -> Option<skia::MaskFilter> {
         if !self.blur.hidden {
             match self.blur.blur_type {
@@ -1020,6 +1027,12 @@ impl Shape {
         self.shadows
             .iter()
             .filter(|shadow| shadow.style() == ShadowStyle::Drop)
+    }
+
+    pub fn drop_shadows_visible(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
+        self.shadows
+            .iter()
+            .filter(|shadow| shadow.style() == ShadowStyle::Drop && !shadow.hidden())
     }
 
     pub fn inner_shadows(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
@@ -1162,11 +1175,6 @@ impl Shape {
         !self.fills.is_empty()
     }
 
-    #[allow(dead_code)]
-    pub fn has_visible_inner_strokes(&self) -> bool {
-        self.visible_strokes().any(|s| s.kind == StrokeKind::Inner)
-    }
-
     pub fn count_visible_inner_strokes(&self) -> usize {
         self.visible_strokes()
             .filter(|s| s.kind == StrokeKind::Inner)
@@ -1208,6 +1216,20 @@ impl Shape {
         } else {
             self.children_ids(include_hidden)
         }
+    }
+
+    pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
+        let drop_shadows: Vec<&crate::shapes::shadows::Shadow> =
+            self.drop_shadows().filter(|s| !s.hidden()).collect();
+        drop_shadows
+            .into_iter()
+            .map(|shadow| {
+                let mut paint = skia_safe::Paint::default();
+                let filter = shadow.get_drop_shadow_filter();
+                paint.set_image_filter(filter);
+                paint
+            })
+            .collect()
     }
 
     pub fn inner_shadow_paints(&self) -> Vec<skia_safe::Paint> {

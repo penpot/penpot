@@ -1,22 +1,55 @@
 use super::{RenderState, Shape, SurfaceId};
 use crate::shapes::VerticalAlign;
 use skia_safe::{
-    canvas::SaveLayerRec, textlayout::LineMetrics, textlayout::Paragraph,
-    textlayout::ParagraphBuilder, textlayout::RectHeightStyle, textlayout::RectWidthStyle,
-    textlayout::StyleMetrics, textlayout::TextDecoration, textlayout::TextStyle, Canvas, Paint,
-    Path,
+    canvas::SaveLayerRec,
+    textlayout::{
+        LineMetrics, Paragraph, ParagraphBuilder, RectHeightStyle, RectWidthStyle, StyleMetrics,
+        TextDecoration, TextStyle,
+    },
+    Canvas, ImageFilter, Paint, Path,
 };
 
 pub fn render(
-    render_state: &mut RenderState,
+    render_state: Option<&mut RenderState>,
+    canvas: Option<&Canvas>,
     shape: &Shape,
     paragraphs: &mut [Vec<ParagraphBuilder>],
     surface_id: Option<SurfaceId>,
+    shadow: Option<&Paint>,
+    blur: Option<&ImageFilter>,
 ) {
-    let canvas = render_state
-        .surfaces
-        .canvas(surface_id.unwrap_or(SurfaceId::Fills));
+    let render_canvas = if let Some(rs) = render_state {
+        rs.surfaces.canvas(surface_id.unwrap_or(SurfaceId::Fills))
+    } else if let Some(c) = canvas {
+        c
+    } else {
+        return;
+    };
 
+    if let Some(blur_filter) = blur {
+        let mut blur_paint = Paint::default();
+        blur_paint.set_image_filter(blur_filter.clone());
+        let blur_layer = SaveLayerRec::default().paint(&blur_paint);
+        render_canvas.save_layer(&blur_layer);
+    }
+
+    if let Some(shadow_paint) = shadow {
+        let layer_rec = SaveLayerRec::default().paint(shadow_paint);
+        render_canvas.save_layer(&layer_rec);
+        draw_text(render_canvas, shape, paragraphs);
+        render_canvas.restore();
+    } else {
+        draw_text(render_canvas, shape, paragraphs);
+    }
+
+    if blur.is_some() {
+        render_canvas.restore();
+    }
+
+    render_canvas.restore();
+}
+
+fn draw_text(canvas: &Canvas, shape: &Shape, paragraphs: &mut [Vec<ParagraphBuilder>]) {
     // Width
     let paragraph_width = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
         text_content.width()
@@ -63,8 +96,6 @@ pub fn render(
             global_offset_y = group_offset_y;
         }
     }
-
-    canvas.restore();
 }
 
 fn draw_text_decorations(
@@ -286,11 +317,11 @@ pub fn render_as_path(
 //     let text_content = text_content.new_bounds(shape.selrect());
 //     let paths = text_content.get_paths(antialias);
 
-//     shadows::render_text_drop_shadows(self, &shape, &paths, antialias);
+//     shadows::render_text_shadows(self, &shape, &paths, antialias);
 //     text::render(self, &paths, None, None);
 
 //     for stroke in shape.visible_strokes().rev() {
-//         shadows::render_text_path_stroke_drop_shadows(
+//         shadows::render_text_path_stroke_shadows(
 //             self, &shape, &paths, stroke, antialias,
 //         );
 //         strokes::render_text_paths(self, &shape, stroke, &paths, None, None, antialias);

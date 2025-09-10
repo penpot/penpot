@@ -3,11 +3,10 @@ use std::collections::HashMap;
 use crate::math::{Matrix, Point, Rect};
 
 use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
-use skia_safe::{self as skia, textlayout::ParagraphBuilder, ImageFilter, RRect};
+use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
 use crate::render::filters::compose_filters;
-use crate::render::text::{self};
 use crate::render::{get_dest_rect, get_source_rect};
 
 // FIXME: See if we can simplify these arguments
@@ -519,7 +518,6 @@ pub fn render(
     stroke: &Stroke,
     surface_id: Option<SurfaceId>,
     shadow: Option<&ImageFilter>,
-    paragraphs: Option<&mut Vec<Vec<ParagraphBuilder>>>,
     antialias: bool,
 ) {
     let scale = render_state.get_scale();
@@ -564,14 +562,7 @@ pub fn render(
                 shape.image_filter(1.).as_ref(),
                 antialias,
             ),
-            Type::Text(_) => {
-                text::render(
-                    render_state,
-                    shape,
-                    paragraphs.expect("Text shapes should have paragraphs"),
-                    surface_id,
-                );
-            }
+            Type::Text(_) => {}
             shape_type @ (Type::Path(_) | Type::Bool(_)) => {
                 if let Some(path) = shape_type.path() {
                     draw_stroke_on_path(
