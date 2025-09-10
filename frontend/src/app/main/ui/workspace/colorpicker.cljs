@@ -99,13 +99,13 @@
 
         should-update?         (mf/use-var true)
         token-color            (contains? cfg/flags :token-color)
-        color-style*           (mf/use-state :color)
+        color-style*           (mf/use-state :direct-color)
         color-style            (deref color-style*)
         toggle-token-color
         (mf/use-fn
          (mf/deps color-style)
          (fn []
-           (let [new-style (if (= :color color-style) :token-color :color)]
+           (let [new-style (if (= :direct-color color-style) :token-color :direct-color)]
              (reset! color-style* new-style))))
 
         ;; TODO: I think we need to put all this picking state under
@@ -395,7 +395,7 @@
       [:div {:class (stl/css :top-actions)}
 
        [:div {:class (stl/css :top-actions-right)}
-        (when (and (= color-style :color)
+        (when (and (= color-style :direct-color)
                    (= :gradient selected-mode))
           [:div {:class (stl/css :opacity-input-wrapper)}
            [:span {:class (stl/css :icon-text)} "%"]
@@ -407,7 +407,7 @@
              :min 0
              :max 100}]])
 
-        (when (and (= color-style :color)
+        (when (and (= color-style :direct-color)
                    (or (not disable-gradient) (not disable-image)))
           [:div {:class (stl/css :select)}
            [:& select
@@ -420,7 +420,7 @@
                              :on-change toggle-token-color
                              :name "color-style"}
            [:& radio-button {:icon deprecated-icon/swatches
-                             :value :color
+                             :value :direct-color
                              :title (tr "labels.color")
                              :id "opt-color"}]
            [:& radio-button {:icon deprecated-icon/tokens
@@ -429,7 +429,7 @@
                              :id "opt-token-color"}]])]
 
        (when (and (not= selected-mode :image)
-                  (= color-style :color))
+                  (= color-style :direct-color))
          [:button {:class (stl/css-case :picker-btn true
                                         :selected picking-color?)
                    :on-click handle-click-picker}
@@ -439,7 +439,7 @@
          [:div {:class (stl/css :token-color-title)}
           (tr "workspace.colorpicker.color-tokens")])]
 
-      (if (= color-style :color)
+      (if (= color-style :direct-color)
         [:*
          (when (= selected-mode :gradient)
            [:> gradients*
