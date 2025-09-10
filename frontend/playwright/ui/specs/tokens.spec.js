@@ -997,13 +997,9 @@ test.describe("Tokens: Themes modal", () => {
       };
 
       // Switch to reference tab and back to composite tab
-      const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Reference",
-      });
+      const referenceTabButton = tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceTabButton.click();
-      const compositeTabButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Composite",
-      });
+      const compositeTabButton = tokensUpdateCreateModal.getByTestId("composite-opt");
       await compositeTabButton.click();
 
       // Verify all values are preserved after switching tabs
@@ -1053,9 +1049,7 @@ test.describe("Tokens: Themes modal", () => {
       await expect(submitButton).toBeDisabled();
 
       // Switch to reference tab, should not be submittable either
-      const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Reference",
-      });
+   const referenceTabButton = tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceTabButton.click();
       await expect(submitButton).toBeDisabled();
     });
@@ -1076,9 +1070,7 @@ test.describe("Tokens: Themes modal", () => {
       const nameField = tokensUpdateCreateModal.getByLabel("Name");
       await nameField.fill(newTokenTitle);
 
-      const referenceTabButton = tokensUpdateCreateModal.getByRole("button", {
-        name: "Reference",
-      });
+         const referenceTabButton = tokensUpdateCreateModal.getByTestId("reference-opt");
       referenceTabButton.click();
 
       const referenceField = tokensUpdateCreateModal.getByLabel("Reference");

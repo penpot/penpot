@@ -2380,6 +2380,10 @@ msgstr "Perfil"
 msgid "labels.projects"
 msgstr "Proyectos"
 
+#:src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "labels.reference"
+msgstr "Referencia"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:909, src/app/main/ui/settings/sidebar.cljs:129, src/app/main/ui/workspace/main_menu.cljs:132
 msgid "labels.release-notes"
 msgstr "Notas de versión"
@@ -2551,6 +2555,10 @@ msgstr "Temas"
 #: src/app/main/ui/dashboard/sidebar.cljs:904, src/app/main/ui/workspace/main_menu.cljs:124
 msgid "labels.tutorials"
 msgstr "Tutoriales"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "labels.typography"
+msgstr "Tipografía"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
 msgid "labels.unknown-error"
@@ -7654,6 +7662,18 @@ msgstr "Introduce: none | uppercase | lowercase | capitalize o {alias}"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:871, src/app/main/ui/workspace/tokens/management/create/form.cljs:898
 msgid "workspace.tokens.text-decoration-value-enter"
 msgstr "Introduce text decoration: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Introduce letter spacing o {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.individual-tokens"
+msgstr "Usa tokens individuales"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.use-reference"
+msgstr "Usa una referencia"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"

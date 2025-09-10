@@ -260,6 +260,7 @@
 (def ^:icon text-uppercase (icon-xref :text-uppercase))
 (def ^:icon thumbnail (icon-xref :thumbnail))
 (def ^:icon tick (icon-xref :tick))
+(def ^:icon tokens (icon-xref :tokens))
 (def ^:icon to-corner (icon-xref :to-corner))
 (def ^:icon to-curve (icon-xref :to-curve))
 (def ^:icon tree (icon-xref :tree))

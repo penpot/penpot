@@ -12,12 +12,14 @@
    [app.common.data :as d]
    [app.main.constants :refer [max-input-length]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon* icon-list]]
+   [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:input-field
   [:map
    [:class {:optional true} :string]
+   [:aria-label {:optional true} [:maybe :string]]
    [:id :string]
    [:icon {:optional true}
     [:maybe [:and :string [:fn #(contains? icon-list %)]]]]
@@ -35,10 +37,13 @@
   [{:keys [id icon class type
            has-hint hint-type
            max-length variant
-           slot-start slot-end] :rest props} ref]
+           slot-start slot-end
+           aria-label] :rest props} ref]
   (let [input-ref (mf/use-ref)
         type  (d/nilv type "text")
         variant (d/nilv variant "dense")
+        tooltip-id (mf/use-id)
+
         props (mf/spread-props props
                                {:class (stl/css-case
                                         :input true
@@ -49,10 +54,10 @@
                                                 "true")
                                 :aria-describedby (when has-hint
                                                     (str id "-hint"))
+                                :aria-labelledby tooltip-id
                                 :type (d/nilv type "text")
                                 :id id
                                 :max-length (d/nilv max-length max-input-length)})
-
         on-icon-click
         (mf/use-fn
          (mf/deps ref)
@@ -72,7 +77,11 @@
      (when (some? slot-start)
        slot-start)
      (when (some? icon)
-       [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}])
+       (if aria-label
+         [:> tooltip* {:content aria-label
+                       :id tooltip-id}
+          [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}]]
+         [:> icon* {:icon-id icon :class (stl/css :icon) :on-click on-icon-click}]))
      [:> "input" props]
      (when (some? slot-end)
        slot-end)]))
