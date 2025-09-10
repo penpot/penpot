@@ -624,19 +624,17 @@
        (map (fn [[group grouped-sets]]
               (if group
                 {:group group
-                 :sets  (mapv #(second (str/split (:set %) #"/")) grouped-sets)
+                 :sets  (map #(second (str/split (:set %) #"/")) grouped-sets)
                  :tokens (->> grouped-sets
                               (mapcat :tokens)
                               (map :name)
-                              distinct
-                              vec)}
-                (mapv (fn [{:keys [set tokens]}]
+                              distinct)}
+                (map (fn [{:keys [set tokens]}]
                         {:group nil
                          :sets [set]
-                         :tokens (mapv :name tokens)})
+                         :tokens (map :name tokens)})
                       grouped-sets))))
-       flatten
-       vec))
+       flatten))
 
 (defn- combine-groups-with-resolved
   "Replaces token names in grouped sets with their full resolved token objects.
@@ -655,7 +653,7 @@
 
   [groups resolved-tokens]
   (let [token-map (into {} (map (juxt :name identity) resolved-tokens))]
-    (mapv (fn [{:keys [group sets tokens]}]
+    (map (fn [{:keys [group sets tokens]}]
             {:group group
              :sets  sets
              :tokens (->> tokens
@@ -675,7 +673,7 @@
      A vector of simplified maps:
      [{:set \"brand/light\" :tokens [{:name \"background\" ...} ...]}]"
   [sets]
-  (mapv (fn [s]
+  (map (fn [s]
           {:set    (ctob/get-name s)
            :tokens (ctob/get-tokens s)})
         sets))
@@ -694,7 +692,7 @@
      [{:set \"brand/light\" :tokens [...]}
       {:set \"primitivos\" :tokens [...]}]"
   [sets active-set-names]
-  (filterv #(contains? active-set-names (:set %)) sets))
+  (filter #(contains? active-set-names (:set %)) sets))
 
 (mf/defc colorpicker-modal
   {::mf/register modal/components
