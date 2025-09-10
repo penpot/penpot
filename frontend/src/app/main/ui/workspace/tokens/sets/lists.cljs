@@ -279,7 +279,7 @@
     [:div {:ref dref
            :role "button"
            :data-testid "tokens-set-item"
-           :id (str "token-set-item-" (str/join "/" tree-path))
+           :id (str "token-set-item-" (str/join "/" path))
            :style {"--tree-depth" depth}
            :class (stl/css-case :set-item-container true
                                 :selected-set is-selected
