@@ -17,6 +17,7 @@
   position: absolute;
   top: $sz-36;
   width: var(--dropdown-width, 100%);
+  transform: translateX(var(--dropdown-translate-distance, 0));
   background-color: var(--options-dropdown-bg-color);
   border-radius: $br-8;
   border: $b-1 solid var(--options-dropdown-border-color);

@@ -477,7 +477,7 @@
    :max-height #{:sizing :dimensions}
    :x #{:spacing :dimensions}
    :y #{:spacing :dimensions}
-   :rotation #{:number}
+   :rotation #{:number :rotation}
    :border-radius #{:border-radius :dimensions}
    :row-gap #{:spacing :dimensions}
    :column-gap #{:spacing :dimensions}
