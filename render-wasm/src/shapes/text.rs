@@ -4,6 +4,7 @@ use crate::{
     textlayout::paragraph_builder_group_from_text,
 };
 
+use macros::ToJs;
 use skia_safe::{
     self as skia,
     paint::{self, Paint},
@@ -18,14 +19,18 @@ use crate::utils::uuid_from_u32;
 use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
 pub enum GrowType {
-    Fixed,
-    AutoWidth,
-    AutoHeight,
+    Fixed = 0,
+    AutoWidth = 1,
+    AutoHeight = 2,
 }
 
+// TODO: maybe move this to the wasm module?
 impl GrowType {
+    // TODO: use transmute
     pub fn from(grow_type: u8) -> Self {
         match grow_type {
             0 => Self::Fixed,
@@ -134,6 +139,8 @@ impl Default for TextContent {
     }
 }
 
+// FIXME: Rethink this type. We'll probably need to move the serialization to the
+// wasm moduel and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
 pub struct Paragraph {
     num_leaves: u32,
@@ -207,6 +214,7 @@ impl Paragraph {
         self.children.push(leaf);
     }
 
+    // FIXME: move serialization to wasm module
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
         style.set_text_align(match self.text_align {

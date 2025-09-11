@@ -4,10 +4,11 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.render-wasm.serializers
-  (:require
-   [app.common.uuid :as uuid]
-   [cuerdas.core :as str]))
+ (ns app.render-wasm.serializers
+   (:require
+    [app.common.uuid :as uuid]
+    [app.render-wasm.wasm :as wasm]
+    [cuerdas.core :as str]))
 
 (defn u8
   [value]
@@ -56,37 +57,21 @@
 
 (defn translate-shape-type
   [type]
-  (case type
-    :frame   0
-    :group   1
-    :bool    2
-    :rect    3
-    :path    4
-    :text    5
-    :circle  6
-    :svg-raw 7
-    :image   8))
+  (let [values (:shape-type wasm/serializers)
+        default (:rect values)]
+    (get values type default)))
 
 (defn translate-stroke-style
   [stroke-style]
-  (case stroke-style
-    :dotted 1
-    :dashed 2
-    :mixed  3
-    0))
+  (let [values (:stroke-style wasm/serializers)
+        default (:solid values)]
+    (get values stroke-style default)))
 
 (defn translate-stroke-cap
   [stroke-cap]
-  (case stroke-cap
-    :line-arrow 1
-    :triangle-arrow 2
-    :square-marker 3
-    :circle-marker 4
-    :diamond-marker 5
-    :round 6
-    :square 7
-    0))
-
+  (let [values (:stroke-cap wasm/serializers)
+        default (:none values)]
+    (get values stroke-cap default)))
 
 (defn serialize-path-attrs
   [svg-attrs]
@@ -120,143 +105,99 @@
 
 (defn translate-constraint-h
   [type]
-  (case type
-    :left      0
-    :right     1
-    :leftright 2
-    :center    3
-    :scale     4))
+  (let [values (:constraint-h wasm/serializers)
+        default 5] ;; TODO: fix code in rust so we have a proper None variant
+    (get values type default)))
 
 (defn translate-constraint-v
   [type]
-  (case type
-    :top       0
-    :bottom    1
-    :topbottom 2
-    :center    3
-    :scale     4))
+  (let [values (:constraint-v wasm/serializers)
+        default 5] ;; TODO: fix code in rust so we have a proper None variant
+    (get values type default)))
 
 (defn translate-bool-type
   [bool-type]
-  (case bool-type
-    :union 0
-    :difference 1
-    :intersection 2
-    :exclude 3
-    0))
+  (let [values (:bool-type wasm/serializers)
+        default (:union values)]
+    (get values bool-type default)))
+
 
 (defn translate-blur-type
   [blur-type]
-  (case blur-type
-    :layer-blur 1
-    0))
+  (let [values (:blur-type wasm/serializers)
+        default (:none values)]
+    (get values blur-type default)))
 
 (defn translate-layout-flex-dir
   [flex-dir]
-  (case flex-dir
-    :row            0
-    :row-reverse    1
-    :column         2
-    :column-reverse 3))
+  (let [values (:flex-direction wasm/serializers)]
+    (get values flex-dir)))
+
 
 (defn translate-layout-grid-dir
-  [flex-dir]
-  (case flex-dir
-    :row    0
-    :column 1))
+  [grid-dir]
+  (let [values (:grid-direction wasm/serializers)]
+    (get values grid-dir)))
 
 (defn translate-layout-align-items
   [align-items]
-  (case align-items
-    :start   0
-    :end     1
-    :center  2
-    :stretch 3
-    0))
+  (let [values (:align-items wasm/serializers)
+        default (:start values)]
+    (get values align-items default)))
 
 (defn translate-layout-align-content
   [align-content]
-  (case align-content
-    :start         0
-    :end           1
-    :center        2
-    :space-between 3
-    :space-around  4
-    :space-evenly  5
-    :stretch       6
-    6))
+  (let [values (:align-content wasm/serializers)
+        default (:stretch values)]
+    (get values align-content default)))
 
 (defn translate-layout-justify-items
   [justify-items]
-  (case justify-items
-    :start   0
-    :end     1
-    :center  2
-    :stretch 3
-    0))
+  (let [values (:justify-items wasm/serializers)
+        default (:start values)]
+    (get values justify-items default)))
 
 (defn translate-layout-justify-content
   [justify-content]
-  (case justify-content
-    :start         0
-    :end           1
-    :center        2
-    :space-between 3
-    :space-around  4
-    :space-evenly  5
-    :stretch       6
-    6))
+  (let [values (:justify-content wasm/serializers)
+        default (:stretch values)]
+    (get values justify-content default)))
 
 (defn translate-layout-wrap-type
   [wrap-type]
-  (case wrap-type
-    :wrap   0
-    :nowrap 1
-    1))
+  (let [values (:wrap-type wasm/serializers)
+        default (:nowrap values)]
+    (get values wrap-type default)))
+
 
 (defn translate-grid-track-type
   [type]
-  (case type
-    :percent 0
-    :flex 1
-    :auto 2
-    :fixed 3))
+  (let [values (:grid-track-type wasm/serializers)]
+    (get values type)))
 
 (defn translate-layout-sizing
   [value]
-  (case value
-    :fill 0
-    :fix  1
-    :auto 2
-    1))
+  (let [values (:sizing wasm/serializers)
+        default (:fix values)]
+    (get values value default)))
 
 (defn translate-align-self
   [value]
-  (when value
-    (case value
-      :auto    0
-      :start   1
-      :end     2
-      :center  3
-      :stretch 4)))
+  (let [values (:align-self wasm/serializers)]
+    (get values value)))
 
 (defn translate-justify-self
   [value]
-  (when value
-    (case value
-      :auto    0
-      :start   1
-      :end     2
-      :center  3
-      :stretch 4)))
+  (let [values (:justify-self wasm/serializers)]
+    (get values value)))
 
 (defn translate-shadow-style
   [style]
-  (case style
-    :drop-shadow 0
-    :inner-shadow 1
-    0))
+  (let [values (:shadow-style wasm/serializers)
+        default (:drop-shadow values)]
+    (get values style default)))
 
+;; TODO: Find/Create a Rust enum for this
 (defn translate-structure-modifier-type
   [type]
   (case type
@@ -266,19 +207,17 @@
 
 (defn translate-grow-type
   [grow-type]
-  (case grow-type
-    :auto-width 1
-    :auto-height 2
-    0))
+  (let [values (:grow-type wasm/serializers)
+        default (:fixed values)]
+    (get values grow-type default)))
 
 (defn translate-vertical-align
   [vertical-align]
-  (case vertical-align
-    "top" 0
-    "center" 1
-    "bottom" 2
-    0))
+  (let [values (:vertical-align wasm/serializers)
+        default (:top values)]
+    (get values vertical-align default)))
 
+;; TODO: Find/Create a Rust enum for this
 (defn translate-text-align
   [text-align]
   (case text-align
@@ -288,6 +227,7 @@
     "justify" 3
     0))
 
+;; TODO: Find/Create a Rust enum for this
 (defn translate-text-transform
   [text-transform]
   (case text-transform
@@ -298,6 +238,7 @@
     nil 0
     0))
 
+;; TODO: Find/Create a Rust enum for this
 (defn translate-text-decoration
   [text-decoration]
   (case text-decoration
@@ -308,6 +249,7 @@
     nil 0
     0))
 
+;; TODO: Find/Create a Rust enum for this
 (defn translate-text-direction
   [text-direction]
   (case text-direction
@@ -318,8 +260,12 @@
 
 (defn translate-font-style
   [font-style]
-  (case font-style
-    "normal" 0
-    "regular" 0
-    "italic" 1
-    0))
+  (let [values (:font-style wasm/serializers)
+        default (:normal values)]
+    (case font-style
+    ;; NOTE: normal == regular!
+    ;; is it OK to keep those two values in our cljs model?
+      "normal" (:normal values)
+      "regular" (:normal values)
+      "italic" (:italic values)
+      default)))

@@ -1,5 +1,6 @@
 #![allow(unused_mut, unused_variables)]
 use indexmap::IndexSet;
+use macros::ToJs;
 use mem::SerializableResult;
 use uuid::Uuid;
 
@@ -11,7 +12,7 @@ use crate::{mem, with_current_shape, with_current_shape_mut, with_state, STATE};
 const RAW_SEGMENT_DATA_SIZE: usize = size_of::<RawSegmentData>();
 
 #[repr(C, u16, align(4))]
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[allow(dead_code)]
 enum RawSegmentData {
     MoveTo(RawMoveCommand) = 0x01,

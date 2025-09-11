@@ -4,7 +4,7 @@ use std::io::Write;
 use std::path::Path;
 use std::sync;
 
-use heck::{ToPascalCase, ToShoutySnakeCase};
+use heck::{ToKebabCase, ToPascalCase};
 use proc_macro::TokenStream;
 
 type Result<T> = std::result::Result<T, String>;
@@ -25,10 +25,10 @@ pub fn derive_to_cljs(input: TokenStream) -> TokenStream {
         .collect::<Vec<_>>();
 
     let variants = parse_variants(&raw_variants).expect("Failed to parse variants");
-    let js_code = generate_js_for_enum(&enum_id, &variants);
+    let js_code = generate_js_for_enum(&enum_id, &mut variants.into_iter().collect::<Vec<_>>());
 
-    if let Err(e) = write_enum_to_temp_file(&enum_id, &js_code) {
-        println!("Error writing enum {} to file: {}", enum_id, e);
+    if let Err(e) = write_enum_to_temp_file(&js_code) {
+        eprintln!("Error writing enum {} to file: {}", enum_id, e);
     }
 
     TokenStream::new() // we don't need to return any generated code
@@ -62,23 +62,27 @@ fn parse_discriminant_value(value: syn::Expr) -> Result<u32> {
     }
 }
 
-fn generate_js_for_enum(id: &str, variants: &HashMap<String, u32>) -> String {
+fn generate_js_for_enum(id: &str, variants: &mut [(String, u32)]) -> String {
+    variants.sort_by_key(|(_, discriminant)| *discriminant);
+
     let output_variants: String = variants
-        .iter()
-        .map(|(variant, discriminant)| format!("\t{}: {},", variant.to_pascal_case(), discriminant))
+        .into_iter()
+        .map(|(variant, discriminant)| {
+            format!(r#"  "{}": {},"#, variant.to_kebab_case(), discriminant)
+        })
         .collect::<Vec<String>>()
         .join("\n");
 
     format!(
         "export const {} = {{\n{}\n}};",
-        id.to_shouty_snake_case(),
+        id.to_pascal_case(),
         output_variants
     )
 }
 
 static INIT: sync::Once = sync::Once::new();
 
-fn write_enum_to_temp_file(enum_id: &str, js_code: &str) -> std::io::Result<()> {
+fn write_enum_to_temp_file(js_code: &str) -> std::io::Result<()> {
     let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR environment variable is not set");
     let out_path = Path::new(&out_dir).join("render_wasm_shared.js");
 
@@ -94,12 +98,6 @@ fn write_enum_to_temp_file(enum_id: &str, js_code: &str) -> std::io::Result<()> 
 
     let mut file = fs::OpenOptions::new().append(true).open(&out_path)?;
     writeln!(file, "{}\n", js_code)?;
-
-    println!(
-        "Wrote enum {} to file: {:?}",
-        enum_id.to_shouty_snake_case(),
-        out_path
-    );
 
     Ok(())
 }

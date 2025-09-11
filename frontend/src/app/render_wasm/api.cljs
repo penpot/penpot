@@ -1042,7 +1042,6 @@
 
 (defn- calculate-bool*
   [bool-type]
-  (println "wiii" (cljs.core/unchecked-get wasm/internal-module "BOOL_TYPE"))
   (-> (h/call wasm/internal-module "_calculate_bool" (sr/translate-bool-type bool-type))
       (mem/->offset-32)))
 
@@ -1074,10 +1073,30 @@
         (->> (js/dynamicImport (str uri))
              (p/mcat (fn [module]
                        (let [default (unchecked-get module "default")
-                             _ (println "bool_type" (unchecked-get module "RAW_FILL_DATA"))]
+                             serializers #js{:blur-type (unchecked-get module "BlurType")
+                                             :bool-type (unchecked-get module "BoolType")
+                                             :font-style (unchecked-get module "FontStyle")
+                                             :flex-direction (unchecked-get module "FlexDirection")
+                                             :grid-direction (unchecked-get module "GridDirection")
+                                             :align-items (unchecked-get module "AlignItems")
+                                             :align-self (unchecked-get module "AlignSelf")
+                                             :align-content (unchecked-get module "AlignContent")
+                                             :justify-items (unchecked-get module "JustifyItems")
+                                             :justify-content (unchecked-get module "JustifyContent")
+                                             :justify-self (unchecked-get module "JustifySelf")
+                                             :shadow-style (unchecked-get module "ShadowStyle")
+                                             :stroke-style (unchecked-get module "StrokeStyle")
+                                             :stroke-cap (unchecked-get module "StrokeCap")
+                                             :shape-type (unchecked-get module "Type")
+                                             :constraint-h (unchecked-get module "ConstraintH")
+                                             :constraint-v (unchecked-get module "ConstraintV")
+                                             :vertical-align (unchecked-get module "VerticalAlign")
+                                             :fill-data (unchecked-get module "RawFillData")
+                                             :segment-data (unchecked-get module "RawSegmentData")}]
+                         (set! wasm/serializers (js->clj serializers :keywordize-keys true))
                          (default))))
-             (p/fmap (fn [module]
-                       (set! wasm/internal-module module)
+             (p/fmap (fn [default]
+                       (set! wasm/internal-module default)
                        true))
              (p/merr (fn [cause]
                        (js/console.error cause)

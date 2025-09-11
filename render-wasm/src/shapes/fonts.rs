@@ -1,14 +1,19 @@
 use std::fmt;
 
 use crate::uuid::Uuid;
+use macros::ToJs;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
 pub enum FontStyle {
-    Normal,
-    Italic,
+    Normal = 0,
+    Italic = 1,
 }
 
+// TODO: maybe move this to the wasm module?
 impl From<u8> for FontStyle {
+    // TODO: use transmute
     fn from(value: u8) -> Self {
         match value {
             0 => Self::Normal,

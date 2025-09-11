@@ -1,3 +1,5 @@
+use macros::ToJs;
+
 use super::Path;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -6,12 +8,14 @@ pub struct Bool {
     pub path: Path,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, Clone, Copy, PartialEq, ToJs)]
+#[repr(u8)]
 pub enum BoolType {
-    Union,
-    Difference,
-    Intersection,
-    Exclusion,
+    Union = 0,
+    Difference = 1,
+    Intersection = 2,
+    Exclusion = 3,
 }
 
 impl Default for Bool {
@@ -23,7 +27,9 @@ impl Default for Bool {
     }
 }
 
+// TODO: maybe move this to the wasm module?
 impl From<u8> for BoolType {
+    // TODO: use transmute
     fn from(value: u8) -> Self {
         match value {
             0 => Self::Union,

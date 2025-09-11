@@ -1,5 +1,7 @@
 use skia_safe as skia;
 
+// TODO: maybe move this to the wasm module?
+// TODO: find a way to use the ToJS derive macro for this
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct BlendMode(skia::BlendMode);
 

@@ -1,3 +1,4 @@
+use macros::ToJs;
 use skia_safe::{self as skia};
 
 use crate::render::BlendMode;
@@ -54,19 +55,22 @@ const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
 const MIN_STROKE_WIDTH: f32 = 0.001;
 
-#[derive(Debug, Clone, PartialEq)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, Clone, PartialEq, ToJs)]
+#[repr(u8)]
 pub enum Type {
-    Frame(Frame),
-    Group(Group),
-    Bool(Bool),
-    Rect(Rect),
-    Path(Path),
-    Circle,
-    SVGRaw(SVGRaw),
-    Text(TextContent),
+    Frame(Frame) = 0,
+    Group(Group) = 1,
+    Bool(Bool) = 2,
+    Rect(Rect) = 3,
+    Path(Path) = 4,
+    Text(TextContent) = 5,
+    Circle = 6,
+    SVGRaw(SVGRaw) = 7,
 }
 
 impl Type {
+    // TODO: move this to the wasm module, use transmute
     pub fn from(value: u8) -> Self {
         match value {
             0 => Type::Frame(Frame::default()),
@@ -141,21 +145,24 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
+#[repr(u8)]
 pub enum ConstraintH {
-    Left,
-    Right,
-    LeftRight,
-    Center,
-    Scale,
+    Left = 0,
+    Right = 1,
+    Leftright = 2,
+    Center = 3,
+    Scale = 4,
 }
 
 impl ConstraintH {
+    // TODO: we should implement a proper From trait for this
+    // TODO: use transmute
     pub fn from(value: u8) -> Option<Self> {
         match value {
             0 => Some(Self::Left),
             1 => Some(Self::Right),
-            2 => Some(Self::LeftRight),
+            2 => Some(Self::Leftright),
             3 => Some(Self::Center),
             4 => Some(Self::Scale),
             _ => None,
@@ -163,14 +170,18 @@ impl ConstraintH {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
+#[repr(u8)]
 pub enum VerticalAlign {
-    Top,
-    Center,
-    Bottom,
+    Top = 0,
+    Center = 1,
+    Bottom = 2,
 }
 
 impl VerticalAlign {
+    // TODO: implement a proper From trait for this
+    // TODO: use transmute
     pub fn from(value: u8) -> Self {
         match value {
             0 => Self::Top,
@@ -181,21 +192,25 @@ impl VerticalAlign {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
+#[repr(u8)]
 pub enum ConstraintV {
-    Top,
-    Bottom,
-    TopBottom,
-    Center,
-    Scale,
+    Top = 0,
+    Bottom = 1,
+    Topbottom = 2,
+    Center = 3,
+    Scale = 4,
 }
 
 impl ConstraintV {
+    // TODO: implement a proper From trait for this
+    // TODO: use transmute
     pub fn from(value: u8) -> Option<Self> {
         match value {
             0 => Some(Self::Top),
             1 => Some(Self::Bottom),
-            2 => Some(Self::TopBottom),
+            2 => Some(Self::Topbottom),
             3 => Some(Self::Center),
             4 => Some(Self::Scale),
             _ => None,
