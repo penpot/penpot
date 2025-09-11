@@ -113,10 +113,18 @@ body {
    ;; Flex/grid self properties
    :flex-shrink
    :margin
+   :margin-block-start
+   :margin-block-end
+   :margin-inline-start
+   :margin-inline-end
    :max-height
+   :max-block-size
    :min-height
+   :min-block-size
    :max-width
+   :max-inline-size
    :min-width
+   :min-inline-size
    :align-self
    :justify-self
 

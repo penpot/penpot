@@ -1884,10 +1884,6 @@ msgid "inspect.tabs.styles.panel.geometry"
 msgstr "Tamaño y posición"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.layout-element"
-msgstr "Layout de elemento"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.toggle-style"
 msgstr "Alternar panel %s"
 
