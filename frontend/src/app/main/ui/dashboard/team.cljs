@@ -693,7 +693,7 @@
        [:label {:for (str "email-" email)}
         [:span {:class (stl/css-case :input-checkbox true
                                      :global/checked (is-selected? email))}
-         i/status-tick]
+         deprecated-icon/status-tick]
 
         [:input {:type "checkbox"
                  :id (str "email-" email)
@@ -757,7 +757,7 @@
         (tr "dashboard.invitation-modal.title.resend-invitations"))]
 
      [:button {:class (stl/css :modal-close-btn)
-               :on-click modal/hide!} i/close]]
+               :on-click modal/hide!} deprecated-icon/close]]
 
     [:div {:class (stl/css :modal-invitation-content)}
      [:p
