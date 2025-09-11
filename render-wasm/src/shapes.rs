@@ -725,12 +725,12 @@ impl Shape {
             .get_or_init(|| self.calculate_extrect(shapes_pool, modifiers))
     }
 
-    /// Calculates the bounding rectangle for a frame shape's shadow, taking into account
+    /// Calculates the bounding rectangle for a selrect shape's shadow, taking into account
     /// stroke widths and shadow properties.
     ///
     /// This method computes the expanded bounds that would be needed to fully render
-    /// the shadow effect for a frame shape. It considers:
-    /// - The base frame bounds (selection rectangle)
+    /// the shadow effect for a shape. It considers:
+    /// - The base bounds (selection rectangle)
     /// - Maximum stroke width across all strokes, accounting for stroke rendering kind
     /// - Shadow offset (x, y displacement)
     /// - Shadow blur radius (expands bounds outward)
@@ -742,12 +742,7 @@ impl Shape {
     /// # Returns
     /// A `math::Rect` representing the bounding rectangle that encompasses the shadow.
     /// Returns an empty rectangle if the shadow is hidden.
-    pub fn get_frame_shadow_bounds(&self, shadow: &Shadow) -> math::Rect {
-        assert!(
-            self.is_frame(),
-            "This method can only be called on frame shapes"
-        );
-
+    pub fn get_selrect_shadow_bounds(&self, shadow: &Shadow) -> math::Rect {
         let base_bounds = self.selrect();
         let mut rect = skia::Rect::new_empty();
 
