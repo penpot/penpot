@@ -14,7 +14,6 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.refs :as refs]
    [app.main.store :as st]
-   [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
@@ -160,33 +159,38 @@
                (dom/click set-element)
                (tm/schedule-on-idle
                 (let [button-element (dom/get-element "add-token-button-Color")]
-                  #(dom/click button-element)))))))]
+                  #(dom/click button-element)))))))
+        icon-id (if collapsed i/arrow-right i/arrow-down)]
 
-    [:div {:class (stl/css :color-token-set)}
-     [:> title-bar* {:collapsable    true
-                     :collapsed      collapsed
-                     :all-clickable  true
-                     :on-collapsed   toggle-set
-                     :class (stl/css :set-title-bar)
-                     :title          name}
-
-      (when (not collapsed)
-        [:div {:class (stl/css :set-actions)}
-         [:> icon-button* {:on-click toggle-list-style
-                           :variant "action"
-                           :aria-label (if (= :list list-style)
-                                         (tr "workspace.assets.grid-view")
-                                         (tr "workspace.assets.list-view"))
-                           :icon (if (= :list list-style)
-                                   i/flex-grid
-                                   i/view-as-list)}]
-         [:> icon-button* {:on-click create-token-on-set
-                           :variant "action"
-                           :aria-label (tr "workspace.tokens.add-token" "color")
-                           :icon i/add}]])]
+    [:article {:class (stl/css :color-token-set)}
+     [:header {:class (stl/css :set-title-bar)}
+      [:button {:class (stl/css :set-title-btn)
+                :aria-controls (str "set-panel-" (d/name name))
+                :aria-expanded (not collapsed)
+                :aria-label (tr "inspect.tabs.styles.panel.toggle-style" name)
+                :on-click toggle-set}
+       [:> i/icon* {:icon-id icon-id
+                    :size "s"
+                    :class (stl/css :set-title-icon)}]
+       [:span {:class (stl/css :set-title)} name]]
+      [:div {:class (stl/css-case :set-title-actions true
+                                  :set-title-action-hidden collapsed)}
+       [:> icon-button* {:on-click toggle-list-style
+                         :variant "action"
+                         :aria-label (if (= :list list-style)
+                                       (tr "workspace.assets.grid-view")
+                                       (tr "workspace.assets.list-view"))
+                         :icon (if (= :list list-style)
+                                 i/flex-grid
+                                 i/view-as-list)}]
+       [:> icon-button* {:on-click create-token-on-set
+                         :variant "action"
+                         :aria-label (tr "workspace.tokens.add-token" "color")
+                         :icon i/add}]]]
 
      (when (not collapsed)
-       [:div {:class (stl/css-case :color-token-list true
+       [:div {:id (str "set-panel-" (d/name name))
+              :class (stl/css-case :color-token-list true
                                    :list-view (= list-style :list)
                                    :grid-view (= list-style :grid))}
 
@@ -203,6 +207,7 @@
                               :on-token-pill-click on-token-pill-click
                               :selected selected?
                               :token token}])))])]))
+
 (defn- label-group-or-set [{:keys [group sets]}]
   (if group
     (str group " (" (str/join ", " sets) ")")
