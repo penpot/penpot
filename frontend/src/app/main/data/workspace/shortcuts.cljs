@@ -213,12 +213,12 @@
                           :fn #(emit-when-no-readonly (dw/vertical-order-selected :bottom))}
 
    :move-fast-up         {:tooltip (ds/shift ds/up-arrow)
-                          :command ["shift+up"]
+                          :command ["shift+up" "shift+alt+up" "alt+shift+up"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :up true))}
 
    :move-fast-down       {:tooltip (ds/shift ds/down-arrow)
-                          :command ["shift+down"]
+                          :command ["shift+down" "shift+alt+down" "alt+shift+down"]
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dwt/move-selected :down true))}
 
