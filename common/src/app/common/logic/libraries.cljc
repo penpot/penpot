@@ -1733,6 +1733,17 @@
     [(conj roperations roperation)
      (conj uoperations uoperation)]))
 
+(defn- check-detached-main
+  [changes dest-shape origin-shape]
+  ;; Only for direct updates (from main to copy). Check if the main shape
+  ;; has been detached. If so, the copy shape must be unrooted (i.e. converted
+  ;; into a normal copy and not a nested instance).
+  (if (and (= (:shape-ref dest-shape) (:id origin-shape))
+           (ctk/subcopy-head? dest-shape)
+           (not (ctk/instance-head? origin-shape)))
+    (pcb/update-shapes changes [(:id dest-shape)] ctk/unroot-shape {:ignore-touched true})
+    changes))
+
 (defn- update-attrs
   "The main function that implements the attribute sync algorithm. Copy
   attributes that have changed in the origin shape to the dest shape.
@@ -1773,6 +1784,8 @@
             (seq roperations)
             (add-update-attr-changes dest-shape container roperations uoperations)
             :always
+            (check-detached-main dest-shape origin-shape)
+            :always
             (generate-update-tokens container dest-shape origin-shape touched omit-touched?))
 
           (let [attr-group        (get ctk/sync-attrs attr)
@@ -1795,7 +1808,6 @@
                  (cfh/text-shape? origin-shape)
                  (= :content attr)
                  (touched attr-group))
-
 
                 skip-operations?
                 (or (= (get origin-shape attr) (get dest-shape attr))
