@@ -120,6 +120,7 @@
     :tiered-file-data-storage
     :token-units
     :token-base-font-size
+    :token-color
     :token-typography-types
     :token-typography-composite
     :transit-readable-response

@@ -1978,6 +1978,10 @@ msgstr "Cerrar"
 msgid "labels.collapse"
 msgstr "Colapsar"
 
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "labels.color"
+msgstr "Color"
+
 #: src/app/main/ui/comments.cljs:913
 msgid "labels.comment"
 msgstr "Comentario"
@@ -2653,6 +2657,10 @@ msgstr "Visibilidad"
 msgid "labels.svg"
 msgstr "SVG"
 
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variante"
+
 #: src/app/main/ui/ds/product/loader.cljs:21
 msgid "loader.tips.01.message"
 msgstr ""
@@ -2776,6 +2784,12 @@ msgstr "Radial"
 #: src/app/main/ui/workspace/colorpicker.cljs:242
 msgid "media.solid"
 msgstr "Sólido"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "color-token.empty-state"
+msgstr ""
+"No hay tokens disponibles. "
+"Comprueba los sets/themes activos o crea nuevos tokens de color."
 
 #: src/app/main/data/common.cljs:128
 msgid "modals.add-shared-confirm-empty.hint"
@@ -7736,6 +7750,10 @@ msgstr "Valor no válido: No se permiten unidades."
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:563
 msgid "workspace.tokens.warning-name-change"
 msgstr "Al renombrar este token se romperán las referencias al nombre anterior"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Tokens de color"
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:145
 msgid "workspace.toolbar.assets"

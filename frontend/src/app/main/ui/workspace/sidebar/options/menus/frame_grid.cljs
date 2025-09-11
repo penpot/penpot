@@ -201,6 +201,7 @@
                             :title (tr "workspace.options.grid.params.color")
                             :disable-gradient true
                             :disable-image true
+                            :origin :guides
                             :on-change handle-change-color
                             :on-detach handle-detach-color}]
             [:button {:class (stl/css-case :show-more-options true
@@ -242,6 +243,7 @@
                              :title (tr "workspace.options.grid.params.color")
                              :disable-gradient true
                              :disable-image true
+                             :origin :guides
                              :on-change handle-change-color
                              :on-detach handle-detach-color}]]]
 

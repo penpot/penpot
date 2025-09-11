@@ -9,7 +9,6 @@
 .color-values {
   @include flexColumn;
   margin-top: $s-8;
-  padding: 0 var(--sp-m);
 
   &.disable-opacity {
     grid-template-columns: 3.5rem repeat(3, 1fr);

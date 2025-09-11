@@ -232,6 +232,7 @@
                           :title (tr "workspace.options.shadow-options.color")
                           :disable-gradient true
                           :disable-image true
+                          :origin :shadow
                           :on-change on-update-color
                           :on-detach on-detach-color
                           :on-open on-open-row

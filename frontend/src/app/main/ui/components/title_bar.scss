@@ -7,6 +7,7 @@
 @import "refactor/common-refactor.scss";
 
 .title-bar {
+  @include headlineSmallTypography;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -20,7 +21,6 @@
 .title,
 .title-only,
 .inspect-title {
-  @include headlineSmallTypography;
   display: grid;
   align-items: center;
   justify-content: flex-start;

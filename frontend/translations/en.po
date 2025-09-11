@@ -1972,6 +1972,10 @@ msgstr "Close"
 msgid "labels.collapse"
 msgstr "Collapse"
 
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "labels.color"
+msgstr "Color"
+
 #: src/app/main/ui/comments.cljs:913
 msgid "labels.comment"
 msgstr "Comment"
@@ -2776,6 +2780,12 @@ msgstr "Radial"
 #: src/app/main/ui/workspace/colorpicker.cljs:242
 msgid "media.solid"
 msgstr "Solid"
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "color-token.empty-state"
+msgstr ""
+"No available color tokens. "
+"Check active sets/themes or add new tokens."
 
 #: src/app/main/data/common.cljs:128
 msgid "modals.add-shared-confirm-empty.hint"
@@ -7849,6 +7859,10 @@ msgstr "Invalid value: Units are not allowed."
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:563
 msgid "workspace.tokens.warning-name-change"
 msgstr "Renaming this token will break any reference to its old name."
+
+#: src/app/main/ui/workspace/colorpicker.cljs
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Color tokens"
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:145
 msgid "workspace.toolbar.assets"

@@ -263,6 +263,7 @@
 (def ^:icon tokens (icon-xref :tokens))
 (def ^:icon to-corner (icon-xref :to-corner))
 (def ^:icon to-curve (icon-xref :to-curve))
+(def ^:icon tokens (icon-xref :tokens))
 (def ^:icon tree (icon-xref :tree))
 (def ^:icon unlock (icon-xref :unlock))
 (def ^:icon user (icon-xref :user))

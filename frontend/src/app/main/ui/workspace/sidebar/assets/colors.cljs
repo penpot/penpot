@@ -128,6 +128,7 @@
                         {:x (.-clientX ^js event)
                          :y (.-clientY ^js event)
                          :on-accept edit-color
+                         :origin :assets
                          :data color
                          :position :right})))
 
@@ -407,6 +408,7 @@
                                    {:x x-position
                                     :y y-position
                                     :on-accept add-color
+                                    :origin :assets
                                     :data {:color "#406280"
                                            :opacity 1}
                                     :position :right})))))

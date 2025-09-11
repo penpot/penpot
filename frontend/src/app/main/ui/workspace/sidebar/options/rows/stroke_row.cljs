@@ -157,10 +157,11 @@
                      :on-remove on-remove
                      :disable-drag disable-drag
                      :on-focus on-focus
+                     :origin :stroke
                      :select-on-focus select-on-focus
                      :on-blur on-blur}]
 
-           ;; Stroke Width, Alignment & Style
+     ;; Stroke Width, Alignment & Style
      [:div {:class (stl/css :stroke-options)}
       [:div {:class (stl/css :stroke-width-input-element)
              :title (tr "workspace.options.stroke-width")}
