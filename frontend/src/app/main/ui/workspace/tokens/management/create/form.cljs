@@ -1024,7 +1024,11 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
          (fn [e]
            (if reference-tab-active?
              (swap! backup-state-ref assoc :reference (dom/get-target-val e))
-             (swap! backup-state-ref assoc-in [:composite (obj/get e "tokenType")] (dom/get-target-val e)))
+             (let [token-type (obj/get e "tokenType")
+                   token-value (dom/get-target-val e)
+                   token-value (cond-> token-value
+                                 (= :font-family token-type) (ctt/split-font-family))]
+               (swap! backup-state-ref assoc-in [:composite token-type] token-value)))
            (on-update-value e)))
 
         input-props (mf/spread-props props {:default-value default-value

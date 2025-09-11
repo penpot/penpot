@@ -960,6 +960,12 @@ test.describe("Tokens: Themes modal", () => {
         name: /save/i,
       });
 
+      // Fill font-family to verify to verify that input value doesn't get split into list of characters
+      const fontFamilyField = tokensUpdateCreateModal
+        .getByLabel("Font family")
+        .first();
+      await fontFamilyField.fill("OneWord");
+
       // Invalidate incorrect values for font size
       const fontSizeField = tokensUpdateCreateModal.getByLabel(/Font Size/i);
       await fontSizeField.fill("invalid");
@@ -975,9 +981,6 @@ test.describe("Tokens: Themes modal", () => {
       // Fill in values for all fields and verify they persist when switching tabs
       await fontSizeField.fill("16");
 
-      const fontFamilyField = tokensUpdateCreateModal
-        .getByLabel(/Font Family/i)
-        .first();
       const fontWeightField =
         tokensUpdateCreateModal.getByLabel(/Font Weight/i);
       const letterSpacingField =
