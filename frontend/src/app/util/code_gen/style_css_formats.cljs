@@ -18,10 +18,14 @@
    :top                       :position
    :width                     :size
    :height                    :size
-   :min-width                 :size
-   :min-height                :size
-   :max-width                 :size
    :max-height                :size
+   :max-block-size            :size
+   :min-height                :size
+   :min-block-size            :size
+   :max-width                 :size
+   :max-inline-size           :size
+   :min-width                 :size
+   :min-inline-size           :size
    :background                :color
    :border                    :border
    :border-radius             :string-or-size-array
@@ -42,6 +46,10 @@
    :padding-block-start       :size-array
    :padding-block-end         :size-array
    :margin                    :size-array
+   :margin-block-start        :size-array
+   :margin-block-end          :size-array
+   :margin-inline-start       :size-array
+   :margin-inline-end         :size-array
    :grid-template-rows        :tracks
    :grid-template-columns     :tracks})
 

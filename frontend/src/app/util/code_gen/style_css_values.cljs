@@ -410,6 +410,26 @@
       (when (or (not= m1 0) (not= m2 0) (not= m3 0) (not= m4 0))
         [m1 m2 m3 m4]))))
 
+(defmethod get-value :margin-block-start
+  [_ {:keys [layout-item-margin] :as shape} objects _]
+  (when (and (ctl/any-layout-immediate-child? objects shape) (:m1 layout-item-margin) (not= (:m1 layout-item-margin) 0))
+    [(:m1 layout-item-margin)]))
+
+(defmethod get-value :margin-inline-end
+  [_ {:keys [layout-item-margin] :as shape} objects _]
+  (when (and (ctl/any-layout-immediate-child? objects shape) (:m2 layout-item-margin) (not= (:m2 layout-item-margin) 0))
+    [(:m2 layout-item-margin)]))
+
+(defmethod get-value :margin-block-end
+  [_ {:keys [layout-item-margin] :as shape} objects _]
+  (when (and (ctl/any-layout-immediate-child? objects shape) (:m3 layout-item-margin) (not= (:m3 layout-item-margin) 0))
+    [(:m3 layout-item-margin)]))
+
+(defmethod get-value :margin-inline-start
+  [_ {:keys [layout-item-margin] :as shape} objects _]
+  (when (and (ctl/any-layout-immediate-child? objects shape) (:m4 layout-item-margin) (not= (:m4 layout-item-margin) 0))
+    [(:m4 layout-item-margin)]))
+
 (defmethod get-value :z-index
   [_ {:keys [layout-item-z-index] :as shape} objects _]
   (cond
@@ -425,6 +445,10 @@
     (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-h shape)))
 
+(defmethod get-value :max-block-size
+  [_ shape objects _]
+  (get-value :max-height shape objects))
+
 (defmethod get-value :min-height
   [_ shape objects _]
   (cond
@@ -434,11 +458,19 @@
     (and (ctl/auto-height? shape) (cfh/frame-shape? shape) (not (:show-content shape)))
     (-> shape :selrect :height)))
 
+(defmethod get-value :min-block-size
+  [_ shape objects _]
+  (get-value :min-height shape objects))
+
 (defmethod get-value :max-width
   [_ shape objects _]
   (cond
     (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-w shape)))
+
+(defmethod get-value :max-inline-size
+  [_ shape objects _]
+  (get-value :max-width shape objects))
 
 (defmethod get-value :min-width
   [_ shape objects _]
@@ -448,6 +480,10 @@
 
     (and (ctl/auto-width? shape) (cfh/frame-shape? shape) (not (:show-content shape)))
     (-> shape :selrect :width)))
+
+(defmethod get-value :min-inline-size
+  [_ shape objects _]
+  (get-value :min-width shape objects))
 
 (defmethod get-value :align-self
   [_ shape objects _]

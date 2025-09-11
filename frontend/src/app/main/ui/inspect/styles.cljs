@@ -11,11 +11,31 @@
    [app.main.refs :as refs]
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
    [app.main.ui.inspect.styles.panels.layout :refer [layout-panel*]]
+   [app.main.ui.inspect.styles.panels.layout-element :refer [layout-element-panel*]]
    [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
    [app.main.ui.inspect.styles.panels.variants-panel :refer [variants-panel*]]
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
+   [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
+
+(def layout-element-properties
+  [:margin-block-start
+   :margin-block-end
+   :margin-inline-start
+   :margin-inline-end
+   :max-block-size
+   :min-block-size
+   :max-inline-size
+   :min-inline-size
+   :align-self
+   :justify-self
+   :flex-shrink
+   :flex
+
+   ;; Grid cell properties
+   :grid-column
+   :grid-row])
 
 
 (def type->panel-group
@@ -43,8 +63,9 @@
   (let [data               (dm/get-in libraries [file-id :data])
         first-shape        (first shapes)
         first-component    (ctkl/get-component data (:component-id first-shape))
-        layout-shapes      (->> shapes (filter ctl/any-layout?))
-        type               (get-shape-type shapes first-shape first-component)
+        shape-type         (get-shape-type shapes first-shape first-component)
+        panels             (type->panel-group shape-type)
+
         tokens-lib         (mf/deref refs/tokens-lib)
         active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
         active-sets
@@ -56,31 +77,60 @@
             (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
         resolved-active-tokens
-        (sd/use-resolved-tokens* active-tokens)
-        panels            (type->panel-group type)]
+        (sd/use-resolved-tokens* active-tokens)]
     [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
+     ;;  TOKENS PANEL
      (when (or active-themes active-sets)
        [:li
         [:> style-box* {:panel :token}
          [:> tokens-panel* {:theme-paths active-themes :set-names active-sets}]]])
      (for [panel panels]
        [:li {:key (d/name panel)}
-        (if (not (= panel :layout))
-          [:> style-box* {:panel panel}
-           (case panel
-             :variant          [:> variants-panel* {:component first-component
-                                                    :objects objects
-                                                    :shape first-shape
-                                                    :data data}]
-             :geometry         [:> geometry-panel* {:shapes shapes
-                                                    :objects objects
-                                                    :resolved-tokens resolved-active-tokens}]
-             color-space)]
-          (when (seq layout-shapes)
-            [:> style-box* {:panel :layout}
-             [:> layout-panel* {:shapes layout-shapes
+        (case panel
+        ;;  VARIANTS PANEL
+          :variant
+          [:> style-box* {:panel :variant}
+           [:> variants-panel* {:component first-component
                                 :objects objects
-                                :resolved-tokens resolved-active-tokens}]]))])]))
+                                :shape first-shape
+                                :data data}]]
+        ;;  GEOMETRY PANEL
+          :geometry
+          [:> style-box* {:panel :geometry}
+           [:> geometry-panel* {:shapes shapes
+                                :objects objects
+                                :resolved-tokens resolved-active-tokens}]]
+         ;;  LAYOUT PANEL
+          :layout
+          (let [layout-shapes (->> shapes (filter ctl/any-layout?))]
+            (when (seq layout-shapes)
+              [:> style-box* {:panel :layout}
+               [:> layout-panel* {:shapes layout-shapes
+                                  :objects objects
+                                  :resolved-tokens resolved-active-tokens}]]))
+         ;;  LAYOUT ELEMENT PANEL
+          :layout-element
+          (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
+                some-layout-prop? (->> shapes
+                                       (mapcat (fn [shape]
+                                                 (keep #(css/get-css-value objects shape %) layout-element-properties)))
+                                       (seq))]
+            (when some-layout-prop?
+              (let [only-flex? (every? #(ctl/flex-layout-immediate-child? objects %) shapes)
+                    only-grid? (every? #(ctl/grid-layout-immediate-child? objects %) shapes)
+                    panel (if only-flex?
+                            :flex-element
+                            (if only-grid?
+                              :grid-element
+                              :layout-element))]
+                [:> style-box* {:panel panel}
+                 [:> layout-element-panel* {:shapes shapes
+                                            :objects objects
+                                            :resolved-tokens resolved-active-tokens
+                                            :layout-element-properties layout-element-properties}]])))
+          ;; DEFAULT WIP
+          [:> style-box* {:panel panel}
+           [:div color-space]])])]))
 
 
 ;; WIP

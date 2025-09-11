@@ -20,7 +20,9 @@
     :blur       (tr "labels.blur")
     :shadow     (tr "labels.shadow")
     :layout     (tr "labels.layout")
-    :layout-element (tr "inspect.tabs.styles.panel.layout-element")
+    :flex-element "Flex element"
+    :grid-element "Grid element"
+    :layout-element "Layout Element"
     :visibility (tr "labels.visibility")
     :svg        (tr "labels.svg")
     nil))
