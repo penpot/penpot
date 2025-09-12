@@ -65,10 +65,9 @@
 .color-tokens-section {
   max-height: $sz-430;
   overflow: auto;
-}
-
-.set-actions {
   display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
 }
 
 .grid-view {
@@ -84,11 +83,54 @@
   gap: var(--sp-xs);
 }
 
-.set-title-bar {
-  @include t.use-typography("title-small");
-  text-transform: none;
-}
-
 .search-input {
   padding: $sz-1;
+}
+
+// Title bar
+.set-title-bar {
+  --title-color: var(--color-foreground-secondary);
+  --arrow-color: var(--color-foreground-secondary);
+  @include t.use-typography("title-small");
+  text-transform: none;
+  display: flex;
+  overflow: hidden;
+  min-height: var(--sp-xxxl);
+  padding-block-start: var(--sp-xs);
+}
+
+.set-title-btn {
+  border: none;
+  background: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-xs);
+  flex-grow: 1;
+  padding: 0;
+  overflow: hidden;
+
+  &:hover {
+    --arrow-color: var(--color-foreground-primary);
+    --title-color: var(--color-foreground-primary);
+  }
+}
+
+.set-title-icon {
+  color: var(--arrow-color);
+  height: $sz-28;
+  padding-block-start: var(--sp-xxs);
+}
+
+.set-title {
+  color: var(--title-color);
+  text-align: left;
+  padding-block-end: var(--sp-xs);
+}
+
+.set-title-actions {
+  display: flex;
+}
+
+.set-title-action-hidden {
+  display: none;
 }
