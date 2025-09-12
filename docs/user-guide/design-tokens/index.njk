@@ -118,7 +118,7 @@ title: 10· Design Tokens
   <img src="/img/design-tokens/08-tokens-color.webp" alt="Tokens color" />
 </figure>
 
-<h3 id="design-tokens-dimensions">Dimensions</h3>
+<h3 id="design-tokens-dimensions">Dimension</h3>
 <p>Dimension tokens allow you to define an amount of distance that can be used to set the size, space, radius or position of specific elements within a design.</p>
 <h4>Applying Dimension Tokens</h4>
 <p>To apply a dimension token, select the element and choose the token from the list:</p>
@@ -205,10 +205,6 @@ title: 10· Design Tokens
 <h4>Y Position (dimension)</h4>
 <p>The Y property specifies the position of the element on the Y axis of the canvas.</p>
 
-<h3 id="design-tokens-font-size">Font Size</h3>
-<p>Font size tokens allow you to define and standardize font-size values across your design system. These tokens can be applied to the <strong>font-size</strong> property in text layers, ensuring consistent typography throughout your designs.</p>
-<p class="advice">Font size token values are always computed as <strong>px</strong> (pixels).</p>
-
 <h3 id="design-tokens-opacity">Opacity</h3>
 <p>Opacity tokens allow you to define the opacity of a layer, ranging from fully opaque to fully transparent.</p>
 <p>Opacity tokens can be applied to any design element that supports transparency. You can use any decimal value between 0 and 1 to set varying levels of opacity or you can use any value between 0 and 100 with <strong>`%`</strong> sign at the end of the value. For example, you can use <strong>45%</strong> which would resolve to <strong>.45</strong>.</p>
@@ -265,8 +261,166 @@ title: 10· Design Tokens
     </li>
 </ul>
 
-<h4>Stroke Width</h4>
+<h3 id="design-tokens-stroke-width">Stroke Width</h3>
 <p>The stroke width token, also known as the border width token, defines the thickness of a stroke around a design element. It can be applied to boards, groups, rectangles and text elements.</p>
+
+
+<h3 id="design-tokens-number">Number token</h3>
+<p>Number tokens define the numeric value of properties that don’t require a unit of measurement.</p>
+<p>The difference between a number token and a dimension token is that the first one has to be unitless.</p>
+<p class="advice">The Number Token does not have a default property to apply to, so it can only be applied by right-clicking and selecting the specific property.</p>
+<p>Number token is especially useful as a reference in other tokens, for math equations (<strong>operands</strong>), to create scales, for example font-size scales, or grid scales.</p>
+<p>It can also be applied to Line Height –since this property works as a multiplier of the font size– or rotation property.</p>
+<figure>
+  <img src="/img/design-tokens/24-tokens-type-number.webp" alt="Number token applied" />
+</figure>
+
+<h3 id="design-tokens-typography">Typography tokens</h3>
+<p class="advice">Typography tokens can only be applied to a text layer, but not to individual elements inside a text layer.
+Applying a Typography Token will detach any Typography Style previously applied, and vice versa.</p>
+<h4>Font Family</h4>
+<figure>
+  <img src="/img/design-tokens/25-tokens-type-font-family.webp" alt="Font family" />
+</figure>
+<figure>
+  <img src="/img/design-tokens/26-tokens-type-font-family-select.webp" alt="Font family selector" />
+</figure>
+<p>As in other tokens, Font Family accepts references to other font family tokens.</p>
+<p>Additionally, you can specify a prioritized list of Font Family names or generic names separated by commas (,), as in CSS. Penpot will use only the first font in the list, but this helps define your font fallbacks so developers can implement them accordingly.</p>
+<pre>
+  <code class="language-css">
+  font-family: Lucida Console, Courier, monospace
+  </code>
+</pre>
+<figure>
+  <img src="/img/design-tokens/27-tokens-type-font-family-edit.webp" alt="Font family edit" />
+</figure>
+<p>When writing the string values of a <strong>Font Family Token</strong>, pay close attention to:</p>
+<ul>
+  <li>Spelling</li>
+  <li>Spacing</li>
+  <li>Punctuation</li>
+  <li>Use of capital letters</li>
+</ul>
+<p><strong>Note:</strong> You can quote font family names — especially those that contain spaces or special characters — 
+  to follow <strong>CSS best practices</strong> or to align with the conventions used by your development team:
+</p>
+<pre>
+  <code class="language-css">
+  font-family: "DM Sans", sans-serif;
+  </code>
+</pre>
+<figure>
+  <img src="/img/design-tokens/28-tokens-type-font-family-resolved.webp" alt="Font family resolved" />
+</figure>
+<p>If the Font Family does not exist in Penpot, when you apply the token you will see a “Missing font” message in the design panel input:</p>
+<figure>
+  <img src="/img/design-tokens/29-tokens-type-font-family-missing.webp" alt="Font family missing" />
+</figure>
+
+
+<h4 id="design-tokens-font-size">Font Size</h4>
+<p>Font size tokens define the vertical size of glyphs/characters as an individual property. In typography, the letter spacing and line height properties are related to the font size.</p>
+<p>Font sizes are typically defined using a proportional scale. You can use math operations with references in order to create dynamic typography scales that follow a particular multiplier, like Golden Ratio.</p>
+<p><strong>Tip:</strong> Use <a href="/user-guide/design-tokens/#design-tokens-number" target="_blank">Number Tokens</a> (unitless token) to create stunning typographic scales though design tokens:</p>
+<figure>
+  <img src="/img/design-tokens/30-tokens-type-font-size-scale.webp" alt="Font size scale" />
+</figure>
+<p>Font size is a dimension-type token and should be defined in px (unitless values are computed as px) for now. To follow the DTGC format, in upcoming releases, units will be mandatory and rem units will be allowed.</p>
+<p>You can use any dimension token as a reference in a font size token. Math operations are also allowed.</p>
+<p><strong>Tip:</strong> You can use a rounding function to round your resolved values and reduce decimals in math operations, since decimals are not ideal when using px:</p>
+<p><code class="language-js">roundTo({values}, decimals)</code></p>
+<figure>
+  <img src="/img/design-tokens/31-tokens-type-font-size-function.webp" alt="Font size function" />
+</figure>
+
+
+<h4 id="design-tokens-font-weight">Font Weight</h4>
+<p>Font Weight defines the thickness of each character/glyph in the Font Family. Font Weight design decisions are typically used to communicate visual hierarchy or emphasize text elements.</p>
+<p>Penpot combines Font Weight and Style as a single property written as a string value and it requires a match to the Font Family it is paired with, since not all font families have the same weight / styles.</p>
+<p>The Token can be defined with a numeric value (100, 400, 900, etc) or a string name (Bold, Black, Thin, etc), and the font style (Italic), if needed.</p>
+<p><strong>Note:</strong> Font Family and Font Weight Tokens work as a pair in Penpot. This means you must consider the current Font Family in order to decide the Font Weight you want to use in your designs.</p>
+<p>This token can be applied to text layers but the result depends on the Font Family in use.</p>
+<h5>Accepted values</h5>
+<p>Font Weight Token can be defined in numeric values or string values. Both values are accepted. When applied, a conversion will occur, transforming any string value to its corresponding numeric value:</p>
+<table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Numeric Value</th>
+      <th>String Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>100</td>
+      <td>Thin, Hairline</td>
+    </tr>
+    <tr>
+      <td>200</td>
+      <td>Extra Light, ExtraLight, extra-light, Ultra Light, UltraLight, ultra-light, extraleicht</td>
+    </tr>
+    <tr>
+      <td>300</td>
+      <td>Light, leicht</td>
+    </tr>
+    <tr>
+      <td>400</td>
+      <td>Regular, Normal, Book, buch</td>
+    </tr>
+    <tr>
+      <td>500</td>
+      <td>Medium, kraeftig, kräftig</td>
+    </tr>
+    <tr>
+      <td>600</td>
+      <td>Semibold, SemiBold, Semi Bold, semi-bold, DemiBold, Demi Bold, demi-bold, halbfett</td>
+    </tr>
+    <tr>
+      <td>700</td>
+      <td>Bold, dreiviertelfett</td>
+    </tr>
+    <tr>
+      <td>800</td>
+      <td>ExtraBold, Extra Bold, extra-bold, ultra-bold, UltraBold, Ultra Bold, fett</td>
+    </tr>
+    <tr>
+      <td>900</td>
+      <td>Black, Heavy, extrafett</td>
+    </tr>
+    <tr>
+      <td>950</td>
+      <td>Extra Black, extra-black, Ultra Black, ultra-black</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Note:</strong> values are case insensitive so for example <code>Regular</code> and <code>regular</code> will both work.</p>
+
+<p>Any of these values can also include the Font Style <em>Italic</em>, if needed. Some examples of accepted values:</p>
+
+<pre><code class="language-css">regular
+Normal Italic
+700
+400 italic
+Bold italic
+ExtraBold Italic
+</code></pre>
+
+<h4 id="design-tokens-font-letter-spacing">Letter Spacing</h4>
+<p>Letter Spacing, also known as kerning, defines the horizontal distance between individual characters.</p>
+<p>The default value is 0. In Penpot letter spacing is defined in px. In the token, you can use values in px or any reference to a Dimension / Spacing / Sizing / Letter Spacing Token.</p>
+<p>This token can be applied directly to a text element or be used as a reference in a Typography Composite Token.</p>
+
+<h4 id="design-tokens-font-text-case">Text Case</h4>
+<p>Text Case defines that the system should transform the capitalization of letters in a text element regardless of how they are typed.</p>
+<p>This property corresponds to <code class="language-css">text-transform</code> in CSS.</p>
+<p>Accepted values are <code class="language-css">none</code>, <code class="language-css">uppercase</code>, <code class="language-css">lowercase</code> and <code class="language-css">capitalize</code>. It also accepts references to another Text Case token.</p>
+<p>This token can be applied directly to a text element or be used as a reference in a Typography Composite Token.</p>
+
+<h4 id="design-tokens-font-text-decoration">Text Decoration</h4>
+<p>Text Decoration defines an optional line as part of font styling properties, typically used to communicate the visual emphasis of a text.</p>
+<p>Accepted values are <code class="language-css">none</code>, <code class="language-css">underline</code> and <code class="language-css">strike-through</code>. It also accepts references to another Text Decoration token.</p>
+<p>This token can be applied directly to a text element or be used as a reference in a Typography Composite Token.</p>
 
 
 <h2 id="design-tokens-sets">Token Sets</h2>
@@ -289,7 +443,7 @@ title: 10· Design Tokens
 <p>When a token set is selected, the tokens within the selected set are displayed on the panel below.</p>
 
 
-<h3 id="design-tokens-sets-edit">Deleting, Duplicating and Renaming a Token Set</h3>
+<h3 id="design-tokens-sets-edit">Editing Token Sets</h3>
 <p>Right-click a token set to perform these quick actions:</p>
 <ol>
     <li><strong>Rename</strong>: Give the set a new name and press Enter.</li>
@@ -464,12 +618,31 @@ title: 10· Design Tokens
   <figcaption>Exporting tokens as a single file.</figcaption>
 </figure>
 
+<!-- Leaving this section as a comment as the feature will be released very soon
+<h2 id="design-tokens-settings">Tokens settings</h2>
 
+<h3 id="design-tokens-base-font-size">Base font size</h3>
+<p>The Base Font Size provides the value for <code class="language-css">1rem</code>.</p>
+<figure>
+  <img src="/img/design-tokens/32-tokens-base-font-size.webp" alt="Tokens base font size" />
+</figure>
+<p>This feature not only supports responsive design decisions but also ensures the adaptability of the design, similar to how engineers work in code.</p>
+<p>When you assign a Token's value in rem units, the property is related to the Base Font Size, which the user of your product or website can adjust.</p>
+<ul>
+  <li>For example, if the user increases the font size or uses a zoom feature, all design properties defined in <code class="language-css">rem</code> units will respond accordingly.</li>
+</ul>
+<p>In contrast, design elements defined in <code class="language-css">pixels</code> will remain the same regardless of the user settings.</p>
+<p><strong>This feature is only supported on Tokens</strong>. When applying Tokens set in rem to any design element, it will convert the rem units to pixels, taking into account the value of this setting. The default value assumes <code class="language-css">1rem = 16px</code>.</p>
+<ul>
+  <li><code class="language-css">rem</code> units can be used in all <a href="/user-guide/design-tokens/#design-tokens-dimensions" target="_blank">dimension token</a> types: Dimension, Spacing, Sizing, Border radius, Stroke Width, Font size, letter spacing, and line height.</li>
+</ul>
+<p>This value is not shared across files so you can have different values in different files, allowing you to use different rem values with the same Tokens structure.</p>
 
-
-
-
-
-
-
-
+<h4 id="design-tokens-change-base-font-size">View and change the current base font size setting</h4>
+<p>Navigate to the Settings modal with the <strong>settings button</strong> on the bottom of the tokens tab:</p>
+<figure>
+  <img src="/img/design-tokens/33-tokens-settings.webp" alt="Tokens settings" />
+</figure>
+<p>Here you can view and change the value.</p>
+<p>The input accepts values with px and unitless, which will be interpreted as pixels.</p>
+ -->

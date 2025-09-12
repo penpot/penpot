@@ -38,7 +38,7 @@
   metosin/reitit-core {:mvn/version "0.9.1"}
   nrepl/nrepl {:mvn/version "1.3.1"}
 
-  org.postgresql/postgresql {:mvn/version "42.7.6"}
+  org.postgresql/postgresql {:mvn/version "42.7.7"}
   org.xerial/sqlite-jdbc {:mvn/version "3.49.1.0"}
 
   com.zaxxer/HikariCP {:mvn/version "6.3.0"}
@@ -65,7 +65,7 @@
 
   ;; Pretty Print specs
   pretty-spec/pretty-spec {:mvn/version "0.1.4"}
-  software.amazon.awssdk/s3 {:mvn/version "2.31.55"}}
+  software.amazon.awssdk/s3 {:mvn/version "2.33.8"}}
 
  :paths ["src" "resources" "target/classes"]
  :aliases

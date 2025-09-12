@@ -1016,12 +1016,6 @@
           (when swap-opened?
             [:> component-swap* {:shapes copies}])
 
-          (when (and (not swap-opened?) (not multi))
-            [:> component-annotation* {:id id
-                                       :shape shape
-                                       :component component
-                                       :rerender-fn rerender-fn}])
-
           (when (and is-variant?
                      (not main-instance?)
                      (not (:deleted component))
@@ -1036,6 +1030,12 @@
             [:> component-variant-main-instance* {:components components
                                                   :shapes shapes
                                                   :data data}])
+
+          (when (and (not swap-opened?) (not multi))
+            [:> component-annotation* {:id id
+                                       :shape shape
+                                       :component component
+                                       :rerender-fn rerender-fn}])
 
           (when (and multi all-main? (not any-variant?))
             [:button {:class (stl/css :combine-variant-button)

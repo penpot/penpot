@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.tokens :as cft]
+   [app.common.schema :as sm]
    [app.common.types.color :as c]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
@@ -121,10 +122,10 @@
 (defn validate-resolve-token
   [token prev-token tokens]
   (let [token (cond-> token
-                ;; When creating a new token we dont have a name yet,
+                ;; When creating a new token we dont have a name yet or invalid name,
                 ;; but we still want to resolve the value to show in the form.
                 ;; So we use a temporary token name that hopefully doesn't clash with any of the users token names
-                (str/empty? (:name token)) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
+                (not (sm/valid? ctt/token-name-ref (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
         tokens' (cond-> tokens
                   ;; Remove previous token when renaming a token
                   (not= (:name token) (:name prev-token))
