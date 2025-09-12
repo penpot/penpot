@@ -43,7 +43,7 @@
 
   frankiesardo/linked {:mvn/version "1.3.0"}
 
-  com.sun.mail/jakarta.mail {:mvn/version "2.0.1"}
+  com.sun.mail/jakarta.mail {:mvn/version "2.0.2"}
   org.la4j/la4j {:mvn/version "0.6.0"}
 
   ;; exception printing
