@@ -475,6 +475,6 @@
 
     ;; ==== Check
 
-    ;; When the nested copy inside the main is detached, their copies are unrooted.
+    ;; When the nested copy inside the main is detached, their copies are unheaded.
     (t/is (not (ctk/subcopy-head? nested2-h-ellipse)))
     (t/is (not (ctk/subcopy-head? copy-nested2-h-ellipse)))))

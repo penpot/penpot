@@ -325,8 +325,8 @@
   (let [repair-shape
         (fn [shape]
           ; Convert shape in a normal copy, removing nested copy status
-          (log/debug :hint "  -> unroot shape")
-          (ctk/unroot-shape shape))]
+          (log/debug :hint "  -> unhead shape")
+          (ctk/unhead-shape shape))]
 
     (log/dbg :hint "repairing shape :shape-ref-is-not-head" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)
@@ -339,7 +339,7 @@
         (fn [shape]
           ; Convert shape in a nested head, adding component info
           (log/debug :hint "  -> reroot shape")
-          (ctk/reroot-shape shape false (:component-file args) (:component-id args)))]
+          (ctk/rehead-shape shape (:component-file args) (:component-id args)))]
 
     (log/dbg :hint "repairing shape :shape-ref-is-head" :id (:id shape) :name (:name shape) :page-id page-id)
     (-> (pcb/empty-changes nil page-id)

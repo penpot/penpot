@@ -310,8 +310,8 @@
           :shape-ref
           :touched))
 
-(defn unroot-shape
-  "Make the shape not be a component root, but keep its :shape-ref and :touched if it was a nested copy"
+(defn unhead-shape
+  "Make the shape not be a component head, but keep its :shape-ref and :touched if it was a nested copy"
   [shape]
   (dissoc shape
           :component-root
@@ -319,11 +319,10 @@
           :component-id
           :main-instance))
 
-(defn reroot-shape
-  "Make the shape a component root, by adding component info"
-  [shape component-root? component-file component-id]
+(defn rehead-shape
+  "Make the shape a component head, by adding component info"
+  [shape component-file component-id]
   (assoc shape
-         :component-root component-root?
          :component-file component-file
          :component-id component-id))
 

@@ -1736,12 +1736,12 @@
 (defn- check-detached-main
   [changes dest-shape origin-shape]
   ;; Only for direct updates (from main to copy). Check if the main shape
-  ;; has been detached. If so, the copy shape must be unrooted (i.e. converted
+  ;; has been detached. If so, the copy shape must be unheaded (i.e. converted
   ;; into a normal copy and not a nested instance).
   (if (and (= (:shape-ref dest-shape) (:id origin-shape))
            (ctk/subcopy-head? dest-shape)
            (not (ctk/instance-head? origin-shape)))
-    (pcb/update-shapes changes [(:id dest-shape)] ctk/unroot-shape {:ignore-touched true})
+    (pcb/update-shapes changes [(:id dest-shape)] ctk/unhead-shape {:ignore-touched true})
     changes))
 
 (defn- update-attrs
