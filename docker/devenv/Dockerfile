@@ -73,7 +73,7 @@ RUN set -eux; \
 
 FROM base AS setup-node
 
-ENV NODE_VERSION=v22.18.0 \
+ENV NODE_VERSION=v22.19.0 \
     PATH=/opt/node/bin:$PATH
 
 RUN set -eux; \
