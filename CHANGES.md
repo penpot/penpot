@@ -15,6 +15,7 @@
 
 - Fix selection problems when devtools open [Taiga #11950](https://tree.taiga.io/project/penpot/issue/11950)
 - Fix long font names overlap [Taiga #11844](https://tree.taiga.io/project/penpot/issue/11844)
+- Fix search shortcut [Taiga #10265](https://tree.taiga.io/project/penpot/issue/10265)
 
 ## 2.10.0 (Unreleased)
 

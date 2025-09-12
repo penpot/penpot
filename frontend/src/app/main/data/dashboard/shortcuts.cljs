@@ -14,11 +14,32 @@
    [app.main.store :as st]))
 
 (def shortcuts
+  {:go-to-drafts       {:tooltip "G D"
+                        :command "g d"
+                        :subsections [:navigation-dashboard]
+                        :fn #(st/emit! (dcm/go-to-dashboard-files :project-id :default))}
+
+   :go-to-libs         {:tooltip "G L"
+                        :command "g l"
+                        :subsections [:navigation-dashboard]
+                        :fn #(st/emit! (dcm/go-to-dashboard-libraries))}
+
+   :create-new-project {:tooltip "+"
+                        :command "+"
+                        :subsections [:general-dashboard]
+                        :fn #(st/emit! (dd/create-element))}
+
+   :toggle-theme    {:tooltip (ds/alt "M")
+                     :command (ds/a-mod "m")
+                     :subsections [:general-dashboard]
+                     :fn #(st/emit! (with-meta (du/toggle-theme)
+                                      {::ev/origin "dashboard:shortcuts"}))}})
+
+(def shortcuts-files-section
   {:go-to-search       {:tooltip (ds/meta "F")
                         :command (ds/c-mod "f")
                         :subsections [:navigation-dashboard]
                         :fn #(st/emit! (dcm/go-to-dashboard-search))}
-
    :go-to-drafts       {:tooltip "G D"
                         :command "g d"
                         :subsections [:navigation-dashboard]
