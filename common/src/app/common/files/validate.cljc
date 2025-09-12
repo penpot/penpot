@@ -47,6 +47,8 @@
     :should-be-component-root
     :should-not-be-component-root
     :ref-shape-not-found
+    :ref-shape-is-head
+    :ref-shape-is-not-head
     :shape-ref-in-main
     :root-main-not-allowed
     :nested-main-not-allowed
@@ -305,6 +307,28 @@
                   "Shape inside main instance should not have shape-ref"
                   shape file page)))
 
+(defn- check-ref-is-not-head
+  "Validate that the referenced shape is not a nested copy root."
+  [shape file page libraries]
+  (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+    (when (and (some? ref-shape)
+               (ctk/instance-head? ref-shape))
+      (report-error :ref-shape-is-head
+                    (str/ffmt "Referenced shape % is a component, so the copy must also be" (:shape-ref shape))
+                    shape file page))))
+
+(defn- check-ref-is-head
+  "Validate that the referenced shape is a nested copy root."
+  [shape file page libraries]
+  (let [ref-shape (ctf/find-ref-shape file page libraries shape :include-deleted? true)]
+    (when (and (some? ref-shape)
+               (not (ctk/instance-head? ref-shape)))
+      (report-error :ref-shape-is-not-head
+                    (str/ffmt "Referenced shape % of a head copy must also be a head" (:shape-ref shape))
+                    shape file page
+                    :component-file (:component-file ref-shape)
+                    :component-id (:component-id ref-shape)))))
+
 (defn- check-empty-swap-slot
   "Validate that this shape does not have any swap slot."
   [shape file page]
@@ -382,6 +406,7 @@
     (check-component-not-main-head shape file page libraries)
     (check-component-root shape file page)
     (check-component-ref shape file page libraries)
+    (check-ref-is-head shape file page libraries)
     (check-empty-swap-slot shape file page)
     (check-duplicate-swap-slot shape file page)
     (check-valid-touched shape file page)
@@ -399,7 +424,8 @@
   ;; We can have situations where the nested copy and the ancestor copy come from different libraries and some of them have been dettached
   ;; so we only validate the shape-ref if the ancestor is from a valid library
   (when library-exists
-    (check-component-ref shape file page libraries))
+    (check-component-ref shape file page libraries)
+    (check-ref-is-head shape file page libraries))
   (run! #(check-shape % file page libraries :context :copy-nested) (:shapes shape)))
 
 (defn- check-shape-main-not-root
@@ -417,6 +443,7 @@
   (check-component-not-main-not-head shape file page)
   (check-component-not-root shape file page)
   (check-component-ref shape file page libraries)
+  (check-ref-is-not-head shape file page libraries)
   (check-empty-swap-slot shape file page)
   (check-valid-touched shape file page)
   (run! #(check-shape % file page libraries :context :copy-any) (:shapes shape)))

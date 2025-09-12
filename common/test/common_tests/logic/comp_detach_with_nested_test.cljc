@@ -446,3 +446,35 @@
     (t/is (= (count fills') 1))
     (t/is (= (:fill-color fill') "#fabada"))
     (t/is (= (:fill-opacity fill') 1))))
+
+(t/deftest test-detach-copy-in-main
+  (let [;; ==== Setup
+        file (-> (setup-file)
+                 (thc/instantiate-component :c-big-board
+                                            :copy-big-board
+                                            :children-labels [:copy-h-board-with-ellipse
+                                                              :copy-nested-h-ellipse
+                                                              :copy-nested-ellipse]))
+
+        page (thf/current-page file)
+
+        ;; ==== Action
+        changes (cll/generate-detach-instance (-> (pcb/empty-changes nil)
+                                                  (pcb/with-page page)
+                                                  (pcb/with-objects (:objects page)))
+                                              page
+                                              {(:id file) file}
+                                              (thi/id :nested-h-ellipse))
+        file'   (-> (thf/apply-changes file changes)
+                    (tho/propagate-component-changes :c-board-with-ellipse)
+                    (tho/propagate-component-changes :c-big-board))
+
+        ;; ==== Get
+        nested2-h-ellipse (ths/get-shape file' :nested-h-ellipse)
+        copy-nested2-h-ellipse (ths/get-shape file' :copy-nested-h-ellipse)]
+
+    ;; ==== Check
+
+    ;; When the nested copy inside the main is detached, their copies are unheaded.
+    (t/is (not (ctk/subcopy-head? nested2-h-ellipse)))
+    (t/is (not (ctk/subcopy-head? copy-nested2-h-ellipse)))))
