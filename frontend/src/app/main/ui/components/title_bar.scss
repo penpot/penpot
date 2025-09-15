@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "../ds/typography.scss" as t;
 @import "refactor/common-refactor.scss";
 
 .title-bar {
-  @include headlineSmallTypography;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -31,13 +31,14 @@
 }
 
 .title {
+  @include t.use-typography("headline-small");
   color: var(--title-color);
-  text-transform: uppercase;
 }
 
 .title-only {
-  color: var(--title-color);
+  @include t.use-typography("headline-small");
   --title-bar-title-margin: #{$s-8};
+  color: var(--title-color);
   margin-inline-start: var(--title-bar-title-margin);
 }
 
