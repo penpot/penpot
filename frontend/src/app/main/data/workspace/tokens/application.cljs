@@ -489,7 +489,7 @@
                                                       (some ctt/spacing-margin-keys attributes))
                                                  (ctt/any-appliable-attr? attributes (:type shape))))))
                           shape-ids (d/nilv (keys shapes)  [])
-                          any-variant? (->> shapes (some ctk/is-variant?) boolean)
+                          any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 
                           resolved-value (get-in resolved-tokens [(cft/token-identifier token) :resolved-value])
                           tokenized-attributes (cft/attributes-map attributes token)
