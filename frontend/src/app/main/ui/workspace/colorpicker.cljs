@@ -673,7 +673,7 @@
    [{:set \"brand/dark\" :tokens [{:name \"background\"}]}]"
   [sets]
   (filter (fn [{:keys [tokens]}]
-            (seq tokens))
+            (some #(= (:type %) :color) tokens))
           sets))
 
 (defn- add-tokens-to-sets
