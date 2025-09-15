@@ -563,9 +563,9 @@
        vec))
 
 (defn combine-as-variants
-  ([]
-   (combine-as-variants nil {}))
-  ([selected {:keys [page-id]}]
+  ([options]
+   (combine-as-variants nil options))
+  ([selected {:keys [page-id trigger]}]
    (ptk/reify ::combine-as-variants
      ptk/WatchEvent
      (watch [_ state stream]
@@ -616,7 +616,8 @@
                                                                (assoc :fixed-scroll false)))
                              (dwsh/relocate-shapes #{variant-id} common-parent index)
                              (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
-                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60)))
+                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
+                             (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger trigger :number-of-combined (count selected)}))
 
                       ;; NOTE: we need to schedule a commit into a
                       ;; microtask for ensure that all the scheduled

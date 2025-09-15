@@ -1136,7 +1136,7 @@
          (when add-component-to-variant?
            (rx/of (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))
          (when add-new-variant?
-           (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "move-shapes-in-workspace"})))))))
+           (rx/of (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "move-shapes-in-workspace"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
