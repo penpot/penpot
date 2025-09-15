@@ -34,7 +34,7 @@
    [app.util.array :as array]
    [app.util.dom :as dom]
    [app.util.dom.dnd :as dnd]
-   [app.util.i18n :as i18n :refer [tr c]]
+   [app.util.i18n :as i18n :refer [c tr]]
    [app.util.strings :refer [matches-search]]
    [app.util.timers :as ts]
    [cljs.spec.alpha :as s]
@@ -358,8 +358,10 @@
 
         ;; For when it's only one shape
         shape               (first shapes)
-        id                  (:id shape)
+        shape-id            (:id shape)
+
         main-instance?      (ctk/main-instance? shape)
+        variant-container?  (ctk/is-variant-container? shape)
 
         component-id        (:component-id shape)
         variant-id          (:variant-id shape)
@@ -409,7 +411,7 @@
         #(st/emit! (dwl/reset-components (map :id touched-not-dangling)))
 
         do-update-component-sync
-        #(st/emit! (dwl/update-component-sync id library-id))
+        #(st/emit! (dwl/update-component-sync shape-id library-id))
 
         do-update-remote-component
         (fn []
@@ -429,21 +431,24 @@
            (do-update-remote-component))
 
         do-show-in-assets
-        #(st/emit! (dw/show-component-in-assets component-id))
+        (let [component-id (if variant-container?
+                             (->> (:shapes shape) (mapv #(get objects %)) first :component-id)
+                             component-id)]
+          #(st/emit! (dw/show-component-in-assets component-id)))
 
         do-create-annotation
-        #(st/emit! (dw/set-annotations-id-for-create id))
+        #(st/emit! (dw/set-annotations-id-for-create shape-id))
 
         do-add-variant
         #(if (ctk/is-variant? shape)
            (st/emit!
             (ptk/event ::ev/event {::ev/name "add-new-variant"
                                    :trigger (if for-design-tab? "design-tab-menu-variant" "context-menu-variant")})
-            (dwv/add-new-variant id))
+            (dwv/add-new-variant shape-id))
            (st/emit!
             (ptk/event ::ev/event {::ev/name "transform-in-variant"
                                    :trigger (if for-design-tab? "design-tab-menu" "context-menu")})
-            (dwv/transform-in-variant id)))
+            (dwv/transform-in-variant shape-id)))
 
         do-add-new-property
         #(st/emit!
@@ -478,7 +483,8 @@
             (when (= 1 (count comps-to-restore))
               (ts/schedule 1000 #(do-show-component nil true)))))
 
-        menu-entries [(when (and (or (not multi) same-variant?) main-instance?)
+        menu-entries [(when (or (and (not multi) (or variant-container? main-instance?))
+                                (and multi same-variant?))
                         {:title (tr "workspace.shape.menu.show-in-assets")
                          :action do-show-in-assets})
                       (when (and (not multi) main-instance? local-component? lacks-annotation?)
