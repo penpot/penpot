@@ -34,7 +34,7 @@
 (def schema:segments impl/schema:segments)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; TRANSFORMATIONS
+;; CONSTRUCTORS & TYPE METHODS
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn content?
@@ -54,6 +54,10 @@
 (defn from-string
   [data]
   (impl/from-string data))
+
+(defn from-plain
+  [data]
+  (impl/from-plain data))
 
 (defn check-content
   [content]
@@ -188,6 +192,12 @@
   the `content->points`."
   [content]
   (some-> content segment/get-points))
+
+(defn calc-selrect
+  "Calculate selrect from a content. The content can be in a PathData
+  instance or plain vector of segments."
+  [content]
+  (segment/content->selrect content))
 
 (defn- calc-bool-content*
   "Calculate the boolean content from shape and objects. Returns plain
