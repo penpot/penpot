@@ -17,7 +17,7 @@
    [app.common.types.text :as types.text]
    [app.main.ui.shapes.text.styles :as sts]
    [app.util.code-gen.common :as cgc]
-   [app.util.code-gen.style-css-formats :refer [format-value format-shadow]]
+   [app.util.code-gen.style-css-formats :refer [format-value format-shadow->css]]
    [app.util.code-gen.style-css-values :refer [get-value]]
    [cuerdas.core :as str]))
 
@@ -332,4 +332,4 @@ body {
 
 (defn shadow->css
   [shadow]
-  (dm/str "box-shadow: " (format-shadow shadow {})))
+  (dm/str "box-shadow: " (format-shadow->css shadow {})))
