@@ -437,6 +437,12 @@
                                        (->> (cfh/get-parents-with-self objects parent-id)
                                             (some ctc/is-variant?)))
 
+            add-new-variant? (and
+                              ;; The parent is a variant container
+                              (-> parent-id objects ctc/is-variant-container?)
+                               ;; Any of the shapes is a main instance
+                              (some (comp ctc/main-instance? objects) ids))
+
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
@@ -445,4 +451,6 @@
                (ptk/data-event :layout/update {:ids (concat all-parents ids)})
                (dwu/commit-undo-transaction undo-id)
                (when add-component-to-variant?
-                 (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))))))
+                 (ptk/event ::ev/event {::ev/name "add-component-to-variant"}))
+               (when add-new-variant?
+                 (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "move-shapes-in-layers-tab"})))))))

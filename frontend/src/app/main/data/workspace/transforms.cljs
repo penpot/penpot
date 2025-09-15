@@ -1112,7 +1112,12 @@
                                        (some (comp ctk/instance-head? objects) ids)
                                        ;; Any ancestor of the destination parent is a variant
                                        (->> (cfh/get-parents-with-self objects frame-id)
-                                            (some ctk/is-variant?)))]
+                                            (some ctk/is-variant?)))
+            add-new-variant? (and
+                             ;; The parent is a variant container
+                              (-> frame-id objects ctk/is-variant-container?)
+                             ;; Any of the shapes is a main instance
+                              (some (comp ctk/main-instance? objects) ids))]
 
         (rx/concat
          (let [shapes  (mapv #(get objects %) ids)
@@ -1129,7 +1134,9 @@
            (rx/of (dch/commit-changes changes)
                   (dwc/expand-collapse frame-id)))
          (when add-component-to-variant?
-           (rx/of (ptk/event ::ev/event {::ev/name "add-component-to-variant"}))))))))
+           (rx/of (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))
+         (when add-new-variant?
+           (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "move-shapes-in-workspace"})))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
