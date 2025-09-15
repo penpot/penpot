@@ -19,7 +19,7 @@
 
 (mf/defc properties-row*
   {::mf/schema schema:properties-row}
-  [{:keys [term detail token property copiable]}]
+  [{:keys [class term detail token property copiable]}]
   (let [copiable? (or copiable false)
         detail? (not (or (nil? detail) (str/blank? detail)))
         detail (if detail? detail "-")
@@ -35,7 +35,7 @@
            (reset! copied* true)
            (wapi/write-to-clipboard copiable-value)
            (tm/schedule 1000 #(reset! copied* false))))]
-    [:dl {:class (stl/css :property-row)}
+    [:dl {:class [(stl/css :property-row) class]}
      [:dt {:class (stl/css :property-term)} term]
      [:dd {:class (stl/css :property-detail)}
       (if copiable?

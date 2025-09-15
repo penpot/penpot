@@ -16,6 +16,6 @@
                             :detail theme-list}]))
    (when (seq set-names)
      (let [sets-list (str/join ", " set-names)]
-       [:> properties-row* {:class (stl/css :token-theme)
+       [:> properties-row* {:class (stl/css :token-sets)
                             :term (tr "inspect.tabs.styles.panel.tokens.active-sets")
                             :detail sets-list}]))])
