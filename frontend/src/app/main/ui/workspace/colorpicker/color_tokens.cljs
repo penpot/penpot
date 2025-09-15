@@ -277,7 +277,7 @@
              (reset! filter-term* value))))
         filtered-combined (filter-combined-tokens combined-tokens filter-term)
         sorted-tokens     (sort-combined-tokens filtered-combined)]
-    (if combined-tokens
+    (if (seq combined-tokens)
       [:div {:class (stl/css :color-tokens-section)}
        [:> input* {:placeholder "Search by token name"
                    :icon i/search
