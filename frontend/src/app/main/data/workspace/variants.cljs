@@ -97,7 +97,7 @@
 (defn update-property-name
   "Update the variant property name on the position pos
    in all the components with this variant-id"
-  [variant-id pos new-name]
+  [variant-id pos new-name {:keys [trigger]}]
   (ptk/reify ::update-property-name
     ptk/WatchEvent
     (watch [it state _]
@@ -106,15 +106,22 @@
             objects (-> (dsh/get-page data page-id)
                         (get :objects))
 
+            related-components (cfv/find-variant-components data objects variant-id)
+
+            props              (-> related-components last :variant-properties)
+            prop-name          (-> props (nth pos) :name)
+
             changes (-> (pcb/empty-changes it page-id)
                         (pcb/with-objects objects)
                         (pcb/with-library-data data)
                         (clvp/generate-update-property-name variant-id pos new-name))
             undo-id (js/Symbol)]
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (dwu/commit-undo-transaction undo-id))))))
+        (when (not= prop-name new-name)
+          (rx/of
+           (dwu/start-undo-transaction undo-id)
+           (dch/commit-changes changes)
+           (dwu/commit-undo-transaction undo-id)
+           (ptk/event ::ev/event {::ev/name "variant-edit-property-name" :trigger trigger})))))))
 
 (defn update-property-value
   "Updates the variant property value on the position pos in a component"

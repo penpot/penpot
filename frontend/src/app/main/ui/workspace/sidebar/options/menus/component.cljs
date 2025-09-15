@@ -356,8 +356,7 @@
                            int)]
              (when (seq value)
                (st/emit!
-                (ptk/event ::ev/event {::ev/name "variant-edit-property-name" :trigger "design-tab-variant"})
-                (dwv/update-property-name variant-id pos value))))))]
+                (dwv/update-property-name variant-id pos value {:trigger "design-tab-variant"}))))))]
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
@@ -1148,8 +1147,7 @@
                            int)]
              (when (seq value)
                (st/emit!
-                (ptk/event ::ev/event {::ev/name "variant-edit-property-name" :trigger "design-tab-component"})
-                (dwv/update-property-name variant-id pos value))))))
+                (dwv/update-property-name variant-id pos value {:trigger "design-tab-component"}))))))
 
         remove-property
         (mf/use-fn
