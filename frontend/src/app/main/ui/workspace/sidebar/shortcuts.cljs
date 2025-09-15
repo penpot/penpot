@@ -18,8 +18,8 @@
    [app.main.data.workspace.shortcuts]
    [app.main.store :as st]
    [app.main.ui.components.search-bar :refer [search-bar*]]
-   [app.main.ui.ds.foundations.assets.icon :as i]
-   [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.strings :refer [matches-search]]
@@ -293,8 +293,8 @@
   [:div {:class (if is-sub
                   (stl/css :subsection-title)
                   (stl/css :section-title))}
-   [:span {:class (stl/css-case :open is-visible
-                                :collapsed-shortcuts true)} deprecated-icon/arrow]
+   [:> icon* {:icon-id (if is-visible i/arrow-down i/arrow-right)
+              :size "s"}]
    [:span {:class (if is-sub
                     (stl/css :subsection-name)
                     (stl/css :section-name))} name]])
@@ -497,11 +497,13 @@
     [:div {:class (dm/str class " " (stl/css :shortcuts))}
      [:div {:class (stl/css :shortcuts-header)}
       [:div {:class (stl/css :shortcuts-title)} (tr "shortcuts.title")]
-      [:div {:class (stl/css :shortcuts-close-button)
-             :on-click close-fn}
-       deprecated-icon/close]]
-     [:div {:class (stl/css :search-field)}
+      [:> icon-button* {:variant "ghost"
+                        :icon i/close
+                        :class (stl/css :shortcuts-close-button)
+                        :on-click close-fn
+                        :aria-label (tr "labels.close")}]]
 
+     [:div {:class (stl/css :search-field)}
       [:> search-bar* {:on-change on-search-term-change-2
                        :on-clear on-search-clear-click
                        :value @filter-term
