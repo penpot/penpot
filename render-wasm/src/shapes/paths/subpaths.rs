@@ -147,18 +147,39 @@ fn merge_paths(candidate: Subpath, others: Vec<Subpath>) -> Result<(Subpath, Vec
 
     let mut merged = candidate.clone();
     let mut other_without_merged = vec![];
+    let mut merged_any = false;
 
     for subpath in others {
         // Only merge if the candidate is not already closed and the subpath can be meaningfully connected
         if !merged.is_closed() && !subpath.is_closed() {
             if merged.ends_in(subpath.start()) {
-                merged = Subpath::try_from((&merged, &subpath))?;
+                if let Ok(new_merged) = Subpath::try_from((&merged, &subpath)) {
+                    merged = new_merged;
+                    merged_any = true;
+                } else {
+                    other_without_merged.push(subpath);
+                }
             } else if merged.starts_in(subpath.end()) {
-                merged = Subpath::try_from((&subpath, &merged))?;
+                if let Ok(new_merged) = Subpath::try_from((&subpath, &merged)) {
+                    merged = new_merged;
+                    merged_any = true;
+                } else {
+                    other_without_merged.push(subpath);
+                }
             } else if merged.ends_in(subpath.end()) {
-                merged = Subpath::try_from((&merged, &subpath.reversed()))?;
+                if let Ok(new_merged) = Subpath::try_from((&merged, &subpath.reversed())) {
+                    merged = new_merged;
+                    merged_any = true;
+                } else {
+                    other_without_merged.push(subpath);
+                }
             } else if merged.starts_in(subpath.start()) {
-                merged = Subpath::try_from((&subpath.reversed(), &merged))?;
+                if let Ok(new_merged) = Subpath::try_from((&subpath.reversed(), &merged)) {
+                    merged = new_merged;
+                    merged_any = true;
+                } else {
+                    other_without_merged.push(subpath);
+                }
             } else {
                 other_without_merged.push(subpath);
             }
@@ -166,6 +187,16 @@ fn merge_paths(candidate: Subpath, others: Vec<Subpath>) -> Result<(Subpath, Vec
             // If either subpath is closed, don't merge
             other_without_merged.push(subpath);
         }
+    }
+
+    // If we tried to merge but failed to close, force close the merged subpath
+    if !merged.is_closed() && merged_any {
+        let mut closed_segments = merged.segments.clone();
+        if let Some(Segment::MoveTo(start)) = closed_segments.first() {
+            closed_segments.push(Segment::LineTo(*start));
+            closed_segments.push(Segment::Close);
+        }
+        merged = Subpath::new(closed_segments);
     }
 
     Ok((merged, other_without_merged))
