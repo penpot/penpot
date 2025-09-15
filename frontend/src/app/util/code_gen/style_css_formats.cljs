@@ -53,24 +53,7 @@
    :grid-template-rows        :tracks
    :grid-template-columns     :tracks})
 
-(defmulti format-value
-  (fn [property _value _options] (css-formatters property)))
-
-(defmethod format-value :position
-  [_ value _options]
-  (cond
-    (number? value) (fmt/format-pixels value)
-    :else value))
-
-(defmethod format-value :size
-  [_ value _options]
-  (cond
-    (= value :fill) "100%"
-    (= value :auto) "auto"
-    (number? value) (fmt/format-pixels value)
-    :else value))
-
-(defn format-color
+(defn format-color->css
   "Format a color value to a CSS compatible string based on the given format."
   [value options]
   (let [format (get options :format :hex)]
@@ -92,33 +75,54 @@
       :else
       (uc/color->format->background value format))))
 
-(defmethod format-value :color
+(defn format-shadow->css
+  [{:keys [style offset-x offset-y blur spread color]} options]
+  (let [css-color (format-color->css color options)]
+    (dm/str
+     (if (= style :inner-shadow) "inset " "")
+     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
+
+(defn- format-position
+  [_ value _options]
+  (cond
+    (number? value) (fmt/format-pixels value)
+    :else value))
+
+(defn- format-size
+  [_ value _options]
+  (cond
+    (= value :fill) "100%"
+    (= value :auto) "auto"
+    (number? value) (fmt/format-pixels value)
+    :else value))
+
+(defn- format-color
   [_ value options]
   (let [format (get options :format :hex)]
-    (format-color value (assoc options :format format))))
+    (format-color->css value (assoc options :format format))))
 
-(defmethod format-value :color-array
+(defn- format-color-array
   [_ value options]
   (->> value
-       (map #(format-color % options))
+       (map #(format-color->css % options))
        (str/join ", ")))
 
-(defmethod format-value :border
+(defn- format-border
   [_ {:keys [color style width]} options]
   (dm/fmt "% % %"
           (fmt/format-pixels width)
           (d/name style)
-          (format-color color options)))
+          (format-color->css color options)))
 
-(defmethod format-value :border-style
+(defn- format-border-style
   [_ value _options]
   (d/name (:style value)))
 
-(defmethod format-value :border-width
+(defn- format-border-width
   [_ value _options]
   (fmt/format-pixels (:width value)))
 
-(defmethod format-value :size-array
+(defn- format-size-array
   [_ value _options]
   (cond
     (and (coll? value) (d/not-empty? value))
@@ -129,7 +133,7 @@
     (some? value)
     value))
 
-(defmethod format-value :string-or-size-array
+(defn format-string-or-size-array
   [_ value _]
   (cond
     (string? value)
@@ -143,11 +147,11 @@
     (some? value)
     value))
 
-(defmethod format-value :keyword
+(defn- format-keyword
   [_ value _options]
   (d/name value))
 
-(defmethod format-value :tracks
+(defn- format-tracks
   [_ value _options]
   (->> value
        (map (fn [{:keys [type value]}]
@@ -158,29 +162,38 @@
                 (fmt/format-pixels value))))
        (str/join " ")))
 
-(defn format-shadow
-  [{:keys [style offset-x offset-y blur spread color]} options]
-  (let [css-color (format-color color options)]
-    (dm/str
-     (if (= style :inner-shadow) "inset " "")
-     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
-
-(defmethod format-value :shadows
+(defn- format-shadow
   [_ value options]
   (->> value
-       (map #(format-shadow % options))
+       (map #(format-shadow->css % options))
        (str/join ", ")))
 
-(defmethod format-value :blur
+(defn- format-blur
   [_ value _options]
   (dm/fmt "blur(%)" (fmt/format-pixels value)))
 
-(defmethod format-value :matrix
+(defn-  format-matrix
   [_ value _options]
   (fmt/format-matrix value))
 
-(defmethod format-value :default
-  [_ value _options]
-  (if (keyword? value)
-    (d/name value)
-    value))
+
+(defn format-value
+  "Get the appropriate value formatter function for a given CSS property."
+  [property value options]
+  (let [property (css-formatters property)]
+    (case property
+      :position (format-position property value options)
+      :size (format-size property value options)
+      :color (format-color property value options)
+      :color-array (format-color-array property value options)
+      :border (format-border property value options)
+      :border-style (format-border-style property value options)
+      :border-width (format-border-width property value options)
+      :size-array (format-size-array property value options)
+      :string-or-size-array (format-string-or-size-array property value options)
+      :keyword (format-keyword property value options)
+      :tracks (format-tracks property value options)
+      :shadow (format-shadow property value options)
+      :blur (format-blur property value options)
+      :matrix (format-matrix property value options)
+      (if (keyword? value) (d/name value) value))))
