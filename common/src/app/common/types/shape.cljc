@@ -22,7 +22,6 @@
    [app.common.types.fills :refer [schema:fill fill->color]]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
-   [app.common.types.path.segment :as path.segment]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.shape.blur :as ctsb]
@@ -588,12 +587,16 @@
 (defn setup-path
   [{:keys [content selrect points] :as shape}]
   (let [selrect (or selrect
-                    (path.segment/content->selrect content)
+                    (path/calc-selrect content)
                     (grc/make-rect))
-        points  (or points  (grc/rect->points selrect))]
+        points  (or points
+                    (grc/rect->points selrect))
+        ;; Ensure we hace correct type here for Path Data
+        content (path/content content)]
     (-> shape
         (assoc :selrect selrect)
-        (assoc :points points))))
+        (assoc :points points)
+        (assoc :content content))))
 
 (defn- setup-image
   [{:keys [metadata] :as shape}]
