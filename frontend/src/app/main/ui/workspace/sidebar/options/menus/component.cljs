@@ -7,7 +7,6 @@
 (ns app.main.ui.workspace.sidebar.options.menus.component
   (:require-macros [app.main.style :as stl])
   (:require
-
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -1069,13 +1068,14 @@
 
         variants           (mapv #(get objects %) (:shapes shape))
         variant-id         (:variant-id (first variants))
+        variant-components (cfv/find-variant-components data objects variant-id)
 
         malformed-ids      (->> variants
                                 (filterv #(some? (:variant-error %)))
                                 (mapv :id))
         malformed?         (d/not-empty? malformed-ids)
 
-        duplicated-ids     (->> (cfv/find-variant-components data objects variant-id)
+        duplicated-ids     (->> variant-components
                                 get-main-ids-with-duplicated-variant-props-and-values)
         duplicated?        (d/not-empty? duplicated-ids)
 
@@ -1087,6 +1087,11 @@
 
         menu-open*         (mf/use-state false)
         menu-open?         (deref menu-open*)
+
+        show-in-assets-panel
+        (mf/use-fn
+         (mf/deps variants)
+         #(st/emit! (dw/show-component-in-assets (:component-id (first variants)))))
 
         create-variant
         (mf/use-fn
@@ -1104,10 +1109,12 @@
             (dwv/add-new-property variant-id {:property-value "Value 1"
                                               :editing? true}))))
 
-        menu-entries [{:title (tr "workspace.shape.menu.add-variant-property")
-                       :action (partial add-new-property "design-tab-menu-component")}
+        menu-entries [{:title (tr "workspace.shape.menu.show-in-assets")
+                       :action show-in-assets-panel}
                       {:title (tr "workspace.shape.menu.add-variant")
-                       :action (partial create-variant "design-tab-menu-component")}]
+                       :action (partial create-variant "design-tab-menu-component")}
+                      {:title (tr "workspace.shape.menu.add-variant-property")
+                       :action (partial add-new-property "design-tab-menu-component")}]
 
         toggle-content
         (mf/use-fn
