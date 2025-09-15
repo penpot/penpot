@@ -1078,6 +1078,7 @@
                                              :font-style (unchecked-get module "FontStyle")
                                              :flex-direction (unchecked-get module "FlexDirection")
                                              :grid-direction (unchecked-get module "GridDirection")
+                                             :grow-type (unchecked-get module "GrowType")
                                              :align-items (unchecked-get module "AlignItems")
                                              :align-self (unchecked-get module "AlignSelf")
                                              :align-content (unchecked-get module "AlignContent")
@@ -1093,7 +1094,7 @@
                                              :vertical-align (unchecked-get module "VerticalAlign")
                                              :fill-data (unchecked-get module "RawFillData")
                                              :segment-data (unchecked-get module "RawSegmentData")}]
-                         (set! wasm/serializers (js->clj serializers :keywordize-keys true))
+                         (set! wasm/serializers serializers)
                          (default))))
              (p/fmap (fn [default]
                        (set! wasm/internal-module default)

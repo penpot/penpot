@@ -6,6 +6,7 @@
 
  (ns app.render-wasm.serializers
    (:require
+    [app.common.data :as d]
     [app.common.uuid :as uuid]
     [app.render-wasm.wasm :as wasm]
     [cuerdas.core :as str]))
@@ -57,21 +58,21 @@
 
 (defn translate-shape-type
   [type]
-  (let [values (:shape-type wasm/serializers)
-        default (:rect values)]
-    (get values type default)))
+  (let [values (unchecked-get wasm/serializers "shape-type")
+        default (unchecked-get values "rect")]
+    (d/nilv (unchecked-get values (d/name type)) default)))
 
 (defn translate-stroke-style
   [stroke-style]
-  (let [values (:stroke-style wasm/serializers)
-        default (:solid values)]
-    (get values stroke-style default)))
+  (let [values (unchecked-get wasm/serializers "stroke-style")
+        default (unchecked-get values "solid")]
+    (d/nilv (unchecked-get values (d/name stroke-style)) default)))
 
 (defn translate-stroke-cap
   [stroke-cap]
-  (let [values (:stroke-cap wasm/serializers)
-        default (:none values)]
-    (get values stroke-cap default)))
+  (let [values (unchecked-get wasm/serializers "stroke-cap")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name stroke-cap)) default)))
 
 (defn serialize-path-attrs
   [svg-attrs]
@@ -105,97 +106,97 @@
 
 (defn translate-constraint-h
   [type]
-  (let [values (:constraint-h wasm/serializers)
+  (let [values (unchecked-get wasm/serializers "constraint-h")
         default 5] ;; TODO: fix code in rust so we have a proper None variant
-    (get values type default)))
+    (d/nilv (unchecked-get values (d/name type)) default)))
 
 (defn translate-constraint-v
   [type]
-  (let [values (:constraint-v wasm/serializers)
+  (let [values (unchecked-get wasm/serializers "constraint-v")
         default 5] ;; TODO: fix code in rust so we have a proper None variant
-    (get values type default)))
+    (d/nilv (unchecked-get values (d/name type)) default)))
 
 (defn translate-bool-type
   [bool-type]
-  (let [values (:bool-type wasm/serializers)
-        default (:union values)]
-    (get values bool-type default)))
+  (let [values (unchecked-get wasm/serializers "bool-type")
+        default (unchecked-get values "union")]
+    (d/nilv (unchecked-get values (d/name bool-type)) default)))
 
 
 (defn translate-blur-type
   [blur-type]
-  (let [values (:blur-type wasm/serializers)
-        default (:none values)]
-    (get values blur-type default)))
+  (let [values (unchecked-get wasm/serializers "blur-type")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name blur-type)) default)))
 
 (defn translate-layout-flex-dir
   [flex-dir]
-  (let [values (:flex-direction wasm/serializers)]
-    (get values flex-dir)))
+  (let [values (unchecked-get wasm/serializers "flex-direction")]
+    (unchecked-get values (d/name flex-dir))))
 
 
 (defn translate-layout-grid-dir
   [grid-dir]
-  (let [values (:grid-direction wasm/serializers)]
-    (get values grid-dir)))
+  (let [values (unchecked-get wasm/serializers "grid-direction")]
+    (unchecked-get values (d/name grid-dir))))
 
 (defn translate-layout-align-items
   [align-items]
-  (let [values (:align-items wasm/serializers)
-        default (:start values)]
-    (get values align-items default)))
+  (let [values (unchecked-get wasm/serializers "align-items")
+        default (unchecked-get values "start")]
+    (d/nilv (unchecked-get values (d/name align-items)) default)))
 
 (defn translate-layout-align-content
   [align-content]
-  (let [values (:align-content wasm/serializers)
-        default (:stretch values)]
-    (get values align-content default)))
+  (let [values (unchecked-get wasm/serializers "align-content")
+        default (unchecked-get values "stretch")]
+    (d/nilv (unchecked-get values (d/name align-content)) default)))
 
 (defn translate-layout-justify-items
   [justify-items]
-  (let [values (:justify-items wasm/serializers)
-        default (:start values)]
-    (get values justify-items default)))
+  (let [values (unchecked-get wasm/serializers "justify-items")
+        default (unchecked-get values "start")]
+    (d/nilv (unchecked-get values (d/name justify-items)) default)))
 
 (defn translate-layout-justify-content
   [justify-content]
-  (let [values (:justify-content wasm/serializers)
-        default (:stretch values)]
-    (get values justify-content default)))
+  (let [values (unchecked-get wasm/serializers "justify-content")
+        default (unchecked-get values "stretch")]
+    (d/nilv (unchecked-get values (d/name justify-content)) default)))
 
 (defn translate-layout-wrap-type
   [wrap-type]
-  (let [values (:wrap-type wasm/serializers)
-        default (:nowrap values)]
-    (get values wrap-type default)))
+  (let [values (unchecked-get wasm/serializers "wrap-type")
+        default (unchecked-get values "nowrap")]
+    (d/nilv (unchecked-get values (d/name wrap-type)) default)))
 
 
 (defn translate-grid-track-type
   [type]
-  (let [values (:grid-track-type wasm/serializers)]
-    (get values type)))
+  (let [values (unchecked-get wasm/serializers "grid-track-type")]
+    (unchecked-get values (d/name type))))
 
 (defn translate-layout-sizing
-  [value]
-  (let [values (:sizing wasm/serializers)
-        default (:fix values)]
-    (get values value default)))
+  [sizing]
+  (let [values (unchecked-get wasm/serializers "sizing")
+        default (unchecked-get values "fix")]
+    (d/nilv (unchecked-get values (d/name sizing)) default)))
 
 (defn translate-align-self
-  [value]
-  (let [values (:align-self wasm/serializers)]
-    (get values value)))
+  [align-self]
+  (let [values (unchecked-get wasm/serializers "align-self")]
+    (unchecked-get values (d/name align-self))))
 
 (defn translate-justify-self
-  [value]
-  (let [values (:justify-self wasm/serializers)]
-    (get values value)))
+  [justify-self]
+  (let [values (unchecked-get wasm/serializers "justify-self")]
+    (unchecked-get values (d/name justify-self))))
 
 (defn translate-shadow-style
   [style]
-  (let [values (:shadow-style wasm/serializers)
-        default (:drop-shadow values)]
-    (get values style default)))
+  (let [values (unchecked-get wasm/serializers "shadow-style")
+        default (unchecked-get values "drop-shadow")]
+    (d/nilv (unchecked-get values (d/name style)) default)))
 
 ;; TODO: Find/Create a Rust enum for this
 (defn translate-structure-modifier-type
@@ -207,15 +208,15 @@
 
 (defn translate-grow-type
   [grow-type]
-  (let [values (:grow-type wasm/serializers)
-        default (:fixed values)]
-    (get values grow-type default)))
+  (let [values (unchecked-get wasm/serializers "grow-type")
+        default (unchecked-get values "fixed")]
+    (d/nilv (unchecked-get values (d/name grow-type)) default)))
 
 (defn translate-vertical-align
   [vertical-align]
-  (let [values (:vertical-align wasm/serializers)
-        default (:top values)]
-    (get values vertical-align default)))
+  (let [values (unchecked-get wasm/serializers "vertical-align")
+        default (unchecked-get values "top")]
+    (d/nilv (unchecked-get values (d/name vertical-align)) default)))
 
 ;; TODO: Find/Create a Rust enum for this
 (defn translate-text-align
@@ -260,12 +261,12 @@
 
 (defn translate-font-style
   [font-style]
-  (let [values (:font-style wasm/serializers)
-        default (:normal values)]
+  (let [values (unchecked-get wasm/serializers "font-style")
+        default (unchecked-get values "normal")]
     (case font-style
     ;; NOTE: normal == regular!
     ;; is it OK to keep those two values in our cljs model?
-      "normal" (:normal values)
-      "regular" (:normal values)
-      "italic" (:italic values)
+      "normal" (unchecked-get values "normal")
+      "regular" (unchecked-get values "normal")
+      "italic" (unchecked-get values "italic")
       default)))
