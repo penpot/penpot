@@ -1105,7 +1105,14 @@
                          frame-id
                          drop-index
                          ids
-                         :cell cell))]
+                         :cell cell))
+
+            add-component-to-variant? (and
+                                        ;; Any of the shapes is a head
+                                       (some (comp ctk/instance-head? objects) ids)
+                                       ;; Any ancestor of the destination parent is a variant
+                                       (->> (cfh/get-parents-with-self objects frame-id)
+                                            (some ctk/is-variant?)))]
 
         (rx/concat
          (let [shapes  (mapv #(get objects %) ids)
@@ -1120,7 +1127,9 @@
 
          (when (and (some? frame-id) (d/not-empty? changes))
            (rx/of (dch/commit-changes changes)
-                  (dwc/expand-collapse frame-id))))))))
+                  (dwc/expand-collapse frame-id)))
+         (when add-component-to-variant?
+           (rx/of (ptk/event ::ev/event {::ev/name "add-component-to-variant"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the

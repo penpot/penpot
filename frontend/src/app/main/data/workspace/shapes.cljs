@@ -417,6 +417,7 @@
             ;; If we try to move a parent into a child we remove it
             ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
 
+
             all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
 
             changes (-> (pcb/empty-changes it)
@@ -428,10 +429,20 @@
                          to-index
                          ids
                          :ignore-parents? ignore-parents?))
+
+            add-component-to-variant? (and
+                                       ;; Any of the shapes is a head
+                                       (some (comp ctc/instance-head? objects) ids)
+                                       ;; Any ancestor of the destination parent is a variant
+                                       (->> (cfh/get-parents-with-self objects parent-id)
+                                            (some ctc/is-variant?)))
+
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
                (ptk/data-event :layout/update {:ids (concat all-parents ids)})
-               (dwu/commit-undo-transaction undo-id))))))
+               (dwu/commit-undo-transaction undo-id)
+               (when add-component-to-variant?
+                 (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))))))
