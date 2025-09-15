@@ -25,6 +25,7 @@
    [app.util.strings :refer [matches-search]]
    [clojure.set :as set]
    [clojure.string]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (mf/defc converted-chars*
@@ -251,7 +252,7 @@
         penultimate     (last short-char-list)]
     [:span {:class (stl/css :keys)}
      (for [chars short-char-list]
-       [:*
+       [:* {:key (str/join chars)}
         (for [char chars]
           [:> converted-chars* {:key (dm/str char "-" (name command))
                                 :char char
@@ -510,7 +511,8 @@
      (if match-any?
        [:div {:class (stl/css :shortcuts-list)}
         (for [section all-shortcuts]
-          [:> shortcut-section* {:section section
+          [:> shortcut-section* {:key (->> section second :id first)
+                                 :section section
                                  :manage-sections manage-sections
                                  :open-sections open-sections
                                  :filter-term filter-term}])]
