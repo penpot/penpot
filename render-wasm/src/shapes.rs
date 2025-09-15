@@ -988,7 +988,7 @@ impl Shape {
         if !self.blur.hidden {
             match self.blur.blur_type {
                 BlurType::None => None,
-                BlurType::Layer => skia::image_filters::blur(
+                BlurType::LayerBlur => skia::image_filters::blur(
                     (self.blur.value * scale, self.blur.value * scale),
                     None,
                     None,
@@ -1005,7 +1005,7 @@ impl Shape {
         if !self.blur.hidden {
             match self.blur.blur_type {
                 BlurType::None => None,
-                BlurType::Layer => skia::MaskFilter::blur(
+                BlurType::LayerBlur => skia::MaskFilter::blur(
                     skia::BlurStyle::Normal,
                     self.blur.value * scale,
                     Some(true),

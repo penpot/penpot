@@ -4,7 +4,7 @@ use macros::ToJs;
 #[repr(u8)]
 pub enum BlurType {
     None = 0,
-    Layer = 1,
+    LayerBlur = 1,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -19,7 +19,7 @@ impl From<u8> for BlurType {
     // TODO: use transmute
     fn from(value: u8) -> Self {
         match value {
-            1 => BlurType::Layer,
+            1 => BlurType::LayerBlur,
             _ => BlurType::None,
         }
     }

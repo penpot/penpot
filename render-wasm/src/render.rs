@@ -563,19 +563,19 @@ impl RenderState {
 
         let mut nested_blur_value = 0.;
         for nested_blur in self.nested_blurs.iter().flatten() {
-            if !nested_blur.hidden && nested_blur.blur_type == BlurType::Layer {
+            if !nested_blur.hidden && nested_blur.blur_type == BlurType::LayerBlur {
                 nested_blur_value += nested_blur.value.powf(2.);
             }
         }
 
-        if !shape.blur.hidden && shape.blur.blur_type == BlurType::Layer {
+        if !shape.blur.hidden && shape.blur.blur_type == BlurType::LayerBlur {
             nested_blur_value += shape.blur.value.powf(2.);
         }
 
         if nested_blur_value > 0. {
             shape
                 .to_mut()
-                .set_blur(BlurType::Layer as u8, false, nested_blur_value.sqrt());
+                .set_blur(BlurType::LayerBlur as u8, false, nested_blur_value.sqrt());
         }
 
         let center = shape.center();
