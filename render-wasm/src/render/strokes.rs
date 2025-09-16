@@ -183,22 +183,22 @@ fn handle_stroke_cap(
     paint.set_style(skia::PaintStyle::Fill);
     match cap {
         StrokeCap::None => {}
-        StrokeCap::Line => {
+        StrokeCap::LineArrow => {
             // We also draw this square cap to fill the gap between the path and the arrow
             draw_square_cap(canvas, paint, p1, p2, width, 0.);
             paint.set_style(skia::PaintStyle::Stroke);
             draw_arrow_cap(canvas, paint, p1, p2, width * 4.);
         }
-        StrokeCap::Triangle => {
+        StrokeCap::TriangleArrow => {
             draw_triangle_cap(canvas, paint, p1, p2, width * 4.);
         }
-        StrokeCap::Rectangle => {
+        StrokeCap::SquareMarker => {
             draw_square_cap(canvas, paint, p1, p2, width * 4., 0.);
         }
-        StrokeCap::Circle => {
+        StrokeCap::CircleMarker => {
             canvas.draw_circle((p1.x, p1.y), width * 2., paint);
         }
-        StrokeCap::Diamond => {
+        StrokeCap::DiamondMarker => {
             draw_square_cap(canvas, paint, p1, p2, width * 4., 45.);
         }
         StrokeCap::Round => {

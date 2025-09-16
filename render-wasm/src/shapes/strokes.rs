@@ -1,18 +1,23 @@
 use crate::shapes::fills::{Fill, SolidColor};
+use macros::ToJs;
 use skia_safe::{self as skia, Rect};
 use std::collections::HashMap;
 
 use super::Corners;
 
-#[derive(Debug, Clone, PartialEq)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, Clone, PartialEq, ToJs)]
+#[repr(u8)]
 pub enum StrokeStyle {
-    Solid,
-    Dotted,
-    Dashed,
-    Mixed,
+    Solid = 0,
+    Dotted = 1,
+    Dashed = 2,
+    Mixed = 3,
 }
 
+// TODO: maybe move this to the wasm module?
 impl From<u8> for StrokeStyle {
+    // TODO: use transmute
     fn from(value: u8) -> Self {
         match value {
             1 => StrokeStyle::Dotted,
@@ -23,26 +28,29 @@ impl From<u8> for StrokeStyle {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+// TODO: maybe move this to the wasm module?
+#[derive(Debug, Clone, Copy, PartialEq, ToJs)]
 pub enum StrokeCap {
-    None,
-    Line,
-    Triangle,
-    Rectangle,
-    Circle,
-    Diamond,
-    Round,
-    Square,
+    None = 0,
+    LineArrow = 1,
+    TriangleArrow = 2,
+    SquareMarker = 3,
+    CircleMarker = 4,
+    DiamondMarker = 5,
+    Round = 6,
+    Square = 7,
 }
 
+// TODO: maybe move this to the wasm module?
 impl From<u8> for StrokeCap {
+    // TODO: use transmute
     fn from(value: u8) -> Self {
         match value {
-            1 => StrokeCap::Line,
-            2 => StrokeCap::Triangle,
-            3 => StrokeCap::Rectangle,
-            4 => StrokeCap::Circle,
-            5 => StrokeCap::Diamond,
+            1 => StrokeCap::LineArrow,
+            2 => StrokeCap::TriangleArrow,
+            3 => StrokeCap::SquareMarker,
+            4 => StrokeCap::CircleMarker,
+            5 => StrokeCap::DiamondMarker,
             6 => StrokeCap::Round,
             7 => StrokeCap::Square,
             _ => StrokeCap::None,

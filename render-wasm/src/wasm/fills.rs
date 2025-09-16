@@ -1,16 +1,18 @@
-mod gradient;
-mod image;
-mod solid;
+use macros::ToJs;
 
 use crate::mem;
 use crate::shapes;
 use crate::with_current_shape_mut;
 use crate::STATE;
 
+mod gradient;
+mod image;
+mod solid;
+
 const RAW_FILL_DATA_SIZE: usize = std::mem::size_of::<RawFillData>();
 
 #[repr(C, u8, align(4))]
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[allow(dead_code)]
 pub enum RawFillData {
     Solid(solid::RawSolidData) = 0x00,
