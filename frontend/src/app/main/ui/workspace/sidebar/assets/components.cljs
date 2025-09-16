@@ -176,7 +176,6 @@
                   :title (tr "workspace.assets.components.num-variants" num-variants)}
            [:> icon* {:icon-id i/variant :size "s"}]])])]))
 
-
 (defn- count-leaves
   "Counts the total number of leaf elements in a nested map structure.
      A leaf element is considered any element inside a vector."
@@ -201,7 +200,6 @@
                              ^boolean (get open-groups prefix (if (= prefix "") true false))))
         dragging*      (mf/use-state false)
         dragging?      (deref dragging*)
-
 
         selected-paths (mf/with-memo [selected-full]
                          (into #{}
@@ -261,7 +259,6 @@
 
          (when ^boolean dragging?
            [:div {:class (stl/css :grid-placeholder)} "\u00A0"])
-
 
          (when (and (empty? components)
                     (some? groups)
@@ -506,9 +503,7 @@
                  page-id (->> comps first :main-instance-page)]
 
              (st/emit!
-              (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-assets-group"})
-              (dwv/combine-as-variants ids {:page-id page-id})))))
-
+              (dwv/combine-as-variants ids {:page-id page-id :trigger "workspace:context-menu-assets-group"})))))
 
         on-drag-start
         (mf/use-fn
@@ -557,8 +552,7 @@
                  ids (into #{} (map :main-instance-id selected-full))]
 
              (st/emit!
-              (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-assets"})
-              (dwv/combine-as-variants ids {:page-id page-id})))))]
+              (dwv/combine-as-variants ids {:page-id page-id :trigger "workspace:context-menu-assets"})))))]
 
     [:& cmm/asset-section {:file-id file-id
                            :title (tr "workspace.assets.components")

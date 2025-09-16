@@ -592,9 +592,6 @@
                                                  page
                                                  libraries)
              component (ctn/get-component-from-shape new-shape libraries)
-             any-parent-is-variant (->> (cfh/get-parents-with-self objects (:parent-id new-shape))
-                                        (some ctk/is-variant?)
-                                        boolean)
 
              undo-id (js/Symbol)]
 
@@ -605,8 +602,7 @@
                            {::ev/name "use-library-component"
                             ::ev/origin origin
                             :external-library (not= file-id current-file-id)
-                            :is-variant (ctk/is-variant? component)
-                            :any-parent-is-variant any-parent-is-variant})
+                            :is-variant (ctk/is-variant? component)})
                 (dwu/start-undo-transaction undo-id)
                 (dch/commit-changes changes)
                 (ptk/data-event :layout/update {:ids [(:id new-shape)]})

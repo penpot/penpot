@@ -235,7 +235,6 @@
             parent-id (:id (ctn/get-first-valid-parent objects parent-id))   ;; We don't want to change the structure of component copies
             frame-id  (:id (ctn/get-first-valid-parent objects frame-id))
 
-
             shape     (cts/setup-shape
                        (-> attrs
                            (assoc :type type)
@@ -312,7 +311,6 @@
                                              (get objects)
                                              (ctc/is-variant?))))]
 
-
          (rx/of (create-artboard-from-shapes selected id parent-id index name delta)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -362,6 +360,7 @@
 
 ;; FIXME: this need to be refactored
 
+
 (defn toggle-file-thumbnail-selected
   []
   (ptk/reify ::toggle-file-thumbnail-selected
@@ -397,6 +396,7 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
+
 (defn relocate-shapes
   [ids parent-id to-index & [ignore-parents?]]
   (dm/assert! (every? uuid? ids))
@@ -428,10 +428,28 @@
                          to-index
                          ids
                          :ignore-parents? ignore-parents?))
+
+            add-component-to-variant? (and
+                                       ;; Any of the shapes is a head
+                                       (some (comp ctc/instance-head? objects) ids)
+                                       ;; Any ancestor of the destination parent is a variant
+                                       (->> (cfh/get-parents-with-self objects parent-id)
+                                            (some ctc/is-variant?)))
+
+            add-new-variant? (and
+                              ;; The parent is a variant container
+                              (-> parent-id objects ctc/is-variant-container?)
+                               ;; Any of the shapes is a main instance
+                              (some (comp ctc/main-instance? objects) ids))
+
             undo-id (js/Symbol)]
 
         (rx/of (dwu/start-undo-transaction undo-id)
                (dch/commit-changes changes)
                (dwco/expand-collapse parent-id)
                (ptk/data-event :layout/update {:ids (concat all-parents ids)})
-               (dwu/commit-undo-transaction undo-id))))))
+               (dwu/commit-undo-transaction undo-id)
+               (when add-component-to-variant?
+                 (ev/event {::ev/name "add-component-to-variant"}))
+               (when add-new-variant?
+                 (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-in-layers-tab"})))))))
