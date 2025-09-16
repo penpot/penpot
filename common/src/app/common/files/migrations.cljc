@@ -1568,6 +1568,22 @@
     (-> data
         (update :pages-index d/update-vals update-page))))
 
+(defmethod migrate-data "0011-fix-invalid-text-touched-flags"
+  [data _]
+  (letfn [(fix-shape [shape]
+            (let [touched-groups (ctk/normal-touched-groups shape)
+                  content-touched? (touched-groups :content-group)
+                  text-touched?    (or (touched-groups :text-content-text)
+                                       (touched-groups :text-content-attribute)
+                                       (touched-groups :text-content-structure))]
+              (if (and text-touched? (not content-touched?))
+                (update shape :touched ctk/set-touched-group :content-group)
+                shape)))
+
+          (update-page [page]
+            (d/update-when page :objects d/update-vals fix-shape))]
+    (-> data
+        (update :pages-index d/update-vals update-page))))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1635,4 +1651,5 @@
          "0008-fix-library-colors-v4"
          "0009-clean-library-colors"
          "0009-add-partial-text-touched-flags"
-         "0010-fix-swap-slots-pointing-non-existent-shapes"]))
+         "0010-fix-swap-slots-pointing-non-existent-shapes"
+         "0011-fix-invalid-text-touched-flags"]))
