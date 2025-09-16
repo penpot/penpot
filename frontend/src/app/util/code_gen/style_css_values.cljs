@@ -72,26 +72,6 @@
       (some? (get shape type))
       (get shape type))))
 
-
-
-(defn- get-position
-  [_ shape objects _]
-  (cond
-    (or (and (ctl/any-layout-immediate-child? objects shape)
-             (not (ctl/position-absolute? shape))
-             (or (cfh/group-like-shape? shape)
-                 (cfh/frame-shape? shape)
-                 (cgc/svg-markup? shape)))
-        (cfh/root-frame? shape))
-    :relative
-
-    (and (ctl/any-layout-immediate-child? objects shape)
-         (not (ctl/position-absolute? shape)))
-    nil
-
-    :else
-    :absolute))
-
 (defn get-stroke-data
   [stroke]
   (let [width (:stroke-width stroke)
@@ -126,16 +106,34 @@
 
 ;; SHAPE VALUES
 
+(defn- get-position
+  [shape objects]
+  (cond
+    (or (and (ctl/any-layout-immediate-child? objects shape)
+             (not (ctl/position-absolute? shape))
+             (or (cfh/group-like-shape? shape)
+                 (cfh/frame-shape? shape)
+                 (cgc/svg-markup? shape)))
+        (cfh/root-frame? shape))
+    :relative
+
+    (and (ctl/any-layout-immediate-child? objects shape)
+         (not (ctl/position-absolute? shape)))
+    nil
+
+    :else
+    :absolute))
+
 (defn- get-left-position
-  [_ shape objects _]
+  [shape objects]
   (get-shape-position shape objects :x))
 
 (defn- get-top-position
-  [_ shape objects _]
+  [shape objects]
   (get-shape-position shape objects :y))
 
 (defn- get-flex
-  [_ shape objects _]
+  [shape objects]
   (let [parent (cfh/get-parent objects (:id shape))]
     (when (and (ctl/flex-layout-immediate-child? objects shape)
                (or (and (contains? #{:row :row-reverse} (:layout-flex-dir parent))
@@ -145,7 +143,7 @@
       1)))
 
 (defn- get-width
-  [_ shape objects options]
+  [shape objects options]
   (let [root? (contains? (:root-shapes options) (:id shape))]
     (if (and root? (ctl/any-layout? shape))
       :fill
@@ -154,7 +152,7 @@
         (get-shape-size shape objects :width)))))
 
 (defn- get-height
-  [_ shape objects options]
+  [shape objects options]
   (let [root? (contains? (:root-shapes options) (:id shape))]
     (when-not (and root? (ctl/any-layout? shape))
       ;; Don't set fixed height for auto-height text shapes
@@ -162,13 +160,13 @@
         (get-shape-size shape objects :height)))))
 
 (defn- get-flex-grow
-  [_ shape _ options]
+  [shape options]
   (let [root? (contains? (:root-shapes options) (:id shape))]
     (when (and root? (ctl/any-layout? shape))
       1)))
 
 (defn- get-transform
-  [_ shape objects _]
+  [shape objects]
   (if (cgc/svg-markup? shape)
     (let [parent (get objects (:parent-id shape))
           transform
@@ -193,18 +191,18 @@
         transform-str))))
 
 (defn- get-background
-  [_ {:keys [fills] :as shape} _ _]
+  [{:keys [fills] :as shape}]
   (let [single-fill? (= (count fills) 1)]
     (when (and (not (cgc/svg-markup? shape)) (not (cfh/group-shape? shape)) single-fill?)
       (fill->color (first fills)))))
 
 (defn- get-border
-  [_ shape _ _]
+  [shape]
   (when-not (cgc/svg-markup? shape)
     (get-stroke-data (first (:strokes shape)))))
 
 (defn- get-border-radius
-  [_ {:keys [rx r1 r2 r3 r4] :as shape} _ _]
+  [{:keys [rx r1 r2 r3 r4] :as shape}]
   (cond
     (cfh/circle-shape? shape)
     "50%"
@@ -216,106 +214,106 @@
     [r1 r2 r3 r4]))
 
 (defn- get-border-start-start-radius
-  [_ {:keys [_ r1 _ _ _] :as shape} _ _]
+  [{:keys [_ r1 _ _ _] :as shape}]
   (when (and r1 (not= r1 0))
     [r1]))
 
 (defn- get-border-start-end-radius
-  [_ {:keys [_ _ r2 _ _] :as shape} _ _]
+  [{:keys [_ _ r2 _ _] :as shape}]
   (when (and r2 (not= r2 0))
     [r2]))
 
 (defn- get-border-end-start-radius
-  [_ {:keys [_ _ _ r3 _] :as shape} _ _]
+  [{:keys [_ _ _ r3 _] :as shape}]
   (when (and r3 (not= r3 0))
     [r3]))
 
 (defn- get-border-end-end-radius
-  [_ {:keys [_ _ _ _ r4] :as shape} _ _]
+  [{:keys [_ _ _ _ r4] :as shape}]
   (when (and r4 (not= r4 0))
     [r4]))
 
 (defn- get-border-style
-  [_ stroke _ _]
+  [stroke]
   (when-not (cgc/svg-markup? stroke)
     (get-stroke-data stroke)))
 
 (defn- get-border-width
-  [_ stroke _ _]
+  [stroke]
   (when-not (cgc/svg-markup? stroke)
     (get-stroke-data stroke)))
 
 (defn- get-box-shadow
-  [_ shape _ _]
+  [shape]
   (when-not (cgc/svg-markup? shape)
     (:shadow shape)))
 
 (defn- get-filter
-  [_ shape _ _]
+  [shape]
   (when-not (cgc/svg-markup? shape)
     (get-in shape [:blur :value])))
 
 (defn- get-display
-  [_ shape _ _]
+  [shape]
   (cond
     (:hidden shape) "none"
     (ctl/flex-layout? shape) "flex"
     (ctl/grid-layout? shape) "grid"))
 
 (defn- get-opacity
-  [_ shape _ _]
+  [shape]
   (when (< (:opacity shape) 1)
     (:opacity shape)))
 
 (defn- get-overflow
-  [_ shape _ _]
+  [shape]
   (when (and (cfh/frame-shape? shape)
              (not (cgc/svg-markup? shape))
              (not (:show-content shape)))
     "hidden"))
 
 (defn- get-flex-direction
-  [_ shape _ _]
+  [shape]
   (:layout-flex-dir shape))
 
 (defn- get-align-items
-  [_ shape _ _]
+  [shape]
   (:layout-align-items shape))
 
 (defn- get-align-content
-  [_ shape _ _]
+  [shape]
   (:layout-align-content shape))
 
 (defn- get-justify-items
-  [_ shape _ _]
+  [shape]
   (:layout-justify-items shape))
 
 (defn- get-justify-content
-  [_ shape _ _]
+  [shape]
   (:layout-justify-content shape))
 
 (defn- get-flex-wrap
-  [_ shape _ _]
+  [shape]
   (:layout-wrap-type shape))
 
 (defn- get-gap
-  [_ shape _ _]
+  [shape]
   (let [[g1 g2] (ctl/gaps shape)]
     (when (and (= g1 g2) (or (not= g1 0) (not= g2 0)))
       [g1])))
 
 (defn- get-row-gap
-  [_ shape _ _]
+  [shape]
   (let [[g1 g2] (ctl/gaps shape)]
     (when (and (not= g1 g2) (not= g1 0)) [g1])))
 
 (defn- get-column-gap
-  [_ shape _ _]
+  [shape]
   (let [[g1 g2] (ctl/gaps shape)]
     (when (and (not= g1 g2) (not= g2 0)) [g2])))
 
 (defn- get-padding
-  [_ {:keys [layout-padding]} _ _]
+  [{:keys [layout-padding]}]
   (when (some? layout-padding)
     (let [default-padding {:p1 0 :p2 0 :p3 0 :p4 0}
           {:keys [p1 p2 p3 p4]} (merge default-padding layout-padding)]
@@ -323,35 +321,35 @@
         [p1 p2 p3 p4]))))
 
 (defn- get-padding-block-start
-  [_ {:keys [layout-padding]} _ _]
+  [{:keys [layout-padding]}]
   (when (and (:p1 layout-padding) (not= (:p1 layout-padding) 0))
     [(:p1 layout-padding)]))
 
 (defn- get-padding-inline-end
-  [_ {:keys [layout-padding]} _ _]
+  [{:keys [layout-padding]}]
   (when (and (:p2 layout-padding) (not= (:p2 layout-padding) 0))
     [(:p2 layout-padding)]))
 
 (defn- get-padding-block-end
-  [_ {:keys [layout-padding]} _ _]
+  [{:keys [layout-padding]}]
   (when (and (:p3 layout-padding) (not= (:p3 layout-padding) 0))
     [(:p3 layout-padding)]))
 
 (defn- get-padding-inline-start
-  [_ {:keys [layout-padding]} _ _]
+  [{:keys [layout-padding]}]
   (when (and (:p4 layout-padding) (not= (:p4 layout-padding) 0))
     [(:p4 layout-padding)]))
 
 (defn- get-grid-template-rows
-  [_ shape _ _]
+  [shape]
   (:layout-grid-rows shape))
 
 (defn- get-grid-template-columns
-  [_ shape _ _]
+  [shape]
   (:layout-grid-columns shape))
 
 (defn- get-grid-template-areas
-  [_ shape _ _]
+  [shape]
   (when (and (ctl/grid-layout? shape)
              (some area-cell? (vals (:layout-grid-cells shape))))
     (let [result
@@ -370,15 +368,15 @@
       result)))
 
 (defn- get-grid-column
-  [_ shape objects _]
+  [shape objects]
   (get-grid-coord shape objects :column :column-span))
 
 (defn- get-grid-row
-  [_ shape objects _]
+  [shape objects]
   (get-grid-coord shape objects :row :row-span))
 
 (defn- get-grid-area
-  [_ shape objects _]
+  [shape objects]
   (when (and (ctl/grid-layout-immediate-child? objects shape)
              (not (ctl/position-absolute? shape)))
     (let [parent (get objects (:parent-id shape))
@@ -387,7 +385,7 @@
         (str/replace (:area-name cell) " " "-")))))
 
 (defn- get-flex-shrink
-  [_ shape objects _]
+  [shape objects]
   (when (and (ctl/flex-layout-immediate-child? objects shape)
 
              (not (and (contains? #{:row :reverse-row} (:layout-flex-dir shape))
@@ -403,7 +401,7 @@
     0))
 
 (defn- get-margin
-  [_ {:keys [layout-item-margin] :as shape} objects _]
+  [{:keys [layout-item-margin] :as shape} objects]
 
   (when (ctl/any-layout-immediate-child? objects shape)
     (let [default-margin {:m1 0 :m2 0 :m3 0 :m4 0}
@@ -412,28 +410,28 @@
         [m1 m2 m3 m4]))))
 
 (defn- get-margin-block-start
-  [_ {:keys [layout-item-margin] :as shape} objects _]
+  [{:keys [layout-item-margin] :as shape} objects]
   (when (and (ctl/any-layout-immediate-child? objects shape) (:m1 layout-item-margin) (not= (:m1 layout-item-margin) 0))
     [(:m1 layout-item-margin)]))
 
 (defn- get-margin-inline-end
-  [_ {:keys [layout-item-margin] :as shape} objects _]
+  [{:keys [layout-item-margin] :as shape} objects]
   (when (and (ctl/any-layout-immediate-child? objects shape) (:m2 layout-item-margin) (not= (:m2 layout-item-margin) 0))
     [(:m2 layout-item-margin)]))
 
 (defn- get-margin-block-end
-  [_ {:keys [layout-item-margin] :as shape} objects _]
+  [{:keys [layout-item-margin] :as shape} objects]
   (when (and (ctl/any-layout-immediate-child? objects shape) (:m3 layout-item-margin) (not= (:m3 layout-item-margin) 0))
     [(:m3 layout-item-margin)]))
 
 (defn- get-margin-inline-start
-  [_ {:keys [layout-item-margin] :as shape} objects _]
+  [{:keys [layout-item-margin] :as shape} objects]
   (when (and (ctl/any-layout-immediate-child? objects shape) (:m4 layout-item-margin) (not= (:m4 layout-item-margin) 0))
     [(:m4 layout-item-margin)]))
 
 
 (defn- get-z-index
-  [_ {:keys [layout-item-z-index] :as shape} objects _]
+  [{:keys [layout-item-z-index] :as shape} objects]
   (cond
     (cfh/root-frame? shape)
     0
@@ -442,14 +440,14 @@
     layout-item-z-index))
 
 (defn- get-max-height
-  [_ shape objects _]
+  [shape objects]
   (prn "max-height" shape)
   (cond
     (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-h shape)))
 
 (defn- get-min-height
-  [_ shape objects _]
+  [shape objects]
   (cond
     (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-h shape)))
     (:layout-item-min-h shape)
@@ -457,13 +455,13 @@
     (-> shape :selrect :height)))
 
 (defn- get-max-width
-  [_ shape objects _]
+  [shape objects]
   (cond
     (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-w shape)))
 
 (defn- get-min-width
-  [_ shape objects _]
+  [shape objects]
   (cond
     (and (ctl/any-layout-immediate-child? objects shape) (some? (:layout-item-min-w shape)))
     (:layout-item-min-w shape)
@@ -472,7 +470,7 @@
     (-> shape :selrect :width)))
 
 (defn- get-align-self
-  [_ shape objects _]
+  [shape objects]
   (cond
     (ctl/flex-layout-immediate-child? objects shape)
     (:layout-item-align-self shape)
@@ -484,7 +482,7 @@
       (when (not= align-self :auto) align-self))))
 
 (defn- get-justify-self
-  [_ shape objects _]
+  [shape objects]
   (cond
     (ctl/grid-layout-immediate-child? objects shape)
     (let [parent (get objects (:parent-id shape))
@@ -493,7 +491,7 @@
       (when (not= justify-self :auto) justify-self))))
 
 (defn- get-grid-auto-flow
-  [_ shape _ _]
+  [shape]
   (when (and (ctl/grid-layout? shape) (= (:layout-grid-dir shape) :column))
     "column"))
 
@@ -502,78 +500,78 @@
   [property shape objects options]
   (case property
     ;; Positioning
-    :position (get-position property shape objects options)
-    :left (get-left-position property shape objects options)
-    :top (get-top-position property shape objects options)
-    :z-index (get-z-index property shape objects options)
-    :transform (get-transform property shape objects options)
+    :position (get-position shape objects)
+    :left (get-left-position  shape objects)
+    :top (get-top-position  shape objects)
+    :z-index (get-z-index  shape objects)
+    :transform (get-transform  shape objects)
 
     ;; Size
-    :width (get-width property shape objects options)
-    :height (get-height property shape objects options)
-    (:max-width :max-inline-size) (get-max-width property shape objects options)
-    (:min-width :min-inline-size) (get-min-width property shape objects options)
-    (:max-height :max-block-size) (get-max-height property shape objects options)
-    (:min-height :min-block-size) (get-min-height property shape objects options)
+    :width (get-width shape objects options)
+    :height (get-height shape objects options)
+    (:max-width :max-inline-size) (get-max-width  shape objects)
+    (:min-width :min-inline-size) (get-min-width  shape objects)
+    (:max-height :max-block-size) (get-max-height  shape objects)
+    (:min-height :min-block-size) (get-min-height  shape objects)
 
     ;; Spacing
-    :margin (get-margin property shape objects options)
-    :margin-block-start (get-margin-block-start property shape objects options)
-    :margin-inline-end (get-margin-inline-end property shape objects options)
-    :margin-block-end (get-margin-block-end property shape objects options)
-    :margin-inline-start (get-margin-inline-start property shape objects options)
-    :padding (get-padding property shape objects options)
-    :padding-block-start (get-padding-block-start property shape objects options)
-    :padding-inline-end (get-padding-inline-end property shape objects options)
-    :padding-block-end (get-padding-block-end property shape objects options)
-    :padding-inline-start (get-padding-inline-start property shape objects options)
+    :margin (get-margin shape objects)
+    :margin-block-start (get-margin-block-start shape objects)
+    :margin-inline-end (get-margin-inline-end shape objects)
+    :margin-block-end (get-margin-block-end shape objects)
+    :margin-inline-start (get-margin-inline-start shape objects)
+    :padding (get-padding shape)
+    :padding-block-start (get-padding-block-start shape)
+    :padding-inline-end (get-padding-inline-end shape)
+    :padding-block-end (get-padding-block-end shape)
+    :padding-inline-start (get-padding-inline-start shape)
 
     ;; Border & Background
-    :border (get-border property shape objects options)
-    :border-style (get-border-style property shape objects options)
-    :border-width (get-border-width property shape objects options)
-    :border-radius (get-border-radius property shape objects options)
-    :border-start-start-radius (get-border-start-start-radius property shape objects options)
-    :border-start-end-radius (get-border-start-end-radius property shape objects options)
-    :border-end-start-radius (get-border-end-start-radius property shape objects options)
-    :border-end-end-radius (get-border-end-end-radius property shape objects options)
-    :background (get-background property shape objects options)
+    :border (get-border shape)
+    :border-style (get-border-style shape)
+    :border-width (get-border-width shape)
+    :border-radius (get-border-radius shape)
+    :border-start-start-radius (get-border-start-start-radius shape)
+    :border-start-end-radius (get-border-start-end-radius shape)
+    :border-end-start-radius (get-border-end-start-radius shape)
+    :border-end-end-radius (get-border-end-end-radius shape)
+    :background (get-background shape)
 
     ;; Visual Effects
-    :opacity (get-opacity property shape objects options)
-    :box-shadow (get-box-shadow property shape objects options)
-    :filter (get-filter property shape objects options)
-    :overflow (get-overflow property shape objects options)
+    :opacity (get-opacity shape)
+    :box-shadow (get-box-shadow shape)
+    :filter (get-filter shape)
+    :overflow (get-overflow shape)
 
     ;; Display
-    :display (get-display property shape objects options)
+    :display (get-display shape)
 
     ;; Flexbox
-    :flex (get-flex property shape objects options)
-    :flex-grow (get-flex-grow property shape objects options)
-    :flex-shrink (get-flex-shrink property shape objects options)
-    :flex-direction (get-flex-direction property shape objects options)
-    :flex-wrap (get-flex-wrap property shape objects options)
-    :align-items (get-align-items property shape objects options)
-    :align-content (get-align-content property shape objects options)
-    :align-self (get-align-self property shape objects options)
-    :justify-content (get-justify-content property shape objects options)
-    :justify-items (get-justify-items property shape objects options)
-    :justify-self (get-justify-self property shape objects options)
+    :flex (get-flex shape objects)
+    :flex-grow (get-flex-grow shape options)
+    :flex-shrink (get-flex-shrink shape objects)
+    :flex-direction (get-flex-direction shape)
+    :flex-wrap (get-flex-wrap shape)
+    :align-items (get-align-items shape)
+    :align-content (get-align-content shape)
+    :align-self (get-align-self shape objects)
+    :justify-content (get-justify-content shape)
+    :justify-items (get-justify-items shape)
+    :justify-self (get-justify-self shape objects)
 
     ;; Grid
-    :grid-template-rows (get-grid-template-rows property shape objects options)
-    :grid-template-columns (get-grid-template-columns property shape objects options)
-    :grid-template-areas (get-grid-template-areas property shape objects options)
-    :grid-column (get-grid-column property shape objects options)
-    :grid-row (get-grid-row property shape objects options)
-    :grid-area (get-grid-area property shape objects options)
-    :grid-auto-flow (get-grid-auto-flow property shape objects options)
+    :grid-template-rows (get-grid-template-rows shape)
+    :grid-template-columns (get-grid-template-columns shape)
+    :grid-template-areas (get-grid-template-areas shape)
+    :grid-column (get-grid-column shape objects)
+    :grid-row (get-grid-row shape objects)
+    :grid-area (get-grid-area shape objects)
+    :grid-auto-flow (get-grid-auto-flow shape)
 
     ;; Spacing (Flex/Grid)
-    :gap (get-gap property shape objects options)
-    :row-gap (get-row-gap property shape objects options)
-    :column-gap (get-column-gap property shape objects options)
+    :gap (get-gap shape)
+    :row-gap (get-row-gap shape)
+    :column-gap (get-column-gap shape)
 
     ;; Default
     (get shape property)))
