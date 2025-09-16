@@ -1,9 +1,15 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.main.ui.inspect.styles.panels.geometry
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
    [app.main.ui.inspect.attributes.common :as cmm]
-   [app.main.ui.inspect.styles.properties-row :refer [properties-row*]]
+   [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
 

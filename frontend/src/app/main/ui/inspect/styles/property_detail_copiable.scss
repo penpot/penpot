@@ -37,15 +37,15 @@
   cursor: pointer;
   display: grid;
   grid-template-columns: 1fr auto;
+  gap: var(--sp-s);
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   color: var(--detail-color);
   min-block-size: var(--button-min-block-size);
   min-inline-size: var(--button-min-inline-size);
   padding: var(--sp-s);
   border-radius: var(--button-border-radius);
-  border: 1px solid transparent;
+  border: $b-1 solid transparent;
   text-align: left;
 
   &:hover {
@@ -57,9 +57,13 @@
   }
 }
 
+.property-detail-copiable-color {
+  grid-template-columns: auto 1fr auto;
+}
+
 .property-detail-copied {
   --button-border-active: var(--color-accent-tertiary);
-  border: 1px solid var(--button-border-active);
+  border: $b-1 solid var(--button-border-active);
 }
 
 .property-detail-icon {

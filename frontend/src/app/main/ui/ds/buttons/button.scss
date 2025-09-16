@@ -33,3 +33,9 @@
 .button-destructive {
   @extend %base-button-destructive;
 }
+
+.button-link {
+  &:hover {
+    text-decoration: none;
+  }
+}

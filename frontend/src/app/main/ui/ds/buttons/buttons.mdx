@@ -69,6 +69,11 @@ Action buttons are a variant of `icon-button*` (`"action"`) but smaller.
 
 <Canvas of={IconButtonStories.Action} />
 
+### Semantics
+
+In some cases, a button needs to be semantically an 'a' tag, but visually maintain the button style.
+In that case, the button accepts a 'to' property with the expected 'href'. It will then be rendered as an anchor element.
+
 ### Accessibility
 
 Icon buttons require an `aria-label`. This is also shown in a tooltip on hovering the button.

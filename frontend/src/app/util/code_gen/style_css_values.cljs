@@ -441,7 +441,6 @@
 
 (defn- get-max-height
   [shape objects]
-  (prn "max-height" shape)
   (cond
     (ctl/any-layout-immediate-child? objects shape)
     (:layout-item-max-h shape)))
