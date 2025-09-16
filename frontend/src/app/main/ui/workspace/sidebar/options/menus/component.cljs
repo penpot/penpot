@@ -397,15 +397,16 @@
            (str duplicated-msg)]]))]))
 
 (mf/defc component-variant-copy*
-  [{:keys [component shape data current-file-id]}]
-  (let [page-objects (mf/deref refs/workspace-page-objects)
-        component-id (:id component)
-        properties   (:variant-properties component)
+  [{:keys [components shapes component-file-data current-file-id]}]
+  (let [component    (first components)
+        shape        (first shapes)
+        properties   (map :variant-properties components)
+        props-first  (:variant-properties component)
         variant-id   (:variant-id component)
-        objects      (-> (dsh/get-page data (:main-instance-page component))
-                         (get :objects))
-        variant-comps    (mf/with-memo [data objects variant-id]
-                           (cfv/find-variant-components data objects variant-id))
+        component-page-objects (-> (dsh/get-page component-file-data (:main-instance-page component))
+                                   (get :objects))
+        variant-comps    (mf/with-memo [component-file-data component-page-objects variant-id]
+                           (cfv/find-variant-components component-file-data component-page-objects variant-id))
 
         duplicated-comps (mf/with-memo [variant-comps]
                            (->> variant-comps
@@ -414,11 +415,11 @@
         malformed-comps  (mf/with-memo [variant-comps]
                            (->> variant-comps
                                 (filter #(->> (:main-instance-id %)
-                                              (get objects)
+                                              (get component-page-objects)
                                               :variant-error))))
 
-        prop-vals        (mf/with-memo [data objects variant-id]
-                           (cfv/extract-properties-values data objects variant-id))
+        prop-vals        (mf/with-memo [component-file-data component-page-objects variant-id]
+                           (cfv/extract-properties-values component-file-data component-page-objects variant-id))
 
         get-options
         (mf/use-fn
@@ -449,47 +450,44 @@
         ;; Used to force a remount after an error
         key*     (mf/use-state (uuid/next))
         key      (deref key*)
+        mixed-label (tr "settings.multiple")
 
         switch-component
         (mf/use-fn
-         (mf/deps shape component component-id variant-comps)
+         (mf/deps shapes)
          (fn [pos val]
-           (when (not= val (dm/get-in component [:variant-properties pos :value]))
-             (let [target-props (-> (:variant-properties component)
-                                    (update pos assoc :value val))
-                   valid-comps  (->> variant-comps
-                                     (remove #(= (:id %) component-id))
-                                     (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
-                                     (reverse))
-                   nearest-comp (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
-                   parents (cfh/get-parents-with-self page-objects (:parent-id shape))
-                   children (cfh/get-children-with-self objects (:main-instance-id nearest-comp))
-                   comps-nesting-loop? (seq? (cfh/components-nesting-loop? children parents))]
-
-               (when nearest-comp
-                 (if comps-nesting-loop?
-                   (do
-                     (st/emit! (ntf/error (tr "workspace.component.swap.loop-error")))
-                     (reset! key* (uuid/next)))
-                   (st/emit! (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true))))))))]
+           (if (= val mixed-label)
+             (reset! key* (uuid/next))
+             (let [error-msg (if (> (count shapes) 1)
+                               (tr "workspace.component.switch.loop-error-multi")
+                               (tr "workspace.component.swap.loop-error"))
+                   mdata     {:on-error #(do
+                                           (st/emit! (ntf/error error-msg))
+                                           (reset! key* (uuid/next)))}
+                   params    {:shapes shapes :pos pos :val val}]
+               (st/emit! (dwv/variants-switch (with-meta params mdata)))))))]
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
-      (for [[pos prop] (map vector (range) properties)]
-        [:div {:key (str (:id shape) pos)
-               :class (stl/css :variant-property-container)}
+      (for [[pos prop] (map vector (range) props-first)]
+        (let [mixed-value? (not-every? #(= (:value prop) (:value (nth % pos))) properties)
+              options (cond-> (get-options (:name prop))
+                        mixed-value?
+                        (conj {:id mixed-label, :label mixed-label :dimmed true}))]
+          [:div {:key (str (:id shape) pos mixed-value?)
+                 :class (stl/css :variant-property-container)}
 
-         [:div {:class (stl/css :variant-property-name-wrapper)
-                :title (:name prop)}
-          [:div {:class (stl/css :variant-property-name)}
-           (:name prop)]]
+           [:div {:class (stl/css :variant-property-name-wrapper)
+                  :title (:name prop)}
+            [:div {:class (stl/css :variant-property-name)}
+             (:name prop)]]
 
-         [:div {:class (stl/css :variant-property-value-wrapper)}
-          [:> select* {:default-selected (:value prop)
-                       :options (get-options (:name prop))
-                       :empty-to-end true
-                       :on-change (partial switch-component pos)
-                       :key (str (:value prop) "-" key)}]]])]
+           [:div {:class (stl/css :variant-property-value-wrapper)}
+            [:> select* {:default-selected (if mixed-value? mixed-label (:value prop))
+                         :options options
+                         :empty-to-end true
+                         :on-change (partial switch-component pos)
+                         :key (str (:value prop) "-" key)}]]]))]
 
      (if (seq malformed-comps)
        [:div {:class (stl/css :variant-warning-wrapper)}
@@ -832,25 +830,22 @@
         all-main?       (every? ctk/main-instance? shapes)
         any-variant?    (some ctk/is-variant? shapes)
 
-        ;; For when it's only one shape
-        shape           (first shapes)
-        id              (:id shape)
-        shape-name      (:name shape)
-
-        component       (ctf/resolve-component shape
-                                               current-file
-                                               libraries
-                                               {:include-deleted? true})
-        data            (dm/get-in libraries [(:component-file shape) :data])
-        is-variant?     (ctk/is-variant? component)
-
-        main-instance?  (ctk/main-instance? shape)
-
         components      (mapv #(ctf/resolve-component %
                                                       current-file
                                                       libraries
                                                       {:include-deleted? true}) shapes)
         same-variant?   (ctv/same-variant? components)
+
+        ;; For when it's only one shape
+        shape           (first shapes)
+        id              (:id shape)
+        shape-name      (:name shape)
+
+        component       (first components)
+        data            (dm/get-in libraries [(:component-file shape) :data])
+        is-variant?     (ctk/is-variant? component)
+
+        main-instance?  (ctk/main-instance? shape)
 
         toggle-content
         (mf/use-fn #(swap! state* update :show-content not))
@@ -985,7 +980,7 @@
                   (tr "settings.multiple")
                   (cfh/last-path shape-name))]]
 
-              (when (and can-swap? (not multi))
+              (when (and can-swap? (or (not multi) same-variant?))
                 [:div {:class (stl/css :component-parent-name)}
                  (if (:deleted component)
                    (tr "workspace.options.component.unlinked")
@@ -1016,11 +1011,11 @@
                      (not main-instance?)
                      (not (:deleted component))
                      (not swap-opened?)
-                     (not multi))
+                     (or (not multi) same-variant?))
             [:> component-variant-copy* {:current-file-id current-file-id
-                                         :component component
-                                         :shape shape
-                                         :data data}])
+                                         :components components
+                                         :shapes shapes
+                                         :component-file-data data}])
 
           (when (and is-variant? main-instance? same-variant? (not swap-opened?))
             [:> component-variant-main-instance* {:components components

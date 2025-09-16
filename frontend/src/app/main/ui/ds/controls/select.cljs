@@ -183,7 +183,10 @@
         (get selected-option :icon)
 
         has-icon?
-        (some? icon)]
+        (some? icon)
+
+        dimmed?
+        (:dimmed selected-option)]
 
     (mf/with-effect [options]
       (mf/set-ref-val! options-ref options))
@@ -201,7 +204,7 @@
                     :size "s"
                     :aria-hidden true}])
        [:span {:class (stl/css-case :header-label true
-                                    :header-label-dimmed empty-selected-id?)}
+                                    :header-label-dimmed (or empty-selected-id? dimmed?))}
         (if ^boolean empty-selected-id? "--" label)]]
 
       [:> icon* {:icon-id i/arrow-down
