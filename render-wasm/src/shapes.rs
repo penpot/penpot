@@ -55,36 +55,19 @@ const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
 const MIN_STROKE_WIDTH: f32 = 0.001;
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
-    Frame(Frame) = 0,
-    Group(Group) = 1,
-    Bool(Bool) = 2,
-    Rect(Rect) = 3,
-    Path(Path) = 4,
-    Text(TextContent) = 5,
-    Circle = 6,
-    SVGRaw(SVGRaw) = 7,
+    Frame(Frame),
+    Group(Group),
+    Bool(Bool),
+    Rect(Rect),
+    Path(Path),
+    Text(TextContent),
+    Circle, // FIXME: shouldn't this have a rect inside, like the Rect variant?
+    SVGRaw(SVGRaw),
 }
 
 impl Type {
-    // TODO: move this to the wasm module, use transmute
-    pub fn from(value: u8) -> Self {
-        match value {
-            0 => Type::Frame(Frame::default()),
-            1 => Type::Group(Group::default()),
-            2 => Type::Bool(Bool::default()),
-            3 => Type::Rect(Rect::default()),
-            4 => Type::Path(Path::default()),
-            5 => Type::Text(TextContent::default()),
-            6 => Type::Circle,
-            7 => Type::SVGRaw(SVGRaw::default()),
-            _ => Type::Rect(Rect::default()),
-        }
-    }
-
     pub fn corners(&self) -> Option<Corners> {
         match self {
             Type::Rect(Rect { corners, .. }) => *corners,

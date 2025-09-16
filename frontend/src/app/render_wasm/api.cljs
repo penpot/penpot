@@ -1090,7 +1090,7 @@
                                              :shadow-style (unchecked-get module "ShadowStyle")
                                              :stroke-style (unchecked-get module "StrokeStyle")
                                              :stroke-cap (unchecked-get module "StrokeCap")
-                                             :shape-type (unchecked-get module "Type")
+                                             :shape-type (unchecked-get module "RawShapeType")
                                              :constraint-h (unchecked-get module "ConstraintH")
                                              :constraint-v (unchecked-get module "ConstraintV")
                                              :sizing (unchecked-get module "Sizing")

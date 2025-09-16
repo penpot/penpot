@@ -18,7 +18,7 @@ mod wasm;
 use indexmap::IndexSet;
 use math::{Bounds, Matrix};
 use mem::SerializableResult;
-use shapes::{BoolType, StructureEntry, StructureEntryType, TransformEntry, Type};
+use shapes::{BoolType, StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
 use state::State;
 use utils::uuid_from_u32_quartet;
@@ -242,13 +242,6 @@ pub extern "C" fn set_shape_masked_group(masked: bool) {
 pub extern "C" fn set_shape_bool_type(raw_bool_type: u8) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_bool_type(BoolType::from(raw_bool_type));
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn set_shape_type(shape_type: u8) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_shape_type(Type::from(shape_type));
     });
 }
 
