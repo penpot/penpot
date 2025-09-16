@@ -570,80 +570,86 @@
        vec))
 
 (defn combine-as-variants
-  ([options]
-   (combine-as-variants nil options))
-  ([selected {:keys [page-id trigger]}]
-   (ptk/reify ::combine-as-variants
-     ptk/WatchEvent
-     (watch [_ state stream]
-       (let [current-page  (:current-page-id state)
+  [ids {:keys [page-id trigger]}]
+  (ptk/reify ::combine-as-variants
+    ptk/WatchEvent
+    (watch [_ state stream]
+      (let [current-page  (:current-page-id state)
 
-             combine
-             (fn [current-page]
-               (let [objects       (dsh/lookup-page-objects state current-page)
-                     selected      (->> (or selected (dsh/lookup-selected state))
-                                        (cfh/clean-loops objects)
-                                        (remove (fn [id]
-                                                  (let [shape (get objects id)]
-                                                    (or (not (ctc/main-instance? shape))
-                                                        (ctc/is-variant? shape))))))]
-                 (when (> (count selected) 1)
-                   (let [shapes        (mapv #(get objects %) selected)
-                         rect          (bounding-rect shapes)
-                         prefix        (->> shapes
-                                            (mapv #(cfh/split-path (:name %)))
-                                            (common-prefix))
+            combine
+            (fn [current-page]
+              (let [objects       (dsh/lookup-page-objects state current-page)
+                    ids           (->> ids
+                                       (cfh/clean-loops objects)
+                                       (remove (fn [id]
+                                                 (let [shape (get objects id)]
+                                                   (or (not (ctc/main-instance? shape))
+                                                       (ctc/is-variant? shape))))))]
+                (when (> (count ids) 1)
+                  (let [shapes        (mapv #(get objects %) ids)
+                        rect          (bounding-rect shapes)
+                        prefix        (->> shapes
+                                           (mapv #(cfh/split-path (:name %)))
+                                           (common-prefix))
                          ;; When the common parent is root, add a wrapper
-                         add-wrapper?  (empty? prefix)
-                         first-shape   (first shapes)
-                         delta         (gpt/point (- (:x rect) (:x first-shape) 30)
-                                                  (- (:y rect) (:y first-shape) 30))
-                         common-parent (->> selected
-                                            (mapv #(-> (cfh/get-parent-ids objects %) reverse))
-                                            common-prefix
-                                            last)
-                         index         (-> (get objects common-parent)
-                                           :shapes
-                                           count
-                                           inc)
-                         variant-id    (uuid/next)
-                         undo-id       (js/Symbol)]
+                        add-wrapper?  (empty? prefix)
+                        first-shape   (first shapes)
+                        delta         (gpt/point (- (:x rect) (:x first-shape) 30)
+                                                 (- (:y rect) (:y first-shape) 30))
+                        common-parent (->> ids
+                                           (mapv #(-> (cfh/get-parent-ids objects %) reverse))
+                                           common-prefix
+                                           last)
+                        index         (-> (get objects common-parent)
+                                          :shapes
+                                          count
+                                          inc)
+                        variant-id    (uuid/next)
+                        undo-id       (js/Symbol)]
 
-                     (rx/concat
-                      (if (and page-id (not= current-page page-id))
-                        (rx/of (dcm/go-to-workspace :page-id page-id))
-                        (rx/empty))
+                    (rx/concat
+                     (if (and page-id (not= current-page page-id))
+                       (rx/of (dcm/go-to-workspace :page-id page-id))
+                       (rx/empty))
 
-                      (rx/of (dwu/start-undo-transaction undo-id)
-                             (transform-in-variant (first selected) variant-id delta prefix add-wrapper? false false)
-                             (dwsh/relocate-shapes (into #{} (-> selected rest reverse)) variant-id 0)
-                             (dwsh/update-shapes selected #(-> %
-                                                               (assoc :constraints-h :left)
-                                                               (assoc :constraints-v :top)
-                                                               (assoc :fixed-scroll false)))
-                             (dwsh/relocate-shapes #{variant-id} common-parent index)
-                             (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
-                             (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
-                             (ev/event {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count selected)}))
+                     (rx/of (dwu/start-undo-transaction undo-id)
+                            (transform-in-variant (first ids) variant-id delta prefix add-wrapper? false false)
+                            (dwsh/relocate-shapes (into #{} (-> ids rest reverse)) variant-id 0)
+                            (dwsh/update-shapes ids #(-> %
+                                                         (assoc :constraints-h :left)
+                                                         (assoc :constraints-v :top)
+                                                         (assoc :fixed-scroll false)))
+                            (dwsh/relocate-shapes #{variant-id} common-parent index)
+                            (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
+                            (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
+                            (ev/event {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count ids)}))
 
                       ;; NOTE: we need to schedule a commit into a
                       ;; microtask for ensure that all the scheduled
                       ;; microtask of previous events execute before the
                       ;; commit
-                      (->> (rx/of (dwu/commit-undo-transaction undo-id))
-                           (rx/observe-on :async)))))))
+                     (->> (rx/of (dwu/commit-undo-transaction undo-id))
+                          (rx/observe-on :async)))))))
 
-             redirect-to-page
-             (fn [page-id]
-               (rx/merge
-                (->> stream
-                     (rx/filter (ptk/type? ::dwpg/initialize-page))
-                     (rx/take 1)
-                     (rx/observe-on :async)
-                     (rx/mapcat (fn [_] (combine page-id))))
-                (rx/of (dcm/go-to-workspace :page-id page-id))))]
+            redirect-to-page
+            (fn [page-id]
+              (rx/merge
+               (->> stream
+                    (rx/filter (ptk/type? ::dwpg/initialize-page))
+                    (rx/take 1)
+                    (rx/observe-on :async)
+                    (rx/mapcat (fn [_] (combine page-id))))
+               (rx/of (dcm/go-to-workspace :page-id page-id))))]
 
-         (if (and page-id (not= page-id current-page))
-           (redirect-to-page page-id)
-           (combine current-page)))))))
+        (if (and page-id (not= page-id current-page))
+          (redirect-to-page page-id)
+          (combine current-page))))))
+
+(defn combine-selected-as-variants
+  [options]
+  (ptk/reify ::combine-selected-as-variants
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [selected (dsh/lookup-selected state)]
+        (rx/of (combine-as-variants selected options))))))
 

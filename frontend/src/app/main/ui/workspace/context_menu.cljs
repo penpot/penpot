@@ -576,7 +576,7 @@
         do-add-component           (mf/use-fn #(st/emit! (dwl/add-component)))
         do-add-multiple-components (mf/use-fn #(st/emit! (dwl/add-multiple-components)))
         do-combine-as-variants     (mf/use-fn #(st/emit!
-                                                (dwv/combine-as-variants {:trigger "workspace:context-menu-component"})))
+                                                (dwv/combine-selected-as-variants {:trigger "workspace:context-menu-component"})))
         do-add-variant             (mf/use-fn
                                     (mf/deps shapes)
                                     #(st/emit!

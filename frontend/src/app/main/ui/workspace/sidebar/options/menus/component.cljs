@@ -907,7 +907,7 @@
         on-combine-as-variants
         (mf/use-fn
          #(st/emit!
-           (dwv/combine-as-variants {:trigger "workspace:button-design-tab"})))
+           (dwv/combine-selected-as-variants {:trigger "workspace:button-design-tab"})))
 
         ;; NOTE: function needed for force rerender from the bottom
         ;; components. This is because `component-annotation`
