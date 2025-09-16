@@ -588,7 +588,7 @@
         [:> menu-separator* {}]
 
         [:> menu-entry* {:title (tr "workspace.shape.menu.create-component")
-                         :shortcut (sc/get-tooltip :create-component)
+                         :shortcut (sc/get-tooltip :create-component-variant)
                          :on-click do-add-component}]
         (when (not single?)
           [:> menu-entry* {:title (tr "workspace.shape.menu.create-multiple-components")
@@ -608,7 +608,7 @@
        [:*
         [:> menu-separator*]
         [:> menu-entry* {:title (tr "workspace.shape.menu.add-variant")
-                         :shortcut (sc/get-tooltip :create-component)
+                         :shortcut (sc/get-tooltip :create-component-variant)
                          :on-click do-add-variant}]])
 
      (when (and (not single?) all-main? (not any-variant?))
