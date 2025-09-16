@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  get-release-notes:
+    environment: release-admins
+    runs-on: ubuntu-latest
+    outputs:
+      release_notes: ${{ steps.extract.outputs.release_notes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract release notes from CHANGES.md
+        id: extract
+        run: |
+          TAG="${{ github.event.inputs.tag }}"
+          # Extract lines between headers "## $TAG" and next "## "
+          RELEASE_NOTES=$(awk "/^## $TAG$/{flag=1; next} /^## /{flag=0} flag" CHANGES.md | awk '{$1=$1};1')
+          # Fallback if nothing found
+          if [ -z "$RELEASE_NOTES" ]; then
+            RELEASE_NOTES="No changes for $TAG according to CHANGES.md"
+          fi
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+  create-release:
+    environment: release-admins
+    needs:
+      - get-release-notes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: ${{ github.event.inputs.tag }}
+          body: ${{ needs.get-release-notes.outputs.release_notes }}
