@@ -434,7 +434,8 @@
         :font-weight update-font-weight
         :letter-spacing update-letter-spacing
         :text-case update-text-case
-        :text-decoration update-text-decoration}
+        :text-decoration update-text-decoration
+        :line-height update-line-height}
        value
        [shape-ids attributes page-id])))))
 

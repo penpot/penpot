@@ -874,6 +874,7 @@
                               :value {:font-size "24px"
                                       :font-weight "bold"
                                       :font-family [(:font-id txt/default-text-attrs) "Arial" "sans-serif"]
+                                      :line-height "24px"
                                       :letter-spacing "2"
                                       :text-case "uppercase"
                                       :text-decoration "underline"}
@@ -895,7 +896,6 @@
          (fn [new-state]
            (let [file' (ths/get-file-from-state new-state)
                  text-1' (cths/get-shape file' :text-1)
-                 text-1' (def text-1' text-1')
                  style-text-blocks (->> (:content text-1')
                                         (txt/content->text+styles)
                                         (remove (fn [[_ text]] (str/empty? (str/trim text))))
@@ -909,6 +909,7 @@
 
              (t/is (= (:font-size style-text-blocks) "24"))
              (t/is (= (:font-weight style-text-blocks) "700"))
+             (t/is (= (:line-height style-text-blocks) 1))
              (t/is (= (:font-family style-text-blocks) "sourcesanspro"))
              (t/is (= (:letter-spacing style-text-blocks) "2"))
              (t/is (= (:text-transform style-text-blocks) "uppercase"))

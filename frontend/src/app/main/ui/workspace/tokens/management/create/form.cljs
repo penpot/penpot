@@ -912,6 +912,10 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
     {:label "Font Weight"
      :icon i/text-font-weight
      :placeholder (tr "workspace.tokens.font-weight-value-enter")}
+    :line-height
+    {:label "Line Height"
+     :icon i/text-lineheight
+     :placeholder (tr "workspace.tokens.line-height-value-enter")}
     :letter-spacing
     {:label "Letter Spacing"
      :icon i/text-letterspacing

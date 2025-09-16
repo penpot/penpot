@@ -92,6 +92,7 @@
                               "~:font-family": ["42dot Sans"],
                               "~:font-size": "100",
                               "~:font-weight": "300",
+                              "~:line-height": "2",
                               "~:letter-spacing": "2",
                               "~:text-case": "uppercase",
                               "~:text-decoration": "underline"

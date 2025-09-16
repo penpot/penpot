@@ -58,6 +58,19 @@
              "fontSize" :font-size
              "fontFamily" :font-family)))
 
+(def composite-token-type->dtcg-token-type
+  "Custom set of conversion keys for composite typography token with `:line-height` available.
+  (Penpot doesn't support `:line-height` token)"
+  (assoc token-type->dtcg-token-type
+         :line-height "lineHeights"))
+
+(def composite-dtcg-token-type->token-type
+  "Custom set of conversion keys for composite typography token with `:line-height` available.
+  (Penpot doesn't support `:line-height` token)"
+  (assoc dtcg-token-type->token-type
+         "lineHeights" :line-height
+         "lineHeight"  :line-height))
+
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
 
@@ -214,7 +227,8 @@
                                 text-case-keys
                                 text-decoration-keys
                                 font-weight-keys
-                                typography-token-keys))
+                                typography-token-keys
+                                #{:line-height}))
 
 ;; TODO: Created to extract the font-size feature from the typography feature flag.
 ;; Delete this once the typography feature flag is removed.
@@ -286,6 +300,7 @@
      (font-size-keys shape-attr)       #{shape-attr :typography}
      (letter-spacing-keys shape-attr)  #{shape-attr :typography}
      (font-family-keys shape-attr)     #{shape-attr :typography}
+     (= :line-height shape-attr)       #{:line-height :typography}
      (= :text-transform shape-attr)    #{:text-case :typography}
      (text-decoration-keys shape-attr) #{shape-attr :typography}
      (font-weight-keys shape-attr)     #{shape-attr :typography}

@@ -1517,7 +1517,7 @@ Will return a value that matches this schema:
   [value]
   (if (map? value)
     (-> value
-        (set/rename-keys cto/dtcg-token-type->token-type)
+        (set/rename-keys cto/composite-dtcg-token-type->token-type)
         (select-keys cto/typography-keys)
         ;; Convert font-family values within typography composite tokens
         (d/update-when :font-family convert-dtcg-font-family))
@@ -1705,7 +1705,7 @@ Will return a value that matches this schema:
     (reduce-kv
      (fn [acc k v]
        (if (contains? cto/typography-keys k)
-         (assoc acc (cto/token-type->dtcg-token-type k) v)
+         (assoc acc (cto/composite-token-type->dtcg-token-type k) v)
          acc))
      {} value)
     value))

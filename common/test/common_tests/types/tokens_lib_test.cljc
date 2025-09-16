@@ -1625,6 +1625,7 @@
            (t/is (= (:value token) {:font-weight "bold"
                                     :font-size "24px"
                                     :letter-spacing "0.05em"
+                                    :line-height "100%"
                                     :font-family ["Arial", "sans-serif"]
                                     :text-case "uppercase"}))
            (t/is (= (:description token) "A complex typography token"))))

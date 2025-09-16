@@ -7466,6 +7466,10 @@ msgstr ""
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Enter a value (300, Bold, Regular Italic...) or an {alias}"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:918
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Enter line height — multiplier, px, %, or {alias}"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:229
 msgid "workspace.tokens.gaps"
 msgstr "Gaps"
@@ -7661,6 +7665,10 @@ msgstr "Invalid token value. The resolved value is too large: %s"
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
 msgid "workspace.tokens.opacity-range"
 msgstr "Opacity must be between 0 and 100% or 0 and 1 (e.g. 50% or 0.5)."
+
+#: frontend/src/app/main/data/workspace/tokens/errors.cljs:99
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr "Line Height depends on Font Size. Add a Font Size to get the resolved value."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
 #, fuzzy
