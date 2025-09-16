@@ -76,7 +76,8 @@
                   :tooltip-content
                   (mf/html
                    [:*
-                    [:div (dm/str (tr "workspace.tokens.token-name") ": " token-name)]
+                    [:div
+                     [:span (dm/str (tr "workspace.tokens.token-name") ": ")] [:span {:class (stl/css :token-name)} token-name]]
                     [:div (tr "workspace.tokens.resolved-value" resolved)]])
                   :on-click on-click
                   :size "medium"}]]))
@@ -286,15 +287,18 @@
                    :class (stl/css :search-input)
                    :default-value filter-term
                    :on-change on-filter-tokens}]
-       (for [combined-sets sorted-tokens]
-         (let  [name (label-group-or-set combined-sets)]
-           [:> set-section*
-            {:collapsed (not (contains?  open-sets name))
-             :key (str "set-" name)
-             :toggle-sets-open toggle-sets-open
-             :color-origin color-origin
-             :on-token-change on-token-change
-             :name name
-             :set combined-sets}]))]
+       (if (seq sorted-tokens)
+         [:div {:class (stl/css :color-tokens-inputs)}
+          (for [combined-sets sorted-tokens]
+            (let  [name (label-group-or-set combined-sets)]
+              [:> set-section*
+               {:collapsed (not (contains?  open-sets name))
+                :key (str "set-" name)
+                :toggle-sets-open toggle-sets-open
+                :color-origin color-origin
+                :on-token-change on-token-change
+                :name name
+                :set combined-sets}]))]
+         [:> token-empty-state*])]
       [:> token-empty-state*])))
 

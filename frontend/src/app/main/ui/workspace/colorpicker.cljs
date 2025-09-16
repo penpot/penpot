@@ -362,7 +362,9 @@
             :id "harmony"}
            {:aria-label "HSVA"
             :icon i/hsva
-            :id "hsva"}])]
+            :id "hsva"}])
+
+        show-tokens? (contains? #{:fill :stroke :color-selection} color-origin)]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
@@ -415,7 +417,7 @@
              :options options
              :on-change handle-change-mode}]])
 
-        (when (and (= origin :sidebar) token-color)
+        (when (and (= origin :sidebar) show-tokens? token-color)
           [:& radio-buttons {:selected color-style
                              :on-change toggle-token-color
                              :name "color-style"}
