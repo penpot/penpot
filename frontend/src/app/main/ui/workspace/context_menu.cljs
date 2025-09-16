@@ -576,11 +576,11 @@
         do-add-component           (mf/use-fn #(st/emit! (dwl/add-component)))
         do-add-multiple-components (mf/use-fn #(st/emit! (dwl/add-multiple-components)))
         do-combine-as-variants     (mf/use-fn #(st/emit!
-                                                (dwv/combine-as-variants {:trigger "context-menu-component"})))
+                                                (dwv/combine-as-variants {:trigger "workspace:context-menu-component"})))
         do-add-variant             (mf/use-fn
                                     (mf/deps shapes)
                                     #(st/emit!
-                                      (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "context-menu-component"})
+                                      (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:context-menu-component"})
                                       (dwv/add-new-variant (:id (first shapes)))))]
     [:*
      (when can-make-component ;; We don't want to change the structure of component copies
@@ -800,6 +800,7 @@
 
 
 ;; FIXME: optimize because it is rendered always
+
 
 (mf/defc context-menu*
   []

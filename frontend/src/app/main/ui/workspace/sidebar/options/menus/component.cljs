@@ -47,7 +47,6 @@
    [app.util.timers :as tm]
    [cuerdas.core :as str]
    [okulary.core :as l]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def ref:annotations-state
@@ -342,7 +341,7 @@
            (let [value (d/nilv (str/trim value) "")]
              (doseq [id component-ids]
                (st/emit!
-                (ptk/event ::ev/event {::ev/name "variant-edit-property-value" :trigger "combo-design-tab"})
+                (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:combo-design-tab"})
                 (dwv/update-property-value id pos value))
                (st/emit! (dwv/update-error id))))))
 
@@ -356,7 +355,7 @@
                            int)]
              (when (seq value)
                (st/emit!
-                (dwv/update-property-name variant-id pos value {:trigger "design-tab-variant"}))))))]
+                (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))]
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
@@ -894,21 +893,21 @@
         (mf/use-fn
          (mf/deps id)
          #(st/emit!
-           (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "button-design-tab-variant"})
+           (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:button-design-tab-variant"})
            (dwv/add-new-variant id)))
 
         add-new-property
         (mf/use-fn
          (mf/deps shape)
          #(st/emit!
-           (ptk/event ::ev/event {::ev/name "add-new-property" :trigger "button-design-tab-variant"})
+           (ev/event {::ev/name "add-new-property" ::ev/origin "workspace:button-design-tab-variant"})
            (dwv/add-new-property (:variant-id shape) {:property-value "Value 1"
                                                       :editing? true})))
 
         on-combine-as-variants
         (mf/use-fn
          #(st/emit!
-           (dwv/combine-as-variants {:trigger "button-design-tab"})))
+           (dwv/combine-as-variants {:trigger "workspace:button-design-tab"})))
 
         ;; NOTE: function needed for force rerender from the bottom
         ;; components. This is because `component-annotation`
@@ -1095,7 +1094,7 @@
         (mf/use-fn
          (mf/deps shape)
          (fn [trigger]
-           (st/emit! (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger trigger})
+           (st/emit! (ev/event {::ev/name "add-new-variant" ::ev/origin trigger})
                      (dwv/add-new-variant (:id shape)))))
 
         add-new-property
@@ -1103,16 +1102,16 @@
          (mf/deps variant-id)
          (fn [trigger]
            (st/emit!
-            (ptk/event ::ev/event {::ev/name "add-new-property" :trigger trigger})
+            (ev/event {::ev/name "add-new-property" ::ev/origin trigger})
             (dwv/add-new-property variant-id {:property-value "Value 1"
                                               :editing? true}))))
 
         menu-entries [{:title (tr "workspace.shape.menu.show-in-assets")
                        :action show-in-assets-panel}
                       {:title (tr "workspace.shape.menu.add-variant")
-                       :action (partial create-variant "design-tab-menu-component")}
+                       :action (partial create-variant "workspace:design-tab-menu-component")}
                       {:title (tr "workspace.shape.menu.add-variant-property")
-                       :action (partial add-new-property "design-tab-menu-component")}]
+                       :action (partial add-new-property "workspace:design-tab-menu-component")}]
 
         toggle-content
         (mf/use-fn
@@ -1147,7 +1146,7 @@
                            int)]
              (when (seq value)
                (st/emit!
-                (dwv/update-property-name variant-id pos value {:trigger "design-tab-component"}))))))
+                (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-component"}))))))
 
         remove-property
         (mf/use-fn
@@ -1158,7 +1157,7 @@
                          int)]
              (when (> (count properties) 1)
                (st/emit!
-                (ptk/event ::ev/event {::ev/name "variant-remove-property" :trigger "button-design-tab"})
+                (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:button-design-tab"})
                 (dwv/remove-property variant-id pos))))))
 
         select-shapes-with-malformed
@@ -1192,7 +1191,7 @@
                             :icon i/help}]
           [:> icon-button* {:variant "ghost"
                             :aria-label (tr "workspace.shape.menu.add-variant")
-                            :on-click (partial create-variant "button-design-tab-component")
+                            :on-click (partial create-variant "workspace:button-design-tab-component")
                             :icon i/variant}]]]]
 
        (when open?
@@ -1230,7 +1229,7 @@
 
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.shape.menu.add-variant-property")
-                             :on-click (partial add-new-property "button-design-tab-component")
+                             :on-click (partial add-new-property "workspace:button-design-tab-component")
                              :icon i/add}]]
 
           (when-not multi?

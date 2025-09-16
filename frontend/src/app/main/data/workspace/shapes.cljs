@@ -235,7 +235,6 @@
             parent-id (:id (ctn/get-first-valid-parent objects parent-id))   ;; We don't want to change the structure of component copies
             frame-id  (:id (ctn/get-first-valid-parent objects frame-id))
 
-
             shape     (cts/setup-shape
                        (-> attrs
                            (assoc :type type)
@@ -312,7 +311,6 @@
                                              (get objects)
                                              (ctc/is-variant?))))]
 
-
          (rx/of (create-artboard-from-shapes selected id parent-id index name delta)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -362,6 +360,7 @@
 
 ;; FIXME: this need to be refactored
 
+
 (defn toggle-file-thumbnail-selected
   []
   (ptk/reify ::toggle-file-thumbnail-selected
@@ -397,6 +396,7 @@
 
 ;; --- Change Shape Order (D&D Ordering)
 
+
 (defn relocate-shapes
   [ids parent-id to-index & [ignore-parents?]]
   (dm/assert! (every? uuid? ids))
@@ -416,7 +416,6 @@
 
             ;; If we try to move a parent into a child we remove it
             ids      (filter #(not (cfh/is-parent? objects parent-id %)) ids)
-
 
             all-parents (into #{parent-id} (map #(cfh/get-parent-id objects %)) ids)
 
@@ -451,6 +450,6 @@
                (ptk/data-event :layout/update {:ids (concat all-parents ids)})
                (dwu/commit-undo-transaction undo-id)
                (when add-component-to-variant?
-                 (ptk/event ::ev/event {::ev/name "add-component-to-variant"}))
+                 (ev/event {::ev/name "add-component-to-variant"}))
                (when add-new-variant?
-                 (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "move-shapes-in-layers-tab"})))))))
+                 (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-in-layers-tab"})))))))

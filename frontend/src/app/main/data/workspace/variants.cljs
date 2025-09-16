@@ -87,9 +87,9 @@
 
         (rx/of
          (when (or (seq properties-to-remove) (seq properties-to-update))
-           (ptk/event ::ev/event {::ev/name "variant-edit-property-value" :trigger "rename-in-layers"}))
+           (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "workspace:rename-in-layers"}))
          (when (seq properties-to-add)
-           (ptk/event ::ev/event {::ev/name "variant-add-property" :trigger "rename-in-layers"}))
+           (ev/event {::ev/name "variant-add-property" ::ev/origin "workspace:rename-in-layers"}))
          (dwu/start-undo-transaction undo-id)
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
@@ -121,7 +121,7 @@
            (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)
            (dwu/commit-undo-transaction undo-id)
-           (ptk/event ::ev/event {::ev/name "variant-edit-property-name" :trigger trigger})))))))
+           (ev/event {::ev/name "variant-edit-property-name" ::ev/origin trigger})))))))
 
 (defn update-property-value
   "Updates the variant property value on the position pos in a component"
@@ -232,7 +232,7 @@
 
         (when (seq (:redo-changes changes))
           (rx/of
-           (ptk/event ::ev/event {::ev/name "variant-remove-property" :trigger "rename-in-layers"})
+           (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:rename-in-layers"})
            (dwu/start-undo-transaction undo-id)
            (dch/commit-changes changes)
            (dwu/commit-undo-transaction undo-id)))))))
@@ -473,13 +473,13 @@
         (cond
           transform-in-variant?
           (rx/of
-           (ptk/event ::ev/event {::ev/name "transform-in-variant" :trigger "shortcut"})
+           (ev/event {::ev/name "transform-in-variant" ::ev/origin "workspace:shortcut"})
            (transform-in-variant (:id first-shape)))
 
           add-new-variant?
           (rx/concat
            (rx/of
-            (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "shortcut-create-component"})
+            (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:shortcut-create-component"})
             (dwu/start-undo-transaction undo-id))
            (rx/from (map add-new-variant selected-ids))
            (rx/of (dwu/commit-undo-transaction undo-id)))
@@ -501,7 +501,7 @@
         (if add-new-variant?
           (rx/concat
            (rx/of
-            (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "shortcut-duplicate"})
+            (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:shortcut-duplicate"})
             (dwu/start-undo-transaction undo-id)
             (add-new-variant (first selected-ids) false))
            (rx/from (map #(add-new-variant % true) (rest selected-ids)))
@@ -624,7 +624,7 @@
                              (dwsh/relocate-shapes #{variant-id} common-parent index)
                              (dwt/update-dimensions [variant-id] :width (+ (:width rect) 60))
                              (dwt/update-dimensions [variant-id] :height (+ (:height rect) 60))
-                             (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger trigger :number-of-combined (count selected)}))
+                             (ev/event {::ev/name "combine-as-variants" ::ev/origin trigger :number-of-combined (count selected)}))
 
                       ;; NOTE: we need to schedule a commit into a
                       ;; microtask for ensure that all the scheduled

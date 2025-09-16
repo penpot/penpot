@@ -295,7 +295,6 @@
                    (rx/map #(resize shape initial-position layout %))
                    (rx/share))
 
-
               modifiers-stream
               (if (features/active-feature? state "render-wasm/v1")
                 (rx/merge
@@ -1024,7 +1023,6 @@
              delta     (calculate-delta position bbox frame)
              modifiers (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
-
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers
                                             {:ignore-constraints false
@@ -1134,9 +1132,9 @@
            (rx/of (dch/commit-changes changes)
                   (dwc/expand-collapse frame-id)))
          (when add-component-to-variant?
-           (rx/of (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))
+           (rx/of (ev/event {::ev/name "add-component-to-variant"})))
          (when add-new-variant?
-           (rx/of (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "move-shapes-in-workspace"}))))))))
+           (rx/of (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-to-frame"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
@@ -1150,6 +1148,7 @@
 
 
 ;; -- Flip ----------------------------------------------------------
+
 
 (defn flip-horizontal-selected
   ([]
@@ -1167,7 +1166,6 @@
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
-
 
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers {:ignore-snap-pixel true}))
