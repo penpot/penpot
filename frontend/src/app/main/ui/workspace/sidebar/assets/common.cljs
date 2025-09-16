@@ -513,7 +513,7 @@
                          :action do-update-component})
                       (when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
-                         :shortcut :create-component
+                         :shortcut :create-component-variant
                          :action do-add-variant})
                       (when (and same-variant? main-instance? variant-id for-design-tab?)
                         {:title (tr "workspace.shape.menu.add-variant-property")

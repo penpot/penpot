@@ -3902,7 +3902,7 @@ msgid "shortcuts.copy-props"
 msgstr "Copiar propiedades"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
+msgid "shortcuts.create-component-variant"
 msgstr "Crear componente / variante"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96

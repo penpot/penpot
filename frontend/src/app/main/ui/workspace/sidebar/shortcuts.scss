@@ -56,7 +56,7 @@
   flex-direction: column;
   height: 100%;
   padding: $s-12;
-  overflow-y: scroll;
+  overflow-y: auto;
   font-size: $fs-12;
   color: var(--title-foreground-color);
 

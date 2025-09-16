@@ -46,6 +46,7 @@
                    :size "s"
                    :class (stl/css :icon)}])
       [:input {:id id
+               :class (stl/css :search-input)
                :on-change handle-change
                :value value
                :auto-focus auto-focus
