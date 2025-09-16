@@ -33,6 +33,7 @@
         "fontWeight": "bold",
         "fontSize": "24px",
         "letterSpacing": "0.05em",
+        "lineHeights": "100%",
         "fontFamilies": ["Arial", "sans-serif"],
         "textCase": "uppercase"
       },

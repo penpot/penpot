@@ -12,6 +12,7 @@
    :font-size "Font Size"
    :font-family "Font Family"
    :font-weight "Font Weight"
+   :line-height "Line Height"
    :letter-spacing "Letter Spacing"
    :text-case "Text Case"
    :text-decoration "Text Decoration"})

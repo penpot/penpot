@@ -974,9 +974,9 @@ test.describe("Tokens: Themes modal", () => {
       ).toBeVisible();
       await expect(saveButton).toBeDisabled();
 
-      // Allow empty fields
+      // Show error with line-height depending on invalid font-size
       await fontSizeField.fill("");
-      await expect(saveButton).toBeEnabled();
+      await expect(saveButton).toBeDisabled();
 
       // Fill in values for all fields and verify they persist when switching tabs
       await fontSizeField.fill("16");
@@ -985,6 +985,8 @@ test.describe("Tokens: Themes modal", () => {
         tokensUpdateCreateModal.getByLabel(/Font Weight/i);
       const letterSpacingField =
         tokensUpdateCreateModal.getByLabel(/Letter Spacing/i);
+      const lineHeightField =
+        tokensUpdateCreateModal.getByLabel(/Line Height/i);
       const textCaseField = tokensUpdateCreateModal.getByLabel(/Text Case/i);
       const textDecorationField =
         tokensUpdateCreateModal.getByLabel(/Text Decoration/i);
@@ -995,6 +997,7 @@ test.describe("Tokens: Themes modal", () => {
         fontFamily: await fontFamilyField.inputValue(),
         fontWeight: await fontWeightField.inputValue(),
         letterSpacing: await letterSpacingField.inputValue(),
+        lineHeight: await lineHeightField.inputValue(),
         textCase: await textCaseField.inputValue(),
         textDecoration: await textDecorationField.inputValue(),
       };
@@ -1011,6 +1014,9 @@ test.describe("Tokens: Themes modal", () => {
       await expect(fontWeightField).toHaveValue(originalValues.fontWeight);
       await expect(letterSpacingField).toHaveValue(
         originalValues.letterSpacing,
+      );
+      await expect(lineHeightField).toHaveValue(
+        originalValues.lineHeight,
       );
       await expect(textCaseField).toHaveValue(originalValues.textCase);
       await expect(textDecorationField).toHaveValue(

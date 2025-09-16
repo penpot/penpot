@@ -7473,6 +7473,10 @@ msgstr ""
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Introduce: 400, Bold, 700 Italic, o {alias}"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:918
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Introduce line height — multiplicador, px o % — o {alias}"
+
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
 msgid "workspace.tokens.generic-error"
@@ -7623,6 +7627,10 @@ msgstr "Valor de token no valido. El valor resuelto es muy grande: %s"
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
 msgid "workspace.tokens.opacity-range"
 msgstr "La opacidad debe estar entre 0 y 100% o 0 y 1 (p.e. 50% o 0.5)."
+
+#: frontend/src/app/main/data/workspace/tokens/errors.cljs:99
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr "El Line Height depende del Font Size. Añade un Font Size para obtener el valor computado."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
 #, fuzzy
