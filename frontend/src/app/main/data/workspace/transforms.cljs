@@ -295,7 +295,6 @@
                    (rx/map #(resize shape initial-position layout %))
                    (rx/share))
 
-
               modifiers-stream
               (if (features/active-feature? state "render-wasm/v1")
                 (rx/merge
@@ -1024,7 +1023,6 @@
              delta     (calculate-delta position bbox frame)
              modifiers (dwm/create-modif-tree [id] (ctm/move-modifiers delta))]
 
-
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers
                                             {:ignore-constraints false
@@ -1105,7 +1103,19 @@
                          frame-id
                          drop-index
                          ids
-                         :cell cell))]
+                         :cell cell))
+
+            add-component-to-variant? (and
+                                        ;; Any of the shapes is a head
+                                       (some (comp ctk/instance-head? objects) ids)
+                                       ;; Any ancestor of the destination parent is a variant
+                                       (->> (cfh/get-parents-with-self objects frame-id)
+                                            (some ctk/is-variant?)))
+            add-new-variant? (and
+                             ;; The parent is a variant container
+                              (-> frame-id objects ctk/is-variant-container?)
+                             ;; Any of the shapes is a main instance
+                              (some (comp ctk/main-instance? objects) ids))]
 
         (rx/concat
          (let [shapes  (mapv #(get objects %) ids)
@@ -1120,7 +1130,11 @@
 
          (when (and (some? frame-id) (d/not-empty? changes))
            (rx/of (dch/commit-changes changes)
-                  (dwc/expand-collapse frame-id))))))))
+                  (dwc/expand-collapse frame-id)))
+         (when add-component-to-variant?
+           (rx/of (ev/event {::ev/name "add-component-to-variant"})))
+         (when add-new-variant?
+           (rx/of (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:move-shapes-to-frame"}))))))))
 
 (defn- get-displacement
   "Retrieve the correct displacement delta point for the
@@ -1134,6 +1148,7 @@
 
 
 ;; -- Flip ----------------------------------------------------------
+
 
 (defn flip-horizontal-selected
   ([]
@@ -1151,7 +1166,6 @@
              selrect   (gsh/shapes->rect shapes)
              center    (grc/rect->center selrect)
              modifiers (dwm/create-modif-tree selected (ctm/resize-modifiers (gpt/point -1.0 1.0) center))]
-
 
          (if (features/active-feature? state "render-wasm/v1")
            (rx/of (dwm/apply-wasm-modifiers modifiers {:ignore-snap-pixel true}))

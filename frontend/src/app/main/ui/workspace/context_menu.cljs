@@ -576,12 +576,11 @@
         do-add-component           (mf/use-fn #(st/emit! (dwl/add-component)))
         do-add-multiple-components (mf/use-fn #(st/emit! (dwl/add-multiple-components)))
         do-combine-as-variants     (mf/use-fn #(st/emit!
-                                                (ptk/event ::ev/event {::ev/name "combine-as-variants" :trigger "context-menu-component"})
-                                                (dwv/combine-as-variants)))
+                                                (dwv/combine-selected-as-variants {:trigger "workspace:context-menu-component"})))
         do-add-variant             (mf/use-fn
                                     (mf/deps shapes)
                                     #(st/emit!
-                                      (ptk/event ::ev/event {::ev/name "add-new-variant" :trigger "context-menu-component"})
+                                      (ev/event {::ev/name "add-new-variant" ::ev/origin "workspace:context-menu-component"})
                                       (dwv/add-new-variant (:id (first shapes)))))]
     [:*
      (when can-make-component ;; We don't want to change the structure of component copies
@@ -589,7 +588,7 @@
         [:> menu-separator* {}]
 
         [:> menu-entry* {:title (tr "workspace.shape.menu.create-component")
-                         :shortcut (sc/get-tooltip :create-component)
+                         :shortcut (sc/get-tooltip :create-component-variant)
                          :on-click do-add-component}]
         (when (not single?)
           [:> menu-entry* {:title (tr "workspace.shape.menu.create-multiple-components")
@@ -609,7 +608,7 @@
        [:*
         [:> menu-separator*]
         [:> menu-entry* {:title (tr "workspace.shape.menu.add-variant")
-                         :shortcut (sc/get-tooltip :create-component)
+                         :shortcut (sc/get-tooltip :create-component-variant)
                          :on-click do-add-variant}]])
 
      (when (and (not single?) all-main? (not any-variant?))
@@ -801,6 +800,7 @@
 
 
 ;; FIXME: optimize because it is rendered always
+
 
 (mf/defc context-menu*
   []

@@ -892,6 +892,12 @@
                              (pcb/update-shapes [parent-id]
                                                 #(ctl/add-children-to-cell % selected all-objects drop-cell)))
 
+              add-component-to-variant? (and
+                                         ;; Any of the shapes is a head
+                                         (some ctc/instance-head? orig-shapes)
+                                         ;; Any ancestor of the destination parent is a variant
+                                         (->> (cfh/get-parents-with-self page-objects parent-id)
+                                              (some ctc/is-variant?)))
               undo-id      (js/Symbol)]
 
           (rx/concat
@@ -900,10 +906,7 @@
                           (let [parent-type   (cfh/get-shape-type all-objects (:parent-id shape))
                                 external-lib? (not= file-id (:component-file shape))
                                 component     (ctn/get-component-from-shape shape libraries)
-                                origin        "workspace:paste"
-                                any-parent-is-variant (->> (cfh/get-parents-with-self all-objects (:parent-id shape))
-                                                           (some ctc/is-variant?)
-                                                           boolean)]
+                                origin        "workspace:paste"]
 
                             ;; NOTE: we don't emit the create-shape event all the time for
                             ;; avoid send a lot of events (that are not necessary); this
@@ -914,8 +917,7 @@
                                          :is-external-library external-lib?
                                          :type (get shape :type)
                                          :parent-type parent-type
-                                         :is-variant (ctc/is-variant? component)
-                                         :any-parent-is-variant any-parent-is-variant})
+                                         :is-variant (ctc/is-variant? component)})
                               (if (cfh/has-layout? objects (:parent-id shape))
                                 (ev/event {::ev/name "layout-add-element"
                                            ::ev/origin origin
@@ -930,7 +932,9 @@
                   (dch/commit-changes changes)
                   (dws/select-shapes selected)
                   (ptk/data-event :layout/update {:ids [frame-id]})
-                  (dwu/commit-undo-transaction undo-id))))))))
+                  (dwu/commit-undo-transaction undo-id)
+                  (when add-component-to-variant?
+                    (ptk/event ::ev/event {::ev/name "add-component-to-variant"})))))))))
 
 (defn- as-content [text]
   (let [paragraphs (->> (str/lines text)

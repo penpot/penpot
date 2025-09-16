@@ -39,7 +39,6 @@
    [app.util.timers :as ts]
    [cljs.spec.alpha :as s]
    [cuerdas.core :as str]
-   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (def assets-filters           (mf/create-context nil))
@@ -357,6 +356,8 @@
 
 
         ;; For when it's only one shape
+
+
         shape               (first shapes)
         shape-id            (:id shape)
 
@@ -442,17 +443,17 @@
         do-add-variant
         #(if (ctk/is-variant? shape)
            (st/emit!
-            (ptk/event ::ev/event {::ev/name "add-new-variant"
-                                   :trigger (if for-design-tab? "design-tab-menu-variant" "context-menu-variant")})
+            (ev/event {::ev/name "add-new-variant"
+                       ::ev/origin (if for-design-tab? "workspace:design-tab-menu-variant" "workspace:context-menu-variant")})
             (dwv/add-new-variant shape-id))
            (st/emit!
-            (ptk/event ::ev/event {::ev/name "transform-in-variant"
-                                   :trigger (if for-design-tab? "design-tab-menu" "context-menu")})
+            (ev/event {::ev/name "transform-in-variant"
+                       ::ev/origin (if for-design-tab? "workspace:design-tab-menu" "workspace:context-menu")})
             (dwv/transform-in-variant shape-id)))
 
         do-add-new-property
         #(st/emit!
-          (ptk/event ::ev/event {::ev/name "add-new-property" :trigger "design-tab-menu-variant"})
+          (ev/event {::ev/name "add-new-property" ::ev/origin "workspace:design-tab-menu-variant"})
           (dwv/add-new-property variant-id {:property-value "Value 1" :editing? true}))
 
         do-show-local-component
@@ -513,7 +514,7 @@
                          :action do-update-component})
                       (when (and (or (not multi) same-variant?) main-instance?)
                         {:title (tr "workspace.shape.menu.add-variant")
-                         :shortcut :create-component
+                         :shortcut :create-component-variant
                          :action do-add-variant})
                       (when (and same-variant? main-instance? variant-id for-design-tab?)
                         {:title (tr "workspace.shape.menu.add-variant-property")

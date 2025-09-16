@@ -173,10 +173,10 @@
                           :subsections [:modify-layers]
                           :fn #(emit-when-no-readonly (dw/unmask-group))}
 
-   :create-component     {:tooltip (ds/meta "K")
-                          :command (ds/c-mod "k")
-                          :subsections [:modify-layers]
-                          :fn #(emit-when-no-readonly (dwv/add-component-or-variant))}
+   :create-component-variant {:tooltip (ds/meta "K")
+                              :command (ds/c-mod "k")
+                              :subsections [:modify-layers]
+                              :fn #(emit-when-no-readonly (dwv/add-component-or-variant))}
 
    :detach-component     {:tooltip (ds/meta-shift "K")
                           :command (ds/c-mod "shift+k")

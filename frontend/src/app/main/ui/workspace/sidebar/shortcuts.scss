@@ -15,64 +15,7 @@
 }
 
 .search-field {
-  display: flex;
-  align-items: center;
-  height: $s-32;
   margin: $s-16 $s-12 $s-4 $s-12;
-  border-radius: $br-8;
-  font-family: "worksans", "vazirmatn", sans-serif;
-  background-color: var(--color-background-tertiary);
-  .search-box {
-    align-items: center;
-    display: flex;
-    width: 100%;
-
-    .icon-wrapper {
-      display: flex;
-      svg {
-        @extend .button-icon-small;
-        stroke: var(--icon-foreground);
-      }
-    }
-
-    .input-text {
-      @include removeInputStyle;
-      height: $s-32;
-      width: 100%;
-      margin: 0;
-      padding: $s-4;
-      border: 0;
-      font-size: $fs-12;
-      color: var(--color-foreground-primary);
-      &::placeholder {
-        color: var(--color-foreground-secondary);
-      }
-      &:focus-visible {
-        border-color: var(--color-accent-primary-muted);
-      }
-    }
-    .clear-btn {
-      @include buttonStyle;
-      @include flexCenter;
-      height: $s-16;
-      width: $s-16;
-      .clear-icon {
-        @include flexCenter;
-        svg {
-          @extend .button-icon-small;
-          stroke: var(--icon-foreground);
-        }
-      }
-    }
-  }
-  .search-icon {
-    @include flexCenter;
-    width: $s-28;
-    svg {
-      @extend .button-icon-small;
-      stroke: var(--icon-foreground);
-    }
-  }
 }
 
 .shortcuts-header {
@@ -92,18 +35,9 @@
   }
 
   .shortcuts-close-button {
-    @extend .button-tertiary;
     position: absolute;
-    right: $s-2;
-    top: $s-2;
-    height: $s-28;
-    width: $s-28;
-    border-radius: $br-5;
-
-    svg {
-      @extend .button-icon;
-      stroke: var(--icon-foreground);
-    }
+    right: 0;
+    top: 0;
   }
 }
 
@@ -122,7 +56,7 @@
   flex-direction: column;
   height: 100%;
   padding: $s-12;
-  overflow-y: scroll;
+  overflow-y: auto;
   font-size: $fs-12;
   color: var(--title-foreground-color);
 
@@ -135,27 +69,13 @@
     padding: $s-8 0;
     cursor: pointer;
 
-    .collapsed-shortcuts {
-      @include flexCenter;
-      svg {
-        @extend .button-icon-small;
-        stroke: var(--icon-foreground);
-      }
-      &.open {
-        transform: rotate(90deg);
-      }
-    }
     .subsection-name,
     .section-name {
       padding-left: $s-4;
     }
+
     &:hover {
       color: var(--title-foreground-color-hover);
-      .collapsed-shortcuts {
-        svg {
-          stroke: var(--title-foreground-color-hover);
-        }
-      }
     }
   }
 
