@@ -58,19 +58,15 @@
 (mf/defc input-token*
   {::mf/forward-ref true
    ::mf/schema schema::input-token}
-  [{:keys [class label placeholder value icon slot-start token-resolve-result] :rest props} ref]
+  [{:keys [class label token-resolve-result] :rest props} ref]
   (let [error (not (nil? (:errors token-resolve-result)))
         id (mf/use-id)
         input-ref (mf/use-ref)
         props (mf/spread-props props {:id id
                                       :type "text"
                                       :class (stl/css :input)
-                                      :placeholder placeholder
-                                      :value value
                                       :variant "comfortable"
                                       :hint-type (when error "error")
-                                      :slot-start slot-start
-                                      :icon icon
                                       :ref (or ref input-ref)})]
     [:*
      [:div {:class (dm/str class " " (stl/css-case :wrapper true

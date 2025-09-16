@@ -828,7 +828,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
         on-select-font
         (mf/use-fn
-         (mf/deps on-external-update-value set-font)
+         (mf/deps on-external-update-value set-font font)
          (fn [{:keys [family] :as font}]
            (when font
              (set-font font)
@@ -854,7 +854,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
       {:placeholder (or placeholder (tr "workspace.tokens.token-font-family-value-enter"))
        :label label
        :aria-label aria-label
-       :default-value default-value
+       :value (or (:name font) default-value)
        :ref input-ref
        :on-blur on-blur
        :on-change on-update-value'
