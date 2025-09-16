@@ -1,4 +1,3 @@
-use macros::ToJs;
 use skia_safe::{self as skia};
 
 use crate::render::BlendMode;
@@ -128,77 +127,29 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintH {
-    Left = 0,
-    Right = 1,
-    Leftright = 2,
-    Center = 3,
-    Scale = 4,
+    Left,
+    Right,
+    LeftRight,
+    Center,
+    Scale,
 }
 
-impl ConstraintH {
-    // TODO: we should implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Left),
-            1 => Some(Self::Right),
-            2 => Some(Self::Leftright),
-            3 => Some(Self::Center),
-            4 => Some(Self::Scale),
-            _ => None,
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum VerticalAlign {
-    Top = 0,
-    Center = 1,
-    Bottom = 2,
+    Top,
+    Center,
+    Bottom,
 }
 
-impl VerticalAlign {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from(value: u8) -> Self {
-        match value {
-            0 => Self::Top,
-            1 => Self::Center,
-            2 => Self::Bottom,
-            _ => Self::Top,
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintV {
-    Top = 0,
-    Bottom = 1,
-    Topbottom = 2,
-    Center = 3,
-    Scale = 4,
-}
-
-impl ConstraintV {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Top),
-            1 => Some(Self::Bottom),
-            2 => Some(Self::Topbottom),
-            3 => Some(Self::Center),
-            4 => Some(Self::Scale),
-            _ => None,
-        }
-    }
+    Top,
+    Bottom,
+    TopBottom,
+    Center,
+    Scale,
 }
 
 pub type Color = skia::Color;
