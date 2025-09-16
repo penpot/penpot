@@ -1069,7 +1069,7 @@
              (p/mcat (fn [module]
                        (let [default (unchecked-get module "default")
                              serializers #js{:blur-type (unchecked-get module "RawBlurType")
-                                             :bool-type (unchecked-get module "BoolType")
+                                             :bool-type (unchecked-get module "RawBoolType")
                                              :font-style (unchecked-get module "FontStyle")
                                              :flex-direction (unchecked-get module "FlexDirection")
                                              :grid-direction (unchecked-get module "GridDirection")
