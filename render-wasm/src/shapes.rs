@@ -170,7 +170,7 @@ pub struct Shape {
     pub strokes: Vec<Stroke>,
     pub blend_mode: BlendMode,
     pub vertical_align: VerticalAlign,
-    pub blur: Blur,
+    pub blur: Option<Blur>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
@@ -199,7 +199,7 @@ impl Shape {
             vertical_align: VerticalAlign::Top,
             opacity: 1.,
             hidden: false,
-            blur: Blur::default(),
+            blur: None,
             svg: None,
             svg_attrs: HashMap::new(),
             shadows: Vec::with_capacity(1),
@@ -219,7 +219,11 @@ impl Shape {
             .shadows
             .iter_mut()
             .for_each(|s| s.scale_content(value));
-        result.blur.scale_content(value);
+
+        if let Some(blur) = result.blur.as_mut() {
+            blur.scale_content(value);
+        }
+
         result
             .layout_item
             .iter_mut()
@@ -482,9 +486,9 @@ impl Shape {
         grid_data.cells = cells.iter().map(GridCell::from_raw).collect();
     }
 
-    pub fn set_blur(&mut self, blur_type: u8, hidden: bool, value: f32) {
+    pub fn set_blur(&mut self, blur: Option<Blur>) {
         self.invalidate_extrect();
-        self.blur = Blur::new(blur_type, hidden, value);
+        self.blur = blur;
     }
 
     pub fn add_child(&mut self, id: Uuid) {
@@ -788,11 +792,13 @@ impl Shape {
             }
         }
 
-        if self.blur.blur_type != blurs::BlurType::None && !self.blur.hidden {
-            rect.left -= self.blur.value;
-            rect.top -= self.blur.value;
-            rect.right += self.blur.value;
-            rect.bottom += self.blur.value;
+        if let Some(blur) = self.blur {
+            if !blur.hidden {
+                rect.left -= blur.value;
+                rect.top -= blur.value;
+                rect.right += blur.value;
+                rect.bottom += blur.value;
+            }
         }
 
         // For groups and frames without clipping, extend the bounding rectangle to include all nested shapes
@@ -919,35 +925,27 @@ impl Shape {
     }
 
     pub fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {
-        if !self.blur.hidden {
-            match self.blur.blur_type {
-                BlurType::None => None,
+        self.blur
+            .filter(|blur| !blur.hidden)
+            .and_then(|blur| match blur.blur_type {
                 BlurType::LayerBlur => skia::image_filters::blur(
-                    (self.blur.value * scale, self.blur.value * scale),
+                    (blur.value * scale, blur.value * scale),
                     None,
                     None,
                     None,
                 ),
-            }
-        } else {
-            None
-        }
+            })
     }
 
     #[allow(dead_code)]
     pub fn mask_filter(&self, scale: f32) -> Option<skia::MaskFilter> {
-        if !self.blur.hidden {
-            match self.blur.blur_type {
-                BlurType::None => None,
-                BlurType::LayerBlur => skia::MaskFilter::blur(
-                    skia::BlurStyle::Normal,
-                    self.blur.value * scale,
-                    Some(true),
-                ),
-            }
-        } else {
-            None
-        }
+        self.blur
+            .filter(|blur| !blur.hidden)
+            .and_then(|blur| match blur.blur_type {
+                BlurType::LayerBlur => {
+                    skia::MaskFilter::blur(skia::BlurStyle::Normal, blur.value * scale, Some(true))
+                }
+            })
     }
 
     pub fn is_recursive(&self) -> bool {

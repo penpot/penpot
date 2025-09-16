@@ -126,7 +126,7 @@
 (defn translate-blur-type
   [blur-type]
   (let [values (unchecked-get wasm/serializers "blur-type")
-        default (unchecked-get values "none")]
+        default (unchecked-get values "layer-blur")]
     (d/nilv (unchecked-get values (d/name blur-type)) default)))
 
 (defn translate-layout-flex-dir

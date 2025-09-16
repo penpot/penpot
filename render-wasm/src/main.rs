@@ -380,13 +380,6 @@ pub extern "C" fn set_shape_hidden(hidden: bool) {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_blur(blur_type: u8, hidden: bool, value: f32) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_blur(blur_type, hidden, value);
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn set_shape_corners(r1: f32, r2: f32, r3: f32, r4: f32) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_corners((r1, r2, r3, r4));

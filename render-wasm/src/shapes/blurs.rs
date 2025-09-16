@@ -1,10 +1,6 @@
-use macros::ToJs;
-
-#[derive(Debug, Clone, Copy, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BlurType {
-    None = 0,
-    LayerBlur = 1,
+    LayerBlur,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -14,28 +10,10 @@ pub struct Blur {
     pub value: f32,
 }
 
-// TODO: maybe move this to the wasm module?
-impl From<u8> for BlurType {
-    // TODO: use transmute
-    fn from(value: u8) -> Self {
-        match value {
-            1 => BlurType::LayerBlur,
-            _ => BlurType::None,
-        }
-    }
-}
-
 impl Blur {
-    pub fn default() -> Self {
+    pub fn new(blur_type: BlurType, hidden: bool, value: f32) -> Self {
         Blur {
-            blur_type: BlurType::None,
-            hidden: true,
-            value: 0.,
-        }
-    }
-    pub fn new(blur_type: u8, hidden: bool, value: f32) -> Self {
-        Blur {
-            blur_type: BlurType::from(blur_type),
+            blur_type,
             hidden,
             value,
         }

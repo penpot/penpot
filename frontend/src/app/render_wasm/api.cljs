@@ -364,18 +364,14 @@
   [bool-type]
   (h/call wasm/internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
 
-(defn- translate-blur-type
-  [blur-type]
-  (case blur-type
-    :layer-blur 1
-    0))
-
 (defn set-shape-blur
   [blur]
-  (let [type   (-> blur :type sr/translate-blur-type)
-        hidden (:hidden blur)
-        value  (:value blur)]
-    (h/call wasm/internal-module "_set_shape_blur" type hidden value)))
+  (if (some? blur)
+    (let [type   (-> blur :type sr/translate-blur-type)
+          hidden (:hidden blur)
+          value  (:value blur)]
+      (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+    (h/call wasm/internal-module "_clear_shape_blur")))
 
 (defn set-shape-corners
   [corners]
@@ -756,10 +752,9 @@
     (set-shape-hidden hidden)
     (set-shape-children children)
     (set-shape-corners corners)
+    (set-shape-blur blur)
     (when (and (= type :group) masked)
       (set-masked masked))
-    (when (some? blur)
-      (set-shape-blur blur))
     (when (= type :bool)
       (set-shape-bool-type bool-type))
     (when (and (some? content)
@@ -1073,7 +1068,7 @@
         (->> (js/dynamicImport (str uri))
              (p/mcat (fn [module]
                        (let [default (unchecked-get module "default")
-                             serializers #js{:blur-type (unchecked-get module "BlurType")
+                             serializers #js{:blur-type (unchecked-get module "RawBlurType")
                                              :bool-type (unchecked-get module "BoolType")
                                              :font-style (unchecked-get module "FontStyle")
                                              :flex-direction (unchecked-get module "FlexDirection")
