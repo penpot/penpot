@@ -9,6 +9,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
+   [app.main.ui.inspect.styles.panels.fill :refer [fill-panel*]]
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
    [app.main.ui.inspect.styles.panels.layout :refer [layout-panel*]]
    [app.main.ui.inspect.styles.panels.layout-element :refer [layout-element-panel*]]
@@ -47,6 +48,13 @@
    :path     [:visibility :geometry :fill :stroke :shadow :blur :svg :layout-element]
    :text     [:visibility :geometry :text :shadow :blur :stroke :layout-element]
    :variant  [:variant :geometry :fill :stroke :shadow :blur :layout :layout-element]})
+
+(defn- has-fill?
+  [shape]
+  (and
+   (not (contains? #{:text :group} (:type shape)))
+   (seq (:fills shape))))
+
 
 (defn- get-shape-type
   [shapes first-shape first-component]
@@ -128,6 +136,16 @@
                                             :objects objects
                                             :resolved-tokens resolved-active-tokens
                                             :layout-element-properties layout-element-properties}]])))
+          ;; FILL PANEL
+          :fill
+          (let [shapes (filter has-fill? shapes)]
+            (when (seq shapes)
+              [:> style-box* {:panel :fill}
+               [:> fill-panel* {:color-space color-space
+                                :shapes shapes
+                                :objects objects
+                                :resolved-tokens resolved-active-tokens}]]))
+
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
