@@ -69,7 +69,7 @@
 
        ;; Watch for profile deletion events
        (->> stream
-            (rx/filter dp/profile-deleted?)
+            (rx/filter dp/profile-deleted-event?)
             (rx/map da/logged-out))
 
        ;; Once profile is fetched, initialize all penpot application
