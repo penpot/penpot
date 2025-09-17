@@ -139,21 +139,11 @@
 (defn- update-attrs [shape props]
   (let [text-values    (calculate-text-values shape)
         font-size      (d/parse-double (:font-size text-values))
-        line-height    (d/parse-double (:line-height text-values))
-        letter-spacing (d/parse-double (:letter-spacing text-values))
         props (cond
                 (:font-size-inc props)
                 {:font-size (str (inc font-size))}
                 (:font-size-dec props)
                 {:font-size (str (dec font-size))}
-                (:line-height-inc props)
-                {:line-height (str (+ line-height 0.1))}
-                (:line-height-dec props)
-                {:line-height (str (- line-height 0.1))}
-                (:letter-spacing-inc props)
-                {:letter-spacing (str (+ letter-spacing 0.1))}
-                (:letter-spacing-dec props)
-                {:letter-spacing (str (- letter-spacing 0.1))}
                 (= (:text-decoration props) "toggle-underline") ;;toggle
                 (if (= (:text-decoration text-values) "underline")
                   {:text-decoration "none"}
@@ -267,26 +257,6 @@
                    :command (ds/c-mod "shift+left")
                    :subsections [:text-editor]
                    :fn #(update-attrs-when-no-readonly {:font-size-dec true})}
-
-   :line-height-inc {:tooltip (ds/alt-shift ds/up-arrow)
-                     :command (ds/a-mod "shift+up")
-                     :subsections [:text-editor]
-                     :fn #(update-attrs-when-no-readonly {:line-height-inc true})}
-
-   :line-height-dec {:tooltip (ds/alt-shift ds/down-arrow)
-                     :command (ds/a-mod "shift+down")
-                     :subsections [:text-editor]
-                     :fn #(update-attrs-when-no-readonly {:line-height-dec true})}
-
-   :letter-spacing-inc {:tooltip (ds/alt ds/up-arrow)
-                        :command (ds/a-mod "up")
-                        :subsections [:text-editor]
-                        :fn #(update-attrs-when-no-readonly {:letter-spacing-inc true})}
-
-   :letter-spacing-dec {:tooltip (ds/alt ds/down-arrow)
-                        :command (ds/a-mod "down")
-                        :subsections [:text-editor]
-                        :fn #(update-attrs-when-no-readonly {:letter-spacing-dec true})}
 
    :bold     {:tooltip (ds/meta "b")
               :command (ds/c-mod "b")
