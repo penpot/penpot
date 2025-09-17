@@ -278,7 +278,7 @@
   [{:keys [::db/conn] :as cfg} file-id update-fn & args]
   (let [file (get-file cfg file-id)
         file (apply update-file-data! cfg file update-fn args)]
-    (feat.fmigr/upsert-migrations! conn file)
+    ;; (feat.fmigr/upsert-migrations! conn file)
     (persist-file! cfg file)))
 
 (defn get-file

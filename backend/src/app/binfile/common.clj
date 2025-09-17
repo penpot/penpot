@@ -235,8 +235,10 @@
            skip-locked?
            include-deleted?
            throw-if-not-exists?
-           lock-for-update?]
+           lock-for-update?
+           lock-for-share?]
     :or {lock-for-update? false
+         lock-for-share? false
          migrate? true
          decode? true
          include-deleted? false
@@ -247,8 +249,14 @@
   (assert (db/connection? conn) "expected cfg with valid connection")
 
   (let [sql
-        (if lock-for-update?
+        (cond
+          lock-for-update?
           (str sql:get-file " FOR UPDATE of f")
+
+          lock-for-share?
+          (str sql:get-file " FOR SHARE of f")
+
+          :else
           sql:get-file)
 
         sql
@@ -650,7 +658,7 @@
   "Update an existing file on the database. Expects not encoded file."
   [{:keys [::db/conn] :as cfg} {:keys [id] :as file} & {:as opts}]
 
-  (if (::reset-migrations opts false)
+  (if (::reset-migrations? opts false)
     (fmigr/reset-migrations! conn file)
     (fmigr/upsert-migrations! conn file))
 
@@ -700,7 +708,7 @@
           (l/error :hint "file schema validation error" :cause result))))
 
     (if (::overwrite cfg)
-      (update-file! cfg file (assoc opts ::reset-migrations true))
+      (update-file! cfg file (assoc opts ::reset-migrations? true))
       (insert-file! cfg file opts))))
 
 (def ^:private sql:get-file-libraries

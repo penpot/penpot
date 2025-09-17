@@ -46,6 +46,7 @@
    [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
+   [promesa.exec.csp :as sp]
    [promesa.exec :as px]
    [promesa.exec.semaphore :as ps]
    [promesa.util :as pu]))
@@ -145,25 +146,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(declare process-file!)
-
-(defn enable-objects-map-feature-on-file!
-  [file-id & {:as opts}]
-  (process-file! file-id fdata/enable-objects-map opts))
-
-(defn enable-pointer-map-feature-on-file!
-  [file-id & {:as opts}]
-  (process-file! file-id fdata/enable-pointer-map opts))
-
-(defn enable-path-data-feature-on-file!
-  [file-id & {:as opts}]
-  (process-file! file-id fdata/enable-path-data opts))
-
-(defn enable-storage-features-on-file!
-  [file-id & {:as opts}]
-  (enable-objects-map-feature-on-file! file-id opts)
-  (enable-pointer-map-feature-on-file! file-id opts))
 
 (defn enable-team-feature!
   [team-id feature & {:keys [skip-check] :or {skip-check false}}]
@@ -427,216 +409,103 @@
 ;; PROCESSING
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(def sql:get-files
-  "SELECT id FROM file
-    WHERE deleted_at is NULL
-    ORDER BY created_at DESC")
-
-(defn process-file!
-  "Apply a function to the file. Optionally save the changes or not.
-  The function receives the decoded and migrated file data."
-  [file-id update-fn & {:keys [rollback?] :or {rollback? true} :as opts}]
-  (let [file-id (h/parse-uuid file-id)]
-    (db/tx-run! (assoc main/system ::db/rollback rollback?)
-                (fn [system]
-                  (binding [h/*system* system
-                            db/*conn* (db/get-connection system)]
-                    (h/process-file! system file-id update-fn opts))))))
-
-(defn process-team-files!
-  "Apply a function to each file of the specified team."
-  [team-id update-fn & {:keys [rollback? label] :or {rollback? true} :as opts}]
-  (let [team-id (h/parse-uuid team-id)
-        opts    (dissoc opts :label)]
-    (db/tx-run! (assoc main/system ::db/rollback rollback?)
-                (fn [{:keys [::db/conn] :as system}]
-                  (when (string? label)
-                    (h/take-team-snapshot! system team-id label))
-
-                  (binding [h/*system* system
-                            db/*conn* (db/get-connection system)]
-                    (->> (h/get-and-lock-team-files conn team-id)
-                         (reduce (fn [result file-id]
-                                   (if (h/process-file! system file-id update-fn opts)
-                                     (inc result)
-                                     result))
-                                 0)))))))
-
-(defn process-files!
-  "Apply a function to all files in the database"
-  [update-fn & {:keys [max-items
-                       max-jobs
-                       rollback?
-                       query]
-                :or {max-jobs 1
-                     max-items Long/MAX_VALUE
-                     rollback? true
-                     query sql:get-files}
-                :as opts}]
-
-  (l/dbg :hint "process:start"
-         :rollback rollback?
-         :max-jobs max-jobs
-         :max-items max-items)
-
-  (let [tpoint    (ct/tpoint)
-        factory   (px/thread-factory :virtual false :prefix "penpot/file-process/")
-        executor  (px/cached-executor :factory factory)
-        sjobs     (ps/create :permits max-jobs)
-
-        process-file
-        (fn [file-id idx tpoint]
-          (let [thread-id (px/get-thread-id)]
-            (try
-              (l/trc :hint "process:file:start"
-                     :tid thread-id
-                     :file-id (str file-id)
-                     :index idx)
-              (let [system (assoc main/system ::db/rollback rollback?)]
-                (db/tx-run! system (fn [system]
-                                     (binding [h/*system* system
-                                               db/*conn* (db/get-connection system)]
-                                       (h/process-file! system file-id update-fn opts)))))
-
-              (catch Throwable cause
-                (l/wrn :hint "unexpected error on processing file (skiping)"
-                       :tid thread-id
-                       :file-id (str file-id)
-                       :index idx
-                       :cause cause))
-              (finally
-                (when-let [pause (:pause opts)]
-                  (Thread/sleep (int pause)))
-
-                (ps/release! sjobs)
-                (let [elapsed (ct/format-duration (tpoint))]
-                  (l/trc :hint "process:file:end"
-                         :tid thread-id
-                         :file-id (str file-id)
-                         :index idx
-                         :elapsed elapsed))))))
-
-        process-file*
-        (fn [idx file-id]
-          (ps/acquire! sjobs)
-          (px/run! executor (partial process-file file-id idx (ct/tpoint)))
-          (inc idx))
-
-        process-files
-        (fn [{:keys [::db/conn] :as system}]
-          (db/exec! conn ["SET statement_timeout = 0"])
-          (db/exec! conn ["SET idle_in_transaction_session_timeout = 0"])
-
-          (try
-            (->> (db/plan conn [query])
-                 (transduce (comp
-                             (take max-items)
-                             (map :id))
-                            (completing process-file*)
-                            0))
-            (finally
-              ;; Close and await tasks
-              (pu/close! executor))))]
-
-    (try
-      (db/tx-run! main/system process-files)
-
-      (catch Throwable cause
-        (l/dbg :hint "process:error" :cause cause))
-
-      (finally
-        (let [elapsed (ct/format-duration (tpoint))]
-          (l/dbg :hint "process:end"
-                 :rollback rollback?
-                 :elapsed elapsed))))))
-
 (defn process!
   [& {:keys [max-items
              max-jobs
              rollback?
              query
-             proc-fn]
+             proc-fn
+             buffer]
       :or {max-items Long/MAX_VALUE
-           rollback? true}
+           rollback? true
+           max-jobs 1
+           buffer 128}
       :as opts}]
 
-  (l/dbg :hint "process:start"
+  (l/inf :hint "process start"
          :rollback rollback?
          :max-jobs max-jobs
          :max-items max-items)
 
   (let [tpoint    (ct/tpoint)
-        factory   (px/thread-factory :virtual false :prefix "penpot/process/")
-        executor  (px/cached-executor :factory factory)
-        sjobs     (ps/create :permits max-jobs)
         max-jobs  (or max-jobs (px/get-available-processors))
         query     (or query
                       (:query (meta proc-fn))
                       (throw (ex-info "missing query" {})))
+        query     (if (vector? query) query [query])
 
-        proc-fn  (if (var? proc-fn)
-                   (deref proc-fn)
-                   proc-fn)
+        proc-fn   (if (var? proc-fn)
+                    (deref proc-fn)
+                    proc-fn)
 
-        process-item
-        (fn [idx tpoint row]
-          (let [thread-id (px/get-thread-id)]
-            (try
-              (l/trc :hint "process:item:start"
-                     :tid thread-id
-                     :index idx)
+        in-ch     (sp/chan :buf buffer)
 
-              (-> main/system
-                  (assoc ::db/rollback rollback?)
-                  (db/tx-run! (fn [system]
-                                (binding [h/*system* system
-                                          db/*conn* (db/get-connection system)]
-                                  (proc-fn system row opts)))))
+        worker-fn
+        (fn [worker-id]
+          (l/dbg :hint "worker started"
+                 :id worker-id)
 
-              (catch Throwable cause
-                (l/wrn :hint "unexpected error on processing item (skiping)"
-                       :tid thread-id
-                       :item-id (str (:id row))
-                       :index idx
-                       :cause cause))
-              (finally
-                (when-let [pause (:pause opts)]
-                  (Thread/sleep (int pause)))
+          (loop []
+            (when-let [[index item] (sp/<! in-ch)]
+              (l/dbg :hint "process item" :worker-id worker-id :index index :item item)
+              (try
+                (-> main/system
+                    (assoc ::db/rollback rollback?)
+                    (db/tx-run! (fn [system]
+                                  (binding [h/*system* system
+                                            db/*conn* (db/get-connection system)]
+                                    (proc-fn system item opts)))))
 
-                (ps/release! sjobs)
-                (let [elapsed (ct/format-duration (tpoint))]
-                  (l/trc :hint "process:item:end"
-                         :tid thread-id
-                         :item-id (str (:id row))
-                         :index idx
-                         :elapsed elapsed))))))
+                (catch Throwable cause
+                  (l/wrn :hint "unexpected error on processing item (skiping)"
+                         :worker-id worker-id
+                         :item item
+                         :cause cause))
+                (finally
+                  (when-let [pause (:pause opts)]
+                    (Thread/sleep (int pause)))))
 
-        process-item*
-        (fn [idx row]
-          (ps/acquire! sjobs)
-          (px/run! executor (partial process-item idx (ct/tpoint) (into {} row)))
-          (inc idx))
+              (recur)))
+
+          (l/dbg :hint "worker stoped"
+                 :id worker-id))
+
+        enqueue-item
+        (fn [index row]
+          (sp/>! in-ch [index (into {} row)])
+          (inc index))
 
         process-items
         (fn [{:keys [::db/conn] :as system}]
           (db/exec! conn ["SET statement_timeout = 0"])
           (db/exec! conn ["SET idle_in_transaction_session_timeout = 0"])
 
-          (->> (db/plan conn [query] {:fetch-size (* max-jobs 3)})
+          (->> (db/plan conn query {:fetch-size (* max-jobs 3)})
                (transduce (take max-items)
-                          (completing process-item*)
-                          0)))]
+                          (completing enqueue-item)
+                          0))
+          (sp/close! in-ch))
+
+        threads
+        (->> (range max-jobs)
+             (map (fn [idx]
+                    (px/fn->thread (partial worker-fn idx)
+                                   :name (str "pentpot/process/" idx))))
+             (doall))]
 
     (try
       (db/tx-run! main/system process-items)
+
+      ;; Await threads termination
+      (doseq [thread threads]
+        (px/await! thread))
 
       (catch Throwable cause
         (l/dbg :hint "process:error" :cause cause))
 
       (finally
-        (pu/close! executor)
         (let [elapsed (ct/format-duration (tpoint))]
-          (l/dbg :hint "process:end"
+          (l/inf :hint "process end"
                  :rollback rollback?
                  :elapsed elapsed))))))
 

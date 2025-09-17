@@ -27,23 +27,6 @@
 ;; OBJECTS-MAP
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn enable-objects-map
-  [file & _opts]
-  (let [update-page
-        (fn [page]
-          (if (and (pmap/pointer-map? page)
-                   (not (pmap/loaded? page)))
-            page
-            (update page :objects omap/wrap)))
-
-        update-data
-        (fn [fdata]
-          (update fdata :pages-index d/update-vals update-page))]
-
-    (-> file
-        (update :data update-data)
-        (update :features conj "fdata/objects-map"))))
-
 (defn process-objects
   "Apply a function to all objects-map on the file. Usualy used for convert
   the objects-map instances to plain maps"
@@ -60,12 +43,29 @@
 
 
 (defn realize-objects
-  "Process a file and remove all instances of objects mao realizing them
+  "Process a file and remove all instances of objects map realizing them
   to a plain data. Used in operation where is more efficient have the
   whole file loaded in memory or we going to persist it in an
   alterantive storage."
   [_cfg file]
   (update file :data process-objects (partial into {})))
+
+(defn enable-objects-map
+  [file]
+  (let [update-page
+        (fn [page]
+          (if (and (pmap/pointer-map? page)
+                   (not (pmap/loaded? page)))
+            page
+            (update page :objects omap/wrap)))
+
+        update-data
+        (fn [fdata]
+          (update fdata :pages-index d/update-vals update-page))]
+
+    (-> file
+        (update :data update-data)
+        (update :features conj "fdata/objects-map"))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; POINTER-MAP
@@ -90,7 +90,6 @@
                 :file-id file-id
                 :fragment-id id))
 
-    ;; FIXME: conditional thread scheduling for decoding big objects
     (blob/decode (:data fragment))))
 
 (defn persist-pointers!
@@ -137,60 +136,13 @@
 
 (defn enable-pointer-map
   "Enable the fdata/pointer-map feature on the file."
-  [file & _opts]
+  [file]
   (-> file
       (update :data (fn [fdata]
                       (-> fdata
                           (update :pages-index d/update-vals pmap/wrap)
                           (d/update-when :components pmap/wrap))))
       (update :features conj "fdata/pointer-map")))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; PATH-DATA
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn enable-path-data
-  "Enable the fdata/path-data feature on the file."
-  [file & _opts]
-  (letfn [(update-object [object]
-            (if (or (cfh/path-shape? object)
-                    (cfh/bool-shape? object))
-              (update object :content path/content)
-              object))
-
-          (update-container [container]
-            (d/update-when container :objects d/update-vals update-object))]
-
-    (-> file
-        (update :data (fn [data]
-                        (-> data
-                            (update :pages-index d/update-vals update-container)
-                            (d/update-when :components d/update-vals update-container))))
-        (update :features conj "fdata/path-data"))))
-
-(defn disable-path-data
-  [file & _opts]
-  (letfn [(update-object [object]
-            (if (or (cfh/path-shape? object)
-                    (cfh/bool-shape? object))
-              (update object :content vec)
-              object))
-
-          (update-container [container]
-            (d/update-when container :objects d/update-vals update-object))]
-
-    (when-let [conn db/*conn*]
-      (db/delete! conn :file-migration {:file-id (:id file)
-                                        :name "0003-convert-path-content"}))
-    (-> file
-        (update :data (fn [data]
-                        (-> data
-                            (update :pages-index d/update-vals update-container)
-                            (d/update-when :components d/update-vals update-container))))
-        (update :features disj "fdata/path-data")
-        (update :migrations disj "0003-convert-path-content")
-        (vary-meta update ::fmg/migrated disj "0003-convert-path-content"))))
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; GENERAL PURPOSE HELPERS
@@ -229,10 +181,10 @@
         (dissoc :legacy-data))))
 
 (defn decode-file-data
-  [{:keys [::wrk/executor]} {:keys [data] :as file}]
+  [_cfg {:keys [data] :as file}]
   (cond-> file
     (bytes? data)
-    (assoc :data (px/invoke! executor #(blob/decode data)))))
+    (assoc :data (blob/decode data))))
 
 (def ^:private sql:insert-file-data
   "INSERT INTO file_data (file_id, id, created_at, modified_at,
@@ -378,112 +330,3 @@
     (-> (db/delete! cfg :file-data params)
         (db/get-update-count)
         (pos?))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; SCRIPTS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def sql:get-unmigrated-files
-  "SELECT f.id
-     FROM file AS f
-    WHERE f.data IS NOT NULL
-    ORDER BY f.modified_at ASC")
-
-(def sql:get-migrated-files
-  "SELECT f.id, f.file_id
-     FROM file_data AS f
-    WHERE f.data IS NOT NULL
-      AND f.id = f.file_id
-    ORDER BY f.id ASC")
-
-(defn migrate-files-to-storage
-  "Migrate the current existing files to store data in new storage
-  tables."
-  {:query sql:get-unmigrated-files}
-  [{:keys [::db/conn]} {:keys [id]} & {:as opts}]
-  (l/dbg :hint "migrating file" :file-id (str id))
-  (let [{:keys [id data index created-at modified-at]}
-        (db/get* conn :file {:id id}
-                 ::db/for-update true
-                 ::db/remove-deleted false)]
-    (db/update! conn :file {:data nil} {:id id} ::db/return-keys false)
-    (db/insert! conn :file-data
-                {:backend "db"
-                 :metadata nil
-                 :type "main"
-                 :data data
-                 :created-at created-at
-                 :modified-at modified-at
-                 :file-id id
-                 :id id}
-                {::db/return-keys false})))
-
-(defn rollback-files-from-storage
-  "Migrate back to the file table storage."
-  {:query sql:get-migrated-files}
-  [{:keys [::db/conn]} {:keys [id file-id]} & {:as opts}]
-  (l/dbg :hint "rollback file" :file-id (str id))
-  (let [{:keys [id data]}
-        (db/get* conn :file-data {:id id :file-id file-id}
-                 ::db/for-update true
-                 ::db/remove-deleted false)]
-    (db/update! conn :file {:data data} {:id id} ::db/return-keys false)
-    (db/delete! conn :file-data {:id id} ::db/return-keys false)))
-
-(def sql:get-unmigrated-snapshots
-  "SELECT fc.id, fc.file_id
-     FROM file_change AS fc
-    WHERE fc.data IS NOT NULL
-      AND f.label IS NOT NULL
-    ORDER BY f.id ASC")
-
-(def sql:get-migrated-snapshots
-  "SELECT f.id, f.file_id
-     FROM file_data AS f
-    WHERE f.data IS NOT NULL
-      AND f.type = 'snapshot'
-      AND f.id != f.file_id
-    ORDER BY f.id ASC")
-
-(defn migrate-snapshots-to-storage
-  "Migrate the current existing files to store data in new storage
-  tables."
-  {:query sql:get-unmigrated-snapshots}
-  [{:keys [::db/conn]} {:keys [id file-id]} & {:as options}]
-  (l/dbg :hint "migrating snapshot" :file-id (str id) :id (str id))
-  (let [{:keys [id file-id data created-at updated-at]}
-        (db/get* conn :file-change {:id id :file-id file-id}
-                 ::db/for-update true
-                 ::db/remove-deleted false)]
-
-    (db/update! conn :file-change
-                {:data nil}
-                {:id id :file-id file-id}
-                {::db/return-keys false})
-    (db/insert! conn :file-data
-                {:backend "db"
-                 :metadata nil
-                 :type "snapshot"
-                 :data data
-                 :created-at created-at
-                 :modified-at updated-at
-                 :file-id file-id
-                 :id id}
-                {::db/return-keys false})))
-
-(defn rollback-snapshots-from-storage
-  "Migrate back to the file table storage."
-  {:query sql:get-unmigrated-snapshots}
-  [{:keys [::db/conn]} {:keys [id file-id]} & {:as opts}]
-  (l/dbg :hint "rollback snapshot" :file-id (str file-id) :id (str id))
-  (let [{:keys [id file-id data]}
-        (db/get* conn :file-data {:id id :file-id file-id}
-                 ::db/for-update true
-                 ::db/remove-deleted false)]
-    (db/update! conn :file-change
-                {:data data}
-                {:id id :file-id file-id}
-                {::db/return-keys false})
-    (db/delete! conn :file-data
-                {:id id :file-id file-id}
-                {::db/return-keys false})))

@@ -142,8 +142,19 @@
             0
             snap)))
 
+(defn mark-migrated!
+  "A helper that inserts an entry in the file migration table for make
+  file migrated for the specified migration label."
+  [system file-id label]
+  (db/insert! system :file-migration
+              {:file-id file-id
+               :name label}
+              {::db/return-keys false}))
+
 (defn process-file!
-  [system file-id update-fn & {:keys [label validate? with-libraries?] :or {validate? true} :as opts}]
+  [system file-id update-fn
+   & {:keys [::snapshot-label ::validate? ::with-libraries?]
+      :or {validate? true} :as opts}]
   (let [file  (bfc/get-file system file-id
                             :lock-for-update? true
                             :realize? true)
@@ -153,8 +164,8 @@
 
         file' (when file
                 (if with-libraries?
-                  (update-fn file libs opts)
-                  (update-fn file opts)))]
+                  (update-fn file libs)
+                  (update-fn file)))]
 
     (when (and (some? file')
                (or (fmg/migrated? file)
@@ -163,12 +174,12 @@
       (when validate?
         (cfv/validate-file-schema! file'))
 
-      (when (string? label)
+      (when (string? snapshot-label)
         (fsnap/create! system file
-                       {:label label
+                       {:label snapshot-label
                         :deleted-at (ct/in-future {:days 30})
                         :created-by "admin"}))
 
       (let [file' (update file' :revn inc)]
-        (bfc/update-file! system file')
+        (bfc/update-file! system file' opts)
         true))))

@@ -326,7 +326,7 @@
 
       ;; In the same way, on reseting the file data, we need to restore
       ;; the applied migrations on the moment of taking the snapshot
-      (bfc/update-file! cfg file ::bfc/reset-migrations true)
+      (bfc/update-file! cfg file ::bfc/reset-migrations? true)
 
       ;; FIXME: this should be separated functions, we should not have
       ;; inline sql here.
