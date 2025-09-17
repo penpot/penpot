@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.variant :as cfv]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.types.library :as ctl]
@@ -59,7 +60,8 @@
   (let [colors       (count (:colors data))
         graphics     0
         typographies (count (:typographies data))
-        components   (count (ctkl/components-seq data))
+        components   (count (->> (ctkl/components-seq data)
+                                 (remove #(cfv/is-secondary-variant? % data))))
         empty?       (and (zero? components)
                           (zero? graphics)
                           (zero? colors)
