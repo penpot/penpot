@@ -277,11 +277,11 @@
          (dwu/commit-undo-transaction undo-id))))))
 
 (defn- focus-property
-  [shape-id prop-num]
+  [variant-id]
   (ptk/reify ::focus-property
     ptk/EffectEvent
     (effect [_ _ _]
-      (dom/focus! (dom/get-element (str "variant-prop-" shape-id prop-num))))))
+      (dom/focus! (dom/get-element (str "variant-prop-" variant-id "-0"))))))
 
 (defn- resposition-and-resize-variant
   "Resize the variant container, and move the shape (that is a variant) to the right"
@@ -347,7 +347,7 @@
            (if multiselect?
              (dws/shift-select-shapes new-shape-id)
              (dws/select-shape new-shape-id)))
-          (->> (rx/of (focus-property new-shape-id prop-num))
+          (->> (rx/of (focus-property (:id variant-container)))
                (rx/delay 250))))))))
 
 (defn transform-in-variant

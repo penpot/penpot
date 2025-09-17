@@ -21,6 +21,8 @@
 
 ### :rocket: Epics and highlights
 
+- Variants
+
 ### :boom: Breaking changes & Deprecations
 
 ### :heart: Community contributions (Thank you!)
@@ -38,6 +40,18 @@
 - New font weight token [Taiga #10939](https://tree.taiga.io/project/penpot/us/10939)
 - Upgrade Node to v22.18.0 [Github #7283](https://github.com/penpot/penpot/pull/7283)
 - Upgrade the base docker image for penpot frontend to v1.29.1 [Github #7283](https://github.com/penpot/penpot/pull/7283)
+- Create variant from an existing component [Taiga #2088](https://tree.taiga.io/project/penpot/us/2088)
+- Create variant from an existing variant [Taiga #8282](https://tree.taiga.io/project/penpot/us/8282)
+- Actions over a component with variants [Taiga #10503](https://tree.taiga.io/project/penpot/us/10503)
+- Create a variant by dragging a component into a component with variants [Taiga #8134](https://tree.taiga.io/project/penpot/us/8134)
+- Transform a variant into an individual component [Taiga #8141](https://tree.taiga.io/project/penpot/us/8141)
+- Delete variant [Taiga #6890](https://tree.taiga.io/project/penpot/us/6890)
+- Restore an orphaned copy of a variant [Taiga #10446](https://tree.taiga.io/project/penpot/us/10446)
+- Add, Edit & Delete variant properties name and value [Taiga #6892](https://tree.taiga.io/project/penpot/us/6892)
+- Retrieve variants [Taiga #6888](https://tree.taiga.io/project/penpot/us/6888)
+- Retrieve variants with nested components [Taiga #10277](https://tree.taiga.io/project/penpot/us/10277)
+- Create variants in bulk from existing components [Taiga #7926](https://tree.taiga.io/project/penpot/us/7926)
+- Alternative ways of creating variants - Button Design Tab [Taiga #10316](https://tree.taiga.io/project/penpot/us/10316)
 
 ### :bug: Bugs fixed
 
@@ -63,6 +77,7 @@
 - Fix incorrect date displayed for support plan [Taiga #11986](https://tree.taiga.io/project/penpot/issue/11986)
 - Fix can't import 'borderWidth' type token [#132](https://github.com/tokens-studio/penpot/issues/132)
 - Fix moving elements up or down while pressing alt [Taiga Issue #11992](https://tree.taiga.io/project/penpot/issue/11992)
+- Fix conflicting shortcuts (remove dec/inc line height and letter spacing) [Taiga #12102](https://tree.taiga.io/project/penpot/issue/12102)
 
 ## 2.9.0
 

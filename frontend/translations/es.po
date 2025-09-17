@@ -4088,22 +4088,6 @@ msgstr "Alternar cursiva"
 msgid "shortcuts.join-nodes"
 msgstr "Unir nodos"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Decrementar el espaciado de letras"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Incrementar el espaciado de letras"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Decrementar el interlineado"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Incrementar el interlineado"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Alternar tachado"
@@ -7471,7 +7455,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
 msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Introduce: 400, Bold, 700 Italic, o {alias}"
+msgstr "Introduce un valor (300, Bold, Regular Italic...) o un {alias}"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
