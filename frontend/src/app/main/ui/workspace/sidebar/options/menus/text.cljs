@@ -52,19 +52,19 @@
                         :name "align-text-options"}
       [:& radio-button {:value "left"
                         :id "text-align-left"
-                        :title (tr "workspace.options.text-options.text-align-left" (sc/get-tooltip :text-align-left))
+                        :title (tr "workspace.options.text-options.text-align-left")
                         :icon deprecated-icon/text-align-left}]
       [:& radio-button {:value "center"
                         :id "text-align-center"
-                        :title (tr "workspace.options.text-options.text-align-center" (sc/get-tooltip :text-align-center))
+                        :title (tr "workspace.options.text-options.text-align-center")
                         :icon deprecated-icon/text-align-center}]
       [:& radio-button {:value "right"
                         :id "text-align-right"
-                        :title (tr "workspace.options.text-options.text-align-right" (sc/get-tooltip :text-align-right))
+                        :title (tr "workspace.options.text-options.text-align-right")
                         :icon deprecated-icon/text-align-right}]
       [:& radio-button {:value "justify"
                         :id "text-align-justify"
-                        :title (tr "workspace.options.text-options.text-align-justify" (sc/get-tooltip :text-align-justify))
+                        :title (tr "workspace.options.text-options.text-align-justify")
                         :icon deprecated-icon/text-justify}]]]))
 
 (mf/defc text-direction-options

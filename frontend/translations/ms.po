@@ -2801,10 +2801,6 @@ msgstr "Kosongkan buat asal"
 msgid "shortcuts.copy"
 msgstr "Salin"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Cipta komponen"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Buat baharu"

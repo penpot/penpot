@@ -3844,10 +3844,6 @@ msgstr "Ievietot saiti starpliktuvē"
 msgid "shortcuts.copy-props"
 msgstr "Ievietot īpašības starpliktuvē"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Izveidot sastāvdaļu"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Izveidot jaunu"
@@ -4213,22 +4209,6 @@ msgstr "Sākt mērīšanu"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.stop-measure"
 msgstr "Beigt mērīšanu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "Līdzināt vidū"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "Līdzināt pie abām malām"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "Līdzināt pa kreisi"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "Līdzināt pa labi"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
@@ -4864,10 +4844,6 @@ msgstr "Fonti"
 msgid "workspace.assets.typography.font-size"
 msgstr "Izmērs"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Fonta variants"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Doties uz stilu bibliotēkas datni, lai labotu"
@@ -5440,10 +5416,6 @@ msgstr "Šajā bibliotēkā vēl nav līdzekļu"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
 msgstr "Atsaistīta"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:929
-msgid "workspace.options.component.variant"
-msgstr "Variants"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
 msgid "workspace.options.component.variant.duplicated.copy.locate"
@@ -6544,19 +6516,19 @@ msgstr "Pārsvītrots (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Līdzināt vidū (%s)"
+msgstr "Līdzināt vidū"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Izlīdzināt (%s)"
+msgstr "Izlīdzināt"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Līdzināt pa kreisi (%s)"
+msgstr "Līdzināt pa kreisi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Līdzināt pa labi (%s)"
+msgstr "Līdzināt pa labi"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"
