@@ -14,7 +14,7 @@
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
    [beicon.v2.core :as rx]
-   [clojure.core :as c]
+   [cljs.core :as c]
    [cuerdas.core :as str]))
 
 (declare ^:private impl-assoc)
@@ -42,37 +42,38 @@
   ;; Marker protocol
   shape/IShape
 
-  IWithMeta
+  c/IWithMeta
   (-with-meta [_ meta]
     (ShapeProxy. id type (with-meta delegate meta)))
 
-  IMeta
+  c/IMeta
   (-meta [_] (meta delegate))
 
-  ICollection
+  c/ICollection
   (-conj [coll entry]
     (impl-conj coll entry))
 
-  IEquiv
+  c/IEquiv
   (-equiv [coll other]
     (c/equiv-map coll other))
 
-  IHash
-  (-hash [coll] (hash (into {} coll)))
+  c/IHash
+  (-hash [coll]
+    (hash (into {} coll)))
 
-  ISequential
+  c/ISequential
 
-  ISeqable
+  c/ISeqable
   (-seq [_]
     (cons (map-entry :id id)
           (cons (map-entry :type type)
                 (c/-seq delegate))))
 
-  ICounted
+  c/ICounted
   (-count [_]
     (+ 1 (count delegate)))
 
-  ILookup
+  c/ILookup
   (-lookup [coll k]
     (-lookup coll k nil))
 
@@ -82,7 +83,7 @@
       :type type
       (c/-lookup delegate k not-found)))
 
-  IFind
+  c/IFind
   (-find [_ k]
     (case k
       :id
@@ -91,7 +92,7 @@
       (map-entry :type type)
       (c/-find delegate k)))
 
-  IAssociative
+  c/IAssociative
   (-assoc [coll k v]
     (impl-assoc coll k v))
 
@@ -100,18 +101,18 @@
         (= k :type)
         (contains? delegate k)))
 
-  IMap
+  c/IMap
   (-dissoc [coll k]
     (impl-dissoc coll k))
 
-  IFn
+  c/IFn
   (-invoke [coll k]
     (-lookup coll k nil))
 
   (-invoke [coll k not-found]
     (-lookup coll k not-found))
 
-  IPrintWithWriter
+  c/IPrintWithWriter
   (-pr-writer [_ writer _]
     (-write writer (str "#penpot/shape " (:id delegate)))))
 
