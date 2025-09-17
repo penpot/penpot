@@ -7429,7 +7429,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
 msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Enter: 400, Bold, 700 Italic, or {alias}"
+msgstr "Enter a value (300, Bold, Regular Italic...) or an {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:229
 msgid "workspace.tokens.gaps"

@@ -7299,10 +7299,6 @@ msgstr "Voorbeeld:"
 msgid "workspace.tokens.export.single-file"
 msgstr "Enkel bestand"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
-msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Voer in: 400, Bold, 700 Italic, of {alias}"
-
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:229
 msgid "workspace.tokens.gaps"
 msgstr "Tussenruimtes"
