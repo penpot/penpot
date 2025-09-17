@@ -2447,10 +2447,6 @@ msgstr "Garbitu historiala"
 msgid "shortcuts.copy"
 msgstr "Kopiatu"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Sortu osagaia"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Sortu berria"
@@ -3146,10 +3142,6 @@ msgstr "Letra-tipoak"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamaina"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Aldaerak"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
@@ -4379,19 +4371,19 @@ msgstr "Gaineko marra (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Lerrokatu erdian (%s)"
+msgstr "Lerrokatu erdian"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Justifikatu (%s)"
+msgstr "Justifikatu"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Lerrokatu ezkerrean (%s)"
+msgstr "Lerrokatu ezkerrean"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Lerrokatu eskuman (%s)"
+msgstr "Lerrokatu eskuman"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

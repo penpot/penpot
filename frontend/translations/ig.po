@@ -2167,10 +2167,6 @@ msgstr "Leta mmụba oghere"
 msgid "shortcuts.paste"
 msgstr "Nyado"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "Dozie akaekpe"
-
 #: src/app/main/ui.cljs:137
 #, unused
 msgid "viewer.breaking-change.message"

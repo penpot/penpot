@@ -4256,22 +4256,6 @@ msgstr "Start measurement"
 msgid "shortcuts.stop-measure"
 msgstr "Stop measurement"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "Align center"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "Align justify"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "Align left"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "Align right"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
 msgstr "Set thumbnails"
@@ -6716,19 +6700,19 @@ msgstr "Strikethrough (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Align center (%s)"
+msgstr "Align center"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Justify (%s)"
+msgstr "Justify"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Align left (%s)"
+msgstr "Align left"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Align right (%s)"
+msgstr "Align right"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

@@ -2568,10 +2568,6 @@ msgstr "Pa yipàdá rẹ"
 msgid "shortcuts.copy"
 msgstr "Dàákọ"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Ṣẹ̀dá pàátì"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Ṣẹ̀dá títún"
@@ -2884,22 +2880,6 @@ msgstr "Bẹ̀rẹ̀ wíwọ̀n"
 msgid "shortcuts.stop-measure"
 msgstr "da wíwọ̀n duro"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "Parapọ saarin"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "Sedede lárè"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "mo si osi"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "Mo sotun"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
 msgstr "Se étò awòn áwòran fun fidio"
@@ -3211,10 +3191,6 @@ msgstr "Fonti"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-size"
 msgstr "Iwon"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Iyatọ"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:530
 msgid "workspace.assets.typography.letter-spacing"
@@ -4445,19 +4421,19 @@ msgstr "Ìfọwọ́bàyíká (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Mú dọ́gba àárín (%s)"
+msgstr "Mú dọ́gba àárín"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Ìdálàre (%s)"
+msgstr "Ìdálàre"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Mú dọ́gba òsì (%s)"
+msgstr "Mú dọ́gba òsì"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Mú dọ́gba ọ̀tún (%s)"
+msgstr "Mú dọ́gba ọ̀tún"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

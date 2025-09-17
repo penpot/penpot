@@ -3792,10 +3792,6 @@ msgstr "लिंक कॉपी करें"
 msgid "shortcuts.copy-props"
 msgstr "गुण कॉपी करें"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "घटक बनाएँ"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "नया निर्माण"
@@ -4161,22 +4157,6 @@ msgstr "मापन शुरू करें"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.stop-measure"
 msgstr "मापन बंद करें"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "मध्य में संरेखित करें"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "पूर्ण संरेखण करें"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "बाएँ संरेखित करें"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "दाएँ संरेखित करें"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
@@ -4787,10 +4767,6 @@ msgstr "फ़ॉन्ट"
 msgid "workspace.assets.typography.font-size"
 msgstr "आकार"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "वेरिएंट"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "संपादन के लिए स्टाइल लाइब्रेरी फ़ाइल पर जाएँ"
@@ -5363,10 +5339,6 @@ msgstr "इस लाइब्रेरी में अभी तक कोई 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
 msgstr "अनलिंक"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:929
-msgid "workspace.options.component.variant"
-msgstr "प्रकारांतर"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1236
 msgid "workspace.options.component.variant.malformed.group.locate"
@@ -6404,19 +6376,19 @@ msgstr "स्ट्राइकथ्रू (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "केंद्र संरेखित करें (%s)"
+msgstr "केंद्र संरेखित करें"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "जस्टिफ़ाई (%s)"
+msgstr "जस्टिफ़ाई"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "बाएँ संरेखित करें (%s)"
+msgstr "बाएँ संरेखित करें"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "दाएँ संरेखित करें (%s)"
+msgstr "दाएँ संरेखित करें"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

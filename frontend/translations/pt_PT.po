@@ -3560,10 +3560,6 @@ msgstr "Copiar"
 msgid "shortcuts.copy-link"
 msgstr "Copiar ligação para a área de transferência"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Criar componente"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Criar novo"
@@ -3919,22 +3915,6 @@ msgstr "Iniciar medição"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.stop-measure"
 msgstr "Parar medição"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "Alinhar ao centro"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "Alinhar justificado"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "Alinhar à esquerda"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "Alinhar à direita"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
@@ -4358,10 +4338,6 @@ msgstr "Fonte"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamanho"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Variante"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
@@ -5848,19 +5824,19 @@ msgstr "Rasurado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Alinhar ao centro (%s)"
+msgstr "Alinhar ao centro"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Justificar (%s)"
+msgstr "Justificar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Alinhar à esquerda (%s)"
+msgstr "Alinhar à esquerda"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Alinhar à direita (%s)"
+msgstr "Alinhar à direita"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

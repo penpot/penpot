@@ -2865,10 +2865,6 @@ msgstr "Limpar desfazer"
 msgid "shortcuts.copy"
 msgstr "Copiar"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Criar componente"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Criar novo"
@@ -3504,10 +3500,6 @@ msgstr "Fonte"
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:522
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamanho"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Variante"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
@@ -4709,19 +4701,19 @@ msgstr "Rasurado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Alinhar ao centro (%s)"
+msgstr "Alinhar ao centro"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Justificar (%s)"
+msgstr "Justificar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Alinhar a esquerda (%s)"
+msgstr "Alinhar a esquerda"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Alinhar a direita (%s)"
+msgstr "Alinhar a direita"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

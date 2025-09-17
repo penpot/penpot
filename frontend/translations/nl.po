@@ -3863,10 +3863,6 @@ msgstr "Link naar klembord kopiëren"
 msgid "shortcuts.copy-props"
 msgstr "Eigenschappen kopiëren"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Component aanmaken"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Nieuw project aanmaken"
@@ -4232,22 +4228,6 @@ msgstr "Meting starten"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.stop-measure"
 msgstr "Meting beëindigen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "Gecentreerd uitlijnen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "Volledig uitvullen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "Links uitlijnen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "Rechts uitlijnen"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
@@ -4902,10 +4882,6 @@ msgstr "Lettertype"
 msgid "workspace.assets.typography.font-size"
 msgstr "Grootte"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Variant"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Ga naar het stijl-bibliotheekbestand om te bewerken"
@@ -5478,10 +5454,6 @@ msgstr "Er zijn nog geen assets in deze bibliotheek"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
 msgstr "Niet gekoppeld"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:929
-msgid "workspace.options.component.variant"
-msgstr "Variant"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
 msgid "workspace.options.component.variant.duplicated.copy.locate"
@@ -6592,19 +6564,19 @@ msgstr "Doorhalen (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Centreren (%s)"
+msgstr "Centreren"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Uitvullen (%s)"
+msgstr "Uitvullen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Links uitlijnen (%s)"
+msgstr "Links uitlijnen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Rechts uitlijnen (%s)"
+msgstr "Rechts uitlijnen"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

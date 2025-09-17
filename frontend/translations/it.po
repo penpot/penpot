@@ -3834,10 +3834,6 @@ msgstr "Copia link negli appunti"
 msgid "shortcuts.copy-props"
 msgstr "Copia proprietà"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:95
-msgid "shortcuts.create-component"
-msgstr "Crea componente"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:96
 msgid "shortcuts.create-new-project"
 msgstr "Crea nuovo"
@@ -4203,22 +4199,6 @@ msgstr "Avvia misurazione"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:182
 msgid "shortcuts.stop-measure"
 msgstr "Interrompi misurazione"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "Allinea al centro"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "Allinea giustificato"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "Allinea a sinistra"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "Allinea a destra"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
@@ -4833,10 +4813,6 @@ msgstr "Carattere"
 msgid "workspace.assets.typography.font-size"
 msgstr "Dimensione"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Variante"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Vai alla libreria dello stile del file per modificare"
@@ -5409,10 +5385,6 @@ msgstr "Non ci sono ancora risorse in questa libreria"
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
 msgstr "Scollegato"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:929
-msgid "workspace.options.component.variant"
-msgstr "Variante"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1236
 msgid "workspace.options.component.variant.malformed.group.locate"
@@ -6452,19 +6424,19 @@ msgstr "Barrato (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Allinea al centro (%s)"
+msgstr "Allinea al centro"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Giustifica (%s)"
+msgstr "Giustifica"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Allinea a sinistra (%s)"
+msgstr "Allinea a sinistra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Allinea a destra (%s)"
+msgstr "Allinea a destra"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"
