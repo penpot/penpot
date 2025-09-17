@@ -7396,7 +7396,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
 msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Introduce: 400, Bold, 700 Italic, o {alias}"
+msgstr "Introduce un valor (300, Bold, Regular Italic...) o un {alias}"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
