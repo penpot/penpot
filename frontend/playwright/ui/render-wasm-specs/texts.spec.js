@@ -227,7 +227,9 @@ test("Renders a file with multiple emoji", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with multiple text shadows, strokes, and blur combinations", async ({ page }) => {
+test("Renders a file with multiple text shadows, strokes, and blur combinations", async ({
+  page,
+}) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
 
@@ -243,7 +245,9 @@ test("Renders a file with multiple text shadows, strokes, and blur combinations"
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with different text leaves decoration", async ({ page }) => {
+test("Renders a file with different text leaves decoration", async ({
+  page,
+}) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile(
@@ -259,7 +263,9 @@ test("Renders a file with different text leaves decoration", async ({ page }) =>
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Renders a file with different text shadows combinations", async ({ page }) => {
+test("Renders a file with different text shadows combinations", async ({
+  page,
+}) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile(
@@ -275,8 +281,9 @@ test("Renders a file with different text shadows combinations", async ({ page })
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-
-test("Renders a file with text in frames and different strokes, shadows, and blurs", async ({ page }) => {
+test("Renders a file with text in frames and different strokes, shadows, and blurs", async ({
+  page,
+}) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile(
