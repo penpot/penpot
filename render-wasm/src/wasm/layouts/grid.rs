@@ -43,14 +43,8 @@ impl From<RawGridCell> for GridCell {
             row_span: raw.row_span,
             column: raw.column,
             column_span: raw.column_span,
-            align_self: match raw_align_self {
-                align::RawAlignSelf::None => None,
-                _ => Some(align::RawAlignSelf::from(raw.align_self).into()),
-            },
-            justify_self: match raw_justify_self {
-                align::RawJustifySelf::None => None,
-                _ => Some(align::RawJustifySelf::from(raw.justify_self).into()),
-            },
+            align_self: raw_align_self.try_into().ok(),
+            justify_self: raw_justify_self.try_into().ok(),
             shape: if shape_id != Uuid::nil() {
                 Some(shape_id)
             } else {

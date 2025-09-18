@@ -42,10 +42,7 @@ pub extern "C" fn set_layout_child_data(
 
     let raw_align_self = align::RawAlignSelf::from(align_self);
 
-    let align_self = match raw_align_self {
-        align::RawAlignSelf::None => None,
-        _ => Some(align::RawAlignSelf::from(align_self).into()),
-    };
+    let align_self = raw_align_self.try_into().ok();
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_flex_layout_child_data(

@@ -145,15 +145,16 @@ impl From<u8> for RawJustifySelf {
     }
 }
 
-impl From<RawJustifySelf> for JustifySelf {
-    fn from(value: RawJustifySelf) -> Self {
+impl TryFrom<RawJustifySelf> for JustifySelf {
+    type Error = ();
+    fn try_from(value: RawJustifySelf) -> Result<JustifySelf, Self::Error> {
         match value {
-            RawJustifySelf::None => unreachable!(), // FIXME: implement try_from instead
-            RawJustifySelf::Auto => JustifySelf::Auto,
-            RawJustifySelf::Start => JustifySelf::Start,
-            RawJustifySelf::End => JustifySelf::End,
-            RawJustifySelf::Center => JustifySelf::Center,
-            RawJustifySelf::Stretch => JustifySelf::Stretch,
+            RawJustifySelf::None => Err(()),
+            RawJustifySelf::Auto => Ok(JustifySelf::Auto),
+            RawJustifySelf::Start => Ok(JustifySelf::Start),
+            RawJustifySelf::End => Ok(JustifySelf::End),
+            RawJustifySelf::Center => Ok(JustifySelf::Center),
+            RawJustifySelf::Stretch => Ok(JustifySelf::Stretch),
         }
     }
 }
@@ -176,15 +177,16 @@ impl From<u8> for RawAlignSelf {
     }
 }
 
-impl From<RawAlignSelf> for AlignSelf {
-    fn from(value: RawAlignSelf) -> Self {
+impl TryFrom<RawAlignSelf> for AlignSelf {
+    type Error = ();
+    fn try_from(value: RawAlignSelf) -> Result<AlignSelf, Self::Error> {
         match value {
-            RawAlignSelf::None => unreachable!(), // FIXME: implement try_from instead
-            RawAlignSelf::Auto => AlignSelf::Auto,
-            RawAlignSelf::Start => AlignSelf::Start,
-            RawAlignSelf::End => AlignSelf::End,
-            RawAlignSelf::Center => AlignSelf::Center,
-            RawAlignSelf::Stretch => AlignSelf::Stretch,
+            RawAlignSelf::None => Err(()),
+            RawAlignSelf::Auto => Ok(AlignSelf::Auto),
+            RawAlignSelf::Start => Ok(AlignSelf::Start),
+            RawAlignSelf::End => Ok(AlignSelf::End),
+            RawAlignSelf::Center => Ok(AlignSelf::Center),
+            RawAlignSelf::Stretch => Ok(AlignSelf::Stretch),
         }
     }
 }
