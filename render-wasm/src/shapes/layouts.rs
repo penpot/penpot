@@ -81,29 +81,12 @@ pub enum WrapType {
     NoWrap,
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GridTrackType {
-    Percent = 0,
-    Flex = 1,
-    Auto = 2,
-    Fixed = 3,
-}
-
-// TODO: maybe move this to the wasm module?
-impl GridTrackType {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Percent,
-            1 => Self::Flex,
-            2 => Self::Auto,
-            3 => Self::Fixed,
-            _ => unreachable!(),
-        }
-    }
+    Percent,
+    Flex,
+    Auto,
+    Fixed,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -113,13 +96,6 @@ pub struct GridTrack {
 }
 
 impl GridTrack {
-    pub fn from_raw(raw: &RawGridTrack) -> Self {
-        Self {
-            track_type: GridTrackType::from_u8(raw.track_type),
-            value: f32::from_le_bytes(raw.value),
-        }
-    }
-
     pub fn scale_content(&mut self, value: f32) {
         if self.track_type == GridTrackType::Fixed {
             self.value *= value;
@@ -252,24 +228,6 @@ impl GridData {
     pub fn scale_content(&mut self, value: f32) {
         self.rows.iter_mut().for_each(|t| t.scale_content(value));
         self.columns.iter_mut().for_each(|t| t.scale_content(value));
-    }
-}
-
-// TODO: move this to the wasm module
-// FIXME: use transmute
-#[derive(Debug)]
-#[repr(C)]
-pub struct RawGridTrack {
-    track_type: u8,
-    value: [u8; 4],
-}
-
-impl RawGridTrack {
-    pub fn from_bytes(bytes: [u8; 5]) -> Self {
-        Self {
-            track_type: bytes[0],
-            value: [bytes[1], bytes[2], bytes[3], bytes[4]],
-        }
     }
 }
 

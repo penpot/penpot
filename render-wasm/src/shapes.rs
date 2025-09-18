@@ -456,24 +456,24 @@ impl Shape {
         }
     }
 
-    pub fn set_grid_columns(&mut self, tracks: Vec<RawGridTrack>) {
+    pub fn set_grid_columns(&mut self, tracks: Vec<GridTrack>) {
         let Type::Frame(frame_data) = &mut self.shape_type else {
             return;
         };
         let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
             return;
         };
-        grid_data.columns = tracks.iter().map(GridTrack::from_raw).collect();
+        grid_data.columns = tracks;
     }
 
-    pub fn set_grid_rows(&mut self, tracks: Vec<RawGridTrack>) {
+    pub fn set_grid_rows(&mut self, tracks: Vec<GridTrack>) {
         let Type::Frame(frame_data) = &mut self.shape_type else {
             return;
         };
         let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
             return;
         };
-        grid_data.rows = tracks.iter().map(GridTrack::from_raw).collect();
+        grid_data.rows = tracks;
     }
 
     pub fn set_grid_cells(&mut self, cells: Vec<GridCell>) {

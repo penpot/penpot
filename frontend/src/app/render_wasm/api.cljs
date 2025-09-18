@@ -47,8 +47,8 @@
 (def ^:const MODIFIER-U32-SIZE (/ MODIFIER-U8-SIZE 4))
 (def ^:const MODIFIER-TRANSFORM-U8-OFFSET-SIZE 16)
 
-(def ^:const GRID-LAYOUT-ROW-U8-SIZE 5)
-(def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 5)
+(def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
+(def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
 (def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
 
 (def dpr
@@ -453,13 +453,9 @@
         dview   (mem/get-data-view)]
 
     (reduce (fn [offset {:keys [type value]}]
-              ;; NOTE: because of the nature of the grid row data
-              ;; structure memory layout we can't use fully 32 bits
-              ;; alligned writes, so for heteregeneus writes we use
-              ;; the buffer abstraction (DataView) for perform
-              ;; surgical writes.
               (-> offset
                   (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (+ 3) ;; padding
                   (mem/write-f32 dview value)
                   (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
 
@@ -475,17 +471,11 @@
         dview  (mem/get-data-view)]
 
     (reduce (fn [offset {:keys [type value]}]
-              ;; NOTE: because of the nature of the grid column data
-              ;; structure memory layout we can't use fully 32 bits
-              ;; alligned writes, so for heteregeneus writes we use
-              ;; the buffer abstraction (DataView) for perform
-              ;; surgical writes.
               (-> offset
                   (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (+ 3) ;; padding
                   (mem/write-f32 dview value)
                   (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
-
-
             offset
             entries)
 
@@ -1060,7 +1050,7 @@
                                              :justify-content (unchecked-get module "RawJustifyContent")
                                              :justify-self (unchecked-get module "RawJustifySelf")
                                              :wrap-type (unchecked-get module "RawWrapType")
-                                             :grid-track-type (unchecked-get module "GridTrackType")
+                                             :grid-track-type (unchecked-get module "RawGridTrackType")
                                              :shadow-style (unchecked-get module "ShadowStyle")
                                              :stroke-style (unchecked-get module "StrokeStyle")
                                              :stroke-cap (unchecked-get module "StrokeCap")

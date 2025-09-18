@@ -1,7 +1,7 @@
 use macros::ToJs;
 
 use crate::mem;
-use crate::shapes::{self, GridCell, GridDirection};
+use crate::shapes::{GridCell, GridDirection, GridTrack, GridTrackType};
 use crate::uuid::Uuid;
 use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_state_mut, STATE};
 
@@ -79,6 +79,57 @@ impl From<RawGridDirection> for GridDirection {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawGridTrackType {
+    Percent = 0,
+    Flex = 1,
+    Auto = 2,
+    Fixed = 3,
+}
+
+impl From<u8> for RawGridTrackType {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<RawGridTrackType> for GridTrackType {
+    fn from(value: RawGridTrackType) -> Self {
+        match value {
+            RawGridTrackType::Percent => Self::Percent,
+            RawGridTrackType::Flex => Self::Flex,
+            RawGridTrackType::Auto => Self::Auto,
+            RawGridTrackType::Fixed => Self::Fixed,
+        }
+    }
+}
+
+#[derive(Debug)]
+#[repr(C, align(4))]
+#[allow(dead_code)]
+pub struct RawGridTrack {
+    track_type: RawGridTrackType,
+    _padding: [u8; 3],
+    value: f32,
+}
+
+impl From<[u8; size_of::<RawGridTrack>()]> for RawGridTrack {
+    fn from(bytes: [u8; size_of::<RawGridTrack>()]) -> Self {
+        unsafe { std::mem::transmute(bytes) }
+    }
+}
+
+impl From<RawGridTrack> for GridTrack {
+    fn from(raw: RawGridTrack) -> Self {
+        Self {
+            track_type: raw.track_type.into(),
+            value: raw.value,
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn set_grid_layout_data(
     dir: u8,
@@ -120,9 +171,10 @@ pub extern "C" fn set_grid_layout_data(
 pub extern "C" fn set_grid_columns() {
     let bytes = mem::bytes();
 
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawGridTrack>())
-        .map(|data| shapes::RawGridTrack::from_bytes(data.try_into().unwrap()))
+    let entries: Vec<GridTrack> = bytes
+        .chunks(size_of::<RawGridTrack>())
+        .map(|data| data.try_into().unwrap())
+        .map(|data: [u8; size_of::<RawGridTrack>()]| RawGridTrack::from(data).into())
         .collect();
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
@@ -136,9 +188,10 @@ pub extern "C" fn set_grid_columns() {
 pub extern "C" fn set_grid_rows() {
     let bytes = mem::bytes();
 
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawGridTrack>())
-        .map(|data| shapes::RawGridTrack::from_bytes(data.try_into().unwrap()))
+    let entries: Vec<GridTrack> = bytes
+        .chunks(size_of::<RawGridTrack>())
+        .map(|data| data.try_into().unwrap())
+        .map(|data: [u8; size_of::<RawGridTrack>()]| RawGridTrack::from(data).into())
         .collect();
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
