@@ -592,7 +592,7 @@
         ;; all of them, not only the applied
         (vary-meta dissoc ::fmg/migrated))))
 
-(defn encode-file
+(defn- encode-file
   [cfg {:keys [id features] :as file}]
   (let [file (if (and (contains? features "fdata/objects-map")
                       (:data file))

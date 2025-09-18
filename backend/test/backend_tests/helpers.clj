@@ -74,9 +74,6 @@
    :enable-smtp
    :enable-quotes
    :enable-rpc-climit
-   :enable-feature-fdata-pointer-map
-   :enable-feature-fdata-objets-map
-   :enable-feature-components-v2
    :enable-auto-file-snapshot
    :disable-file-validation])
 

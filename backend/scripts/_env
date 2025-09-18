@@ -54,7 +54,24 @@ export JAVA_OPTS="\
        -Dlog4j2.configurationFile=log4j2-devenv.xml \
        -Djdk.tracePinnedThreads=full \
        -Dim4java.useV7=true \
+       -XX:+UseShenandoahGC \
+       -XX:+UseCompactObjectHeaders \
+       -XX:+UnlockExperimentalVMOptions \
+       -XX:ShenandoahGCMode=generational \
        -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
        --enable-native-access=ALL-UNNAMED";
+
+function setup_minio() {
+    # Initialize MINIO config
+    mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
+    mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
+    mc admin user info penpot-s3 penpot-devenv |grep -F -q "readwrite"
+    if [ "$?" = "1" ]; then
+        mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
+    fi
+    mc mb penpot-s3/penpot -p -q
+}
+
+

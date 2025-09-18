@@ -4,17 +4,9 @@ SCRIPT_DIR=$(dirname $0);
 source $SCRIPT_DIR/_env;
 
 # Initialize MINIO config
-mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
-mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
-mc admin user info penpot-s3 penpot-devenv |grep -F -q "readwrite"
-if [ "$?" = "1" ]; then
-    mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
-fi
-mc mb penpot-s3/penpot -p -q
+setup_minio;
 
-entrypoint=${1:-app.main};
 
-export OPTIONS="-A:jmx-remote -A:dev"
-
+shift 1;
 set -ex
-exec lojure $OPTIONS -M -m $entrypoint;
+exec clojure -A:jmx-remote -A:dev -M -m app.main "$@";

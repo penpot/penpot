@@ -48,7 +48,8 @@
   {:query sql:get-files}
   [cfg {:keys [id]} & {:as options}]
   (h/process-file! cfg id
-                   (partial update-all-media-references cfg)
+                   (fn [file _opts]
+                     (update-all-media-references cfg file))
                    (assoc options
                           ::bfc/reset-migrations? true
                           ::h/validate? false))

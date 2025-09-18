@@ -20,7 +20,6 @@
    [app.config :as cf]
    [app.db :as db]
    [app.features.fdata :as fdata]
-   [app.features.file-migrations :as feat.fmigr]
    [app.features.file-snapshots :as fsnap]
    [app.features.logical-deletion :as ldel]
    [app.http.errors :as errors]
@@ -272,20 +271,10 @@
           :project-id (:project-id file)
           :team-id    (:team-id file)}}))))
 
-;: FIXME: DEPRECATED
-(defn update-file!
-  "A public api that allows apply a transformation to a file with all context setup."
-  [{:keys [::db/conn] :as cfg} file-id update-fn & args]
-  (let [file (get-file cfg file-id)
-        file (apply update-file-data! cfg file update-fn args)]
-    ;; (feat.fmigr/upsert-migrations! conn file)
-    (persist-file! cfg file)))
-
 (defn get-file
   "Get not-decoded file, only decodes the features set."
   [cfg id]
-  ;; FIXME: lock for share
-  (bfc/get-file cfg id :decode? false :lock-for-update? true))
+  (bfc/get-file cfg id :decode? false :lock-for-share? true))
 
 (defn persist-file!
   "Function responsible of persisting already encoded file. Should be

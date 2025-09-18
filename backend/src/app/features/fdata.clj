@@ -9,12 +9,9 @@
   (:require
    [app.common.data :as d]
    [app.common.exceptions :as ex]
-   [app.common.files.helpers :as cfh]
-   [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.path :as path]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
@@ -104,7 +101,7 @@
                       {:id id
                        :file-id file-id
                        :type "fragment"
-                       :content content}))))))
+                       :data content}))))))
 
 (defn process-pointers
   "Apply a function to all pointers on the file. Usuly used for

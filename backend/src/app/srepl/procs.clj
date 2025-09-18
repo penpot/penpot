@@ -8,22 +8,14 @@
   (:require
    [app.binfile.common :as bfc]
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
+   [app.common.files.changes :as cfc]
    [app.common.files.helpers :as cfh]
-   [app.common.files.migrations :as fmg]
+   [app.common.files.repair :as cfr]
+   [app.common.files.validate :as cfv]
    [app.common.logging :as l]
-   [app.common.schema :as sm]
-   [app.common.time :as ct]
-   [app.common.types.path :as path]
-   [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
-   [app.features.fdata :as fdata]
-   [app.srepl.helpers :as h]
-   [app.storage :as sto]
-   [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
-   [app.util.pointer-map :as pmap]))
+   [app.srepl.helpers :as h]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PATH-DATA
@@ -39,7 +31,7 @@
   Should be used only in cases when you want to downgrade to an older
   penpot version for some reason."
   {:query sql:get-files-with-path-data}
-  [{:keys [::db/conn] :as cfg} {:keys [id]} & {:as options}]
+  [cfg {:keys [id]} & {:as options}]
 
   (let [update-object
         (fn [object]
@@ -94,7 +86,7 @@
   {:query sql:get-unmigrated-files}
   [{:keys [::db/conn]} {:keys [id]} & {:as opts}]
   (l/dbg :hint "migrating file" :file-id (str id))
-  (let [{:keys [id data index created-at modified-at]}
+  (let [{:keys [id data created-at modified-at]}
         (db/get* conn :file {:id id}
                  ::db/for-update true
                  ::db/remove-deleted false)]
@@ -204,7 +196,7 @@
             (let [changes (cfr/repair-file file libs errors)]
               (-> file
                   (update :revn inc)
-                  (update :data cpc/process-changes changes)))))
+                  (update :data cfc/process-changes changes)))))
 
         process-file
         (fn [file libs]

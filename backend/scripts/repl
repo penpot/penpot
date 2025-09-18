@@ -4,17 +4,10 @@ SCRIPT_DIR=$(dirname $0);
 source $SCRIPT_DIR/_env;
 
 # Initialize MINIO config
-mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
-mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
-mc admin user info penpot-s3 penpot-devenv |grep -F -q "readwrite"
-if [ "$?" = "1" ]; then
-    mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
-fi
-mc mb penpot-s3/penpot -p -q
+setup_minio;
 
 export JAVA_OPTS="$JAVA_OPTS -Dlog4j2.configurationFile=log4j2-devenv-repl.xml"
 export OPTIONS="-A:jmx-remote -A:dev"
-
 export OPTIONS_EVAL="nil"
 # export OPTIONS_EVAL="(set! *warn-on-reflection* true)"
 
