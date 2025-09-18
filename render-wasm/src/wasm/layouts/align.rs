@@ -131,11 +131,12 @@ impl From<RawJustifyContent> for JustifyContent {
 #[repr(u8)]
 #[allow(dead_code)]
 pub enum RawJustifySelf {
-    Auto = 0,
-    Start = 1,
-    End = 2,
-    Center = 3,
-    Stretch = 4,
+    None = 0,
+    Auto = 1,
+    Start = 2,
+    End = 3,
+    Center = 4,
+    Stretch = 5,
 }
 
 impl From<u8> for RawJustifySelf {
@@ -147,6 +148,7 @@ impl From<u8> for RawJustifySelf {
 impl From<RawJustifySelf> for JustifySelf {
     fn from(value: RawJustifySelf) -> Self {
         match value {
+            RawJustifySelf::None => unreachable!(), // FIXME: implement try_from instead
             RawJustifySelf::Auto => JustifySelf::Auto,
             RawJustifySelf::Start => JustifySelf::Start,
             RawJustifySelf::End => JustifySelf::End,

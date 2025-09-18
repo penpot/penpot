@@ -1,6 +1,5 @@
 use macros::ToJs;
 
-use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -154,37 +153,6 @@ pub struct GridCell {
     pub shape: Option<Uuid>,
 }
 
-impl GridCell {
-    pub fn from_raw(raw: &RawGridCell) -> Self {
-        Self {
-            row: i32::from_le_bytes(raw.row),
-            row_span: i32::from_le_bytes(raw.row_span),
-            column: i32::from_le_bytes(raw.column),
-            column_span: i32::from_le_bytes(raw.column_span),
-            align_self: if raw.has_align_self == 1 {
-                AlignSelf::from_u8(raw.align_self)
-            } else {
-                None
-            },
-            justify_self: if raw.has_justify_self == 1 {
-                Some(crate::wasm::layouts::RawJustifySelf::from(raw.justify_self).into())
-            } else {
-                None
-            },
-            shape: if raw.has_shape_id == 1 {
-                Some(uuid_from_u32_quartet(
-                    u32::from_le_bytes(raw.shape_id_a),
-                    u32::from_le_bytes(raw.shape_id_b),
-                    u32::from_le_bytes(raw.shape_id_c),
-                    u32::from_le_bytes(raw.shape_id_d),
-                ))
-            } else {
-                None
-            },
-        }
-    }
-}
-
 // TODO: maybe move this to the wasm module?
 #[derive(Debug, Clone, PartialEq, Copy, ToJs)]
 #[repr(u8)]
@@ -333,47 +301,6 @@ impl RawGridTrack {
         Self {
             track_type: bytes[0],
             value: [bytes[1], bytes[2], bytes[3], bytes[4]],
-        }
-    }
-}
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct RawGridCell {
-    row: [u8; 4],
-    row_span: [u8; 4],
-    column: [u8; 4],
-    column_span: [u8; 4],
-    has_align_self: u8,
-    align_self: u8,
-    has_justify_self: u8,
-    justify_self: u8,
-    has_shape_id: u8,
-    shape_id_a: [u8; 4],
-    shape_id_b: [u8; 4],
-    shape_id_c: [u8; 4],
-    shape_id_d: [u8; 4],
-}
-
-impl RawGridCell {
-    pub fn from_bytes(bytes: [u8; 37]) -> Self {
-        Self {
-            row: [bytes[0], bytes[1], bytes[2], bytes[3]],
-            row_span: [bytes[4], bytes[5], bytes[6], bytes[7]],
-            column: [bytes[8], bytes[9], bytes[10], bytes[11]],
-            column_span: [bytes[12], bytes[13], bytes[14], bytes[15]],
-
-            has_align_self: bytes[16],
-            align_self: bytes[17],
-
-            has_justify_self: bytes[18],
-            justify_self: bytes[19],
-
-            has_shape_id: bytes[20],
-            shape_id_a: [bytes[21], bytes[22], bytes[23], bytes[24]],
-            shape_id_b: [bytes[25], bytes[26], bytes[27], bytes[28]],
-            shape_id_c: [bytes[29], bytes[30], bytes[31], bytes[32]],
-            shape_id_d: [bytes[33], bytes[34], bytes[35], bytes[36]],
         }
     }
 }

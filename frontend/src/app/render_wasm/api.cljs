@@ -49,7 +49,7 @@
 
 (def ^:const GRID-LAYOUT-ROW-U8-SIZE 5)
 (def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 5)
-(def ^:const GRID-LAYOUT-CELL-U8-SIZE 37)
+(def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
 
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
@@ -500,38 +500,20 @@
     (reduce-kv (fn [offset _ cell]
                  (let [shape-id  (-> (get cell :shapes) first)]
                    (-> offset
-                       ;; row: [u8; 4],
                        (mem/write-i32 dview (get cell :row))
-
-                       ;; row_span: [u8; 4],
                        (mem/write-i32 dview (get cell :row-span))
-
-                       ;; column: [u8; 4],
                        (mem/write-i32 dview (get cell :column))
-
-                       ;; column_span: [u8; 4],
                        (mem/write-i32 dview (get cell :column-span))
 
+                       ;; FIXME: remove this field
                        ;; has_align_self: u8,
                        (mem/write-bool dview (some? (get cell :align-self)))
-
                        ;; align_self: u8,
                        (mem/write-u8 dview (get cell :align-self))
-
-                       ;; has_justify_self: u8,
-                       (mem/write-bool dview (get cell :justify-self))
-
-                       ;; justify_self: u8,
                        (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
+                       ;; FIXME:  remove this padding
+                       (mem/write-u8 dview 0)
 
-                       ;; has_shape_id: u8,
-                       ;; (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
-                       (mem/write-u8 dview (some? shape-id))
-
-                       ;; shape_id_a: [u8; 4],
-                       ;; shape_id_b: [u8; 4],
-                       ;; shape_id_c: [u8; 4],
-                       ;; shape_id_d: [u8; 4],
                        (mem/write-uuid dview (d/nilv shape-id uuid/zero))
                        (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 

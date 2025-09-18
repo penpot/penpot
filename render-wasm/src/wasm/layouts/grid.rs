@@ -1,8 +1,64 @@
 use crate::mem;
-use crate::shapes::{self};
+use crate::shapes::{self, GridCell};
+use crate::uuid::Uuid;
 use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_state_mut, STATE};
 
 use super::align;
+
+#[derive(Debug)]
+#[repr(C, align(1))]
+struct RawGridCell {
+    row: i32,
+    row_span: i32,
+    column: i32,
+    column_span: i32,
+    has_align_self: u8, // FIXME: remove this field
+    align_self: u8,
+    justify_self: u8,
+    shape_id_a: u32,
+    shape_id_b: u32,
+    shape_id_c: u32,
+    shape_id_d: u32,
+}
+
+impl From<[u8; size_of::<RawGridCell>()]> for RawGridCell {
+    fn from(bytes: [u8; size_of::<RawGridCell>()]) -> Self {
+        unsafe { std::mem::transmute(bytes) }
+    }
+}
+
+impl From<RawGridCell> for GridCell {
+    fn from(raw: RawGridCell) -> Self {
+        let raw_justify_self = super::align::RawJustifySelf::from(raw.justify_self);
+        let shape_id = uuid_from_u32_quartet(
+            raw.shape_id_a,
+            raw.shape_id_b,
+            raw.shape_id_c,
+            raw.shape_id_d,
+        );
+
+        Self {
+            row: raw.row,
+            row_span: raw.row_span,
+            column: raw.column,
+            column_span: raw.column_span,
+            align_self: if raw.has_align_self == 1 {
+                shapes::AlignSelf::from_u8(raw.align_self)
+            } else {
+                None
+            },
+            justify_self: match raw_justify_self {
+                super::align::RawJustifySelf::None => None,
+                _ => Some(crate::wasm::layouts::RawJustifySelf::from(raw.justify_self).into()),
+            },
+            shape: if shape_id != Uuid::nil() {
+                Some(shape_id)
+            } else {
+                None
+            },
+        }
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn set_grid_layout_data(
@@ -77,13 +133,14 @@ pub extern "C" fn set_grid_rows() {
 pub extern "C" fn set_grid_cells() {
     let bytes = mem::bytes();
 
-    let entries: Vec<_> = bytes
-        .chunks(size_of::<shapes::RawGridCell>())
-        .map(|data| shapes::RawGridCell::from_bytes(data.try_into().unwrap()))
+    let cells: Vec<RawGridCell> = bytes
+        .chunks(size_of::<RawGridCell>())
+        .map(|data| data.try_into().expect("Invalid grid cell data"))
+        .map(|data: [u8; size_of::<RawGridCell>()]| RawGridCell::from(data))
         .collect();
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_grid_cells(entries);
+        shape.set_grid_cells(cells.into_iter().map(|raw| raw.into()).collect());
     });
 
     mem::free_bytes();

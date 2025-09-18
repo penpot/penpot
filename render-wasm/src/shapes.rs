@@ -476,14 +476,14 @@ impl Shape {
         grid_data.rows = tracks.iter().map(GridTrack::from_raw).collect();
     }
 
-    pub fn set_grid_cells(&mut self, cells: Vec<RawGridCell>) {
+    pub fn set_grid_cells(&mut self, cells: Vec<GridCell>) {
         let Type::Frame(frame_data) = &mut self.shape_type else {
             return;
         };
         let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
             return;
         };
-        grid_data.cells = cells.iter().map(GridCell::from_raw).collect();
+        grid_data.cells = cells;
     }
 
     pub fn set_blur(&mut self, blur: Option<Blur>) {

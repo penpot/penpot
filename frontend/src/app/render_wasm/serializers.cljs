@@ -189,8 +189,9 @@
 
 (defn translate-justify-self
   [justify-self]
-  (let [values (unchecked-get wasm/serializers "justify-self")]
-    (unchecked-get values (d/name justify-self))))
+  (let [values (unchecked-get wasm/serializers "justify-self")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name justify-self)) default)))
 
 (defn translate-shadow-style
   [style]
