@@ -6,20 +6,20 @@
 
 (ns app.srepl.procs
   (:require
-   [app.common.data :as d]
    [app.binfile.common :as bfc]
+   [app.common.data :as d]
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
    [app.common.schema :as sm]
-   [app.features.fdata :as fdata]
-   [app.srepl.helpers :as h]
    [app.common.time :as ct]
    [app.common.types.path :as path]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as-alias sql]
+   [app.features.fdata :as fdata]
+   [app.srepl.helpers :as h]
    [app.storage :as sto]
    [app.util.blob :as blob]
    [app.util.objects-map :as omap]
@@ -30,7 +30,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private sql:get-files-with-path-data
-  "SELECT id FROM file WHERE features @> '{fdata/path-data}' AND id = '469eee50-acf6-81e9-8006-d1365cdf4f7c'")
+  "SELECT id FROM file WHERE features @> '{fdata/path-data}'")
 
 (defn disable-path-data
   "A script responsible for remove the path data type from file data and
@@ -53,7 +53,7 @@
           (d/update-when container :objects d/update-vals update-object))
 
         update-file
-        (fn [file]
+        (fn [file & _opts]
           (-> file
               (update :data (fn [data]
                               (-> data
@@ -62,12 +62,14 @@
               (update :features disj "fdata/path-data")
               (update :migrations disj
                       "0003-convert-path-content-v2"
-                      "0003-convert-path-content")))]
+                      "0003-convert-path-content")))
 
-    (h/process-file! cfg id update-file (assoc options
-                                               ::bfc/reset-migrations? true
-                                               ::h/validate? false))))
+        options
+        (-> options
+            (assoc ::bfc/reset-migrations? true)
+            (assoc ::h/validate? false))]
 
+    (h/process-file! cfg id update-file options)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; STORAGE
@@ -177,3 +179,51 @@
     (db/delete! conn :file-data
                 {:id id :file-id file-id}
                 {::db/return-keys false})))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; GENERAL PURPOSE REPAIR
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn repair-file
+  "Internal helper for validate and repair the file. The operation is
+  applied multiple times untile file is fixed or max iteration counter
+  is reached (default 10).
+
+  This function should not be used directly, it is used throught the
+  app.srepl.main/repair-file! helper. In practical terms this function
+  is private and implementation detail."
+  [file libs & {:keys [max-iterations] :or {max-iterations 10}}]
+
+  (let [validate-and-repair
+        (fn [file libs iteration]
+          (when-let [errors (not-empty (cfv/validate-file file libs))]
+            (l/trc :hint "repairing file"
+                   :file-id (str (:id file))
+                   :iteration iteration
+                   :errors (count errors))
+            (let [changes (cfr/repair-file file libs errors)]
+              (-> file
+                  (update :revn inc)
+                  (update :data cpc/process-changes changes)))))
+
+        process-file
+        (fn [file libs]
+          (loop [file      file
+                 iteration 0]
+            (if (< iteration max-iterations)
+              (if-let [file (validate-and-repair file libs iteration)]
+                (recur file (inc iteration))
+                file)
+              (do
+                (l/wrn :hint "max retry num reached on repairing file"
+                       :file-id (str (:id file))
+                       :iteration iteration)
+                file))))
+
+        file'
+        (process-file file libs)]
+
+    (when (not= (:revn file) (:revn file'))
+      (l/trc :hint "file repaired" :file-id (str (:id file))))
+
+    file'))

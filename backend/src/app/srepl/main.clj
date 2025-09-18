@@ -35,8 +35,8 @@
    [app.rpc.commands.profile :as profile]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
-   [app.srepl.fixes :as fixes]
    [app.srepl.helpers :as h]
+   [app.srepl.procs :as procs]
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.worker :as wrk]
@@ -46,8 +46,8 @@
    [clojure.tools.namespace.repl :as repl]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
-   [promesa.exec.csp :as sp]
    [promesa.exec :as px]
+   [promesa.exec.csp :as sp]
    [promesa.exec.semaphore :as ps]
    [promesa.util :as pu]))
 
@@ -399,11 +399,11 @@
 
 (defn repair-file!
   "Repair the list of errors detected by validation."
-  [file-id & {:keys [rollback?] :or {rollback? true} :as opts}]
+  [file-id & {:keys [rollback?] :or {rollback? true} :as options}]
   (let [system  (assoc main/system ::db/rollback rollback?)
         file-id (h/parse-uuid file-id)
-        opts    (assoc opts :with-libraries? true)]
-    (db/tx-run! system h/process-file! file-id fixes/repair-file opts)))
+        options (assoc options ::h/with-libraries? true)]
+    (db/tx-run! system h/process-file! file-id procs/repair-file options)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PROCESSING

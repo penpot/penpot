@@ -164,8 +164,8 @@
 
         file' (when file
                 (if with-libraries?
-                  (update-fn file libs)
-                  (update-fn file)))]
+                  (update-fn file libs opts)
+                  (update-fn file opts)))]
 
     (when (and (some? file')
                (or (fmg/migrated? file)

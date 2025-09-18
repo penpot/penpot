@@ -10,8 +10,8 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint]
-   [app.srepl.procs.media-refs]
    [app.srepl.main :as srepl]
+   [app.srepl.procs.media-refs]
    [clojure.edn :as edn]))
 
 (def ^:private required-services
