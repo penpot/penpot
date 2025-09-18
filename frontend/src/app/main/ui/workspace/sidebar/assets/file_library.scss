@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../../../ds/typography.scss" as t;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 .tool-window {
   padding: 0 0 $s-24 $s-12;
   display: grid;

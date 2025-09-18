@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .tool-window {
   position: relative;

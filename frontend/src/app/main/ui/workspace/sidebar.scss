@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 $width-settings-bar: $sz-318;
 $width-settings-bar-max: $sz-500;

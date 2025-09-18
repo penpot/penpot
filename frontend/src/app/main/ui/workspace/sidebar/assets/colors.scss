@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 // TODO: we should be using subgrid in the common "assets component" to avoid
 // using this SCSS variable here (we cannot use a CSS var in this CSS module because

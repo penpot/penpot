@@ -7,7 +7,7 @@
 @use "../../ds/typography.scss" as t;
 @use "../../ds/_sizes.scss" as *;
 @use "../../ds/_borders.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .modal-overlay {
   @extend .modal-overlay-base;

@@ -8,7 +8,7 @@
 @use "../ds/z-index.scss" as *;
 @use "../ds/_sizes.scss" as *;
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .palette-wrapper {
   position: absolute;

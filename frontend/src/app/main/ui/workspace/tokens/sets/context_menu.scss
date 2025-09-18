@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../../../ds/typography.scss" as t;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .token-set-context-menu {
   position: absolute;

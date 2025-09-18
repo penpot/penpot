@@ -4,14 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .flow-element {
   display: flex;
   align-items: center;
-
-  .element-label {
-  }
 
   .flow-name {
     cursor: pointer;

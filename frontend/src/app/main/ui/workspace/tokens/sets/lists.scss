@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../../../ds/typography.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .sets-list {
   width: 100%;
