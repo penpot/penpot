@@ -1272,10 +1272,6 @@ msgstr "Γραμματοσειρά"
 msgid "workspace.assets.typography.font-size"
 msgstr "Μέγεθος"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Παραλαγή"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Μεταβείτε στο αρχείο βιβλιοθήκης στυλ για επεξεργασία"
@@ -1805,19 +1801,19 @@ msgstr "Διαγράμμιση (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Ευθυγράμμιση κέντρο (%s)"
+msgstr "Ευθυγράμμιση κέντρο"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Δικαιολόγηση (%s)"
+msgstr "Δικαιολόγηση"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Στοίχιση αριστερά (%s)"
+msgstr "Στοίχιση αριστερά"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Για ευθυγράμμιση προς τα δεξιά (%s)"
+msgstr "Για ευθυγράμμιση προς τα δεξιά"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

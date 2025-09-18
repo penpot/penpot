@@ -22,7 +22,6 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.grid :as ctg]
    [app.common.types.path :as path]
-   [app.common.types.path.segment :as path.segm]
    [app.common.types.shape :as cts]
    [app.common.types.shape.blur :as ctsb]
    [app.common.types.shape.export :as ctse]
@@ -1345,22 +1344,29 @@
          (cond-> (or (cfh/path-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
             {:name "content"
-             :get #(-> % u/proxy->shape :content .toString)
+             :get #(-> % u/proxy->shape :content str)
              :set
              (fn [_ value]
-               (let [content (svg.path/parse value)]
+               (let [segments (if (string? value)
+                                (svg.path/parse value)
+                                value)]
                  (cond
-                   (not (cfh/path-shape? data))
-                   (u/display-not-valid :content-type type)
-
-                   ;; FIXME: revisit path content validation
-                   (not (sm/validate ::path/content content))
-                   (u/display-not-valid :content value)
-
                    (not (r/check-permission plugin-id "content:write"))
                    (u/display-not-valid :content "Plugin doesn't have 'content:write' permission")
 
+                   (not (cfh/path-shape? data))
+                   (u/display-not-valid :content-type type)
+
+                   (not (sm/validate path/schema:segments segments))
+                   (u/display-not-valid :content segments)
+
                    :else
-                   (let [selrect  (path.segm/content->selrect content)
-                         points   (grc/rect->points selrect)]
-                     (st/emit! (dwsh/update-shapes [id] (fn [shape] (assoc shape :content content :selrect selrect :points points))))))))}))))))
+                   (let [selrect (path/calc-selrect segments)
+                         content (path/from-plain segments)
+                         points  (grc/rect->points selrect)]
+                     (st/emit! (dwsh/update-shapes [id]
+                                                   (fn [shape]
+                                                     (-> shape
+                                                         (assoc :content content)
+                                                         (assoc :selrect selrect)
+                                                         (assoc :points points)))))))))}))))))

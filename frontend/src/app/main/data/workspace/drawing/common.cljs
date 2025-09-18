@@ -9,7 +9,6 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.main.data.helpers :as dsh]
    [app.main.data.workspace.shapes :as dwsh]
@@ -71,10 +70,6 @@
                    (and click-draw? text?)
                    (-> (assoc :height 17 :width 4 :grow-type :auto-width)
                        (cts/setup-shape))
-
-                   (or (cfh/path-shape? shape)
-                       (cfh/bool-shape? shape))
-                   (update :content path/content)
 
                    :always
                    (dissoc :initialized? :click-draw?))]

@@ -1787,18 +1787,6 @@ msgstr "Copia"
 msgid "inspect.subtitle.main"
 msgstr "Componente principal"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:65
-msgid "inspect.subtitle.variant"
-msgstr "Variante"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:59
-msgid "inspect.tabs.switcher.label"
-msgstr "Información sobre la capa"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:101
-msgid "inspect.tabs.computed"
-msgstr "Computado"
-
 #: src/app/main/ui/inspect/right_sidebar.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:116
 msgid "inspect.tabs.code"
 msgstr "Código"
@@ -1863,37 +1851,62 @@ msgstr "Información"
 msgid "labels.styles"
 msgstr "Estilos"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:10
-msgid "inspect.tabs.styles.panel.variant"
-msgstr "Propiedades de las variantes"
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.blur"
+msgstr "Desenfoque"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:11
-msgid "inspect.tabs.styles.panel.token"
-msgstr "Sets y temas de tokens"
-
-#: src/app/main/ui/inspect/styles/tokens_panel.cljs:26
-msgid "inspect.tabs.styles.panel.token.active-themes"
-msgstr "Temas activos"
-
-#: src/app/main/ui/inspect/styles/tokens_panel.cljs:30
-msgid "inspect.tabs.styles.panel.token.active-sets"
-msgstr "Sets activos"
+#: src/app/main/ui/inspect/styles/properties_row.cljs:48
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Valor resuelto:"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.geometry"
 msgstr "Tamaño y posición"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.layout-element"
+msgstr "Layout de elemento"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.shadow"
+msgstr "Sombra"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.stroke"
+msgstr "Borde"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.text"
+msgstr "Texto"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.toggle-style"
 msgstr "Alternar panel %s"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.copy-to-clipboard"
-msgstr "Copiar al portapapeles"
+#: src/app/main/ui/inspect/styles/style_box.cljs:11
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Sets y temas de tokens"
 
-#: src/app/main/ui/inspect/styles/properties_row.cljs:48
-msgid "inspect.tabs.styles.token.resolved-value"
-msgstr "Valor resuelto:"
+#: src/app/main/ui/inspect/styles/style_box.cljs:10
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Propiedades de las variantes"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:12
+msgid "inspect.tabs.styles.panel.visibility"
+msgstr "Visibilidad"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Información sobre la capa"
+>>>>>>> origin/staging
 
 #: src/app/main/ui/dashboard/comments.cljs:95
 msgid "label.mark-all-as-read"
@@ -4314,22 +4327,6 @@ msgstr "Comenzar medida"
 msgid "shortcuts.stop-measure"
 msgstr "Terminar medida"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:183
-msgid "shortcuts.text-align-center"
-msgstr "Alinear al centro"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:184
-msgid "shortcuts.text-align-justify"
-msgstr "Alinear justificado"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:185
-msgid "shortcuts.text-align-left"
-msgstr "Alinear a la izquierda"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:186
-msgid "shortcuts.text-align-right"
-msgstr "Alinear a la derecha"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:187
 msgid "shortcuts.thumbnail-set"
 msgstr "Activar miniaturas"
@@ -5089,10 +5086,6 @@ msgstr "Fuente"
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamaño"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "workspace.assets.typography.font-variant-id"
-msgstr "Variante"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Ir al archivo de la biblioteca del estilo para editar"
@@ -5120,6 +5113,9 @@ msgstr "Transformar texto"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:69
 msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
+
+msgid "workspace.component.swap.loop-error"
+msgstr "Los componentes no pueden anidarse dentro de sí mismos"
 
 #: src/app/main/ui/workspace/context_menu.cljs:791
 msgid "workspace.context-menu.grid-cells.area"
@@ -5657,16 +5653,9 @@ msgstr "Intercambiar componente"
 msgid "workspace.options.component.swap.empty"
 msgstr "Aún no hay recursos en esta biblioteca"
 
-msgid "workspace.component.swap.loop-error"
-msgstr "Los componentes no pueden anidarse dentro de sí mismos"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:973
 msgid "workspace.options.component.unlinked"
 msgstr "Desvinculado"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:929
-msgid "workspace.options.component.variant"
-msgstr "Variante"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
 msgid "workspace.options.component.variant.duplicated.copy.locate"
@@ -6752,19 +6741,19 @@ msgstr "Tachado (%s)"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
 msgid "workspace.options.text-options.text-align-center"
-msgstr "Alinear al centro (%s)"
+msgstr "Alinear al centro"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
 msgid "workspace.options.text-options.text-align-justify"
-msgstr "Justificar (%s)"
+msgstr "Justificar"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
 msgid "workspace.options.text-options.text-align-left"
-msgstr "Alinear a la izquierda (%s)"
+msgstr "Alinear a la izquierda"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
 msgid "workspace.options.text-options.text-align-right"
-msgstr "Alinear a la derecha (%s)"
+msgstr "Alinear a la derecha"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title"

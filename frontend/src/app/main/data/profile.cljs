@@ -19,6 +19,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.plugins.register :as plugins.register]
+   [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
@@ -356,8 +357,18 @@
 
 ;; --- EVENT: request-account-deletion
 
-(def profile-deleted?
+(def profile-deleted-event?
   (ptk/type? ::profile-deleted))
+
+(defn- delete-subscription
+  []
+  (if (contains? cf/flags :subscriptions)
+    (->> (http/fetch {:uri "/payments/subscriptions/delete"
+                      :credentials "include"
+                      :method :get})
+         (rx/map (constantly nil))
+         (rx/catch #(rx/empty)))
+    (rx/empty)))
 
 (defn request-account-deletion
   [params]
@@ -366,13 +377,17 @@
     (watch [_ _ _]
       (let [{:keys [on-error on-success]
              :or {on-error rx/throw
-                  on-success identity}} (meta params)]
-        (->> (rp/cmd! :delete-profile {})
-             (rx/tap on-success)
-             (rx/map (fn [_]
-                       (ptk/data-event ::profile-deleted params)))
-             (rx/catch on-error)
-             (rx/delay-at-least 300))))))
+                  on-success identity}}
+            (meta params)]
+
+        (rx/concat
+         (delete-subscription)
+         (->> (rp/cmd! :delete-profile {})
+              (rx/tap on-success)
+              (rx/map (fn [_]
+                        (ptk/data-event ::profile-deleted params)))
+              (rx/catch on-error)
+              (rx/delay-at-least 300)))))))
 
 ;; --- EVENT: request-profile-recovery
 

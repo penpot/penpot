@@ -326,7 +326,7 @@
   (ptk/reify ::handle-new-shape
     ptk/UpdateEvent
     (update [_ state]
-      (let [shape (cts/setup-shape {:type :path :content (path/content nil)})]
+      (let [shape (cts/setup-shape {:type :path})]
         (update state :workspace-drawing assoc :object shape)))
 
     ptk/WatchEvent
