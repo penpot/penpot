@@ -1,4 +1,4 @@
-name: DEVELOP - Build Bundle and Docker Image
+name: _DEVELOP
 
 on:
   schedule:

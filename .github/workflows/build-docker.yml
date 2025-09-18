@@ -1,4 +1,4 @@
-name: DOCKER - Build and Push Penpot Images
+name: Docker Images Builder
 
 on:
   workflow_dispatch:

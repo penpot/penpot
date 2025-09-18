@@ -1,4 +1,4 @@
-name: BUNDLE - Build Bundle and Updload to S3
+name: Bundles Builder
 
 on:
   # Create bundle from manual action

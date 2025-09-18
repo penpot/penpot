@@ -1,4 +1,4 @@
-name: STAGING - Build Bundle and Docker Image
+name: _STAGING
 
 on:
   schedule:
