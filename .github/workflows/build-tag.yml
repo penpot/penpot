@@ -1,4 +1,4 @@
-name: TAG - Build Bundle and Docker Image
+name: _TAG
 
 on:
   push:
