@@ -201,31 +201,14 @@ impl LayoutData {
     }
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(u8)]
 pub enum AlignSelf {
-    Auto = 0,
-    Start = 1,
-    End = 2,
-    Center = 3,
-    Stretch = 4,
-}
-
-// TODO: maybe move this to the wasm module?
-impl AlignSelf {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Option<AlignSelf> {
-        match value {
-            0 => Some(Self::Auto),
-            1 => Some(Self::Start),
-            2 => Some(Self::End),
-            3 => Some(Self::Center),
-            4 => Some(Self::Stretch),
-            _ => None,
-        }
-    }
+    Auto,
+    Start,
+    End,
+    Center,
+    Stretch,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]

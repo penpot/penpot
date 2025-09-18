@@ -505,14 +505,11 @@
                        (mem/write-i32 dview (get cell :column))
                        (mem/write-i32 dview (get cell :column-span))
 
-                       ;; FIXME: remove this field
-                       ;; has_align_self: u8,
-                       (mem/write-bool dview (some? (get cell :align-self)))
-                       ;; align_self: u8,
                        (mem/write-u8 dview (get cell :align-self))
                        (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
-                       ;; FIXME:  remove this padding
-                       (mem/write-u8 dview 0)
+
+                       ;; padding
+                       (+ 2)
 
                        (mem/write-uuid dview (d/nilv shape-id uuid/zero))
                        (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
@@ -567,7 +564,7 @@
             (d/nilv max-w 0)
             has-min-w
             (d/nilv min-w 0)
-            (some? align-self)
+
             (d/nilv align-self 0)
             is-absolute
             (d/nilv z-index))))
@@ -1057,7 +1054,7 @@
                                              :grid-direction (unchecked-get module "GridDirection")
                                              :grow-type (unchecked-get module "GrowType")
                                              :align-items (unchecked-get module "RawAlignItems")
-                                             :align-self (unchecked-get module "AlignSelf")
+                                             :align-self (unchecked-get module "RawAlignSelf")
                                              :align-content (unchecked-get module "RawAlignContent")
                                              :justify-items (unchecked-get module "RawJustifyItems")
                                              :justify-content (unchecked-get module "RawJustifyContent")

@@ -6,8 +6,6 @@ mod constraints;
 mod flex;
 mod grid;
 
-pub use align::RawJustifySelf; // FIXME: fix this
-
 #[no_mangle]
 pub extern "C" fn clear_shape_layout() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
@@ -31,7 +29,6 @@ pub extern "C" fn set_layout_child_data(
     max_w: f32,
     has_min_w: bool,
     min_w: f32,
-    has_align_self: bool,
     align_self: u8,
     is_absolute: bool,
     z_index: i32,
@@ -42,10 +39,12 @@ pub extern "C" fn set_layout_child_data(
     let min_h = if has_min_h { Some(min_h) } else { None };
     let max_w = if has_max_w { Some(max_w) } else { None };
     let min_w = if has_min_w { Some(min_w) } else { None };
-    let align_self = if has_align_self {
-        shapes::AlignSelf::from_u8(align_self)
-    } else {
-        None
+
+    let raw_align_self = align::RawAlignSelf::from(align_self);
+
+    let align_self = match raw_align_self {
+        align::RawAlignSelf::None => None,
+        _ => Some(align::RawAlignSelf::from(align_self).into()),
     };
 
     with_current_shape_mut!(state, |shape: &mut Shape| {

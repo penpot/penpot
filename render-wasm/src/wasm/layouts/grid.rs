@@ -12,9 +12,9 @@ struct RawGridCell {
     row_span: i32,
     column: i32,
     column_span: i32,
-    has_align_self: u8, // FIXME: remove this field
     align_self: u8,
     justify_self: u8,
+    _padding: u16,
     shape_id_a: u32,
     shape_id_b: u32,
     shape_id_c: u32,
@@ -30,6 +30,7 @@ impl From<[u8; size_of::<RawGridCell>()]> for RawGridCell {
 impl From<RawGridCell> for GridCell {
     fn from(raw: RawGridCell) -> Self {
         let raw_justify_self = super::align::RawJustifySelf::from(raw.justify_self);
+        let raw_align_self = super::align::RawAlignSelf::from(raw.align_self);
         let shape_id = uuid_from_u32_quartet(
             raw.shape_id_a,
             raw.shape_id_b,
@@ -42,14 +43,13 @@ impl From<RawGridCell> for GridCell {
             row_span: raw.row_span,
             column: raw.column,
             column_span: raw.column_span,
-            align_self: if raw.has_align_self == 1 {
-                shapes::AlignSelf::from_u8(raw.align_self)
-            } else {
-                None
+            align_self: match raw_align_self {
+                align::RawAlignSelf::None => None,
+                _ => Some(align::RawAlignSelf::from(raw.align_self).into()),
             },
             justify_self: match raw_justify_self {
-                super::align::RawJustifySelf::None => None,
-                _ => Some(crate::wasm::layouts::RawJustifySelf::from(raw.justify_self).into()),
+                align::RawJustifySelf::None => None,
+                _ => Some(align::RawJustifySelf::from(raw.justify_self).into()),
             },
             shape: if shape_id != Uuid::nil() {
                 Some(shape_id)

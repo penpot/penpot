@@ -184,8 +184,9 @@
 
 (defn translate-align-self
   [align-self]
-  (let [values (unchecked-get wasm/serializers "align-self")]
-    (unchecked-get values (d/name align-self))))
+  (let [values (unchecked-get wasm/serializers "align-self")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name align-self)) default)))
 
 (defn translate-justify-self
   [justify-self]

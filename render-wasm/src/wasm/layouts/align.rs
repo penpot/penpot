@@ -1,7 +1,7 @@
 use macros::ToJs;
 
 use crate::shapes::{
-    AlignContent, AlignItems, JustifyContent, JustifyItems, JustifySelf, VerticalAlign,
+    AlignContent, AlignItems, AlignSelf, JustifyContent, JustifyItems, JustifySelf, VerticalAlign,
 };
 use crate::{with_current_shape_mut, STATE};
 
@@ -154,6 +154,37 @@ impl From<RawJustifySelf> for JustifySelf {
             RawJustifySelf::End => JustifySelf::End,
             RawJustifySelf::Center => JustifySelf::Center,
             RawJustifySelf::Stretch => JustifySelf::Stretch,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawAlignSelf {
+    None = 0,
+    Auto = 1,
+    Start = 2,
+    End = 3,
+    Center = 4,
+    Stretch = 5,
+}
+
+impl From<u8> for RawAlignSelf {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<RawAlignSelf> for AlignSelf {
+    fn from(value: RawAlignSelf) -> Self {
+        match value {
+            RawAlignSelf::None => unreachable!(), // FIXME: implement try_from instead
+            RawAlignSelf::Auto => AlignSelf::Auto,
+            RawAlignSelf::Start => AlignSelf::Start,
+            RawAlignSelf::End => AlignSelf::End,
+            RawAlignSelf::Center => AlignSelf::Center,
+            RawAlignSelf::Stretch => AlignSelf::Stretch,
         }
     }
 }
