@@ -889,7 +889,7 @@
         show-profile-menu? (deref show-profile-menu*)
         sub-menu*      (mf/use-state false)
         sub-menu       (deref sub-menu*)
-        version        (:full cf/version)
+        version        (:base cf/version)
 
         close-sub-menu
         (mf/use-fn
