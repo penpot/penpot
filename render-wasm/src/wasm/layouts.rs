@@ -1,10 +1,36 @@
-use crate::shapes::{self};
+use crate::shapes::Sizing;
 use crate::{with_current_shape_mut, STATE};
+use macros::ToJs;
 
 mod align;
 mod constraints;
 mod flex;
 mod grid;
+
+#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawSizing {
+    Fill = 0,
+    Fix = 1,
+    Auto = 2,
+}
+
+impl From<u8> for RawSizing {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<RawSizing> for Sizing {
+    fn from(value: RawSizing) -> Self {
+        match value {
+            RawSizing::Fill => Sizing::Fill,
+            RawSizing::Fix => Sizing::Fix,
+            RawSizing::Auto => Sizing::Auto,
+        }
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn clear_shape_layout() {
@@ -33,8 +59,8 @@ pub extern "C" fn set_layout_child_data(
     is_absolute: bool,
     z_index: i32,
 ) {
-    let h_sizing = shapes::Sizing::from_u8(h_sizing);
-    let v_sizing = shapes::Sizing::from_u8(v_sizing);
+    let h_sizing = RawSizing::from(h_sizing);
+    let v_sizing = RawSizing::from(v_sizing);
     let max_h = if has_max_h { Some(max_h) } else { None };
     let min_h = if has_min_h { Some(min_h) } else { None };
     let max_w = if has_max_w { Some(max_w) } else { None };
@@ -50,8 +76,8 @@ pub extern "C" fn set_layout_child_data(
             margin_right,
             margin_bottom,
             margin_left,
-            h_sizing,
-            v_sizing,
+            h_sizing.into(),
+            v_sizing.into(),
             max_h,
             min_h,
             max_w,

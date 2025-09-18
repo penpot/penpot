@@ -1057,7 +1057,7 @@
                                              :shape-type (unchecked-get module "RawShapeType")
                                              :constraint-h (unchecked-get module "RawConstraintH")
                                              :constraint-v (unchecked-get module "RawConstraintV")
-                                             :sizing (unchecked-get module "Sizing")
+                                             :sizing (unchecked-get module "RawSizing")
                                              :vertical-align (unchecked-get module "RawVerticalAlign")
                                              :fill-data (unchecked-get module "RawFillData")
                                              :segment-data (unchecked-get module "RawSegmentData")}]

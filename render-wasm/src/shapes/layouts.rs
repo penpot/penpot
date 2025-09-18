@@ -1,5 +1,3 @@
-use macros::ToJs;
-
 use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -103,7 +101,7 @@ impl GridTrack {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct GridCell {
     pub row: i32,
     pub row_span: i32,
@@ -114,27 +112,11 @@ pub struct GridCell {
     pub shape: Option<Uuid>,
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Sizing {
-    Fill = 0,
-    Fix = 1,
-    Auto = 2,
-}
-
-// TODO: maybe move this to the wasm module?
-impl Sizing {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Fill,
-            1 => Self::Fix,
-            2 => Self::Auto,
-            _ => unreachable!(),
-        }
-    }
+    Fill,
+    Fix,
+    Auto,
 }
 
 #[derive(Debug, Clone, PartialEq)]
