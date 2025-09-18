@@ -70,116 +70,42 @@ impl GridDirection {
     }
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignItems {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    Stretch = 3,
+    Start,
+    End,
+    Center,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl AlignItems {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignContent {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    SpaceBetween = 3,
-    SpaceAround = 4,
-    SpaceEvenly = 5,
-    Stretch = 6,
+    Start,
+    End,
+    Center,
+    SpaceBetween,
+    SpaceAround,
+    SpaceEvenly,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl AlignContent {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::SpaceBetween,
-            4 => Self::SpaceAround,
-            5 => Self::SpaceEvenly,
-            6 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyItems {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    Stretch = 3,
+    Start,
+    End,
+    Center,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl JustifyItems {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyContent {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    SpaceBetween = 3,
-    SpaceAround = 4,
-    SpaceEvenly = 5,
-    Stretch = 6,
-}
-
-// TODO: maybe move this to the wasm module?
-impl JustifyContent {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::SpaceBetween,
-            4 => Self::SpaceAround,
-            5 => Self::SpaceEvenly,
-            6 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
+    Start,
+    End,
+    Center,
+    SpaceBetween,
+    SpaceAround,
+    SpaceEvenly,
+    Stretch,
 }
 
 // TODO: maybe move this to the wasm module?

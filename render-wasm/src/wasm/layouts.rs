@@ -28,10 +28,10 @@ pub extern "C" fn set_flex_layout_data(
     padding_left: f32,
 ) {
     let dir = shapes::FlexDirection::from_u8(dir);
-    let align_items = shapes::AlignItems::from_u8(align_items);
-    let align_content = shapes::AlignContent::from_u8(align_content);
-    let justify_items = shapes::JustifyItems::from_u8(justify_items);
-    let justify_content = shapes::JustifyContent::from_u8(justify_content);
+    let align_items = align::RawAlignItems::from(align_items);
+    let align_content = align::RawAlignContent::from(align_content);
+    let justify_items = align::RawJustifyItems::from(justify_items);
+    let justify_content = align::RawJustifyContent::from(justify_content);
     let wrap_type = shapes::WrapType::from_u8(wrap_type);
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
@@ -39,10 +39,10 @@ pub extern "C" fn set_flex_layout_data(
             dir,
             row_gap,
             column_gap,
-            align_items,
-            align_content,
-            justify_items,
-            justify_content,
+            align_items.into(),
+            align_content.into(),
+            justify_items.into(),
+            justify_content.into(),
             wrap_type,
             padding_top,
             padding_right,
@@ -119,20 +119,20 @@ pub extern "C" fn set_grid_layout_data(
     padding_left: f32,
 ) {
     let dir = shapes::GridDirection::from_u8(dir);
-    let align_items = shapes::AlignItems::from_u8(align_items);
-    let align_content = shapes::AlignContent::from_u8(align_content);
-    let justify_items = shapes::JustifyItems::from_u8(justify_items);
-    let justify_content = shapes::JustifyContent::from_u8(justify_content);
+    let align_items = align::RawAlignItems::from(align_items);
+    let align_content = align::RawAlignContent::from(align_content);
+    let justify_items = align::RawJustifyItems::from(justify_items);
+    let justify_content = align::RawJustifyContent::from(justify_content);
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_layout_data(
             dir,
             row_gap,
             column_gap,
-            align_items,
-            align_content,
-            justify_items,
-            justify_content,
+            align_items.into(),
+            align_content.into(),
+            justify_items.into(),
+            justify_content.into(),
             padding_top,
             padding_right,
             padding_bottom,
