@@ -8,13 +8,13 @@
 // MAIN STYLES
 //#################################################
 
-@import "common/refactor/fonts.scss";
-@import "common/refactor/spacing.scss";
-@import "common/refactor/borders.scss";
-@import "common/refactor/opacity.scss";
-@import "common/refactor/shadows.scss";
-@import "common/refactor/z-index.scss";
-@import "common/refactor/mixins.scss";
-@import "common/refactor/focus.scss";
-@import "common/refactor/animations.scss";
-@import "common/refactor/basic-rules.scss";
+@forward "./fonts.scss";
+@forward "./spacing.scss";
+@forward "./borders.scss";
+@forward "./opacity.scss";
+@forward "./shadows.scss";
+@forward "./z-index.scss";
+@forward "./mixins.scss";
+@forward "./focus.scss";
+@forward "./animations.scss";
+@forward "./basic-rules.scss";

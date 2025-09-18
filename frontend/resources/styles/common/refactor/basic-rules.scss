@@ -4,6 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "./spacing.scss" as *;
+@use "./borders.scss" as *;
+@use "./mixins.scss" as *;
+@use "./focus.scss" as *;
+@use "./shadows.scss" as *;
+@use "./z-index.scss" as *;
+
 // SCROLLBAR
 .new-scrollbar {
   scrollbar-width: thin;

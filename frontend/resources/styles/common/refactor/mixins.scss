@@ -4,6 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "./fonts.scss" as *;
+@use "./spacing.scss" as *;
+
 @mixin flexCenter {
   display: flex;
   justify-content: center;
