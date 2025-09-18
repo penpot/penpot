@@ -24,29 +24,12 @@ impl Layout {
     }
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum FlexDirection {
-    Row = 0,
-    RowReverse = 1,
-    Column = 2,
-    ColumnReverse = 3,
-}
-
-// TODO: maybe move this to the wasm module?
-impl FlexDirection {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Row,
-            1 => Self::RowReverse,
-            2 => Self::Column,
-            3 => Self::ColumnReverse,
-            _ => unreachable!(),
-        }
-    }
+    Row,
+    RowReverse,
+    Column,
+    ColumnReverse,
 }
 
 // TODO: maybe move this to the wasm module?
@@ -108,25 +91,10 @@ pub enum JustifyContent {
     Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WrapType {
-    Wrap = 0,
-    Nowrap = 1,
-}
-
-// TODO: maybe move this to the wasm module?
-impl WrapType {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Wrap,
-            1 => Self::Nowrap,
-            _ => unreachable!(),
-        }
-    }
+    Wrap,
+    NoWrap,
 }
 
 // TODO: maybe move this to the wasm module?

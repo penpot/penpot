@@ -4,51 +4,12 @@ use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_stat
 
 mod align;
 mod constraints;
+mod flex;
 
 #[no_mangle]
 pub extern "C" fn clear_shape_layout() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.clear_layout();
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn set_flex_layout_data(
-    dir: u8,
-    row_gap: f32,
-    column_gap: f32,
-    align_items: u8,
-    align_content: u8,
-    justify_items: u8,
-    justify_content: u8,
-    wrap_type: u8,
-    padding_top: f32,
-    padding_right: f32,
-    padding_bottom: f32,
-    padding_left: f32,
-) {
-    let dir = shapes::FlexDirection::from_u8(dir);
-    let align_items = align::RawAlignItems::from(align_items);
-    let align_content = align::RawAlignContent::from(align_content);
-    let justify_items = align::RawJustifyItems::from(justify_items);
-    let justify_content = align::RawJustifyContent::from(justify_content);
-    let wrap_type = shapes::WrapType::from_u8(wrap_type);
-
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_flex_layout_data(
-            dir,
-            row_gap,
-            column_gap,
-            align_items.into(),
-            align_content.into(),
-            justify_items.into(),
-            justify_content.into(),
-            wrap_type,
-            padding_top,
-            padding_right,
-            padding_bottom,
-            padding_left,
-        );
     });
 }
 
