@@ -1,27 +1,12 @@
-use macros::ToJs;
 use skia_safe::{self as skia, image_filters, ImageFilter, Paint};
 
 use super::Color;
 use crate::render::filters::compose_filters;
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, Copy, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ShadowStyle {
-    Drop = 0,
-    Inner = 1,
-}
-
-// TODO: maybe move this to the wasm module?
-impl From<u8> for ShadowStyle {
-    // TODO: use transmute
-    fn from(value: u8) -> Self {
-        match value {
-            0 => Self::Drop,
-            1 => Self::Inner,
-            _ => Self::default(),
-        }
-    }
+    Drop,
+    Inner,
 }
 
 impl Default for ShadowStyle {

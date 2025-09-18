@@ -508,31 +508,6 @@ pub extern "C" fn set_modifiers() {
 }
 
 #[no_mangle]
-pub extern "C" fn add_shape_shadow(
-    raw_color: u32,
-    blur: f32,
-    spread: f32,
-    x: f32,
-    y: f32,
-    raw_style: u8,
-    hidden: bool,
-) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        let color = skia::Color::new(raw_color);
-        let style = shapes::ShadowStyle::from(raw_style);
-        let shadow = shapes::Shadow::new(color, blur, spread, (x, y), style, hidden);
-        shape.add_shadow(shadow);
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn clear_shape_shadows() {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.clear_shadows();
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn update_shape_tiles() {
     with_state_mut!(state, {
         state.update_tile_for_current_shape();

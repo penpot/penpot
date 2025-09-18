@@ -1051,7 +1051,7 @@
                                              :justify-self (unchecked-get module "RawJustifySelf")
                                              :wrap-type (unchecked-get module "RawWrapType")
                                              :grid-track-type (unchecked-get module "RawGridTrackType")
-                                             :shadow-style (unchecked-get module "ShadowStyle")
+                                             :shadow-style (unchecked-get module "RawShadowStyle")
                                              :stroke-style (unchecked-get module "StrokeStyle")
                                              :stroke-cap (unchecked-get module "StrokeCap")
                                              :shape-type (unchecked-get module "RawShapeType")
