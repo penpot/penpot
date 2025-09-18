@@ -1051,7 +1051,7 @@
                                              :bool-type (unchecked-get module "RawBoolType")
                                              :font-style (unchecked-get module "FontStyle")
                                              :flex-direction (unchecked-get module "RawFlexDirection")
-                                             :grid-direction (unchecked-get module "GridDirection")
+                                             :grid-direction (unchecked-get module "RawGridDirection")
                                              :grow-type (unchecked-get module "GrowType")
                                              :align-items (unchecked-get module "RawAlignItems")
                                              :align-self (unchecked-get module "RawAlignSelf")

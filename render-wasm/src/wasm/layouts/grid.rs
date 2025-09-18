@@ -1,5 +1,7 @@
+use macros::ToJs;
+
 use crate::mem;
-use crate::shapes::{self, GridCell};
+use crate::shapes::{self, GridCell, GridDirection};
 use crate::uuid::Uuid;
 use crate::{uuid_from_u32_quartet, with_current_shape_mut, with_state, with_state_mut, STATE};
 
@@ -54,6 +56,29 @@ impl From<RawGridCell> for GridCell {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawGridDirection {
+    Row = 0,
+    Column = 1,
+}
+
+impl From<u8> for RawGridDirection {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<RawGridDirection> for GridDirection {
+    fn from(value: RawGridDirection) -> Self {
+        match value {
+            RawGridDirection::Row => Self::Row,
+            RawGridDirection::Column => Self::Column,
+        }
+    }
+}
+
 #[no_mangle]
 pub extern "C" fn set_grid_layout_data(
     dir: u8,
@@ -68,7 +93,7 @@ pub extern "C" fn set_grid_layout_data(
     padding_bottom: f32,
     padding_left: f32,
 ) {
-    let dir = shapes::GridDirection::from_u8(dir);
+    let dir = RawGridDirection::from(dir);
     let align_items = align::RawAlignItems::from(align_items);
     let align_content = align::RawAlignContent::from(align_content);
     let justify_items = align::RawJustifyItems::from(justify_items);
@@ -76,7 +101,7 @@ pub extern "C" fn set_grid_layout_data(
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_grid_layout_data(
-            dir,
+            dir.into(),
             row_gap,
             column_gap,
             align_items.into(),

@@ -31,25 +31,10 @@ pub enum FlexDirection {
     ColumnReverse,
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum GridDirection {
-    Row = 0,
-    Column = 1,
-}
-
-// TODO: maybe move this to the wasm module?
-impl GridDirection {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Row,
-            1 => Self::Column,
-            _ => unreachable!(),
-        }
-    }
+    Row,
+    Column,
 }
 
 #[derive(Debug, Clone, PartialEq, Copy)]
