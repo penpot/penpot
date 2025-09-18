@@ -505,7 +505,7 @@
                        (mem/write-i32 dview (get cell :column))
                        (mem/write-i32 dview (get cell :column-span))
 
-                       (mem/write-u8 dview (get cell :align-self))
+                       (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
                        (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
                        ;; padding
