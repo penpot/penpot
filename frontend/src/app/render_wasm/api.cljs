@@ -1079,7 +1079,7 @@
                                              :align-content (unchecked-get module "RawAlignContent")
                                              :justify-items (unchecked-get module "RawJustifyItems")
                                              :justify-content (unchecked-get module "RawJustifyContent")
-                                             :justify-self (unchecked-get module "JustifySelf")
+                                             :justify-self (unchecked-get module "RawJustifySelf")
                                              :wrap-type (unchecked-get module "RawWrapType")
                                              :grid-track-type (unchecked-get module "GridTrackType")
                                              :shadow-style (unchecked-get module "ShadowStyle")

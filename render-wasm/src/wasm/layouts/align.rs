@@ -1,6 +1,8 @@
 use macros::ToJs;
 
-use crate::shapes::{AlignContent, AlignItems, JustifyContent, JustifyItems, VerticalAlign};
+use crate::shapes::{
+    AlignContent, AlignItems, JustifyContent, JustifyItems, JustifySelf, VerticalAlign,
+};
 use crate::{with_current_shape_mut, STATE};
 
 // TODO: maybe move this to the wasm module?
@@ -121,6 +123,35 @@ impl From<RawJustifyContent> for JustifyContent {
             RawJustifyContent::SpaceAround => JustifyContent::SpaceAround,
             RawJustifyContent::SpaceEvenly => JustifyContent::SpaceEvenly,
             RawJustifyContent::Stretch => JustifyContent::Stretch,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawJustifySelf {
+    Auto = 0,
+    Start = 1,
+    End = 2,
+    Center = 3,
+    Stretch = 4,
+}
+
+impl From<u8> for RawJustifySelf {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<RawJustifySelf> for JustifySelf {
+    fn from(value: RawJustifySelf) -> Self {
+        match value {
+            RawJustifySelf::Auto => JustifySelf::Auto,
+            RawJustifySelf::Start => JustifySelf::Start,
+            RawJustifySelf::End => JustifySelf::End,
+            RawJustifySelf::Center => JustifySelf::Center,
+            RawJustifySelf::Stretch => JustifySelf::Stretch,
         }
     }
 }
