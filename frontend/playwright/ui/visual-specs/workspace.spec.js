@@ -95,9 +95,7 @@ test.describe("Assets tab", () => {
 
     await workspace.clickLibrary("Testing library 1");
     await expect(
-      workspace.librariesModal.getByText(
-        "There are no Shared Libraries available",
-      ),
+      workspace.librariesModal.getByText("File library"),
     ).toBeVisible();
     await expect(workspace.page).toHaveScreenshot();
   });

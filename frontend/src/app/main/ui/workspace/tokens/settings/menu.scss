@@ -6,7 +6,7 @@
 
 @use "../../../ds/spacing.scss" as *;
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .setting-modal-overlay {
   @extend .modal-overlay-base;

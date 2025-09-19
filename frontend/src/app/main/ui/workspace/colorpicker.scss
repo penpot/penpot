@@ -8,11 +8,12 @@
 @use "../ds/spacing.scss";
 @use "../ds/_borders.scss" as *;
 @use "../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "../ds/utils" as *;
+@use "refactor/basic-rules.scss" as *;
 
 .colorpicker-tooltip {
   @extend .modal-background;
-  left: calc(10 * $s-140);
+  left: calc(10 * px2rem(140));
   width: auto;
   padding: var(--sp-m);
   width: $sz-284;
@@ -31,7 +32,7 @@
   align-items: flex-start;
   flex-direction: row-reverse;
   justify-content: space-between;
-  height: $s-40;
+  height: $sz-40;
 }
 
 .top-actions-right {
@@ -41,13 +42,18 @@
 
 .opacity-input-wrapper {
   @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-68;
+  @include t.use-typography("body-small");
+  width: px2rem(68);
 }
 
+// TODO: change to DS button component
 .picker-btn {
-  @include buttonStyle;
-  @include flexCenter;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: none;
+  background: none;
+  cursor: pointer;
   border-radius: $br-8;
   background-color: transparent;
   border: $b-1 solid transparent;
@@ -125,7 +131,7 @@
 }
 
 .accept-color {
-  @include uppercaseTitleTipography;
+  @include t.use-typography("headline-small");
   @extend .button-primary;
   width: 100%;
   height: var(--sp-xxxl);
@@ -133,7 +139,9 @@
 }
 
 .picker-detail-wrapper {
-  @include flexCenter;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   position: relative;
   margin: var(--sp-m) 0 var(--sp-s) 0;
 }
@@ -155,7 +163,7 @@
 }
 
 .select {
-  width: $s-116;
+  width: px2rem(116);
 }
 
 .select-image {
@@ -168,8 +176,8 @@
   justify-content: center;
   background-image: url("/images/colorpicker-no-image.png");
   background-position: center;
-  background-size: auto $s-140;
-  height: $s-140;
+  background-size: auto px2rem(140);
+  height: px2rem(140);
   margin-bottom: $sz-6;
   margin-right: $sz-1;
   img {
@@ -183,7 +191,7 @@
 
 .choose-image {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
+  @include t.use-typography("headline-small");
   width: 100%;
   margin-top: var(--sp-m);
   height: var(--sp-xxxl);

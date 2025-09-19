@@ -24,21 +24,20 @@ test("Navigate to penpot changelog from profile menu", async ({ page }) => {
   ]);
 
   await newPage.waitForLoadState();
-  await expect(newPage).toHaveURL("https://github.com/penpot/penpot/blob/develop/CHANGES.md");
+  await expect(newPage).toHaveURL(
+    "https://github.com/penpot/penpot/blob/develop/CHANGES.md",
+  );
 });
 
-test("Opens release notes from current version from profile menu", async ({ page }) => {
+test("Opens release notes from current version from profile menu", async ({
+  page,
+}) => {
   const dashboardPage = new DashboardPage(page);
   await dashboardPage.goToDashboard();
 
   await dashboardPage.openProfileMenu();
   await dashboardPage.clickProfileMenuItem("About Penpot");
-  await expect(
-      page.getByText("Version 0.0.0 notes"),
-    ).toBeVisible();
+  await expect(page.getByText("Version 0.0.0 notes")).toBeVisible();
   await dashboardPage.clickProfileMenuItem("Version");
-  await expect(
-      page.getByText("new in penpot?"),
-    ).toBeVisible();
-
+  await expect(page.getByText("new in penpot?")).toBeVisible();
 });

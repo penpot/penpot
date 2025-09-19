@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "../ds/typography.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .settings-bar-right {
   min-width: $s-252;

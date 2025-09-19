@@ -6,7 +6,7 @@
 
 @use "../../ds/typography.scss" as *;
 @use "../../ds/spacing.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .sidebar-wrapper {
   display: grid;

@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 // TODO: Legacy sass variables. We should remove them in favor of DS tokens.
 $bp-max-1366: "(max-width: 1366px)";

@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .layer-row {
   --layer-indentation-size: calc(#{$s-4} * 6);

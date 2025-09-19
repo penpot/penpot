@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as *;
 
 .group-title-wrapper {
   width: 100%;
