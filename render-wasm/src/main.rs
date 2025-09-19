@@ -352,13 +352,6 @@ pub extern "C" fn set_shape_svg_raw_content() {
 }
 
 #[no_mangle]
-pub extern "C" fn set_shape_blend_mode(mode: i32) {
-    with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.set_blend_mode(render::BlendMode::from(mode));
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn set_shape_opacity(opacity: f32) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         shape.set_opacity(opacity);

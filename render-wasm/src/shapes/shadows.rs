@@ -25,7 +25,6 @@ pub struct Shadow {
     hidden: bool,
 }
 
-// TODO: create shadows out of a chunk of bytes
 impl Shadow {
     pub fn new(
         color: Color,

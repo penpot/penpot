@@ -1,4 +1,3 @@
-mod blend;
 mod debug;
 mod fills;
 pub mod filters;
@@ -37,7 +36,6 @@ use crate::wapi;
 use crate::math;
 use crate::math::bools;
 
-pub use blend::BlendMode;
 pub use fonts::*;
 pub use images::*;
 

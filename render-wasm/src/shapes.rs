@@ -1,12 +1,12 @@
 use skia_safe::{self as skia};
 
-use crate::render::BlendMode;
 use crate::uuid::Uuid;
 use std::borrow::Cow;
 use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet};
 use std::iter::once;
 
+mod blend;
 mod blurs;
 mod bools;
 mod corners;
@@ -26,6 +26,7 @@ mod text;
 pub mod text_paths;
 mod transform;
 
+pub use blend::*;
 pub use blurs::*;
 pub use bools::*;
 pub use corners::*;
@@ -610,7 +611,7 @@ impl Shape {
         self.svg_attrs.insert(name, value);
     }
 
-    pub fn blend_mode(&self) -> crate::render::BlendMode {
+    pub fn blend_mode(&self) -> BlendMode {
         self.blend_mode
     }
 

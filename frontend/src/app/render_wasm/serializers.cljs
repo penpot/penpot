@@ -85,24 +85,9 @@
 
 (defn translate-blend-mode
   [blend-mode]
-  (case blend-mode
-    :normal 3
-    :darken 16
-    :multiply 24
-    :color-burn 19
-    :lighten 17
-    :screen 14
-    :color-dodge 18
-    :overlay 15
-    :soft-light 21
-    :hard-light 20
-    :difference 22
-    :exclusion 23
-    :hue 25
-    :saturation 26
-    :color 27
-    :luminosity 28
-    3))
+  (let [values (unchecked-get wasm/serializers "blend-mode")
+        default (unchecked-get values "normal")]
+    (d/nilv (unchecked-get values (d/name blend-mode)) default)))
 
 (defn translate-constraint-h
   [type]

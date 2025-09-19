@@ -1,3 +1,4 @@
+pub mod blend;
 pub mod blurs;
 pub mod fills;
 pub mod fonts;

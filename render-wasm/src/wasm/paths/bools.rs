@@ -9,7 +9,6 @@ use crate::uuid::Uuid;
 use crate::{mem, SerializableResult};
 use crate::{with_current_shape_mut, with_state, STATE};
 
-// TODO: maybe move this to the wasm module?
 #[derive(Debug, Clone, Copy, PartialEq, ToJs)]
 #[repr(u8)]
 #[allow(dead_code)]

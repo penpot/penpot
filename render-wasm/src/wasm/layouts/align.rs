@@ -5,7 +5,6 @@ use crate::shapes::{
 };
 use crate::{with_current_shape_mut, STATE};
 
-// TODO: maybe move this to the wasm module?
 #[derive(Debug, Clone, PartialEq, Copy, ToJs)]
 #[repr(u8)]
 #[allow(dead_code)]
@@ -16,7 +15,6 @@ pub enum RawAlignItems {
     Stretch = 3,
 }
 
-// TODO: maybe move this to the wasm module?
 impl From<u8> for RawAlignItems {
     fn from(value: u8) -> Self {
         unsafe { std::mem::transmute(value) }
