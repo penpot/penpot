@@ -368,13 +368,13 @@
                                                                           :position :top})
             redo (thf/apply-changes file changes)
             redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-ordered-set-names))
+                          (ctob/get-set-names))
             undo (thf/apply-undo-changes redo changes)
             undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-ordered-set-names))]
+                          (ctob/get-set-names))]
         (t/is (= ["bar" "foo" "baz"] (vec redo-sets)))
         (t/testing "undo"
-          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
 
     (t/testing "at bottom"
       (let [file (setup-file #(-> %
@@ -387,13 +387,13 @@
                                                                           :position :bot})
             redo (thf/apply-changes file changes)
             redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-ordered-set-names))
+                          (ctob/get-set-names))
             undo (thf/apply-undo-changes redo changes)
             undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-ordered-set-names))]
+                          (ctob/get-set-names))]
         (t/is (= ["bar" "baz" "foo"] (vec redo-sets)))
         (t/testing "undo"
-          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
 
     (t/testing "dropping out of set group"
       (let [file (setup-file #(-> %
@@ -405,13 +405,13 @@
                                                                           :position :top})
             redo (thf/apply-changes file changes)
             redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-ordered-set-names))
+                          (ctob/get-set-names))
             undo (thf/apply-undo-changes redo changes)
             undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-ordered-set-names))]
+                          (ctob/get-set-names))]
         (t/is (= ["bar" "foo"] (vec redo-sets)))
         (t/testing "undo"
-          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
 
     (t/testing "into set group"
       (let [file (setup-file #(-> %
@@ -423,13 +423,13 @@
                                                                           :position :bot})
             redo (thf/apply-changes file changes)
             redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-ordered-set-names))
+                          (ctob/get-set-names))
             undo (thf/apply-undo-changes redo changes)
             undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-ordered-set-names))]
+                          (ctob/get-set-names))]
         (t/is (= ["foo/bar" "foo/foo"] (vec redo-sets)))
         (t/testing "undo"
-          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
 
     (t/testing "edge-cases:"
       (t/testing "prevent overriding set to identical path"
@@ -461,13 +461,13 @@
                                                                             :collapsed-paths #{["foo"]}})
               redo (thf/apply-changes file changes)
               redo-sets (-> (tht/get-tokens-lib redo)
-                            (ctob/get-ordered-set-names))
+                            (ctob/get-set-names))
               undo (thf/apply-undo-changes redo changes)
               undo-sets (-> (tht/get-tokens-lib undo)
-                            (ctob/get-ordered-set-names))]
+                            (ctob/get-set-names))]
           (t/is (= ["foo/bar" "foo"] (vec redo-sets)))
           (t/testing "undo"
-            (t/is (= (ctob/get-ordered-set-names lib) undo-sets))))))))
+            (t/is (= (ctob/get-set-names lib) undo-sets))))))))
 
 (t/deftest generate-move-token-group-test
   (t/testing "Ignore dropping set group to the same position"
@@ -503,14 +503,14 @@
                                                                                 :position :top})
             redo (thf/apply-changes file changes)
             redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-ordered-set-names))
+                          (ctob/get-set-names))
             undo (thf/apply-undo-changes redo changes)
             undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-ordered-set-names))]
+                          (ctob/get-set-names))]
         (t/is (= ["bar/bar" "foo/foo" "baz/baz"] (vec redo-sets)))
 
         (t/testing "undo"
-          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
 
     (t/testing "to bottom"
       (let [file (setup-file #(-> %
@@ -522,14 +522,14 @@
                                                                                 :position :bot})
             redo (thf/apply-changes file changes)
             redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-ordered-set-names))
+                          (ctob/get-set-names))
             undo (thf/apply-undo-changes redo changes)
             undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-ordered-set-names))]
+                          (ctob/get-set-names))]
         (t/is (= ["bar" "foo/foo"] (vec redo-sets)))
 
         (t/testing "undo"
-          (t/is (= (ctob/get-ordered-set-names lib) undo-sets)))))
+          (t/is (= (ctob/get-set-names lib) undo-sets)))))
 
     (t/testing "into set group"
       (let [file (setup-file #(-> %
@@ -541,13 +541,13 @@
                                                                                 :position :bot})
             redo (thf/apply-changes file changes)
             redo-sets (-> (tht/get-tokens-lib redo)
-                          (ctob/get-ordered-set-names))
+                          (ctob/get-set-names))
             undo (thf/apply-undo-changes redo changes)
             undo-sets (-> (tht/get-tokens-lib undo)
-                          (ctob/get-ordered-set-names))]
+                          (ctob/get-set-names))]
         (t/is (= ["bar/foo/foo" "bar/bar"] (vec redo-sets)))
         (t/testing "undo"
-          (t/is (= (ctob/get-ordered-set-names lib) undo-sets))))
+          (t/is (= (ctob/get-set-names lib) undo-sets))))
 
       (t/testing "edge-cases:"
         (t/testing "prevent overriding set to identical path"
