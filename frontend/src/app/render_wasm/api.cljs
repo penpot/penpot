@@ -1040,7 +1040,7 @@
                              serializers #js{:blur-type (unchecked-get module "RawBlurType")
                                              :blend-mode (unchecked-get module "RawBlendMode")
                                              :bool-type (unchecked-get module "RawBoolType")
-                                             :font-style (unchecked-get module "FontStyle")
+                                             :font-style (unchecked-get module "RawFontStyle")
                                              :flex-direction (unchecked-get module "RawFlexDirection")
                                              :grid-direction (unchecked-get module "RawGridDirection")
                                              :grow-type (unchecked-get module "GrowType")

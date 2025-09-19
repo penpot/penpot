@@ -572,10 +572,12 @@ impl RawTextData {
     }
 }
 
+// TODO: maybe move this to the wasm module?
 pub struct RawTextData {
     pub paragraph: Paragraph,
 }
 
+// TODO: maybe move this to the wasm module?
 impl From<&Vec<u8>> for RawTextData {
     fn from(bytes: &Vec<u8>) -> Self {
         let paragraph = RawParagraphData::try_from(&bytes[..RAW_PARAGRAPH_DATA_SIZE]).unwrap();
@@ -596,12 +598,10 @@ impl From<&Vec<u8>> for RawTextData {
 
             let font_id = uuid_from_u32(text_leaf.font_id);
             let font_variant_id = uuid_from_u32(text_leaf.font_variant_id);
+            let font_style = crate::wasm::fonts::RawFontStyle::from(text_leaf.font_style);
 
-            let font_family = FontFamily::new(
-                font_id,
-                text_leaf.font_weight as u32,
-                text_leaf.font_style.into(),
-            );
+            let font_family =
+                FontFamily::new(font_id, text_leaf.font_weight as u32, font_style.into());
 
             let new_text_leaf = TextLeaf::new(
                 text,
