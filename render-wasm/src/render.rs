@@ -1171,7 +1171,7 @@ impl RenderState {
             plain_shape.to_mut().add_stroke(Stroke {
                 fill: Fill::Solid(SolidColor(skia::Color::BLACK)),
                 width: stroke.width,
-                style: stroke.style.clone(),
+                style: stroke.style,
                 cap_end: stroke.cap_end,
                 cap_start: stroke.cap_start,
                 kind: stroke.kind,

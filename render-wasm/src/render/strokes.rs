@@ -182,7 +182,6 @@ fn handle_stroke_cap(
 ) {
     paint.set_style(skia::PaintStyle::Fill);
     match cap {
-        StrokeCap::None => {}
         StrokeCap::LineArrow => {
             // We also draw this square cap to fill the gap between the path and the arrow
             draw_square_cap(canvas, paint, p1, p2, width, 0.);
@@ -241,23 +240,27 @@ fn handle_stroke_caps(
             paint_stroke.set_image_filter(filter.clone());
         }
 
-        handle_stroke_cap(
-            canvas,
-            stroke.cap_start,
-            stroke.width,
-            &mut paint_stroke,
-            first_point,
-            &points[1],
-        );
+        if let Some(cap) = stroke.cap_start {
+            handle_stroke_cap(
+                canvas,
+                cap,
+                stroke.width,
+                &mut paint_stroke,
+                first_point,
+                &points[1],
+            );
+        }
 
-        handle_stroke_cap(
-            canvas,
-            stroke.cap_end,
-            stroke.width,
-            &mut paint_stroke,
-            last_point,
-            &points[c_points - 2],
-        );
+        if let Some(cap) = stroke.cap_end {
+            handle_stroke_cap(
+                canvas,
+                cap,
+                stroke.width,
+                &mut paint_stroke,
+                last_point,
+                &points[c_points - 2],
+            );
+        }
     }
 }
 
