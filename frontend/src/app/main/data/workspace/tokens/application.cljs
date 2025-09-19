@@ -498,7 +498,7 @@
                        (rx/of
                         (st/emit! (ev/event {::ev/name "apply-tokens"
                                              :type type
-                                             :applyed-to attributes
+                                             :applied-to attributes
                                              :applied-to-variant any-variant?}))
                         (dwu/start-undo-transaction undo-id)
                         (dwsh/update-shapes shape-ids (fn [shape]
