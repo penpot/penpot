@@ -1,9 +1,36 @@
+use macros::ToJs;
+
 use crate::mem;
 use crate::shapes::{GrowType, RawTextData, Type};
 use crate::textlayout::{
     auto_height, build_paragraphs_with_width, paragraph_builder_group_from_text,
 };
 use crate::{with_current_shape, with_current_shape_mut, STATE};
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+#[allow(dead_code)]
+pub enum RawGrowType {
+    Fixed = 0,
+    AutoWidth = 1,
+    AutoHeight = 2,
+}
+
+impl From<u8> for RawGrowType {
+    fn from(value: u8) -> Self {
+        unsafe { std::mem::transmute(value) }
+    }
+}
+
+impl From<RawGrowType> for GrowType {
+    fn from(value: RawGrowType) -> Self {
+        match value {
+            RawGrowType::Fixed => GrowType::Fixed,
+            RawGrowType::AutoWidth => GrowType::AutoWidth,
+            RawGrowType::AutoHeight => GrowType::AutoHeight,
+        }
+    }
+}
 
 #[no_mangle]
 pub extern "C" fn clear_shape_text() {
@@ -26,9 +53,11 @@ pub extern "C" fn set_shape_text_content() {
 
 #[no_mangle]
 pub extern "C" fn set_shape_grow_type(grow_type: u8) {
+    let grow_type = RawGrowType::from(grow_type);
+
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
-            text_content.set_grow_type(GrowType::from(grow_type));
+            text_content.set_grow_type(grow_type.into());
         }
     });
 }

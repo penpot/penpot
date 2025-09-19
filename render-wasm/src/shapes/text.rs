@@ -4,7 +4,6 @@ use crate::{
     textlayout::paragraph_builder_group_from_text,
 };
 
-use macros::ToJs;
 use skia_safe::{
     self as skia,
     paint::{self, Paint},
@@ -19,26 +18,11 @@ use crate::utils::uuid_from_u32;
 use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum GrowType {
-    Fixed = 0,
-    AutoWidth = 1,
-    AutoHeight = 2,
-}
-
-// TODO: maybe move this to the wasm module?
-impl GrowType {
-    // TODO: use transmute
-    pub fn from(grow_type: u8) -> Self {
-        match grow_type {
-            0 => Self::Fixed,
-            1 => Self::AutoWidth,
-            2 => Self::AutoHeight,
-            _ => unreachable!(),
-        }
-    }
+    Fixed,
+    AutoWidth,
+    AutoHeight,
 }
 
 #[derive(Debug, PartialEq, Clone)]
