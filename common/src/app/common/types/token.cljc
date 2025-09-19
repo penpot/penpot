@@ -26,6 +26,27 @@
        (mu/keys)
        (into #{})))
 
+(defn find-token-value-references
+  "Returns set of token references found in `token-value`.
+
+  Used for checking if a token has a reference in the value.
+  Token references are strings delimited by curly braces.
+  E.g.: {foo.bar.baz} -> foo.bar.baz"
+  [token-value]
+  (if (string? token-value)
+    (some->> (re-seq #"\{([^}]*)\}" token-value)
+             (map second)
+             (into #{}))
+    #{}))
+
+(defn token-value-self-reference?
+  "Check if the token is self referencing with its `token-name` in `token-value`.
+  Simple 1 level check, doesn't account for circular self refernces across multiple tokens."
+  [token-name token-value]
+  (let [token-references (find-token-value-references token-value)
+        self-reference? (get token-references token-name)]
+    self-reference?))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

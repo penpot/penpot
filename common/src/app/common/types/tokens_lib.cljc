@@ -182,27 +182,6 @@
   [token]
   (get-path (:name token) token-separator))
 
-(defn find-token-value-references
-  "Returns set of token references found in `token-value`.
-
-  Used for checking if a token has a reference in the value.
-  Token references are strings delimited by curly braces.
-  E.g.: {foo.bar.baz} -> foo.bar.baz"
-  [token-value]
-  (if (string? token-value)
-    (some->> (re-seq #"\{([^}]*)\}" token-value)
-             (map second)
-             (into #{}))
-    #{}))
-
-(defn token-value-self-reference?
-  "Check if the token is self referencing with its `token-name` in `token-value`.
-  Simple 1 level check, doesn't account for circular self refernces across multiple tokens."
-  [token-name token-value]
-  (let [token-references (find-token-value-references token-value)
-        self-reference? (get token-references token-name)]
-    self-reference?))
-
 (defn group-by-type [tokens]
   (let [tokens' (if (or (map? tokens)
                         (d/ordered-map? tokens))
@@ -537,34 +516,33 @@
 ;; === TokenSets (collection)
 
 (defprotocol ITokenSets
-  "Collection of sets and set groups.
-
-  Naming conventions:
-    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
-    Set final name or fname: the last part of the name \"some-set\".
-    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
-    Set path str:            the set path as a string \"some-group/some-subgroup\".
-    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
-    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
-
-    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
-    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
-    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
-    Prefixed set final name or pfname: a final name with prefix \"S-some-set\"."
-  (add-set [_ token-set] "add a set to the library, at the end")
-  (update-set [_ id f] "modify a set in the library")
-  (delete-set [_ id] "delete a set in the library and disable it in all themes")
-  (move-set [_ from-path to-path before-path before-group?] "Move token set at `from-path` to `to-path` and order it before `before-path` with `before-group?`.")
-  (move-set-group [_ from-path to-path before-path before-group?] "Move token set group at `from-path` to `to-path` and order it before `before-path` with `before-group?`.")
-  (set-count [_] "get the total number if sets in the library")
-  (get-set-tree [_] "get a nested tree of all sets in the library")
-  (get-sets [_] "get an ordered sequence of all sets in the library")
-  (get-sets-at-prefix-path- [_ prefixed-path-str] "get an ordered sequence of sets at `prefixed-path-str` in the library")
-  (get-sets-at-path [_ path-str] "get an ordered sequence of sets at `path` in the library")
-  (rename-set-group [_ from-path-str to-path-str] "renames set groups and all child set names from `from-path-str` to `to-path-str`")
-  (get-ordered-set-names [_] "get an ordered sequence of all sets names in the library")
-  (get-set [_ id] "get a set looking by id")
-  (get-set-by-name [_ name] "get a set looking by name"))
+  "Collection of sets and set groups."
+  (add-set [_ token-set]
+    "Add a set to the library, at the end of the list")
+  (update-set [_ id f]
+    "Modify a set in the library")
+  (delete-set [_ id]
+    "Delete a set in the library and remove it from all themes")
+  (move-set [_ from-path to-path before-path before-group?]
+    "Move token set at `from-path` to `to-path` and order it before `before-path` with `before-group?`")
+  (move-set-group [_ from-path to-path before-path before-group?]
+    "Move token set group at `from-path` to `to-path` and order it before `before-path` with `before-group?`.")
+  (rename-set-group [_ from-path-str to-path-str]
+    "Renames set groups and all child set names from `from-path-str` to `to-path-str`")
+  (set-count [_]
+    "Get the total number if sets in the library")
+  (get-set [_ id]
+    "Get a set looking by id")
+  (get-set-by-name [_ name]
+    "Get a set looking by name")
+  (get-sets [_]
+    "Get an ordered sequence of all sets in the library")
+  (get-set-names [_]
+    "Get an ordered sequence of all sets names in the library")
+  (get-set-tree [_]
+    "Get a nested tree of all sets in the library")
+  (get-sets-at-path [_ path-str]
+    "Get an ordered sequence of sets under `path` in the library"))
 
 (def ^:private schema:token-set-node
   [:schema {:registry {::node
@@ -606,12 +584,12 @@
 
 (defprotocol ITokenTheme
   (set-sets [_ set-names] "set the active token sets")
-  (enable-set [_ set-name] "enable set in theme")
-  (enable-sets [_ set-names] "enable sets in theme")
-  (disable-set [_ set-name] "disable set in theme")
-  (disable-sets [_ set-names] "disable sets in theme")
+  (enable-set [_ set-name] "enable one set in theme")
+  (enable-sets [_ set-names] "enable several sets in theme")
+  (disable-set [_ set-name] "disable one set in theme")
+  (disable-sets [_ set-names] "disable several sets in theme")
   (toggle-set [_ set-name] "toggle a set enabled / disabled in the theme")
-  (update-set-name [_ prev-set-name set-name] "update set-name from `prev-set-name` to `set-name` when it exists")
+  (update-set-name [_ prev-set-name set-name] "update set-name when it exists")
   (theme-path [_] "get `theme-path` from theme")
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
   (hidden-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
@@ -783,6 +761,7 @@
 ;; === TokenThemes (collection)
 
 (defprotocol ITokenThemes
+  "Collection of themes in groups"
   (add-theme [_ token-theme] "add a theme to the library, at the end")
   (update-theme [_ group name f] "modify a theme in the ilbrary")
   (delete-theme [_ group name] "delete a theme in the library")
@@ -977,6 +956,19 @@ Will return a value that matches this schema:
        (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
 
   ITokenSets
+  ;  Naming conventions:
+  ;  (TODO: this will disappear after refactoring the internal structure of TokensLib).
+  ;    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
+  ;    Set final name or fname: the last part of the name \"some-set\".
+  ;    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
+  ;    Set path str:            the set path as a string \"some-group/some-subgroup\".
+  ;    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
+  ;    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
+
+  ;    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
+  ;    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
+  ;    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
+  ;    Prefixed set final name or pfname: a final name with prefix \"S-some-set\".
   (add-set [_ token-set]
     (assert (token-set? token-set) "expected valid token-set")
     (let [path (get-set-prefixed-path token-set)]
@@ -1120,11 +1112,6 @@ Will return a value that matches this schema:
     (->> (tree-seq d/ordered-map? vals sets)
          (filter (partial instance? TokenSet))))
 
-  (get-sets-at-prefix-path- [_ prefixed-path-str]
-    (some->> (get-in sets (split-set-name prefixed-path-str))
-             (tree-seq d/ordered-map? vals)
-             (filter (partial instance? TokenSet))))
-
   (get-sets-at-path [_ path]
     (some->> (map add-set-path-group-prefix path)
              (get-in sets)
@@ -1142,7 +1129,7 @@ Will return a value that matches this schema:
                                         (rename set' (str to-path-str (str/strip-prefix (get-name set') from-path-str))))))
        this sets)))
 
-  (get-ordered-set-names [this]
+  (get-set-names [this]
     (map get-name (get-sets this)))
 
   (set-count [this]
@@ -1302,10 +1289,13 @@ Will return a value that matches this schema:
   (sets-at-path-all-active? [this group-path]
     (let [active-set-names (get-active-themes-set-names this)
           prefixed-path-str (set-group-path->set-group-prefixed-path-str group-path)]
+
       (if (seq active-set-names)
-        (let [path-active-set-names (->> (get-sets-at-prefix-path- this prefixed-path-str)
-                                         (map get-name)
-                                         (into #{}))
+        (let [path-active-set-names (some->> (get-in sets (split-set-name prefixed-path-str))
+                                             (tree-seq d/ordered-map? vals)
+                                             (filter (partial instance? TokenSet))
+                                             (map get-name)
+                                             (into #{}))
               difference (set/difference path-active-set-names active-set-names)]
           (cond
             (empty? difference) :all
@@ -1315,7 +1305,7 @@ Will return a value that matches this schema:
 
   (get-tokens-in-active-sets [this]
     (let [theme-set-names  (get-active-themes-set-names this)
-          all-set-names    (get-ordered-set-names this)
+          all-set-names    (get-set-names this)
           active-set-names (filter theme-set-names all-set-names)
           tokens           (reduce (fn [tokens set-name]
                                      (let [set (get-set-by-name this set-name)]
@@ -1796,7 +1786,7 @@ Will return a value that matches this schema:
                   (into {}))]
     (-> sets
         (assoc "$themes.json" themes)
-        (assoc "$metadata.json" {"tokenSetOrder" (get-ordered-set-names tokens-lib)
+        (assoc "$metadata.json" {"tokenSetOrder" (get-set-names tokens-lib)
                                  "activeThemes" active-themes
                                  "activeSets" (get-active-themes-set-names tokens-lib)}))))
 

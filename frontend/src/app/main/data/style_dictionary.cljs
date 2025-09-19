@@ -12,7 +12,7 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.types.token :as ctt]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.tinycolor :as tinycolor]
    [app.main.data.workspace.tokens.errors :as wte]
@@ -88,8 +88,8 @@
       out-of-bounds
       {:errors [(wte/error-with-value :error.token/number-too-large value)]}
 
-      (seq (ctob/find-token-value-references value))
-      (let [references (seq (ctob/find-token-value-references value))]
+      (seq (cto/find-token-value-references value))
+      (let [references (seq (cto/find-token-value-references value))]
         {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
          :references references})
 
@@ -110,7 +110,7 @@
       parsed-value
       (if out-of-bounds
         {:errors [(wte/error-with-value :error.token/number-too-large value)]}
-        (if-let [references (seq (ctob/find-token-value-references value))]
+        (if-let [references (seq (cto/find-token-value-references value))]
           {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
            :references references}
           {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]})))))
@@ -120,10 +120,10 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
-  (let [missing-references? (seq (ctob/find-token-value-references value))
+  (let [missing-references? (seq (cto/find-token-value-references value))
         parsed-value (cft/parse-token-value value)
         out-of-scope (not (<= 0 (:value parsed-value) 1))
-        references (seq (ctob/find-token-value-references value))]
+        references (seq (cto/find-token-value-references value))]
     (cond (and parsed-value (not out-of-scope))
           parsed-value
 
@@ -144,10 +144,10 @@
   If the `value` is not parseable and/or has missing references returns a map with `:errors`.
   If the `value` is parseable but is out of range returns a map with `warnings`."
   [value]
-  (let [missing-references? (seq (ctob/find-token-value-references value))
+  (let [missing-references? (seq (cto/find-token-value-references value))
         parsed-value (cft/parse-token-value value)
         out-of-scope (< (:value parsed-value) 0)
-        references (seq (ctob/find-token-value-references value))]
+        references (seq (cto/find-token-value-references value))]
     (cond
       (and parsed-value (not out-of-scope))
       parsed-value
@@ -179,7 +179,7 @@
   [value]
   (let [normalized-value (str/lower (str/trim value))
         valid? (contains? #{"none" "uppercase" "lowercase" "capitalize"} normalized-value)
-        references (seq (ctob/find-token-value-references value))]
+        references (seq (cto/find-token-value-references value))]
     (cond
       valid?
       {:value normalized-value}
@@ -195,8 +195,8 @@
   "Parses `value` of a text-decoration `sd-token` into a map like `{:value \"underline\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [valid-text-decoration (ctt/valid-text-decoration value)
-        references (seq (ctob/find-token-value-references value))]
+  (let [valid-text-decoration (cto/valid-text-decoration value)
+        references (seq (cto/find-token-value-references value))]
     (cond
       valid-text-decoration
       {:value valid-text-decoration}
@@ -212,8 +212,8 @@
   "Parses `value` of a font-weight `sd-token` into a map like `{:value \"700\"}` or `{:value \"700 Italic\"}`.
   If the `value` is not parseable and/or has missing references returns a map with `:errors`."
   [value]
-  (let [valid-font-weight (ctt/valid-font-weight-variant value)
-        references (seq (ctob/find-token-value-references value))]
+  (let [valid-font-weight (cto/valid-font-weight-variant value)
+        references (seq (cto/find-token-value-references value))]
     (cond
       valid-font-weight
       {:value value}
@@ -255,7 +255,7 @@
 
 (defn- parse-sd-token-font-family-value
   [value]
-  (let [missing-references (seq (some ctob/find-token-value-references value))]
+  (let [missing-references (seq (some cto/find-token-value-references value))]
     (cond
       missing-references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]
@@ -280,7 +280,7 @@
   [value]
   (let [missing-references
         (when (string? value)
-          (seq (ctob/find-token-value-references value)))]
+          (seq (cto/find-token-value-references value)))]
     (cond
       missing-references
       {:errors [(wte/error-with-value :error.style-dictionary/missing-reference missing-references)]

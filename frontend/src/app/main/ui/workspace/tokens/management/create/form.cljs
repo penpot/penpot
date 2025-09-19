@@ -12,7 +12,7 @@
    [app.common.files.tokens :as cft]
    [app.common.schema :as sm]
    [app.common.types.color :as c]
-   [app.common.types.token :as ctt]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.modal :as modal]
@@ -113,7 +113,7 @@
   (check-empty-value (:value token)))
 
 (defn check-self-reference [token-name token-value]
-  (when (ctob/token-value-self-reference? token-name token-value)
+  (when (cto/token-value-self-reference? token-name token-value)
     (wte/get-error-code :error.token/direct-self-reference)))
 
 (defn check-token-self-reference [token]
@@ -125,7 +125,7 @@
                 ;; When creating a new token we dont have a name yet or invalid name,
                 ;; but we still want to resolve the value to show in the form.
                 ;; So we use a temporary token name that hopefully doesn't clash with any of the users token names
-                (not (sm/valid? ctt/token-name-ref (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
+                (not (sm/valid? cto/token-name-ref (:name token))) (assoc :name "__PENPOT__TOKEN__NAME__PLACEHOLDER__"))
         tokens' (cond-> tokens
                   ;; Remove previous token when renaming a token
                   (not= (:name token) (:name prev-token))
@@ -182,7 +182,7 @@
 (defn check-coll-self-reference
   "Invalidate a collection of `token-vals` for a self-refernce against `token-name`.,"
   [token-name token-vals]
-  (when (some #(ctob/token-value-self-reference? token-name %) token-vals)
+  (when (some #(cto/token-value-self-reference? token-name %) token-vals)
     (wte/get-error-code :error.token/direct-self-reference)))
 
 (defn check-font-family-token-self-reference [token]
@@ -191,7 +191,7 @@
 (defn validate-font-family-token
   [props]
   (-> props
-      (update :token-value ctt/split-font-family)
+      (update :token-value cto/split-font-family)
       (assoc :validators [(fn [token]
                             (when (empty? (:value token))
                               (wte/get-error-code :error.token/empty-input)))
@@ -220,14 +220,14 @@
     ;; Entering form without a value - show no error just resolve nil
     (nil? token-value) (rx/of nil)
     ;; Validate refrence string
-    (ctt/typography-composite-token-reference? token-value) (default-validate-token props)
+    (cto/typography-composite-token-reference? token-value) (default-validate-token props)
     ;; Validate composite token
     :else
     (-> props
         (update :token-value
                 (fn [v]
                   (-> (or v {})
-                      (d/update-when :font-family #(if (string? %) (ctt/split-font-family %) %)))))
+                      (d/update-when :font-family #(if (string? %) (cto/split-font-family %) %)))))
         (assoc :validators [check-empty-typography-token
                             check-typography-token-self-reference])
         (default-validate-token))))
@@ -306,10 +306,10 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
                               ;; Style dictionary resolver needs font families to be an array of strings
                               (= :font-family (or (:type token) token-type))
-                              (update-in [(:name token) :value] ctt/split-font-family)
+                              (update-in [(:name token) :value] cto/split-font-family)
 
                               (= :typography (or (:type token) token-type))
-                              (d/update-in-when [(:name token) :font-family :value] ctt/split-font-family))
+                              (d/update-in-when [(:name token) :font-family :value] cto/split-font-family))
 
         resolved-tokens (sd/use-resolved-tokens active-theme-tokens {:cache-atom form-token-cache-atom
                                                                      :interactive? true})
@@ -791,7 +791,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
   (let [current-font* (mf/use-state (or font
                                         (some-> (mf/ref-val input-ref)
                                                 (dom/get-value)
-                                                (ctt/split-font-family)
+                                                (cto/split-font-family)
                                                 (first)
                                                 (fonts/find-font-family))))
         current-font (deref current-font*)]
@@ -871,9 +871,9 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
         (mf/use-fn
          (fn [value]
            (when value
-             (ctt/join-font-family value))))]
+             (cto/join-font-family value))))]
     [:> form*
-     (mf/spread-props props {:token (when token (update token :value ctt/join-font-family))
+     (mf/spread-props props {:token (when token (update token :value cto/join-font-family))
                              :custom-input-token-value font-picker-combobox*
                              :on-value-resolve on-value-resolve
                              :validate-token validate-font-family-token})]))
@@ -966,7 +966,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              {:aria-label label
               :placeholder placeholder
               :input-ref input-ref
-              :default-value (when value (ctt/join-font-family value))
+              :default-value (when value (cto/join-font-family value))
               :on-blur on-blur
               :on-update-value on-change
               :on-external-update-value on-external-update-value
@@ -986,7 +986,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
    {:aria-label (tr "labels.reference")
     :placeholder (tr "workspace.tokens.reference-composite")
     :icon i/text-typography
-    :default-value (when (ctt/typography-composite-token-reference? default-value) default-value)
+    :default-value (when (cto/typography-composite-token-reference? default-value) default-value)
     :on-blur on-blur
     :on-change on-update-value
     :token-resolve-result (when (or
@@ -997,7 +997,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 (mf/defc typography-inputs*
   [{:keys [default-value on-update-value on-external-update-value on-value-resolve clear-resolve-value] :rest props}]
   (let [;; Active Tab State
-        active-tab* (mf/use-state (if (ctt/typography-composite-token-reference? default-value) :reference :composite))
+        active-tab* (mf/use-state (if (cto/typography-composite-token-reference? default-value) :reference :composite))
         active-tab (deref active-tab*)
         reference-tab-active? (= :reference active-tab)
         ;; Backup value ref
@@ -1030,7 +1030,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              (let [token-type (obj/get e "tokenType")
                    token-value (dom/get-target-val e)
                    token-value (cond-> token-value
-                                 (= :font-family token-type) (ctt/split-font-family))]
+                                 (= :font-family token-type) (cto/split-font-family))]
                (swap! backup-state-ref assoc-in [:composite token-type] token-value)))
            (on-update-value e)))
 

@@ -14,6 +14,7 @@
    [app.common.test-helpers.ids-map :as thi]
    [app.common.time :as ct]
    [app.common.transit :as tr]
+   [app.common.types.token :as cto]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [clojure.test :as t]))
@@ -62,13 +63,13 @@
 
 (t/deftest find-token-value-references
   (t/testing "finds references inside curly braces in a string"
-    (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo} + {bar}")))
+    (t/is (= #{"foo" "bar"} (cto/find-token-value-references "{foo} + {bar}")))
     (t/testing "ignores extra text"
-      (t/is (= #{"foo.bar.baz"} (ctob/find-token-value-references "{foo.bar.baz} + something")))))
+      (t/is (= #{"foo.bar.baz"} (cto/find-token-value-references "{foo.bar.baz} + something")))))
   (t/testing "ignores string without references"
-    (t/is (nil? (ctob/find-token-value-references "1 + 2"))))
+    (t/is (nil? (cto/find-token-value-references "1 + 2"))))
   (t/testing "handles edge-case for extra curly braces"
-    (t/is (= #{"foo" "bar"} (ctob/find-token-value-references "{foo}} + {bar}")))))
+    (t/is (= #{"foo" "bar"} (cto/find-token-value-references "{foo}} + {bar}")))))
 
 (t/deftest make-token-set
   (let [now        (ct/now)
@@ -99,7 +100,7 @@
                        (ctob/add-set (ctob/make-token-set :name "Move")))
         move (fn [from-path to-path before-path before-group?]
                (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                    (ctob/get-ordered-set-names)
+                    (ctob/get-set-names)
                     (into [])))]
     (t/testing "move to top"
       (t/is (= ["Move" "A" "B"] (move ["Move"] ["Move"] ["A"] false))))
@@ -117,10 +118,11 @@
                        (ctob/add-set (ctob/make-token-set :name "Foo")))
         move (fn [from-path to-path before-path before-group?]
                (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                    (ctob/get-ordered-set-names)
+                    (ctob/get-set-names)
                     (into [])))]
     (t/testing "move outside of group"
       (t/is (= ["Foo/Baz" "Bar" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo"] false)))
+      (t/is (= ["Bar" "Foo/Baz" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo"] true)))
       (t/is (= ["Bar" "Foo/Baz" "Foo"] (move ["Foo" "Bar"] ["Bar"] ["Foo" "Baz"] true)))
       (t/is (= ["Foo/Baz" "Foo" "Bar"] (move ["Foo" "Bar"] ["Bar"] nil false))))
 
@@ -136,10 +138,10 @@
                        (ctob/add-set (ctob/make-token-set :name "b/b")))
         move (fn [from-path to-path before-path before-group?]
                (->> (ctob/move-set tokens-lib from-path to-path before-path before-group?)
-                    (ctob/get-ordered-set-names)
+                    (ctob/get-set-names)
                     (vec)))]
     (t/testing "move within group"
-      (t/is (= ["a/b" "a/a" "b/a" "b/b"] (vec (ctob/get-ordered-set-names tokens-lib))))
+      (t/is (= ["a/b" "a/a" "b/a" "b/b"] (vec (ctob/get-set-names tokens-lib))))
       (t/is (= ["a/a" "a/b" "b/a" "b/b"] (move ["a" "b"] ["a" "b"] nil true))))))
 
 (t/deftest move-token-set-nested-3
@@ -161,7 +163,7 @@
                                                                 :sets #{"Foo/A" "Bar/Foo"})))
           move (fn [from-path to-path before-path before-group?]
                  (->> (ctob/move-set-group tokens-lib from-path to-path before-path before-group?)
-                      (ctob/get-ordered-set-names)
+                      (ctob/get-set-names)
                       (into [])))]
       (t/is (= ["Bar/Foo" "Bar/Foo/A" "Bar/Foo/B"] (move ["Foo"] ["Bar" "Foo"] nil nil)))
       (t/is (= ["Bar/Foo" "Foo/A" "Foo/B"] (move ["Bar"] ["Bar"] ["Foo"] true)))))
@@ -297,7 +299,7 @@
         tokens-lib' (-> tokens-lib
                         (ctob/rename-set-group ["foo" "bar"] "bar-renamed")
                         (ctob/rename-set-group ["foo" "bar-renamed" "baz"] "baz-renamed"))
-        expected-set-names (ctob/get-ordered-set-names tokens-lib')
+        expected-set-names (ctob/get-set-names tokens-lib')
         expected-theme-sets (-> (ctob/get-theme tokens-lib' "" "theme")
                                 :sets)]
     (t/is (= expected-set-names
@@ -511,7 +513,7 @@
                        (ctob/add-set (ctob/make-token-set :name "group-2/set-a"))
                        (ctob/add-set (ctob/make-token-set :name "group-1/set-c")))
 
-        ordered-sets (ctob/get-ordered-set-names tokens-lib)]
+        ordered-sets (ctob/get-set-names tokens-lib)]
 
     (t/is (= ordered-sets '("group-1/set-a"
                             "group-1/set-b"
@@ -1305,7 +1307,7 @@
      (let [json (-> (slurp "test/common_tests/types/data/tokens-single-set-legacy-example.json")
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "single_set")]
-       (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
+       (t/is (= '("single_set") (ctob/get-set-names lib)))
        (t/testing "token added"
          (t/is (some? (ctob/get-token-by-name lib "single_set" "color.red.100")))))))
 
@@ -1314,7 +1316,7 @@
      (let [json (-> (slurp "test/common_tests/types/data/tokens-single-set-dtcg-example.json")
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "single_set")]
-       (t/is (= '("single_set") (ctob/get-ordered-set-names lib)))
+       (t/is (= '("single_set") (ctob/get-set-names lib)))
        (t/testing "token added"
          (t/is (some? (ctob/get-token-by-name lib "single_set" "color.red.100")))))))
 
@@ -1324,7 +1326,7 @@
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "")
            token-theme (ctob/get-theme lib "group-1" "theme-1")]
-       (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
+       (t/is (= '("core" "light" "dark" "theme") (ctob/get-set-names lib)))
        (t/testing "set exists in theme"
          (t/is (= (:group token-theme) "group-1"))
          (t/is (= (:name token-theme) "theme-1"))
@@ -1354,7 +1356,7 @@
                     (json/decode {:key-fn identity}))
            lib (ctob/parse-decoded-json json "")
            token-theme (ctob/get-theme lib "group-1" "theme-1")]
-       (t/is (= '("core" "light" "dark" "theme") (ctob/get-ordered-set-names lib)))
+       (t/is (= '("core" "light" "dark" "theme") (ctob/get-set-names lib)))
        (t/testing "set exists in theme"
          (t/is (= (:group token-theme) "group-1"))
          (t/is (= (:name token-theme) "theme-1"))
@@ -1385,7 +1387,7 @@
            lib (ctob/parse-decoded-json json "")
            themes (ctob/get-themes lib)
            first-theme (first themes)]
-       (t/is (= '("dark") (ctob/get-ordered-set-names lib)))
+       (t/is (= '("dark") (ctob/get-set-names lib)))
        (t/is (= 1 (count themes)))
        (t/testing "existing theme is default theme"
          (t/is (= (:group first-theme) ""))
