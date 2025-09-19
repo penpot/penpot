@@ -38,6 +38,7 @@
    [potok.v2.core :as ptk]))
 
 (declare token-properties)
+(declare update-layout-item-margin)
 
 ;; Events to update the value of attributes with applied tokens ---------------------------------------------------------
 
@@ -520,7 +521,7 @@
   Splits out `shape-ids` into seperate default actions:
   - Layouts take the `default` update function
   - Shapes inside layout will only take margin"
-  [{:keys [token shapes]}]
+  [{:keys [token shapes attr]}]
   (ptk/reify ::apply-spacing-token
     ptk/WatchEvent
     (watch [_ state _]
@@ -533,7 +534,7 @@
             (group-by #(if (ctsl/any-layout-immediate-child? objects %) :frame-children :other) shapes)]
 
         (rx/of
-         (apply-token {:attributes attributes
+         (apply-token {:attributes (or attr attributes)
                        :token token
                        :shape-ids (map :id other)
                        :on-update-shape on-update-shape})
@@ -558,13 +559,12 @@
             (update shape :applied-tokens remove-token))))))))
 
 (defn toggle-token
-  [{:keys [token shapes]}]
+  [{:keys [token shapes attrs]}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
     (watch [_ _ _]
       (let [{:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
-
             unapply-tokens?
             (cft/shapes-token-applied? token shapes (or all-attributes attributes))
 
@@ -578,8 +578,9 @@
            (case (:type token)
              :spacing
              (apply-spacing-token {:token token
+                                   :attr attrs
                                    :shapes shapes})
-             (apply-token {:attributes attributes
+             (apply-token {:attributes (or attrs attributes)
                            :token token
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))

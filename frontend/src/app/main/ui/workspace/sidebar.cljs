@@ -303,7 +303,6 @@
 
     [:> (mf/provider muc/sidebar) {:value :right}
      [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
-
       [:aside
        {:class (stl/css-case :right-settings-bar true
                              :not-expand (not can-be-expanded?)

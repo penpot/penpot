@@ -417,7 +417,6 @@
 
     ;; FIXME: this with effect with trigger all the time because
     ;; `config` will be always a different instance
-
     (mf/with-effect [tokens config]
       (let [cached (get @cache-atom tokens)]
         (cond

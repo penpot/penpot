@@ -420,7 +420,7 @@
         ;; also don't use the memoized version of get-attrs because it
         ;; makes no sense because the shapes object are changed on
         ;; each rerender.
-        [measure-ids measure-values]
+        [measure-ids measure-values measure-tokens]
         (get-attrs* shapes objects :measure)]
 
     [:div {:class (stl/css :options)}
@@ -434,6 +434,7 @@
         {:type type
          :ids measure-ids
          :values measure-values
+         :applied-tokens measure-tokens
          :shapes shapes}])
 
      (when (some? components)

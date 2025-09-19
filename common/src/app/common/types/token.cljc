@@ -468,3 +468,25 @@
   "Predicate if a typography composite token is a reference value - a string pointing to another reference token."
   [token-value]
   (string? token-value))
+
+(def tokens-by-input
+  "A map from input name to applicable token for that input."
+  {:width #{:sizing :dimensions}
+   :height #{:sizing :dimensions}
+   :max-width #{:sizing :dimensions}
+   :max-height #{:sizing :dimensions}
+   :x #{:spacing :dimensions}
+   :y #{:spacing :dimensions}
+   :rotation #{:number :rotation}
+   :border-radius #{:border-radius :dimensions}
+   :row-gap #{:spacing :dimensions}
+   :column-gap #{:spacing :dimensions}
+   :horizontal-padding #{:spacing :dimensions}
+   :vertical-padding #{:spacing :dimensions}
+   :sided-paddings #{:spacing :dimensions}
+   :horizontal-margin #{:spacing :dimensions}
+   :vertical-margin #{:spacing :dimensions}
+   :sided-margins #{:spacing :dimensions}
+   :line-height #{:line-height :number}
+   :font-size #{:font-size}
+   :letter-spacing #{:letter-spacing}})

@@ -33,6 +33,9 @@
         ids        (mf/with-memo [shape-id] [shape-id])
         shapes     (mf/with-memo [shape] [shape])
 
+        applied-tokens
+        (get shape :applied-tokens)
+
         stroke-values
         (select-keys shape stroke-attrs)
 
@@ -99,6 +102,7 @@
                       :type shape-type
                       :values layer-values}]
      [:> measures-menu* {:ids ids
+                         :applied-tokens applied-tokens
                          :values measure-values
                          :type shape-type
                          :shapes shapes}]

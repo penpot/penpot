@@ -37,6 +37,9 @@
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
 
+        applied-tokens
+        (get shape :applied-tokens)
+
         objects
         (mf/with-memo [shapes-with-children]
           (d/index-by :id shapes-with-children))
@@ -111,6 +114,7 @@
                       :values layer-values}]
      [:> measures-menu* {:type type
                          :ids measure-ids
+                         :applied-tokens applied-tokens
                          :values measure-values
                          :shapes shapes}]
 
