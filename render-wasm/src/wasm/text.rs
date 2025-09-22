@@ -2,10 +2,7 @@ use macros::ToJs;
 
 use crate::mem;
 use crate::shapes::{GrowType, RawTextData, Type};
-use crate::textlayout::{
-    auto_height, build_paragraphs_with_width, paragraph_builder_group_from_text,
-};
-use crate::{with_current_shape, with_current_shape_mut, STATE};
+use crate::{with_current_shape_mut, STATE};
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]
@@ -57,52 +54,38 @@ pub extern "C" fn set_shape_grow_type(grow_type: u8) {
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
-            text_content.set_grow_type(grow_type.into());
+            text_content.set_grow_type(GrowType::from(grow_type));
+        } else {
+            panic!("Trying to update grow type in a shape that it's not a text shape");
         }
     });
 }
 
 #[no_mangle]
 pub extern "C" fn get_text_dimensions() -> *mut u8 {
-    let mut width = 0.01;
-    let mut height = 0.01;
-    let mut m_width = 0.01;
+    let mut ptr = std::ptr::null_mut();
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        if let Type::Text(content) = &mut shape.shape_type {
+            let text_content_size = content.update_layout(shape.selrect);
 
-    with_current_shape!(state, |shape: &Shape| {
-        width = shape.selrect.width();
-        height = shape.selrect.height();
-
-        if let Type::Text(content) = &shape.shape_type {
-            // 1. Reset Paragraphs
-            let paragraph_width = content.width();
-            let mut paragraphs = paragraph_builder_group_from_text(content, None);
-            let built_paragraphs = build_paragraphs_with_width(&mut paragraphs, paragraph_width);
-
-            // 2. Max Width Calculation
-            m_width = built_paragraphs
-                .iter()
-                .flatten()
-                .fold(0.0, |max_width, p| f32::max(p.max_width(), max_width));
-
-            // 3. Width and Height Calculation
-            match content.grow_type() {
-                GrowType::AutoHeight => {
-                    let mut paragraph_height = paragraph_builder_group_from_text(content, None);
-                    height = auto_height(&mut paragraph_height, paragraph_width).ceil();
-                }
-                GrowType::AutoWidth => {
-                    width = paragraph_width;
-                    let mut paragraph_height = paragraph_builder_group_from_text(content, None);
-                    height = auto_height(&mut paragraph_height, paragraph_width).ceil();
-                }
-                GrowType::Fixed => {}
-            }
+            let mut bytes = vec![0; 12];
+            bytes[0..4].clone_from_slice(&text_content_size.width.to_le_bytes());
+            bytes[4..8].clone_from_slice(&text_content_size.height.to_le_bytes());
+            bytes[8..12].clone_from_slice(&text_content_size.max_width.to_le_bytes());
+            ptr = mem::write_bytes(bytes)
         }
     });
 
-    let mut bytes = vec![0; 12];
-    bytes[0..4].clone_from_slice(&width.to_le_bytes());
-    bytes[4..8].clone_from_slice(&height.to_le_bytes());
-    bytes[8..12].clone_from_slice(&m_width.to_le_bytes());
-    mem::write_bytes(bytes)
+    // FIXME: I think it should be better if instead of returning
+    // a NULL ptr we failed gracefully.
+    ptr
+}
+
+#[no_mangle]
+pub extern "C" fn update_shape_text_layout() {
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        if let Type::Text(text_content) = &mut shape.shape_type {
+            text_content.update_layout(shape.selrect);
+        }
+    });
 }

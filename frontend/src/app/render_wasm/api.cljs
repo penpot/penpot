@@ -602,8 +602,11 @@
         shadows))
 
 (defn set-shape-text-content
+  "This function sets shape text content and returns a stream that loads the needed fonts asynchronously"
   [shape-id content]
+
   (h/call wasm/internal-module "_clear_shape_text")
+
   (set-shape-vertical-align (get content :vertical-align))
 
   (let [paragraph-set (first (get content :children))
@@ -635,8 +638,12 @@
         (let [updated-fonts
               (-> fonts
                   (cond-> ^boolean emoji? (f/add-emoji-font))
-                  (f/add-noto-fonts langs))]
-          (f/store-fonts shape-id updated-fonts))))))
+                  (f/add-noto-fonts langs))
+              result (f/store-fonts shape-id updated-fonts)]
+
+          (h/call wasm/internal-module "_update_shape_text_layout")
+
+          result)))))
 
 (defn set-shape-text
   [shape-id content]

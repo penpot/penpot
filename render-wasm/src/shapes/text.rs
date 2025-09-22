@@ -1,28 +1,138 @@
 use crate::{
     math::{Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
-    textlayout::paragraph_builder_group_from_text,
 };
 
+use core::f32;
+use macros::ToJs;
 use skia_safe::{
     self as skia,
     paint::{self, Paint},
+    textlayout::ParagraphBuilder,
     textlayout::ParagraphStyle,
 };
 use std::collections::HashSet;
 
 use super::FontFamily;
 use crate::shapes::{self, merge_fills};
-use crate::textlayout::{auto_height, auto_width};
 use crate::utils::uuid_from_u32;
+use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+// TODO: maybe move this to the wasm module?
+pub type ParagraphBuilderGroup = Vec<ParagraphBuilder>;
+
+#[repr(u8)]
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 pub enum GrowType {
-    Fixed,
-    AutoWidth,
-    AutoHeight,
+    Fixed = 0,
+    AutoWidth = 1,
+    AutoHeight = 2,
+}
+
+#[derive(Debug, PartialEq, Copy, Clone)]
+pub struct TextContentSize {
+    pub width: f32,
+    pub height: f32,
+    pub max_width: f32,
+}
+
+const DEFAULT_TEXT_CONTENT_SIZE: f32 = 0.01;
+
+impl TextContentSize {
+    pub fn default() -> Self {
+        Self {
+            width: DEFAULT_TEXT_CONTENT_SIZE,
+            height: DEFAULT_TEXT_CONTENT_SIZE,
+            max_width: DEFAULT_TEXT_CONTENT_SIZE,
+        }
+    }
+
+    pub fn new(width: f32, height: f32, max_width: f32) -> Self {
+        Self {
+            width,
+            height,
+            max_width,
+        }
+    }
+
+    pub fn new_with_size(width: f32, height: f32) -> Self {
+        Self {
+            width,
+            height,
+            max_width: DEFAULT_TEXT_CONTENT_SIZE,
+        }
+    }
+
+    pub fn set_size(&mut self, width: f32, height: f32) {
+        self.width = width;
+        self.height = height;
+    }
+
+    pub fn copy_finite_size(&mut self, size: TextContentSize) {
+        if f32::is_finite(size.width) {
+            self.width = size.width;
+        }
+        if f32::is_finite(size.max_width) {
+            self.max_width = size.max_width;
+        } else {
+            self.max_width = size.width;
+        }
+        if f32::is_finite(size.height) {
+            self.height = size.height;
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct TextContentLayoutResult(
+    Vec<ParagraphBuilderGroup>,
+    Vec<Vec<skia::textlayout::Paragraph>>,
+    TextContentSize,
+);
+
+#[derive(Debug)]
+pub struct TextContentLayout {
+    pub paragraph_builders: Vec<ParagraphBuilderGroup>,
+    pub paragraphs: Vec<Vec<skia_safe::textlayout::Paragraph>>,
+}
+
+impl Clone for TextContentLayout {
+    fn clone(&self) -> Self {
+        Self {
+            paragraph_builders: vec![],
+            paragraphs: vec![],
+        }
+    }
+}
+
+impl PartialEq for TextContentLayout {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl TextContentLayout {
+    pub fn new() -> Self {
+        Self {
+            paragraph_builders: vec![],
+            paragraphs: vec![],
+        }
+    }
+
+    pub fn set(
+        &mut self,
+        paragraph_builders: Vec<ParagraphBuilderGroup>,
+        paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
+    ) {
+        self.paragraph_builders = paragraph_builders;
+        self.paragraphs = paragraphs;
+    }
+
+    pub fn needs_update(&self) -> bool {
+        self.paragraph_builders.is_empty() || self.paragraphs.is_empty()
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -30,6 +140,8 @@ pub struct TextContent {
     pub paragraphs: Vec<Paragraph>,
     pub bounds: Rect,
     pub grow_type: GrowType,
+    pub size: TextContentSize,
+    pub layout: TextContentLayout,
 }
 
 impl TextContent {
@@ -38,6 +150,8 @@ impl TextContent {
             paragraphs: Vec::new(),
             bounds,
             grow_type,
+            size: TextContentSize::default(),
+            layout: TextContentLayout::new(),
         }
     }
 
@@ -48,6 +162,8 @@ impl TextContent {
             paragraphs,
             bounds,
             grow_type,
+            size: TextContentSize::new_with_size(bounds.width(), bounds.height()),
+            layout: TextContentLayout::new(),
         }
     }
 
@@ -79,9 +195,7 @@ impl TextContent {
 
     pub fn width(&self) -> f32 {
         if self.grow_type() == GrowType::AutoWidth {
-            let temp_paragraphs = paragraph_builder_group_from_text(self, None);
-            let mut temp_paragraphs = temp_paragraphs;
-            auto_width(&mut temp_paragraphs, f32::MAX).ceil()
+            self.size.width
         } else {
             self.bounds.width()
         }
@@ -96,10 +210,7 @@ impl TextContent {
     }
 
     pub fn visual_bounds(&self) -> (f32, f32) {
-        let paragraph_width = self.width();
-        let mut paragraphs = paragraph_builder_group_from_text(self, None);
-        let paragraph_height = auto_height(&mut paragraphs, paragraph_width);
-        (paragraph_width, paragraph_height)
+        (self.size.width, self.size.height)
     }
 
     pub fn transform(&mut self, transform: &Matrix) {
@@ -111,6 +222,138 @@ impl TextContent {
         let p2 = transform.map_point(skia::Point::new(right, bottom));
         self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
     }
+
+    /// Builds the ParagraphBuilders necessary to render
+    /// this text.
+    pub fn paragraph_builder_group_from_text(
+        &self,
+        use_shadow: Option<bool>,
+    ) -> Vec<ParagraphBuilderGroup> {
+        let fonts = get_font_collection();
+        let fallback_fonts = get_fallback_fonts();
+        let mut paragraph_group = Vec::new();
+
+        for paragraph in self.paragraphs() {
+            let paragraph_style = paragraph.paragraph_to_style();
+            let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
+            for leaf in paragraph.children() {
+                let remove_alpha = use_shadow.unwrap_or(false) && !leaf.is_transparent();
+                let text_style = leaf.to_style(&self.bounds(), fallback_fonts, remove_alpha);
+                let text = leaf.apply_text_transform();
+                builder.push_style(&text_style);
+                builder.add_text(&text);
+            }
+            paragraph_group.push(vec![builder]);
+        }
+
+        paragraph_group
+    }
+
+    /// Performs a text auto layout without width limits.
+    /// This should be the same as text_auto_layout.
+    fn build_paragraphs_from_paragraph_builders(
+        &self,
+        paragraph_builders: &mut [ParagraphBuilderGroup],
+        width: f32,
+    ) -> Vec<Vec<skia::textlayout::Paragraph>> {
+        let paragraphs = paragraph_builders
+            .iter_mut()
+            .map(|builders| {
+                builders
+                    .iter_mut()
+                    .map(|builder| {
+                        let mut paragraph = builder.build();
+                        // For auto-width, always layout with infinite width first to get intrinsic width
+                        paragraph.layout(width);
+                        paragraph
+                    })
+                    .collect()
+            })
+            .collect();
+        paragraphs
+    }
+
+    /// Performs an Auto Width text layout.
+    fn text_layout_auto_width(&self) -> TextContentLayoutResult {
+        // TODO: Deberíamos comprobar primero que los párrafos
+        // no están generados.
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
+        let (width, height) =
+            paragraphs
+                .iter()
+                .flatten()
+                .fold((0.0, 0.0), |(auto_width, auto_height), paragraph| {
+                    (
+                        f32::max(paragraph.max_intrinsic_width(), auto_width),
+                        auto_height + paragraph.height(),
+                    )
+                });
+
+        let size = TextContentSize::new(width.ceil(), height.ceil(), width.ceil());
+        TextContentLayoutResult(paragraph_builders, paragraphs, size)
+    }
+
+    /// Private function that performs
+    /// Performs an Auto Height text layout.
+    fn text_layout_auto_height(&self) -> TextContentLayoutResult {
+        let width = self.width();
+        // TODO: Deberíamos primero comprobar si existen los
+        // paragraph builders para poder obtener el layout.
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::INFINITY);
+        let height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
+
+        let size = TextContentSize::new_with_size(width.ceil(), height.ceil());
+        TextContentLayoutResult(paragraph_builders, paragraphs, size)
+    }
+
+    /// Performs a Fixed text layout.
+    fn text_layout_fixed(&self) -> TextContentLayoutResult {
+        let width = self.width();
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+
+        let size = TextContentSize::new_with_size(width.ceil(), f32::INFINITY);
+        TextContentLayoutResult(paragraph_builders, paragraphs, size)
+    }
+
+    pub fn needs_update_layout(&self) -> bool {
+        self.layout.needs_update()
+    }
+
+    pub fn set_layout_from_result(&mut self, result: TextContentLayoutResult) {
+        self.layout.set(result.0, result.1);
+        self.size.copy_finite_size(result.2);
+    }
+
+    pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        self.size.set_size(selrect.width(), selrect.height());
+        // 3. Width and Height Calculation
+        match self.grow_type() {
+            GrowType::AutoHeight => {
+                let result = self.text_layout_auto_height();
+                self.set_layout_from_result(result);
+            }
+            GrowType::AutoWidth => {
+                let result = self.text_layout_auto_width();
+                self.set_layout_from_result(result);
+            }
+            GrowType::Fixed => {
+                let result = self.text_layout_fixed();
+                self.set_layout_from_result(result);
+            }
+        }
+        self.size
+    }
 }
 
 impl Default for TextContent {
@@ -119,6 +362,8 @@ impl Default for TextContent {
             paragraphs: vec![],
             bounds: Rect::default(),
             grow_type: GrowType::Fixed,
+            size: TextContentSize::default(),
+            layout: TextContentLayout::new(),
         }
     }
 }

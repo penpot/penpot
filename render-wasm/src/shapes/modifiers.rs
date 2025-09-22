@@ -14,7 +14,6 @@ use crate::shapes::{
     TransformEntry, Type,
 };
 use crate::state::{ShapesPool, State};
-use crate::textlayout::{auto_height, paragraph_builder_group_from_text};
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
@@ -196,12 +195,15 @@ fn propagate_transform(
 
     let mut transform = entry.transform;
 
-    if let Type::Text(content) = &shape.shape_type {
-        match content.grow_type() {
+    // NOTA: No puedo utilizar un clone porque entonces estaríamos
+    // perdiendo la referencia al contenido del layout...
+    if let Type::Text(text_content) = &mut shape.shape_type.clone() {
+        if text_content.needs_update_layout() {
+            text_content.update_layout(shape.selrect);
+        }
+        match text_content.grow_type() {
             GrowType::AutoHeight => {
-                let paragraph_width = shape_bounds_after.width();
-                let mut paragraphs = paragraph_builder_group_from_text(content, None);
-                let height = auto_height(&mut paragraphs, paragraph_width);
+                let height = text_content.size.height;
                 let resize_transform = math::resize_matrix(
                     &shape_bounds_after,
                     &shape_bounds_after,
@@ -212,15 +214,10 @@ fn propagate_transform(
                 transform.post_concat(&resize_transform);
             }
             GrowType::AutoWidth => {
-                let paragraph_width = content.width();
-                let mut paragraphs = paragraph_builder_group_from_text(content, None);
-                let height = auto_height(&mut paragraphs, paragraph_width);
-                let resize_transform = math::resize_matrix(
-                    &shape_bounds_after,
-                    &shape_bounds_after,
-                    paragraph_width,
-                    height,
-                );
+                let width = text_content.width();
+                let height = text_content.size.height;
+                let resize_transform =
+                    math::resize_matrix(&shape_bounds_after, &shape_bounds_after, width, height);
                 shape_bounds_after = shape_bounds_after.transform(&resize_transform);
                 transform.post_concat(&resize_transform);
             }

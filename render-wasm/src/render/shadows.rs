@@ -1,10 +1,9 @@
 use super::{RenderState, SurfaceId};
 use crate::render::strokes;
-use crate::shapes::{Shadow, Shape, Stroke, Type};
+use crate::shapes::{ParagraphBuilderGroup, Shadow, Shape, Stroke, Type};
 use skia_safe::{canvas::SaveLayerRec, Paint, Path};
 
 use crate::render::text;
-use crate::textlayout::ParagraphBuilderGroup;
 
 // Fill Shadows
 pub fn render_fill_inner_shadows(

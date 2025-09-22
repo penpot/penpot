@@ -769,7 +769,7 @@ impl Shape {
             bounds_rect
         };
 
-        if let Type::Text(ref text_content) = self.shape_type {
+        if let Type::Text(text_content) = &self.shape_type {
             let (width, height) = text_content.visual_bounds();
             rect.right = rect.left + width;
             rect.bottom = rect.top + height;

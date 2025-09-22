@@ -1,4 +1,4 @@
-use crate::{shapes::text::TextContent, textlayout::paragraph_builder_group_from_text};
+use crate::shapes::text::TextContent;
 use skia_safe::{
     self as skia, textlayout::Paragraph as SkiaParagraph, FontMetrics, Point, Rect, TextBlob,
 };
@@ -12,17 +12,16 @@ pub struct TextPaths(TextContent);
 // It's an example of how to convert texts to paths
 #[allow(dead_code)]
 impl TextPaths {
-    pub fn new(content: TextContent) -> Self {
-        Self(content)
+    pub fn new(text_content: TextContent) -> Self {
+        Self(text_content)
     }
 
     pub fn get_paths(&self, antialias: bool) -> Vec<(skia::Path, skia::Paint)> {
         let mut paths = Vec::new();
-
         let mut offset_y = self.bounds.y();
-        let mut paragraphs = paragraph_builder_group_from_text(&self.0, None);
+        let mut paragraph_builders = self.0.paragraph_builder_group_from_text(None);
 
-        for paragraphs in paragraphs.iter_mut() {
+        for paragraphs in paragraph_builders.iter_mut() {
             for paragraph_builder in paragraphs.iter_mut() {
                 // 1. Get paragraph and set the width layout
                 let mut skia_paragraph = paragraph_builder.build();

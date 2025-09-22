@@ -471,6 +471,7 @@ export function updateTextShape(root, fonts) {
 
     Module._set_shape_text_content();
   }
+  Module._update_shape_text_layout();
 }
 
 export function addTextShape(text, fonts) {
