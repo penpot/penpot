@@ -1,4 +1,3 @@
-mod blend;
 mod debug;
 mod fills;
 pub mod filters;
@@ -37,7 +36,6 @@ use crate::wapi;
 use crate::math;
 use crate::math::bools;
 
-pub use blend::BlendMode;
 pub use fonts::*;
 pub use images::*;
 
@@ -253,7 +251,7 @@ pub(crate) struct RenderState {
     // can affect its child elements if they don't specify one themselves. If the planned
     // migration to remove group-level fills is completed, this code should be removed.
     pub nested_fills: Vec<Vec<Fill>>,
-    pub nested_blurs: Vec<Option<Blur>>,
+    pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub show_grid: Option<Uuid>,
     pub focus_mode: FocusMode,
 }
@@ -568,14 +566,15 @@ impl RenderState {
             }
         }
 
-        if !shape.blur.hidden && shape.blur.blur_type == BlurType::LayerBlur {
-            nested_blur_value += shape.blur.value.powf(2.);
+        if let Some(blur) = shape.blur {
+            if !blur.hidden {
+                nested_blur_value += blur.value.powf(2.);
+            }
         }
 
         if nested_blur_value > 0. {
-            shape
-                .to_mut()
-                .set_blur(BlurType::LayerBlur as u8, false, nested_blur_value.sqrt());
+            let blur = Blur::new(BlurType::LayerBlur, false, nested_blur_value.sqrt());
+            shape.to_mut().set_blur(Some(blur));
         }
 
         let center = shape.center();
@@ -1170,7 +1169,7 @@ impl RenderState {
             plain_shape.to_mut().add_stroke(Stroke {
                 fill: Fill::Solid(SolidColor(skia::Color::BLACK)),
                 width: stroke.width,
-                style: stroke.style.clone(),
+                style: stroke.style,
                 cap_end: stroke.cap_end,
                 cap_start: stroke.cap_start,
                 kind: stroke.kind,
@@ -1449,7 +1448,9 @@ impl RenderState {
 
             match element.shape_type {
                 Type::Frame(_) | Type::Group(_) => {
-                    self.nested_blurs.push(Some(element.blur));
+                    if let Some(blur) = element.blur {
+                        self.nested_blurs.push(Some(blur));
+                    }
                 }
                 _ => {}
             }

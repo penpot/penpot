@@ -221,16 +221,6 @@ Shadow styles are serialized as `u8`:
 | 3     | Stretch |
 | \_    | error   |
 
-### Align self
-
-| Value | Field   |
-| ----- | ------- |
-| 0     | Start   |
-| 1     | End     |
-| 2     | Center  |
-| 3     | Stretch |
-| \_    | error   |
-
 ### Align Content
 
 | Value | Field         |
@@ -269,25 +259,27 @@ Shadow styles are serialized as `u8`:
 
 ### Align Self
 
-| Value | Field   |
-| ----- | ------- |
-| 0     | Auto    |
-| 1     | Start   |
-| 2     | End     |
-| 3     | Center  |
-| 4     | Stretch |
-| \_    | error   |
+| Value | Field         |
+| ----- | ------------- |
+| 0     | (none)        |
+| 1     | Auto          |
+| 2     | Start         |
+| 3     | End           |
+| 4     | Center        |
+| 5     | Stretch       |
+| \_    | (unsupported) |
 
 ### Justify Self
 
-| Value | Field   |
-| ----- | ------- |
-| 0     | Auto    |
-| 1     | Start   |
-| 2     | End     |
-| 3     | Center  |
-| 4     | Stretch |
-| \_    | error   |
+| Value | Field         |
+| ----- | ------------- |
+| 0     | (none)        |
+| 1     | Auto          |
+| 2     | Start         |
+| 3     | End           |
+| 4     | Center        |
+| 5     | Stretch       |
+| \_    | (unsupported) |
 
 ### Wrap type
 

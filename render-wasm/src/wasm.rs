@@ -1,6 +1,10 @@
+pub mod blend;
+pub mod blurs;
 pub mod fills;
 pub mod fonts;
-pub mod layout;
+pub mod layouts;
 pub mod paths;
+pub mod shadows;
+pub mod shapes;
 pub mod strokes;
 pub mod text;

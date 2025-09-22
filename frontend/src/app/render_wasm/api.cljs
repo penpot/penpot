@@ -47,9 +47,9 @@
 (def ^:const MODIFIER-U32-SIZE (/ MODIFIER-U8-SIZE 4))
 (def ^:const MODIFIER-TRANSFORM-U8-OFFSET-SIZE 16)
 
-(def ^:const GRID-LAYOUT-ROW-U8-SIZE 5)
-(def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 5)
-(def ^:const GRID-LAYOUT-CELL-U8-SIZE 37)
+(def ^:const GRID-LAYOUT-ROW-U8-SIZE 8)
+(def ^:const GRID-LAYOUT-COLUMN-U8-SIZE 8)
+(def ^:const GRID-LAYOUT-CELL-U8-SIZE 36)
 
 (def dpr
   (if use-dpr? (if (exists? js/window) js/window.devicePixelRatio 1.0) 1.0))
@@ -364,18 +364,14 @@
   [bool-type]
   (h/call wasm/internal-module "_set_shape_bool_type" (sr/translate-bool-type bool-type)))
 
-(defn- translate-blur-type
-  [blur-type]
-  (case blur-type
-    :layer-blur 1
-    0))
-
 (defn set-shape-blur
   [blur]
-  (let [type   (-> blur :type sr/translate-blur-type)
-        hidden (:hidden blur)
-        value  (:value blur)]
-    (h/call wasm/internal-module "_set_shape_blur" type hidden value)))
+  (if (some? blur)
+    (let [type   (-> blur :type sr/translate-blur-type)
+          hidden (:hidden blur)
+          value  (:value blur)]
+      (h/call wasm/internal-module "_set_shape_blur" type hidden value))
+    (h/call wasm/internal-module "_clear_shape_blur")))
 
 (defn set-shape-corners
   [corners]
@@ -457,13 +453,9 @@
         dview   (mem/get-data-view)]
 
     (reduce (fn [offset {:keys [type value]}]
-              ;; NOTE: because of the nature of the grid row data
-              ;; structure memory layout we can't use fully 32 bits
-              ;; alligned writes, so for heteregeneus writes we use
-              ;; the buffer abstraction (DataView) for perform
-              ;; surgical writes.
               (-> offset
                   (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (+ 3) ;; padding
                   (mem/write-f32 dview value)
                   (mem/assert-written offset GRID-LAYOUT-ROW-U8-SIZE)))
 
@@ -479,17 +471,11 @@
         dview  (mem/get-data-view)]
 
     (reduce (fn [offset {:keys [type value]}]
-              ;; NOTE: because of the nature of the grid column data
-              ;; structure memory layout we can't use fully 32 bits
-              ;; alligned writes, so for heteregeneus writes we use
-              ;; the buffer abstraction (DataView) for perform
-              ;; surgical writes.
               (-> offset
                   (mem/write-u8 dview (sr/translate-grid-track-type type))
+                  (+ 3) ;; padding
                   (mem/write-f32 dview value)
                   (mem/assert-written offset GRID-LAYOUT-COLUMN-U8-SIZE)))
-
-
             offset
             entries)
 
@@ -504,38 +490,17 @@
     (reduce-kv (fn [offset _ cell]
                  (let [shape-id  (-> (get cell :shapes) first)]
                    (-> offset
-                       ;; row: [u8; 4],
                        (mem/write-i32 dview (get cell :row))
-
-                       ;; row_span: [u8; 4],
                        (mem/write-i32 dview (get cell :row-span))
-
-                       ;; column: [u8; 4],
                        (mem/write-i32 dview (get cell :column))
-
-                       ;; column_span: [u8; 4],
                        (mem/write-i32 dview (get cell :column-span))
 
-                       ;; has_align_self: u8,
-                       (mem/write-bool dview (some? (get cell :align-self)))
-
-                       ;; align_self: u8,
-                       (mem/write-u8 dview (get cell :align-self))
-
-                       ;; has_justify_self: u8,
-                       (mem/write-bool dview (get cell :justify-self))
-
-                       ;; justify_self: u8,
+                       (mem/write-u8 dview (sr/translate-align-self (get cell :align-self)))
                        (mem/write-u8 dview (sr/translate-justify-self (get cell :justify-self)))
 
-                       ;; has_shape_id: u8,
-                       ;; (.set heap (sr/bool->u8 (d/not-empty? (:shapes cell))) (+ current-offset 20))
-                       (mem/write-u8 dview (some? shape-id))
+                       ;; padding
+                       (+ 2)
 
-                       ;; shape_id_a: [u8; 4],
-                       ;; shape_id_b: [u8; 4],
-                       ;; shape_id_c: [u8; 4],
-                       ;; shape_id_d: [u8; 4],
                        (mem/write-uuid dview (d/nilv shape-id uuid/zero))
                        (mem/assert-written offset GRID-LAYOUT-CELL-U8-SIZE))))
 
@@ -589,7 +554,7 @@
             (d/nilv max-w 0)
             has-min-w
             (d/nilv min-w 0)
-            (some? align-self)
+
             (d/nilv align-self 0)
             is-absolute
             (d/nilv z-index))))
@@ -756,10 +721,9 @@
     (set-shape-hidden hidden)
     (set-shape-children children)
     (set-shape-corners corners)
+    (set-shape-blur blur)
     (when (and (= type :group) masked)
       (set-masked masked))
-    (when (some? blur)
-      (set-shape-blur blur))
     (when (= type :bool)
       (set-shape-bool-type bool-type))
     (when (and (some? content)
@@ -1073,28 +1037,29 @@
         (->> (js/dynamicImport (str uri))
              (p/mcat (fn [module]
                        (let [default (unchecked-get module "default")
-                             serializers #js{:blur-type (unchecked-get module "BlurType")
-                                             :bool-type (unchecked-get module "BoolType")
-                                             :font-style (unchecked-get module "FontStyle")
-                                             :flex-direction (unchecked-get module "FlexDirection")
-                                             :grid-direction (unchecked-get module "GridDirection")
-                                             :grow-type (unchecked-get module "GrowType")
-                                             :align-items (unchecked-get module "AlignItems")
-                                             :align-self (unchecked-get module "AlignSelf")
-                                             :align-content (unchecked-get module "AlignContent")
-                                             :justify-items (unchecked-get module "JustifyItems")
-                                             :justify-content (unchecked-get module "JustifyContent")
-                                             :justify-self (unchecked-get module "JustifySelf")
-                                             :wrap-type (unchecked-get module "WrapType")
-                                             :grid-track-type (unchecked-get module "GridTrackType")
-                                             :shadow-style (unchecked-get module "ShadowStyle")
-                                             :stroke-style (unchecked-get module "StrokeStyle")
-                                             :stroke-cap (unchecked-get module "StrokeCap")
-                                             :shape-type (unchecked-get module "Type")
-                                             :constraint-h (unchecked-get module "ConstraintH")
-                                             :constraint-v (unchecked-get module "ConstraintV")
-                                             :sizing (unchecked-get module "Sizing")
-                                             :vertical-align (unchecked-get module "VerticalAlign")
+                             serializers #js{:blur-type (unchecked-get module "RawBlurType")
+                                             :blend-mode (unchecked-get module "RawBlendMode")
+                                             :bool-type (unchecked-get module "RawBoolType")
+                                             :font-style (unchecked-get module "RawFontStyle")
+                                             :flex-direction (unchecked-get module "RawFlexDirection")
+                                             :grid-direction (unchecked-get module "RawGridDirection")
+                                             :grow-type (unchecked-get module "RawGrowType")
+                                             :align-items (unchecked-get module "RawAlignItems")
+                                             :align-self (unchecked-get module "RawAlignSelf")
+                                             :align-content (unchecked-get module "RawAlignContent")
+                                             :justify-items (unchecked-get module "RawJustifyItems")
+                                             :justify-content (unchecked-get module "RawJustifyContent")
+                                             :justify-self (unchecked-get module "RawJustifySelf")
+                                             :wrap-type (unchecked-get module "RawWrapType")
+                                             :grid-track-type (unchecked-get module "RawGridTrackType")
+                                             :shadow-style (unchecked-get module "RawShadowStyle")
+                                             :stroke-style (unchecked-get module "RawStrokeStyle")
+                                             :stroke-cap (unchecked-get module "RawStrokeCap")
+                                             :shape-type (unchecked-get module "RawShapeType")
+                                             :constraint-h (unchecked-get module "RawConstraintH")
+                                             :constraint-v (unchecked-get module "RawConstraintV")
+                                             :sizing (unchecked-get module "RawSizing")
+                                             :vertical-align (unchecked-get module "RawVerticalAlign")
                                              :fill-data (unchecked-get module "RawFillData")
                                              :segment-data (unchecked-get module "RawSegmentData")}]
                          (set! wasm/serializers serializers)

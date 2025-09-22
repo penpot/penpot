@@ -1,61 +1,26 @@
 use crate::shapes::fills::{Fill, SolidColor};
-use macros::ToJs;
 use skia_safe::{self as skia, Rect};
 use std::collections::HashMap;
 
 use super::Corners;
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum StrokeStyle {
-    Solid = 0,
-    Dotted = 1,
-    Dashed = 2,
-    Mixed = 3,
+    Solid,
+    Dotted,
+    Dashed,
+    Mixed,
 }
 
-// TODO: maybe move this to the wasm module?
-impl From<u8> for StrokeStyle {
-    // TODO: use transmute
-    fn from(value: u8) -> Self {
-        match value {
-            1 => StrokeStyle::Dotted,
-            2 => StrokeStyle::Dashed,
-            3 => StrokeStyle::Mixed,
-            _ => StrokeStyle::Solid,
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, Copy, PartialEq, ToJs)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StrokeCap {
-    None = 0,
-    LineArrow = 1,
-    TriangleArrow = 2,
-    SquareMarker = 3,
-    CircleMarker = 4,
-    DiamondMarker = 5,
-    Round = 6,
-    Square = 7,
-}
-
-// TODO: maybe move this to the wasm module?
-impl From<u8> for StrokeCap {
-    // TODO: use transmute
-    fn from(value: u8) -> Self {
-        match value {
-            1 => StrokeCap::LineArrow,
-            2 => StrokeCap::TriangleArrow,
-            3 => StrokeCap::SquareMarker,
-            4 => StrokeCap::CircleMarker,
-            5 => StrokeCap::DiamondMarker,
-            6 => StrokeCap::Round,
-            7 => StrokeCap::Square,
-            _ => StrokeCap::None,
-        }
-    }
+    LineArrow,
+    TriangleArrow,
+    SquareMarker,
+    CircleMarker,
+    DiamondMarker,
+    Round,
+    Square,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -70,8 +35,8 @@ pub struct Stroke {
     pub fill: Fill,
     pub width: f32,
     pub style: StrokeStyle,
-    pub cap_end: StrokeCap,
-    pub cap_start: StrokeCap,
+    pub cap_end: Option<StrokeCap>,
+    pub cap_start: Option<StrokeCap>,
     pub kind: StrokeKind,
 }
 
@@ -85,35 +50,50 @@ impl Stroke {
         }
     }
 
-    pub fn new_center_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
+    pub fn new_center_stroke(
+        width: f32,
+        style: StrokeStyle,
+        cap_start: Option<StrokeCap>,
+        cap_end: Option<StrokeCap>,
+    ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
             width,
-            style: StrokeStyle::from(style),
-            cap_end: StrokeCap::from(cap_end),
-            cap_start: StrokeCap::from(cap_start),
+            style,
+            cap_end,
+            cap_start,
             kind: StrokeKind::Center,
         }
     }
 
-    pub fn new_inner_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
+    pub fn new_inner_stroke(
+        width: f32,
+        style: StrokeStyle,
+        cap_start: Option<StrokeCap>,
+        cap_end: Option<StrokeCap>,
+    ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
             width,
-            style: StrokeStyle::from(style),
-            cap_end: StrokeCap::from(cap_end),
-            cap_start: StrokeCap::from(cap_start),
+            style,
+            cap_end,
+            cap_start,
             kind: StrokeKind::Inner,
         }
     }
 
-    pub fn new_outer_stroke(width: f32, style: u8, cap_start: u8, cap_end: u8) -> Self {
+    pub fn new_outer_stroke(
+        width: f32,
+        style: StrokeStyle,
+        cap_start: Option<StrokeCap>,
+        cap_end: Option<StrokeCap>,
+    ) -> Self {
         Stroke {
             fill: Fill::Solid(SolidColor(skia::Color::TRANSPARENT)),
             width,
-            style: StrokeStyle::from(style),
-            cap_end: StrokeCap::from(cap_end),
-            cap_start: StrokeCap::from(cap_start),
+            style,
+            cap_end,
+            cap_start,
             kind: StrokeKind::Outer,
         }
     }

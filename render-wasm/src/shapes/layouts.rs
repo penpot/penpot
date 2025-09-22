@@ -1,6 +1,3 @@
-use macros::ToJs;
-
-use crate::utils::uuid_from_u32_quartet;
 use crate::uuid::Uuid;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -24,208 +21,70 @@ impl Layout {
     }
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum FlexDirection {
-    Row = 0,
-    RowReverse = 1,
-    Column = 2,
-    ColumnReverse = 3,
+    Row,
+    RowReverse,
+    Column,
+    ColumnReverse,
 }
 
-// TODO: maybe move this to the wasm module?
-impl FlexDirection {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Row,
-            1 => Self::RowReverse,
-            2 => Self::Column,
-            3 => Self::ColumnReverse,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum GridDirection {
-    Row = 0,
-    Column = 1,
+    Row,
+    Column,
 }
 
-// TODO: maybe move this to the wasm module?
-impl GridDirection {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Row,
-            1 => Self::Column,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignItems {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    Stretch = 3,
+    Start,
+    End,
+    Center,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl AlignItems {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum AlignContent {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    SpaceBetween = 3,
-    SpaceAround = 4,
-    SpaceEvenly = 5,
-    Stretch = 6,
+    Start,
+    End,
+    Center,
+    SpaceBetween,
+    SpaceAround,
+    SpaceEvenly,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl AlignContent {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::SpaceBetween,
-            4 => Self::SpaceAround,
-            5 => Self::SpaceEvenly,
-            6 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyItems {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    Stretch = 3,
+    Start,
+    End,
+    Center,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl JustifyItems {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum JustifyContent {
-    Start = 0,
-    End = 1,
-    Center = 2,
-    SpaceBetween = 3,
-    SpaceAround = 4,
-    SpaceEvenly = 5,
-    Stretch = 6,
+    Start,
+    End,
+    Center,
+    SpaceBetween,
+    SpaceAround,
+    SpaceEvenly,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl JustifyContent {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Start,
-            1 => Self::End,
-            2 => Self::Center,
-            3 => Self::SpaceBetween,
-            4 => Self::SpaceAround,
-            5 => Self::SpaceEvenly,
-            6 => Self::Stretch,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WrapType {
-    Wrap = 0,
-    Nowrap = 1,
+    Wrap,
+    NoWrap,
 }
 
-// TODO: maybe move this to the wasm module?
-impl WrapType {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Wrap,
-            1 => Self::Nowrap,
-            _ => unreachable!(),
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum GridTrackType {
-    Percent = 0,
-    Flex = 1,
-    Auto = 2,
-    Fixed = 3,
-}
-
-// TODO: maybe move this to the wasm module?
-impl GridTrackType {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Percent,
-            1 => Self::Flex,
-            2 => Self::Auto,
-            3 => Self::Fixed,
-            _ => unreachable!(),
-        }
-    }
+    Percent,
+    Flex,
+    Auto,
+    Fixed,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -235,13 +94,6 @@ pub struct GridTrack {
 }
 
 impl GridTrack {
-    pub fn from_raw(raw: &RawGridTrack) -> Self {
-        Self {
-            track_type: GridTrackType::from_u8(raw.track_type),
-            value: f32::from_le_bytes(raw.value),
-        }
-    }
-
     pub fn scale_content(&mut self, value: f32) {
         if self.track_type == GridTrackType::Fixed {
             self.value *= value;
@@ -249,7 +101,7 @@ impl GridTrack {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub struct GridCell {
     pub row: i32,
     pub row_span: i32,
@@ -260,58 +112,11 @@ pub struct GridCell {
     pub shape: Option<Uuid>,
 }
 
-impl GridCell {
-    pub fn from_raw(raw: &RawGridCell) -> Self {
-        Self {
-            row: i32::from_le_bytes(raw.row),
-            row_span: i32::from_le_bytes(raw.row_span),
-            column: i32::from_le_bytes(raw.column),
-            column_span: i32::from_le_bytes(raw.column_span),
-            align_self: if raw.has_align_self == 1 {
-                AlignSelf::from_u8(raw.align_self)
-            } else {
-                None
-            },
-            justify_self: if raw.has_justify_self == 1 {
-                JustifySelf::from_u8(raw.justify_self)
-            } else {
-                None
-            },
-            shape: if raw.has_shape_id == 1 {
-                Some(uuid_from_u32_quartet(
-                    u32::from_le_bytes(raw.shape_id_a),
-                    u32::from_le_bytes(raw.shape_id_b),
-                    u32::from_le_bytes(raw.shape_id_c),
-                    u32::from_le_bytes(raw.shape_id_d),
-                ))
-            } else {
-                None
-            },
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum Sizing {
-    Fill = 0,
-    Fix = 1,
-    Auto = 2,
-}
-
-// TODO: maybe move this to the wasm module?
-impl Sizing {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Self {
-        match value {
-            0 => Self::Fill,
-            1 => Self::Fix,
-            2 => Self::Auto,
-            _ => unreachable!(),
-        }
-    }
+    Fill,
+    Fix,
+    Auto,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -339,58 +144,23 @@ impl LayoutData {
     }
 }
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(u8)]
 pub enum AlignSelf {
-    Auto = 0,
-    Start = 1,
-    End = 2,
-    Center = 3,
-    Stretch = 4,
+    Auto,
+    Start,
+    End,
+    Center,
+    Stretch,
 }
 
-// TODO: maybe move this to the wasm module?
-impl AlignSelf {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Option<AlignSelf> {
-        match value {
-            0 => Some(Self::Auto),
-            1 => Some(Self::Start),
-            2 => Some(Self::End),
-            3 => Some(Self::Center),
-            4 => Some(Self::Stretch),
-            _ => None,
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Copy, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum JustifySelf {
     Auto = 0,
     Start = 1,
     End = 2,
     Center = 3,
     Stretch = 4,
-}
-
-// TODO: maybe move this to the wasm module?
-impl JustifySelf {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from_u8(value: u8) -> Option<JustifySelf> {
-        match value {
-            0 => Some(Self::Auto),
-            1 => Some(Self::Start),
-            2 => Some(Self::End),
-            3 => Some(Self::Center),
-            4 => Some(Self::Stretch),
-            _ => None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -440,65 +210,6 @@ impl GridData {
     pub fn scale_content(&mut self, value: f32) {
         self.rows.iter_mut().for_each(|t| t.scale_content(value));
         self.columns.iter_mut().for_each(|t| t.scale_content(value));
-    }
-}
-
-// TODO: move this to the wasm module
-// FIXME: use transmute
-#[derive(Debug)]
-#[repr(C)]
-pub struct RawGridTrack {
-    track_type: u8,
-    value: [u8; 4],
-}
-
-impl RawGridTrack {
-    pub fn from_bytes(bytes: [u8; 5]) -> Self {
-        Self {
-            track_type: bytes[0],
-            value: [bytes[1], bytes[2], bytes[3], bytes[4]],
-        }
-    }
-}
-
-#[derive(Debug)]
-#[repr(C)]
-pub struct RawGridCell {
-    row: [u8; 4],
-    row_span: [u8; 4],
-    column: [u8; 4],
-    column_span: [u8; 4],
-    has_align_self: u8,
-    align_self: u8,
-    has_justify_self: u8,
-    justify_self: u8,
-    has_shape_id: u8,
-    shape_id_a: [u8; 4],
-    shape_id_b: [u8; 4],
-    shape_id_c: [u8; 4],
-    shape_id_d: [u8; 4],
-}
-
-impl RawGridCell {
-    pub fn from_bytes(bytes: [u8; 37]) -> Self {
-        Self {
-            row: [bytes[0], bytes[1], bytes[2], bytes[3]],
-            row_span: [bytes[4], bytes[5], bytes[6], bytes[7]],
-            column: [bytes[8], bytes[9], bytes[10], bytes[11]],
-            column_span: [bytes[12], bytes[13], bytes[14], bytes[15]],
-
-            has_align_self: bytes[16],
-            align_self: bytes[17],
-
-            has_justify_self: bytes[18],
-            justify_self: bytes[19],
-
-            has_shape_id: bytes[20],
-            shape_id_a: [bytes[21], bytes[22], bytes[23], bytes[24]],
-            shape_id_b: [bytes[25], bytes[26], bytes[27], bytes[28]],
-            shape_id_c: [bytes[29], bytes[30], bytes[31], bytes[32]],
-            shape_id_d: [bytes[33], bytes[34], bytes[35], bytes[36]],
-        }
     }
 }
 

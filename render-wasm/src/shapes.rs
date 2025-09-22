@@ -1,13 +1,12 @@
-use macros::ToJs;
 use skia_safe::{self as skia};
 
-use crate::render::BlendMode;
 use crate::uuid::Uuid;
 use std::borrow::Cow;
 use std::cell::OnceCell;
 use std::collections::{HashMap, HashSet};
 use std::iter::once;
 
+mod blend;
 mod blurs;
 mod bools;
 mod corners;
@@ -27,6 +26,7 @@ mod text;
 pub mod text_paths;
 mod transform;
 
+pub use blend::*;
 pub use blurs::*;
 pub use bools::*;
 pub use corners::*;
@@ -55,36 +55,19 @@ const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
 const MIN_STROKE_WIDTH: f32 = 0.001;
 
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Type {
-    Frame(Frame) = 0,
-    Group(Group) = 1,
-    Bool(Bool) = 2,
-    Rect(Rect) = 3,
-    Path(Path) = 4,
-    Text(TextContent) = 5,
-    Circle = 6,
-    SVGRaw(SVGRaw) = 7,
+    Frame(Frame),
+    Group(Group),
+    Bool(Bool),
+    Rect(Rect),
+    Path(Path),
+    Text(TextContent),
+    Circle, // FIXME: shouldn't this have a rect inside, like the Rect variant?
+    SVGRaw(SVGRaw),
 }
 
 impl Type {
-    // TODO: move this to the wasm module, use transmute
-    pub fn from(value: u8) -> Self {
-        match value {
-            0 => Type::Frame(Frame::default()),
-            1 => Type::Group(Group::default()),
-            2 => Type::Bool(Bool::default()),
-            3 => Type::Rect(Rect::default()),
-            4 => Type::Path(Path::default()),
-            5 => Type::Text(TextContent::default()),
-            6 => Type::Circle,
-            7 => Type::SVGRaw(SVGRaw::default()),
-            _ => Type::Rect(Rect::default()),
-        }
-    }
-
     pub fn corners(&self) -> Option<Corners> {
         match self {
             Type::Rect(Rect { corners, .. }) => *corners,
@@ -145,77 +128,29 @@ impl Type {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintH {
-    Left = 0,
-    Right = 1,
-    Leftright = 2,
-    Center = 3,
-    Scale = 4,
+    Left,
+    Right,
+    LeftRight,
+    Center,
+    Scale,
 }
 
-impl ConstraintH {
-    // TODO: we should implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Left),
-            1 => Some(Self::Right),
-            2 => Some(Self::Leftright),
-            3 => Some(Self::Center),
-            4 => Some(Self::Scale),
-            _ => None,
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum VerticalAlign {
-    Top = 0,
-    Center = 1,
-    Bottom = 2,
+    Top,
+    Center,
+    Bottom,
 }
 
-impl VerticalAlign {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from(value: u8) -> Self {
-        match value {
-            0 => Self::Top,
-            1 => Self::Center,
-            2 => Self::Bottom,
-            _ => Self::Top,
-        }
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-#[derive(Debug, Clone, PartialEq, Copy, ToJs)]
-#[repr(u8)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum ConstraintV {
-    Top = 0,
-    Bottom = 1,
-    Topbottom = 2,
-    Center = 3,
-    Scale = 4,
-}
-
-impl ConstraintV {
-    // TODO: implement a proper From trait for this
-    // TODO: use transmute
-    pub fn from(value: u8) -> Option<Self> {
-        match value {
-            0 => Some(Self::Top),
-            1 => Some(Self::Bottom),
-            2 => Some(Self::Topbottom),
-            3 => Some(Self::Center),
-            4 => Some(Self::Scale),
-            _ => None,
-        }
-    }
+    Top,
+    Bottom,
+    TopBottom,
+    Center,
+    Scale,
 }
 
 pub type Color = skia::Color;
@@ -236,7 +171,7 @@ pub struct Shape {
     pub strokes: Vec<Stroke>,
     pub blend_mode: BlendMode,
     pub vertical_align: VerticalAlign,
-    pub blur: Blur,
+    pub blur: Option<Blur>,
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
@@ -265,7 +200,7 @@ impl Shape {
             vertical_align: VerticalAlign::Top,
             opacity: 1.,
             hidden: false,
-            blur: Blur::default(),
+            blur: None,
             svg: None,
             svg_attrs: HashMap::new(),
             shadows: Vec::with_capacity(1),
@@ -285,7 +220,11 @@ impl Shape {
             .shadows
             .iter_mut()
             .for_each(|s| s.scale_content(value));
-        result.blur.scale_content(value);
+
+        if let Some(blur) = result.blur.as_mut() {
+            blur.scale_content(value);
+        }
+
         result
             .layout_item
             .iter_mut()
@@ -518,39 +457,39 @@ impl Shape {
         }
     }
 
-    pub fn set_grid_columns(&mut self, tracks: Vec<RawGridTrack>) {
+    pub fn set_grid_columns(&mut self, tracks: Vec<GridTrack>) {
         let Type::Frame(frame_data) = &mut self.shape_type else {
             return;
         };
         let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
             return;
         };
-        grid_data.columns = tracks.iter().map(GridTrack::from_raw).collect();
+        grid_data.columns = tracks;
     }
 
-    pub fn set_grid_rows(&mut self, tracks: Vec<RawGridTrack>) {
+    pub fn set_grid_rows(&mut self, tracks: Vec<GridTrack>) {
         let Type::Frame(frame_data) = &mut self.shape_type else {
             return;
         };
         let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
             return;
         };
-        grid_data.rows = tracks.iter().map(GridTrack::from_raw).collect();
+        grid_data.rows = tracks;
     }
 
-    pub fn set_grid_cells(&mut self, cells: Vec<RawGridCell>) {
+    pub fn set_grid_cells(&mut self, cells: Vec<GridCell>) {
         let Type::Frame(frame_data) = &mut self.shape_type else {
             return;
         };
         let Some(Layout::GridLayout(_, grid_data)) = &mut frame_data.layout else {
             return;
         };
-        grid_data.cells = cells.iter().map(GridCell::from_raw).collect();
+        grid_data.cells = cells;
     }
 
-    pub fn set_blur(&mut self, blur_type: u8, hidden: bool, value: f32) {
+    pub fn set_blur(&mut self, blur: Option<Blur>) {
         self.invalidate_extrect();
-        self.blur = Blur::new(blur_type, hidden, value);
+        self.blur = blur;
     }
 
     pub fn add_child(&mut self, id: Uuid) {
@@ -672,7 +611,7 @@ impl Shape {
         self.svg_attrs.insert(name, value);
     }
 
-    pub fn blend_mode(&self) -> crate::render::BlendMode {
+    pub fn blend_mode(&self) -> BlendMode {
         self.blend_mode
     }
 
@@ -854,11 +793,13 @@ impl Shape {
             }
         }
 
-        if self.blur.blur_type != blurs::BlurType::None && !self.blur.hidden {
-            rect.left -= self.blur.value;
-            rect.top -= self.blur.value;
-            rect.right += self.blur.value;
-            rect.bottom += self.blur.value;
+        if let Some(blur) = self.blur {
+            if !blur.hidden {
+                rect.left -= blur.value;
+                rect.top -= blur.value;
+                rect.right += blur.value;
+                rect.bottom += blur.value;
+            }
         }
 
         // For groups and frames without clipping, extend the bounding rectangle to include all nested shapes
@@ -985,35 +926,27 @@ impl Shape {
     }
 
     pub fn image_filter(&self, scale: f32) -> Option<skia::ImageFilter> {
-        if !self.blur.hidden {
-            match self.blur.blur_type {
-                BlurType::None => None,
+        self.blur
+            .filter(|blur| !blur.hidden)
+            .and_then(|blur| match blur.blur_type {
                 BlurType::LayerBlur => skia::image_filters::blur(
-                    (self.blur.value * scale, self.blur.value * scale),
+                    (blur.value * scale, blur.value * scale),
                     None,
                     None,
                     None,
                 ),
-            }
-        } else {
-            None
-        }
+            })
     }
 
     #[allow(dead_code)]
     pub fn mask_filter(&self, scale: f32) -> Option<skia::MaskFilter> {
-        if !self.blur.hidden {
-            match self.blur.blur_type {
-                BlurType::None => None,
-                BlurType::LayerBlur => skia::MaskFilter::blur(
-                    skia::BlurStyle::Normal,
-                    self.blur.value * scale,
-                    Some(true),
-                ),
-            }
-        } else {
-            None
-        }
+        self.blur
+            .filter(|blur| !blur.hidden)
+            .and_then(|blur| match blur.blur_type {
+                BlurType::LayerBlur => {
+                    skia::MaskFilter::blur(skia::BlurStyle::Normal, blur.value * scale, Some(true))
+                }
+            })
     }
 
     pub fn is_recursive(&self) -> bool {

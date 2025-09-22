@@ -13,7 +13,7 @@ pub fn calculate_resize(
         ConstraintH::Left | ConstraintH::Right | ConstraintH::Center => {
             parent_before.width() / f32::max(0.01, parent_after.width())
         }
-        ConstraintH::Leftright => {
+        ConstraintH::LeftRight => {
             let left = parent_before.left(child_before.nw);
             let right = parent_before.right(child_before.ne);
             let target_width = parent_after.width() - left - right;
@@ -26,7 +26,7 @@ pub fn calculate_resize(
         ConstraintV::Top | ConstraintV::Bottom | ConstraintV::Center => {
             parent_before.height() / f32::max(0.01, parent_after.height())
         }
-        ConstraintV::Topbottom => {
+        ConstraintV::TopBottom => {
             let top = parent_before.top(child_before.nw);
             let bottom = parent_before.bottom(child_before.sw);
             let target_height = parent_after.height() - top - bottom;
@@ -51,7 +51,7 @@ pub fn calculate_displacement(
     child_after: &Bounds,
 ) -> Option<(f32, f32)> {
     let delta_x = match constraint_h {
-        ConstraintH::Left | ConstraintH::Leftright => {
+        ConstraintH::Left | ConstraintH::LeftRight => {
             let target_left = parent_before.left(child_before.nw);
             let current_left = parent_after.left(child_after.nw);
             target_left - current_left
@@ -71,7 +71,7 @@ pub fn calculate_displacement(
     };
 
     let delta_y = match constraint_v {
-        ConstraintV::Top | ConstraintV::Topbottom => {
+        ConstraintV::Top | ConstraintV::TopBottom => {
             let target_top = parent_before.top(child_before.nw);
             let current_top = parent_after.top(child_after.nw);
             target_top - current_top
