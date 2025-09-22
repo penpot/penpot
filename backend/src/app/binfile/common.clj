@@ -188,9 +188,9 @@
   and decoding."
   [cfg file-id & {:as opts}]
   (db/run! cfg (fn [{:keys [::db/conn] :as cfg}]
-                 (some->> (db/get* conn :file {:id file-id}
-                                   (assoc opts ::db/remove-deleted false))
-                          (decode-file cfg)))))
+                 (when-let [row (db/get* conn :file {:id file-id}
+                                         (assoc opts ::db/remove-deleted false))]
+                   (decode-file cfg row opts)))))
 
 (defn clean-file-features
   [file]
