@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
@@ -75,7 +75,7 @@
         (mf/use-fn
          (mf/deps color file-id)
          (fn [attrs]
-           (let [name  (cfh/merge-path-item (:path color) (:name color))
+           (let [name  (cpn/merge-path-item (:path color) (:name color))
                  color (-> attrs
                            (assoc :id (:id color))
                            (assoc :name name))]
@@ -221,7 +221,7 @@
          :on-key-down input-key-down
          :auto-focus true
          :max-length max-input-length
-         :default-value (cfh/merge-path-item (:path color) (:name color))}]
+         :default-value (cpn/merge-path-item (:path color) (:name color))}]
 
        [:div {:title (if (= (:name color) default-name)
                        default-name
@@ -345,7 +345,7 @@
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& colors-group {:file-id file-id
-                              :prefix (cfh/merge-path-item prefix path-item)
+                              :prefix (cpn/merge-path-item prefix path-item)
                               :key (dm/str "group-" path-item)
                               :groups content
                               :open-groups open-groups

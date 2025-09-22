@@ -14,6 +14,7 @@
    [app.common.geom.point :as gpt]
    [app.common.logic.variant-properties :as clvp]
    [app.common.logic.variants :as clv]
+   [app.common.path-names :as cpn]
    [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
@@ -374,11 +375,11 @@
                             (:name main))
              ;; If there is a prefix, set is as first item of path
              cpath (-> name
-                       cfh/split-path
+                       cpn/split-path
                        (cond->
                         (seq prefix)
                          (->> (drop (count prefix))
-                              (cons (cfh/join-path prefix))
+                              (cons (cpn/join-path prefix))
                               vec)))
 
              name         (first cpath)
@@ -522,7 +523,7 @@
             objects            (-> (dsh/get-page data page-id)
                                    (get :objects))
             variant-components (cfv/find-variant-components data objects variant-id)
-            clean-name         (cfh/clean-path name)
+            clean-name         (cpn/clean-path name)
             undo-id            (js/Symbol)]
 
         (rx/concat
@@ -591,7 +592,7 @@
                   (let [shapes        (mapv #(get objects %) ids)
                         rect          (bounding-rect shapes)
                         prefix        (->> shapes
-                                           (mapv #(cfh/split-path (:name %)))
+                                           (mapv #(cpn/split-path (:name %)))
                                            (common-prefix))
                          ;; When the common parent is root, add a wrapper
                         add-wrapper?  (empty? prefix)

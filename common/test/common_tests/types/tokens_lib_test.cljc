@@ -11,6 +11,7 @@
    #?(:clj [app.common.test-helpers.tokens :as tht])
    #?(:clj [clojure.datafy :refer [datafy]])
    [app.common.data :as d]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.time :as ct]
    [app.common.transit :as tr]
@@ -871,22 +872,6 @@
        (t/is (ctob/valid-tokens-lib? tokens-lib'))
        (t/is (= (ctob/set-count tokens-lib') 1))
        (t/is (= (ctob/theme-count tokens-lib') 2)))))
-
-(t/deftest split-and-join-path
-  (let [name "group/subgroup/name"
-        path (ctob/split-path name "/")
-        name' (ctob/join-path path "/")]
-    (t/is (= (first path) "group"))
-    (t/is (= (second path) "subgroup"))
-    (t/is (= (nth path 2) "name"))
-    (t/is (= name' name))))
-
-(t/deftest split-and-join-path-with-spaces
-  (let [name "group / subgroup / name"
-        path (ctob/split-path name "/")]
-    (t/is (= (first path) "group"))
-    (t/is (= (second path) "subgroup"))
-    (t/is (= (nth path 2) "name"))))
 
 (t/deftest add-tokens-in-set
   (let [tokens-lib (-> (ctob/make-tokens-lib)

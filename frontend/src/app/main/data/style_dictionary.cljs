@@ -230,7 +230,7 @@
   Uses `font-size-value` to calculate the relative line-height value.
   Returns an error for an invalid font-size value."
   [line-height-value font-size-value font-size-errors]
-  (let [missing-references (seq (some ctob/find-token-value-references line-height-value))
+  (let [missing-references (seq (some cto/find-token-value-references line-height-value))
         error
         (cond
           missing-references

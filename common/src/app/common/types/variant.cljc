@@ -7,8 +7,8 @@
 (ns app.common.types.variant
   (:require
    [app.common.data :as d]
-   [app.common.files.helpers :as cfh]
    [app.common.math :as math]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [cuerdas.core :as str]))
 
@@ -90,7 +90,7 @@
   ([path properties]
    (path-to-properties path properties 0))
   ([path properties min-props]
-   (let [cpath          (cfh/split-path path)
+   (let [cpath          (cpn/split-path path)
          total-props    (max (count cpath) min-props)
          assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
          ;; Add empty strings to the end of cpath to reach the minimum number of properties
@@ -309,4 +309,4 @@
   "Transforms a variant-name (its properties values) into a standard name:
    the real name of the shape joined by the properties values separated by '/'"
   [variant]
-  (cfh/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
+  (cpn/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))

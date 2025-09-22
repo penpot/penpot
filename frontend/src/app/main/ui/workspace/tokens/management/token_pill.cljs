@@ -10,8 +10,8 @@
    [app.main.style :as stl])
   (:require
    [app.common.data :as d]
-   [app.common.files.helpers :as cfh]
    [app.common.files.tokens :as cft]
+   [app.common.path-names :as cpn]
    [app.common.types.token :as ctt]
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
@@ -306,7 +306,7 @@
          :class (stl/css :token-pill-icon)}])
 
      (if contains-path?
-       (let [[first-part last-part] (cfh/split-by-last-period name)]
+       (let [[first-part last-part] (cpn/split-by-last-period name)]
          [:span {:class (stl/css :divided-name-wrapper)
                  :aria-label name}
           [:span {:class (stl/css :first-name-wrapper)} first-part]

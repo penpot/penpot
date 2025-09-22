@@ -106,7 +106,7 @@
              [:> text* {:as "span" :typography "body-medium" :class (stl/css :group-title-name)} group]]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
           (for [[_ {:keys [group name] :as theme}] themes
-                :let [theme-id (ctob/theme-path theme)
+                :let [theme-id (ctob/get-theme-path theme)
                       selected? (some? (get active-theme-ids theme-id))
                       delete-theme
                       (fn [e]
