@@ -1057,7 +1057,7 @@ export class SelectionController extends EventTarget {
       fragment.children.length === 1 &&
       fragment.firstElementChild?.dataset?.inline === "force"
     ) {
-      const collapseNode = fragment.lastElementChild.firstChild;
+      const collapseNode = fragment.firstElementChild.firstChild;
       if (this.isInlineStart) {
         this.focusInline.before(...fragment.firstElementChild.children);
       } else if (this.isInlineEnd) {

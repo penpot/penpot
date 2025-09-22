@@ -85,6 +85,30 @@ impl TextContentSize {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct TextPositionWithAffinity {
+    pub position_with_affinity: PositionWithAffinity,
+    pub paragraph: i32,
+    pub leaf: i32,
+    pub offset: i32,
+}
+
+impl TextPositionWithAffinity {
+    pub fn new(
+        position_with_affinity: PositionWithAffinity,
+        paragraph: i32,
+        leaf: i32,
+        offset: i32,
+    ) -> Self {
+        Self {
+            position_with_affinity,
+            paragraph,
+            leaf,
+            offset,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct TextContentLayoutResult(
     Vec<ParagraphBuilderGroup>,
@@ -95,7 +119,7 @@ pub struct TextContentLayoutResult(
 #[derive(Debug)]
 pub struct TextContentLayout {
     pub paragraph_builders: Vec<ParagraphBuilderGroup>,
-    pub paragraphs: Vec<Vec<skia_safe::textlayout::Paragraph>>,
+    pub paragraphs: Vec<Vec<skia::textlayout::Paragraph>>,
 }
 
 impl Clone for TextContentLayout {
@@ -223,18 +247,49 @@ impl TextContent {
         self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
     }
 
-    pub fn get_caret_position_at(&self, point: &Point) -> Option<PositionWithAffinity> {
+    pub fn get_caret_position_at(&self, point: &Point) -> Option<TextPositionWithAffinity> {
         let mut offset_y = 0.0;
-        let paragraphs = self.layout.paragraphs.iter().flatten();
+        let layout_paragraphs = self.layout.paragraphs.iter().flatten();
 
-        for paragraph in paragraphs {
+        let mut paragraph_index: i32 = -1;
+        let mut leaf_index: i32 = -1;
+        for layout_paragraph in layout_paragraphs {
+            paragraph_index += 1;
             let start_y = offset_y;
-            let end_y = offset_y + paragraph.height();
+            let end_y = offset_y + layout_paragraph.height();
+
+            // We only test against paragraphs that can contain the current y
+            // coordinate.
             if point.y > start_y && point.y < end_y {
-                let position_with_affinity = paragraph.get_glyph_position_at_coordinate(*point);
-                return Some(position_with_affinity);
+                let position_with_affinity =
+                    layout_paragraph.get_glyph_position_at_coordinate(*point);
+                if let Some(paragraph) = self.paragraphs().get(paragraph_index as usize) {
+                    // Computed position keeps the current position in terms
+                    // of number of characters of text. This is used to know
+                    // in which leaf we are.
+                    let mut computed_position = 0;
+                    let mut leaf_offset = 0;
+                    for leaf in paragraph.children() {
+                        leaf_index += 1;
+                        let length = leaf.text.len();
+                        let start_position = computed_position;
+                        let end_position = computed_position + length;
+                        let current_position = position_with_affinity.position as usize;
+                        if start_position <= current_position && end_position >= current_position {
+                            leaf_offset = position_with_affinity.position - start_position as i32;
+                            break;
+                        }
+                        computed_position += length;
+                    }
+                    return Some(TextPositionWithAffinity::new(
+                        position_with_affinity,
+                        paragraph_index,
+                        leaf_index,
+                        leaf_offset,
+                    ));
+                }
             }
-            offset_y += paragraph.height();
+            offset_y += layout_paragraph.height();
         }
         None
     }
