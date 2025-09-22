@@ -10,6 +10,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.common.spec :as us]
    [app.common.thumbnails :as thc]
    [app.common.types.component :as ctk]
@@ -62,7 +63,7 @@
                  (let [path (if (str/empty? path)
                               (if reverse? "z" "a")
                               path)]
-                   (str/lower (cfh/merge-path-item path name))))
+                   (str/lower (cpn/merge-path-item path name))))
                (if ^boolean reverse? > <))
 
       :always
@@ -71,30 +72,30 @@
 (defn add-group
   [asset group-name]
   (-> (:path asset)
-      (cfh/merge-path-item group-name)
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item group-name)
+      (cpn/merge-path-item (:name asset))))
 
 (defn rename-group
   [asset path last-path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cfh/split-path)
+      (cpn/split-path)
       butlast
       (vec)
       (conj last-path)
-      (cfh/join-path)
+      (cpn/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item (:name asset))))
 
 (defn ungroup
   [asset path]
   (-> (:path asset)
       (str/slice 0 (count path))
-      (cfh/split-path)
+      (cpn/split-path)
       butlast
-      (cfh/join-path)
+      (cpn/join-path)
       (str (str/slice (:path asset) (count path)))
-      (cfh/merge-path-item (:name asset))))
+      (cpn/merge-path-item (:name asset))))
 
 (s/def ::asset-name ::us/not-empty-string)
 (s/def ::name-group-form
@@ -282,7 +283,7 @@
         (st/emit!
          (rename
           (:id target-asset)
-          (cfh/merge-path-item prefix (:name target-asset))))))))
+          (cpn/merge-path-item prefix (:name target-asset))))))))
 
 (mf/defc component-item-thumbnail*
   "Component that renders the thumbnail image or the original SVG."

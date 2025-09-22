@@ -11,6 +11,7 @@
    [app.common.exceptions :as ex]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -511,7 +512,7 @@
       (report-error :variant-bad-name
                     (str/ffmt "Variant % has an invalid name" (:id shape))
                     shape file page))
-    (when-not (= (:name parent) (cfh/merge-path-item (:path component) (:name component)))
+    (when-not (= (:name parent) (cpn/merge-path-item (:path component) (:name component)))
       (report-error :variant-component-bad-name
                     (str/ffmt "Component % has an invalid name" (:id shape))
                     shape file page))
