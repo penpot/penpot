@@ -27,7 +27,7 @@
   (when (seq themes)
     [:ul {:class (stl/css :theme-options)}
      (for [[_ {:keys [group name] :as theme}] themes
-           :let [theme-id (ctob/theme-path theme)
+           :let [theme-id (ctob/get-theme-path theme)
                  selected? (get active-theme-paths theme-id)
                  select-theme (fn [e]
                                 (dom/stop-propagation e)

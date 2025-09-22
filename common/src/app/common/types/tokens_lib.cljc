@@ -11,6 +11,7 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
@@ -23,42 +24,6 @@
    [clojure.set :as set]
    [clojure.walk :as walk]
    [cuerdas.core :as str]))
-
-;; === Groups handling
-
-;; TODO: add again the removed functions and refactor the rest of the module to use them
-
-(def ^:private xf-map-trim
-  (comp
-   (map str/trim)
-   (remove str/empty?)))
-
-(defn split-path
-  "Decompose a string in the form 'one.two.three' into a vector of strings, removing spaces."
-  [path separator]
-  (->> (str/split path separator)
-       (into [] xf-map-trim)
-       (not-empty)))
-
-(defn join-path
-  "Regenerate a path as a string, from a vector."
-  [path separator]
-  (str/join separator path))
-
-(defn split-path-name
-  "Decompose a string in the form 'one.two.three' into a vector with two elements: first the
-   path and second the name, removing spaces (e.g. ['one.two' 'three'])."
-  [path separator]
-  (let [pathv (split-path path separator)]
-    [(join-path (butlast pathv) separator)
-     (last pathv)]))
-
-(defn get-path
-  "Get the path of object by specified separator (E.g. with '.' separator, the
-  'group.subgroup.name' -> ['group' 'subgroup'])"
-  [name separator]
-  (->> (split-path name separator)
-       (not-empty)))
 
 ;; === Common
 
@@ -180,7 +145,7 @@
 
 (defn get-token-path
   [token]
-  (get-path (:name token) token-separator))
+  (cpn/split-path (:name token) :separator token-separator))
 
 (defn group-by-type [tokens]
   (let [tokens' (if (or (map? tokens)
@@ -413,26 +378,26 @@
 
 (defn get-set-path
   [token-set]
-  (get-path (get-name token-set) set-separator))
+  (cpn/split-path (get-name token-set) :separator set-separator))
 
 (defn split-set-name
   [name]
-  (split-path name set-separator))
+  (cpn/split-path name :separator set-separator))
 
 (defn join-set-path [path]
-  (join-path path set-separator))
+  (cpn/join-path path :separator set-separator :with-spaces? false))
 
 (defn normalize-set-name
   "Normalize a set name (ensure that there are no extra spaces, like ' group /  set' -> 'group/set').
 
   If `relative-to` is provided, the normalized name will preserve the same group prefix as reference name."
   ([name]
-   (->> (split-set-name name)
-        (str/join set-separator)))
+   (-> (split-set-name name)
+       (cpn/join-path :separator set-separator :with-spaces? false)))
   ([name relative-to]
-   (->> (concat (butlast (split-set-name relative-to))
-                (split-set-name name))
-        (str/join set-separator))))
+   (-> (concat (butlast (split-set-name relative-to))
+               (split-set-name name))
+       (cpn/join-path :separator set-separator :with-spaces? false))))
 
 (defn replace-last-path-name
   "Replaces the last element in a `path` vector with `name`."
@@ -479,12 +444,15 @@
   (-> (set-group-path->set-group-prefixed-path path)
       (join-set-path)))
 
+(defn add-set-group-prefix [group-path]
+  (str set-group-prefix group-path))
+
 (defn- set-name->prefixed-full-path [name-str]
   (-> (split-set-name name-str)
       (set-full-path->set-prefixed-full-path)))
 
 (defn- get-set-prefixed-path [token-set]
-  (let [path (get-path (get-name token-set) set-separator)]
+  (let [path (cpn/split-path (get-name token-set) :separator set-separator)]
     (set-full-path->set-prefixed-full-path path)))
 
 (defn tokens-tree
@@ -565,23 +533,6 @@
 
 ;; === TokenTheme
 
-(def ^:private theme-separator "/")
-
-(defn join-theme-path [group name]
-  (join-path [group name] theme-separator))
-
-(defn split-theme-path [path]
-  (split-path-name path theme-separator))
-
-(def hidden-theme-group
-  "")
-
-(def hidden-theme-name
-  "__PENPOT__HIDDEN__TOKEN__THEME__")
-
-(def hidden-theme-path
-  (join-theme-path hidden-theme-group hidden-theme-name))
-
 (defprotocol ITokenTheme
   (set-sets [_ set-names] "set the active token sets")
   (enable-set [_ set-name] "enable one set in theme")
@@ -590,9 +541,14 @@
   (disable-sets [_ set-names] "disable several sets in theme")
   (toggle-set [_ set-name] "toggle a set enabled / disabled in the theme")
   (update-set-name [_ prev-set-name set-name] "update set-name when it exists")
-  (theme-path [_] "get `theme-path` from theme")
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
   (hidden-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
+
+(def hidden-theme-group
+  "")
+
+(def hidden-theme-name
+  "__PENPOT__HIDDEN__TOKEN__THEME__")
 
 (defrecord TokenTheme [id name group description is-source external-id modified-at sets]
   cp/Datafiable
@@ -659,9 +615,6 @@
                    (ct/now)
                    (conj (disj sets prev-set-name) set-name))
       this))
-
-  (theme-path [_]
-    (join-theme-path group name))
 
   (theme-matches-group-name [this group name]
     (and (= (:group this) group)
@@ -757,6 +710,22 @@
       (assoc :group hidden-theme-group)
       (assoc :name hidden-theme-name)
       (make-token-theme)))
+
+(def ^:private theme-separator "/")
+
+(defn- join-theme-path [group name]
+  (cpn/join-path [group name] :separator theme-separator :with-spaces? false))
+
+(defn get-theme-path [theme]
+  (join-theme-path (:group theme) (:name theme)))
+
+(defn split-theme-path [path]
+  (cpn/split-group-name path
+                        :separator theme-separator
+                        :with-spaces? false))
+
+(def hidden-theme-path
+  (join-theme-path hidden-theme-group hidden-theme-name))
 
 ;; === TokenThemes (collection)
 
@@ -1205,10 +1174,10 @@ Will return a value that matches this schema:
   (activate-theme [this group name]
     (if-let [theme (get-theme this group name)]
       (let [group-themes (->> (get themes group)
-                              (map (comp theme-path val))
+                              (map (comp get-theme-path val))
                               (into #{}))
             active-themes' (-> (set/difference active-themes group-themes)
-                               (conj (theme-path theme)))]
+                               (conj (get-theme-path theme)))]
         (TokensLib. sets
                     themes
                     active-themes'))

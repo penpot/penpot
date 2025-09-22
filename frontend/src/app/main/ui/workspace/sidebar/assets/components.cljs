@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctc]
    [app.common.types.file :as ctf]
    [app.main.data.event :as ev]
@@ -150,8 +150,8 @@
           {:class (stl/css-case :cell-name listing-thumbs?
                                 :item-name (not listing-thumbs?)
                                 :editing renaming?)
-           :value (cfh/merge-path-item (:path component) (:name component))
-           :tooltip (cfh/merge-path-item (:path component) (:name component))
+           :value (cpn/merge-path-item (:path component) (:name component))
+           :tooltip (cpn/merge-path-item (:path component) (:name component))
            :display-value (:name component)
            :editing renaming?
            :disable-dbl-click true
@@ -289,7 +289,7 @@
           (when-not (empty? path-item)
             [:& components-group {:file-id file-id
                                   :key path-item
-                                  :prefix (cfh/merge-path-item prefix path-item)
+                                  :prefix (cpn/merge-path-item prefix path-item)
                                   :groups content
                                   :open-groups open-groups
                                   :force-open? force-open?
@@ -457,7 +457,7 @@
              (st/emit! (dwu/start-undo-transaction undo-id))
              (run! st/emit!
                    (->> components
-                        (filter #(cfh/inside-path? (:path %) path))
+                        (filter #(cpn/inside-path? (:path %) path))
                         (map #(dwv/rename-comp-or-variant-and-main
                                (:id %)
                                (cmm/rename-group % path last-path)))))
@@ -488,7 +488,7 @@
              (st/emit! (dwu/start-undo-transaction undo-id))
              (run! st/emit!
                    (->> components
-                        (filter #(cfh/inside-path? (:path %) path))
+                        (filter #(cpn/inside-path? (:path %) path))
                         (map #(dwv/rename-comp-or-variant-and-main (:id %) (cmm/ungroup % path)))))
              (st/emit! (dwu/commit-undo-transaction undo-id)))))
 
@@ -498,7 +498,7 @@
          (fn [path]
            (on-clear-selection)
            (let [comps   (->> components
-                              (filter #(cfh/inside-path? (:path %) path)))
+                              (filter #(cpn/inside-path? (:path %) path)))
                  ids     (into #{} (map :main-instance-id comps))
                  page-id (->> comps first :main-instance-page)]
 

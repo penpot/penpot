@@ -9,7 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.main.data.event :as ev]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -212,7 +212,7 @@
         (for [[path-item content] groups]
           (when-not (empty? path-item)
             [:& typographies-group {:file-id file-id
-                                    :prefix (cfh/merge-path-item prefix path-item)
+                                    :prefix (cpn/merge-path-item prefix path-item)
                                     :key (dm/str "group-" path-item)
                                     :groups content
                                     :open-groups open-groups

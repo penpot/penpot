@@ -7,8 +7,8 @@
   (:require
    [app.common.data :as d]
    [app.common.files.changes-builder :as pcb]
-   [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctcl]
    [app.common.types.variant :as ctv]
@@ -127,7 +127,7 @@
 (defn- generate-make-shape-no-variant
   [changes shape]
   (let [new-name      (ctv/variant-name-to-name shape)
-        [cpath cname] (cfh/parse-path-name new-name)]
+        [cpath cname] (cpn/split-group-name new-name)]
     (-> changes
         (pcb/update-component (:component-id shape)
                               #(-> (dissoc % :variant-id :variant-properties)
@@ -146,7 +146,7 @@
 (defn- create-new-properties-from-variant
   [shape min-props data container-name base-properties]
   (let [component (ctcl/get-component data (:component-id shape) true)
-        component-full-name (cfh/merge-path-item (:path component) (:name component))
+        component-full-name (cpn/merge-path-item (:path component) (:name component))
         add-name? (not= component-full-name container-name)
         props     (ctv/merge-properties base-properties
                                         (:variant-properties component))
@@ -188,7 +188,7 @@
                             (map #(assoc % :value "")))
         num-base-props (count base-props)
 
-        [cpath cname]  (cfh/parse-path-name (:name variant-container))
+        [cpath cname]  (cpn/split-group-name (:name variant-container))
         container-name (:name variant-container)
 
         create-new-properties

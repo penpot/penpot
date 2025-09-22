@@ -11,6 +11,7 @@
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
+   [app.common.path-names :as cpn]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
@@ -556,7 +557,7 @@
            :title group-name}
 
      [:span {:class (stl/css :component-group-name)}
-      (cfh/last-path group-name)]
+      (cpn/last-path group-name)]
 
      [:> icon* {:class (stl/css :component-group-icon)
                 :variant "ghost"
@@ -565,7 +566,7 @@
 
 (defn- find-common-path
   ([components]
-   (let [paths (map (comp cfh/split-path :path) components)]
+   (let [paths (map (comp cpn/split-path :path) components)]
      (find-common-path paths [] 0)))
   ([paths path n]
    (let [current (nth (first paths) n nil)]
@@ -608,7 +609,7 @@
 
         path                (if single?
                               (:path (first components))
-                              (cfh/join-path (if (not every-same-file?)
+                              (cpn/join-path (if (not every-same-file?)
                                                ""
                                                (find-common-path components))))
 
@@ -636,7 +637,7 @@
                                  vals
                                  (remove #(true? (:deleted %)))
                                  (remove #(cfv/is-secondary-variant? % current-lib-data))
-                                 (map #(assoc % :full-name (cfh/merge-path-item-with-dot (:path %) (:name %)))))
+                                 (map #(assoc % :full-name (cpn/merge-path-item-with-dot (:path %) (:name %)))))
 
         count-variants      (fn [component]
                               (->> (ctkl/components-seq current-lib-data)
@@ -644,7 +645,7 @@
                                    count))
 
         get-subgroups       (fn [path]
-                              (let [split-path (cfh/split-path path)]
+                              (let [split-path (cpn/split-path path)]
                                 (reduce (fn [acc dir]
                                           (conj acc (str (last acc) " / " dir)))
                                         [(first split-path)] (rest split-path))))
@@ -655,7 +656,7 @@
                              (remove str/empty?)
                              (remove nil?)
                              (distinct)
-                             (filter #(= (cfh/butlast-path %) (:path filters))))
+                             (filter #(= (cpn/butlast-path %) (:path filters))))
 
         groups              (when-not is-search?
                               (->> (sort (sequence xform components))
@@ -700,7 +701,7 @@
         on-go-back
         (mf/use-fn
          (mf/deps (:path filters))
-         #(swap! filters* assoc :path (cfh/butlast-path (:path filters))))
+         #(swap! filters* assoc :path (cpn/butlast-path (:path filters))))
 
         on-enter-group
         (mf/use-fn #(swap! filters* assoc :path %))
@@ -709,7 +710,7 @@
         (mf/use-fn
          (fn [style]
            (swap! filters* assoc :listing-thumbs? (= style "grid"))))
-        filter-path-with-dots (->> (:path filters) (cfh/split-path) (cfh/join-path-with-dot))]
+        filter-path-with-dots (->> (:path filters) (cpn/split-path) (cpn/join-path-with-dot))]
 
     [:div {:class (stl/css :component-swap)}
      [:div {:class (stl/css :element-set-title)}
@@ -918,7 +919,7 @@
 
         menu-entries (cmm/generate-components-menu-entries shapes {:for-design-tab? true})
         show-menu?   (seq menu-entries)
-        path         (->> component (:path) (cfh/split-path) (cfh/join-path-with-dot))]
+        path         (->> component (:path) (cpn/split-path) (cpn/join-path-with-dot))]
 
     (when (seq shapes)
       [:div {:class (stl/css :element-set)}
@@ -979,13 +980,13 @@
                [:span {:class (stl/css :component-name-inside)}
                 (if (and multi (not same-variant?))
                   (tr "settings.multiple")
-                  (cfh/last-path shape-name))]]
+                  (cpn/last-path shape-name))]]
 
               (when (and can-swap? (or (not multi) same-variant?))
                 [:div {:class (stl/css :component-parent-name)}
                  (if (:deleted component)
                    (tr "workspace.options.component.unlinked")
-                   (cfh/merge-path-item-with-dot path (:name component)))])]]
+                   (cpn/merge-path-item-with-dot path (:name component)))])]]
 
             (when show-menu?
               [:div {:class (stl/css :component-actions)}
@@ -1208,7 +1209,7 @@
                [:span {:class (stl/css :component-name-inside)}
                 (if multi?
                   (tr "settings.multiple")
-                  (cfh/last-path shape-name))]]]]
+                  (cpn/last-path shape-name))]]]]
 
             (when-not multi?
               [:div {:class (stl/css :component-actions)}
