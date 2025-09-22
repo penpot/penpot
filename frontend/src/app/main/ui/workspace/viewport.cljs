@@ -12,11 +12,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.shapes :as gsh]
    [app.common.types.color :as clr]
+   [app.common.types.component :as ctk]
    [app.common.types.path :as path]
    [app.common.types.shape :as cts]
    [app.common.types.shape-tree :as ctt]
    [app.common.types.shape.layout :as ctl]
    [app.main.data.workspace.modifiers :as dwm]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
@@ -51,7 +53,7 @@
    [app.main.ui.workspace.viewport.selection :as selection]
    [app.main.ui.workspace.viewport.snap-distances :as snap-distances]
    [app.main.ui.workspace.viewport.snap-points :as snap-points]
-   [app.main.ui.workspace.viewport.top-bar :refer [path-edition-bar* grid-edition-bar* view-only-bar*]]
+   [app.main.ui.workspace.viewport.top-bar :refer [grid-edition-bar* path-edition-bar* view-only-bar*]]
    [app.main.ui.workspace.viewport.utils :as utils]
    [app.main.ui.workspace.viewport.viewport-ref :refer [create-viewport-ref]]
    [app.main.ui.workspace.viewport.widgets :as widgets]
@@ -261,7 +263,11 @@
 
         single-select?           (= (count selected-shapes) 1)
 
-        first-shape (first selected-shapes)
+        first-shape              (first selected-shapes)
+
+        show-add-variant?        (and single-select?
+                                      (or (ctk/is-variant-container? first-shape)
+                                          (ctk/is-variant? first-shape)))
 
         show-padding?
         (and (nil? transform)
@@ -288,7 +294,13 @@
                    (:y first-shape)
                    (:y selected-frame))
 
-        rule-area-size (/ rulers/ruler-area-size zoom)]
+        rule-area-size (/ rulers/ruler-area-size zoom)
+
+        add-variant
+        (mf/use-fn
+         (mf/deps first-shape)
+         #(st/emit!
+           (dwv/add-new-variant (:id first-shape))))]
 
     (hooks/setup-dom-events zoom disable-paste in-viewport? read-only? drawing-tool path-drawing?)
     (hooks/setup-viewport-size vport viewport-ref)
@@ -603,6 +615,11 @@
        (when show-selrect?
          [:& widgets/selection-rect {:data selrect
                                      :zoom zoom}])
+
+       (when show-add-variant?
+         [:> widgets/button-add* {:shape first-shape
+                                  :zoom zoom
+                                  :on-click add-variant}])
 
        (when show-presence?
          [:& presence/active-cursors
