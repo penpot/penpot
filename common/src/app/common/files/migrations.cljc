@@ -1650,6 +1650,6 @@
          "0007-clear-invalid-strokes-and-fills-v2"
          "0008-fix-library-colors-v4"
          "0009-clean-library-colors"
-         #_"0009-add-partial-text-touched-flags"
-         #_"0010-fix-swap-slots-pointing-non-existent-shapes"
+         "0009-add-partial-text-touched-flags"
+         "0010-fix-swap-slots-pointing-non-existent-shapes"
          "0011-fix-invalid-text-touched-flags"]))
