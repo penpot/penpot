@@ -3,7 +3,9 @@ use std::collections::HashMap;
 use std::error::Error;
 
 mod shapes_pool;
+mod text_editor;
 pub use shapes_pool::*;
+pub use text_editor::*;
 
 use crate::render::RenderState;
 use crate::shapes::StructureEntry;
@@ -20,6 +22,7 @@ use crate::shapes::modifiers::grid_layout::grid_cell_data;
 /// must not be shared between different Web Workers.
 pub(crate) struct State {
     pub render_state: RenderState,
+    pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
     pub shapes: ShapesPool,
     pub modifiers: HashMap<Uuid, skia::Matrix>,
@@ -31,6 +34,7 @@ impl State {
     pub fn new(width: i32, height: i32) -> Self {
         State {
             render_state: RenderState::new(width, height),
+            text_editor_state: TextEditorState::new(),
             current_id: None,
             shapes: ShapesPool::new(),
             modifiers: HashMap::new(),
@@ -49,6 +53,14 @@ impl State {
 
     pub fn render_state(&self) -> &RenderState {
         &self.render_state
+    }
+
+    pub fn text_editor_state_mut(&mut self) -> &mut TextEditorState {
+        &mut self.text_editor_state
+    }
+
+    pub fn text_editor_state(&self) -> &TextEditorState {
+        &self.text_editor_state
     }
 
     pub fn render_from_cache(&mut self) {

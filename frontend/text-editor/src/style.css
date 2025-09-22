@@ -12,8 +12,15 @@ canvas {
   width: 100cqw;
 }
 
+form {
+  display: flex;
+}
+
 .text-editor-container {
-  background-color: white;
+  background-color: transparent;
+  position: fixed;
+  min-height: 1rem;
+  min-width: 1rem;
 }
 
 .playground {

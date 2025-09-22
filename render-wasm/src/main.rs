@@ -77,6 +77,20 @@ macro_rules! with_current_shape {
     };
 }
 
+#[macro_export]
+macro_rules! with_state_mut_current_shape {
+    ($state:ident, |$shape:ident: &Shape| $block:block) => {
+        let $state = unsafe {
+            #[allow(static_mut_refs)]
+            STATE.as_mut()
+        }
+        .expect("Got an invalid state pointer");
+        if let Some($shape) = $state.current_shape() {
+            $block
+        }
+    };
+}
+
 /// This is called from JS after the WebGL context has been created.
 #[no_mangle]
 pub extern "C" fn init(width: i32, height: i32) {
@@ -268,6 +282,7 @@ pub extern "C" fn set_shape_clip_content(clip_content: bool) {
 #[no_mangle]
 pub extern "C" fn set_shape_rotation(rotation: f32) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
+        println!("set_shape_rotation {} {}", rotation, shape.id);
         shape.set_rotation(rotation);
     });
 }
