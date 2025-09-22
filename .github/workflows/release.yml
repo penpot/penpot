@@ -3,31 +3,80 @@ name: Release Publisher
 on:
   workflow_dispatch:
     inputs:
-      tag:
+      gh_ref:
         description: 'Tag to release'
-        required: true
         type: string
+        required: true
+  workflow_call:
+    inputs:
+      gh_ref:
+        description: 'Tag to release'
+        type: string
+        required: true
 
 permissions:
   contents: write
 
 jobs:
-  get-release-notes:
+  release:
     environment: release-admins
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
-      release_notes: ${{ steps.extract.outputs.release_notes }}
+      version: ${{ steps.vars.outputs.gh_ref }}
+      release_notes: ${{ steps.extract_release_notes.outputs.release_notes }}
     steps:
+      - name: Extract some useful variables
+        id: vars
+        run: |
+          echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
+
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.vars.outputs.gh_ref }}
 
+      # # --- Publicly release the docker images ---
+      # - name: Login to private registry
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ${{ secrets.DOCKER_REGISTRY }}
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # - name: Login to DockerHub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.PUB_DOCKER_USERNAME }}
+      #     password: ${{ secrets.PUB_DOCKER_PASSWORD }}
+
+      # - name: Publish docker images to Public Registry
+      #   env:
+      #     TAG: ${{ steps.vars.outputs.gh_ref }}
+      #     REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
+      #     HUB: ${{ secrets.PUB_DOCKER_HUB }}
+      #   run: |
+      #     IMAGES=("frontend" "backend" "exporter")
+      #     EXTRA_TAGS=("main" "latest")
+
+      #     for image in "${IMAGES[@]}"; do
+      #       docker pull "$REGISTRY/penpotapp/$image:$TAG"
+      #       docker tag "$REGISTRY/penpotapp/$image:$TAG" "penpotapp/$image:$TAG"
+      #       docker push "penpotapp/$image:$TAG"
+
+      #       for tag in "${EXTRA_TAGS[@]}"; do
+      #         docker tag "$REGISTRY/penpotapp/$image:$TAG" "penpotapp/$image:$tag"
+      #         docker push "penpotapp/$image:$tag"
+      #       done
+      #     done
+
+      # --- Release notes extraction ---
       - name: Extract release notes from CHANGES.md
-        id: extract
+        id: extract_release_notes
+        env:
+          TAG: ${{ steps.vars.outputs.gh_ref }}
         run: |
-          TAG="${{ github.event.inputs.tag }}"
-          # Extract lines between headers "## $TAG" and next "## "
           RELEASE_NOTES=$(awk "/^## $TAG$/{flag=1; next} /^## /{flag=0} flag" CHANGES.md | awk '{$1=$1};1')
-          # Fallback if nothing found
           if [ -z "$RELEASE_NOTES" ]; then
             RELEASE_NOTES="No changes for $TAG according to CHANGES.md"
           fi
@@ -35,17 +84,12 @@ jobs:
           echo "$RELEASE_NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-  create-release:
-    environment: release-admins
-    needs:
-      - get-release-notes
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create GitHub Release
+      # --- Create GitHub release ---
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          name: ${{ github.event.inputs.tag }}
-          body: ${{ needs.get-release-notes.outputs.release_notes }}
+          tag_name: ${{ steps.vars.outputs.gh_ref }}
+          name: ${{ steps.vars.outputs.gh_ref }}
+          body: ${{ steps.extract_release_notes.outputs.release_notes }}
