@@ -130,7 +130,6 @@
        ms-or-obj
 
        (integer? ms-or-obj)
-
        (Duration/ofMillis ms-or-obj)
 
        :else

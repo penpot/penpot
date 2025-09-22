@@ -26,9 +26,7 @@
    [app.rpc :as-alias rpc]
    [app.rpc.doc :as-alias rpc.doc]
    [app.setup :as-alias setup]
-   [app.worker :as wrk]
    [integrant.core :as ig]
-   [promesa.exec :as px]
    [reitit.core :as r]
    [reitit.middleware :as rr]
    [yetti.adapter :as yt]
@@ -55,6 +53,8 @@
   [:map
    [::port ::sm/int]
    [::host ::sm/text]
+   [::io-threads {:optional true} ::sm/int]
+   [::max-worker-threads {:optional true} ::sm/int]
    [::max-body-size {:optional true} ::sm/int]
    [::max-multipart-body-size {:optional true} ::sm/int]
    [::router {:optional true} [:fn r/router?]]
@@ -65,31 +65,41 @@
   (assert (sm/check schema:server-params params)))
 
 (defmethod ig/init-key ::server
-  [_ {:keys [::handler ::router ::host ::port ::wrk/executor] :as cfg}]
+  [_ {:keys [::handler ::router ::host ::port ::mtx/metrics] :as cfg}]
   (l/info :hint "starting http server" :port port :host host)
-  (let [options {:http/port port
-                 :http/host host
-                 :http/max-body-size (::max-body-size cfg)
-                 :http/max-multipart-body-size (::max-multipart-body-size cfg)
-                 :xnio/direct-buffers false
-                 :xnio/io-threads (or (::io-threads cfg)
-                                      (max 3 (px/get-available-processors)))
-                 :xnio/dispatch executor
-                 :ring/compat :ring2
-                 :socket/backlog 4069}
+  (let [on-dispatch
+        (fn [_ start-at-ns]
+          (let [timing (- (System/nanoTime) start-at-ns)
+                timing (int (/ timing 1000000))]
+            (mtx/run! metrics
+                      :id :http-server-dispatch-timing
+                      :val timing)))
 
-        handler (cond
-                  (some? router)
-                  (router-handler router)
+        options
+        {:http/port port
+         :http/host host
+         :http/max-body-size (::max-body-size cfg)
+         :http/max-multipart-body-size (::max-multipart-body-size cfg)
+         :xnio/direct-buffers false
+         :xnio/io-threads (::io-threads cfg)
+         :xnio/max-worker-threads (::max-worker-threads cfg)
+         :ring/compat :ring2
+         :events/on-dispatch on-dispatch
+         :socket/backlog 4069}
 
-                  (some? handler)
-                  handler
+        handler
+        (cond
+          (some? router)
+          (router-handler router)
 
-                  :else
-                  (throw (UnsupportedOperationException. "handler or router are required")))
+          (some? handler)
+          handler
 
-        options (d/without-nils options)
-        server  (yt/server handler options)]
+          :else
+          (throw (UnsupportedOperationException. "handler or router are required")))
+
+        server
+        (yt/server handler (d/without-nils options))]
 
     (assoc cfg ::server (yt/start! server))))
 

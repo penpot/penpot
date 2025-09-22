@@ -31,13 +31,13 @@
    java.time.Duration
    java.util.Collection
    java.util.Optional
+   java.util.concurrent.atomic.AtomicLong
    org.reactivestreams.Subscriber
    software.amazon.awssdk.core.ResponseBytes
    software.amazon.awssdk.core.async.AsyncRequestBody
    software.amazon.awssdk.core.async.AsyncResponseTransformer
    software.amazon.awssdk.core.async.BlockingInputStreamAsyncRequestBody
    software.amazon.awssdk.core.client.config.ClientAsyncConfiguration
-   software.amazon.awssdk.core.client.config.SdkAdvancedAsyncClientOption
    software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient
    software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup
    software.amazon.awssdk.regions.Region
@@ -87,12 +87,11 @@
 
 (def ^:private schema:config
   [:map {:title "s3-backend-config"}
-   ::wrk/executor
+   ::wrk/netty-io-executor
    [::region {:optional true} :keyword]
    [::bucket {:optional true} ::sm/text]
    [::prefix {:optional true} ::sm/text]
-   [::endpoint {:optional true} ::sm/uri]
-   [::io-threads {:optional true} ::sm/int]])
+   [::endpoint {:optional true} ::sm/uri]])
 
 (defmethod ig/expand-key ::backend
   [k v]
@@ -110,6 +109,7 @@
           presigner (build-s3-presigner params)]
       (assoc params
              ::sto/type :s3
+             ::counter (AtomicLong. 0)
              ::client @client
              ::presigner presigner
              ::close-fn #(.close ^java.lang.AutoCloseable client)))))
@@ -121,7 +121,7 @@
 (defmethod ig/halt-key! ::backend
   [_ {:keys [::close-fn]}]
   (when (fn? close-fn)
-    (px/run! close-fn)))
+    (close-fn)))
 
 (def ^:private schema:backend
   [:map {:title "s3-backend"}
@@ -198,19 +198,16 @@
   (Region/of (name region)))
 
 (defn- build-s3-client
-  [{:keys [::region ::endpoint ::io-threads ::wrk/executor]}]
+  [{:keys [::region ::endpoint ::wrk/netty-io-executor]}]
   (let [aconfig  (-> (ClientAsyncConfiguration/builder)
-                     (.advancedOption SdkAdvancedAsyncClientOption/FUTURE_COMPLETION_EXECUTOR executor)
                      (.build))
 
         sconfig  (-> (S3Configuration/builder)
                      (cond-> (some? endpoint) (.pathStyleAccessEnabled true))
                      (.build))
 
-        thr-num  (or io-threads (min 16 (px/get-available-processors)))
         hclient  (-> (NettyNioAsyncHttpClient/builder)
-                     (.eventLoopGroupBuilder (-> (SdkEventLoopGroup/builder)
-                                                 (.numberOfThreads (int thr-num))))
+                     (.eventLoopGroup (SdkEventLoopGroup/create netty-io-executor))
                      (.connectionAcquisitionTimeout default-timeout)
                      (.connectionTimeout default-timeout)
                      (.readTimeout default-timeout)
@@ -262,7 +259,7 @@
       (.close ^InputStream input))))
 
 (defn- make-request-body
-  [executor content]
+  [counter content]
   (let [size (impl/get-size content)]
     (reify
       AsyncRequestBody
@@ -272,16 +269,19 @@
       (^void subscribe [_ ^Subscriber subscriber]
         (let [delegate (AsyncRequestBody/forBlockingInputStream (long size))
               input    (io/input-stream content)]
-          (px/run! executor (partial write-input-stream delegate input))
+
+          (px/thread-call (partial write-input-stream delegate input)
+                          {:name (str "penpot/storage/" (.getAndIncrement ^AtomicLong counter))})
+
           (.subscribe ^BlockingInputStreamAsyncRequestBody delegate
                       ^Subscriber subscriber))))))
 
 (defn- put-object
-  [{:keys [::client ::bucket ::prefix ::wrk/executor]} {:keys [id] :as object} content]
+  [{:keys [::client ::bucket ::prefix ::counter]} {:keys [id] :as object} content]
   (let [path    (dm/str prefix (impl/id->path id))
         mdata   (meta object)
         mtype   (:content-type mdata "application/octet-stream")
-        rbody   (make-request-body executor content)
+        rbody   (make-request-body counter content)
         request (.. (PutObjectRequest/builder)
                     (bucket bucket)
                     (contentType mtype)

@@ -27,7 +27,7 @@
      (sp/put! channel [type data])
      nil)))
 
-(defn start-listener
+(defn spawn-listener
   [channel on-event on-close]
   (assert (sp/chan? channel) "expected active events channel")
 
@@ -51,7 +51,7 @@
   [f on-event]
 
   (binding [*channel* (sp/chan :buf 32)]
-    (let [listener (start-listener *channel* on-event (constantly nil))]
+    (let [listener (spawn-listener *channel* on-event (constantly nil))]
       (try
         (f)
         (finally

@@ -112,7 +112,7 @@
 
     (if (db/read-only? pool)
       (l/wrn :hint "not started (db is read-only)")
-      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual false))))
+      (px/fn->thread dispatcher :name "penpot/worker-dispatcher"))))
 
 (defmethod ig/halt-key! ::wrk/dispatcher
   [_ thread]

@@ -21,8 +21,7 @@
    [clojure.java.io :as io]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [promesa.core :as p]
-   [promesa.exec :as px])
+   [promesa.core :as p])
   (:import
    clojure.lang.MapEntry
    io.lettuce.core.KeyValue
@@ -45,8 +44,10 @@
    io.lettuce.core.pubsub.api.sync.RedisPubSubCommands
    io.lettuce.core.resource.ClientResources
    io.lettuce.core.resource.DefaultClientResources
+   io.netty.channel.nio.NioEventLoopGroup
    io.netty.util.HashedWheelTimer
    io.netty.util.Timer
+   io.netty.util.concurrent.EventExecutorGroup
    java.lang.AutoCloseable
    java.time.Duration))
 
@@ -111,20 +112,15 @@
 
 (defmethod ig/expand-key ::redis
   [k v]
-  (let [cpus    (px/get-available-processors)
-        threads (max 1 (int (* cpus 0.2)))]
-    {k (-> (d/without-nils v)
-           (assoc ::timeout (ct/duration "10s"))
-           (assoc ::io-threads (max 3 threads))
-           (assoc ::worker-threads (max 3 threads)))}))
+  {k (-> (d/without-nils v)
+         (assoc ::timeout (ct/duration "10s")))})
 
 (def ^:private schema:redis-params
   [:map {:title "redis-params"}
-   ::wrk/executor
+   ::wrk/netty-io-executor
+   ::wrk/netty-executor
    ::mtx/metrics
    [::uri ::sm/uri]
-   [::worker-threads ::sm/int]
-   [::io-threads ::sm/int]
    [::timeout ::ct/duration]])
 
 (defmethod ig/assert-key ::redis
@@ -141,17 +137,30 @@
 
 (defn- initialize-resources
   "Initialize redis connection resources"
-  [{:keys [::uri ::io-threads ::worker-threads ::wrk/executor ::mtx/metrics] :as params}]
+  [{:keys [::uri ::mtx/metrics ::wrk/netty-io-executor ::wrk/netty-executor] :as params}]
 
   (l/inf :hint "initialize redis resources"
-         :uri (str uri)
-         :io-threads io-threads
-         :worker-threads worker-threads)
+         :uri (str uri))
 
   (let [timer     (HashedWheelTimer.)
         resources (.. (DefaultClientResources/builder)
-                      (ioThreadPoolSize ^long io-threads)
-                      (computationThreadPoolSize ^long worker-threads)
+                      (eventExecutorGroup ^EventExecutorGroup netty-executor)
+
+                      ;; We provide lettuce with a shared event loop
+                      ;; group instance instead of letting lettuce to
+                      ;; create its own
+                      (eventLoopGroupProvider
+                       (reify io.lettuce.core.resource.EventLoopGroupProvider
+                         (allocate [_ _] netty-io-executor)
+                         (threadPoolSize [_]
+                           (.executorCount ^NioEventLoopGroup netty-io-executor))
+                         (release [_ _ _ _ _]
+                           ;; Do nothing
+                           )
+                         (shutdown [_ _ _ _]
+                           ;; Do nothing
+                           )))
+
                       (timer ^Timer timer)
                       (build))
 
@@ -166,7 +175,7 @@
                     (l/trace :hint "evict connection (cache)" :key key :reason cause)
                     (some-> val d/close!))
 
-        cache     (cache/create :executor executor
+        cache     (cache/create :executor netty-executor
                                 :on-remove on-remove
                                 :keepalive "5m")]
     (reify

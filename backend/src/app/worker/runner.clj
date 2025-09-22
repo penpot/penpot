@@ -220,10 +220,8 @@
                     (px/sleep timeout)
                     (recur result))
                   (do
-                    (l/err :hint "unhandled exception on processing task result (retrying in some instants)"
-                           :cause cause)
-                    (px/sleep timeout)
-                    (recur result))))))]
+                    (l/err :hint "unhandled exception on processing task result"
+                           :cause cause))))))]
 
     (try
       (let [key       (str/ffmt "taskq:%" queue)
@@ -248,7 +246,7 @@
 (defn- start-thread!
   [{:keys [::rds/redis ::id ::queue ::wrk/tenant] :as cfg}]
   (px/thread
-    {:name (format "penpot/worker/runner:%s" id)}
+    {:name (str "penpot/worker-runner/" id)}
     (l/inf :hint "started" :id id :queue queue)
     (try
       (dm/with-open [rconn (rds/connect redis)]
@@ -303,7 +301,7 @@
       (l/wrn :hint "not started (db is read-only)" :queue queue :parallelism parallelism)
       (doall
        (->> (range parallelism)
-            (map #(assoc cfg ::id %))
+            (map #(assoc cfg ::id (str queue "/" %)))
             (map start-thread!))))))
 
 (defmethod ig/halt-key! ::wrk/runner

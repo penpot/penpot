@@ -15,6 +15,7 @@
    [app.config :as cf]
    [app.srepl.cli :as cli]
    [app.srepl.main]
+   [app.srepl.procs]
    [app.util.locks :as locks]
    [clojure.core :as c]
    [clojure.core.server :as ccs]

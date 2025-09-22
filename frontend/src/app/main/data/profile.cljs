@@ -407,7 +407,8 @@
       (watch [_ _ _]
         (let [{:keys [on-error on-success]
                :or {on-error rx/throw
-                    on-success identity}} (meta data)]
+                    on-success identity}}
+              (meta data)]
 
           (->> (rp/cmd! :request-profile-recovery data)
                (rx/tap on-success)
