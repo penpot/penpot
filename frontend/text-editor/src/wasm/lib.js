@@ -199,7 +199,7 @@ const debouncedRender = debounce(() => {
   Module._render(Date.now());
 }, 100);
 
-export function setupInteraction(canvas) {
+export function setupInteraction(canvas, textEditor) {
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
     const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
@@ -209,6 +209,12 @@ export function setupInteraction(canvas) {
     offsetX -= (mouseX - offsetX) * (zoomFactor - 1);
     offsetY -= (mouseY - offsetY) * (zoomFactor - 1);
     Module._set_view(scale, offsetX, offsetY);
+    textEditor.updatePositionWithTransform({
+      x: offsetX,
+      y: offsetY,
+      rotation: 0,
+      scale: scale
+    })
     Module._render_from_cache();
     debouncedRender();
   });
@@ -228,6 +234,12 @@ export function setupInteraction(canvas) {
       lastX = e.offsetX;
       lastY = e.offsetY;
       Module._set_view(scale, offsetX, offsetY);
+      textEditor.updatePositionWithTransform({
+        x: offsetX,
+        y: offsetY,
+        rotation: 0,
+        scale: scale,
+      });
       Module._render_from_cache();
       debouncedRender();
     }

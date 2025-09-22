@@ -197,9 +197,6 @@
       -->
       <div class="text-editor-container align-top">
         <div
-          id="text-editor-selection-imposter"
-          class="text-editor-selection-imposter"></div>
-        <div
           class="text-editor-content"
           contenteditable="true"
           role="textbox"
@@ -225,6 +222,10 @@
         import {
           init, assignCanvas, render, setupInteraction, useShape, setShapeChildren, addTextShape, updateTextShape, hexToU32ARGB,getRandomInt, getRandomColor, getRandomFloat, addShapeSolidFill, addShapeSolidStrokeFill, storeFonts
         } from './wasm/lib.js';
+
+        const canvas = document.getElementById("canvas");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
         async function loadFontList() {
           const response = await fetch('fonts/fonts.txt')
@@ -294,7 +295,7 @@
         );
 
         const textEditorElement = document.querySelector(".text-editor-content");
-        const textEditor = new TextEditor(textEditorElement, {
+        const textEditor = new TextEditor(textEditorElement, canvas, {
           styleDefaults: {
             "font-family": "MontserratAlternates",
             "font-size": "14",
@@ -511,10 +512,6 @@
           directionRTLElement.checked = direction === "rtl";
         });
 
-        const canvas = document.getElementById("canvas");
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
         const MIN_LINES = 1;
         const MAX_LINES = 5;
         const MIN_WORDS = 1;
@@ -526,16 +523,16 @@
           Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
           Module._set_view(1, 0, 0);
           Module._init_shapes_pool(1);
-          setupInteraction(canvas);
+          setupInteraction(canvas, textEditor);
 
           canvas.addEventListener('click', (e) => {
             console.log('click', e.type, e);
             useShape(uuid);
             const caretPosition = Module._get_caret_position_at(e.offsetX, e.offsetY);
             console.log('caretPosition', caretPosition);
-          })
+          });
 
-          storeFonts(fonts)
+          storeFonts(fonts);
 
           console.log("text shape", uuid);
           useShape(uuid);
@@ -552,7 +549,7 @@
 
           useShape("00000000-0000-0000-0000-000000000000");
           setShapeChildren(children);
-          render()
+          render();
         });
       </script>
 

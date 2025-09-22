@@ -10,7 +10,6 @@ import clipboard from "./clipboard/index.js";
 import commands from "./commands/index.js";
 import ChangeController from "./controllers/ChangeController.js";
 import SelectionController from "./controllers/SelectionController.js";
-import { createSelectionImposterFromClientRects } from "./selection/Imposter.js";
 import { addEventListeners, removeEventListeners } from "./Event.js";
 import {
   mapContentFragmentFromHTML,
@@ -63,13 +62,6 @@ export class TextEditor extends EventTarget {
   #selectionController = null;
 
   /**
-   * Selection imposter keeps selection elements.
-   *
-   * @type {HTMLElement}
-   */
-  #selectionImposterElement = null;
-
-  /**
    * Style defaults.
    *
    * @type {Object.<string, *>}
@@ -85,17 +77,25 @@ export class TextEditor extends EventTarget {
   #fixInsertCompositionText = false;
 
   /**
+   * Canvas element that renders text.
+   *
+   * @type {HTMLCanvasElement}
+   */
+  #canvas = null;
+
+  /**
    * Constructor.
    *
    * @param {HTMLElement} element
+   * @param {HTMLCanvasElement} canvas
    */
-  constructor(element, options) {
+  constructor(element, canvas, options) {
     super();
     if (!(element instanceof HTMLElement))
       throw new TypeError("Invalid text editor element");
 
     this.#element = element;
-    this.#selectionImposterElement = options?.selectionImposterElement;
+    this.#canvas = canvas;
     this.#events = {
       blur: this.#onBlur,
       focus: this.#onFocus,
@@ -132,6 +132,7 @@ export class TextEditor extends EventTarget {
     if (this.#element.ariaAutoComplete) this.#element.ariaAutoComplete = false;
     if (!this.#element.ariaMultiLine) this.#element.ariaMultiLine = true;
     this.#element.dataset.itype = "editor";
+    this.#updatePositionFromCanvas();
   }
 
   /**
@@ -140,6 +141,29 @@ export class TextEditor extends EventTarget {
   #setupRoot() {
     this.#root = createEmptyRoot(this.#styleDefaults);
     this.#element.appendChild(this.#root);
+  }
+
+  /**
+   * Updates position from canvas.
+   */
+  #updatePositionFromCanvas() {
+    const boundingClientRect = this.#canvas.getBoundingClientRect();
+    this.#element.parentElement.style.top = boundingClientRect.top + 'px';
+    this.#element.parentElement.style.left = boundingClientRect.left + 'px';
+  }
+
+  /**
+   * Updates caret position using a transform object.
+   *
+   * @param {*} transform
+   */
+  updatePositionWithTransform(transform) {
+    const x = transform?.x ?? 0.0;
+    const y = transform?.y ?? 0.0;
+    const rotation = transform?.rotation ?? 0.0;
+    const scale = transform?.scale ?? 1.0;
+    this.#updatePositionFromCanvas();
+    this.#element.parentElement.style.transform = `scale(${scale}) translate(${x}px, ${y}px) rotate(${rotation}deg)`;
   }
 
   /**
@@ -157,11 +181,6 @@ export class TextEditor extends EventTarget {
    * @returns {void}
    */
   #onStyleChange = (e) => {
-    if (this.#selectionImposterElement.children.length > 0) {
-      // We need to recreate the selection imposter when we've
-      // already have one.
-      this.#createSelectionImposter();
-    }
     this.dispatchEvent(new e.constructor(e.type, e));
   };
 
@@ -189,27 +208,6 @@ export class TextEditor extends EventTarget {
   }
 
   /**
-   * Creates the selection imposter.
-   */
-  #createSelectionImposter() {
-    // We only create a selection imposter if there's any selection
-    // and if there is a selection imposter element to attach the
-    // rects.
-    if (
-      this.#selectionImposterElement &&
-      !this.#selectionController.isCollapsed
-    ) {
-      const rects = this.#selectionController.range?.getClientRects();
-      if (rects) {
-        const rect = this.#selectionImposterElement.getBoundingClientRect();
-        this.#selectionImposterElement.replaceChildren(
-          createSelectionImposterFromClientRects(rect, rects),
-        );
-      }
-    }
-  }
-
-  /**
    * On blur we create a new FakeSelection if there's any.
    *
    * @param {FocusEvent} e
@@ -217,7 +215,6 @@ export class TextEditor extends EventTarget {
   #onBlur = (e) => {
     this.#changeController.notifyImmediately();
     this.#selectionController.saveSelection();
-    this.#createSelectionImposter();
     this.dispatchEvent(new FocusEvent(e.type, e));
   };
 
@@ -230,9 +227,6 @@ export class TextEditor extends EventTarget {
   #onFocus = (e) => {
     if (!this.#selectionController.restoreSelection()) {
       this.selectAll();
-    }
-    if (this.#selectionImposterElement) {
-      this.#selectionImposterElement.replaceChildren();
     }
     this.dispatchEvent(new FocusEvent(e.type, e));
   };
