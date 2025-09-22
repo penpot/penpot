@@ -27,7 +27,7 @@
    [app.common.types.page :as ctp]
    [app.common.types.plugins :as ctpg]
    [app.common.types.shape :as cts]
-   [app.common.types.tokens-lib :as cto]
+   [app.common.types.tokens-lib :as ctob]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
    [app.config :as cf]
@@ -120,7 +120,7 @@
   (sm/encoder cty/schema:typography sm/json-transformer))
 
 (def encode-tokens-lib
-  (sm/encoder cto/schema:tokens-lib sm/json-transformer))
+  (sm/encoder ctob/schema:tokens-lib sm/json-transformer))
 
 (def encode-plugin-data
   (sm/encoder ctpg/schema:plugin-data sm/json-transformer))
@@ -158,7 +158,7 @@
   (sm/decoder cty/schema:typography sm/json-transformer))
 
 (def decode-tokens-lib
-  (sm/decoder cto/schema:tokens-lib sm/json-transformer))
+  (sm/decoder ctob/schema:tokens-lib sm/json-transformer))
 
 (def decode-plugin-data
   (sm/decoder ctpg/schema:plugin-data sm/json-transformer))
@@ -196,7 +196,7 @@
   (sm/check-fn cty/schema:typography))
 
 (def validate-tokens-lib
-  (sm/check-fn cto/schema:tokens-lib))
+  (sm/check-fn ctob/schema:tokens-lib))
 
 (def validate-plugin-data
   (sm/check-fn ctpg/schema:plugin-data))
@@ -349,7 +349,8 @@
             typography (encode-typography object)]
         (write-entry! output path typography)))
 
-    (when tokens-lib
+    (when (and tokens-lib
+               (not (ctob/empty-lib? tokens-lib)))
       (let [path           (str "files/" file-id "/tokens.json")
             encoded-tokens (encode-tokens-lib tokens-lib)]
         (write-entry! output path encoded-tokens)))))
