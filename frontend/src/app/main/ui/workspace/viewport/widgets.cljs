@@ -349,3 +349,39 @@
                         :on-frame-leave on-frame-leave
                         :on-frame-select on-frame-select}]))])
 
+(mf/defc button-add*
+  [{:keys [shape zoom on-click]}]
+  (let [{:keys [x2 y2 height]} (:selrect shape)
+
+        center-x (+ x2 (/ 22 zoom))
+        center-y (- y2 (/ height 2))
+
+        rect-x   (- center-x (/ 16 zoom))
+        rect-y   (- center-y (/ 16 zoom))
+        rect-sz  (/ 32 zoom)
+        rect-r   (/ 8 zoom)
+
+        icon-x   (- center-x (/ 8 zoom))
+        icon-y   (- center-y (/ 8 zoom))
+        icon-sz  (/ 16 zoom)
+
+        handle-click
+        (mf/use-fn
+         (mf/deps on-click)
+         #(when (fn? on-click)
+            (on-click)))]
+
+    [:g {:class (stl/css :button-add-wrapper)
+         :on-click handle-click}
+     [:rect {:x rect-x
+             :y rect-y
+             :width rect-sz
+             :height rect-sz
+             :rx rect-r
+             :ry rect-r}]
+     [:use {:class (stl/css :button-add-icon)
+            :x icon-x
+            :y icon-y
+            :width icon-sz
+            :height icon-sz
+            :href "#icon-add"}]]))

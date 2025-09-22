@@ -87,3 +87,17 @@
   width: 100%;
   max-width: initial;
 }
+
+// The following colors must be defined
+// for dark and light themss
+
+.button-add-wrapper {
+  fill: #bb97d8;
+  &:hover {
+    fill: #a977d1;
+  }
+}
+
+.button-add-icon {
+  stroke: #fff;
+}
