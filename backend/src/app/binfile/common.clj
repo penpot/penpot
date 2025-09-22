@@ -641,6 +641,9 @@
   "Insert a new file into the database table. Expectes a not-encoded file.
   Returns nil."
   [{:keys [::db/conn] :as cfg} file & {:as opts}]
+  ;; We need to disab
+  (db/exec-one! conn ["SET CONSTRAINTS ALL DEFERRED"])
+
   (when (:migrations file)
     (fmigr/upsert-migrations! conn file))
 
