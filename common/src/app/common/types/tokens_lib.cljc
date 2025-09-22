@@ -768,7 +768,8 @@
   (theme-active? [_ group name] "predicate if token theme is active")
   (activate-theme [_ group name] "adds theme from the active-themes")
   (deactivate-theme [_ group name] "removes theme from the active-themes")
-  (toggle-theme-active? [_ group name] "toggles theme in the active-themes"))
+  (toggle-theme-active? [_ group name] "toggles theme in the active-themes")
+  (get-hidden-theme [_] "get the hidden temporary theme"))
 
 (def schema:token-themes
   [:and
@@ -906,6 +907,7 @@
 
 (defprotocol ITokensLib
   "A library of tokens, sets and themes."
+  (empty-lib? [_] "True if the lib does not contain any token, set or theme")
   (set-path-exists? [_ path] "if a set at `path` exists")
   (set-group-path-exists? [_ path] "if a set group at `path` exists")
   (add-token-in-set [_ set-name token] "add token to a set")
@@ -1235,7 +1237,16 @@ Will return a value that matches this schema:
       (filter #(theme-active? this (:group %) (:name %))))
      (tree-seq d/ordered-map? vals themes)))
 
+  (get-hidden-theme [this]
+    (get-theme this hidden-theme-group hidden-theme-name))
+
   ITokensLib
+  (empty-lib? [this]
+    (and (empty? sets)
+         (or (empty? themes)
+             (and (= (theme-count this) 1)
+                  (get-hidden-theme this)))))
+
   (set-path-exists? [_ set-path]
     (some? (get-in sets (set-full-path->set-prefixed-full-path set-path))))
 
@@ -1337,10 +1348,6 @@ Will return a value that matches this schema:
 
      cljs.core/IEncodeJS
      (-clj->js [this] (clj->js (datafy this)))))
-
-(defn get-hidden-theme
-  [tokens-lib]
-  (get-theme tokens-lib hidden-theme-group hidden-theme-name))
 
 (defn valid-tokens-lib?
   [o]
@@ -1752,11 +1759,12 @@ Will return a value that matches this schema:
         active-set-names
         (get-active-themes-set-names tokens-lib)]
 
-    (-> sets
-        (assoc "$themes" themes)
-        (assoc "$metadata" {"tokenSetOrder" ordered-set-names
-                            "activeThemes" active-themes
-                            "activeSets" active-set-names}))))
+    (when-not (empty-lib? tokens-lib)
+      (-> sets
+          (assoc "$themes" themes)
+          (assoc "$metadata" {"tokenSetOrder" ordered-set-names
+                              "activeThemes" active-themes
+                              "activeSets" active-set-names})))))
 
 (defn get-tokens-of-unknown-type
   "Search for all tokens in the decoded json file that have a type that is not currently

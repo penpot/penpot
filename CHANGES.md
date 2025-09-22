@@ -62,6 +62,7 @@
 - Fix moving elements up or down while pressing alt [Taiga Issue #11992](https://tree.taiga.io/project/penpot/issue/11992)
 - Fix conflicting shortcuts (remove dec/inc line height and letter spacing) [Taiga #12102](https://tree.taiga.io/project/penpot/issue/12102)
 - Fix conflicting shortcuts (remove text-align shortcuts) [Taiga #12047](https://tree.taiga.io/project/penpot/issue/12047)
+- Fix export file with empty tokens library [Taiga #12137](https://tree.taiga.io/project/penpot/issue/12137)
 
 ## 2.9.0
 
