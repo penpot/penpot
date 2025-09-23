@@ -770,6 +770,18 @@
                  #(interaction-proxy plugin-id file-id page-id id %)
                  (range 0 (count interactions)))))}
 
+           :tokens
+           {:this true
+            :get
+            (fn [_]
+              (let [tokens
+                    (-> (u/locate-shape file-id page-id id)
+                        (get :applied-tokens))]
+                (reduce
+                 (fn [acc [prop name]]
+                   (obj/set! acc (d/name prop) name))
+                 #js {}
+                 tokens)))}
 
            ;; Methods
 
@@ -1220,7 +1232,35 @@
 
                :else
                (let [guide (u/proxy->ruler-guide value)]
-                 (st/emit! (dwgu/remove-guide guide))))))
+                 (st/emit! (dwgu/remove-guide guide)))))
+
+
+           :applyToken
+           (fn [_property _token]
+             ;; TODO
+             )
+
+           :applyTokenName
+           (fn [_property _token-name]
+             ;; TODO
+             )
+
+           :swapComponent
+           (fn [_component]
+             ;; TODO validate input
+             ;; TODO swap component
+             )
+
+           :isVariantCopy
+           (fn []
+             ;; TODO
+             )
+
+           :switchVariant
+           (fn [_property _value]
+             ;; TODO validate input
+             ;; TODO switch variant
+             ))
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
