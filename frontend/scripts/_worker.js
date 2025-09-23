@@ -24,6 +24,7 @@ async function compileFile(path) {
           "node_modules/animate.css",
           "resources/styles/common/",
           "resources/styles",
+          "src/app/main/ui/",
         ],
         sourceMap: false,
       });
