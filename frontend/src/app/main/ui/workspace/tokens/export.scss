@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../ds/typography.scss" as t;
-@use "../../ds/_sizes.scss" as *;
-@use "../../ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 @use "refactor/common-refactor.scss" as *;
 
 .modal-overlay {

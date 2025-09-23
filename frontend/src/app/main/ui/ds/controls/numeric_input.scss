@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../spacing.scss" as *;
-@use "../borders.scss" as *;
-@use "../sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .input-wrapper {
   --opacity-button: 0;

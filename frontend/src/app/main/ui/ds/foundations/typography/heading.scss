@@ -3,7 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 //
 // Copyright (c) KALEIDOS INC
-@use "../../typography.scss" as t;
+@use "ds/typography.scss" as t;
 
 .display-typography {
   @include t.use-typography("display");

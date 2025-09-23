@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/typography.scss" as t;
-@use "../ds/borders" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
 
 .code-display {
   @include t.use-typography("code-font");

@@ -4,11 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_sizes.scss" as *;
-@use "../_borders.scss" as *;
-@use "../typography.scss" as *;
-@use "../spacing.scss" as *;
-@use "../z-index.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/z-index.scss" as *;
 
 .toast {
   --toast-icon-color: var(--color-foreground-secondary);

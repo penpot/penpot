@@ -6,7 +6,7 @@
 
 @use "common/refactor/common-refactor.scss" as *;
 @use "./grid.scss" as g;
-@use "../ds/typography.scss" as t;
+@use "ds/typography.scss" as t;
 
 .grid-empty-placeholder {
   border-radius: $br-12;
