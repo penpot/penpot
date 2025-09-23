@@ -24,7 +24,7 @@
                                   (ctob/set-sets active-token-set-names))
                           (update-theme-fn))]
     (-> changes
-        (pcb/update-active-token-themes #{(ctob/get-theme-path hidden-theme')})
+        (pcb/set-active-token-themes #{(ctob/get-theme-path hidden-theme')})
         (pcb/set-token-theme (:group hidden-theme)
                              (:name hidden-theme)
                              hidden-theme'))))
