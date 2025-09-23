@@ -120,7 +120,7 @@
                                    (disj active-token-themes ctob/hidden-theme-path))
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/update-active-token-themes active-token-themes'))]
+                        (pcb/set-active-token-themes active-token-themes'))]
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -344,7 +344,7 @@
                 (pcb/set-token-theme (:group hidden-theme)
                                      (:name hidden-theme)
                                      hidden-theme-with-set)
-                (pcb/update-active-token-themes #{ctob/hidden-theme-path}))]
+                (pcb/set-active-token-themes #{ctob/hidden-theme-path}))]
         (rx/of (dch/commit-changes changes)
                (set-selected-token-set-id (ctob/get-id token-set)))))))
 

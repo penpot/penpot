@@ -366,9 +366,34 @@
      [:type [:= :del-typography]]
      [:id ::sm/uuid]]]
 
-   [:update-active-token-themes
-    [:map {:title "UpdateActiveTokenThemes"}
-     [:type [:= :update-active-token-themes]]
+   [:set-tokens-lib
+    [:map {:title "SetTokensLib"}
+     [:type [:= :set-tokens-lib]]
+     [:tokens-lib ::sm/any]]]  ;; TODO: we should define a plain object schema for tokens-lib
+
+   [:set-token
+    [:map {:title "SetTokenChange"}
+     [:type [:= :set-token]]
+     [:set-id ::sm/uuid]
+     [:token-id ::sm/uuid]
+     [:token [:maybe ctob/schema:token-attrs]]]]
+
+   [:set-token-set
+    [:map {:title "SetTokenSetChange"}
+     [:type [:= :set-token-set]]
+     [:id ::sm/uuid]
+     [:token-set [:maybe ctob/schema:token-set-attrs]]]]
+
+   [:set-token-theme
+    [:map {:title "SetTokenThemeChange"}
+     [:type [:= :set-token-theme]]
+     [:theme-name :string]
+     [:group :string]
+     [:theme [:maybe ctob/schema:token-theme-attrs]]]]
+
+   [:set-active-token-themes
+    [:map {:title "SetActiveTokenThemes"}
+     [:type [:= :set-active-token-themes]]
      [:theme-paths [:set :string]]]]
 
    [:rename-token-set-group
@@ -392,31 +417,6 @@
      [:to-path [:vector :string]]
      [:before-path [:maybe [:vector :string]]]
      [:before-group [:maybe :boolean]]]]
-
-   [:set-token-theme
-    [:map {:title "SetTokenThemeChange"}
-     [:type [:= :set-token-theme]]
-     [:theme-name :string]
-     [:group :string]
-     [:theme [:maybe ctob/schema:token-theme-attrs]]]]
-
-   [:set-tokens-lib
-    [:map {:title "SetTokensLib"}
-     [:type [:= :set-tokens-lib]]
-     [:tokens-lib ::sm/any]]]
-
-   [:set-token-set
-    [:map {:title "SetTokenSetChange"}
-     [:type [:= :set-token-set]]
-     [:id ::sm/uuid]
-     [:token-set [:maybe ctob/schema:token-set-attrs]]]]
-
-   [:set-token
-    [:map {:title "SetTokenChange"}
-     [:type [:= :set-token]]
-     [:set-id ::sm/uuid]
-     [:token-id ::sm/uuid]
-     [:token [:maybe ctob/schema:token-attrs]]]]
 
    [:set-base-font-size
     [:map {:title "ModBaseFontSize"}
@@ -970,7 +970,7 @@
   [data {:keys [id]}]
   (ctyl/delete-typography data id))
 
-;; -- Tokens
+;; -- Design Tokens
 
 (defmethod process-change :set-tokens-lib
   [data {:keys [tokens-lib]}]
@@ -1026,7 +1026,7 @@
                                    (fn [prev-token-theme]
                                      (ctob/make-token-theme (merge prev-token-theme theme)))))))))
 
-(defmethod process-change :update-active-token-themes
+(defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]
   (update data :tokens-lib #(-> % (ctob/ensure-tokens-lib)
                                 (ctob/set-active-themes theme-paths))))
@@ -1050,7 +1050,7 @@
                                 (ctob/ensure-tokens-lib)
                                 (ctob/move-set-group from-path to-path before-path before-group))))
 
-;; === Base font size
+;; === Design Tokens configuration
 
 (defmethod process-change :set-base-font-size
   [data {:keys [base-font-size]}]
