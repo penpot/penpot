@@ -4,69 +4,41 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
 
-.flow-element {
-  display: flex;
-  align-items: center;
-
-  .flow-name {
-    cursor: pointer;
-  }
-
-  & input.element-name {
-    background: transparent;
-  }
-}
-
-.flow-badge {
+.frame-flow-badge-wrapper {
   cursor: pointer;
   display: flex;
-  .content {
-    @include deprecated.bodySmallTypography;
-    display: flex;
-    align-items: center;
-    height: deprecated.$s-24;
-    border-radius: deprecated.$br-6;
-    background-color: var(--flow-tag-background-color);
-    svg {
-      @extend .button-icon;
-      height: deprecated.$s-24;
-      width: deprecated.$s-12;
-      stroke: var(--icon-foreground);
-      margin: 0 deprecated.$s-8;
-    }
+}
 
-    span {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: deprecated.$s-8;
-      color: var(--flow-tag-foreground-color);
-    }
-  }
+.frame-flow-badge-content {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xs);
+  border-radius: $br-6;
+  padding-inline-start: var(--sp-xs);
+  padding-inline-end: var(--sp-s);
+  height: var(--sp-xxl);
+  background-color: var(--flow-tag-background-color);
+  color: var(--flow-tag-foreground-color);
 
-  &.selected .content,
-  &:hover .content {
-    background-color: var(--flow-tag-background-color-hover);
-    svg {
-      stroke: var(--flow-tag-foreground-color-hover);
-    }
-
-    span {
-      color: var(--flow-tag-foreground-color-hover);
-    }
+  &:hover,
+  &.selected {
+    --flow-tag-foreground-color: var(--flow-tag-foreground-color-hover);
+    --flow-tag-background-color: var(--flow-tag-background-color-hover);
   }
 }
 
-.workspace-frame-label-wrapper {
+.frame-title-wrapper {
   pointer-events: none;
 }
 
-.workspace-frame-label {
-  font-size: deprecated.$fs-12;
-  color: black;
+.frame-title-label {
+  @include t.use-typography("body-small");
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -74,30 +46,33 @@
   pointer-events: all;
 }
 
-.element-name-input {
-  @include deprecated.removeInputStyle;
-  @include deprecated.bodySmallTypography;
-  @include deprecated.removeInputStyle;
+.frame-title-input {
+  @include t.use-typography("body-small");
   flex-grow: 1;
-  height: 20px;
-  margin: 0;
-  padding-left: deprecated.$s-6;
-  border: deprecated.$s-1 solid var(--input-border-color-focus);
-  color: var(--layer-row-foreground-color);
   width: 100%;
   max-width: initial;
+  background: none;
+  outline: none;
+  height: var(--sp-xl);
+  padding-inline-start: var(--sp-s);
+  border: $b-1 solid var(--input-border-color-focus);
+  color: var(--layer-row-foreground-color);
 }
 
-// The following colors must be defined
+// TODO The following colors must be defined
 // for dark and light themss
 
 .button-add-wrapper {
-  fill: #bb97d8;
+  --button-add-background-color: #bb97d8;
+  --button-add-background-color-hover: #a977d1;
+  --button-add-icon-color: #fff;
+
+  fill: var(--button-add-background-color);
   &:hover {
-    fill: #a977d1;
+    --button-add-background-color: var(--button-add-background-color-hover);
   }
 }
 
 .button-add-icon {
-  stroke: #fff;
+  stroke: var(--button-add-icon-color);
 }
