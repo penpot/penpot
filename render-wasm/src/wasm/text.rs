@@ -1,7 +1,9 @@
 use macros::ToJs;
 
 use crate::mem;
-use crate::shapes::{self, Fill, GrowType, TextAlign, TextDecoration, TextDirection, Type};
+use crate::shapes::{
+    self, Fill, GrowType, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
+};
 use crate::utils::uuid_from_u32;
 use crate::{with_current_shape_mut, STATE};
 
@@ -65,6 +67,26 @@ impl From<RawTextDecoration> for Option<TextDecoration> {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+pub enum RawTextTransform {
+    None = 0,
+    Uppercase = 1,
+    Lowercase = 2,
+    Capitalize = 3,
+}
+
+impl From<RawTextTransform> for Option<TextTransform> {
+    fn from(value: RawTextTransform) -> Self {
+        match value {
+            RawTextTransform::None => None,
+            RawTextTransform::Uppercase => Some(TextTransform::Uppercase),
+            RawTextTransform::Lowercase => Some(TextTransform::Lowercase),
+            RawTextTransform::Capitalize => Some(TextTransform::Capitalize),
+        }
+    }
+}
+
 #[repr(C)]
 #[repr(align(4))]
 #[derive(Debug, Clone, Copy)]
@@ -73,7 +95,7 @@ pub struct RawParagraphData {
     text_align: RawTextAlign,
     text_direction: RawTextDirection,
     text_decoration: RawTextDecoration,
-    text_transform: u8,
+    text_transform: RawTextTransform,
     line_height: f32,
     letter_spacing: f32,
     typography_ref_file: [u32; 4],
@@ -126,7 +148,7 @@ impl RawTextData {
 pub struct RawTextLeaf {
     font_style: u8,
     text_decoration: RawTextDecoration,
-    text_transform: u8,
+    text_transform: RawTextTransform,
     font_size: f32,
     letter_spacing: f32,
     font_weight: i32,
@@ -160,7 +182,7 @@ impl TryFrom<&[u8]> for RawTextLeaf {
 pub struct RawTextLeafData {
     font_style: u8,
     text_decoration: RawTextDecoration,
-    text_transform: u8,
+    text_transform: RawTextTransform,
     text_direction: RawTextDirection,
     font_size: f32,
     letter_spacing: f32,
@@ -243,7 +265,7 @@ impl From<&Vec<u8>> for RawTextData {
                 text_leaf.letter_spacing,
                 text_leaf.font_style,
                 text_leaf.text_decoration.into(),
-                text_leaf.text_transform,
+                text_leaf.text_transform.into(),
                 text_leaf.text_direction.into(),
                 text_leaf.font_weight,
                 font_variant_id,
@@ -260,7 +282,7 @@ impl From<&Vec<u8>> for RawTextData {
             paragraph.text_align.into(),
             paragraph.text_direction.into(),
             paragraph.text_decoration.into(),
-            paragraph.text_transform,
+            paragraph.text_transform.into(),
             paragraph.line_height,
             paragraph.letter_spacing,
             typography_ref_file,

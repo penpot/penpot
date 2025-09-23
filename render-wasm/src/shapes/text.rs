@@ -370,6 +370,13 @@ pub type TextAlign = skia::textlayout::TextAlign;
 pub type TextDirection = skia::textlayout::TextDirection;
 pub type TextDecoration = skia::textlayout::TextDecoration;
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum TextTransform {
+    Lowercase,
+    Uppercase,
+    Capitalize,
+}
+
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
 // wasm moduel and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
@@ -378,7 +385,7 @@ pub struct Paragraph {
     text_align: TextAlign,
     text_direction: TextDirection,
     text_decoration: Option<TextDecoration>,
-    text_transform: u8,
+    text_transform: Option<TextTransform>,
     line_height: f32,
     letter_spacing: f32,
     typography_ref_file: Uuid,
@@ -393,7 +400,7 @@ impl Default for Paragraph {
             text_align: TextAlign::default(),
             text_direction: TextDirection::LTR,
             text_decoration: None,
-            text_transform: 0,
+            text_transform: None,
             line_height: 1.0,
             letter_spacing: 0.0,
             typography_ref_file: Uuid::nil(),
@@ -410,7 +417,7 @@ impl Paragraph {
         text_align: TextAlign,
         text_direction: TextDirection,
         text_decoration: Option<TextDecoration>,
-        text_transform: u8,
+        text_transform: Option<TextTransform>,
         line_height: f32,
         letter_spacing: f32,
         typography_ref_file: Uuid,
@@ -498,7 +505,7 @@ pub struct TextLeaf {
     font_weight: i32,
     font_variant_id: Uuid,
     text_decoration: Option<TextDecoration>,
-    text_transform: u8,
+    text_transform: Option<TextTransform>,
     text_direction: TextDirection,
     fills: Vec<shapes::Fill>,
 }
@@ -512,7 +519,7 @@ impl TextLeaf {
         letter_spacing: f32,
         font_style: u8,
         text_decoration: Option<TextDecoration>,
-        text_transform: u8,
+        text_transform: Option<TextTransform>,
         text_direction: TextDirection,
         font_weight: i32,
         font_variant_id: Uuid,
@@ -612,9 +619,9 @@ impl TextLeaf {
 
     pub fn apply_text_transform(&self) -> String {
         match self.text_transform {
-            1 => self.text.to_uppercase(),
-            2 => self.text.to_lowercase(),
-            3 => self
+            Some(TextTransform::Uppercase) => self.text.to_uppercase(),
+            Some(TextTransform::Lowercase) => self.text.to_lowercase(),
+            Some(TextTransform::Capitalize) => self
                 .text
                 .split_whitespace()
                 .map(|word| {
@@ -626,7 +633,7 @@ impl TextLeaf {
                 })
                 .collect::<Vec<_>>()
                 .join(" "),
-            _ => self.text.clone(),
+            None => self.text.clone(),
         }
     }
 

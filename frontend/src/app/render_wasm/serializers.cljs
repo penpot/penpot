@@ -215,13 +215,10 @@
 ;; TODO: Find/Create a Rust enum for this
 (defn translate-text-transform
   [text-transform]
-  (case text-transform
-    "none" 0
-    "uppercase" 1
-    "lowercase" 2
-    "capitalize" 3
-    nil 0
-    0))
+  (let [values (unchecked-get wasm/serializers "text-transform")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name text-transform)) default)))
+
 
 (defn translate-text-decoration
   [text-decoration]
