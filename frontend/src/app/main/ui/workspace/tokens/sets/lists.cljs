@@ -21,7 +21,9 @@
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as kbd]
+   [beicon.v2.core :as rx]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (defn- on-start-creation
@@ -359,6 +361,16 @@
                                       (disj % path)
                                       (conj % path)))))]
 
+    (mf/with-effect []
+      (let [sub (rx/subs! (fn [paths']
+                            (swap! collapsed-paths* (fn [paths] (apply disj paths paths'))))
+                          (->> st/stream
+                               (rx/filter (ptk/type? :expand-token-sets))
+                               (rx/map deref)
+                               (rx/map :paths)))]
+        (fn []
+          (rx/dispose! sub))))
+
     (for [{:keys [id token-set index is-new is-group path parent-path depth] :as node}
           (ctob/sets-tree-seq token-sets
                               {:skip-children-pred collapsed?
@@ -431,7 +443,6 @@
           :on-edit-submit on-edit-submit-set}]))))
 
 (mf/defc controlled-sets-list*
-  {::mf/props :obj}
   [{:keys [token-sets
            selected
            on-update-token-set

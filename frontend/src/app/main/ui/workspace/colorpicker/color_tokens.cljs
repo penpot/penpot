@@ -10,8 +10,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.constants :refer [max-input-length]]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as-alias ev]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -21,8 +24,8 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as tm]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc token-empty-state*
@@ -82,21 +85,21 @@
                   :on-click on-click
                   :size "medium"}]]))
 
-(defn group->set-name
-  "Given a group structure, returns a representative set name.
+(defn group->paths
+  "Given a map with :group string (slash-separated), returns a set of vectors
+   representing the cumulative group hierarchy.
    
-   Input:
-   {:group \"brand\"
-    :sets  [\"light\" \"dark\"]
-    :tokens [...]}
-
-   Output:
-   - If :group exists → \"brand/light\" (first set in :sets)
-   - If :group is nil → the first (and only) value of :sets"
-  [{:keys [group sets]}]
-  (if group
-    (str group "/" (first sets))
-    (first sets)))
+   Example:
+   {:group \"test/gracia\"}
+   => #{[\"test\"] [\"test\" \"gracia\"]}"
+  [m]
+  (let [parts (when-let [g (:group m)]
+                (str/split g #"/"))]
+    (if (seq parts)
+      (->> (range 1 (inc (count parts)))
+           (map (fn [i] (vec (take i parts))))
+           set)
+      #{})))
 
 (mf/defc set-section*
   {::mf/private true}
@@ -154,14 +157,30 @@
         (mf/use-fn
          (mf/deps set)
          (fn [_]
-           (let [first-set-name (group->set-name set)
-                 set-item-id (dm/str "token-set-item-" first-set-name)
-                 set-element (dom/get-element set-item-id)]
-             (when set-element
-               (dom/click set-element)
-               (tm/schedule-on-idle
-                (let [button-element (dom/get-element "add-token-button-Color")]
-                  #(dom/click button-element)))))))
+           (let [;; We want to create a token on the first set
+                 ;; if there are many in this group
+                 complete-name (str (:group set) "/" (first (:sets set)))
+                 path-set (group->paths set)]
+             (st/emit! (dcm/go-to-workspace :layout :tokens)
+                       (ptk/data-event :expand-token-sets {:paths path-set})
+                       (dwtl/set-selected-token-set-name complete-name)
+                       (dwtl/set-token-type-section-open :color true)
+                       (let [{:keys [modal title]} (get dwta/token-properties :color)
+                             window-size (dom/get-window-size)
+                             left-sidebar (dom/get-element "left-sidebar-aside")
+                             x-size (dom/get-data left-sidebar "size")
+                             modal-height 392
+                             x (- (int x-size) 30)
+                             y (- (/ (:height window-size) 2) (/ modal-height 2))]
+                         (modal/show (:key modal)
+                                     {:x x
+                                      :y y
+                                      :position :right
+                                      :fields (:fields modal)
+                                      :title title
+                                      :action "create"
+                                      :token-type :color}))))))
+
         icon-id (if collapsed i/arrow-right i/arrow-down)]
 
     [:article {:class (stl/css :color-token-set)}
