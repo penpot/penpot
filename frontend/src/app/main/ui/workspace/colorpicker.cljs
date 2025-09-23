@@ -660,7 +660,9 @@
             :sets  sets
             :tokens (->> tokens
                          (map #(get token-map %))
-                         (remove nil?)
+                         (remove #(or (nil? %)
+                                      (:errors %)
+                                      (nil? (:resolved-value %))))
                          vec)})
          groups)))
 

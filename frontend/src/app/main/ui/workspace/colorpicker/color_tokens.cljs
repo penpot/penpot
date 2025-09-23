@@ -123,9 +123,10 @@
         selected-shapes
         (mf/with-memo [selected objects]
           (into [] (keep (d/getf objects)) selected))
-        first-shape       (first selected-shapes)
-        applied-tokens    (:applied-tokens first-shape)
-        has-color-tokens? (get applied-tokens :fill)
+
+        first-shape        (first selected-shapes)
+        applied-tokens     (:applied-tokens first-shape)
+        has-color-tokens?  (get applied-tokens :fill)
         has-stroke-tokens? (get applied-tokens :stroke-color)
 
         on-token-pill-click
@@ -139,8 +140,8 @@
                (let [attributes (if (= color-origin :stroke) #{:stroke-color} #{:fill})
                      shape-ids (into #{} (map :id selected-shapes))]
                  (if (or
-                      (= (:name token) has-stroke-tokens?)
-                      (= (:name token) has-color-tokens?))
+                      (and (= (:name token) has-stroke-tokens?) (= color-origin :stroke))
+                      (and (= (:name token) has-color-tokens?) (= color-origin :fill)))
                    (st/emit! (dwta/unapply-token {:attributes attributes
                                                   :token token
                                                   :shape-ids shape-ids}))
@@ -261,6 +262,7 @@
         filter-term (deref filter-term*)
         open-sets* (mf/use-state sets)
         open-sets  (deref open-sets*)
+
         toggle-sets-open
         (mf/use-fn
          (mf/deps open-sets)
@@ -275,7 +277,8 @@
          (fn [event]
            (let [value (-> event (dom/get-target)
                            (dom/get-value))]
-             (reset! filter-term* value))))
+             (reset! filter-term* value)
+             (reset! open-sets* sets))))
         filtered-combined (filter-combined-tokens combined-tokens filter-term)
         sorted-tokens     (sort-combined-tokens filtered-combined)]
     (if (seq combined-tokens)
