@@ -31,6 +31,7 @@
    [app.common.types.shape :as cts]
    [app.common.types.shape.interactions :as ctsi]
    [app.common.types.shape.shadow :as ctss]
+   [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
@@ -1585,6 +1586,25 @@
     (-> data
         (update :pages-index d/update-vals update-page))))
 
+(defmethod migrate-data "0012-fix-position-data"
+  [data _]
+  (let [decode-fn
+        (sm/decoder ctst/schema:position-data sm/json-transformer)
+
+        update-object
+        (fn [object]
+          (if (cfh/text-shape? object)
+            (d/update-when object :position-data decode-fn)
+            object))
+
+        update-container
+        (fn [container]
+          (d/update-when container :objects d/update-vals update-object))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1652,4 +1672,5 @@
          "0009-clean-library-colors"
          "0009-add-partial-text-touched-flags"
          "0010-fix-swap-slots-pointing-non-existent-shapes"
-         "0011-fix-invalid-text-touched-flags"]))
+         "0011-fix-invalid-text-touched-flags"
+         "0012-fix-position-data"]))
