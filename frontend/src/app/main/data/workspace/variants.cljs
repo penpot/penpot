@@ -700,11 +700,12 @@
   (ptk/reify ::variants-switch
     ptk/WatchEvent
     (watch [_ _ _]
-      (let [ids (into (d/ordered-set) (map :id shapes))
+      (let [ids (into (d/ordered-set) d/xf:map-id shapes)
             undo-id (js/Symbol)]
         (rx/concat
          (rx/of (dwu/start-undo-transaction undo-id))
-         (rx/from (map  #(variant-switch % params) shapes))
+         (->> (rx/from shapes)
+              (rx/map #(variant-switch % params)))
          (rx/of (dwu/commit-undo-transaction undo-id)
                 (dws/select-shapes ids)))))))
 

@@ -461,9 +461,10 @@
              (let [error-msg (if (> (count shapes) 1)
                                (tr "workspace.component.switch.loop-error-multi")
                                (tr "workspace.component.swap.loop-error"))
+
                    mdata     {:on-error #(do
-                                           (st/emit! (ntf/error error-msg))
-                                           (reset! key* (uuid/next)))}
+                                           (reset! key* (uuid/next))
+                                           (st/emit! (ntf/error error-msg)))}
                    params    {:shapes shapes :pos pos :val val}]
                (st/emit! (dwv/variants-switch (with-meta params mdata)))))))]
 
@@ -474,7 +475,7 @@
               options (cond-> (get-options (:name prop))
                         mixed-value?
                         (conj {:id mixed-label, :label mixed-label :dimmed true}))]
-          [:div {:key (str (:id shape) pos mixed-value?)
+          [:div {:key (str pos mixed-value?)
                  :class (stl/css :variant-property-container)}
 
            [:div {:class (stl/css :variant-property-name-wrapper)
