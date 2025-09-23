@@ -148,6 +148,7 @@
                      (->> (rp/cmd! ::sse/import-binfile
                                    {:name (str/replace (:name data) #".penpot$" "")
                                     :file file
+                                    :version 1
                                     :project-id project-id})
                           (rx/tap (fn [event]
                                     (let [payload (sse/get-payload event)
