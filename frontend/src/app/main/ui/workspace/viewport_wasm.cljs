@@ -516,11 +516,11 @@
            :alt? @alt?
            :shift? @shift?}])
 
-       [:& widgets/frame-titles
+       [:> widgets/frame-titles*
         {:objects (with-meta objects-modified nil)
          :selected selected
          :zoom zoom
-         :show-artboard-names? show-artboard-names?
+         :is-show-artboard-names show-artboard-names?
          :on-frame-enter on-frame-enter
          :on-frame-leave on-frame-leave
          :on-frame-select on-frame-select
@@ -551,9 +551,8 @@
            :focus focus}])
 
        (when show-pixel-grid?
-         [:& widgets/pixel-grid
-          {:vbox vbox
-           :zoom zoom}])
+         [:> widgets/pixel-grid* {:vbox vbox
+                                  :zoom zoom}])
 
        (when show-snap-points?
          [:& snap-points/snap-points
@@ -576,13 +575,12 @@
            :page-id page-id}])
 
        (when show-cursor-tooltip?
-         [:& widgets/cursor-tooltip
-          {:zoom zoom
-           :tooltip tooltip}])
+         [:> widgets/cursor-tooltip* {:zoom zoom
+                                      :tooltip tooltip}])
 
        (when show-selrect?
-         [:& widgets/selection-rect {:data selrect
-                                     :zoom zoom}])
+         [:> widgets/selection-rect* {:data selrect
+                                      :zoom zoom}])
 
        (when show-presence?
          [:& presence/active-cursors

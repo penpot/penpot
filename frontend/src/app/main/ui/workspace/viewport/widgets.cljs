@@ -22,8 +22,8 @@
    [app.main.store :as st]
    [app.main.streams :as ms]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.foundations.assets.icon :as i :refer [icon*]]
    [app.main.ui.hooks :as hooks]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.viewport.utils :as vwu]
    [app.util.debug :as dbg]
    [app.util.dom :as dom]
@@ -32,7 +32,7 @@
    [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
-(mf/defc pixel-grid
+(mf/defc pixel-grid*
   [{:keys [vbox zoom]}]
   [:g.pixel-grid
    [:defs
@@ -53,8 +53,8 @@
            :fill (str "url(#pixel-grid)")
            :style {:pointer-events "none"}}]])
 
-(mf/defc cursor-tooltip
-  [{:keys [zoom tooltip] :as props}]
+(mf/defc cursor-tooltip*
+  [{:keys [zoom tooltip]}]
   (let [coords (some-> (hooks/use-rxsub ms/mouse-position)
                        (gpt/divide (gpt/point zoom zoom)))
         pos-x (- (:x coords) 100)
@@ -63,9 +63,9 @@
      [:foreignObject {:width 200 :height 100 :style {:text-align "center"}}
       [:span tooltip]]]))
 
-(mf/defc selection-rect
+(mf/defc selection-rect*
   {:wrap [mf/memo]}
-  [{:keys [data zoom] :as props}]
+  [{:keys [data zoom]}]
   (when data
     [:rect.selection-rect
      {:x (:x data)
@@ -206,12 +206,12 @@
                           :y -15
                           :width (max 0 (- text-width text-pos-x))
                           :height 22
-                          :class (stl/css :workspace-frame-label-wrapper)
+                          :class (stl/css :frame-title-wrapper)
                           :style {:fill color}
                           :visibility (if show-artboard-names? "visible" "hidden")}
           [:input {:type "text"
-                   :class (stl/css :workspace-frame-label
-                                   :element-name-input)
+                   :class (stl/css :frame-title-label
+                                   :frame-title-input)
                    :style {:color color}
                    :auto-focus true
                    :on-key-down on-key-down
@@ -223,10 +223,10 @@
                           :y -11
                           :width (max 0 (- text-width text-pos-x))
                           :height 20
-                          :class (stl/css :workspace-frame-label-wrapper)
+                          :class (stl/css :frame-title-wrapper)
                           :style {:fill color}
                           :visibility (if show-artboard-names? "visible" "hidden")}
-          [:div {:class (stl/css :workspace-frame-label)
+          [:div {:class (stl/css :frame-title-label)
                  :style {:color color}
                  :ref ref
                  :on-pointer-down on-pointer-down
@@ -238,27 +238,21 @@
              (dm/str (:id frame) " - " (:name frame))
              (:name frame))]])])))
 
-(mf/defc frame-titles
+(mf/defc frame-titles*
   {::mf/wrap-props false
    ::mf/wrap [mf/memo]}
-  [props]
-  (let [objects              (unchecked-get props "objects")
-        zoom                 (unchecked-get props "zoom")
-        selected             (or (unchecked-get props "selected") #{})
-        show-artboard-names? (unchecked-get props "show-artboard-names?")
-        on-frame-enter       (unchecked-get props "on-frame-enter")
-        on-frame-leave       (unchecked-get props "on-frame-leave")
-        on-frame-select      (unchecked-get props "on-frame-select")
-        shapes               (ctt/get-frames objects {:skip-copies? true})
-        shapes               (if (dbg/enabled? :shape-titles)
-                               (into (set shapes)
-                                     (map (d/getf objects))
-                                     selected)
-                               shapes)
-        focus                (unchecked-get props "focus")
+  [{:keys [objects zoom selected focus is-show-artboard-names
+           on-frame-enter on-frame-leave on-frame-select]}]
+  (let [selected       (or selected #{})
+        shapes         (ctt/get-frames objects {:skip-copies? true})
+        shapes         (if (dbg/enabled? :shape-titles)
+                         (into (set shapes)
+                               (map (d/getf objects))
+                               selected)
+                         shapes)
 
-        edition              (mf/deref refs/selected-edition)
-        grid-edition?        (ctl/grid-layout? objects edition)]
+        edition        (mf/deref refs/selected-edition)
+        grid-edition?  (ctl/grid-layout? objects edition)]
 
     [:g.frame-titles
      (for [{:keys [id parent-id] :as shape} shapes]
@@ -270,7 +264,7 @@
                           :frame shape
                           :selected? (contains? selected id)
                           :zoom zoom
-                          :show-artboard-names? show-artboard-names?
+                          :show-artboard-names? is-show-artboard-names
                           :show-id? (dbg/enabled? :shape-titles)
                           :on-frame-enter on-frame-enter
                           :on-frame-leave on-frame-leave
@@ -278,7 +272,6 @@
                           :grid-edition? (and (= id edition) grid-edition?)}]))]))
 
 (mf/defc frame-flow*
-  {::mf/props :obj}
   [{:keys [flow frame is-selected zoom on-frame-enter on-frame-leave on-frame-select]}]
   (let [x         (dm/get-prop frame :x)
         y         (dm/get-prop frame :y)
@@ -323,18 +316,18 @@
                      :width 100000
                      :height 24
                      :transform (vwu/text-transform pos zoom)}
-     [:div {:class (stl/css-case :flow-badge true
-                                 :selected is-selected)}
-      [:div {:class (stl/css :content)
+     [:div {:class (stl/css :frame-flow-badge-wrapper)}
+      [:div {:class (stl/css-case :frame-flow-badge-content true
+                                  :selected is-selected)
              :on-pointer-down on-pointer-down
              :on-double-click on-double-click
              :on-pointer-enter on-pointer-enter
              :on-pointer-leave on-pointer-leave}
-       deprecated-icon/play
+       [:> icon* {:icon-id i/play
+                  :size "s"}]
        [:span flow-name]]]]))
 
 (mf/defc frame-flows*
-  {::mf/props :obj}
   [{:keys [flows objects zoom selected on-frame-enter on-frame-leave on-frame-select]}]
   [:g.frame-flows
    (for [[flow-id flow] flows]
