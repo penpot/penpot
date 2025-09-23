@@ -504,6 +504,10 @@
              m
              m))
 
+(defn update-vals-r
+  [f m]
+  (update-vals m f))
+
 (defn update-in-when
   [m key-seq f & args]
   (let [found (get-in m key-seq sentinel)]
