@@ -1,5 +1,6 @@
 use macros::ToJs;
 
+use super::fonts::RawFontStyle;
 use crate::mem;
 use crate::shapes::{
     self, Fill, GrowType, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
@@ -146,7 +147,7 @@ impl RawTextData {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct RawTextLeaf {
-    font_style: u8,
+    font_style: RawFontStyle,
     text_decoration: RawTextDecoration,
     text_transform: RawTextTransform,
     font_size: f32,
@@ -180,7 +181,7 @@ impl TryFrom<&[u8]> for RawTextLeaf {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct RawTextLeafData {
-    font_style: u8,
+    font_style: RawFontStyle,
     text_decoration: RawTextDecoration,
     text_transform: RawTextTransform,
     text_direction: RawTextDirection,
@@ -246,32 +247,33 @@ impl From<&Vec<u8>> for RawTextData {
             offset += RAW_LEAF_DATA_SIZE + (text_leaf.total_fills as usize * RAW_LEAF_FILLS_SIZE);
         }
 
-        for text_leaf in raw_text_leaves.iter() {
+        for raw_text_leaf in raw_text_leaves.iter() {
             let (text, new_offset) =
-                RawTextData::text_from_bytes(bytes, offset, text_leaf.text_length);
+                RawTextData::text_from_bytes(bytes, offset, raw_text_leaf.text_length);
             offset = new_offset;
 
-            let font_id = uuid_from_u32(text_leaf.font_id);
-            let font_variant_id = uuid_from_u32(text_leaf.font_variant_id);
-            let font_style = crate::wasm::fonts::RawFontStyle::from(text_leaf.font_style);
+            let font_id = uuid_from_u32(raw_text_leaf.font_id);
+            let font_variant_id = uuid_from_u32(raw_text_leaf.font_variant_id);
 
-            let font_family =
-                shapes::FontFamily::new(font_id, text_leaf.font_weight as u32, font_style.into());
+            let font_family = shapes::FontFamily::new(
+                font_id,
+                raw_text_leaf.font_weight as u32,
+                raw_text_leaf.font_style.into(),
+            );
 
-            let new_text_leaf = shapes::TextLeaf::new(
+            let text_leaf = shapes::TextLeaf::new(
                 text,
                 font_family,
-                text_leaf.font_size,
-                text_leaf.letter_spacing,
-                text_leaf.font_style,
-                text_leaf.text_decoration.into(),
-                text_leaf.text_transform.into(),
-                text_leaf.text_direction.into(),
-                text_leaf.font_weight,
+                raw_text_leaf.font_size,
+                raw_text_leaf.letter_spacing,
+                raw_text_leaf.text_decoration.into(),
+                raw_text_leaf.text_transform.into(),
+                raw_text_leaf.text_direction.into(),
+                raw_text_leaf.font_weight,
                 font_variant_id,
-                text_leaf.fills.clone(),
+                raw_text_leaf.fills.clone(),
             );
-            text_leaves.push(new_text_leaf);
+            text_leaves.push(text_leaf);
         }
 
         let typography_ref_file = uuid_from_u32(paragraph.typography_ref_file);
