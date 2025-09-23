@@ -50,7 +50,6 @@
 (def property-max-length 60)
 (def value-prefix "Value ")
 
-
 (defn properties-to-name
   "Transform the properties into a name, with the values separated by comma"
   [properties]
@@ -58,7 +57,6 @@
        (map :value)
        (remove str/empty?)
        (str/join ", ")))
-
 
 (defn next-property-number
   "Returns the next property number, to avoid duplicates on the property names"
@@ -100,7 +98,6 @@
          remaining      (drop (count properties) cpath)]
      (add-new-props assigned remaining))))
 
-
 (defn properties-map->formula
   "Transforms a map of properties to a formula of properties omitting the empty ones"
   [properties]
@@ -109,7 +106,6 @@
                (when (not (str/blank? value))
                  (str name "=" value))))
        (str/join ", ")))
-
 
 (defn properties-formula->map
   "Transforms a formula of properties to a map of properties"
@@ -120,7 +116,6 @@
        (mapv (fn [[k v]]
                {:name (str/trim k)
                 :value (str/trim v)}))))
-
 
 (defn valid-properties-formula?
   "Checks if a formula is valid"
@@ -138,20 +133,17 @@
   (let [upd-names (set (map :name upd-props))]
     (filterv #(not (contains? upd-names (:name %))) prev-props)))
 
-
 (defn find-properties-to-update
   "Compares two property maps to find which properties should be updated"
   [prev-props upd-props]
   (filterv #(some (fn [prop] (and (= (:name %) (:name prop))
                                   (not= (:value %) (:value prop)))) prev-props) upd-props))
 
-
 (defn find-properties-to-add
   "Compares two property maps to find which properties should be added"
   [prev-props upd-props]
   (let [prev-names (set (map :name prev-props))]
     (filterv #(not (contains? prev-names (:name %))) upd-props)))
-
 
 (defn- split-base-name-and-number
   "Extract the number in parentheses from an item, if present, and return both the base name and the number"
@@ -191,7 +183,6 @@
                  (conj acc {:name (update-number-in-repeated-item (mapv :name acc) (:name prop))
                             :value (:value prop)}))
                [])))
-
 
 (defn find-index-for-property-name
   "Finds the index of a name in a property map"

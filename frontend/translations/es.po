@@ -5114,7 +5114,10 @@ msgid "workspace.assets.ungroup"
 msgstr "Desagrupar"
 
 msgid "workspace.component.swap.loop-error"
-msgstr "Los componentes no pueden anidarse dentro de sí mismos"
+msgstr "Los componentes no pueden anidarse dentro de sí mismos."
+
+msgid "workspace.component.switch.loop-error-multi"
+msgstr "Algunas copias no se han podido intercambiar. Los componentes no pueden anidarse dentro de sí mismos."
 
 #: src/app/main/ui/workspace/context_menu.cljs:791
 msgid "workspace.context-menu.grid-cells.area"

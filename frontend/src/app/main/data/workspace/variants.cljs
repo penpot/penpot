@@ -7,6 +7,7 @@
 (ns app.main.data.workspace.variants
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as pcb]
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
@@ -16,6 +17,7 @@
    [app.common.types.color :as clr]
    [app.common.types.component :as ctc]
    [app.common.types.components-list :as ctkl]
+   [app.common.types.file :as ctf]
    [app.common.types.shape.layout :as ctsl]
    [app.common.types.variant :as ctv]
    [app.common.uuid :as uuid]
@@ -652,4 +654,58 @@
     (watch [_ state _]
       (let [selected (dsh/lookup-selected state)]
         (rx/of (combine-as-variants selected options))))))
+
+(defn- variant-switch
+  "Switch the shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
+  [shape {:keys [pos val] :as params}]
+  (ptk/reify ::variant-switch
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [libraries    (dsh/lookup-libraries state)
+            component-id (:component-id shape)
+            component    (ctf/get-component libraries (:component-file shape) component-id :include-deleted? false)]
+             ;; If the value is already val, do nothing
+        (when (not= val (dm/get-in component [:variant-properties pos :value]))
+          (let [current-page-objects   (dsh/lookup-page-objects state)
+                variant-id             (:variant-id component)
+                component-file-data    (dm/get-in libraries [(:component-file shape) :data])
+                component-page-objects (-> (dsh/get-page component-file-data (:main-instance-page component))
+                                           (get :objects))
+                variant-comps          (cfv/find-variant-components component-file-data component-page-objects variant-id)
+                target-props           (-> (:variant-properties component)
+                                           (update pos assoc :value val))
+                valid-comps            (->> variant-comps
+                                            (remove #(= (:id %) component-id))
+                                            (filter #(= (dm/get-in % [:variant-properties pos :value]) val))
+                                            (reverse))
+                nearest-comp           (apply min-key #(ctv/distance target-props (:variant-properties %)) valid-comps)
+                shape-parents          (cfh/get-parents-with-self current-page-objects (:parent-id shape))
+                nearest-comp-children  (cfh/get-children-with-self component-page-objects (:main-instance-id nearest-comp))
+                comps-nesting-loop?    (seq? (cfh/components-nesting-loop? nearest-comp-children shape-parents))
+
+                {:keys [on-error]
+                 :or {on-error rx/throw}} (meta params)]
+
+            ;; If there is no nearest-comp, do nothing
+            (when nearest-comp
+              (if comps-nesting-loop?
+                (do
+                  (on-error)
+                  (rx/empty))
+                (rx/of (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true))))))))))
+
+(defn variants-switch
+  "Switch each shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
+  [{:keys [shapes] :as params}]
+  (ptk/reify ::variants-switch
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [ids (into (d/ordered-set) d/xf:map-id shapes)
+            undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from shapes)
+              (rx/map #(variant-switch % params)))
+         (rx/of (dwu/commit-undo-transaction undo-id)
+                (dws/select-shapes ids)))))))
 

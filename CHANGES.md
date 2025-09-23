@@ -10,6 +10,7 @@
 
 ### :sparkles: New features & Enhancements
 - Show current Penpot version [Taiga #11603](https://tree.taiga.io/project/penpot/us/11603)
+- Switch several variant copies at the same time [Taiga #11411](https://tree.taiga.io/project/penpot/us/11411)
 
 ### :bug: Bugs fixed
 
