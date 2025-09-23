@@ -5,7 +5,6 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.plugins.library
-  "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
@@ -26,6 +25,7 @@
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.text :as text]
+   [app.plugins.tokens :as tokens]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -612,6 +612,78 @@
         (let [typography (u/locate-library-typography file-id id)]
           (apply array (keys (dm/get-in typography [:plugin-data (keyword "shared" namespace)]))))))))
 
+(defn get-variant-components
+  [file-id variant-id]
+  (->> (dm/get-in (u/locate-file file-id) [:data :components])
+       (map second)
+       (filter #(= (:variant-id %) variant-id))))
+
+(declare lib-component-proxy)
+
+(defn variant-proxy
+  [plugin-id file-id id]
+
+  (obj/reify {:name "VariantProxy"}
+    :$plugin {:enumerable false :get (constantly plugin-id)}
+    :$file {:enumerable false :get (constantly file-id)}
+    :$id {:enumerable false :get (constantly id)}
+
+    :id {:get (fn [_] (dm/str id))}
+    :libraryId {:get (fn [_] (dm/str file-id))}
+
+    :properties
+    {:this true
+     :get (fn [_]
+            (->> (get-variant-components file-id id)
+                 (mapcat :variant-properties)
+                 (keep :name)
+                 (set)
+                 (apply array)))}
+
+    :errors
+    {:this true
+     :get (fn [_]
+            ;; TODO
+            )}
+
+    :currentValues
+    (fn [property]
+      ;; TODO: validate input
+      (->> (get-variant-components file-id id)
+           (map
+            (fn [{:keys [variant-properties]}]
+              (->> variant-properties
+                   (d/seek #(= (:name %) property)))))
+           (keep :value)
+           (set)
+           (apply array)))
+
+    :deleteProperty
+    (fn [_property]
+      ;; TODO
+      )
+
+    :findComponents
+    (fn [props]
+      ;; TODO: Parse input
+      ;; TODO: Probably not the best way to find the components
+      (letfn [(match-props [{:keys [variant-properties]}]
+                (->> (js/Object.keys props)
+                     (every? (fn [p]
+                               (= (obj/get props p)
+                                  (-> (d/seek #(= (:name %) p) variant-properties)
+                                      :value))))))]
+        (->> (get-variant-components file-id id)
+             (filter match-props)
+             (keep :id)
+             (map #(lib-component-proxy plugin-id file-id %))
+             (apply array))))
+
+    :addVariant
+    (fn []
+      ;; TODO
+      )))
+
 (defn lib-component-proxy? [p]
   (obj/type-of? p "LibraryComponentProxy"))
 
@@ -763,7 +835,32 @@
             component (u/locate-library-component file-id id)
             root (ctf/get-component-root (:data file) component)]
         (when (some? root)
-          (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))))
+          (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))
+
+    :variants
+    {:enumerable false
+     :get
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (when (some? (:variant-id component))
+           (variant-proxy plugin-id file-id (:variant-id component)))))}
+
+    :variantProps
+    {:get
+     (fn []
+       (let [component (u/locate-library-component file-id id)]
+         (when (some? (:variant-id component))
+           (->> (:variant-properties component)
+                (reduce
+                 (fn [acc {:keys [name value]}]
+                   (obj/set! acc name value))
+                 #js {})))))}
+
+    :variantErrors
+    {:get (fn [])}
+
+    :setVariantProperty
+    (fn [_property _value])))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
@@ -805,13 +902,33 @@
      :get
      (fn [_]
        (let [file (u/locate-file file-id)
-             components (->> file
-                             :data
-                             :components
-                             (remove (comp :deleted second))
-                             (map first)
-                             (map #(lib-component-proxy plugin-id file-id %)))]
+             components
+             (concat
+              (->> file
+                   :data
+                   :components
+                   (remove (comp :deleted second))
+                   (remove (comp :variant-id second))
+                   (map first)
+                   (map #(lib-component-proxy plugin-id file-id %)))
+
+              (->> file
+                   :data
+                   :components
+                   (remove (comp :deleted second))
+                   (filter (comp :variant-id second))
+                   (map second)
+                   (group-by :variant-id)
+                   ;; TODO: This is not the way to locate the variant main component
+                   (map (comp :id first second))
+                   (map #(lib-component-proxy plugin-id file-id %))))]
          (apply array components)))}
+
+    :tokens
+    {:this true
+     :get
+     (fn [_]
+       (tokens/tokens-context plugin-id file-id))}
 
     :createColor
     (fn []
