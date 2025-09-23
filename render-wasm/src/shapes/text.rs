@@ -378,7 +378,7 @@ pub enum TextTransform {
 }
 
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
-// wasm moduel and store here meaningful model values (and/or skia type aliases)
+// wasm module and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
 pub struct Paragraph {
     num_leaves: u32,
@@ -535,6 +535,10 @@ impl TextLeaf {
             font_variant_id,
             fills,
         }
+    }
+
+    pub fn set_text(&mut self, text: String) {
+        self.text = text;
     }
 
     pub fn fills(&self) -> &[shapes::Fill] {
