@@ -1068,6 +1068,7 @@
                                              :sizing (unchecked-get module "RawSizing")
                                              :vertical-align (unchecked-get module "RawVerticalAlign")
                                              :fill-data (unchecked-get module "RawFillData")
+                                             :text-align (unchecked-get module "RawTextAlign")
                                              :segment-data (unchecked-get module "RawSegmentData")}]
                          (set! wasm/serializers serializers)
                          (default))))

@@ -1,7 +1,7 @@
 use macros::ToJs;
 
 use crate::mem;
-use crate::shapes::{self, Fill, GrowType, Type};
+use crate::shapes::{self, Fill, GrowType, TextAlign, Type};
 use crate::utils::uuid_from_u32;
 use crate::{with_current_shape_mut, STATE};
 
@@ -9,12 +9,32 @@ const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
 pub const RAW_LEAF_FILLS_SIZE: usize = 160;
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
 
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+pub enum RawTextAlign {
+    Left = 0,
+    Center = 1,
+    Right = 2,
+    Justify = 3,
+}
+
+impl From<RawTextAlign> for TextAlign {
+    fn from(value: RawTextAlign) -> Self {
+        match value {
+            RawTextAlign::Left => TextAlign::Left,
+            RawTextAlign::Center => TextAlign::Center,
+            RawTextAlign::Right => TextAlign::Right,
+            RawTextAlign::Justify => TextAlign::Justify,
+        }
+    }
+}
+
 #[repr(C)]
 #[repr(align(4))]
 #[derive(Debug, Clone, Copy)]
 pub struct RawParagraphData {
     num_leaves: u32,
-    text_align: u8,
+    text_align: RawTextAlign,
     text_direction: u8,
     text_decoration: u8,
     text_transform: u8,
@@ -201,7 +221,7 @@ impl From<&Vec<u8>> for RawTextData {
 
         let paragraph = shapes::Paragraph::new(
             paragraph.num_leaves,
-            paragraph.text_align,
+            paragraph.text_align.into(),
             paragraph.text_direction,
             paragraph.text_decoration,
             paragraph.text_transform,

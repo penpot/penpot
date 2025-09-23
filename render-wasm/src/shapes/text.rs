@@ -366,12 +366,14 @@ impl Default for TextContent {
     }
 }
 
+pub type TextAlign = skia::textlayout::TextAlign;
+
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
 // wasm moduel and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
 pub struct Paragraph {
     num_leaves: u32,
-    text_align: u8,
+    text_align: TextAlign,
     text_direction: u8,
     text_decoration: u8,
     text_transform: u8,
@@ -386,7 +388,7 @@ impl Default for Paragraph {
     fn default() -> Self {
         Self {
             num_leaves: 0,
-            text_align: 0,
+            text_align: TextAlign::default(),
             text_direction: 0,
             text_decoration: 0,
             text_transform: 0,
@@ -403,7 +405,7 @@ impl Paragraph {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         num_leaves: u32,
-        text_align: u8,
+        text_align: TextAlign,
         text_direction: u8,
         text_decoration: u8,
         text_transform: u8,
@@ -444,13 +446,7 @@ impl Paragraph {
     // FIXME: move serialization to wasm module
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
-        style.set_text_align(match self.text_align {
-            0 => skia::textlayout::TextAlign::Left,
-            1 => skia::textlayout::TextAlign::Center,
-            2 => skia::textlayout::TextAlign::Right,
-            3 => skia::textlayout::TextAlign::Justify,
-            _ => skia::textlayout::TextAlign::Left,
-        });
+        style.set_text_align(self.text_align);
         style.set_text_direction(match self.text_direction {
             0 => skia::textlayout::TextDirection::LTR,
             1 => skia::textlayout::TextDirection::RTL,

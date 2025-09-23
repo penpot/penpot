@@ -208,12 +208,10 @@
 ;; TODO: Find/Create a Rust enum for this
 (defn translate-text-align
   [text-align]
-  (case text-align
-    "left" 0
-    "center" 1
-    "right" 2
-    "justify" 3
-    0))
+  (let [values (unchecked-get wasm/serializers "text-align")
+        default (unchecked-get values "left")]
+    (d/nilv (unchecked-get values (d/name text-align)) default)))
+
 
 ;; TODO: Find/Create a Rust enum for this
 (defn translate-text-transform
