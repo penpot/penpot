@@ -367,6 +367,8 @@ impl Default for TextContent {
 }
 
 pub type TextAlign = skia::textlayout::TextAlign;
+pub type TextDirection = skia::textlayout::TextDirection;
+pub type TextDecoration = skia::textlayout::TextDecoration;
 
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
 // wasm moduel and store here meaningful model values (and/or skia type aliases)
@@ -374,8 +376,8 @@ pub type TextAlign = skia::textlayout::TextAlign;
 pub struct Paragraph {
     num_leaves: u32,
     text_align: TextAlign,
-    text_direction: u8,
-    text_decoration: u8,
+    text_direction: TextDirection,
+    text_decoration: Option<TextDecoration>,
     text_transform: u8,
     line_height: f32,
     letter_spacing: f32,
@@ -389,8 +391,8 @@ impl Default for Paragraph {
         Self {
             num_leaves: 0,
             text_align: TextAlign::default(),
-            text_direction: 0,
-            text_decoration: 0,
+            text_direction: TextDirection::LTR,
+            text_decoration: None,
             text_transform: 0,
             line_height: 1.0,
             letter_spacing: 0.0,
@@ -406,8 +408,8 @@ impl Paragraph {
     pub fn new(
         num_leaves: u32,
         text_align: TextAlign,
-        text_direction: u8,
-        text_decoration: u8,
+        text_direction: TextDirection,
+        text_decoration: Option<TextDecoration>,
         text_transform: u8,
         line_height: f32,
         letter_spacing: f32,
@@ -447,11 +449,7 @@ impl Paragraph {
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
         style.set_text_align(self.text_align);
-        style.set_text_direction(match self.text_direction {
-            0 => skia::textlayout::TextDirection::LTR,
-            1 => skia::textlayout::TextDirection::RTL,
-            _ => skia::textlayout::TextDirection::LTR,
-        });
+        style.set_text_direction(self.text_direction);
 
         if !self.children.is_empty() {
             let reference_child = self
@@ -499,9 +497,9 @@ pub struct TextLeaf {
     font_style: u8,
     font_weight: i32,
     font_variant_id: Uuid,
-    text_decoration: u8,
+    text_decoration: Option<TextDecoration>,
     text_transform: u8,
-    text_direction: u8,
+    text_direction: TextDirection,
     fills: Vec<shapes::Fill>,
 }
 
@@ -513,9 +511,9 @@ impl TextLeaf {
         font_size: f32,
         letter_spacing: f32,
         font_style: u8,
-        text_decoration: u8,
+        text_decoration: Option<TextDecoration>,
         text_transform: u8,
-        text_direction: u8,
+        text_direction: TextDirection,
         font_weight: i32,
         font_variant_id: Uuid,
         fills: Vec<shapes::Fill>,
@@ -562,11 +560,8 @@ impl TextLeaf {
         style.set_half_leading(false);
 
         style.set_decoration_type(match self.text_decoration {
-            0 => skia::textlayout::TextDecoration::NO_DECORATION,
-            1 => skia::textlayout::TextDecoration::UNDERLINE,
-            2 => skia::textlayout::TextDecoration::LINE_THROUGH,
-            3 => skia::textlayout::TextDecoration::OVERLINE,
-            _ => skia::textlayout::TextDecoration::NO_DECORATION,
+            Some(text_decoration) => text_decoration,
+            None => skia::textlayout::TextDecoration::NO_DECORATION,
         });
 
         // Trick to avoid showing the text decoration
@@ -605,11 +600,8 @@ impl TextLeaf {
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
         style.set_decoration_type(match self.text_decoration {
-            0 => skia::textlayout::TextDecoration::NO_DECORATION,
-            1 => skia::textlayout::TextDecoration::UNDERLINE,
-            2 => skia::textlayout::TextDecoration::LINE_THROUGH,
-            3 => skia::textlayout::TextDecoration::OVERLINE,
-            _ => skia::textlayout::TextDecoration::NO_DECORATION,
+            Some(text_decoration) => text_decoration,
+            None => skia::textlayout::TextDecoration::NO_DECORATION,
         });
         style
     }

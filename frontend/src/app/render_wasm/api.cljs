@@ -1069,6 +1069,8 @@
                                              :vertical-align (unchecked-get module "RawVerticalAlign")
                                              :fill-data (unchecked-get module "RawFillData")
                                              :text-align (unchecked-get module "RawTextAlign")
+                                             :text-direction (unchecked-get module "RawTextDirection")
+                                             :text-decoration (unchecked-get module "RawTextDecoration")
                                              :segment-data (unchecked-get module "RawSegmentData")}]
                          (set! wasm/serializers serializers)
                          (default))))

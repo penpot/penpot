@@ -1,7 +1,7 @@
 use macros::ToJs;
 
 use crate::mem;
-use crate::shapes::{self, Fill, GrowType, TextAlign, Type};
+use crate::shapes::{self, Fill, GrowType, TextAlign, TextDecoration, TextDirection, Type};
 use crate::utils::uuid_from_u32;
 use crate::{with_current_shape_mut, STATE};
 
@@ -29,14 +29,50 @@ impl From<RawTextAlign> for TextAlign {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+pub enum RawTextDirection {
+    Ltr = 0,
+    Rtl = 1,
+}
+
+impl From<RawTextDirection> for TextDirection {
+    fn from(value: RawTextDirection) -> Self {
+        match value {
+            RawTextDirection::Ltr => TextDirection::LTR,
+            RawTextDirection::Rtl => TextDirection::RTL,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy, ToJs)]
+#[repr(u8)]
+pub enum RawTextDecoration {
+    None = 0,
+    Underline = 1,
+    LineThrough = 2,
+    Overline = 3,
+}
+
+impl From<RawTextDecoration> for Option<TextDecoration> {
+    fn from(value: RawTextDecoration) -> Self {
+        match value {
+            RawTextDecoration::None => None,
+            RawTextDecoration::Underline => Some(TextDecoration::UNDERLINE),
+            RawTextDecoration::LineThrough => Some(TextDecoration::LINE_THROUGH),
+            RawTextDecoration::Overline => Some(TextDecoration::OVERLINE),
+        }
+    }
+}
+
 #[repr(C)]
 #[repr(align(4))]
 #[derive(Debug, Clone, Copy)]
 pub struct RawParagraphData {
     num_leaves: u32,
     text_align: RawTextAlign,
-    text_direction: u8,
-    text_decoration: u8,
+    text_direction: RawTextDirection,
+    text_decoration: RawTextDecoration,
     text_transform: u8,
     line_height: f32,
     letter_spacing: f32,
@@ -89,7 +125,7 @@ impl RawTextData {
 #[derive(Debug, Clone, Copy)]
 pub struct RawTextLeaf {
     font_style: u8,
-    text_decoration: u8,
+    text_decoration: RawTextDecoration,
     text_transform: u8,
     font_size: f32,
     letter_spacing: f32,
@@ -123,9 +159,9 @@ impl TryFrom<&[u8]> for RawTextLeaf {
 #[derive(Debug, Clone)]
 pub struct RawTextLeafData {
     font_style: u8,
-    text_decoration: u8,
+    text_decoration: RawTextDecoration,
     text_transform: u8,
-    text_direction: u8,
+    text_direction: RawTextDirection,
     font_size: f32,
     letter_spacing: f32,
     font_weight: i32,
@@ -156,7 +192,7 @@ impl From<&[u8]> for RawTextLeafData {
             font_style: text_leaf.font_style,
             text_decoration: text_leaf.text_decoration,
             text_transform: text_leaf.text_transform,
-            text_direction: 0, // TODO: Añadirlo
+            text_direction: RawTextDirection::Ltr, // TODO: Add this
             font_size: text_leaf.font_size,
             letter_spacing: text_leaf.letter_spacing,
             font_weight: text_leaf.font_weight,
@@ -206,9 +242,9 @@ impl From<&Vec<u8>> for RawTextData {
                 text_leaf.font_size,
                 text_leaf.letter_spacing,
                 text_leaf.font_style,
-                text_leaf.text_decoration,
+                text_leaf.text_decoration.into(),
                 text_leaf.text_transform,
-                text_leaf.text_direction,
+                text_leaf.text_direction.into(),
                 text_leaf.font_weight,
                 font_variant_id,
                 text_leaf.fills.clone(),
@@ -222,8 +258,8 @@ impl From<&Vec<u8>> for RawTextData {
         let paragraph = shapes::Paragraph::new(
             paragraph.num_leaves,
             paragraph.text_align.into(),
-            paragraph.text_direction,
-            paragraph.text_decoration,
+            paragraph.text_direction.into(),
+            paragraph.text_decoration.into(),
             paragraph.text_transform,
             paragraph.line_height,
             paragraph.letter_spacing,
