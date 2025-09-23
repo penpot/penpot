@@ -166,7 +166,7 @@
    ;; Edge-case for allowing margin attribute on shapes inside layout parent
    (and selected-inside-layout? (set/subset? ctt/spacing-margin-keys attrs))
    (some (fn [shape]
-           (ctt/any-appliable-attr? attrs (:type shape) (:layout shape)))
+           (ctt/any-appliable-attr-for-shape? attrs (:type shape) (:layout shape)))
          selected-shapes)))
 
 (def token-types-with-status-icon

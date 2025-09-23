@@ -310,6 +310,10 @@
    schema:text-decoration
    schema:dimensions])
 
+(defn token-attr?
+  [attr]
+  (contains? all-keys attr))
+
 (defn shape-attr->token-attrs
   ([shape-attr] (shape-attr->token-attrs shape-attr nil))
   ([shape-attr changed-sub-attr]
@@ -403,15 +407,15 @@
     :text    text-attributes
     nil))
 
-(defn appliable-attrs
+(defn appliable-attrs-for-shape
   "Returns intersection of shape `attributes` for `shape-type`."
   [attributes shape-type is-layout]
   (set/intersection attributes (shape-type->attributes shape-type is-layout)))
 
-(defn any-appliable-attr?
+(defn any-appliable-attr-for-shape?
   "Checks if `token-type` supports given shape `attributes`."
   [attributes token-type is-layout]
-  (seq (appliable-attrs attributes token-type is-layout)))
+  (d/not-empty? (appliable-attrs-for-shape attributes token-type is-layout)))
 
 ;; Token attrs that are set inside content blocks of text shapes, instead
 ;; at the shape level.

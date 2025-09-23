@@ -69,6 +69,12 @@
    [:fn {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}
     #(not (cft/token-name-path-exists? % tokens-tree))]])
 
+(defn validate-token-name
+  [tokens-tree name]
+  (let [schema    (make-token-name-schema tokens-tree)
+        explainer (sm/explainer schema)]
+    (-> name explainer sm/simplify not-empty)))
+
 (def ^:private schema:token-description
   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}])
 
@@ -363,27 +369,20 @@
               ;; Allow setting editing token to it's own path
               (d/dissoc-in token-path)))
 
-        validate-token-name
-        (mf/with-memo [tokens-tree-in-selected-set]
-          (let [schema    (make-token-name-schema tokens-tree-in-selected-set)
-                explainer (sm/explainer schema)]
-            (fn [name]
-              (-> name explainer sm/simplify not-empty))))
-
         on-blur-name
         (mf/use-fn
-         (mf/deps touched-name? validate-token-name)
+         (mf/deps touched-name?)
          (fn [e]
            (let [value  (dom/get-target-val e)
-                 errors (validate-token-name value)]
+                 errors (validate-token-name tokens-tree-in-selected-set value)]
              (when touched-name? (reset! warning-name-change* true))
              (reset! name-errors* errors))))
 
         on-update-name-debounced
-        (mf/with-memo [touched-name? validate-token-name]
+        (mf/with-memo [touched-name?]
           (uf/debounce (fn [token-name]
                          (when touched-name?
-                           (reset! name-errors* (validate-token-name token-name))))
+                           (reset! name-errors* (validate-token-name tokens-tree-in-selected-set token-name))))
                        300))
 
         on-update-name
@@ -487,7 +486,7 @@
 
         on-submit
         (mf/use-fn
-         (mf/deps is-create token active-theme-tokens validate-token validate-token-name validate-token-description)
+         (mf/deps is-create token active-theme-tokens validate-token validate-token-description)
          (fn [e]
            (dom/prevent-default e)
            ;; We have to re-validate the current form values before submitting
@@ -496,7 +495,7 @@
            ;; and press enter before the next validations could return.
 
            (let [clean-name         (clean-name (mf/ref-val token-name-ref))
-                 valid-name?        (empty? (validate-token-name clean-name))
+                 valid-name?        (empty? (validate-token-name tokens-tree-in-selected-set clean-name))
 
                  value              (mf/ref-val value-ref)
                  clean-description  (mf/ref-val description-ref)
@@ -512,10 +511,10 @@
                      (fn [valid-token]
                        (st/emit!
                         (if is-create
-                          (dwtl/create-token {:name clean-name
-                                              :type token-type
-                                              :value (:value valid-token)
-                                              :description clean-description})
+                          (dwtl/create-token (ctob/make-token {:name clean-name
+                                                               :type token-type
+                                                               :value (:value valid-token)
+                                                               :description clean-description}))
 
                           (dwtl/update-token (:id token)
                                              {:name clean-name

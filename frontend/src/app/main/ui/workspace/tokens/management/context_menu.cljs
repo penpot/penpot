@@ -55,10 +55,7 @@
 
 (defn generic-attribute-actions [attributes title {:keys [token selected-shapes on-update-shape hint allowed-shape-attributes]}]
   (let [allowed-attributes (set/intersection attributes allowed-shape-attributes)
-        on-update-shape-fn
-        (or on-update-shape
-            (-> (dwta/get-token-properties token)
-                (:on-update-shape)))
+        on-update-shape-fn (or on-update-shape (dwta/get-update-shape-fn token))
 
         {:keys [selected-pred shape-ids]}
         (attribute-actions token selected-shapes allowed-attributes)]

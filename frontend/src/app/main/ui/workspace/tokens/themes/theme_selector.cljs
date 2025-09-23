@@ -31,7 +31,7 @@
                  selected? (get active-theme-paths theme-id)
                  select-theme (fn [e]
                                 (dom/stop-propagation e)
-                                (st/emit! (dwtl/toggle-token-theme-active? id))
+                                (st/emit! (dwtl/toggle-token-theme-active id))
                                 (on-close))]]
        [:li {:key theme-id
              :role "option"

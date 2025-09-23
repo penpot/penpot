@@ -51,7 +51,7 @@
               true))  ;; if still no library exists, cannot be duplicate
     :type-properties {:error/fn #(tr "workspace.tokens.theme-name-already-exists")}}))
 
-(defn- validate-theme-name
+(defn validate-theme-name
   [tokens-lib group theme-id name]
   (let [schema     (theme-name-schema {:tokens-lib tokens-lib :theme-id theme-id :group group})
         validation (m/explain schema (str/trim name))]
@@ -151,7 +151,7 @@
               [:div {:on-click (fn [e]
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
-                                 (st/emit! (dwtl/toggle-token-theme-active? id)))}
+                                 (st/emit! (dwtl/toggle-token-theme-active id)))}
                [:& switch {:name (tr "workspace.tokens.theme-name" name)
                            :on-change (constantly nil)
                            :selected? selected?}]]]
