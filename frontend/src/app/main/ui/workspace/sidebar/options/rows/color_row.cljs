@@ -250,11 +250,12 @@
 
              (str color-name)]
             (when on-detach
-              [:button
-               {:class (stl/css :detach-btn)
-                :title (tr "settings.detach")
-                :on-click detach-value}
-               detach-icon])]
+              [:> icon-button*
+               {:variant "ghost"
+                :class (stl/css :detach-btn)
+                :aria-label (tr "settings.detach")
+                :on-click detach-value
+                :icon i/detach}])]
 
          ;; Rendering a gradient
            gradient-color?
@@ -266,7 +267,7 @@
            [:div {:class (stl/css :color-name)}
             (tr "media.image")]
 
-              ;; Rendering a plain color
+           ;; Rendering a plain color
            :else
            [:span {:class (stl/css :color-input-wrapper)}
             [:> color-input* {:value (if multiple-colors?
