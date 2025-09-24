@@ -49,7 +49,7 @@
 (mf/defc color-row*
   [{:keys [index color class disable-gradient disable-opacity disable-image disable-picker hidden
            on-change on-reorder on-detach on-open on-close on-remove origin
-           disable-drag on-focus on-blur select-only select-on-focus on-token-change]}]
+           disable-drag on-focus on-blur select-only select-on-focus on-token-change color-token]}]
   (let [libraries        (mf/deref refs/files)
         on-change        (h/use-ref-callback on-change)
         on-token-change  (h/use-ref-callback on-token-change)
@@ -225,70 +225,74 @@
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
 
-     [:div {:class (stl/css :color-info)}
-      [:div {:class (stl/css-case :color-name-wrapper true
-                                  :no-opacity (or disable-opacity
-                                                  (not opacity?))
-                                  :library-name-wrapper library-color?
-                                  :editing editing-text?
-                                  :gradient-name-wrapper gradient-color?)}
-       [:div {:class (stl/css :color-bullet-wrapper)}
-        [:& cb/color-bullet {:color (cond-> color
-                                      (nil? color-name) (dissoc :ref-id :ref-file))
-                             :mini true
-                             :on-click handle-click-color}]]
-       (cond
-         ;; Rendering a color with ID
-         library-color?
-         [:*
-          [:div {:class (stl/css :color-name)
-                 :title (str color-name)}
+     (if color-token
 
-           (str color-name)]
-          (when on-detach
-            [:button
-             {:class (stl/css :detach-btn)
-              :title (tr "settings.detach")
-              :on-click detach-value}
-             detach-icon])]
+       [:div {:class (stl/css :color-info)}
+        "Token applied"]
+       [:div {:class (stl/css :color-info)}
+        [:div {:class (stl/css-case :color-name-wrapper true
+                                    :no-opacity (or disable-opacity
+                                                    (not opacity?))
+                                    :library-name-wrapper library-color?
+                                    :editing editing-text?
+                                    :gradient-name-wrapper gradient-color?)}
+         [:div {:class (stl/css :color-bullet-wrapper)}
+          [:& cb/color-bullet {:color (cond-> color
+                                        (nil? color-name) (dissoc :ref-id :ref-file))
+                               :mini true
+                               :on-click handle-click-color}]]
+         (cond
+         ;; Rendering a color with ID
+           library-color?
+           [:*
+            [:div {:class (stl/css :color-name)
+                   :title (str color-name)}
+
+             (str color-name)]
+            (when on-detach
+              [:button
+               {:class (stl/css :detach-btn)
+                :title (tr "settings.detach")
+                :on-click detach-value}
+               detach-icon])]
 
          ;; Rendering a gradient
-         gradient-color?
-         [:div {:class (stl/css :color-name)}
-          (uc/gradient-type->string (dm/get-in color [:gradient :type]))]
+           gradient-color?
+           [:div {:class (stl/css :color-name)}
+            (uc/gradient-type->string (dm/get-in color [:gradient :type]))]
 
          ;; Rendering an image
-         image-color?
-         [:div {:class (stl/css :color-name)}
-          (tr "media.image")]
+           image-color?
+           [:div {:class (stl/css :color-name)}
+            (tr "media.image")]
 
               ;; Rendering a plain color
-         :else
-         [:span {:class (stl/css :color-input-wrapper)}
-          [:> color-input* {:value (if multiple-colors?
-                                     ""
-                                     (-> color :color clr/remove-hash))
-                            :placeholder (tr "settings.multiple")
-                            :data-index index
-                            :class (stl/css :color-input)
-                            :on-focus on-focus'
-                            :on-blur on-blur'
-                            :on-change on-color-change}]])]
+           :else
+           [:span {:class (stl/css :color-input-wrapper)}
+            [:> color-input* {:value (if multiple-colors?
+                                       ""
+                                       (-> color :color clr/remove-hash))
+                              :placeholder (tr "settings.multiple")
+                              :data-index index
+                              :class (stl/css :color-input)
+                              :on-focus on-focus'
+                              :on-blur on-blur'
+                              :on-change on-color-change}]])]
 
-      (when opacity?
-        [:div {:class (stl/css :opacity-element-wrapper)}
-         [:span {:class (stl/css :icon-text)} "%"]
-         [:> numeric-input* {:value (-> color :opacity opacity->string)
-                             :class (stl/css :opacity-input)
-                             :placeholder "--"
-                             :select-on-focus select-on-focus
-                             :on-focus on-focus'
-                             :on-blur on-blur'
-                             :on-change on-opacity-change
-                             :data-testid "opacity-input"
-                             :default 100
-                             :min 0
-                             :max 100}]])]
+        (when opacity?
+          [:div {:class (stl/css :opacity-element-wrapper)}
+           [:span {:class (stl/css :icon-text)} "%"]
+           [:> numeric-input* {:value (-> color :opacity opacity->string)
+                               :class (stl/css :opacity-input)
+                               :placeholder "--"
+                               :select-on-focus select-on-focus
+                               :on-focus on-focus'
+                               :on-blur on-blur'
+                               :on-change on-opacity-change
+                               :data-testid "opacity-input"
+                               :default 100
+                               :min 0
+                               :max 100}]])])
 
      (when (some? on-remove)
        [:> icon-button* {:variant "ghost"

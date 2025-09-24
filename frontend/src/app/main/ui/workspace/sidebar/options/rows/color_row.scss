@@ -4,10 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "../../../../ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as *;
 
 .color-data {
-  @include deprecated.flexRow;
+  display: flex;
+  align-items: center;
+  gap: $s-4;
 
   position: relative;
 
@@ -44,17 +47,17 @@
 
   &:hover {
     --detach-icon-foreground-color: var(--input-foreground-color-active);
-
-    .detach-btn,
-    .select-btn {
-      background-color: transparent;
-    }
   }
+}
+
+.detach-btn,
+.select-btn {
+  background-color: transparent;
 }
 
 .color-name-wrapper {
   @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  @include t.use-typography("body-small");
   flex-grow: 1;
   width: 100%;
   min-width: 0;
@@ -81,10 +84,10 @@
     }
   }
   .color-name {
-    @include deprecated.bodySmallTypography;
-    @include deprecated.textEllipsis;
-    padding-inline: deprecated.$s-6;
-    border-radius: deprecated.$br-8;
+  @include t.use-typography("body-small");
+    @include textEllipsis;
+    padding-inline: $s-6;
+    border-radius: $br-8;
     color: var(--input-foreground-color-active);
   }
   .detach-btn {
@@ -100,7 +103,7 @@
     stroke: var(--detach-icon-foreground-color);
   }
   .color-input-wrapper {
-    @include deprecated.bodySmallTypography;
+  @include t.use-typography("body-small");
     display: flex;
     align-items: center;
     height: deprecated.$s-28;
@@ -172,18 +175,21 @@
 
 .opacity-element-wrapper {
   @extend .input-element;
-  @include deprecated.bodySmallTypography;
-  width: deprecated.$s-60;
-  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
+  @include t.use-typography("body-small");
+  width: px2rem(60);
+  border-radius: 0 $br-8 $br-8 0;
+
+}
   .opacity-input {
     padding: 0;
     border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
     min-width: deprecated.$s-28;
   }
   .icon-text {
-    @include deprecated.flexCenter;
-    height: deprecated.$s-32;
-    margin-inline-end: deprecated.$s-4;
-    margin-block-start: deprecated.$s-2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+    height: $s-32;
+    margin-inline-end: $s-4;
+    margin-block-start: $s-2;
   }
-}

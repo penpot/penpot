@@ -78,6 +78,8 @@
   [{:keys [ids type values]}]
   (let [fills          (get values :fills)
         hide-on-export (get values :hide-fill-on-export false)
+        applied-tokens (:applied-tokens values)
+        color-tokens-applied (:fill applied-tokens)
 
         ^boolean
         multiple?      (= :multiple fills)
@@ -226,6 +228,7 @@
                                :on-remove on-remove
                                :disable-drag disable-drag?
                                :on-focus on-focus
+                               :color-token color-tokens-applied
                                :origin :fill
                                :select-on-focus (not disable-drag?)
                                :on-blur on-blur}]))])
