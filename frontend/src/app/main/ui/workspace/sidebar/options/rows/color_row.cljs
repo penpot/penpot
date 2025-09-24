@@ -140,6 +140,7 @@
          :icon i/tokens}]]]]))
 
 (mf/defc color-row*
+  ;; TODO: Add schema
   [{:keys [index color class disable-gradient disable-opacity disable-image disable-picker hidden
            on-change on-reorder on-detach on-open on-close on-remove origin on-detach-token
            disable-drag on-focus on-blur select-only select-on-focus on-token-change applied-token]}]

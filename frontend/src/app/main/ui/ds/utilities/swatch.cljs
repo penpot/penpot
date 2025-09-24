@@ -12,7 +12,7 @@
    [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.schema :as sm]
-   [app.common.types.color :as ct]
+  ;;  [app.common.types.color :as ct]
    [app.config :as cfg]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.color :as uc]
@@ -59,7 +59,8 @@
 
 (def ^:private schema:swatch
   [:map {:title "SchemaSwatch"}
-   [:background {:optional true} ct/schema:color]
+  ;;  TODO: Review schema
+  ;;  [:background {:optional true} ct/schema:color]
    [:class {:optional true} :string]
    [:size {:optional true} [:enum "small" "medium" "large"]]
    [:active {:optional true} ::sm/boolean]
