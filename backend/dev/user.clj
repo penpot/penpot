@@ -35,6 +35,7 @@
    [app.util.blob :as blob]
    [clj-async-profiler.core :as prof]
    [clojure.contrib.humanize :as hum]
+   [clojure.datafy :refer [datafy]]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint print-table]]
    [clojure.repl :refer :all]
