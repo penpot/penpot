@@ -17,7 +17,7 @@
   Use this for managing sets active state without having to modify a
   user created theme (\"no themes selected\" state in the ui)."
   [changes tokens-lib update-theme-fn]
-  (let [active-token-set-names   (ctob/get-active-themes-set-names tokens-lib)
+  (let [active-token-set-names (ctob/get-active-themes-set-names tokens-lib)
 
         hidden-theme  (ctob/get-hidden-theme tokens-lib)
         hidden-theme' (-> (some-> hidden-theme
@@ -25,8 +25,7 @@
                           (update-theme-fn))]
     (-> changes
         (pcb/set-active-token-themes #{(ctob/get-theme-path hidden-theme')})
-        (pcb/set-token-theme (:group hidden-theme)
-                             (:name hidden-theme)
+        (pcb/set-token-theme (ctob/get-id hidden-theme)
                              hidden-theme'))))
 
 (defn generate-toggle-token-set

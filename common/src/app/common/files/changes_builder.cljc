@@ -987,30 +987,18 @@
                                     :token-set (datafy prev-token-set)})
         (apply-changes-local))))
 
-(defn set-token-theme [changes group theme-name theme]
+(defn set-token-theme [changes id theme]
   (assert-library! changes)
   (let [library-data (::library-data (meta changes))
         prev-theme (some-> (get library-data :tokens-lib)
-                           (ctob/get-theme group theme-name))]
+                           (ctob/get-theme id))]
     (-> changes
         (update :redo-changes conj {:type :set-token-theme
-                                    :theme-name theme-name
-                                    :group group
+                                    :id id
                                     :theme theme})
-        (update :undo-changes conj (if prev-theme
-                                     {:type :set-token-theme
-                                      :group group
-                                      :theme-name (or
-                                                   ;; Undo of edit
-                                                   (:name theme)
-                                                   ;; Undo of delete
-                                                   theme-name)
-                                      :theme prev-theme}
-                                     ;; Undo of create
-                                     {:type :set-token-theme
-                                      :group group
-                                      :theme-name theme-name
-                                      :theme nil}))
+        (update :undo-changes conj {:type :set-token-theme
+                                    :id id
+                                    :theme prev-theme})
         (apply-changes-local))))
 
 (defn set-active-token-themes

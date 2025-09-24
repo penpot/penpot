@@ -9,6 +9,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as-alias ev]
@@ -159,11 +160,10 @@
          (fn [_]
            (let [;; We want to create a token on the first set
                  ;; if there are many in this group
-                 complete-name (str (:group set) "/" (first (:sets set)))
                  path-set (group->paths set)]
              (st/emit! (dcm/go-to-workspace :layout :tokens)
                        (ptk/data-event :expand-token-sets {:paths path-set})
-                       (dwtl/set-selected-token-set-name complete-name)
+                       (dwtl/set-selected-token-set-id (ctob/get-id set))
                        (dwtl/set-token-type-section-open :color true)
                        (let [{:keys [modal title]} (get dwta/token-properties :color)
                              window-size (dom/get-window-size)
