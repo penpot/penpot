@@ -5,7 +5,7 @@
 ;; Copyright (c) KALEIDOS INC
 
 (ns app.common.schema.generators
-  (:refer-clojure :exclude [set subseq uuid filter map let boolean vector keyword int double])
+  (:refer-clojure :exclude [set subseq uuid filter map let boolean vector keyword int double not-empty])
   #?(:cljs (:require-macros [app.common.schema.generators]))
   (:require
    [app.common.math :as mth]
@@ -146,3 +146,5 @@
 
 (def any
   (tg/one-of [text boolean double int keyword]))
+
+(def not-empty tg/not-empty)
