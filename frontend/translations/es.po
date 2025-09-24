@@ -1196,7 +1196,11 @@ msgstr "Desvincular token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "Este token no está disponible en ningún set ni tema activo."
+msgstr "Este token no está disponible en ningún set o tiene un valor inválido."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Este token no existe o ha sido borrado."
 
 #: src/app/main/data/auth.cljs:314
 msgid "errors.auth-provider-not-allowed"

@@ -27,6 +27,7 @@
 (def new-warning "#fe4811")
 (def new-primary-light "#6911d4")
 (def background-quaternary "#2e3434")
+(def background-primary "#18181a")
 (def background-quaternary-light "#eef0f2")
 (def canvas "#E8E9EA")
 

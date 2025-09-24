@@ -173,7 +173,9 @@
      [:> fill/fill-menu*
       {:ids ids
        :type type
-       :values fill-values}]
+       :values fill-values
+       :shapes shapes
+       :applied-tokens applied-tokens}]
 
      [:& stroke-menu {:ids ids
                       :type type
