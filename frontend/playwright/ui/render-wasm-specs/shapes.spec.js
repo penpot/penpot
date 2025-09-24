@@ -195,3 +195,19 @@ test("Renders a file with shadows applied to any kind of shape", async ({
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+test("Renders a file with a closed path shape with multiple segments using strokes and shadow", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-subpath-stroke-shadow.json");
+
+  await workspace.goToWorkspace({
+    id: "3f7c3cc4-556d-80fa-8006-da2505231c2b",
+    pageId: "3f7c3cc4-556d-80fa-8006-da2505231c2c",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});

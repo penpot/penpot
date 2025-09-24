@@ -24,6 +24,7 @@ pub fn is_close_to(current: f32, value: f32) -> bool {
     (current - value).abs() <= THRESHOLD
 }
 
+#[allow(dead_code)]
 pub fn are_close_points(a: impl Into<(f32, f32)>, b: impl Into<(f32, f32)>) -> bool {
     let (a_x, a_y) = a.into();
     let (b_x, b_y) = b.into();
