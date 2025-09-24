@@ -52,7 +52,7 @@
 }
 
 .token-selected-icon {
-  color: var(--color-foreground-secondary);
+  color: var(--color-accent-primary);
 }
 
 .token-name {
@@ -64,7 +64,6 @@
 
 .color-tokens-section {
   max-height: $sz-430;
-  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
@@ -85,6 +84,10 @@
 
 .search-input {
   padding: $sz-1;
+}
+
+.color-tokens-inputs {
+  overflow: auto;
 }
 
 // Title bar
@@ -133,4 +136,8 @@
 
 .set-title-action-hidden {
   display: none;
+}
+
+.token-name {
+  color: var(--color-foreground-primary);
 }

@@ -10,8 +10,11 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.main.constants :refer [max-input-length]]
+   [app.main.data.common :as dcm]
    [app.main.data.event :as-alias ev]
+   [app.main.data.modal :as modal]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -21,8 +24,8 @@
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
-   [app.util.timers :as tm]
    [cuerdas.core :as str]
+   [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
 (mf/defc token-empty-state*
@@ -76,26 +79,27 @@
                   :tooltip-content
                   (mf/html
                    [:*
-                    [:div (dm/str (tr "workspace.tokens.token-name") ": " token-name)]
+                    [:div
+                     [:span (dm/str (tr "workspace.tokens.token-name") ": ")] [:span {:class (stl/css :token-name)} token-name]]
                     [:div (tr "workspace.tokens.resolved-value" resolved)]])
                   :on-click on-click
                   :size "medium"}]]))
 
-(defn group->set-name
-  "Given a group structure, returns a representative set name.
+(defn group->paths
+  "Given a map with :group string (slash-separated), returns a set of vectors
+   representing the cumulative group hierarchy.
    
-   Input:
-   {:group \"brand\"
-    :sets  [\"light\" \"dark\"]
-    :tokens [...]}
-
-   Output:
-   - If :group exists → \"brand/light\" (first set in :sets)
-   - If :group is nil → the first (and only) value of :sets"
-  [{:keys [group sets]}]
-  (if group
-    (str group "/" (first sets))
-    (first sets)))
+   Example:
+   {:group \"test/gracia\"}
+   => #{[\"test\"] [\"test\" \"gracia\"]}"
+  [m]
+  (let [parts (when-let [g (:group m)]
+                (str/split g #"/"))]
+    (if (seq parts)
+      (->> (range 1 (inc (count parts)))
+           (map (fn [i] (vec (take i parts))))
+           set)
+      #{})))
 
 (mf/defc set-section*
   {::mf/private true}
@@ -122,9 +126,10 @@
         selected-shapes
         (mf/with-memo [selected objects]
           (into [] (keep (d/getf objects)) selected))
-        first-shape       (first selected-shapes)
-        applied-tokens    (:applied-tokens first-shape)
-        has-color-tokens? (get applied-tokens :fill)
+
+        first-shape        (first selected-shapes)
+        applied-tokens     (:applied-tokens first-shape)
+        has-color-tokens?  (get applied-tokens :fill)
         has-stroke-tokens? (get applied-tokens :stroke-color)
 
         on-token-pill-click
@@ -138,8 +143,8 @@
                (let [attributes (if (= color-origin :stroke) #{:stroke-color} #{:fill})
                      shape-ids (into #{} (map :id selected-shapes))]
                  (if (or
-                      (= (:name token) has-stroke-tokens?)
-                      (= (:name token) has-color-tokens?))
+                      (and (= (:name token) has-stroke-tokens?) (= color-origin :stroke))
+                      (and (= (:name token) has-color-tokens?) (= color-origin :fill)))
                    (st/emit! (dwta/unapply-token {:attributes attributes
                                                   :token token
                                                   :shape-ids shape-ids}))
@@ -152,14 +157,30 @@
         (mf/use-fn
          (mf/deps set)
          (fn [_]
-           (let [first-set-name (group->set-name set)
-                 set-item-id (dm/str "token-set-item-" first-set-name)
-                 set-element (dom/get-element set-item-id)]
-             (when set-element
-               (dom/click set-element)
-               (tm/schedule-on-idle
-                (let [button-element (dom/get-element "add-token-button-Color")]
-                  #(dom/click button-element)))))))
+           (let [;; We want to create a token on the first set
+                 ;; if there are many in this group
+                 complete-name (str (:group set) "/" (first (:sets set)))
+                 path-set (group->paths set)]
+             (st/emit! (dcm/go-to-workspace :layout :tokens)
+                       (ptk/data-event :expand-token-sets {:paths path-set})
+                       (dwtl/set-selected-token-set-name complete-name)
+                       (dwtl/set-token-type-section-open :color true)
+                       (let [{:keys [modal title]} (get dwta/token-properties :color)
+                             window-size (dom/get-window-size)
+                             left-sidebar (dom/get-element "left-sidebar-aside")
+                             x-size (dom/get-data left-sidebar "size")
+                             modal-height 392
+                             x (- (int x-size) 30)
+                             y (- (/ (:height window-size) 2) (/ modal-height 2))]
+                         (modal/show (:key modal)
+                                     {:x x
+                                      :y y
+                                      :position :right
+                                      :fields (:fields modal)
+                                      :title title
+                                      :action "create"
+                                      :token-type :color}))))))
+
         icon-id (if collapsed i/arrow-right i/arrow-down)]
 
     [:article {:class (stl/css :color-token-set)}
@@ -260,6 +281,7 @@
         filter-term (deref filter-term*)
         open-sets* (mf/use-state sets)
         open-sets  (deref open-sets*)
+
         toggle-sets-open
         (mf/use-fn
          (mf/deps open-sets)
@@ -274,7 +296,8 @@
          (fn [event]
            (let [value (-> event (dom/get-target)
                            (dom/get-value))]
-             (reset! filter-term* value))))
+             (reset! filter-term* value)
+             (reset! open-sets* sets))))
         filtered-combined (filter-combined-tokens combined-tokens filter-term)
         sorted-tokens     (sort-combined-tokens filtered-combined)]
     (if (seq combined-tokens)
@@ -286,15 +309,18 @@
                    :class (stl/css :search-input)
                    :default-value filter-term
                    :on-change on-filter-tokens}]
-       (for [combined-sets sorted-tokens]
-         (let  [name (label-group-or-set combined-sets)]
-           [:> set-section*
-            {:collapsed (not (contains?  open-sets name))
-             :key (str "set-" name)
-             :toggle-sets-open toggle-sets-open
-             :color-origin color-origin
-             :on-token-change on-token-change
-             :name name
-             :set combined-sets}]))]
+       (if (seq sorted-tokens)
+         [:div {:class (stl/css :color-tokens-inputs)}
+          (for [combined-sets sorted-tokens]
+            (let  [name (label-group-or-set combined-sets)]
+              [:> set-section*
+               {:collapsed (not (contains?  open-sets name))
+                :key (str "set-" name)
+                :toggle-sets-open toggle-sets-open
+                :color-origin color-origin
+                :on-token-change on-token-change
+                :name name
+                :set combined-sets}]))]
+         [:> token-empty-state*])]
       [:> token-empty-state*])))
 

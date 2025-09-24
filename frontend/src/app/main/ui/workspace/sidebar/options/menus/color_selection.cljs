@@ -152,7 +152,7 @@
                :on-change #(on-change %1 color %2)
                :on-token-change #(on-token-change %1 %2 color)
                :on-open on-open
-               :origin :color-selection-library
+               :origin :color-selection
                :on-close on-close}]))
          (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
            [:button  {:class (stl/css :more-colors-btn)

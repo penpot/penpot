@@ -81,24 +81,10 @@
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dwtl/set-token-type-section-open type true)
-                     ;; Normally the modal position is calculated by client-position,
-                     ;; but in some cases it is opened programmatically (not by a user click),
-                     ;; so we need to set its position explicitly.
-                     (let [pos (dom/get-client-position event)
-                           window-size (dom/get-window-size)
-                           left-sidebar (dom/get-element "left-sidebar-aside")
-                           x-size (dom/get-data left-sidebar "size")
-                           modal-size {:width 452
-                                       :height 392}
-                           x (if (= 0 (:x pos))
-                               (- (int x-size) 30)
-                               (:x pos))
-                           y (if (= 0 (:y pos))
-                               (- (/ (:height window-size) 2) (/ (:height modal-size) 2))
-                               (:y pos))]
+                     (let [pos (dom/get-client-position event)]
                        (modal/show (:key modal)
-                                   {:x x
-                                    :y y
+                                   {:x (:x pos)
+                                    :y (:y pos)
                                     :position :right
                                     :fields (:fields modal)
                                     :title title
