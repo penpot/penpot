@@ -78,7 +78,7 @@
 
 (mf/defc themes-overview
   [{:keys [change-view]}]
-  (let [active-theme-ids (mf/deref refs/workspace-active-theme-paths)
+  (let [active-theme-paths (mf/deref refs/workspace-active-theme-paths)
         themes-groups (mf/deref refs/workspace-token-theme-tree-no-hidden)
 
         create-theme
@@ -105,20 +105,20 @@
              [:> icon* {:icon-id i/group :class (stl/css :group-title-icon)}]
              [:> text* {:as "span" :typography "body-medium" :class (stl/css :group-title-name)} group]]])
          [:ul {:class (stl/css :theme-group-rows-wrapper)}
-          (for [[_ {:keys [group name] :as theme}] themes
-                :let [theme-id (ctob/get-theme-path theme)
-                      selected? (some? (get active-theme-ids theme-id))
+          (for [[_ {:keys [id name] :as theme}] themes
+                :let [theme-path (ctob/get-theme-path theme)
+                      selected? (some? (get active-theme-paths theme-path))
                       delete-theme
                       (fn [e]
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
-                        (st/emit! (dwtl/delete-token-theme group name)))
+                        (st/emit! (dwtl/delete-token-theme id)))
                       on-edit-theme
                       (fn [e]
                         (dom/prevent-default e)
                         (dom/stop-propagation e)
-                        (change-view :edit-theme {:theme-path [(:id theme) (:group theme) (:name theme)]}))]]
-            [:li {:key theme-id
+                        (change-view :edit-theme {:theme-info [(:id theme) (:group theme) (:name theme)]}))]]
+            [:li {:key theme-path
                   :class (stl/css :theme-row)}
              [:div {:class (stl/css :theme-switch-row)}
 
@@ -126,7 +126,7 @@
               [:div {:on-click (fn [e]
                                  (dom/prevent-default e)
                                  (dom/stop-propagation e)
-                                 (st/emit! (dwtl/toggle-token-theme-active? group name)))}
+                                 (st/emit! (dwtl/toggle-token-theme-active? id)))}
                [:& switch {:name (tr "workspace.tokens.theme-name" name)
                            :on-change (constantly nil)
                            :selected? selected?}]]]
@@ -238,7 +238,7 @@
   (let [tlib (-> (ctob/make-tokens-lib)
                  (ctob/add-theme theme))
         tlib (reduce ctob/add-set tlib sets)]
-    (ctob/activate-theme tlib (:group theme) (:name theme))))
+    (ctob/activate-theme tlib (ctob/get-id theme))))
 
 (mf/defc edit-create-theme*
   [{:keys [change-view theme on-save is-editing has-prev-view]}]
@@ -285,7 +285,7 @@
         (mf/use-fn
          (mf/deps current-theme on-back)
          (fn []
-           (st/emit! (dwtl/delete-token-theme (:group current-theme) (:name current-theme)))
+           (st/emit! (dwtl/delete-token-theme (ctob/get-id current-theme)))
            (on-back)))
 
         ;; Sets tree handlers
@@ -369,16 +369,16 @@
 
 (mf/defc edit-theme
   [{:keys [state change-view]}]
-  (let [{:keys [theme-path]} state
-        [_ theme-group theme-name] theme-path
-        theme (mf/deref (refs/workspace-token-theme theme-group theme-name))
+  (let [{:keys [theme-info]} state
+        [theme-id _ _] theme-info
+        theme (mf/deref (refs/workspace-token-theme theme-id))
         has-prev-view (has-prev-view (:prev-type state))
 
         on-save
         (mf/use-fn
          (mf/deps theme)
          (fn [theme']
-           (st/emit! (dwtl/update-token-theme [(:group theme) (:name theme)] theme'))))]
+           (st/emit! (dwtl/update-token-theme (ctob/get-id theme) theme'))))]
 
     [:> edit-create-theme*
      {:change-view change-view
@@ -413,12 +413,12 @@
         state       (deref state*)
 
         change-view (mf/use-fn
-                     (fn [type & {:keys [theme-path]}]
+                     (fn [type & {:keys [theme-info]}]
                        (swap! state* (fn [current-state]
                                        (cond-> current-state
                                          :always (assoc :type type
                                                         :prev-type (:type current-state))
-                                         :theme-path (assoc :theme-path theme-path))))))
+                                         :theme-info (assoc :theme-info theme-info))))))
 
         component (case (:type state)
                     :empty-themes empty-themes
