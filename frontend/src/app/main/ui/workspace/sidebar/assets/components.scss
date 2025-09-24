@@ -4,59 +4,59 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .drop-space {
-  height: $s-12;
+  height: deprecated.$s-12;
 }
 
 .drop-space-small {
-  height: $s-2;
+  height: deprecated.$s-2;
 }
 
 .asset-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($s-96, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(deprecated.$s-96, 1fr));
   max-width: 100%;
-  gap: $s-4;
-  margin-inline: $s-8;
+  gap: deprecated.$s-4;
+  margin-inline: deprecated.$s-8;
 }
 
 .grid-cell {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   position: relative;
   aspect-ratio: 1 / 1;
-  padding: $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--assets-component-background-color);
   overflow: hidden;
   cursor: pointer;
 
   .variant-mark {
     background-color: var(--color-background-tertiary);
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
   }
 
   .cell-name {
-    @include bodySmallTypography;
-    @include textEllipsis;
+    @include deprecated.bodySmallTypography;
+    @include deprecated.textEllipsis;
     display: none;
     position: absolute;
-    left: $s-4;
-    bottom: $s-4;
-    height: calc($s-24 - $s-2);
-    width: calc(100% - 2 * $s-4);
-    padding: $s-2 $s-6;
-    column-gap: $s-4;
-    border-radius: $br-4;
+    left: deprecated.$s-4;
+    bottom: deprecated.$s-4;
+    height: calc(deprecated.$s-24 - deprecated.$s-2);
+    width: calc(100% - 2 * deprecated.$s-4);
+    padding: deprecated.$s-2 deprecated.$s-6;
+    column-gap: deprecated.$s-4;
+    border-radius: deprecated.$br-4;
     background-color: var(--assets-item-name-background-color);
-    border: $s-1 solid transparent;
+    border: deprecated.$s-1 solid transparent;
     color: var(--assets-item-name-foreground-color);
 
     input {
-      @include textEllipsis;
-      @include bodySmallTypography;
-      @include removeInputStyle;
+      @include deprecated.textEllipsis;
+      @include deprecated.bodySmallTypography;
+      @include deprecated.removeInputStyle;
       height: auto;
       padding: 0;
     }
@@ -69,7 +69,7 @@
 
     &.editing {
       border-color: var(--input-border-color-focus);
-      border-radius: $br-4;
+      border-radius: deprecated.$br-4;
       display: flex;
       align-items: center;
       background-color: var(--input-background-color);
@@ -83,18 +83,18 @@
   }
 
   &.selected {
-    border: $s-2 solid var(--assets-item-border-color);
+    border: deprecated.$s-2 solid var(--assets-item-border-color);
 
     &::before {
       content: " ";
       position: absolute;
-      z-index: $z-index-2;
+      z-index: deprecated.$z-index-2;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      border: $s-4 solid var(--assets-component-second-border-selected);
-      border-radius: $br-8;
+      border: deprecated.$s-4 solid var(--assets-component-second-border-selected);
+      border-radius: deprecated.$br-8;
     }
   }
 }
@@ -102,7 +102,7 @@
 .component-group {
   display: grid;
   grid-template-columns: 1fr;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .thumbnail {
@@ -115,9 +115,9 @@
 
 .grid-placeholder {
   width: 100%;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--assets-item-background-color-drag);
-  border: $s-2 solid var(--assets-item-border-color-drag);
+  border: deprecated.$s-2 solid var(--assets-item-border-color-drag);
 }
 
 .enum-item {
@@ -125,17 +125,17 @@
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  column-gap: $s-8;
-  height: $s-44;
-  padding-right: $s-4;
-  padding: $s-1;
-  border: $s-1 solid transparent;
-  border-radius: $br-8;
+  column-gap: deprecated.$s-8;
+  height: deprecated.$s-44;
+  padding-right: deprecated.$s-4;
+  padding: deprecated.$s-1;
+  border: deprecated.$s-1 solid transparent;
+  border-radius: deprecated.$br-8;
   background-color: var(--assets-item-background-color);
   cursor: pointer;
 
   &:not(:last-child) {
-    margin-bottom: $s-4;
+    margin-bottom: deprecated.$s-4;
   }
 
   &:hover {
@@ -155,58 +155,58 @@
   }
 
   &.selected {
-    border: $s-1 solid var(--assets-item-border-color);
+    border: deprecated.$s-1 solid var(--assets-item-border-color);
   }
 }
 
 .enum-item-with-mark {
-  grid-template-columns: auto 1fr $s-24;
-  padding-right: $s-4;
+  grid-template-columns: auto 1fr deprecated.$s-24;
+  padding-right: deprecated.$s-4;
 }
 
 .item-name {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   order: 2;
   color: var(--assets-item-name-foreground-color);
 
   input {
-    @include textEllipsis;
-    @include bodySmallTypography;
-    @include removeInputStyle;
-    height: $s-32;
-    padding: $s-4;
+    @include deprecated.textEllipsis;
+    @include deprecated.bodySmallTypography;
+    @include deprecated.removeInputStyle;
+    height: deprecated.$s-32;
+    padding: deprecated.$s-4;
   }
 
   span {
     display: flex;
     place-items: center;
-    padding-inline-end: $s-4;
+    padding-inline-end: deprecated.$s-4;
   }
 
   &.editing {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    column-gap: $s-8;
-    border: $s-1 solid var(--input-border-color-focus);
-    border-radius: $br-8;
+    column-gap: deprecated.$s-8;
+    border: deprecated.$s-1 solid var(--input-border-color-focus);
+    border-radius: deprecated.$br-8;
     background-color: var(--input-background-color);
   }
 }
 
 .asset-list-thumbnail {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   flex-shrink: 0;
-  padding: $s-2;
-  height: $s-40;
-  width: $s-40;
-  border-radius: $br-6;
+  padding: deprecated.$s-2;
+  height: deprecated.$s-40;
+  width: deprecated.$s-40;
+  border-radius: deprecated.$br-6;
   background-color: var(--assets-component-background-color);
 }
 
 .grid-placeholder {
-  height: $s-2;
+  height: deprecated.$s-2;
   width: 100%;
   background-color: var(--color-accent-primary);
 }
@@ -222,21 +222,21 @@
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: $s-8;
+  border-radius: deprecated.$s-8;
   background-color: var(--assets-item-background-color-drag);
-  border: $s-2 solid var(--assets-item-border-color-drag);
+  border: deprecated.$s-2 solid var(--assets-item-border-color-drag);
 }
 
 .variant-mark-cell {
   position: absolute;
-  right: $s-2;
-  top: $s-2;
+  right: deprecated.$s-2;
+  top: deprecated.$s-2;
 }
 
 .component-icon {
-  @include flexCenter;
-  height: $s-24;
-  width: $s-24;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
   order: 3;
   color: var(--color-accent-secondary);
 }

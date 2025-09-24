@@ -4,18 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .profile-name {
   width: fit-content;
   font-family: worksans;
   padding: 2px 12px;
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
   display: flex;
   align-items: center;
   height: 20px;
-  font-size: $fs-12;
-  line-height: $lh-150;
+  font-size: deprecated.$fs-12;
+  line-height: deprecated.$lh-150;
 }
 
 .multiuser-cursor {

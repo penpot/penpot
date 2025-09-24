@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .flow-element {
   display: flex;
@@ -23,18 +23,18 @@
   cursor: pointer;
   display: flex;
   .content {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     display: flex;
     align-items: center;
-    height: $s-24;
-    border-radius: $br-6;
+    height: deprecated.$s-24;
+    border-radius: deprecated.$br-6;
     background-color: var(--flow-tag-background-color);
     svg {
       @extend .button-icon;
-      height: $s-24;
-      width: $s-12;
+      height: deprecated.$s-24;
+      width: deprecated.$s-12;
       stroke: var(--icon-foreground);
-      margin: 0 $s-8;
+      margin: 0 deprecated.$s-8;
     }
 
     span {
@@ -42,7 +42,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: $s-8;
+      margin-right: deprecated.$s-8;
       color: var(--flow-tag-foreground-color);
     }
   }
@@ -65,7 +65,7 @@
 }
 
 .workspace-frame-label {
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   color: black;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -75,14 +75,14 @@
 }
 
 .element-name-input {
-  @include removeInputStyle;
-  @include bodySmallTypography;
-  @include removeInputStyle;
+  @include deprecated.removeInputStyle;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.removeInputStyle;
   flex-grow: 1;
   height: 20px;
   margin: 0;
-  padding-left: $s-6;
-  border: $s-1 solid var(--input-border-color-focus);
+  padding-left: deprecated.$s-6;
+  border: deprecated.$s-1 solid var(--input-border-color-focus);
   color: var(--layer-row-foreground-color);
   width: 100%;
   max-width: initial;

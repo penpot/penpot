@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/_sizes.scss" as *;
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
   margin: 0;
@@ -13,16 +13,16 @@
 
 .title-spacing-shadow {
   margin: 0;
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
 }
 
 .element-set-content {
-  margin-top: $s-4;
-  @include flexColumn;
+  margin-top: deprecated.$s-4;
+  @include deprecated.flexColumn;
 }
 
 .multiple-shadows {
-  @include flexRow;
+  @include deprecated.flexRow;
 }
 
 .label {
@@ -36,7 +36,7 @@
 }
 
 .shadow-element {
-  @include flexColumn;
+  @include deprecated.flexColumn;
   position: relative;
 
   --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
@@ -64,13 +64,13 @@
   grid-column: span 6;
   display: flex;
   align-items: center;
-  gap: $s-1;
+  gap: deprecated.$s-1;
 
   .more-options {
     @extend .button-secondary;
-    height: $s-32;
-    width: $s-28;
-    border-radius: $br-8 0 0 $br-8;
+    height: deprecated.$s-32;
+    width: deprecated.$s-28;
+    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
     svg {
       @extend .button-icon;
     }
@@ -83,24 +83,24 @@
   }
   .type-select {
     padding: 0;
-    border-radius: 0 $br-8 $br-8 0;
+    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
     flex-grow: 1;
     .shadow-type-select {
       flex-grow: 1;
-      border-radius: 0 $br-8 $br-8 0;
+      border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
     }
   }
 
   &.hidden {
     .more-options {
-      @include hiddenElement;
-      border: $s-1 solid var(--input-border-color-disabled);
+      @include deprecated.hiddenElement;
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
     }
     .type-select {
-      @include hiddenElement;
+      @include deprecated.hiddenElement;
       .shadow-type-select {
-        @include hiddenElement;
-        border: $s-1 solid var(--input-border-color-disabled);
+        @include deprecated.hiddenElement;
+        border: deprecated.$s-1 solid var(--input-border-color-disabled);
       }
     }
   }
@@ -124,7 +124,7 @@
 .spread-input,
 .offset-y-input {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
 }
 
 .input-label {

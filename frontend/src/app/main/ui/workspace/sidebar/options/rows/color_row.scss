@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .color-data {
-  @include flexRow;
+  @include deprecated.flexRow;
 
   position: relative;
 
@@ -37,10 +37,10 @@
   flex: 1;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: $s-2;
-  border-radius: $s-8;
+  gap: deprecated.$s-2;
+  border-radius: deprecated.$s-8;
   background-color: var(--input-details-color);
-  height: $s-32;
+  height: deprecated.$s-32;
 
   &:hover {
     --detach-icon-foreground-color: var(--input-foreground-color-active);
@@ -54,14 +54,14 @@
 
 .color-name-wrapper {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   flex-grow: 1;
   width: 100%;
   min-width: 0;
-  border-radius: $br-8 0 0 $br-8;
+  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
   padding: 0;
   margin-inline-end: 0;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -70,9 +70,9 @@
     padding: 0;
   }
   .color-bullet-wrapper {
-    height: $s-28;
-    padding: 0 $s-2 0 $s-8;
-    border-radius: $br-8 0 0 $br-8;
+    height: deprecated.$s-28;
+    padding: 0 deprecated.$s-2 0 deprecated.$s-8;
+    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
     background-color: transparent;
     display: flex;
     align-items: center;
@@ -81,18 +81,18 @@
     }
   }
   .color-name {
-    @include bodySmallTypography;
-    @include textEllipsis;
-    padding-inline: $s-6;
-    border-radius: $br-8;
+    @include deprecated.bodySmallTypography;
+    @include deprecated.textEllipsis;
+    padding-inline: deprecated.$s-6;
+    border-radius: deprecated.$br-8;
     color: var(--input-foreground-color-active);
   }
   .detach-btn {
     @extend .button-tertiary;
-    height: $s-28;
-    width: $s-28;
+    height: deprecated.$s-28;
+    width: deprecated.$s-28;
     margin-inline-start: auto;
-    border-radius: 0 $br-8 $br-8 0;
+    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
     display: none;
   }
   .detach-icon {
@@ -100,29 +100,29 @@
     stroke: var(--detach-icon-foreground-color);
   }
   .color-input-wrapper {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     display: flex;
     align-items: center;
-    height: $s-28;
-    padding: 0 $s-0;
+    height: deprecated.$s-28;
+    padding: 0 deprecated.$s-0;
     width: 100%;
     margin: 0;
     flex-grow: 1;
     background-color: var(--input-background-color);
     color: var(--input-foreground-color);
-    border-radius: $br-0;
+    border-radius: deprecated.$br-0;
   }
   &.no-opacity {
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
     .color-input-wrapper {
-      border-radius: $br-8;
+      border-radius: deprecated.$br-8;
     }
   }
   &:hover {
     --detach-icon-foreground-color: var(--input-foreground-color-active);
 
     background-color: var(--input-background-color-hover);
-    border: $s-1 solid var(--input-border-color-hover);
+    border: deprecated.$s-1 solid var(--input-border-color-hover);
     .color-bullet-wrapper,
     .color-name,
     .detach-btn,
@@ -144,46 +144,46 @@
     &:focus,
     &:focus-within {
       background-color: var(--input-background-color-focus);
-      border: $s-1 solid var(--input-border-color-focus);
+      border: deprecated.$s-1 solid var(--input-border-color-focus);
     }
   }
 
   &:focus,
   &:focus-within {
     background-color: var(--input-background-color-focus);
-    border: $s-1 solid var(--input-border-color-focus);
+    border: deprecated.$s-1 solid var(--input-border-color-focus);
     &:hover {
       background-color: var(--input-background-color-hover);
-      border: $s-1 solid var(--input-border-color-focus);
+      border: deprecated.$s-1 solid var(--input-border-color-focus);
     }
   }
 
   &.editing {
     background-color: var(--input-background-color-active);
     &:hover {
-      border: $s-1 solid var(--input-border-color-active);
+      border: deprecated.$s-1 solid var(--input-border-color-active);
     }
   }
 }
 
 .library-name-wrapper {
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
 }
 
 .opacity-element-wrapper {
   @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-60;
-  border-radius: 0 $br-8 $br-8 0;
+  @include deprecated.bodySmallTypography;
+  width: deprecated.$s-60;
+  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
   .opacity-input {
     padding: 0;
-    border-radius: 0 $br-8 $br-8 0;
-    min-width: $s-28;
+    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
+    min-width: deprecated.$s-28;
   }
   .icon-text {
-    @include flexCenter;
-    height: $s-32;
-    margin-inline-end: $s-4;
-    margin-block-start: $s-2;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-32;
+    margin-inline-end: deprecated.$s-4;
+    margin-block-start: deprecated.$s-2;
   }
 }

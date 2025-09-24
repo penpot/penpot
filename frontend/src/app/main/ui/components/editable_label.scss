@@ -4,19 +4,19 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .editable-label-input {
-  @include textEllipsis;
-  @include bodySmallTypography;
-  @include removeInputStyle;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.removeInputStyle;
   flex-grow: 1;
-  height: $s-28;
+  height: deprecated.$s-28;
   max-width: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
   margin: 0;
-  padding-left: $s-6;
-  border-radius: $br-4;
-  border: $s-1 solid var(--input-border-color-active);
+  padding-left: deprecated.$s-6;
+  border-radius: deprecated.$br-4;
+  border: deprecated.$s-1 solid var(--input-border-color-active);
   color: var(--input-foreground-color-active);
 }
 
@@ -29,8 +29,8 @@
 
   svg {
     @extend .button-icon;
-    height: $s-12;
-    width: $s-12;
+    height: deprecated.$s-12;
+    width: deprecated.$s-12;
     stroke: var(--icon-foreground);
     margin: 0;
   }

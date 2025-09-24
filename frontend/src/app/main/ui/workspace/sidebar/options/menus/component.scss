@@ -5,7 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/typography.scss" as t;
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
   margin: 0;
@@ -15,12 +15,12 @@
 }
 
 .element-content {
-  @include flexColumn;
+  @include deprecated.flexColumn;
   display: grid;
   grid-template-columns: repeat(8, var(--sp-xxxl));
   row-gap: var(--sp-m);
-  padding-top: $s-4;
-  padding-bottom: $s-8;
+  padding-top: deprecated.$s-4;
+  padding-bottom: deprecated.$s-8;
 }
 
 .element-title {
@@ -30,15 +30,15 @@
 }
 
 .title-back {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   display: flex;
   align-items: center;
-  gap: $s-4;
+  gap: deprecated.$s-4;
   width: 100%;
-  height: $s-32;
+  height: deprecated.$s-32;
   padding: 0;
   border: 0;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--title-background-color);
   color: var(--title-foreground-color);
   cursor: pointer;
@@ -46,7 +46,7 @@
 
 .title-spacing-component {
   justify-content: flex-start;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   flex-grow: 1;
 }
 
@@ -62,8 +62,8 @@
 .component-line {
   grid-column: span 8;
   width: 100%;
-  min-height: $s-32;
-  border-radius: $br-8;
+  min-height: deprecated.$s-32;
+  border-radius: deprecated.$br-8;
   display: flex;
   gap: var(--sp-xs);
 }
@@ -71,28 +71,28 @@
 .component-wrapper {
   display: flex;
   flex-grow: 1;
-  gap: $s-1;
+  gap: deprecated.$s-1;
 }
 
 .component-name-wrapper {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   cursor: default;
   flex-grow: 1;
   display: grid;
-  grid-template-columns: $s-16 1fr;
-  gap: $s-4;
-  padding: 0 $s-8;
-  border-radius: $br-8 0 0 $br-8;
+  grid-template-columns: deprecated.$s-16 1fr;
+  gap: deprecated.$s-4;
+  padding: 0 deprecated.$s-8;
+  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color-hover);
 
   &.without-menu {
     width: 100%;
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
   }
 
   &:focus {
-    outline: $s-1 solid var(--color-accent-primary);
+    outline: deprecated.$s-1 solid var(--color-accent-primary);
   }
 
   &:hover:not(:disabled) {
@@ -103,26 +103,26 @@
 
 .component-icon {
   display: flex;
-  height: $s-32;
+  height: deprecated.$s-32;
   align-items: center;
   color: var(--icon-foreground);
 }
 
 .component-name-outside {
-  @include flexColumn;
-  min-height: $s-32;
-  padding: $s-8 0 $s-8 $s-2;
-  border-radius: $br-8 0 0 $br-8;
+  @include deprecated.flexColumn;
+  min-height: deprecated.$s-32;
+  padding: deprecated.$s-8 0 deprecated.$s-8 deprecated.$s-2;
+  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
   overflow: hidden;
   gap: 0;
 }
 
 .component-name {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   direction: rtl;
   text-align: left;
-  height: $s-16;
+  height: deprecated.$s-16;
 }
 
 .component-name-inside {
@@ -131,18 +131,18 @@
 }
 
 .component-parent-name {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   direction: rtl;
   text-align: left;
-  height: $s-16;
-  max-width: $s-184;
+  height: deprecated.$s-16;
+  max-width: deprecated.$s-184;
   color: var(--title-foreground-color);
 }
 
 .component-actions {
   position: relative;
-  width: $s-32;
+  width: deprecated.$s-32;
 }
 
 .component-menu-btn {
@@ -150,7 +150,7 @@
   cursor: unset;
   height: 100%;
   width: 100%;
-  border-radius: 0 $br-8 $br-8 0;
+  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
 
   &.selected {
     @extend .button-icon-selected;
@@ -158,7 +158,7 @@
 }
 
 .copy-text {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   height: 100%;
   display: flex;
   align-items: center;
@@ -169,11 +169,11 @@
   @extend .dropdown-wrapper;
   right: 0;
   left: unset;
-  width: $s-252;
+  width: deprecated.$s-252;
 }
 
 .not-main {
-  top: $s-48;
+  top: deprecated.$s-48;
 }
 
 .dropdown-element {
@@ -183,9 +183,9 @@
 .component-path {
   display: flex;
   align-items: center;
-  gap: $s-4;
+  gap: deprecated.$s-4;
   width: 100%;
-  height: $s-32;
+  height: deprecated.$s-32;
   padding: 0;
   border: 0;
   background-color: var(--title-background-color);
@@ -194,57 +194,57 @@
 }
 
 .path-name {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   direction: rtl;
-  height: $s-32;
-  padding: $s-8 0 $s-8 $s-2;
-  margin-right: $s-4;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8 0 deprecated.$s-8 deprecated.$s-2;
+  margin-right: deprecated.$s-4;
 }
 
 .component-list-empty {
-  @include bodySmallTypography;
-  margin: 0 $s-4 0 $s-8;
+  @include deprecated.bodySmallTypography;
+  margin: 0 deprecated.$s-4 0 deprecated.$s-8;
   color: var(--color-foreground-secondary);
 }
 
 .component-item {
   display: flex;
   align-items: center;
-  margin-bottom: $s-4;
-  padding: $s-1 $s-8 $s-1 $s-1;
-  gap: $s-8;
-  font-size: $s-12;
+  margin-bottom: deprecated.$s-4;
+  padding: deprecated.$s-1 deprecated.$s-8 deprecated.$s-1 deprecated.$s-1;
+  gap: deprecated.$s-8;
+  font-size: deprecated.$s-12;
   cursor: pointer;
   width: 100%;
-  height: $s-44;
-  border-radius: $br-8;
+  height: deprecated.$s-44;
+  border-radius: deprecated.$br-8;
   background-color: var(--assets-item-background-color);
   color: var(--assets-item-name-foreground-color);
-  border: $s-1 solid transparent;
+  border: deprecated.$s-1 solid transparent;
 
   .variant-icon {
     background-color: none;
-    padding: $s-2;
-    flex: 0 0 $s-16;
+    padding: deprecated.$s-2;
+    flex: 0 0 deprecated.$s-16;
   }
 
   .component-name {
-    @include textEllipsis;
+    @include deprecated.textEllipsis;
     width: 80%;
   }
 
   .component-img {
-    flex: 0 0 $s-40;
+    flex: 0 0 deprecated.$s-40;
     background-color: var(--assets-component-background-color);
-    border-radius: $br-6;
-    height: $s-40;
-    width: $s-40;
-    padding: $s-2;
+    border-radius: deprecated.$br-6;
+    height: deprecated.$s-40;
+    width: deprecated.$s-40;
+    padding: deprecated.$s-2;
   }
 
   &.selected {
-    border: $s-1 solid var(--assets-item-border-color);
+    border: deprecated.$s-1 solid var(--assets-item-border-color);
   }
 
   &:hover {
@@ -265,18 +265,18 @@
 
 .component-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($s-96, 1fr));
-  gap: $s-4;
+  grid-template-columns: repeat(auto-fill, minmax(deprecated.$s-96, 1fr));
+  gap: deprecated.$s-4;
 }
 
 .grid-cell {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   place-items: center;
   aspect-ratio: 1 / 1;
   flex-wrap: wrap;
   position: relative;
-  padding: $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--assets-component-background-color);
   overflow: hidden;
   cursor: pointer;
@@ -301,19 +301,19 @@
   }
 
   .component-name {
-    @include bodySmallTypography;
-    @include textEllipsis;
+    @include deprecated.bodySmallTypography;
+    @include deprecated.textEllipsis;
     display: none;
     position: absolute;
-    left: $s-4;
-    bottom: $s-4;
-    height: calc($s-24 - $s-2);
-    width: calc(100% - 2 * $s-4);
-    padding: $s-2 $s-6;
-    column-gap: $s-4;
-    border-radius: $br-4;
+    left: deprecated.$s-4;
+    bottom: deprecated.$s-4;
+    height: calc(deprecated.$s-24 - deprecated.$s-2);
+    width: calc(100% - 2 * deprecated.$s-4);
+    padding: deprecated.$s-2 deprecated.$s-6;
+    column-gap: deprecated.$s-4;
+    border-radius: deprecated.$br-4;
     background-color: var(--assets-item-name-background-color);
-    border: $s-1 solid transparent;
+    border: deprecated.$s-1 solid transparent;
     color: var(--assets-item-name-foreground-color);
     direction: rtl;
   }
@@ -325,7 +325,7 @@
   }
 
   &.selected {
-    border: $s-2 solid var(--assets-item-border-color);
+    border: deprecated.$s-2 solid var(--assets-item-border-color);
 
     &::before {
       content: " ";
@@ -334,8 +334,8 @@
       left: 0;
       right: 0;
       bottom: 0;
-      border: $s-4 solid var(--assets-component-second-border-selected);
-      border-radius: $br-8;
+      border: deprecated.$s-4 solid var(--assets-component-second-border-selected);
+      border-radius: deprecated.$br-8;
     }
 
     .component-name {
@@ -363,36 +363,36 @@
 }
 
 .element-set-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   display: flex;
   align-items: center;
-  height: $s-32;
-  padding-left: $s-2;
+  height: deprecated.$s-32;
+  padding-left: deprecated.$s-2;
   color: var(--title-foreground-color);
 }
 
 // Component swap
 
 .component-swap {
-  padding-top: $s-12;
+  padding-top: deprecated.$s-12;
   grid-column: span 8;
 }
 
 .component-swap-content {
-  @include flexColumn;
-  gap: $s-16;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-16;
 }
 
 .fields-wrapper {
-  @include flexColumn;
-  gap: $s-4;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-4;
 }
 
 .search-field {
   display: flex;
   align-items: center;
-  height: $s-32;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  border-radius: deprecated.$br-8;
   font-family: "worksans", "vazirmatn", sans-serif;
   background-color: var(--input-background-color);
 }
@@ -403,15 +403,15 @@
 }
 
 .library-name {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   color: var(--title-foreground-color);
-  padding: $s-8 0 $s-8 $s-2;
+  padding: deprecated.$s-8 0 deprecated.$s-8 deprecated.$s-2;
 }
 
 .swap-wrapper {
-  @include flexColumn;
-  gap: $s-4;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-4;
 }
 
 .listing-options-wrapper {
@@ -424,15 +424,15 @@
 }
 
 .component-group {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: grid;
-  grid-template-columns: 1fr $s-12;
-  height: $s-32;
+  grid-template-columns: 1fr deprecated.$s-12;
+  height: deprecated.$s-32;
   cursor: pointer;
   align-items: center;
 
   .component-group-name {
-    @include textEllipsis;
+    @include deprecated.textEllipsis;
     color: var(--assets-item-name-foreground-color);
   }
 
@@ -451,12 +451,12 @@
 
 .path-wrapper {
   display: flex;
-  max-width: $s-232;
-  padding: $s-8 0 $s-8 $s-2;
+  max-width: deprecated.$s-232;
+  padding: deprecated.$s-8 0 deprecated.$s-8 deprecated.$s-2;
 }
 
 .component-group-path {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   direction: rtl;
   color: var(--assets-item-name-foreground-color-rest);
 }
@@ -464,18 +464,18 @@
 // Component annotation
 
 .component-annotation {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   grid-column: span 8;
   color: var(--entry-foreground-color);
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
 
   .annotation-title {
     display: flex;
     align-items: center;
-    height: $s-32;
+    height: deprecated.$s-32;
 
     &.expanded {
-      border-bottom: $s-1 solid var(--entry-border-color-disabled);
+      border-bottom: deprecated.$s-1 solid var(--entry-border-color-disabled);
     }
 
     &.expandeable {
@@ -489,9 +489,9 @@
     }
 
     .icon-arrow {
-      @include flexCenter;
-      width: $s-28;
-      height: $s-32;
+      @include deprecated.flexCenter;
+      width: deprecated.$s-28;
+      height: deprecated.$s-32;
       display: flex;
       margin: 0;
       padding: 0;
@@ -500,8 +500,8 @@
       svg {
         @extend .button-icon;
         stroke: var(--icon-foreground);
-        width: $s-16;
-        height: $s-16;
+        width: deprecated.$s-16;
+        height: deprecated.$s-16;
       }
 
       &.expanded svg {
@@ -510,10 +510,10 @@
     }
 
     .icon {
-      @include flexCenter;
-      width: $s-28;
-      height: $s-32;
-      border-radius: $br-8;
+      @include deprecated.flexCenter;
+      width: deprecated.$s-28;
+      height: deprecated.$s-32;
+      border-radius: deprecated.$br-8;
       display: none;
       margin: 0;
       padding: 0;
@@ -522,8 +522,8 @@
       svg {
         @extend .button-icon;
         stroke: var(--icon-foreground);
-        width: $s-16;
-        height: $s-16;
+        width: deprecated.$s-16;
+        height: deprecated.$s-16;
       }
 
       &.icon-tick:hover,
@@ -551,7 +551,7 @@
 
     .annotation-text {
       flex-grow: 1;
-      margin-left: $s-12;
+      margin-left: deprecated.$s-12;
     }
 
     &:hover {
@@ -562,10 +562,10 @@
   }
 
   &.editing {
-    border: $s-1 solid var(--input-border-color-success);
+    border: deprecated.$s-1 solid var(--input-border-color-success);
 
     .annotation-title {
-      border-bottom: $s-1 solid var(--entry-border-color-disabled);
+      border-bottom: deprecated.$s-1 solid var(--entry-border-color-disabled);
 
       .icon {
         display: flex;
@@ -573,19 +573,19 @@
     }
 
     textarea {
-      min-height: $s-252;
+      min-height: deprecated.$s-252;
     }
   }
 
   &.creating {
-    border: $s-1 solid var(--input-border-color-success);
+    border: deprecated.$s-1 solid var(--input-border-color-success);
 
     .annotation-title .icon {
       display: flex;
     }
 
     textarea {
-      min-height: $s-252;
+      min-height: deprecated.$s-252;
     }
   }
 
@@ -598,10 +598,10 @@
   }
 
   .counter {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     text-align: right;
     color: var(--entry-foreground-color);
-    margin: 0 $s-8 $s-8 0;
+    margin: 0 deprecated.$s-8 deprecated.$s-8 0;
   }
 
   // Auto growing text
@@ -619,7 +619,7 @@
     textarea {
       background-color: var(--input-background-color-active);
       color: var(--input-foreground-color-active);
-      padding: $s-12;
+      padding: deprecated.$s-12;
 
       border: none;
       overflow: hidden;
@@ -648,7 +648,7 @@
 }
 
 .variant-property-row {
-  @include flexRow;
+  @include deprecated.flexRow;
   justify-content: space-between;
   width: 100%;
 }
@@ -687,15 +687,15 @@
 }
 
 .variant-warning-wrapper {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   grid-column: span 8;
 
   border: 1px solid var(--color-background-quaternary);
-  border-radius: $s-8;
-  padding: $s-12;
+  border-radius: deprecated.$s-8;
+  padding: deprecated.$s-12;
   display: flex;
   flex-direction: column;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .variant-warning-highlight {
@@ -707,7 +707,7 @@
 }
 
 .variant-warning-button {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   background-color: transparent;
   border: none;
   appearance: none;
@@ -718,29 +718,29 @@
 }
 
 .variant-icon {
-  @include flexCenter;
-  height: $s-24;
-  width: $s-24;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
   color: var(--color-accent-secondary);
-  border-radius: $s-8;
+  border-radius: deprecated.$s-8;
 }
 
 .variant-mark-cell {
   position: absolute;
-  right: $s-2;
-  top: $s-2;
+  right: deprecated.$s-2;
+  top: deprecated.$s-2;
 }
 
 .combine-variant-button {
-  @include buttonStyle;
-  @include uppercaseTitleTipography;
+  @include deprecated.buttonStyle;
+  @include deprecated.uppercaseTitleTipography;
   grid-column: span 8;
   cursor: default;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--assets-item-background-color);
   color: var(--color-foreground-secondary);
   cursor: pointer;
@@ -751,6 +751,6 @@
   }
 
   &:focus {
-    outline: $s-1 solid var(--color-accent-primary);
+    outline: deprecated.$s-1 solid var(--color-accent-primary);
   }
 }
