@@ -2536,7 +2536,7 @@ msgstr "Kollaboration in Echtzeit"
 
 #: src/app/main/ui/ds/product/loader.cljs:24
 msgid "loader.tips.03.title"
-msgstr "Auto-Layout wie CSS"
+msgstr "Layouts wie CSS"
 
 #: src/app/main/ui/ds/product/loader.cljs:28
 msgid "loader.tips.05.title"

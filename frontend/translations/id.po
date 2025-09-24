@@ -2445,7 +2445,7 @@ msgstr "Desain secara fleksibel dengan kontrol tata letak seperti CSS."
 
 #: src/app/main/ui/ds/product/loader.cljs:24
 msgid "loader.tips.03.title"
-msgstr "Tata Letak Otomatis seperti CSS"
+msgstr "Tata Letak seperti CSS"
 
 #: src/app/main/ui/ds/product/loader.cljs:27
 msgid "loader.tips.04.message"
