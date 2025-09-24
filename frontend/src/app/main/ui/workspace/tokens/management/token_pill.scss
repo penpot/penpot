@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as *;
-@use "../../../ds/borders.scss" as *;
-@use "../../../ds/sizes.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
 
 .token-pill {
   @include use-typography("code-font");

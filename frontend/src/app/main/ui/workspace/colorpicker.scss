@@ -4,11 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/typography.scss" as t;
-@use "../ds/spacing.scss";
-@use "../ds/_borders.scss" as *;
-@use "../ds/_sizes.scss" as *;
-@use "../ds/utils" as *;
+@use "ds/typography.scss" as t;
+@use "ds/spacing.scss";
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "refactor/basic-rules.scss" as *;
 
 .colorpicker-tooltip {

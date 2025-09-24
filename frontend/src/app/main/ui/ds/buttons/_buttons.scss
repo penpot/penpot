@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_borders.scss" as *;
-@use "../_sizes.scss" as *;
-@use "../utils.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 
 %base-button {
   --button-bg-color: initial;

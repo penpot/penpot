@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../../ds/_sizes.scss" as *;
-@use "../../../../ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 
 .input-token-color-bullet {
   --bullet-size: var(--sp-l);

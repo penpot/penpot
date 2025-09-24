@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as t;
+@use "ds/typography.scss" as t;
 @use "refactor/common-refactor.scss" as *;
 .tool-window {
   padding: 0 0 $s-24 $s-12;

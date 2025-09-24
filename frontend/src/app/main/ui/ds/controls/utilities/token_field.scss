@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../_borders.scss" as *;
-@use "../../_sizes.scss" as *;
-@use "../../typography.scss" as t;
-@use "../../colors.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/colors.scss" as *;
 
 .token-field {
   --token-field-bg-color: var(--color-background-tertiary);
