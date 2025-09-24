@@ -1,0 +1,891 @@
+// App.js
+import React from 'react';
+import { ThemeProvider } from './src/contexts/ThemeContext';
+import { AuthProvider } from './src/contexts/AuthContext';
+import { CartProvider } from './src/contexts/CartContext';
+import AppNavigator from './src/navigation/AppNavigator';
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AppNavigator />
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
+  );
+}
+// src/contexts/ThemeContext.js
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useColorScheme } from 'react-native';
+
+const ThemeContext = createContext();
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
+
+export const ThemeProvider = ({ children }) => {
+  const colorScheme = useColorScheme();
+  const [isDark, setIsDark] = useState(colorScheme === 'dark');
+
+  const lightTheme = {
+    primary: '#4361EE',
+    primaryDark: '#3A56D4',
+    primaryLight: '#5F7AFF',
+    secondary: '#7209B7',
+    accent: '#F72585',
+    success: '#4CC9F0',
+    warning: '#FCA311',
+    error: '#EF476F',
+    info: '#4895EF',
+    background: '#FFFFFF',
+    cardBackground: '#F8FAFC',
+    text: '#0F172A',
+    textSecondary: '#64748B',
+    border: '#E2E8F0',
+    white: '#FFFFFF',
+    black: '#000000',
+  };
+
+  const darkTheme = {
+    primary: '#5F7AFF',
+    primaryDark: '#4361EE',
+    primaryLight: '#7B94FF',
+    secondary: '#8B5FBF',
+    accent: '#FF6B9D',
+    success: '#6CD4F5',
+    warning: '#FFB74D',
+    error: '#FF8FA3',
+    info: '#6BA6FF',
+    background: '#0F172A',
+    cardBackground: '#1E293B',
+    text: '#FFFFFF',
+    textSecondary: '#94A3B8',
+    border: '#334155',
+    white: '#0F172A',
+    black: '#FFFFFF',
+  };
+
+  const theme = isDark ? darkTheme : lightTheme;
+
+  const toggleTheme = () => setIsDark(!isDark);
+
+  return (
+    <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+// src/contexts/CartContext.js
+import React, { createContext, useContext, useState } from 'react';
+
+const CartContext = createContext();
+
+export const useCart = () => {
+  const context = useContext(CartContext);
+  if (!context) {
+    throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+};
+
+export const CartProvider = ({ children }) => {
+  const [cartItems, setCartItems] = useState([]);
+
+  const addToCart = (product, quantity = 1) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item =>
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + quantity }
+            : item
+        );
+      }
+      return [...prev, { ...product, quantity }];
+    });
+  };
+
+  const removeFromCart = (productId) => {
+    setCartItems(prev => prev.filter(item => item.id !== productId));
+  };
+
+  const updateQuantity = (productId, quantity) => {
+    if (quantity <= 0) {
+      removeFromCart(productId);
+      return;
+    }
+    setCartItems(prev => prev.map(item => 
+      item.id === productId ? { ...item, quantity } : item
+    ));
+  };
+
+  const clearCart = () => setCartItems([]);
+
+  const getTotalItems = () => cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const getTotalPrice = () => cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  return (
+    <CartContext.Provider value={{
+      cartItems,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      getTotalItems,
+      getTotalPrice
+    }}>
+      {children}
+    </CartContext.Provider>
+  );
+};
+
+// src/contexts/AuthContext.js
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+const AuthContext = createContext();
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simuler une vérification d'authentification
+    const checkAuth = setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(checkAuth);
+  }, []);
+
+  const signIn = async (email, password) => {
+    // Simulation de connexion
+    const userData = { id: 1, name: 'Utilisateur', email };
+    setUser(userData);
+    return { success: true, user: userData };
+  };
+
+  const signUp = async (userData) => {
+    const newUser = { id: Date.now(), ...userData };
+    setUser(newUser);
+    return { success: true, user: newUser };
+  };
+
+  const signOut = () => setUser(null);
+
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      signIn,
+      signUp,
+      signOut,
+      isAuthenticated: !!user
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+// src/navigation/AppNavigator.js
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { useAuth } from '../contexts/AuthContext';
+import AuthNavigator from './AuthNavigator';
+import TabNavigator from './TabNavigator';
+
+const Stack = createStackNavigator();
+
+const AppNavigator = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <p>Chargement...</p>
+      </div>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {user ? (
+          <Stack.Screen name="Main" component={TabNavigator} />
+        ) : (
+          <Stack.Screen name="Auth" component={AuthNavigator} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+export default AppNavigator;
+// src/navigation/TabNavigator.js
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import HomeScreen from '../screens/HomeScreen';
+import CategoriesScreen from '../screens/CategoriesScreen';
+import CouponsScreen from '../screens/CouponsScreen';
+import CartScreen from '../screens/CartScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+
+const Tab = createBottomTabNavigator();
+const HomeStack = createStackNavigator();
+const CategoriesStack = createStackNavigator();
+
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="Home" component={HomeScreen} />
+    </HomeStack.Navigator>
+  );
+}
+
+function CategoriesStackNavigator() {
+  return (
+    <CategoriesStack.Navigator screenOptions={{ headerShown: false }}>
+      <CategoriesStack.Screen name="Categories" component={CategoriesScreen} />
+    </CategoriesStack.Navigator>
+  );
+}
+
+export default function TabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        tabBarActiveTintColor: '#4361EE',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: {
+          paddingBottom: 5,
+          paddingTop: 5,
+          height: 60,
+        },
+      }}
+    >
+      <Tab.Screen 
+        name="Accueil" 
+        component={HomeStackNavigator}
+        options={{ tabBarIcon: ({ color, size }) => '🏠' }}
+      />
+      <Tab.Screen 
+        name="Catégories" 
+        component={CategoriesStackNavigator}
+        options={{ tabBarIcon: ({ color, size }) => '📁' }}
+      />
+      <Tab.Screen 
+        name="Coupons" 
+        component={CouponsScreen}
+        options={{ 
+          tabBarIcon: ({ color, size }) => '🎫',
+          tabBarBadge: 3
+        }}
+      />
+      <Tab.Screen 
+        name="Panier" 
+        component={CartScreen}
+        options={{ 
+          tabBarIcon: ({ color, size }) => '🛒',
+          tabBarBadge: 0
+        }}
+      />
+      <Tab.Screen 
+        name="Profil" 
+        component={ProfileScreen}
+        options={{ tabBarIcon: ({ color, size }) => '👤' }}
+      />
+    </Tab.Navigator>
+  );
+}
+// src/screens/HomeScreen.js
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Animated,
+  StatusBar,
+  RefreshControl,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../contexts/ThemeContext';
+import { useCart } from '../contexts/CartContext';
+import styles from '../styles/HomeScreenStyles';
+
+const HomeScreen = () => {
+  const navigation = useNavigation();
+  const { theme, isDark, toggleTheme } = useTheme();
+  const { cartItems, getTotalItems } = useCart();
+  
+  const [refreshing, setRefreshing] = useState(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const quickActions = [
+    { 
+      id: 1, 
+      title: 'Express', 
+      subtitle: '15-30min', 
+      icon: '⚡', 
+      color: '#4361EE',
+      screen: 'ExpressDelivery'
+    },
+    { 
+      id: 2, 
+      title: 'Coupons', 
+      subtitle: '3 disponibles', 
+      icon: '🎫', 
+      color: '#7209B7',
+      screen: 'Coupons'
+    },
+    { 
+      id: 3, 
+      title: 'Commandes', 
+      subtitle: '2 en cours', 
+      icon: '📦', 
+      color: '#06D6A0',
+      screen: 'Orders'
+    },
+  ];
+
+  const categories = [
+    { id: 1, name: 'Épicerie', icon: '🛒', color: '#4361EE' },
+    { id: 2, name: 'Boulangerie', icon: '🍞', color: '#7209B7' },
+    { id: 3, name: 'Boucherie', icon: '🥩', color: '#F72585' },
+    { id: 4, name: 'Laiterie', icon: '🥛', color: '#4CC9F0' },
+    { id: 5, name: 'Pharmacie', icon: '💊', color: '#FCA311' },
+    { id: 6, name: 'Bio', icon: '🌿', color: '#06D6A0' },
+  ];
+
+  const featuredStores = [
+    {
+      id: 1,
+      name: "Carrefour Express",
+      category: "alimentation",
+      rating: 4.2,
+      deliveryTime: "15min",
+      distance: "1.2km",
+      promo: "Livraison offerte",
+      isOpen: true
+    },
+    {
+      id: 2,
+      name: "Zara Tunis",
+      category: "fashion", 
+      rating: 4.5,
+      deliveryTime: "45min",
+      distance: "2.5km",
+      promo: "-30% collection",
+      isOpen: true
+    },
+    {
+      id: 3,
+      name: "Mytek",
+      category: "hightech",
+      rating: 4.3,
+      deliveryTime: "60min", 
+      distance: "3.2km",
+      promo: "Installation gratuite",
+      isOpen: true
+    }
+  ];
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  const cartItemCount = getTotalItems();
+
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar 
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor="transparent"
+        translucent
+      />
+
+      {/* Header animé */}
+      <Animated.View style={[styles.animatedHeader, { 
+        backgroundColor: theme.background, opacity: headerOpacity 
+      }]}>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Accueil</Text>
+        <View style={styles.headerIcons}>
+          <TouchableOpacity onPress={toggleTheme} style={styles.themeButton}>
+            <Text style={styles.themeIcon}>{isDark ? '☀️' : '🌙'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Panier')}
+            style={styles.cartButton}
+          >
+            <Text style={styles.cartIcon}>🛒</Text>
+            {cartItemCount > 0 && (
+              <View style={[styles.cartBadge, { backgroundColor: theme.primary }]}>
+                <Text style={styles.badgeText}>
+                  {cartItemCount > 9 ? '9+' : cartItemCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+      >
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={styles.welcomeText}>
+            <Text style={[styles.greeting, { color: theme.text }]}>Bonjour 👋</Text>
+            <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
+              Que souhaitez-vous aujourd'hui ?
+            </Text>
+          </View>
+        </View>
+
+        {/* Barre de recherche */}
+        <View style={styles.searchSection}>
+          <TouchableOpacity 
+            style={[styles.searchBar, { backgroundColor: theme.cardBackground }]}
+            onPress={() => navigation.navigate('Search')}
+          >
+            <Text style={[styles.searchPlaceholder, { color: theme.textSecondary }]}>
+              🔍 Rechercher nourriture, shopping, pharmacie...
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Bannière promotionnelle */}
+        <TouchableOpacity 
+          style={[styles.promoBanner, { backgroundColor: theme.primary }]}
+          onPress={() => navigation.navigate('Promotions')}
+        >
+          <Text style={styles.promoTitle}>Livraison Express -15%</Text>
+          <Text style={styles.promoSubtitle}>Code: EXPRESS15 • Valable aujourd'hui</Text>
+        </TouchableOpacity>
+
+        {/* Actions rapides */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Services</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.actionsScroll}>
+            {quickActions.map((action) => (
+              <TouchableOpacity
+                key={action.id}
+                style={[styles.actionCard, { backgroundColor: theme.cardBackground }]}
+                onPress={() => navigation.navigate(action.screen)}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: action.color }]}>
+                  <Text style={styles.actionEmoji}>{action.icon}</Text>
+                </View>
+                <Text style={[styles.actionTitle, { color: theme.text }]}>{action.title}</Text>
+                <Text style={[styles.actionSubtitle, { color: theme.textSecondary }]}>
+                  {action.subtitle}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Catégories */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>Catégories</Text>
+            <TouchableOpacity>
+              <Text style={[styles.seeAll, { color: theme.primary }]}>Tout voir</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.categoriesGrid}>
+            {categories.map((category) => (
+              <TouchableOpacity
+                key={category.id}
+                style={[styles.categoryCard, { backgroundColor: theme.cardBackground }]}
+                onPress={() => navigation.navigate('Category', { category })}
+              >
+                <Text style={styles.categoryIcon}>{category.icon}</Text>
+                <Text style={[styles.categoryName, { color: theme.text }]}>
+                  {category.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Commerces en vedette */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>À proximité</Text>
+            <TouchableOpacity>
+              <Text style={[styles.seeAll, { color: theme.primary }]}>Voir carte</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {featuredStores.map((store) => (
+              <TouchableOpacity
+                key={store.id}
+                style={[styles.storeCard, { backgroundColor: theme.cardBackground }]}
+                onPress={() => navigation.navigate('StoreDetail', { store })}
+              >
+                <View style={styles.storeHeader}>
+                  <Text style={[styles.storeName, { color: theme.text }]}>{store.name}</Text>
+                  <View style={[styles.status, { 
+                    backgroundColor: store.isOpen ? '#10B981' : '#EF4444' 
+                  }]}>
+                    <Text style={styles.statusText}>
+                      {store.isOpen ? 'Ouvert' : 'Fermé'}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[styles.storeInfo, { color: theme.textSecondary }]}>
+                  ⭐ {store.rating} • 🚗 {store.deliveryTime} • 📍 {store.distance}
+                </Text>
+                <Text style={[styles.storePromo, { color: theme.primary }]}>
+                  {store.promo}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.spacer} />
+      </ScrollView>
+    </View>
+  );
+};
+
+export default HomeScreen;
+
+// src/styles/HomeScreenStyles.js
+import { StyleSheet, Dimensions, Platform } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const isIOS = Platform.OS === 'ios';
+
+export default StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  animatedHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    zIndex: 1000,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  themeButton: { padding: 8 },
+  themeIcon: { fontSize: 20 },
+  cartButton: { position: 'relative', padding: 8 },
+  cartIcon: { fontSize: 22 },
+  cartBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  heroSection: {
+    paddingTop: isIOS ? 60 : 40,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+  },
+  welcomeText: { marginBottom: 5 },
+  greeting: {
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: '400',
+    opacity: 0.8,
+  },
+  searchSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  searchBar: {
+    padding: 15,
+    borderRadius: 12,
+  },
+  searchPlaceholder: {
+    fontSize: 16,
+  },
+  promoBanner: {
+    marginHorizontal: 20,
+    padding: 20,
+    borderRadius: 16,
+    marginTop: 10,
+  },
+  promoTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 5,
+  },
+  promoSubtitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    opacity: 0.9,
+  },
+  section: {
+    marginTop: 25,
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  seeAll: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  actionsScroll: {
+    paddingRight: 20,
+  },
+  actionCard: {
+    width: 110,
+    padding: 15,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  actionIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  actionEmoji: {
+    fontSize: 20,
+  },
+  actionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  actionSubtitle: {
+    fontSize: 11,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  categoryCard: {
+    width: (width - 60) / 3,
+    padding: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  categoryIcon: {
+    fontSize: 24,
+    marginBottom: 8,
+  },
+  categoryName: {
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  storeCard: {
+    width: 280,
+    padding: 15,
+    borderRadius: 16,
+    marginRight: 15,
+  },
+  storeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  storeName: {
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+  },
+  status: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  storeInfo: {
+    fontSize: 12,
+    marginBottom: 5,
+  },
+  storePromo: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  spacer: {
+    height: 30,
+  },
+});
+
+// src/screens/CategoriesScreen.js
+import React from 'react';
+import { View, Text } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
+
+const CategoriesScreen = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+      <Text style={{ color: theme.text }}>Écran Catégories</Text>
+    </View>
+  );
+};
+
+export default CategoriesScreen;
+
+// src/screens/CouponsScreen.js
+import React from 'react';
+import { View, Text } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
+
+const CouponsScreen = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+      <Text style={{ color: theme.text }}>Écran Coupons</Text>
+    </View>
+  );
+};
+
+export default CouponsScreen;
+
+// src/screens/CartScreen.js
+import React from 'react';
+import { View, Text } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
+import { useCart } from '../contexts/CartContext';
+
+const CartScreen = () => {
+  const { theme } = useTheme();
+  const { cartItems, getTotalPrice } = useCart();
+  
+  return (
+    <View style={{ flex: 1, padding: 20, backgroundColor: theme.background }}>
+      <Text style={{ color: theme.text, fontSize: 24, fontWeight: '700', marginBottom: 20 }}>
+        Mon Panier
+      </Text>
+      {cartItems.length === 0 ? (
+        <Text style={{ color: theme.textSecondary, textAlign: 'center' }}>
+          Votre panier est vide
+        </Text>
+      ) : (
+        <>
+          <Text style={{ color: theme.text }}>Articles: {cartItems.length}</Text>
+          <Text style={{ color: theme.text }}>Total: {getTotalPrice()} DT</Text>
+        </>
+      )}
+    </View>
+  );
+};
+
+export default CartScreen;
+
+// src/screens/ProfileScreen.js
+import React from 'react';
+import { View, Text } from 'react-native';
+import { useTheme } from '../contexts/ThemeContext';
+
+const ProfileScreen = () => {
+  const { theme } = useTheme();
+  
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+      <Text style={{ color: theme.text }}>Écran Profil</Text>
+    </View>
+  );
+};
+
+export default ProfileScreen;
+
+{
+  "name": "delivery-app",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-native": "^0.72.0",
+    "@react-navigation/native": "^6.1.0",
+    "@react-navigation/bottom-tabs": "^6.5.0",
+    "@react-navigation/stack": "^6.3.0",
+    "react-native-screens": "~3.22.0",
+    "react-native-safe-area-context": "4.6.0",
+    "react-native-vector-icons": "^10.0.0"
+  }
+}
+
+npx create-expo-app DeliveryApp
+cd DeliveryApp
