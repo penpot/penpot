@@ -4,14 +4,19 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/mixins.scss" as *;
+@use "ds/_utils.scss" as *;
 
 .color-data {
-  @include deprecated.flexRow;
-
-  position: relative;
-
   --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
+
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  position: relative;
 
   &:hover {
     --reorder-icon-visibility: visible;
@@ -34,156 +39,288 @@
   --detach-icon-foreground-color: none;
 
   display: grid;
-  flex: 1;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: deprecated.$s-2;
-  border-radius: deprecated.$s-8;
-  background-color: var(--input-details-color);
-  height: deprecated.$s-32;
+  flex: 1;
+  gap: var(--sp-xxs);
+  height: $sz-32;
+  border-radius: $br-8;
+  background-color: var(--color-background-primary);
 
   &:hover {
-    --detach-icon-foreground-color: var(--input-foreground-color-active);
-
-    .detach-btn,
-    .select-btn {
-      background-color: transparent;
-    }
+    --detach-icon-foreground-color: var(--color-foreground-primary);
   }
 }
 
 .color-name-wrapper {
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
+  --color-name-wrapper-background-color: var(--color-background-tertiary);
+  --color-name-wrapper-foreground-color: var(--color-foreground-primary);
+  --color-name-wrapper-boder-color: var(--color-background-tertiary);
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  display: flex;
+  align-items: center;
   flex-grow: 1;
-  width: 100%;
+  gap: var(--sp-xs);
+  height: $sz-32;
   min-width: 0;
-  border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
+  width: 100%;
   padding: 0;
   margin-inline-end: 0;
-  gap: deprecated.$s-4;
+  border: $b-1 solid var(--color-name-wrapper-boder-color);
+  border-radius: $br-8;
+  background-color: var(--color-name-wrapper-background-color);
+  color: var(--color-name-wrapper-foreground-color);
+  border-radius: $br-8 0 0 $br-8;
 
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  input {
-    padding: 0;
-  }
-  .color-bullet-wrapper {
-    height: deprecated.$s-28;
-    padding: 0 deprecated.$s-2 0 deprecated.$s-8;
-    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
-    background-color: transparent;
-    display: flex;
-    align-items: center;
-    &:hover {
-      background-color: transparent;
-    }
-  }
-  .color-name {
-    @include deprecated.bodySmallTypography;
-    @include deprecated.textEllipsis;
-    padding-inline: deprecated.$s-6;
-    border-radius: deprecated.$br-8;
-    color: var(--input-foreground-color-active);
-  }
-  .detach-btn {
-    @extend .button-tertiary;
-    height: deprecated.$s-28;
-    width: deprecated.$s-28;
-    margin-inline-start: auto;
-    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-    display: none;
-  }
-  .detach-icon {
-    @extend .button-icon;
-    stroke: var(--detach-icon-foreground-color);
-  }
-  .color-input-wrapper {
-    @include deprecated.bodySmallTypography;
-    display: flex;
-    align-items: center;
-    height: deprecated.$s-28;
-    padding: 0 deprecated.$s-0;
-    width: 100%;
-    margin: 0;
-    flex-grow: 1;
-    background-color: var(--input-background-color);
-    color: var(--input-foreground-color);
-    border-radius: deprecated.$br-0;
-  }
   &.no-opacity {
-    border-radius: deprecated.$br-8;
+    border-radius: $br-8;
     .color-input-wrapper {
-      border-radius: deprecated.$br-8;
+      border-radius: $br-8;
     }
   }
+
   &:hover {
     --detach-icon-foreground-color: var(--input-foreground-color-active);
+    --color-name-wrapper-background-color: var(--color-background-quaternary);
+    --color-name-wrapper-boder-color: var(--color-background-quaternary);
 
-    background-color: var(--input-background-color-hover);
-    border: deprecated.$s-1 solid var(--input-border-color-hover);
-    .color-bullet-wrapper,
-    .color-name,
-    .detach-btn,
-    .color-input-wrapper {
-      background-color: var(--input-background-color-hover);
-    }
     .detach-btn {
-      display: flex;
+      display: grid;
     }
     &.editing {
-      background-color: var(--input-background-color-active);
-      .color-bullet-wrapper,
-      .color-name,
-      .detach-btn,
-      .color-input-wrapper {
-        background-color: var(--input-background-color-active);
-      }
+      --color-name-wrapper-background-color: var(--color-background-primary);
     }
+
     &:focus,
     &:focus-within {
-      background-color: var(--input-background-color-focus);
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
+      --color-name-wrapper-background-color: var(--color-background-tertiary);
+      --color-name-wrapper-boder-color: var(--color-accent-primary);
     }
   }
 
   &:focus,
   &:focus-within {
-    background-color: var(--input-background-color-focus);
-    border: deprecated.$s-1 solid var(--input-border-color-focus);
+    --color-name-wrapper-background-color: var(--color-background-tertiary);
+    --color-name-wrapper-boder-color: var(--color-accent-primary);
     &:hover {
-      background-color: var(--input-background-color-hover);
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
+      --color-name-wrapper-background-color: var(--color-background-quaternary);
     }
   }
 
   &.editing {
-    background-color: var(--input-background-color-active);
+    --color-name-wrapper-background-color: var(--color-background-primary);
     &:hover {
-      border: deprecated.$s-1 solid var(--input-border-color-active);
+      --color-name-wrapper-boder-color: var(--color-accent-primary);
     }
   }
 }
 
+.detach-btn {
+  display: none;
+  background: var(--color-name-wrapper-background-color);
+}
+
+.color-input-wrapper {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  height: $sz-28;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: var(--color-name-wrapper-background-color);
+  color: var(--color-name-wrapper-foreground-color);
+  border-radius: 0;
+}
+
+.color-name {
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  flex-grow: 1;
+  padding-inline: px2rem(6);
+  border-radius: $br-8;
+  color: var(--color-name-wrapper-foreground-color);
+}
+
+.color-bullet-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: $sz-28;
+  padding: 0 var(--sp-xxs) 0 var(--sp-s);
+  border-radius: $br-8 0 0 $br-8;
+  background-color: transparent;
+  &:hover {
+    background-color: transparent;
+  }
+}
+
+.color-input {
+  @include textEllipsis;
+  border: none;
+  background: none;
+  outline: none;
+  height: $sz-28;
+  width: 100%;
+  flex-grow: 1;
+  margin: var(--sp-xxs) 0;
+  padding: 0 0 0 px2rem(6);
+  border-radius: $br-8;
+  color: var(--input-foreground-color-active);
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
 .library-name-wrapper {
-  border-radius: deprecated.$br-8;
+  border-radius: $br-8;
 }
 
 .opacity-element-wrapper {
-  @extend .input-element;
-  @include deprecated.bodySmallTypography;
-  width: deprecated.$s-60;
-  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-  .opacity-input {
-    padding: 0;
-    border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
-    min-width: deprecated.$s-28;
+  --opacity-input-background-color: var(--color-background-tertiary);
+  --opacity-input-boder-color: var(--color-background-tertiary);
+
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  height: $sz-32;
+  width: px2rem(60);
+  border-radius: 0 $br-8 $br-8 0;
+  border: $b-1 solid var(--opacity-input-boder-color);
+  background-color: var(--opacity-input-background-color);
+
+  &:hover {
+    --opacity-input-background-color: var(--color-background-quaternary);
+    --opacity-input-boder-color: var(--color-background-quaternary);
+
+    .detach-btn {
+      display: grid;
+    }
+    &.editing {
+      --opacity-input-background-color: var(--color-background-primary);
+    }
+
+    &:focus,
+    &:focus-within {
+      --opacity-input-background-color: var(--color-background-tertiary);
+      --opacity-input-boder-color: var(--color-accent-primary);
+    }
   }
-  .icon-text {
-    @include deprecated.flexCenter;
-    height: deprecated.$s-32;
-    margin-inline-end: deprecated.$s-4;
-    margin-block-start: deprecated.$s-2;
+
+  &:focus,
+  &:focus-within {
+    --opacity-input-background-color: var(--color-background-tertiary);
+    --opacity-input-boder-color: var(--color-accent-primary);
+    &:hover {
+      --opacity-input-background-color: var(--color-background-quaternary);
+    }
   }
+
+  &.editing {
+    --opacity-input-background-color: var(--color-background-primary);
+    &:hover {
+      --opacity-input-boder-color: var(--color-accent-primary);
+    }
+  }
+}
+
+.opacity-input {
+  @include textEllipsis;
+  height: $sz-28;
+  min-width: $sz-28;
+  flex-grow: 1;
+  width: 100%;
+  padding: 0;
+  border-radius: 0 $br-8 $br-8 0;
+  border: none;
+  background: none;
+  outline: none;
+  margin: var(--sp-xxs) 0;
+  padding: 0 0 0 px2rem(6);
+  color: var(--color-foreground-primary);
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+}
+
+.icon-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-32;
+  margin-inline-end: var(--sp-xs);
+  margin-block-start: var(--sp-xxs);
+  color: var(--color-foreground-secondary);
+}
+
+// TOKEN ROW
+
+.token-color-wrapper {
+  --token-color-wrapper-background-color: var(--color-background-tertiary);
+  --token-color-wrapper-foreground-color: var(--color-token-foreground);
+  --token-color-wrapper-border-color: var(--color-token-border);
+  --token-actions-display: none;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-xs);
+  height: $sz-32;
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  margin-inline-end: 0;
+  background: var(--token-color-wrapper-background-color);
+  border: $b-1 solid var(--token-color-wrapper-border-color);
+  border-radius: $br-8;
+  &:hover {
+    --token-color-wrapper-background-color: var(--color-token-background);
+    --token-color-wrapper-foreground-color: var(--color-foreground-primary);
+    --token-color-wrapper-border-color: var(--color-token-background);
+    --token-actions-display: flex;
+  }
+}
+.token-color-with-errors,
+.token-color-not-active {
+  --token-color-wrapper-background-color: var(--color-background-primary);
+  --token-color-wrapper-foreground-color: var(--color-foreground-secondary);
+  --token-color-wrapper-border-color: var(--color-token-border);
+  &:hover {
+    --token-color-wrapper-background-color: var(--color-background-primary);
+    --token-color-wrapper-foreground-color: var(--color-foreground-secondary);
+    --token-color-wrapper-border-color: var(--color-token-background);
+    --token-actions-display: flex;
+  }
+}
+
+.token-name {
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  color: var(--token-color-wrapper-foreground-color);
+  height: $sz-32;
+  display: flex;
+  align-items: center;
+}
+
+.token-name-tooltip {
+  color: var(--color-foreground-primary);
+}
+
+.token-actions {
+  display: var(--token-actions-display);
+  justify-self: flex-end;
+  align-items: center;
+}
+
+.error-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--color-foreground-error);
+  margin-left: var(--sp-xs);
+  position: absolute;
+  right: 1px;
+  top: 5px;
 }

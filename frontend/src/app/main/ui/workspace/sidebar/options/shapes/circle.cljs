@@ -120,7 +120,10 @@
      [:> fill/fill-menu*
       {:ids ids
        :type type
-       :values shape}]
+       :values shape
+       :shapes shapes
+       :applied-tokens applied-tokens}]
+
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values}]

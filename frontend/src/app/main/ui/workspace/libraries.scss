@@ -454,7 +454,7 @@
 .sample-library-button {
   @include t.use-typography("headline-small");
   height: $sz-32;
-  width: $sz-80;
+  width: px2rem(80);
   margin: 0;
   border-radius: $br-8;
   white-space: nowrap;

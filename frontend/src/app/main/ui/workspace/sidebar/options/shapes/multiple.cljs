@@ -17,6 +17,7 @@
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.types.token :as tt]
    [app.common.weak :as weak]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
@@ -212,17 +213,22 @@
             :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
 
         merge-token-values
-        (fn [acc keys attrs]
+        (fn [acc shape-attrs applied-tokens]
           (reduce
-           (fn [accum key]
-             (let [new-val (get attrs key)
-                   existing (get accum key ::not-found)]
-               (cond
-                 (= existing ::not-found) (assoc accum key new-val)
-                 (= existing new-val)     accum
-                 :else                    (assoc accum key :multiple))))
+           (fn [accum shape-attr]
+             (let [token-attrs (tt/shape-attr->token-attrs shape-attr)]
+               (reduce
+                (fn [a t-attr]
+                  (let [new-val  (get applied-tokens t-attr)
+                        existing (get a t-attr ::not-found)]
+                    (cond
+                      (= existing ::not-found) (assoc a t-attr new-val)
+                      (= existing new-val)     a
+                      :else                    (assoc a t-attr :multiple))))
+                accum
+                token-attrs)))
            acc
-           keys))
+           shape-attrs))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
@@ -263,8 +269,8 @@
 
               :children
               (let [children (->> (:shapes shape []) (map #(get objects %)))
-                    [new-ids new-values] (get-attrs* children objects attr-group)]
-                [(d/concat-vec ids new-ids) (merge-attrs values new-values) {}])
+                    [new-ids new-values tokens] (get-attrs* children objects attr-group)]
+                [(d/concat-vec ids new-ids) (merge-attrs values new-values) tokens])
 
               [])))]
 
@@ -376,7 +382,7 @@
         [constraint-ids constraint-values]
         (get-attrs shapes objects :constraint)
 
-        [fill-ids fill-values]
+        [fill-ids fill-values fill-tokens]
         (get-attrs shapes objects :fill)
 
         [shadow-ids shadow-values]
@@ -463,7 +469,11 @@
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])
 
      (when-not (empty? fill-ids)
-       [:> fill/fill-menu* {:type type :ids fill-ids :values fill-values}])
+       [:> fill/fill-menu* {:type type
+                            :ids fill-ids
+                            :values fill-values
+                            :shapes shapes
+                            :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type

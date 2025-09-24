@@ -1184,7 +1184,11 @@ msgstr "Detach token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "This token is not available in any active set or theme."
+msgstr "This token is not in any active set or has an invalid value."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs
+msgid "color-row.token-color-row.deleted-token"
+msgstr "This token does not exists or has been deleted."
 
 #: src/app/main/data/auth.cljs:314
 msgid "errors.auth-provider-not-allowed"

@@ -108,6 +108,7 @@
                  color-operations   (get groups color)
                  ids    (into (d/ordered-set) xf:map-shape-id color-operations)]
              (st/emit! (dws/select-shapes ids)))))
+
         on-token-change
         (mf/use-fn
          (fn [_ token old-color]

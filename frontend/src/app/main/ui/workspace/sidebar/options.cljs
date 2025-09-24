@@ -46,7 +46,7 @@
 
 (mf/defc single-shape-options*
   {::mf/private true}
-  [{:keys [shape page-id file-id libraries] :as props}]
+  [{:keys [shape page-id file-id libraries] :rest props}]
   (let [shape-type (dm/get-prop shape :type)
         shape-id   (dm/get-prop shape :id)
 
