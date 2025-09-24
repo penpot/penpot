@@ -362,7 +362,7 @@
         (fn []
           (rx/dispose! sub))))
 
-    (for [{:keys [token-set id index is-new is-group path parent-path depth] :as node}
+    (for [{:keys [token-set id index is-new is-group path depth] :as node}
           (ctob/sets-tree-seq token-sets
                               {:skip-children-pred collapsed?
                                :new-at-path new-path})]

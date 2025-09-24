@@ -73,39 +73,35 @@
         (let [data       (dsh/lookup-file-data state)
               tokens-lib (get data :tokens-lib)]
 
-          (if (and tokens-lib (ctob/get-theme tokens-lib (:group token-theme) (:name token-theme)))
+          (if (and tokens-lib (ctob/get-theme tokens-lib (ctob/get-id token-theme)))
             (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
                               :type :toast
                               :level :error
                               :timeout 9000}))
             (let [changes (-> (pcb/empty-changes it)
                               (pcb/with-library-data data)
-                              (pcb/set-token-theme (:group new-token-theme)
-                                                   (:name new-token-theme)
+                              (pcb/set-token-theme (ctob/get-id new-token-theme)
                                                    new-token-theme))]
               (rx/of (dch/commit-changes changes)))))))))
 
-(defn update-token-theme [[group name] token-theme]
+(defn update-token-theme [id token-theme]
   (ptk/reify ::update-token-theme
     ptk/WatchEvent
     (watch [it state _]
       (let [data             (dsh/lookup-file-data state)
             tokens-lib       (get data :tokens-lib)]
-        (if (and (or (not= group (:group token-theme))
-                     (not= name (:name token-theme)))
-                 (ctob/get-theme tokens-lib
-                                 (:group token-theme)
-                                 (:name token-theme)))
+        (if (and (not= id (ctob/get-id token-theme))
+                 (ctob/get-theme tokens-lib (ctob/get-id token-theme)))
           (rx/of (ntf/show {:content (tr "errors.token-theme-already-exists")
                             :type :toast
                             :level :error
                             :timeout 9000}))
           (let [changes (-> (pcb/empty-changes it)
                             (pcb/with-library-data data)
-                            (pcb/set-token-theme group name token-theme))]
+                            (pcb/set-token-theme (ctob/get-id token-theme) token-theme))]
             (rx/of (dch/commit-changes changes))))))))
 
-(defn toggle-token-theme-active? [group name]
+(defn toggle-token-theme-active? [id]
   (ptk/reify ::toggle-token-theme-active?
     ptk/WatchEvent
     (watch [it state _]
@@ -113,7 +109,7 @@
 
             tokens-lib (get-tokens-lib state)
             active-token-themes (some-> tokens-lib
-                                        (ctob/toggle-theme-active? group name)
+                                        (ctob/toggle-theme-active? id)
                                         (ctob/get-active-theme-paths))
             active-token-themes' (if (= active-token-themes #{ctob/hidden-theme-path})
                                    active-token-themes
@@ -125,14 +121,14 @@
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
 
-(defn delete-token-theme [group theme-name]
+(defn delete-token-theme [id]
   (ptk/reify ::delete-token-theme
     ptk/WatchEvent
     (watch [it state _]
       (let [data    (dsh/lookup-file-data state)
             changes (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
-                        (pcb/set-token-theme group theme-name nil))]
+                        (pcb/set-token-theme id nil))]
         (rx/of
          (dch/commit-changes changes)
          (dwtp/propagate-workspace-tokens))))))
@@ -341,8 +337,7 @@
                 (pcb/with-library-data data)
                 (pcb/set-token-set (ctob/get-id token-set) token-set)
                 (pcb/set-token (ctob/get-id token-set) (:id token) token)
-                (pcb/set-token-theme (:group hidden-theme)
-                                     (:name hidden-theme)
+                (pcb/set-token-theme (ctob/get-id hidden-theme)
                                      hidden-theme-with-set)
                 (pcb/set-active-token-themes #{ctob/hidden-theme-path}))]
         (rx/of (dch/commit-changes changes)

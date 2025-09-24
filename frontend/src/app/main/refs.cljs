@@ -437,18 +437,18 @@
   (l/derived (d/nilf ctob/get-theme-groups) tokens-lib))
 
 (defn workspace-token-theme
-  [group name]
+  [id]
   (l/derived
    (fn [lib]
      (when lib
-       (ctob/get-theme lib group name)))
+       (ctob/get-theme lib id)))
    tokens-lib))
 
 (def workspace-token-theme-tree-no-hidden
   (l/derived (fn [lib]
                (or
                 (some-> lib
-                        (ctob/delete-theme ctob/hidden-theme-group ctob/hidden-theme-name)
+                        (ctob/delete-theme ctob/hidden-theme-id)
                         (ctob/get-theme-tree))
                 []))
              tokens-lib))

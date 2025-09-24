@@ -387,8 +387,7 @@
    [:set-token-theme
     [:map {:title "SetTokenThemeChange"}
      [:type [:= :set-token-theme]]
-     [:theme-name :string]
-     [:group :string]
+     [:id ::sm/uuid]
      [:theme [:maybe ctob/schema:token-theme-attrs]]]]
 
    [:set-active-token-themes
@@ -1009,20 +1008,20 @@
                 (ctob/update-set lib' id (fn [_] (ctob/make-token-set token-set))))))))
 
 (defmethod process-change :set-token-theme
-  [data {:keys [group theme-name theme]}]
+  [data {:keys [id theme]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
                 (not theme)
-                (ctob/delete-theme lib' group theme-name)
+                (ctob/delete-theme lib' id)
 
-                (not (ctob/get-theme lib' group theme-name))
+                (not (ctob/get-theme lib' id))
                 (ctob/add-theme lib' (ctob/make-token-theme theme))
 
                 :else
                 (ctob/update-theme lib'
-                                   group theme-name
+                                   id
                                    (fn [prev-token-theme]
                                      (ctob/make-token-theme (merge prev-token-theme theme)))))))))
 

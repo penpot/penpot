@@ -544,6 +544,9 @@
   (theme-matches-group-name [_ group name] "if a theme matches the given group & name")
   (hidden-theme? [_] "if a theme is the (from the user ui) hidden temporary theme"))
 
+(def hidden-theme-id
+  uuid/zero)
+
 (def hidden-theme-group
   "")
 
@@ -732,20 +735,21 @@
 (defprotocol ITokenThemes
   "Collection of themes in groups"
   (add-theme [_ token-theme] "add a theme to the library, at the end")
-  (update-theme [_ group name f] "modify a theme in the ilbrary")
-  (delete-theme [_ group name] "delete a theme in the library")
+  (update-theme [_ id f] "modify a theme in the ilbrary")
+  (delete-theme [_ id] "delete a theme in the library")
   (theme-count [_] "get the total number if themes in the library")
   (get-theme-tree [_] "get a nested tree of all themes in the library")
   (get-themes [_] "get an ordered sequence of all themes in the library")
-  (get-theme [_ group name] "get one theme looking for name")
+  (get-theme [_ id] "get one theme looking for id")
+  (get-theme-by-name [_ group name] "get one theme looking for group and name")
   (get-theme-groups [_] "get a sequence of group names by order")
   (get-active-theme-paths [_] "get the active theme paths")
   (get-active-themes [_] "get an ordered sequence of active themes in the library")
   (set-active-themes  [_ active-themes] "set active themes in library")
-  (theme-active? [_ group name] "predicate if token theme is active")
-  (activate-theme [_ group name] "adds theme from the active-themes")
-  (deactivate-theme [_ group name] "removes theme from the active-themes")
-  (toggle-theme-active? [_ group name] "toggles theme in the active-themes")
+  (theme-active? [_ id] "predicate if token theme is active")
+  (activate-theme [_ id] "adds theme from the active-themes")
+  (deactivate-theme [_ id] "removes theme from the active-themes")
+  (toggle-theme-active? [_ id] "toggles theme in the active-themes")
   (get-hidden-theme [_] "get the hidden temporary theme"))
 
 (def schema:token-themes
@@ -896,7 +900,7 @@
   (get-token-by-name [_ set-name token-name] "get token in a set searching by set and token names")
   (update-token [_ set-id token-id f] "update a token in a set")
   (delete-token [_ set-id token-id] "delete a token from a set")
-  (toggle-set-in-theme [_ group-name theme-name set-name] "toggle a set used / not used in a theme")
+  (toggle-set-in-theme [_ theme-id set-name] "toggle a set used / not used in a theme")
   (get-active-themes-set-names [_] "set of set names that are active in the the active themes")
   (sets-at-path-all-active? [_ group-path] "compute active state for child sets at `group-path`.
 Will return a value that matches this schema:
@@ -1121,31 +1125,37 @@ Will return a value that matches this schema:
                   (update themes (:group token-theme) d/oassoc (:name token-theme) token-theme)
                   active-themes)))
 
-  (update-theme [this group name f]
-    (let [theme (dm/get-in themes [group name])]
-      (if theme
-        (let [theme' (-> (make-token-theme (f theme))
-                         (assoc :modified-at (ct/now)))
-              group' (:group theme')
-              name'  (:name theme')
-              same-group? (= group group')
-              same-name? (= name name')
-              same-path? (and same-group? same-name?)]
-          (TokensLib. sets
-                      (if same-path?
-                        (update themes group' assoc name' theme')
-                        (-> themes
-                            (d/oassoc-in-before [group name] [group' name'] theme')
-                            (d/dissoc-in [group name])))
-                      (if same-path?
-                        active-themes
-                        (disj active-themes (join-theme-path group name)))))
-        this)))
+  (update-theme [this id f]
+    (if-let [theme (get-theme this id)]
+      (let [group       (:group theme)
+            name        (:name theme)
+            theme'      (-> (make-token-theme (f theme))
+                            (assoc :modified-at (ct/now)))
+            group'      (:group theme')
+            name'       (:name theme')
+            same-group? (= group group')
+            same-name?  (= name name')
+            same-path?  (and same-group? same-name?)]
+        (TokensLib. sets
+                    (if same-path?
+                      (update themes group' assoc name' theme')
+                      (-> themes
+                          (d/oassoc-in-before [group name] [group' name'] theme')
+                          (d/dissoc-in [group name])))
+                    (if same-path?
+                      active-themes
+                      (disj active-themes (join-theme-path group name)))))
+      this))
 
-  (delete-theme [_ group name]
-    (TokensLib. sets
-                (d/dissoc-in themes [group name])
-                (disj active-themes (join-theme-path group name))))
+
+  (delete-theme [this id]
+    (let [theme (get-theme this id)
+          [group name] [(:group theme) (:name theme)]]
+      (if theme
+        (TokensLib. sets
+                    (d/dissoc-in themes [group name])
+                    (disj active-themes (join-theme-path group name)))
+        this)))
 
   (get-theme-tree [_]
     themes)
@@ -1163,7 +1173,11 @@ Will return a value that matches this schema:
   (theme-count [this]
     (count (get-themes this)))
 
-  (get-theme [_ group name]
+  (get-theme [this id]
+    (->> (get-themes this)
+         (d/seek #(= (:id %) id))))
+
+  (get-theme-by-name [_ group name]
     (dm/get-in themes [group name]))
 
   (set-active-themes [_ active-themes]
@@ -1171,9 +1185,10 @@ Will return a value that matches this schema:
                 themes
                 active-themes))
 
-  (activate-theme [this group name]
-    (if-let [theme (get-theme this group name)]
-      (let [group-themes (->> (get themes group)
+  (activate-theme [this id]
+    (if-let [theme (get-theme this id)]
+      (let [group (:group theme)
+            group-themes (->> (get themes group)
                               (map (comp get-theme-path val))
                               (into #{}))
             active-themes' (-> (set/difference active-themes group-themes)
@@ -1183,18 +1198,21 @@ Will return a value that matches this schema:
                     active-themes'))
       this))
 
-  (deactivate-theme [_ group name]
-    (TokensLib. sets
-                themes
-                (disj active-themes (join-theme-path group name))))
+  (deactivate-theme [this id]
+    (if-let [theme (get-theme this id)]
+      (TokensLib. sets
+                  themes
+                  (disj active-themes (get-theme-path theme)))
+      this))
 
-  (theme-active? [_ group name]
-    (contains? active-themes (join-theme-path group name)))
+  (theme-active? [this id]
+    (when-let [theme (get-theme this id)]
+      (contains? active-themes (get-theme-path theme))))
 
-  (toggle-theme-active? [this group name]
-    (if (theme-active? this group name)
-      (deactivate-theme this group name)
-      (activate-theme this group name)))
+  (toggle-theme-active? [this id]
+    (if (theme-active? this id)
+      (deactivate-theme this id)
+      (activate-theme this id)))
 
   (get-active-theme-paths [_]
     active-themes)
@@ -1204,11 +1222,11 @@ Will return a value that matches this schema:
      (list)
      (comp
       (filter (partial instance? TokenTheme))
-      (filter #(theme-active? this (:group %) (:name %))))
+      (filter #(theme-active? this (get-id %))))
      (tree-seq d/ordered-map? vals themes)))
 
   (get-hidden-theme [this]
-    (get-theme this hidden-theme-group hidden-theme-name))
+    (get-theme this hidden-theme-id))
 
   ITokensLib
   (empty-lib? [this]
@@ -1242,10 +1260,10 @@ Will return a value that matches this schema:
   (delete-token [this set-id token-id]
     (update-set this set-id #(delete-token- % token-id)))
 
-  (toggle-set-in-theme [this theme-group theme-name set-name]
-    (if-let [_theme (get-in themes theme-group theme-name)]
+  (toggle-set-in-theme [this theme-id set-name]
+    (if-let [theme (get-theme this theme-id)]
       (TokensLib. sets
-                  (d/oupdate-in themes [theme-group theme-name]
+                  (d/oupdate-in themes [(:group theme) (:name theme)]
                                 #(toggle-set % set-name))
                   active-themes)
       this))
@@ -1643,7 +1661,7 @@ Will return a value that matches this schema:
                 ordered-set-names)
 
         library
-        (update-theme library hidden-theme-group hidden-theme-name
+        (update-theme library hidden-theme-id
                       #(assoc % :sets active-set-names))
 
         library
@@ -1651,8 +1669,9 @@ Will return a value that matches this schema:
 
         library
         (reduce (fn [library theme-path]
-                  (let [[group name] (split-theme-path theme-path)]
-                    (activate-theme library group name)))
+                  (let [[group name] (split-theme-path theme-path)
+                        theme        (get-theme-by-name library group name)]
+                    (activate-theme library (get-id theme))))
                 library
                 active-theme-names)]
 
