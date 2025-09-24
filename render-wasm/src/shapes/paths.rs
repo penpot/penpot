@@ -14,23 +14,7 @@ pub enum Segment {
     Close,
 }
 
-impl Segment {
-    fn xy(&self) -> Option<Point> {
-        match self {
-            Segment::MoveTo(xy) => Some(*xy),
-            Segment::LineTo(xy) => Some(*xy),
-            Segment::CurveTo((_, _, xy)) => Some(*xy),
-            Segment::Close => None,
-        }
-    }
-
-    pub fn is_close_to(&self, other: &Segment) -> bool {
-        match (self.xy(), other.xy()) {
-            (Some(a), Some(b)) => math::are_close_points(a, b),
-            _ => false,
-        }
-    }
-}
+impl Segment {}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Path {
@@ -92,8 +76,7 @@ impl Path {
             }
         }
 
-        // TODO: handle error
-        let open = subpaths::is_open_path(&segments).expect("Failed to determine if path is open");
+        let open = subpaths::is_open_path(&segments);
 
         Self {
             segments,
