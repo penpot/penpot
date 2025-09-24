@@ -50,7 +50,7 @@ jobs:
       #     username: ${{ secrets.PUB_DOCKER_USERNAME }}
       #     password: ${{ secrets.PUB_DOCKER_PASSWORD }}
 
-      # - name: Publish docker images to Public Registry
+      # - name: Publish docker images to DockerHub
       #   env:
       #     TAG: ${{ steps.vars.outputs.gh_ref }}
       #     REGISTRY: ${{ secrets.DOCKER_REGISTRY }}
