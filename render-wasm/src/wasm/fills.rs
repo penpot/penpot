@@ -53,6 +53,7 @@ impl TryFrom<&[u8]> for RawFillData {
     }
 }
 
+// FIXME: return Result
 pub fn parse_fills_from_bytes(buffer: &[u8], num_fills: usize) -> Vec<shapes::Fill> {
     buffer
         .chunks_exact(RAW_FILL_DATA_SIZE)

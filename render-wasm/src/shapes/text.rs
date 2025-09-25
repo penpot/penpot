@@ -15,9 +15,7 @@ use std::collections::HashSet;
 
 use super::FontFamily;
 use crate::shapes::{self, merge_fills};
-use crate::utils::uuid_from_u32;
 use crate::utils::{get_fallback_fonts, get_font_collection};
-use crate::wasm::fills::parse_fills_from_bytes;
 use crate::Uuid;
 
 // TODO: maybe move this to the wasm module?
@@ -368,15 +366,25 @@ impl Default for TextContent {
     }
 }
 
+pub type TextAlign = skia::textlayout::TextAlign;
+pub type TextDirection = skia::textlayout::TextDirection;
+pub type TextDecoration = skia::textlayout::TextDecoration;
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum TextTransform {
+    Lowercase,
+    Uppercase,
+    Capitalize,
+}
+
 // FIXME: Rethink this type. We'll probably need to move the serialization to the
-// wasm moduel and store here meaningful model values (and/or skia type aliases)
+// wasm module and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
 pub struct Paragraph {
-    num_leaves: u32,
-    text_align: u8,
-    text_direction: u8,
-    text_decoration: u8,
-    text_transform: u8,
+    text_align: TextAlign,
+    text_direction: TextDirection,
+    text_decoration: Option<TextDecoration>,
+    text_transform: Option<TextTransform>,
     line_height: f32,
     letter_spacing: f32,
     typography_ref_file: Uuid,
@@ -387,11 +395,10 @@ pub struct Paragraph {
 impl Default for Paragraph {
     fn default() -> Self {
         Self {
-            num_leaves: 0,
-            text_align: 0,
-            text_direction: 0,
-            text_decoration: 0,
-            text_transform: 0,
+            text_align: TextAlign::default(),
+            text_direction: TextDirection::LTR,
+            text_decoration: None,
+            text_transform: None,
             line_height: 1.0,
             letter_spacing: 0.0,
             typography_ref_file: Uuid::nil(),
@@ -404,11 +411,10 @@ impl Default for Paragraph {
 impl Paragraph {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        num_leaves: u32,
-        text_align: u8,
-        text_direction: u8,
-        text_decoration: u8,
-        text_transform: u8,
+        text_align: TextAlign,
+        text_direction: TextDirection,
+        text_decoration: Option<TextDecoration>,
+        text_transform: Option<TextTransform>,
         line_height: f32,
         letter_spacing: f32,
         typography_ref_file: Uuid,
@@ -416,7 +422,6 @@ impl Paragraph {
         children: Vec<TextLeaf>,
     ) -> Self {
         Self {
-            num_leaves,
             text_align,
             text_direction,
             text_decoration,
@@ -446,18 +451,8 @@ impl Paragraph {
     // FIXME: move serialization to wasm module
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
-        style.set_text_align(match self.text_align {
-            0 => skia::textlayout::TextAlign::Left,
-            1 => skia::textlayout::TextAlign::Center,
-            2 => skia::textlayout::TextAlign::Right,
-            3 => skia::textlayout::TextAlign::Justify,
-            _ => skia::textlayout::TextAlign::Left,
-        });
-        style.set_text_direction(match self.text_direction {
-            0 => skia::textlayout::TextDirection::LTR,
-            1 => skia::textlayout::TextDirection::RTL,
-            _ => skia::textlayout::TextDirection::LTR,
-        });
+        style.set_text_align(self.text_align);
+        style.set_text_direction(self.text_direction);
 
         if !self.children.is_empty() {
             let reference_child = self
@@ -502,12 +497,11 @@ pub struct TextLeaf {
     font_family: FontFamily,
     font_size: f32,
     letter_spacing: f32,
-    font_style: u8,
     font_weight: i32,
     font_variant_id: Uuid,
-    text_decoration: u8,
-    text_transform: u8,
-    text_direction: u8,
+    text_decoration: Option<TextDecoration>,
+    text_transform: Option<TextTransform>,
+    text_direction: TextDirection,
     fills: Vec<shapes::Fill>,
 }
 
@@ -518,10 +512,9 @@ impl TextLeaf {
         font_family: FontFamily,
         font_size: f32,
         letter_spacing: f32,
-        font_style: u8,
-        text_decoration: u8,
-        text_transform: u8,
-        text_direction: u8,
+        text_decoration: Option<TextDecoration>,
+        text_transform: Option<TextTransform>,
+        text_direction: TextDirection,
         font_weight: i32,
         font_variant_id: Uuid,
         fills: Vec<shapes::Fill>,
@@ -531,7 +524,6 @@ impl TextLeaf {
             font_family,
             font_size,
             letter_spacing,
-            font_style,
             text_decoration,
             text_transform,
             text_direction,
@@ -539,6 +531,10 @@ impl TextLeaf {
             font_variant_id,
             fills,
         }
+    }
+
+    pub fn set_text(&mut self, text: String) {
+        self.text = text;
     }
 
     pub fn fills(&self) -> &[shapes::Fill] {
@@ -568,11 +564,8 @@ impl TextLeaf {
         style.set_half_leading(false);
 
         style.set_decoration_type(match self.text_decoration {
-            0 => skia::textlayout::TextDecoration::NO_DECORATION,
-            1 => skia::textlayout::TextDecoration::UNDERLINE,
-            2 => skia::textlayout::TextDecoration::LINE_THROUGH,
-            3 => skia::textlayout::TextDecoration::OVERLINE,
-            _ => skia::textlayout::TextDecoration::NO_DECORATION,
+            Some(text_decoration) => text_decoration,
+            None => skia::textlayout::TextDecoration::NO_DECORATION,
         });
 
         // Trick to avoid showing the text decoration
@@ -611,11 +604,8 @@ impl TextLeaf {
         style.set_font_size(self.font_size);
         style.set_letter_spacing(self.letter_spacing);
         style.set_decoration_type(match self.text_decoration {
-            0 => skia::textlayout::TextDecoration::NO_DECORATION,
-            1 => skia::textlayout::TextDecoration::UNDERLINE,
-            2 => skia::textlayout::TextDecoration::LINE_THROUGH,
-            3 => skia::textlayout::TextDecoration::OVERLINE,
-            _ => skia::textlayout::TextDecoration::NO_DECORATION,
+            Some(text_decoration) => text_decoration,
+            None => skia::textlayout::TextDecoration::NO_DECORATION,
         });
         style
     }
@@ -626,9 +616,9 @@ impl TextLeaf {
 
     pub fn apply_text_transform(&self) -> String {
         match self.text_transform {
-            1 => self.text.to_uppercase(),
-            2 => self.text.to_lowercase(),
-            3 => self
+            Some(TextTransform::Uppercase) => self.text.to_uppercase(),
+            Some(TextTransform::Lowercase) => self.text.to_lowercase(),
+            Some(TextTransform::Capitalize) => self
                 .text
                 .split_whitespace()
                 .map(|word| {
@@ -640,7 +630,7 @@ impl TextLeaf {
                 })
                 .collect::<Vec<_>>()
                 .join(" "),
-            _ => self.text.clone(),
+            None => self.text.clone(),
         }
     }
 
@@ -653,217 +643,5 @@ impl TextLeaf {
             shapes::Fill::Solid(shapes::SolidColor(color)) => color.a() == 0,
             _ => false,
         })
-    }
-}
-
-const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
-const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
-pub const RAW_LEAF_FILLS_SIZE: usize = 160;
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct RawTextLeaf {
-    font_style: u8,
-    text_decoration: u8,
-    text_transform: u8,
-    font_size: f32,
-    letter_spacing: f32,
-    font_weight: i32,
-    font_id: [u32; 4],
-    font_family: [u8; 4],
-    font_variant_id: [u32; 4],
-    text_length: u32,
-    total_fills: u32,
-}
-
-impl From<[u8; RAW_LEAF_DATA_SIZE]> for RawTextLeaf {
-    fn from(bytes: [u8; RAW_LEAF_DATA_SIZE]) -> Self {
-        unsafe { std::mem::transmute(bytes) }
-    }
-}
-
-impl TryFrom<&[u8]> for RawTextLeaf {
-    type Error = String;
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let data: [u8; RAW_LEAF_DATA_SIZE] = bytes
-            .get(0..RAW_LEAF_DATA_SIZE)
-            .and_then(|slice| slice.try_into().ok())
-            .ok_or("Invalid text leaf data".to_string())?;
-        Ok(RawTextLeaf::from(data))
-    }
-}
-
-#[allow(dead_code)]
-#[repr(C)]
-#[derive(Debug, Clone)]
-pub struct RawTextLeafData {
-    font_style: u8,
-    text_decoration: u8,
-    text_transform: u8,
-    text_direction: u8,
-    font_size: f32,
-    letter_spacing: f32,
-    font_weight: i32,
-    font_id: [u32; 4],
-    font_family: [u8; 4],
-    font_variant_id: [u32; 4],
-    text_length: u32,
-    total_fills: u32,
-    fills: Vec<shapes::Fill>,
-}
-
-impl From<&[u8]> for RawTextLeafData {
-    fn from(bytes: &[u8]) -> Self {
-        let text_leaf: RawTextLeaf = RawTextLeaf::try_from(bytes).unwrap();
-        let total_fills = text_leaf.total_fills as usize;
-
-        // Use checked_mul to prevent overflow
-        let fills_size = total_fills
-            .checked_mul(RAW_LEAF_FILLS_SIZE)
-            .expect("Overflow occurred while calculating fills size");
-
-        let fills_start = RAW_LEAF_DATA_SIZE;
-        let fills_end = fills_start + fills_size;
-        let buffer = &bytes[fills_start..fills_end];
-        let fills = parse_fills_from_bytes(buffer, total_fills);
-
-        Self {
-            font_style: text_leaf.font_style,
-            text_decoration: text_leaf.text_decoration,
-            text_transform: text_leaf.text_transform,
-            text_direction: 0, // TODO: Añadirlo
-            font_size: text_leaf.font_size,
-            letter_spacing: text_leaf.letter_spacing,
-            font_weight: text_leaf.font_weight,
-            font_id: text_leaf.font_id,
-            font_family: text_leaf.font_family,
-            font_variant_id: text_leaf.font_variant_id,
-            text_length: text_leaf.text_length,
-            total_fills: text_leaf.total_fills,
-            fills,
-        }
-    }
-}
-
-#[repr(C)]
-#[repr(align(4))]
-#[derive(Debug, Clone, Copy)]
-pub struct RawParagraphData {
-    num_leaves: u32,
-    text_align: u8,
-    text_direction: u8,
-    text_decoration: u8,
-    text_transform: u8,
-    line_height: f32,
-    letter_spacing: f32,
-    typography_ref_file: [u32; 4],
-    typography_ref_id: [u32; 4],
-}
-
-impl From<[u8; RAW_PARAGRAPH_DATA_SIZE]> for RawParagraphData {
-    fn from(bytes: [u8; RAW_PARAGRAPH_DATA_SIZE]) -> Self {
-        unsafe { std::mem::transmute(bytes) }
-    }
-}
-
-impl TryFrom<&[u8]> for RawParagraphData {
-    type Error = String;
-    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let data: [u8; RAW_PARAGRAPH_DATA_SIZE] = bytes
-            .get(0..RAW_PARAGRAPH_DATA_SIZE)
-            .and_then(|slice| slice.try_into().ok())
-            .ok_or("Invalid paragraph data".to_string())?;
-        Ok(RawParagraphData::from(data))
-    }
-}
-
-impl RawTextData {
-    fn text_from_bytes(buffer: &[u8], offset: usize, text_length: u32) -> (String, usize) {
-        let text_length = text_length as usize;
-        let text_end = offset + text_length;
-
-        if text_end > buffer.len() {
-            panic!(
-                "Invalid text range: offset={}, text_end={}, buffer_len={}",
-                offset,
-                text_end,
-                buffer.len()
-            );
-        }
-
-        let text_utf8 = buffer[offset..text_end].to_vec();
-        if text_utf8.is_empty() {
-            return (String::new(), text_end);
-        }
-
-        let text = String::from_utf8_lossy(&text_utf8).to_string();
-        (text, text_end)
-    }
-}
-
-// TODO: maybe move this to the wasm module?
-pub struct RawTextData {
-    pub paragraph: Paragraph,
-}
-
-// TODO: maybe move this to the wasm module?
-impl From<&Vec<u8>> for RawTextData {
-    fn from(bytes: &Vec<u8>) -> Self {
-        let paragraph = RawParagraphData::try_from(&bytes[..RAW_PARAGRAPH_DATA_SIZE]).unwrap();
-        let mut offset = RAW_PARAGRAPH_DATA_SIZE;
-        let mut raw_text_leaves: Vec<RawTextLeafData> = Vec::new();
-        let mut text_leaves: Vec<TextLeaf> = Vec::new();
-
-        for _ in 0..paragraph.num_leaves {
-            let text_leaf = RawTextLeafData::from(&bytes[offset..]);
-            raw_text_leaves.push(text_leaf.clone());
-            offset += RAW_LEAF_DATA_SIZE + (text_leaf.total_fills as usize * RAW_LEAF_FILLS_SIZE);
-        }
-
-        for text_leaf in raw_text_leaves.iter() {
-            let (text, new_offset) =
-                RawTextData::text_from_bytes(bytes, offset, text_leaf.text_length);
-            offset = new_offset;
-
-            let font_id = uuid_from_u32(text_leaf.font_id);
-            let font_variant_id = uuid_from_u32(text_leaf.font_variant_id);
-            let font_style = crate::wasm::fonts::RawFontStyle::from(text_leaf.font_style);
-
-            let font_family =
-                FontFamily::new(font_id, text_leaf.font_weight as u32, font_style.into());
-
-            let new_text_leaf = TextLeaf::new(
-                text,
-                font_family,
-                text_leaf.font_size,
-                text_leaf.letter_spacing,
-                text_leaf.font_style,
-                text_leaf.text_decoration,
-                text_leaf.text_transform,
-                text_leaf.text_direction,
-                text_leaf.font_weight,
-                font_variant_id,
-                text_leaf.fills.clone(),
-            );
-            text_leaves.push(new_text_leaf);
-        }
-
-        let typography_ref_file = uuid_from_u32(paragraph.typography_ref_file);
-        let typography_ref_id = uuid_from_u32(paragraph.typography_ref_id);
-
-        let paragraph = Paragraph::new(
-            paragraph.num_leaves,
-            paragraph.text_align,
-            paragraph.text_direction,
-            paragraph.text_decoration,
-            paragraph.text_transform,
-            paragraph.line_height,
-            paragraph.letter_spacing,
-            typography_ref_file,
-            typography_ref_id,
-            text_leaves.clone(),
-        );
-
-        Self { paragraph }
     }
 }

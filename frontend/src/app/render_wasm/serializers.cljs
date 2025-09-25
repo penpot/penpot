@@ -205,46 +205,33 @@
         default (unchecked-get values "top")]
     (d/nilv (unchecked-get values (d/name vertical-align)) default)))
 
-;; TODO: Find/Create a Rust enum for this
 (defn translate-text-align
   [text-align]
-  (case text-align
-    "left" 0
-    "center" 1
-    "right" 2
-    "justify" 3
-    0))
+  (let [values (unchecked-get wasm/serializers "text-align")
+        default (unchecked-get values "left")]
+    (d/nilv (unchecked-get values (d/name text-align)) default)))
+
 
 ;; TODO: Find/Create a Rust enum for this
 (defn translate-text-transform
   [text-transform]
-  (case text-transform
-    "none" 0
-    "uppercase" 1
-    "lowercase" 2
-    "capitalize" 3
-    nil 0
-    0))
+  (let [values (unchecked-get wasm/serializers "text-transform")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name text-transform)) default)))
 
-;; TODO: Find/Create a Rust enum for this
+
 (defn translate-text-decoration
   [text-decoration]
-  (case text-decoration
-    "none" 0
-    "underline" 1
-    "line-through" 2
-    "overline" 3
-    nil 0
-    0))
+  (let [values (unchecked-get wasm/serializers "text-decoration")
+        default (unchecked-get values "none")]
+    (d/nilv (unchecked-get values (d/name text-decoration)) default)))
 
-;; TODO: Find/Create a Rust enum for this
 (defn translate-text-direction
   [text-direction]
-  (case text-direction
-    "ltr" 0
-    "rtl" 1
-    nil 0
-    0))
+  (let [values (unchecked-get wasm/serializers "text-direction")
+        default (unchecked-get values "ltr")]
+    (d/nilv (unchecked-get values (d/name text-direction)) default)))
+
 
 (defn translate-font-style
   [font-style]
