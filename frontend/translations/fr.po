@@ -2609,7 +2609,7 @@ msgstr "Concevez de manière agile en contrôlant la disposition comme avec du C
 
 #: src/app/main/ui/ds/product/loader.cljs:24
 msgid "loader.tips.03.title"
-msgstr "Disposition automatique comme avec le CSS"
+msgstr "Disposition comme avec le CSS"
 
 #: src/app/main/ui/ds/product/loader.cljs:27
 msgid "loader.tips.04.message"

@@ -2336,7 +2336,7 @@ msgstr "Cria designs de forma flexível com controlos semelhantes a CSS."
 
 #: src/app/main/ui/ds/product/loader.cljs:24
 msgid "loader.tips.03.title"
-msgstr "Auto Layout como em CSS"
+msgstr "Layouts como em CSS"
 
 #: src/app/main/ui/ds/product/loader.cljs:27
 msgid "loader.tips.04.message"
