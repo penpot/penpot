@@ -8189,3 +8189,33 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "labels.sources"
+msgstr "Sources"
+
+msgid "labels.pinned-projects"
+msgstr "Pinned Projects"
+
+msgid "labels.resend"
+msgstr "Resend"
+
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Delete invitations"
+
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Resend invitations"
+
+msgid "dashboard.invitation-modal.delete"
+msgstr "You're going to delete the invitations to:"
+
+msgid "dashboard.invitation-modal.resend"
+msgstr "You're going to resend the invitations to:"
+
+msgid "dashboard.order-invitations-by-status"
+msgstr "Order by status"
+
+msgid "dashboard.order-invitations-by-role"
+msgstr "Order by role"
+
+msgid "notifications.invitation-deleted"
+msgstr "Invitation deleted successfully"

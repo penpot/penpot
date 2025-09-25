@@ -8070,3 +8070,33 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "labels.sources"
+msgstr "Recursos"
+
+msgid "labels.pinned-projects"
+msgstr "Proyectos fijados"
+
+msgid "labels.resend"
+msgstr "Reenviar"
+
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Eliminar invitaciones"
+
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Reenviar invitaciones"
+
+msgid "dashboard.invitation-modal.delete"
+msgstr "Vas a eliminar las invitaciones para:"
+
+msgid "dashboard.invitation-modal.resend"
+msgstr "Vas a reenviar las invitaciones para:"
+
+msgid "dashboard.order-invitations-by-status"
+msgstr "Ordenar por estado"
+
+msgid "dashboard.order-invitations-by-role"
+msgstr "Ordenar por rol"
+
+msgid "notifications.invitation-deleted"
+msgstr "Invitación eliminada con éxito"
