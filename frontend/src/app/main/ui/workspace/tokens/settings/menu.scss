@@ -6,7 +6,7 @@
 
 @use "ds/spacing.scss" as *;
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .setting-modal-overlay {
   @extend .modal-overlay-base;

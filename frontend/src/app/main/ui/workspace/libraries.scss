@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 // Library modal
 .modal-overlay {
@@ -15,10 +15,10 @@
   @extend .modal-container-base;
   display: grid;
   grid-template-rows: auto 1fr;
-  height: $s-520;
-  max-height: $s-520;
-  width: $s-712;
-  max-width: $s-712;
+  height: deprecated.$s-520;
+  max-height: deprecated.$s-520;
+  width: deprecated.$s-712;
+  max-width: deprecated.$s-712;
 }
 
 .close-btn {
@@ -31,8 +31,8 @@
 }
 
 .modal-title {
-  @include headlineMediumTypography;
-  margin-block-end: $s-16;
+  @include deprecated.headlineMediumTypography;
+  margin-block-end: deprecated.$s-16;
   color: var(--modal-title-foreground-color);
 }
 
@@ -41,9 +41,9 @@
 .updates-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: $s-32;
-  max-height: $s-400;
-  padding-block-start: $s-16;
+  gap: deprecated.$s-32;
+  max-height: deprecated.$s-400;
+  padding-block-start: deprecated.$s-16;
 }
 
 .lib-section,
@@ -51,7 +51,7 @@
 .shared-section {
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .shared-section {
@@ -59,22 +59,22 @@
 }
 
 .title-spacing-lib {
-  margin: 0 0 0 calc(-1 * $s-8);
+  margin: 0 0 0 calc(-1 * deprecated.$s-8);
 }
 
 .section-list,
 .section-list-shared {
   display: grid;
   grid-auto-rows: min-content;
-  gap: $s-8;
-  max-height: $s-320;
+  gap: deprecated.$s-8;
+  max-height: deprecated.$s-320;
   overflow-y: auto;
 }
 
 .section-list-item {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .item-content {
@@ -84,12 +84,12 @@
 .item-publish,
 .item-unpublish {
   @extend .button-primary;
-  @include uppercaseTitleTipography;
-  height: $s-32;
-  min-width: $s-92;
-  padding: $s-8 $s-24;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
+  min-width: deprecated.$s-92;
+  padding: deprecated.$s-8 deprecated.$s-24;
   margin: 0;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
 }
 
 .item-unpublish {
@@ -99,11 +99,11 @@
 .item-button,
 .item-button-shared {
   @extend .button-secondary;
-  height: $s-32;
-  width: $s-32;
-  margin-inline-start: $s-2;
-  margin-inline-end: $s-8;
-  padding: $s-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  margin-inline-start: deprecated.$s-2;
+  margin-inline-end: deprecated.$s-8;
+  padding: deprecated.$s-8;
 }
 
 .detach-icon,
@@ -113,19 +113,19 @@
 }
 
 .section-list-shared {
-  max-height: $s-272;
+  max-height: deprecated.$s-272;
 }
 
 .section-title {
-  @include headlineSmallTypography;
-  margin-block-end: $s-12;
+  @include deprecated.headlineSmallTypography;
+  margin-block-end: deprecated.$s-12;
   color: var(--title-foreground-color);
 }
 
 .search-icon {
-  @include flexCenter;
-  width: $s-20;
-  padding: 0 0 0 $s-8;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-20;
+  padding: 0 0 0 deprecated.$s-8;
 
   svg {
     @extend .button-icon-small;
@@ -135,30 +135,30 @@
 
 // empty state
 .section-list-empty {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   display: grid;
   grid-template-rows: auto 1fr;
   justify-items: center;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   text-align: center;
   height: fit-content;
-  margin-block: $s-16;
+  margin-block: deprecated.$s-16;
   color: var(--modal-title-foreground-color);
 }
 
 .empty-state-icon {
-  @include flexCenter;
-  width: $s-48;
-  height: $s-48;
-  border-radius: $br-circle;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-48;
+  height: deprecated.$s-48;
+  border-radius: deprecated.$br-circle;
   background-color: var(--pill-background-color);
 }
 
 .library-icon {
   @extend .button-icon;
   stroke: var(--icon-foreground);
-  height: $s-32;
-  width: $s-32;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
 }
 
 // Update library tab
@@ -166,8 +166,8 @@
   @extend .link;
   direction: rtl;
   grid-column: span 3;
-  margin-block-start: $s-8;
-  margin-inline-start: $s-8;
+  margin-block-start: deprecated.$s-8;
+  margin-inline-start: deprecated.$s-8;
   margin: 0;
 }
 
@@ -178,60 +178,60 @@
 .libraries-updates {
   display: grid;
   grid-column: span 3;
-  grid-template-columns: repeat(auto-fill, minmax($s-160, 1fr));
-  gap: $s-24;
-  margin-block-start: $s-16;
+  grid-template-columns: repeat(auto-fill, minmax(deprecated.$s-160, 1fr));
+  gap: deprecated.$s-24;
+  margin-block-start: deprecated.$s-16;
 }
 
 .libraries-updates-column {
   display: grid;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .libraries-updates-item {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: start;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   color: var(--library-content-foreground-color);
 }
 
 .component-svg {
   background-color: var(--color-canvas);
-  border-radius: $br-4;
-  border: $s-2 solid transparent;
-  height: $s-24;
-  width: $s-24;
-  min-height: $s-24;
-  min-width: $s-24;
+  border-radius: deprecated.$br-4;
+  border: deprecated.$s-2 solid transparent;
+  height: deprecated.$s-24;
+  width: deprecated.$s-24;
+  min-height: deprecated.$s-24;
+  min-width: deprecated.$s-24;
 }
 
 .name-block {
   color: var(--library-content-foreground-color);
-  width: $s-168;
+  width: deprecated.$s-168;
 }
 
 .ellipsis {
-  padding-inline-start: calc($s-24 + #{$s-8});
+  padding-inline-start: calc(deprecated.$s-24 + #{deprecated.$s-8});
 }
 
 .item-name {
-  @include bodyLargeTypography;
-  @include textEllipsis;
+  @include deprecated.bodyLargeTypography;
+  @include deprecated.textEllipsis;
   margin: 0;
-  max-width: $s-244;
+  max-width: deprecated.$s-244;
   color: var(--library-name-foreground-color);
 }
 
 .item-update {
   @extend .button-primary;
-  @include headlineSmallTypography;
-  height: $s-32;
-  min-width: $s-92;
-  padding: $s-8 $s-24;
-  margin-inline-end: $s-2;
-  border-radius: $br-8;
+  @include deprecated.headlineSmallTypography;
+  height: deprecated.$s-32;
+  min-width: deprecated.$s-92;
+  padding: deprecated.$s-8 deprecated.$s-24;
+  margin-inline-end: deprecated.$s-2;
+  border-radius: deprecated.$br-8;
 
   &:disabled {
     @extend .button-disabled;
@@ -239,7 +239,7 @@
 }
 
 .item-contents {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   color: var(--library-content-foreground-color);
   display: flex;
   flex-wrap: wrap;
@@ -251,33 +251,33 @@
 
   &:not(:last-child)::after {
     content: "·";
-    margin-inline: $s-4;
+    margin-inline: deprecated.$s-4;
   }
 }
 
 // Modal Component v2 update
 .modal-v2-info {
-  width: $s-664;
+  width: deprecated.$s-664;
   height: fit-content;
   max-height: fit-content;
 }
 
 .modal-v2-title {
-  @include headlineMediumTypography;
+  @include deprecated.headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 
 .info-content {
   display: grid;
   grid-template-rows: repeat(4, 1fr);
-  margin-top: $s-32;
-  gap: $s-24;
+  margin-top: deprecated.$s-32;
+  gap: deprecated.$s-24;
 }
 
 .info-block {
   display: grid;
   grid-template-columns: auto 1fr;
-  column-gap: $s-20;
+  column-gap: deprecated.$s-20;
   grid-template:
     "icon title"
     "icon content";
@@ -285,30 +285,30 @@
 
 .info-icon {
   grid-area: icon;
-  width: $s-52;
-  height: $s-52;
-  margin-top: $s-8;
-  border-radius: $br-circle;
+  width: deprecated.$s-52;
+  height: deprecated.$s-52;
+  margin-top: deprecated.$s-8;
+  border-radius: deprecated.$br-circle;
   background: var(--color-background-quaternary);
   display: flex;
   justify-content: center;
   align-items: center;
 
   svg {
-    width: $s-32;
-    height: $s-32;
+    width: deprecated.$s-32;
+    height: deprecated.$s-32;
     fill: var(--icon-foreground-active);
   }
 }
 
 .info-block-title {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   grid-area: title;
   color: var(--modal-title-foreground-color);
 }
 
 .info-block-content {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   grid-area: content;
   color: var(--library-content-foreground-color);
 }
@@ -316,27 +316,27 @@
 .info-bottom {
   display: flex;
   justify-content: flex-end;
-  margin-block-start: $s-24;
-  margin-inline-end: $s-8;
+  margin-block-start: deprecated.$s-24;
+  margin-inline-end: deprecated.$s-8;
 }
 
 .primary-button {
   @extend .button-primary;
-  @include headlineSmallTypography;
-  padding: $s-0 $s-16;
+  @include deprecated.headlineSmallTypography;
+  padding: deprecated.$s-0 deprecated.$s-16;
 }
 
 .sample-libraries-info {
   display: flex;
   flex-direction: column;
-  font-size: $fs-12;
-  margin: $s-32;
+  font-size: deprecated.$fs-12;
+  margin: deprecated.$s-32;
   color: var(--color-foreground-secondary);
 }
 
 .sample-libraries-link {
   color: var(--color-accent-primary);
-  font-weight: $fw400;
+  font-weight: deprecated.$fw400;
   &:hover {
     text-decoration: underline;
   }
@@ -345,7 +345,7 @@
 .sample-libraries-container {
   display: flex;
   flex-direction: column;
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   width: 100%;
   align-items: start;
   color: var(--color-foreground-secondary);
@@ -356,16 +356,16 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  margin-top: $s-8;
+  margin-top: deprecated.$s-8;
 }
 
 .sample-library-item-name {
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   color: var(--color-foreground-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: $s-232;
+  max-width: deprecated.$s-232;
 }
 
 .sample-library-add {
@@ -377,11 +377,11 @@
 }
 
 .sample-library-button {
-  @include uppercaseTitleTipography;
-  height: $s-32;
-  width: $s-80;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
+  width: deprecated.$s-80;
   margin: 0;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

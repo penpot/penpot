@@ -4,23 +4,23 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .dashboard {
   @extend .new-scrollbar;
   background-color: var(--app-background);
   display: grid;
-  grid-template-columns: $s-40 $s-256 1fr;
-  grid-template-rows: $s-52 1fr;
+  grid-template-columns: deprecated.$s-40 deprecated.$s-256 1fr;
+  grid-template-rows: deprecated.$s-52 1fr;
   height: 100vh;
 }
 
 .dashboard-content {
   display: grid;
-  grid-template-rows: $s-64 1fr;
+  grid-template-rows: deprecated.$s-64 1fr;
   position: relative;
   grid-row: 1 / span 2;
-  padding: $s-16 $s-16 0 0;
+  padding: deprecated.$s-16 deprecated.$s-16 0 0;
   overflow: hidden;
   width: 100%;
 }
