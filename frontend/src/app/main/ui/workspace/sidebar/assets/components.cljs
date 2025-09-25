@@ -127,10 +127,10 @@
         renaming? (= renaming (:id component))]
 
     [:div {:ref item-ref
-           :class (stl/css-case :selected (contains? selected (:id component))
-                                :grid-cell is-listing-thumbs
-                                :enum-item (not is-listing-thumbs)
-                                :enum-item-with-mark (and (not is-listing-thumbs) (ctc/is-variant? component)))
+           :class (stl/css-case :component-item true
+                                :component-item-grid is-listing-thumbs
+                                :component-item-list (not is-listing-thumbs)
+                                :component-item-selected (contains? selected (:id component)))
            :id (dm/str "component-shape-id-" (:id component))
            :draggable (and (not read-only?) (not renaming?))
            :on-click on-component-click
@@ -145,33 +145,36 @@
                 (some? container))
        [:*
         [:*
-         [:> editable-label*
-          {:class (stl/css-case :cell-name is-listing-thumbs
-                                :item-name (not is-listing-thumbs)
-                                :editing renaming?)
-           :value (cpn/merge-path-item (:path component) (:name component))
-           :tooltip (cpn/merge-path-item (:path component) (:name component))
-           :display-value (:name component)
-           :is-editing renaming?
-           :is-dbl-click-disabled true
-           :on-change do-rename
-           :on-cancel cancel-rename}]
+         [:div {:class (stl/css-case :component-item-grid-name is-listing-thumbs
+                                     :component-item-list-name (not is-listing-thumbs)
+                                     :component-item-editing renaming?)}
+          [:> editable-label*
+           {:class-input (stl/css-case :component-item-grid-input is-listing-thumbs
+                                       :component-item-list-input (not is-listing-thumbs))
+            :class-label (stl/css-case :component-item-grid-label is-listing-thumbs
+                                       :component-item-list-label (not is-listing-thumbs))
+            :value (cpn/merge-path-item (:path component) (:name component))
+            :tooltip (cpn/merge-path-item (:path component) (:name component))
+            :display-value (:name component)
+            :is-editing renaming?
+            :on-change do-rename
+            :on-cancel cancel-rename}]]
 
          (when ^boolean dragging?
-           [:div {:class (stl/css :dragging)}])]
+           [:div {:class (stl/css :component-item-dragging)}])]
 
         [:> cmm/component-item-thumbnail*
          {:file-id file-id
-          :class (stl/css-case :thumbnail true
-                               :asset-list-thumbnail (not is-listing-thumbs))
+          :class (stl/css-case :component-item-thumbnail true
+                               :component-item-list-thumbnail (not is-listing-thumbs))
           :root-shape root-shape
           :component component
           :container container
           :is-hidden (not visible?)}]
+
         (when (ctc/is-variant? component)
-          [:span {:class (stl/css-case :variant-mark-cell is-listing-thumbs
-                                       :variant-mark true
-                                       :component-icon true)
+          [:span {:class (stl/css-case :component-item-variant-mark true
+                                       :component-item-grid-variant-mark is-listing-thumbs)
                   :title (tr "workspace.assets.components.num-variants" num-variants)}
            [:> icon* {:icon-id i/variant :size "s"}]])])]))
 
@@ -248,21 +251,21 @@
 
      (when group-open?
        [:*
-        [:div {:class (stl/css-case :asset-grid is-listing-thumbs
-                                    :asset-enum (not is-listing-thumbs))
+        [:div {:class (stl/css-case :component-group-grid is-listing-thumbs
+                                    :component-group-list (not is-listing-thumbs))
                :on-drag-enter on-drag-enter
                :on-drag-leave on-drag-leave
                :on-drag-over dom/prevent-default
                :on-drop on-drop}
 
          (when ^boolean dragging?
-           [:div {:class (stl/css :grid-placeholder)} "\u00A0"])
+           [:div {:class (stl/css :component-group-placeholder)} "\u00A0"])
 
          (when (and (empty? components)
                     (some? groups)
                     is-local)
-           [:div {:class (stl/css-case :drop-space true
-                                       :drop-space-small (not dragging?))}])
+           [:div {:class (stl/css-case :component-group-drop-space true
+                                       :component-group-drop-space-small (not dragging?))}])
 
          (for [component components]
            [:> components-item*
@@ -559,7 +562,7 @@
                             :is-open is-open}
      [:> cmm/asset-section-block* {:role :title-button}
       (when ^boolean is-open
-        [:div {:class (stl/css :listing-options)}
+        [:div
          [:& radio-buttons {:selected (if is-listing-thumbs "grid" "list")
                             :on-change toggle-list-style
                             :name "listing-style"}
