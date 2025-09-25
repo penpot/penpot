@@ -92,7 +92,7 @@ impl From<RawTextTransform> for Option<TextTransform> {
 #[repr(align(4))]
 #[derive(Debug, Clone, Copy)]
 pub struct RawParagraphData {
-    num_leaves: u32,
+    leaf_count: u32,
     text_align: RawTextAlign,
     text_direction: RawTextDirection,
     text_decoration: RawTextDecoration,
@@ -117,30 +117,6 @@ impl TryFrom<&[u8]> for RawParagraphData {
             .and_then(|slice| slice.try_into().ok())
             .ok_or("Invalid paragraph data".to_string())?;
         Ok(RawParagraphData::from(data))
-    }
-}
-
-impl RawTextData {
-    fn text_from_bytes(buffer: &[u8], offset: usize, text_length: u32) -> (String, usize) {
-        let text_length = text_length as usize;
-        let text_end = offset + text_length;
-
-        if text_end > buffer.len() {
-            panic!(
-                "Invalid text range: offset={}, text_end={}, buffer_len={}",
-                offset,
-                text_end,
-                buffer.len()
-            );
-        }
-
-        let text_utf8 = buffer[offset..text_end].to_vec();
-        if text_utf8.is_empty() {
-            return (String::new(), text_end);
-        }
-
-        let text = String::from_utf8_lossy(&text_utf8).to_string();
-        (text, text_end)
     }
 }
 
@@ -187,31 +163,34 @@ pub struct RawTextLeaf {
     raw_fills: Vec<u8>, // FIXME: remove this once we cap the amount of fills a text shape has
 }
 
-// TODO: implement TryFrom instead
-impl From<&[u8]> for RawTextLeaf {
-    fn from(bytes: &[u8]) -> Self {
-        let raw_attrs: RawTextLeafAttrs = RawTextLeafAttrs::try_from(bytes).unwrap();
+impl TryFrom<&[u8]> for RawTextLeaf {
+    // TODO: use a proper error type
+    type Error = String;
+
+    fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
+        let raw_attrs: RawTextLeafAttrs = RawTextLeafAttrs::try_from(bytes)?;
         let total_fills = raw_attrs.fill_count as usize;
 
         // Use checked_mul to prevent overflow
         let fills_size = total_fills
             .checked_mul(RAW_LEAF_FILLS_SIZE)
-            .expect("Overflow occurred while calculating fills size");
+            .ok_or("Overflow occurred while calculating fills size")?;
 
         let fills_start = RAW_LEAF_DATA_SIZE;
         let fills_end = fills_start + fills_size;
-        let buffer = &bytes[fills_start..fills_end];
+        let raw_fills = &bytes[fills_start..fills_end];
 
-        Self {
+        Ok(Self {
             attrs: raw_attrs,
-            raw_fills: buffer.to_vec(),
-        }
+            raw_fills: raw_fills.to_vec(),
+        })
     }
 }
 
 impl From<RawTextLeaf> for shapes::TextLeaf {
     fn from(value: RawTextLeaf) -> Self {
-        let default_text = String::default();
+        let text = String::default();
+
         let font_family = shapes::FontFamily::new(
             uuid_from_u32(value.attrs.font_id),
             value.attrs.font_weight as u32,
@@ -221,7 +200,7 @@ impl From<RawTextLeaf> for shapes::TextLeaf {
             super::fills::parse_fills_from_bytes(&value.raw_fills, value.attrs.fill_count as usize);
 
         Self::new(
-            default_text,
+            text,
             font_family,
             value.attrs.font_size,
             value.attrs.letter_spacing,
@@ -235,52 +214,74 @@ impl From<RawTextLeaf> for shapes::TextLeaf {
     }
 }
 
-// TODO: decouple from model
-pub struct RawTextData {
-    pub paragraph: shapes::Paragraph,
+#[repr(C)]
+#[derive(Debug, Clone)]
+pub struct RawParagraph {
+    attrs: RawParagraphData,
+    leaves: Vec<RawTextLeaf>,
+    text_buffer: Vec<u8>,
 }
 
-impl From<&Vec<u8>> for RawTextData {
-    fn from(bytes: &Vec<u8>) -> Self {
-        let paragraph = RawParagraphData::try_from(&bytes[..RAW_PARAGRAPH_DATA_SIZE]).unwrap();
+impl TryFrom<&Vec<u8>> for RawParagraph {
+    // TODO: use a proper error type
+    type Error = String;
+
+    fn try_from(bytes: &Vec<u8>) -> Result<Self, Self::Error> {
+        let attrs = RawParagraphData::try_from(&bytes[..RAW_PARAGRAPH_DATA_SIZE])?;
         let mut offset = RAW_PARAGRAPH_DATA_SIZE;
         let mut raw_text_leaves: Vec<RawTextLeaf> = Vec::new();
-        let mut text_leaves: Vec<shapes::TextLeaf> = Vec::new();
 
-        for _ in 0..paragraph.num_leaves {
-            let text_leaf = RawTextLeaf::from(&bytes[offset..]);
-            raw_text_leaves.push(text_leaf.clone());
-            offset +=
+        for _ in 0..attrs.leaf_count {
+            let text_leaf = RawTextLeaf::try_from(&bytes[offset..])?;
+            let leaf_size =
                 RAW_LEAF_DATA_SIZE + (text_leaf.attrs.fill_count as usize * RAW_LEAF_FILLS_SIZE);
+
+            offset += leaf_size;
+            raw_text_leaves.push(text_leaf);
         }
 
-        for raw_text_leaf in raw_text_leaves.into_iter() {
-            let (text, new_offset) =
-                RawTextData::text_from_bytes(bytes, offset, raw_text_leaf.attrs.text_length);
-            offset = new_offset;
+        let text_buffer = &bytes[offset..];
 
-            let mut text_leaf = shapes::TextLeaf::from(raw_text_leaf);
-            text_leaf.set_text(text);
-            text_leaves.push(text_leaf);
+        Ok(Self {
+            attrs,
+            leaves: raw_text_leaves,
+            text_buffer: text_buffer.to_vec(),
+        })
+    }
+}
+
+impl From<RawParagraph> for shapes::Paragraph {
+    fn from(value: RawParagraph) -> Self {
+        let typography_ref_file = uuid_from_u32(value.attrs.typography_ref_file);
+        let typography_ref_id = uuid_from_u32(value.attrs.typography_ref_id);
+
+        let mut leaves = vec![];
+
+        let mut offset = 0;
+        for raw_leaf in value.leaves.into_iter() {
+            let delta = raw_leaf.attrs.text_length as usize;
+            let text_buffer = &value.text_buffer[offset..offset + delta];
+
+            let mut leaf = shapes::TextLeaf::from(raw_leaf);
+            if !text_buffer.is_empty() {
+                leaf.set_text(String::from_utf8_lossy(text_buffer).to_string());
+            }
+
+            leaves.push(leaf);
+            offset += delta;
         }
 
-        let typography_ref_file = uuid_from_u32(paragraph.typography_ref_file);
-        let typography_ref_id = uuid_from_u32(paragraph.typography_ref_id);
-
-        let paragraph = shapes::Paragraph::new(
-            paragraph.num_leaves,
-            paragraph.text_align.into(),
-            paragraph.text_direction.into(),
-            paragraph.text_decoration.into(),
-            paragraph.text_transform.into(),
-            paragraph.line_height,
-            paragraph.letter_spacing,
+        shapes::Paragraph::new(
+            value.attrs.text_align.into(),
+            value.attrs.text_direction.into(),
+            value.attrs.text_decoration.into(),
+            value.attrs.text_transform.into(),
+            value.attrs.line_height,
+            value.attrs.letter_spacing,
             typography_ref_file,
             typography_ref_id,
-            text_leaves.clone(),
-        );
-
-        Self { paragraph }
+            leaves,
+        )
     }
 }
 
@@ -320,9 +321,9 @@ pub extern "C" fn clear_shape_text() {
 pub extern "C" fn set_shape_text_content() {
     let bytes = mem::bytes();
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let raw_text_data = RawTextData::from(&bytes);
+        let raw_text_data = RawParagraph::try_from(&bytes).unwrap();
         shape
-            .add_paragraph(raw_text_data.paragraph)
+            .add_paragraph(raw_text_data.into())
             .expect("Failed to add paragraph");
     });
     mem::free_bytes();

@@ -381,7 +381,6 @@ pub enum TextTransform {
 // wasm module and store here meaningful model values (and/or skia type aliases)
 #[derive(Debug, PartialEq, Clone)]
 pub struct Paragraph {
-    num_leaves: u32,
     text_align: TextAlign,
     text_direction: TextDirection,
     text_decoration: Option<TextDecoration>,
@@ -396,7 +395,6 @@ pub struct Paragraph {
 impl Default for Paragraph {
     fn default() -> Self {
         Self {
-            num_leaves: 0,
             text_align: TextAlign::default(),
             text_direction: TextDirection::LTR,
             text_decoration: None,
@@ -413,7 +411,6 @@ impl Default for Paragraph {
 impl Paragraph {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        num_leaves: u32,
         text_align: TextAlign,
         text_direction: TextDirection,
         text_decoration: Option<TextDecoration>,
@@ -425,7 +422,6 @@ impl Paragraph {
         children: Vec<TextLeaf>,
     ) -> Self {
         Self {
-            num_leaves,
             text_align,
             text_direction,
             text_decoration,
