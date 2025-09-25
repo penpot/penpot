@@ -42,7 +42,6 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
-   [app.main.data.workspace.fix-broken-shapes :as fbs]
    [app.main.data.workspace.fix-deleted-fonts :as fdf]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
@@ -232,8 +231,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dp/check-open-plugin)
-             (fdf/fix-deleted-fonts)
-             (fbs/fix-broken-shapes)))))
+             (fdf/fix-deleted-fonts-for-local-library file-id)))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
