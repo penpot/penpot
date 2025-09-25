@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .viewport {
   cursor: none;
@@ -35,5 +35,5 @@
   left: 0;
   bottom: 0;
   right: 0;
-  z-index: $z-index-1;
+  z-index: deprecated.$z-index-1;
 }

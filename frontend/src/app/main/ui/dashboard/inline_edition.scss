@@ -4,29 +4,29 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .edit-wrapper {
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
   display: flex;
-  padding-right: $s-24;
+  padding-right: deprecated.$s-24;
   position: relative;
-  margin-right: $s-24;
+  margin-right: deprecated.$s-24;
 }
 
 input.element-title {
   background-color: var(--input-background-color-active);
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   color: var(--color-foreground-primary);
-  font-size: $fs-16;
-  height: $s-32;
+  font-size: deprecated.$fs-16;
+  height: deprecated.$s-32;
   margin: 0;
   border: none;
-  padding: $s-6;
+  padding: deprecated.$s-6;
   width: 100%;
 
   &:focus-visible {
-    border: $s-1 solid var(--color-accent-primary);
+    border: deprecated.$s-1 solid var(--color-accent-primary);
     outline: none;
   }
 }
@@ -35,14 +35,14 @@ input.element-title {
   cursor: pointer;
   position: absolute;
 
-  top: $s-1;
-  right: calc(-1 * $s-8);
+  top: deprecated.$s-1;
+  right: calc(-1 * deprecated.$s-8);
 
   svg {
     fill: var(--color-foreground-secondary);
-    height: $s-16;
+    height: deprecated.$s-16;
     transform: rotate(45deg) translateY(7px);
-    width: $s-16;
+    width: deprecated.$s-16;
     margin: 0;
   }
   &:hover {
