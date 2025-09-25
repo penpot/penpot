@@ -6,84 +6,31 @@
 
 @use "refactor/common-refactor.scss" as deprecated;
 
-.drop-space {
-  height: deprecated.$s-12;
-}
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
 
-.drop-space-small {
-  height: deprecated.$s-2;
-}
 
-.asset-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(deprecated.$s-96, 1fr));
-  max-width: 100%;
-  gap: deprecated.$s-4;
-  margin-inline: deprecated.$s-8;
-}
 
-.grid-cell {
+
+.grid-item {
   @include deprecated.flexCenter;
   position: relative;
   aspect-ratio: 1 / 1;
-  padding: deprecated.$s-8;
-  border-radius: deprecated.$br-8;
+  padding: var(--sp-s);
+  border-radius: $br-8;
   background-color: var(--assets-component-background-color);
   overflow: hidden;
   cursor: pointer;
 
-  .variant-mark {
-    background-color: var(--color-background-tertiary);
-    border-radius: deprecated.$br-8;
-  }
-
-  .cell-name {
-    @include deprecated.bodySmallTypography;
-    @include deprecated.textEllipsis;
-    display: none;
-    position: absolute;
-    left: deprecated.$s-4;
-    bottom: deprecated.$s-4;
-    height: calc(deprecated.$s-24 - deprecated.$s-2);
-    width: calc(100% - 2 * deprecated.$s-4);
-    padding: deprecated.$s-2 deprecated.$s-6;
-    column-gap: deprecated.$s-4;
-    border-radius: deprecated.$br-4;
-    background-color: var(--assets-item-name-background-color);
-    border: deprecated.$s-1 solid transparent;
-    color: var(--assets-item-name-foreground-color);
-
-    input {
-      @include deprecated.textEllipsis;
-      @include deprecated.bodySmallTypography;
-      @include deprecated.removeInputStyle;
-      height: auto;
-      padding: 0;
-    }
-
-    span {
-      display: flex;
-      align-items: center;
-      height: 100%;
-    }
-
-    &.editing {
-      border-color: var(--input-border-color-focus);
-      border-radius: deprecated.$br-4;
-      display: flex;
-      align-items: center;
-      background-color: var(--input-background-color);
-    }
-  }
-
   &:hover {
-    .cell-name {
+    .grid-item-name {
       display: block;
     }
   }
 
   &.selected {
-    border: deprecated.$s-2 solid var(--assets-item-border-color);
+    border: $b-2 solid var(--assets-item-border-color);
 
     &::before {
       content: " ";
@@ -93,55 +40,78 @@
       left: 0;
       right: 0;
       bottom: 0;
-      border: deprecated.$s-4 solid var(--assets-component-second-border-selected);
-      border-radius: deprecated.$br-8;
+      border: var(--sp-xs) solid var(--assets-component-second-border-selected);
+      border-radius: $br-8;
     }
   }
 }
 
-.component-group {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: deprecated.$s-4;
+
+.grid-item-name {
+  @include t.use-typography("body-small");
+  @include deprecated.textEllipsis;
+  display: none;
+  position: absolute;
+  left: var(--sp-xs);
+  bottom: var(--sp-xs);
+  height: calc(var(--sp-xxl) - var(--sp-xxs));
+  width: calc(100% - 2 * var(--sp-xs));
+  padding: var(--sp-xxs) deprecated.$s-6;
+  column-gap: var(--sp-xs);
+  border-radius: $br-4;
+  background-color: var(--assets-item-name-background-color);
+  border: $b-1 solid transparent;
+  color: var(--assets-item-name-foreground-color);
+
+  // These belong to editable-label
+
+  input {
+    @include t.use-typography("body-small");
+    @include deprecated.textEllipsis;
+    @include deprecated.removeInputStyle;
+    height: auto;
+    padding: 0;
+  }
+
+  span {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  &.editing {
+    border-color: var(--input-border-color-focus);
+    border-radius: $br-4;
+    display: flex;
+    align-items: center;
+    background-color: var(--input-background-color);
+  }
 }
 
-.thumbnail {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-  border: 0;
-}
 
-.grid-placeholder {
-  width: 100%;
-  border-radius: deprecated.$br-8;
-  background-color: var(--assets-item-background-color-drag);
-  border: deprecated.$s-2 solid var(--assets-item-border-color-drag);
-}
 
-.enum-item {
+.list-item {
   position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
-  column-gap: deprecated.$s-8;
+  column-gap: var(--sp-s);
   height: deprecated.$s-44;
-  padding-right: deprecated.$s-4;
+  padding-right: var(--sp-xs);
   padding: deprecated.$s-1;
-  border: deprecated.$s-1 solid transparent;
-  border-radius: deprecated.$br-8;
+  border: $b-1 solid transparent;
+  border-radius: $br-8;
   background-color: var(--assets-item-background-color);
   cursor: pointer;
 
   &:not(:last-child) {
-    margin-bottom: deprecated.$s-4;
+    margin-bottom: var(--sp-xs);
   }
 
   &:hover {
     background-color: var(--assets-item-background-color-hover);
 
-    .item-name {
+    .list-item-name {
       color: var(--assets-item-name-foreground-color-hover);
 
       &.editing {
@@ -155,66 +125,55 @@
   }
 
   &.selected {
-    border: deprecated.$s-1 solid var(--assets-item-border-color);
+    border: $b-1 solid var(--assets-item-border-color);
   }
 }
 
-.enum-item-with-mark {
-  grid-template-columns: auto 1fr deprecated.$s-24;
-  padding-right: deprecated.$s-4;
+
+
+.list-item-with-mark {
+  grid-template-columns: auto 1fr var(--sp-xxl);
+  padding-right: var(--sp-xs);
 }
 
-.item-name {
-  @include deprecated.bodySmallTypography;
+
+
+
+.list-item-name {
+  @include t.use-typography("body-small");
   @include deprecated.textEllipsis;
   order: 2;
   color: var(--assets-item-name-foreground-color);
 
+  // These belong to editable-label
+
   input {
     @include deprecated.textEllipsis;
-    @include deprecated.bodySmallTypography;
+    @include t.use-typography("body-small");
     @include deprecated.removeInputStyle;
-    height: deprecated.$s-32;
-    padding: deprecated.$s-4;
+    height: var(--sp-xxxl);
+    padding: var(--sp-xs);
   }
 
   span {
     display: flex;
     place-items: center;
-    padding-inline-end: deprecated.$s-4;
+    padding-inline-end: var(--sp-xs);
   }
 
   &.editing {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    column-gap: deprecated.$s-8;
-    border: deprecated.$s-1 solid var(--input-border-color-focus);
-    border-radius: deprecated.$br-8;
+    column-gap: var(--sp-s);
+    border: $b-1 solid var(--input-border-color-focus);
+    border-radius: $br-8;
     background-color: var(--input-background-color);
   }
 }
 
-.asset-list-thumbnail {
-  @include deprecated.flexCenter;
-  flex-shrink: 0;
-  padding: deprecated.$s-2;
-  height: deprecated.$s-40;
-  width: deprecated.$s-40;
-  border-radius: deprecated.$br-6;
-  background-color: var(--assets-component-background-color);
-}
 
-.grid-placeholder {
-  height: deprecated.$s-2;
-  width: 100%;
-  background-color: var(--color-accent-primary);
-}
 
-.listing-options {
-  display: flex;
-  align-items: center;
-}
 
 .dragging {
   position: absolute;
@@ -222,21 +181,91 @@
   left: 0;
   width: 100%;
   height: 100%;
-  border-radius: deprecated.$s-8;
-  background-color: var(--assets-item-background-color-drag);
-  border: deprecated.$s-2 solid var(--assets-item-border-color-drag);
+  border-radius: var(--sp-s);
+  border: $b-2 solid var(--assets-item-border-color-drag);
 }
 
-.variant-mark-cell {
-  position: absolute;
-  right: deprecated.$s-2;
-  top: deprecated.$s-2;
+
+
+
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  border: 0;
 }
 
-.component-icon {
+.list-item-thumbnail {
   @include deprecated.flexCenter;
-  height: deprecated.$s-24;
-  width: deprecated.$s-24;
-  order: 3;
+  flex-shrink: 0;
+  padding: var(--sp-xxs);
+  height: deprecated.$s-40;
+  width: deprecated.$s-40;
+  border-radius: $br-6;
+  background-color: var(--assets-component-background-color);
+}
+
+
+
+
+.variant-mark {
+  @include deprecated.flexCenter;
+  height: var(--sp-xxl);
+  width: var(--sp-xxl);
   color: var(--color-accent-secondary);
+  border-radius: $br-8;
+  order: 3;
+}
+
+.grid-item-variant-mark {
+  position: absolute;
+  right: var(--sp-xxs);
+  top: var(--sp-xxs);
+  background-color: var(--color-background-tertiary);
+}
+
+
+
+
+// components-group
+
+
+.component-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-xs);
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(deprecated.$s-96, 1fr));
+  max-width: 100%;
+  gap: var(--sp-xs);
+  margin-inline: var(--sp-s);
+}
+
+.grid-placeholder {
+  width: 100%;
+  height: var(--sp-xxs);
+  border-radius: $br-8;
+  background-color: var(--color-accent-primary);
+}
+
+.drop-space {
+  height: var(--sp-m);
+}
+
+.drop-space-small {
+  height: var(--sp-xxs);
+}
+
+
+// components-section
+
+
+.listing-options {
+  display: flex;
+  align-items: center;
 }

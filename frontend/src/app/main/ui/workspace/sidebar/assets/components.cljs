@@ -128,9 +128,9 @@
 
     [:div {:ref item-ref
            :class (stl/css-case :selected (contains? selected (:id component))
-                                :grid-cell is-listing-thumbs
-                                :enum-item (not is-listing-thumbs)
-                                :enum-item-with-mark (and (not is-listing-thumbs) (ctc/is-variant? component)))
+                                :grid-item is-listing-thumbs
+                                :list-item (not is-listing-thumbs)
+                                :list-item-with-mark (and (not is-listing-thumbs) (ctc/is-variant? component)))
            :id (dm/str "component-shape-id-" (:id component))
            :draggable (and (not read-only?) (not renaming?))
            :on-click on-component-click
@@ -146,8 +146,8 @@
        [:*
         [:*
          [:> editable-label*
-          {:class (stl/css-case :cell-name is-listing-thumbs
-                                :item-name (not is-listing-thumbs)
+          {:class (stl/css-case :grid-item-name is-listing-thumbs
+                                :list-item-name (not is-listing-thumbs)
                                 :editing renaming?)
            :value (cfh/merge-path-item (:path component) (:name component))
            :tooltip (cfh/merge-path-item (:path component) (:name component))
@@ -163,15 +163,14 @@
         [:> cmm/component-item-thumbnail*
          {:file-id file-id
           :class (stl/css-case :thumbnail true
-                               :asset-list-thumbnail (not is-listing-thumbs))
+                               :list-item-thumbnail (not is-listing-thumbs))
           :root-shape root-shape
           :component component
           :container container
           :is-hidden (not visible?)}]
         (when (ctc/is-variant? component)
-          [:span {:class (stl/css-case :variant-mark-cell is-listing-thumbs
-                                       :variant-mark true
-                                       :component-icon true)
+          [:span {:class (stl/css-case :grid-item-variant-mark is-listing-thumbs
+                                       :variant-mark true)
                   :title (tr "workspace.assets.components.num-variants" num-variants)}
            [:> icon* {:icon-id i/variant :size "s"}]])])]))
 
@@ -248,8 +247,7 @@
 
      (when group-open?
        [:*
-        [:div {:class (stl/css-case :asset-grid is-listing-thumbs
-                                    :asset-enum (not is-listing-thumbs))
+        [:div {:class (stl/css-case :asset-grid is-listing-thumbs)
                :on-drag-enter on-drag-enter
                :on-drag-leave on-drag-leave
                :on-drag-over dom/prevent-default
