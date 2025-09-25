@@ -170,11 +170,10 @@
   [string]
   (+ (count string) 1))
 
+
 (defn- fetch-image
   [shape-id image-id]
-  (let [buffer-shape-id (uuid/get-u32 shape-id)
-        buffer-image-id (uuid/get-u32 image-id)
-        url             (cf/resolve-file-media {:id image-id})]
+  (let [url   (cf/resolve-file-media {:id image-id})]
     {:key url
      :callback #(->> (http/send! {:method :get
                                   :uri url
@@ -182,23 +181,32 @@
                      (rx/map :body)
                      (rx/mapcat wapi/read-file-as-array-buffer)
                      (rx/map (fn [image]
-                               ;; FIXME use bigger heap ptr size if it
-                               ;; is possible (if image size modulo
-                               ;; permits it)
-                               (let [size    (.-byteLength image)
-                                     offset  (mem/alloc size)
-                                     heap    (mem/get-heap-u8)
-                                     data    (js/Uint8Array. image)]
-                                 (.set heap data offset)
-                                 (h/call wasm/internal-module "_store_image"
-                                         (aget buffer-shape-id 0)
-                                         (aget buffer-shape-id 1)
-                                         (aget buffer-shape-id 2)
-                                         (aget buffer-shape-id 3)
-                                         (aget buffer-image-id 0)
-                                         (aget buffer-image-id 1)
-                                         (aget buffer-image-id 2)
-                                         (aget buffer-image-id 3))
+                               (let [size        (.-byteLength image)
+                                     padded-size (if (zero? (mod size 4)) size (+ size (- 4 (mod size 4))))
+                                     total-bytes (+ 32 padded-size) ; UUID size + padded size
+                                     offset      (mem/alloc->offset-32 total-bytes)
+                                     heap32      (mem/get-heap-u32)
+                                     data        (js/Uint8Array. image)
+                                     padded      (js/Uint8Array. padded-size)]
+
+                                 ;; 1. Set shape id
+                                 (mem.h32/write-uuid offset heap32 shape-id)
+
+                                 ;; 2. Set image id
+                                 (mem.h32/write-uuid (+ offset 4) heap32 image-id)
+
+                                 ;; 3. Adjust padding on image data
+                                 (.set padded data)
+                                 (when (< size padded-size)
+                                   (dotimes [i (- padded-size size)]
+                                     (aset padded (+ size i) 0)))
+
+                                 ;; 4. Set image data
+                                 (let [u32view (js/Uint32Array. (.-buffer padded))
+                                       image-u32-offset (+ offset 8)]
+                                   (.set heap32 u32view image-u32-offset))
+
+                                 (h/call wasm/internal-module "_store_image")
                                  true))))}))
 
 (defn- get-fill-images
