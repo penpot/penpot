@@ -4,32 +4,35 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
 
 .dashboard-templates-section {
   background-color: var(--color-background-tertiary);
   bottom: 0;
-  border-bottom-left-radius: deprecated.$br-8;
-  border-bottom-right-radius: deprecated.$br-8;
-  border-top-right-radius: deprecated.$br-8;
+  border-bottom-left-radius: $br-8;
+  border-bottom-right-radius: $br-8;
+  border-top-right-radius: $br-8;
   display: flex;
   flex-direction: column;
-  height: deprecated.$s-244;
+  height: px2rem(244);
   justify-content: flex-end;
-  margin-left: deprecated.$s-6;
-  margin-right: deprecated.$s-6;
-  margin-bottom: deprecated.$s-6;
+  margin-left: px2rem(6);
+  margin-right: px2rem(6);
+  margin-bottom: px2rem(6);
   position: absolute;
   transition: bottom 300ms;
-  width: calc(100% - deprecated.$s-12);
+  width: calc(100% - $sz-12);
   pointer-events: none;
   &.collapsed {
-    bottom: calc(-1 * deprecated.$s-228);
+    bottom: calc(-1 * px2rem(228));
     background-color: transparent;
     transition: bottom 300ms;
     .title-btn {
-      border-bottom-right-radius: deprecated.$br-8;
-      border-bottom-left-radius: deprecated.$br-8;
+      border-bottom-right-radius: $br-8;
+      border-bottom-left-radius: $br-8;
     }
     .content,
     .content-description {
@@ -40,43 +43,41 @@
 
 .title {
   pointer-events: all;
-  width: deprecated.$s-420;
-  top: calc(-1 * deprecated.$s-40);
+  width: px2rem(420);
+  top: calc(-1 * $sz-40);
   text-align: right;
-  height: deprecated.$s-56;
+  height: px2rem(56);
   position: absolute;
 }
 
 .title-btn {
   border: none;
   cursor: pointer;
-  height: deprecated.$s-56;
+  height: px2rem(56);
   display: inline-flex;
   align-items: center;
-  border-top-left-radius: deprecated.$br-8;
-  border-top-right-radius: deprecated.$br-8;
+  border-top-left-radius: $br-8;
+  border-top-right-radius: $br-8;
   position: relative;
-  z-index: deprecated.$z-index-1;
+  z-index: var(--z-index-auto);
   background-color: var(--color-background-tertiary);
   width: 100%;
 }
 
 .title-text {
+  @include t.use-typography("body-large");
   display: inline-block;
   vertical-align: middle;
-  line-height: 1.2;
-  font-size: deprecated.$fs-16;
-  margin-left: deprecated.$s-12;
-  margin-right: deprecated.$s-8;
+  margin-left: var(--sp-m);
+  margin-right: var(--sp-s);
   color: var(--color-foreground-primary);
-  font-weight: deprecated.$fw400;
 }
 
 .title-icon-container {
   display: inline-block;
   vertical-align: middle;
   margin-left: auto;
-  margin-right: deprecated.$s-8;
+  margin-right: var(--sp-s);
   color: var(--color-foreground-primary);
 }
 
@@ -84,12 +85,12 @@
   display: inline-block;
   vertical-align: middle;
   margin-left: auto;
-  margin-right: deprecated.$s-8;
+  margin-right: var(--sp-s);
   transform: rotate(90deg);
 }
 
 .title-icon-text {
-  margin-right: deprecated.$s-8;
+  margin-right: var(--sp-s);
 }
 
 .title-icon-collapsed {
@@ -97,27 +98,34 @@
 }
 
 .arrow-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--color-foreground-secondary);
 }
 
 .move-button {
   position: absolute;
-  top: deprecated.$s-96;
-  border: deprecated.$s-2 solid var(--color-foreground-secondary);
+  top: px2rem(96);
+  border: $b-2 solid var(--color-foreground-secondary);
   border-radius: 50%;
   text-align: center;
-  width: deprecated.$s-36;
-  height: deprecated.$s-36;
+  width: $sz-36;
+  height: $sz-36;
   cursor: pointer;
-  background-color: var(--button-secondary-background-color-rest);
+  background-color: var(--color-background-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: all;
 
   &:hover {
-    border: deprecated.$s-2 solid var(--color-background-tertiary);
+    border: $b-2 solid var(--color-background-tertiary);
     background-color: var(--color-accent-primary);
     .arrow-icon {
       stroke: var(--color-background-tertiary);
@@ -127,30 +135,30 @@
 
 .move-left {
   left: 0;
-  margin-left: deprecated.$s-44;
+  margin-left: px2rem(44);
   transform: rotate(180deg);
 }
 
 .move-right {
   right: 0;
-  margin-right: deprecated.$s-44;
+  margin-right:  px2rem(44);
 }
 
 .content-description {
-  font-size: deprecated.$fs-14;
+  @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
-  margin-bottom: -8px;
-  margin-top: deprecated.$s-16;
-  margin-left: deprecated.$s-16;
+  margin-bottom: calc(-1 * var(--sp-s));
+  margin-top: var(--sp-l);
+  margin-left: var(--sp-l);
   visibility: visible;
 }
 
 .content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(deprecated.$s-276, deprecated.$s-276));
+  grid-template-columns: repeat(auto-fill, minmax(px2rem(276), px2rem(276)));
   grid-auto-flow: column;
   pointer-events: all;
-  height: deprecated.$s-228;
+  height: px2rem(228);
   overflow: scroll hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
@@ -159,8 +167,8 @@
 }
 
 .card-container {
-  width: deprecated.$s-276;
-  margin-top: deprecated.$s-20;
+  width: px2rem(276);
+  margin-top: var(--sp-xl);
   text-align: center;
   vertical-align: top;
   background-color: transparent;
@@ -170,15 +178,16 @@
 }
 
 .template-card {
+  @include t.use-typography("body-large");
   display: inline-block;
-  width: deprecated.$s-256;
-  font-size: deprecated.$fs-16;
+  width: px2rem(256);
   cursor: pointer;
   color: var(--color-foreground-primary);
-  padding: 0 deprecated.$s-4 deprecated.$s-8 deprecated.$s-4;
-  border-radius: deprecated.$br-8;
-  border: deprecated.$s-2 solid transparent;
+  padding: 0 var(--sp-xs) var(--sp-s) var(--sp-xs);
+  border-radius: $br-8;
+  border: $b-2 solid transparent;
   &:hover {
+    text-decoration: none;
     border-color: var(--color-accent-primary);
     .download-icon {
       stroke: var(--color-accent-primary);
@@ -191,29 +200,28 @@
 
 .img-container {
   width: 100%;
-  height: deprecated.$s-136;
-  margin-bottom: deprecated.$s-8;
-  border-radius: deprecated.$br-5;
+  height: px2rem(136);
+  margin-bottom: var(--sp-s);
+  border-radius: px2rem(5);
   display: flex;
   justify-content: center;
   flex-direction: column;
 
   img {
-    border-radius: deprecated.$br-4;
+    border-radius: $br-4;
   }
 }
 
 .card-name {
-  padding: 0 deprecated.$s-6;
+  padding: 0 px2rem(6);
   display: flex;
   justify-content: space-between;
-  height: deprecated.$s-24;
+  height: $sz-24;
   align-items: center;
 }
 
 .card-text {
-  font-weight: deprecated.$fw400;
-  font-size: deprecated.$fs-16;
+  @include t.use-typography("body-large");
   white-space: nowrap;
   overflow: hidden;
   width: 90%;
@@ -222,24 +230,30 @@
 }
 
 .download-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--icon-foreground);
 }
 
 .template-link {
-  border: deprecated.$s-2 solid transparent;
-  margin: deprecated.$s-32;
-  padding: deprecated.$s-32 0;
+  border: $b-2 solid transparent;
+  margin: var(--sp-xxxl);
+  padding: var(--sp-xxxl) 0;
 }
 
 .template-link-title {
-  font-size: deprecated.$fs-14;
+    @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
-  font-weight: deprecated.$fw400;
 }
 
 .template-link-text {
-  font-size: deprecated.$fs-12;
-  margin-top: deprecated.$s-8;
+  @include t.use-typography("body-small");
+  margin-top: var(--sp-s);
   color: var(--color-foreground-secondary);
 }
