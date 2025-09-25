@@ -9,6 +9,7 @@
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
    [app.common.schema :as sm]
+   [app.common.types.objects-map]
    [app.util.object :as obj]
    [app.worker.export]
    [app.worker.impl :as impl]
