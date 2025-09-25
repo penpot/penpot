@@ -146,11 +146,18 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
+  (letfn [(resize [shape initial layout [point lock? center? ignore-constraints? point-snap]]
             (let [selrect  (dm/get-prop shape :selrect)
                   width    (dm/get-prop selrect :width)
                   height   (dm/get-prop selrect :height)
                   rotation (dm/get-prop shape :rotation)
+
+                  shape-type (:type shape)
+                  is-frame? (= :frame shape-type)
+                  ignore-constraints? (and ^boolean ignore-constraints?
+                                           ^boolean is-frame?)
+
+                  _ (prn "ignore-constraints?" ignore-constraints?)
 
                   shape-center (gsh/shape->center shape)
                   shape-transform (:transform shape)
@@ -259,12 +266,13 @@
           ;; Unifies the instantaneous proportion lock modifier
           ;; activated by Shift key and the shapes own proportion
           ;; lock flag that can be activated on element options.
-          (normalize-proportion-lock [[point shift? alt?]]
+          (normalize-proportion-lock [[point shift? alt? mod?]]
             (let [proportion-lock? (:proportion-lock shape)]
               [point
                (or ^boolean proportion-lock?
                    ^boolean shift?)
-               alt?]))]
+               alt?
+               mod?]))]
     (reify
       ptk/UpdateEvent
       (update [_ state]
@@ -286,7 +294,7 @@
               resize-events-stream
               (->> ms/mouse-position
                    (rx/filter some?)
-                   (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
+                   (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt ms/mouse-position-mod)
                    (rx/map normalize-proportion-lock)
                    (rx/switch-map
                     (fn [[point _ _ :as current]]
@@ -316,7 +324,8 @@
                       (rx/map
                        #(dwm/apply-wasm-modifiers
                          (dwm/create-modif-tree ids %)
-                         :ignore-constraints (contains? layout :scale-text)))))
+                         :ignore-constraints (or (contains? layout :scale-text)
+                                                 false)))))
 
                 (->> resize-events-stream
                      (rx/mapcat
@@ -1055,11 +1064,11 @@
 
         (if (features/active-feature? state "render-wasm/v1")
           (rx/of (dwm/apply-wasm-modifiers modif-tree
-                                           {:ignore-constraints false
+                                           {:ignore-constraints true
                                             :ignore-snap-pixel true}))
 
           (rx/of (dwm/apply-modifiers {:modifiers modif-tree
-                                       :ignore-constraints false
+                                       :ignore-constraints true
                                        :ignore-snap-pixel true})))))))
 
 (defn- cleanup-invalid-moving-shapes [ids objects frame-id]

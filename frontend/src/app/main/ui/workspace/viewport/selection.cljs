@@ -508,7 +508,9 @@
              (dom/stop-propagation event)
              (let [target   (dom/get-current-target event)
                    position (-> (dom/get-data target "position")
-                                (keyword))]
+                                (keyword))
+                   ignore-constraints? (.-ctrlKey event)]
+               (prn "single-handlers* ignore-constraints?" ignore-constraints? "shape-type" shape-type)
                (cond
                  ;; If text and in auto-width and the resize is horizontal, switch to auto-height and mark direction
                  (and (= shape-type :text)

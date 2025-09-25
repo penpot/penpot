@@ -633,7 +633,7 @@
   [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-group]
                  :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-group nil}
                  :as params}]
-  (ptk/reify ::apply-wasm-modifiesr
+  (ptk/reify ::apply-wasm-modifiers
     ptk/WatchEvent
     (watch [_ state _]
       (let [objects          (dsh/lookup-page-objects state)
