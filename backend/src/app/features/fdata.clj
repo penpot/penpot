@@ -12,12 +12,13 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.migrations :as fmg]
    [app.common.logging :as l]
+   [app.common.types.objects-map :as omap]
    [app.common.types.path :as path]
    [app.db :as db]
    [app.db.sql :as-alias sql]
    [app.storage :as sto]
    [app.util.blob :as blob]
-   [app.util.objects-map :as omap]
+   [app.util.objects-map :as omap.legacy]
    [app.util.pointer-map :as pmap]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -36,10 +37,7 @@
   [file & _opts]
   (let [update-page
         (fn [page]
-          (if (and (pmap/pointer-map? page)
-                   (not (pmap/loaded? page)))
-            page
-            (update page :objects omap/wrap)))
+          (update page :objects omap/wrap))
 
         update-data
         (fn [fdata]
@@ -58,7 +56,8 @@
             (fn [page]
               (update page :objects
                       (fn [objects]
-                        (if (omap/objects-map? objects)
+                        (if (or (omap/objects-map? objects)
+                                (omap.legacy/objects-map? objects))
                           (update-fn objects)
                           objects)))))
     fdata))
