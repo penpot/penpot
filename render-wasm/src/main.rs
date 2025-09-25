@@ -301,34 +301,6 @@ pub extern "C" fn set_children() {
 }
 
 #[no_mangle]
-pub extern "C" fn store_image(
-    a1: u32,
-    b1: u32,
-    c1: u32,
-    d1: u32,
-    a2: u32,
-    b2: u32,
-    c2: u32,
-    d2: u32,
-) {
-    with_state_mut!(state, {
-        let image_id = uuid_from_u32_quartet(a2, b2, c2, d2);
-        let image_bytes = mem::bytes();
-
-        if let Err(msg) = state.render_state_mut().add_image(image_id, &image_bytes) {
-            eprintln!("{}", msg);
-        }
-
-        mem::free_bytes();
-    });
-
-    with_state_mut!(state, {
-        let shape_id = uuid_from_u32_quartet(a1, b1, c1, d1);
-        state.update_tile_for_shape(shape_id);
-    });
-}
-
-#[no_mangle]
 pub extern "C" fn is_image_cached(a: u32, b: u32, c: u32, d: u32) -> bool {
     with_state_mut!(state, {
         let id = uuid_from_u32_quartet(a, b, c, d);
