@@ -117,8 +117,7 @@
   [state]
   (assoc state :open? false))
 
-(mf/defc assets-context-menu
-  {::mf/wrap-props false}
+(mf/defc assets-context-menu*
   [{:keys [options state on-close]}]
   [:> context-menu*
    {:show (:open? state)
@@ -140,9 +139,8 @@
   [section assets-count]
   (or (not (= section :tokens)) (and (< 0 assets-count) (= section :tokens))))
 
-(mf/defc asset-section
-  {::mf/wrap-props false}
-  [{:keys [children file-id title section assets-count icon open? on-click]}]
+(mf/defc asset-section*
+  [{:keys [children file-id title section assets-count icon is-open on-click]}]
   (let [children    (-> (array/normalize-to-array children)
                         (array/without-nils))
 
@@ -154,10 +152,10 @@
 
         on-collapsed
         (mf/use-fn
-         (mf/deps file-id section open? assets-count)
+         (mf/deps file-id section is-open assets-count)
          (fn [_]
            (when (< 0 assets-count)
-             (st/emit! (dw/set-assets-section-open file-id section (not open?))))))
+             (st/emit! (dw/set-assets-section-open file-id section (not is-open))))))
 
         title
         (mf/html
@@ -175,23 +173,22 @@
 
     [:div {:class (stl/css-case :asset-section true
                                 :opened (and (< 0 assets-count)
-                                             open?))
+                                             is-open))
            :on-click on-click}
      [:> title-bar*
       {:collapsable   (< 0 assets-count)
-       :collapsed     (not open?)
+       :collapsed     (not is-open)
        :all-clickable true
        :on-collapsed  on-collapsed
        :add-icon-gap  (= 0 assets-count)
        :title         title}
       buttons]
      (when ^boolean (and (< 0 assets-count)
-                         open?)
-       [:div {:class (stl/css-case :title-spacing open?)}
+                         is-open)
+       [:div {:class (stl/css-case :title-spacing is-open)}
         content])]))
 
-(mf/defc asset-section-block
-  {::mf/wrap-props false}
+(mf/defc asset-section-block*
   [{:keys [children]}]
   [:* children])
 

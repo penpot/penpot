@@ -101,12 +101,12 @@
                                            :shapes selected-shapes})))))]
 
     [:div {:on-click on-toggle-open-click :class (stl/css :token-section-wrapper)}
-     [:& cmm/asset-section {:icon (token-section-icon type)
-                            :title title
-                            :section :tokens
-                            :assets-count (count tokens)
-                            :open? is-open}
-      [:& cmm/asset-section-block {:role :title-button}
+     [:> cmm/asset-section* {:icon (token-section-icon type)
+                             :title title
+                             :section :tokens
+                             :assets-count (count tokens)
+                             :is-open is-open}
+      [:> cmm/asset-section-block* {:role :title-button}
        (when can-edit?
          [:> icon-button* {:on-click on-popover-open-click
                            :variant "ghost"
@@ -114,7 +114,7 @@
                            :id (str "add-token-button-" title)
                            :aria-label (tr "workspace.tokens.add-token" title)}])]
       (when is-open
-        [:& cmm/asset-section-block {:role :content}
+        [:> cmm/asset-section-block* {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token tokens]
             [:> token-pill*
