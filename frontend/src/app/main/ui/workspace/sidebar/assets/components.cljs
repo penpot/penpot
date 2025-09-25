@@ -619,10 +619,6 @@
                      :id     "assets-duplicate-component"
                      :handler on-duplicate})
 
-                  (when (and is-local (not read-only?))
-                    {:name    (tr "workspace.assets.delete")
-                     :id      "assets-delete-component"
-                     :handler on-delete})
                   (when (and is-local (not (or multi-assets? read-only?)))
                     {:name   (tr "workspace.assets.group")
                      :id     "assets-group-component"
@@ -637,4 +633,9 @@
                      :id     "assets-combine-as-variants"
                      :title (when-not all-same-page? (tr "workspace.shape.menu.combine-as-variants-error"))
                      :disabled (not all-same-page?)
-                     :handler on-combine-as-variants})]}]]]))
+                     :handler on-combine-as-variants})
+
+                  (when (and is-local (not read-only?))
+                    {:name    (tr "workspace.assets.delete")
+                     :id      "assets-delete-component"
+                     :handler on-delete})]}]]]))
