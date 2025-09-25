@@ -83,14 +83,14 @@
   {::mf/wrap [mf/memo
               #(mf/deferred % ts/raf)]
    ::mf/forward-ref true}
-  [{:keys [frame selected? zoom show-artboard-names? show-id? on-frame-enter
-           on-frame-leave on-frame-select grid-edition?]} external-ref]
+  [{:keys [frame zoom is-selected is-show-artboard-names is-show-id is-grid-edition
+           on-frame-enter on-frame-leave on-frame-select]} external-ref]
   (let [workspace-read-only? (mf/use-ctx ctx/workspace-read-only?)
 
         ;; Note that we don't use mf/deref to avoid a repaint dependency here
         objects (deref refs/workspace-page-objects)
 
-        color (if selected?
+        color (if is-selected
                 (if (or (ctn/in-any-component? objects frame) (ctk/is-variant-container? frame))
                   "var(--assets-component-hightlight)"
                   "var(--color-accent-tertiary)")
@@ -134,7 +134,7 @@
         is-variant?    (:is-variant-container frame)
 
         text-width (* (:width frame) zoom)
-        show-icon? (and (or (:use-for-thumbnail frame) grid-edition? main-instance? is-variant?)
+        show-icon? (and (or (:use-for-thumbnail frame) is-grid-edition main-instance? is-variant?)
                         (not (<= text-width 15)))
         text-pos-x (if show-icon? 15 0)
 
@@ -182,8 +182,8 @@
 
     (when (not (:hidden frame))
       [:g.frame-title {:id (dm/str "frame-title-" (:id frame))
-                       :data-edit-grid grid-edition?
-                       :transform (vwu/title-transform frame zoom grid-edition?)
+                       :data-edit-grid is-grid-edition
+                       :transform (vwu/title-transform frame zoom is-grid-edition)
                        :pointer-events (when (:blocked frame) "none")}
        (when show-icon?
          [:svg {:x 0
@@ -193,12 +193,12 @@
                 :class "workspace-frame-icon"
                 :style {:stroke color
                         :fill "none"}
-                :visibility (if show-artboard-names? "visible" "hidden")}
+                :visibility (if is-show-artboard-names "visible" "hidden")}
           (cond
             (:use-for-thumbnail frame) [:use {:href "#icon-boards-thumbnail"}]
-            grid-edition? [:use {:href "#icon-grid"}]
-            main-instance? [:use {:href "#icon-component"}]
-            is-variant?  [:use {:href "#icon-component"}])])
+            is-grid-edition            [:use {:href "#icon-grid"}]
+            main-instance?             [:use {:href "#icon-component"}]
+            is-variant?                [:use {:href "#icon-component"}])])
 
        (if ^boolean edition?
            ;; Case when edition? is true
@@ -208,7 +208,7 @@
                           :height 22
                           :class (stl/css :frame-title-wrapper)
                           :style {:fill color}
-                          :visibility (if show-artboard-names? "visible" "hidden")}
+                          :visibility (if is-show-artboard-names "visible" "hidden")}
           [:input {:type "text"
                    :class (stl/css :frame-title-label
                                    :frame-title-input)
@@ -225,7 +225,7 @@
                           :height 20
                           :class (stl/css :frame-title-wrapper)
                           :style {:fill color}
-                          :visibility (if show-artboard-names? "visible" "hidden")}
+                          :visibility (if is-show-artboard-names "visible" "hidden")}
           [:div {:class (stl/css :frame-title-label)
                  :style {:color color}
                  :ref ref
@@ -234,13 +234,12 @@
                  :on-context-menu on-context-menu
                  :on-pointer-enter on-pointer-enter
                  :on-pointer-leave on-pointer-leave}
-           (if show-id?
+           (if is-show-id
              (dm/str (:id frame) " - " (:name frame))
              (:name frame))]])])))
 
 (mf/defc frame-titles*
-  {::mf/wrap-props false
-   ::mf/wrap [mf/memo]}
+  {::mf/wrap [mf/memo]}
   [{:keys [objects zoom selected focus is-show-artboard-names
            on-frame-enter on-frame-leave on-frame-select]}]
   (let [selected       (or selected #{})
@@ -262,14 +261,14 @@
               (or (empty? focus) (contains? focus id)))
          [:& frame-title {:key (dm/str "frame-title-" id)
                           :frame shape
-                          :selected? (contains? selected id)
                           :zoom zoom
-                          :show-artboard-names? is-show-artboard-names
-                          :show-id? (dbg/enabled? :shape-titles)
+                          :is-selected (contains? selected id)
+                          :is-show-artboard-names is-show-artboard-names
+                          :is-show-id (dbg/enabled? :shape-titles)
+                          :is-grid-edition (and (= id edition) grid-edition?)
                           :on-frame-enter on-frame-enter
                           :on-frame-leave on-frame-leave
-                          :on-frame-select on-frame-select
-                          :grid-edition? (and (= id edition) grid-edition?)}]))]))
+                          :on-frame-select on-frame-select}]))]))
 
 (mf/defc frame-flow*
   [{:keys [flow frame is-selected zoom on-frame-enter on-frame-leave on-frame-select]}]
