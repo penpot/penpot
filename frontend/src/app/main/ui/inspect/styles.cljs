@@ -1,3 +1,9 @@
+;; This Source Code Form is subject to the terms of the Mozilla Public
+;; License, v. 2.0. If a copy of the MPL was not distributed with this
+;; file, You can obtain one at http://mozilla.org/MPL/2.0/.
+;;
+;; Copyright (c) KALEIDOS INC
+
 (ns app.main.ui.inspect.styles
   (:require-macros [app.main.style :as stl])
   (:require
@@ -15,6 +21,7 @@
    [app.main.ui.inspect.styles.panels.layout-element :refer [layout-element-panel*]]
    [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
    [app.main.ui.inspect.styles.panels.variants-panel :refer [variants-panel*]]
+   [app.main.ui.inspect.styles.panels.visibility :refer [visibility-panel*]]
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
@@ -85,7 +92,15 @@
             (ctob/get-tokens-in-active-sets tokens-lib)
             {}))
         resolved-active-tokens
-        (sd/use-resolved-tokens* active-tokens)]
+        (sd/use-resolved-tokens* active-tokens)
+        has-visibility-props? (mf/use-fn
+                               (fn [shape]
+                                 (let [shape-type (:type shape)]
+                                   (and
+                                    (not (or (= shape-type :text) (= shape-type :group)))
+                                    (or (:opacity shape)
+                                        (:blend-mode shape)
+                                        (:visibility shape))))))]
     [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
      ;;  TOKENS PANEL
      (when (or active-themes active-sets)
@@ -146,6 +161,14 @@
                                 :objects objects
                                 :resolved-tokens resolved-active-tokens}]]))
 
+          ;; VISIBILITY PANEL
+          :visibility
+          (let [shapes (filter has-visibility-props? shapes)]
+            (when (seq shapes)
+              [:> style-box* {:panel :visibility}
+               [:> visibility-panel* {:shapes shapes
+                                      :objects objects
+                                      :resolved-tokens resolved-active-tokens}]]))
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
