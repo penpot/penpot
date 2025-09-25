@@ -63,6 +63,7 @@
 - Fix conflicting shortcuts (remove dec/inc line height and letter spacing) [Taiga #12102](https://tree.taiga.io/project/penpot/issue/12102)
 - Fix conflicting shortcuts (remove text-align shortcuts) [Taiga #12047](https://tree.taiga.io/project/penpot/issue/12047)
 - Fix export file with empty tokens library [Taiga #12137](https://tree.taiga.io/project/penpot/issue/12137)
+- Fix context menu on spacing tokens [Taiga #12141](https://tree.taiga.io/project/penpot/issue/12141)
 
 ## 2.9.0
 

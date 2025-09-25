@@ -139,6 +139,13 @@
 
 (def spacing-keys (schema-keys schema:spacing))
 
+(def ^:private schema:spacing-gap-padding
+  (-> (reduce mu/union [schema:spacing-gap
+                        schema:spacing-padding])
+      (mu/update-properties assoc :title "SpacingGapPaddingTokenAttrs")))
+
+(def spacing-gap-padding-keys (schema-keys schema:spacing-gap-padding))
+
 (def ^:private schema:dimensions
   (-> (reduce mu/union [schema:sizing
                         schema:spacing
@@ -320,9 +327,9 @@
   (set/union generic-attributes
              border-radius-keys))
 
-(def frame-attributes
+(def frame-with-layout-attributes
   (set/union rect-attributes
-             spacing-keys))
+             spacing-gap-padding-keys))
 
 (def text-attributes
   (set/union generic-attributes
@@ -330,12 +337,14 @@
              number-keys))
 
 (defn shape-type->attributes
-  [type]
+  [type is-layout]
   (case type
     :bool    generic-attributes
     :circle  generic-attributes
     :rect    rect-attributes
-    :frame   frame-attributes
+    :frame   (if is-layout
+               frame-with-layout-attributes
+               rect-attributes)
     :image   rect-attributes
     :path    generic-attributes
     :svg-raw generic-attributes
@@ -343,14 +352,14 @@
     nil))
 
 (defn appliable-attrs
-  "Returns intersection of shape `attributes` for `token-type`."
-  [attributes token-type]
-  (set/intersection attributes (shape-type->attributes token-type)))
+  "Returns intersection of shape `attributes` for `shape-type`."
+  [attributes shape-type is-layout]
+  (set/intersection attributes (shape-type->attributes shape-type is-layout)))
 
 (defn any-appliable-attr?
   "Checks if `token-type` supports given shape `attributes`."
-  [attributes token-type]
-  (seq (appliable-attrs attributes token-type)))
+  [attributes token-type is-layout]
+  (seq (appliable-attrs attributes token-type is-layout)))
 
 ;; Token attrs that are set inside content blocks of text shapes, instead
 ;; at the shape level.
