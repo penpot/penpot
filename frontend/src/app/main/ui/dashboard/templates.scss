@@ -4,32 +4,32 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .dashboard-templates-section {
   background-color: var(--color-background-tertiary);
   bottom: 0;
-  border-bottom-left-radius: $br-8;
-  border-bottom-right-radius: $br-8;
-  border-top-right-radius: $br-8;
+  border-bottom-left-radius: deprecated.$br-8;
+  border-bottom-right-radius: deprecated.$br-8;
+  border-top-right-radius: deprecated.$br-8;
   display: flex;
   flex-direction: column;
-  height: $s-244;
+  height: deprecated.$s-244;
   justify-content: flex-end;
-  margin-left: $s-6;
-  margin-right: $s-6;
-  margin-bottom: $s-6;
+  margin-left: deprecated.$s-6;
+  margin-right: deprecated.$s-6;
+  margin-bottom: deprecated.$s-6;
   position: absolute;
   transition: bottom 300ms;
-  width: calc(100% - $s-12);
+  width: calc(100% - deprecated.$s-12);
   pointer-events: none;
   &.collapsed {
-    bottom: calc(-1 * $s-228);
+    bottom: calc(-1 * deprecated.$s-228);
     background-color: transparent;
     transition: bottom 300ms;
     .title-btn {
-      border-bottom-right-radius: $br-8;
-      border-bottom-left-radius: $br-8;
+      border-bottom-right-radius: deprecated.$br-8;
+      border-bottom-left-radius: deprecated.$br-8;
     }
     .content,
     .content-description {
@@ -40,23 +40,23 @@
 
 .title {
   pointer-events: all;
-  width: $s-420;
-  top: calc(-1 * $s-40);
+  width: deprecated.$s-420;
+  top: calc(-1 * deprecated.$s-40);
   text-align: right;
-  height: $s-56;
+  height: deprecated.$s-56;
   position: absolute;
 }
 
 .title-btn {
   border: none;
   cursor: pointer;
-  height: $s-56;
+  height: deprecated.$s-56;
   display: inline-flex;
   align-items: center;
-  border-top-left-radius: $br-8;
-  border-top-right-radius: $br-8;
+  border-top-left-radius: deprecated.$br-8;
+  border-top-right-radius: deprecated.$br-8;
   position: relative;
-  z-index: $z-index-1;
+  z-index: deprecated.$z-index-1;
   background-color: var(--color-background-tertiary);
   width: 100%;
 }
@@ -65,18 +65,18 @@
   display: inline-block;
   vertical-align: middle;
   line-height: 1.2;
-  font-size: $fs-16;
-  margin-left: $s-12;
-  margin-right: $s-8;
+  font-size: deprecated.$fs-16;
+  margin-left: deprecated.$s-12;
+  margin-right: deprecated.$s-8;
   color: var(--color-foreground-primary);
-  font-weight: $fw400;
+  font-weight: deprecated.$fw400;
 }
 
 .title-icon-container {
   display: inline-block;
   vertical-align: middle;
   margin-left: auto;
-  margin-right: $s-8;
+  margin-right: deprecated.$s-8;
   color: var(--color-foreground-primary);
 }
 
@@ -84,12 +84,12 @@
   display: inline-block;
   vertical-align: middle;
   margin-left: auto;
-  margin-right: $s-8;
+  margin-right: deprecated.$s-8;
   transform: rotate(90deg);
 }
 
 .title-icon-text {
-  margin-right: $s-8;
+  margin-right: deprecated.$s-8;
 }
 
 .title-icon-collapsed {
@@ -103,12 +103,12 @@
 
 .move-button {
   position: absolute;
-  top: $s-96;
-  border: $s-2 solid var(--color-foreground-secondary);
+  top: deprecated.$s-96;
+  border: deprecated.$s-2 solid var(--color-foreground-secondary);
   border-radius: 50%;
   text-align: center;
-  width: $s-36;
-  height: $s-36;
+  width: deprecated.$s-36;
+  height: deprecated.$s-36;
   cursor: pointer;
   background-color: var(--button-secondary-background-color-rest);
   display: flex;
@@ -117,7 +117,7 @@
   pointer-events: all;
 
   &:hover {
-    border: $s-2 solid var(--color-background-tertiary);
+    border: deprecated.$s-2 solid var(--color-background-tertiary);
     background-color: var(--color-accent-primary);
     .arrow-icon {
       stroke: var(--color-background-tertiary);
@@ -127,30 +127,30 @@
 
 .move-left {
   left: 0;
-  margin-left: $s-44;
+  margin-left: deprecated.$s-44;
   transform: rotate(180deg);
 }
 
 .move-right {
   right: 0;
-  margin-right: $s-44;
+  margin-right: deprecated.$s-44;
 }
 
 .content-description {
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   color: var(--color-foreground-primary);
   margin-bottom: -8px;
-  margin-top: $s-16;
-  margin-left: $s-16;
+  margin-top: deprecated.$s-16;
+  margin-left: deprecated.$s-16;
   visibility: visible;
 }
 
 .content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($s-276, $s-276));
+  grid-template-columns: repeat(auto-fill, minmax(deprecated.$s-276, deprecated.$s-276));
   grid-auto-flow: column;
   pointer-events: all;
-  height: $s-228;
+  height: deprecated.$s-228;
   overflow: scroll hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
@@ -159,8 +159,8 @@
 }
 
 .card-container {
-  width: $s-276;
-  margin-top: $s-20;
+  width: deprecated.$s-276;
+  margin-top: deprecated.$s-20;
   text-align: center;
   vertical-align: top;
   background-color: transparent;
@@ -171,13 +171,13 @@
 
 .template-card {
   display: inline-block;
-  width: $s-256;
-  font-size: $fs-16;
+  width: deprecated.$s-256;
+  font-size: deprecated.$fs-16;
   cursor: pointer;
   color: var(--color-foreground-primary);
-  padding: 0 $s-4 $s-8 $s-4;
-  border-radius: $br-8;
-  border: $s-2 solid transparent;
+  padding: 0 deprecated.$s-4 deprecated.$s-8 deprecated.$s-4;
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-2 solid transparent;
   &:hover {
     border-color: var(--color-accent-primary);
     .download-icon {
@@ -191,29 +191,29 @@
 
 .img-container {
   width: 100%;
-  height: $s-136;
-  margin-bottom: $s-8;
-  border-radius: $br-5;
+  height: deprecated.$s-136;
+  margin-bottom: deprecated.$s-8;
+  border-radius: deprecated.$br-5;
   display: flex;
   justify-content: center;
   flex-direction: column;
 
   img {
-    border-radius: $br-4;
+    border-radius: deprecated.$br-4;
   }
 }
 
 .card-name {
-  padding: 0 $s-6;
+  padding: 0 deprecated.$s-6;
   display: flex;
   justify-content: space-between;
-  height: $s-24;
+  height: deprecated.$s-24;
   align-items: center;
 }
 
 .card-text {
-  font-weight: $fw400;
-  font-size: $fs-16;
+  font-weight: deprecated.$fw400;
+  font-size: deprecated.$fs-16;
   white-space: nowrap;
   overflow: hidden;
   width: 90%;
@@ -227,19 +227,19 @@
 }
 
 .template-link {
-  border: $s-2 solid transparent;
-  margin: $s-32;
-  padding: $s-32 0;
+  border: deprecated.$s-2 solid transparent;
+  margin: deprecated.$s-32;
+  padding: deprecated.$s-32 0;
 }
 
 .template-link-title {
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   color: var(--color-foreground-primary);
-  font-weight: $fw400;
+  font-weight: deprecated.$fw400;
 }
 
 .template-link-text {
-  font-size: $fs-12;
-  margin-top: $s-8;
+  font-size: deprecated.$fs-12;
+  margin-top: deprecated.$s-8;
   color: var(--color-foreground-secondary);
 }

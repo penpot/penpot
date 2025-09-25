@@ -4,35 +4,35 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 
 .dashboard-fonts {
-  border-top: $s-1 solid var(--color-background-quaternary);
+  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
   display: flex;
   flex-direction: column;
-  padding-left: $s-120;
+  padding-left: deprecated.$s-120;
   overflow-y: auto;
-  padding-bottom: $s-120;
+  padding-bottom: deprecated.$s-120;
 
   .btn-primary {
-    font-size: $fs-11;
-    height: $s-32;
-    min-width: $s-100;
+    font-size: deprecated.$fs-11;
+    height: deprecated.$s-32;
+    min-width: deprecated.$s-100;
   }
 }
 
 .dashboard-installed-fonts {
-  max-width: $s-1000;
+  max-width: deprecated.$s-1000;
   width: 100%;
   display: flex;
-  margin-top: $s-24;
+  margin-top: deprecated.$s-24;
   flex-direction: column;
 
   h3 {
-    font-size: $fs-14;
+    font-size: deprecated.$fs-14;
     color: var(--color-foreground-secondary);
-    margin: $s-4;
+    margin: deprecated.$s-4;
   }
 
   .font-item {
@@ -44,18 +44,18 @@
   align-items: center;
   color: var(--color-foreground-secondary);
   display: flex;
-  font-size: $fs-12;
-  height: $s-40;
-  padding-left: $s-24;
+  font-size: deprecated.$fs-12;
+  height: deprecated.$s-40;
+  padding-left: deprecated.$s-24;
   text-transform: uppercase;
 
   > .family {
-    min-width: $s-200;
-    width: $s-200;
+    min-width: deprecated.$s-200;
+    width: deprecated.$s-200;
   }
 
   > .variants {
-    padding-left: $s-12;
+    padding-left: deprecated.$s-12;
   }
 }
 
@@ -67,17 +67,17 @@
   input {
     background-color: var(--color-background-tertiary);
     border-color: transparent;
-    border-radius: $br-8;
-    border: $s-1 solid transparent;
+    border-radius: deprecated.$br-8;
+    border: deprecated.$s-1 solid transparent;
     color: var(--color-foreground-primary);
-    font-size: $fs-14;
-    height: $s-32;
+    font-size: deprecated.$fs-14;
+    height: deprecated.$s-32;
     margin: 0;
-    padding: 0 $s-8;
-    width: $s-152;
+    padding: 0 deprecated.$s-8;
+    width: deprecated.$s-152;
 
     &:focus {
-      outline: $s-1 solid var(--color-accent-primary);
+      outline: deprecated.$s-1 solid var(--color-accent-primary);
     }
     &::placeholder {
       color: var(--color-foreground-secondary);
@@ -88,65 +88,65 @@
 .font-item {
   align-items: center;
   background-color: var(--color-background-tertiary);
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
   color: var(--color-foreground-secondary);
   display: flex;
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   justify-content: space-between;
-  margin-top: $s-4;
-  max-width: $s-1000;
-  padding: $s-12 $s-24;
+  margin-top: deprecated.$s-4;
+  max-width: deprecated.$s-1000;
+  padding: deprecated.$s-12 deprecated.$s-24;
   width: 100%;
 
   input {
-    border: $s-1 solid transparent;
+    border: deprecated.$s-1 solid transparent;
     margin: 0;
-    padding: $s-8;
+    padding: deprecated.$s-8;
 
     background-color: var(--color-background-tertiary);
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
     color: var(--color-foreground-primary);
-    font-size: $fs-14;
+    font-size: deprecated.$fs-14;
 
     &:focus {
-      outline: $s-1 solid var(--color-accent-primary);
+      outline: deprecated.$s-1 solid var(--color-accent-primary);
     }
   }
 
   > .family {
-    min-width: $s-200;
-    width: $s-200;
+    min-width: deprecated.$s-200;
+    width: deprecated.$s-200;
   }
 
   > .filenames {
-    min-width: $s-200;
+    min-width: deprecated.$s-200;
   }
 
   > .variants {
-    font-size: $fs-14;
+    font-size: deprecated.$fs-14;
     display: flex;
     flex-wrap: wrap;
     flex-grow: 1;
-    padding-left: $s-16;
-    gap: $s-6;
+    padding-left: deprecated.$s-16;
+    gap: deprecated.$s-6;
 
     .variant {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: $s-8 $s-12;
+      padding: deprecated.$s-8 deprecated.$s-12;
       cursor: pointer;
-      gap: $s-4;
+      gap: deprecated.$s-4;
       .icon {
         display: flex;
         align-items: center;
         justify-content: center;
-        height: $s-16;
-        width: $s-16;
+        height: deprecated.$s-16;
+        width: deprecated.$s-16;
         svg {
           fill: none;
-          width: $s-12;
-          height: $s-12;
+          width: deprecated.$s-12;
+          height: deprecated.$s-12;
           transform: rotate(45deg);
         }
       }
@@ -166,37 +166,37 @@
     color: var(--color-foreground-primary);
     .variant {
       background-color: var(--color-background-quaternary);
-      border-radius: $br-8;
+      border-radius: deprecated.$br-8;
     }
   }
 
   .filenames {
     display: flex;
     flex-direction: column;
-    font-size: $fs-12;
+    font-size: deprecated.$fs-12;
   }
 
   .options {
     display: flex;
     justify-content: flex-end;
-    min-width: $s-180;
+    min-width: deprecated.$s-180;
 
     .icon {
-      width: $s-24;
+      width: deprecated.$s-24;
       cursor: pointer;
       display: flex;
-      margin-left: $s-12;
+      margin-left: deprecated.$s-12;
       justify-content: center;
       align-items: center;
       svg {
-        width: $s-16;
-        height: $s-16;
+        width: deprecated.$s-16;
+        height: deprecated.$s-16;
         stroke: var(--color-foreground-secondary);
         fill: none;
       }
 
       &.failure {
-        margin-right: $s-12;
+        margin-right: deprecated.$s-12;
         svg {
           stroke: var(--element-foreground-warning);
         }
@@ -214,38 +214,38 @@
 }
 
 .dashboard-fonts-upload {
-  max-width: $s-1000;
+  max-width: deprecated.$s-1000;
   width: 100%;
   display: flex;
   flex-direction: column;
 
   .upload-button {
-    width: $s-100;
+    width: deprecated.$s-100;
   }
 
   .btn-secondary {
-    margin-left: $s-12;
+    margin-left: deprecated.$s-12;
   }
 }
 
 .dashboard-fonts-hero {
-  font-size: $fs-14;
-  padding: $s-32 0;
-  margin-top: $s-80;
+  font-size: deprecated.$fs-14;
+  padding: deprecated.$s-32 0;
+  margin-top: deprecated.$s-80;
   display: flex;
   justify-content: space-between;
 
   .btn-primary {
-    height: $s-40;
+    height: deprecated.$s-40;
     width: 100%;
   }
 
   .desc {
     display: flex;
     flex-direction: column;
-    gap: $s-24;
+    gap: deprecated.$s-24;
     color: var(--color-background-secondary);
-    width: $s-500;
+    width: deprecated.$s-500;
 
     h2 {
       color: var(--color-foreground-primary);
@@ -253,7 +253,7 @@
     }
     p {
       color: var(--color-foreground-secondary);
-      font-size: $fs-16;
+      font-size: deprecated.$fs-16;
     }
   }
 
@@ -264,25 +264,25 @@
 
 .fonts-placeholder {
   align-items: center;
-  border-radius: $br-8;
-  border: $s-1 solid var(--color-background-quaternary);
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-1 solid var(--color-background-quaternary);
   display: flex;
   flex-direction: column;
-  height: $s-160;
+  height: deprecated.$s-160;
   justify-content: center;
-  margin-top: $s-16;
-  max-width: $s-1000;
+  margin-top: deprecated.$s-16;
+  max-width: deprecated.$s-1000;
   width: 100%;
 
   .icon svg {
     stroke: var(--color-foreground-secondary);
     fill: none;
-    width: $s-32;
-    height: $s-32;
+    width: deprecated.$s-32;
+    height: deprecated.$s-32;
   }
 
   .label {
     color: var(--color-foreground-secondary);
-    font-size: $fs-14;
+    font-size: deprecated.$fs-14;
   }
 }

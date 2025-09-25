@@ -1,4 +1,4 @@
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .container {
   display: grid;
@@ -9,7 +9,7 @@
 }
 
 .title {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--color-foreground-primary);
 }
 
@@ -31,7 +31,7 @@
 
   color: var(--color-foreground-primary);
   word-break: break-word;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
 
   svg {
     width: var(--cell-size);

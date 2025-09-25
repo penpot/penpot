@@ -4,36 +4,36 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 // ACCESS TOKENS PAGE
 .dashboard-access-tokens {
   display: grid;
   grid-template-rows: auto 1fr;
-  margin: $s-80 auto $s-120 auto;
-  gap: $s-32;
-  width: $s-800;
+  margin: deprecated.$s-80 auto deprecated.$s-120 auto;
+  gap: deprecated.$s-32;
+  width: deprecated.$s-800;
 }
 
 // hero
 .access-tokens-hero {
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: $s-32;
-  width: $s-500;
-  font-size: $fs-14;
-  margin: $s-16 auto 0 auto;
+  gap: deprecated.$s-32;
+  width: deprecated.$s-500;
+  font-size: deprecated.$fs-14;
+  margin: deprecated.$s-16 auto 0 auto;
 }
 
 .hero-title {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--title-foreground-color-hover);
 }
 
 .hero-desc {
   color: var(--title-foreground-color);
   margin-bottom: 0;
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
 }
 
 .hero-btn {
@@ -45,12 +45,12 @@
   display: grid;
   place-items: center;
   align-content: center;
-  height: $s-156;
-  max-width: $s-1000;
+  height: deprecated.$s-156;
+  max-width: deprecated.$s-1000;
   width: 100%;
-  padding: $s-32;
-  border: $s-1 solid var(--panel-border-color);
-  border-radius: $br-8;
+  padding: deprecated.$s-32;
+  border: deprecated.$s-1 solid var(--panel-border-color);
+  border-radius: deprecated.$br-8;
   color: var(--dashboard-list-text-foreground-color);
 }
 
@@ -61,12 +61,12 @@
 
 .table-rows {
   display: grid;
-  grid-auto-rows: $s-64;
-  gap: $s-16;
+  grid-auto-rows: deprecated.$s-64;
+  gap: deprecated.$s-16;
   width: 100%;
   height: 100%;
-  max-width: $s-1000;
-  margin-top: $s-16;
+  max-width: deprecated.$s-1000;
+  margin-top: deprecated.$s-16;
   color: var(--title-foreground-color);
 }
 
@@ -74,33 +74,33 @@
   display: grid;
   grid-template-columns: 43% 1fr auto;
   align-items: center;
-  height: $s-64;
+  height: deprecated.$s-64;
   width: 100%;
-  padding: 0 $s-16;
-  border-radius: $br-8;
+  padding: 0 deprecated.$s-16;
+  border-radius: deprecated.$br-8;
   background-color: var(--dashboard-list-background-color);
   color: var(--dashboard-list-foreground-color);
 }
 
 .field-name {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   display: grid;
   width: 43%;
-  min-width: $s-300;
+  min-width: deprecated.$s-300;
 }
 
 .expiration-date {
-  @include flexCenter;
-  min-width: $s-76;
+  @include deprecated.flexCenter;
+  min-width: deprecated.$s-76;
   width: fit-content;
-  height: $s-24;
-  border-radius: $br-8;
+  height: deprecated.$s-24;
+  border-radius: deprecated.$br-8;
   color: var(--dashboard-list-text-foreground-color);
 }
 
 .expired {
-  @include headlineSmallTypography;
-  padding: 0 $s-6;
+  @include deprecated.headlineSmallTypography;
+  padding: 0 deprecated.$s-6;
   color: var(--pill-foreground-color);
   background-color: var(--status-widget-background-color-warning);
 }
@@ -114,7 +114,7 @@
 }
 
 .menu-btn {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
 }
 
 // Create access token modal
@@ -124,15 +124,15 @@
 
 .modal-container {
   @extend .modal-container-base;
-  min-width: $s-408;
+  min-width: deprecated.$s-408;
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 .modal-close-btn {
@@ -140,46 +140,46 @@
 }
 
 .modal-content {
-  @include flexColumn;
-  gap: $s-24;
-  @include bodySmallTypography;
-  margin-bottom: $s-24;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-24;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-24;
 }
 
 .select-title {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--modal-title-foreground-color);
 }
 
 .custon-input-wrapper {
-  @include flexRow;
-  border-radius: $br-8;
-  height: $s-32;
+  @include deprecated.flexRow;
+  border-radius: deprecated.$br-8;
+  height: deprecated.$s-32;
   background-color: var(--input-background-color);
 }
 
 .custom-input-token {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   margin: 0;
   flex-grow: 1;
   &:focus {
     outline: none;
-    border: $s-1 solid var(--input-border-color-active);
+    border: deprecated.$s-1 solid var(--input-border-color-active);
   }
 }
 
 .token-value {
-  @include textEllipsis;
-  @include bodySmallTypography;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodySmallTypography;
   flex-grow: 1;
 }
 
 .copy-btn {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   @extend .button-secondary;
-  height: $s-28;
-  width: $s-28;
+  height: deprecated.$s-28;
+  width: deprecated.$s-28;
 }
 
 .clipboard-icon {

@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 
 // Dashboard team settings
@@ -13,33 +13,33 @@
   flex-direction: column;
   align-items: center;
   width: 100%;
-  border-top: $s-1 solid var(--panel-border-color);
+  border-top: deprecated.$s-1 solid var(--panel-border-color);
   overflow-y: auto;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
+  padding-inline-start: deprecated.$s-20;
+  padding-block-start: deprecated.$s-20;
 }
 
 .settings-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: $s-24;
+  gap: deprecated.$s-24;
 }
 
 .block {
   display: grid;
   grid-auto-rows: min-content;
-  gap: $s-8;
-  max-width: $s-1000;
+  gap: deprecated.$s-8;
+  max-width: deprecated.$s-1000;
   width: 100%;
 }
 
 .info-block {
-  margin-block-start: $s-16;
+  margin-block-start: deprecated.$s-16;
 }
 
 .block-label {
-  @include headlineSmallTypography;
+  @include deprecated.headlineSmallTypography;
   color: var(--title-foreground-color);
 }
 
@@ -49,14 +49,14 @@
 
 .block-content {
   display: grid;
-  grid-template-columns: $s-32 1fr;
+  grid-template-columns: deprecated.$s-32 1fr;
   align-items: center;
-  gap: $s-12;
+  gap: deprecated.$s-12;
 }
 
 .owner-icon {
-  width: $s-32;
-  height: $s-32;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
   border-radius: 50%;
 }
 
@@ -71,10 +71,10 @@
 .team-icon {
   --update-button-opacity: 0;
   position: relative;
-  height: $s-120;
-  width: $s-120;
-  padding: $s-16;
-  margin-block-end: $s-32;
+  height: deprecated.$s-120;
+  width: deprecated.$s-120;
+  padding: deprecated.$s-16;
+  margin-block-end: deprecated.$s-32;
 
   &:hover {
     --update-button-opacity: 1;
@@ -86,28 +86,28 @@
   top: 0;
   left: 0;
   border-radius: 50%;
-  width: $s-120;
-  height: $s-120;
+  width: deprecated.$s-120;
+  height: deprecated.$s-120;
 }
 
 .update-overlay {
   opacity: var(--update-button-opacity);
-  @include buttonStyle;
-  @include flexCenter;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
   position: absolute;
   top: 0;
   left: 0;
   height: 100%;
   width: 100%;
-  z-index: $z-index-modal;
-  border-radius: $br-circle;
+  z-index: deprecated.$z-index-modal;
+  border-radius: deprecated.$br-circle;
   background-color: var(--color-accent-primary);
 }
 
 .image-icon {
   @extend .button-icon;
-  min-width: $s-24;
-  min-height: $s-24;
+  min-width: deprecated.$s-24;
+  min-height: deprecated.$s-24;
   stroke: var(--icon-foreground-hover);
 }
 
@@ -117,9 +117,9 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
-  border-top: $s-1 solid var(--panel-border-color);
+  padding-inline-start: deprecated.$s-20;
+  padding-block-start: deprecated.$s-20;
+  border-top: deprecated.$s-1 solid var(--panel-border-color);
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
@@ -133,31 +133,31 @@
   display: grid;
   grid-template-rows: auto 1fr;
   height: fit-content;
-  max-width: $s-1000;
+  max-width: deprecated.$s-1000;
   width: 100%;
 }
 
 .table-header {
-  @include headlineSmallTypography;
+  @include deprecated.headlineSmallTypography;
   display: grid;
   align-items: center;
-  grid-template-columns: 43% 1fr $s-108 $s-12;
-  height: $s-40;
+  grid-template-columns: 43% 1fr deprecated.$s-108 deprecated.$s-12;
+  height: deprecated.$s-40;
   width: 100%;
-  max-width: $s-1000;
-  padding: 0 $s-16;
+  max-width: deprecated.$s-1000;
+  padding: 0 deprecated.$s-16;
   user-select: none;
   color: var(--title-foreground-color);
 }
 
 .table-rows {
   display: grid;
-  grid-auto-rows: $s-64;
-  gap: $s-16;
+  grid-auto-rows: deprecated.$s-64;
+  gap: deprecated.$s-16;
   width: 100%;
   height: 100%;
-  max-width: $s-1000;
-  margin-top: $s-16;
+  max-width: deprecated.$s-1000;
+  margin-top: deprecated.$s-16;
   color: var(--title-foreground-color);
 }
 
@@ -165,17 +165,17 @@
   display: grid;
   grid-template-columns: 43% 1fr auto;
   align-items: center;
-  height: $s-64;
+  height: deprecated.$s-64;
   width: 100%;
-  padding: 0 $s-16;
-  border-radius: $br-8;
+  padding: 0 deprecated.$s-16;
+  border-radius: deprecated.$br-8;
   background-color: var(--dashboard-list-background-color);
   color: var(--dashboard-list-foreground-color);
 }
 
 .title-field-name {
   width: 43%;
-  min-width: $s-300;
+  min-width: deprecated.$s-300;
 }
 
 .title-field-roles {
@@ -186,9 +186,9 @@
 .field-name {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: $s-16;
+  gap: deprecated.$s-16;
   width: 43%;
-  min-width: $s-300;
+  min-width: deprecated.$s-300;
 }
 
 .field-roles {
@@ -202,9 +202,9 @@
 
 // MEMBER INFO
 .member-image {
-  height: $s-32;
-  width: $s-32;
-  border-radius: $br-circle;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
+  border-radius: deprecated.$br-circle;
 }
 
 .member-info {
@@ -215,18 +215,18 @@
 
 .member-name,
 .member-email {
-  @include textEllipsis;
-  @include bodyLargeTypography;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodyLargeTypography;
 }
 
 .member-email {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--dashboard-list-text-foreground-color);
 }
 
 .you {
   color: var(--dashboard-list-text-foreground-color);
-  margin-left: $s-6;
+  margin-left: deprecated.$s-6;
 }
 
 // ROL INFO
@@ -235,14 +235,14 @@
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  height: $s-32;
-  min-width: $s-160;
+  height: deprecated.$s-32;
+  min-width: deprecated.$s-160;
   width: fit-content;
-  padding: $s-4 $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-4 deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   border-color: var(--menu-background-color-hover);
   background-color: var(--menu-background-color-hover);
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
 }
 
 .has-priv {
@@ -255,9 +255,9 @@
 
 .roles-dropdown {
   @extend .menu-dropdown;
-  bottom: calc(-1 * $s-76);
+  bottom: calc(-1 * deprecated.$s-76);
   width: fit-content;
-  min-width: $s-160;
+  min-width: deprecated.$s-160;
 }
 
 .rol-dropdown-item {
@@ -271,16 +271,16 @@
 }
 
 .menu-btn {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
 }
 
 .actions-dropdown {
   @extend .menu-dropdown;
-  bottom: calc(-1 * $s-32);
+  bottom: calc(-1 * deprecated.$s-32);
   right: 0;
   left: unset;
   width: fit-content;
-  min-width: $s-160;
+  min-width: deprecated.$s-160;
 }
 
 .action-dropdown-item {
@@ -293,9 +293,9 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
-  border-top: $s-1 solid var(--panel-border-color);
+  padding-inline-start: deprecated.$s-20;
+  padding-block-start: deprecated.$s-20;
+  border-top: deprecated.$s-1 solid var(--panel-border-color);
   overflow-y: auto;
   scrollbar-gutter: stable;
 }
@@ -304,12 +304,12 @@
   display: grid;
   grid-template-rows: auto 1fr;
   height: fit-content;
-  max-width: $s-1000;
+  max-width: deprecated.$s-1000;
   width: 100%;
 }
 
 .table-row-invitations {
-  grid-template-columns: 43% 1fr $s-108 $s-12;
+  grid-template-columns: 43% 1fr deprecated.$s-108 deprecated.$s-12;
   align-items: center;
 }
 
@@ -317,19 +317,19 @@
   display: grid;
   place-items: center;
   align-content: center;
-  height: $s-156;
-  max-width: $s-1000;
+  height: deprecated.$s-156;
+  max-width: deprecated.$s-1000;
   width: 100%;
-  margin-top: $s-16;
-  border: $s-1 solid var(--panel-border-color);
-  border-radius: $br-8;
+  margin-top: deprecated.$s-16;
+  border: deprecated.$s-1 solid var(--panel-border-color);
+  border-radius: deprecated.$br-8;
   color: var(--dashboard-list-text-foreground-color);
 }
 
 .btn-empty-invitations {
   @extend .button-primary;
-  margin-block-start: $s-16;
-  padding-inline: $s-12;
+  margin-block-start: deprecated.$s-16;
+  padding-inline: deprecated.$s-12;
 }
 
 .title-field-status {
@@ -338,15 +338,15 @@
 }
 
 .field-email {
-  @include textEllipsis;
-  @include bodyLargeTypography;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodyLargeTypography;
   display: grid;
   align-items: center;
 }
 
 .invitations-dropdown {
-  bottom: calc(-1 * $s-112);
-  right: calc(-1 * $s-20);
+  bottom: calc(-1 * deprecated.$s-112);
+  right: calc(-1 * deprecated.$s-20);
 }
 
 // WEBHOOKS SECTION
@@ -354,63 +354,63 @@
   display: grid;
   grid-template-rows: auto 1fr;
   justify-items: center;
-  gap: $s-24;
+  gap: deprecated.$s-24;
   width: 100%;
   height: 100%;
-  padding-inline-start: $s-20;
-  padding-block-start: $s-20;
-  border-top: $s-1 solid var(--panel-border-color);
+  padding-inline-start: deprecated.$s-20;
+  padding-block-start: deprecated.$s-20;
+  border-top: deprecated.$s-1 solid var(--panel-border-color);
   overflow-y: auto;
 }
 
 .webhooks-hero-container {
   display: grid;
   grid-template-rows: auto 1fr;
-  margin: $s-80 auto $s-20 auto;
-  gap: $s-24;
+  margin: deprecated.$s-80 auto deprecated.$s-20 auto;
+  gap: deprecated.$s-24;
 }
 
 .webhooks-empty {
   display: grid;
   place-items: center;
   align-content: center;
-  height: $s-156;
-  max-width: $s-1000;
+  height: deprecated.$s-156;
+  max-width: deprecated.$s-1000;
   width: 100%;
-  padding: $s-32;
-  border: $s-1 solid var(--panel-border-color);
-  border-radius: $br-8;
+  padding: deprecated.$s-32;
+  border: deprecated.$s-1 solid var(--panel-border-color);
+  border-radius: deprecated.$br-8;
   color: var(--dashboard-list-text-foreground-color);
 }
 
 .webhooks-hero {
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: $s-32;
-  margin-top: $s-32;
+  gap: deprecated.$s-32;
+  margin-top: deprecated.$s-32;
   margin: 0;
-  padding: $s-32;
+  padding: deprecated.$s-32;
   padding: 0;
-  width: $s-468;
+  width: deprecated.$s-468;
 }
 
 .hero-title {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--dashboard-list-foreground-color);
 }
 
 .hero-desc {
   color: var(--color-foreground-secondary);
   margin-bottom: 0;
-  font-size: $fs-16;
-  max-width: $s-512;
+  font-size: deprecated.$fs-16;
+  max-width: deprecated.$s-512;
 }
 
 .hero-btn {
   @extend .button-primary;
-  height: $s-32;
-  max-width: $s-512;
+  height: deprecated.$s-32;
+  max-width: deprecated.$s-512;
 }
 
 .webhook-table {
@@ -421,7 +421,7 @@
   display: grid;
   align-items: center;
   grid-template-columns: auto 1fr auto auto;
-  gap: $s-16;
+  gap: deprecated.$s-16;
 }
 
 .actions {
@@ -430,7 +430,7 @@
 
 .menu-disabled {
   color: var(--icon-foreground);
-  width: $s-28;
+  width: deprecated.$s-28;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -438,10 +438,10 @@
 
 .webhook-actions-dropdown {
   @extend .menu-dropdown;
-  right: calc(-1 * $s-16);
-  bottom: calc(-1 * $s-40);
+  right: calc(-1 * deprecated.$s-16);
+  bottom: calc(-1 * deprecated.$s-40);
   width: fit-content;
-  min-width: $s-160;
+  min-width: deprecated.$s-160;
 }
 
 .webhook-dropdown-item {
@@ -461,35 +461,35 @@
 // INVITE MEMBERS MODAL
 .modal-team-container {
   @extend .modal-container-base;
-  @include menuShadow;
+  @include deprecated.menuShadow;
   position: fixed;
-  top: $s-72;
-  right: $s-12;
+  top: deprecated.$s-72;
+  right: deprecated.$s-12;
   left: unset;
-  width: $s-400;
-  padding: $s-32;
+  width: deprecated.$s-400;
+  padding: deprecated.$s-32;
   background-color: var(--modal-background-color);
 
   &.hero {
-    top: $s-216;
-    right: $s-32;
+    top: deprecated.$s-216;
+    right: deprecated.$s-32;
   }
 }
 
 .modal-team-container-workspace {
-  top: $s-40;
-  z-index: $z-index-modal;
+  top: deprecated.$s-40;
+  z-index: deprecated.$z-index-modal;
 }
 
 .modal-title {
-  @include headlineMediumTypography;
-  height: $s-32;
+  @include deprecated.headlineMediumTypography;
+  height: deprecated.$s-32;
   color: var(--modal-title-foreground-color);
 }
 
 .role-select {
-  @include flexColumn;
-  row-gap: $s-8;
+  @include deprecated.flexColumn;
+  row-gap: deprecated.$s-8;
 }
 
 .arrow-icon {
@@ -499,20 +499,20 @@
 }
 
 .invite-team-member-text {
-  @include bodyLargeTypography;
-  margin: 0 0 $s-16 0;
+  @include deprecated.bodyLargeTypography;
+  margin: 0 0 deprecated.$s-16 0;
   color: var(--modal-title-foreground-color);
 }
 
 .role-title {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   margin: 0;
   color: var(--modal-title-foreground-color);
 }
 
 .invitation-row {
-  margin-top: $s-8;
-  margin-bottom: $s-24;
+  margin-top: deprecated.$s-8;
+  margin-bottom: deprecated.$s-24;
 }
 
 .action-buttons {
@@ -535,11 +535,11 @@
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -548,18 +548,18 @@
 }
 
 .modal-content {
-  @include flexColumn;
-  gap: $s-24;
-  @include bodySmallTypography;
-  margin-bottom: $s-24;
+  @include deprecated.flexColumn;
+  gap: deprecated.$s-24;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-24;
 }
 
 .fields-row {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .select-title {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -585,6 +585,6 @@
 
 .email-input {
   @extend .input-base;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   height: auto;
 }
