@@ -618,10 +618,12 @@
           f.version,
           f.is_shared,
           ft.media_id,
-          p.team_id
+          p.team_id,
+          fwlf.library_file_ids
      from file as f
     inner join project as p on (p.id = f.project_id)
      left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn and ft.deleted_at is null)
+     left join file_with_library_files as fwlf on fwlf.id = f.id
     where f.is_shared = true
       and f.deleted_at is null
       and p.deleted_at is null

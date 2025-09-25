@@ -447,7 +447,10 @@
     :fn (mg/resource "app/migrations/sql/0140-add-locked-by-column-to-file-change-table.sql")}
 
    {:name "0141-add-idx-to-file-library-rel"
-    :fn (mg/resource "app/migrations/sql/0141-add-idx-to-file-library-rel.sql")}])
+    :fn (mg/resource "app/migrations/sql/0141-add-idx-to-file-library-rel.sql")}
+
+   {:name "0142-create-view-file_with_library_files"
+    :fn (mg/resource "app/migrations/sql/0142-create-view-file_with_library_files.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

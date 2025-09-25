@@ -18,6 +18,7 @@
 - Fix long font names overlap [Taiga #11844](https://tree.taiga.io/project/penpot/issue/11844)
 - Fix paste behavior according to the selected element [Taiga #11979](https://tree.taiga.io/project/penpot/issue/11979)
 - Fix problem with export size [#7160](https://github.com/penpot/penpot/issues/7160)
+- Fix multi level library dependencies [Taiga #12155](https://tree.taiga.io/project/penpot/issue/12155)
 
 ## 2.10.0 (Unreleased)
 

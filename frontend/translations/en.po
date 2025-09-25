@@ -5554,6 +5554,9 @@ msgstr "see all changes"
 msgid "workspace.libraries.updates"
 msgstr "UPDATES"
 
+msgid "workspace.libraries.connected-to"
+msgstr "Connected to"
+
 #: src/app/main/ui/ds/notifications/shared/notification_pill.cljs:67, src/app/main/ui/ds/notifications/shared/notification_pill.cljs:72
 msgid "workspace.notification-pill.detail"
 msgstr "Details"

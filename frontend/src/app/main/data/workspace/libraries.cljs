@@ -1380,6 +1380,43 @@
 
 ;; --- Link and unlink Files
 
+(defn libraries-fetched
+  [file-id libraries]
+  (ptk/reify ::libraries-fetched
+    ptk/UpdateEvent
+    (update [_ state]
+      (update state :files merge
+              (->> libraries
+                   (map #(assoc % :library-of file-id))
+                   (d/index-by :id))))))
+
+(defn- load-library-file
+  [file-id library-id]
+  (ptk/reify ::load-library-file
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [features (get state :features)]
+        (rx/merge
+         (->> (rp/cmd! :get-file {:id library-id :features features})
+              (rx/merge-map fpmap/resolve-file)
+              (rx/map (fn [file]
+                        (libraries-fetched file-id [file]))))
+         (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
+              (rx/map (fn [thumbnails]
+                        (fn [state]
+                          (update state :thumbnails merge thumbnails))))))))))
+
+(defn- all-used-libraries [libraries root-id]
+  (letfn [(collect [id visited]
+            (if (visited id)
+              visited
+              (let [deps (get-in libraries [id :library-file-ids])]
+                (reduce (fn [v dep]
+                          (collect dep v))
+                        (conj visited id)
+                        deps))))]
+    (disj (collect root-id #{}) root-id)))
+
 (defn link-file-to-library
   [file-id library-id]
   (ptk/reify ::attach-library
@@ -1389,41 +1426,36 @@
        :file-id file-id
        :library-id library-id})
 
-    ;; NOTE: this event implements UpdateEvent protocol for perform an
-    ;; optimistic update state for make the UI feel more responsive.
-    ptk/UpdateEvent
-    (update [_ state]
-      (let [libraries (:workspace-shared-files state)
-            library   (d/seek #(= (:id %) library-id) libraries)]
-        (if library
-          (update state :files assoc library-id
-                  (-> library
-                      (dissoc :library-summary)
-                      (assoc :library-of file-id)))
-          state)))
-
     ptk/WatchEvent
     (watch [_ state _]
       (let [libraries (:shared-files state)
             library   (get libraries library-id)
-            features (get state :features)
-            variants-count (-> library :library-summary :components :variants-count)]
+            variants-count (-> library :library-summary :components :variants-count)
+
+            loaded-libraries (->> (dsh/lookup-libraries state)
+                                  (remove (fn [[_ lib]]
+                                            (or (nil? (:data lib))
+                                                (empty? (:data lib)))))
+                                  (map first)
+                                  set)
+
+            libraries (update-vals libraries
+                                   (fn [library]
+                                     (assoc library
+                                            :library-file-ids
+                                            (->> (str/split (:library-file-ids library) #",")
+                                                 (remove empty?)
+                                                 (mapv uuid/uuid)))))
+            libraries-to-load (as-> (all-used-libraries libraries library-id) $
+                                (remove loaded-libraries $)
+                                (conj $ library-id))]
         (rx/concat
          (rx/merge
           (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
                (rx/ignore))
-          (->> (rp/cmd! :get-file {:id library-id :features features})
-               (rx/merge-map fpmap/resolve-file)
-               ;; FIXME: this should call the libraries-fetched event instead of ad-hoc assoc event
-               (rx/map (fn [file]
-                         (assoc file :library-of file-id)))
-               (rx/map (fn [file]
-                         (fn [state]
-                           (assoc-in state [:files library-id] file)))))
-          (->> (rp/cmd! :get-file-object-thumbnails {:file-id library-id :tag "component"})
-               (rx/map (fn [thumbnails]
-                         (fn [state]
-                           (update state :thumbnails merge thumbnails))))))
+          (->> libraries-to-load
+               (rx/from)
+               (rx/map #(load-library-file file-id %))))
          (rx/of (ptk/reify ::attach-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
