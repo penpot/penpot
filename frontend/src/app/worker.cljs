@@ -16,8 +16,6 @@
    [app.worker.import]
    [app.worker.index]
    [app.worker.messages :as wm]
-   [app.worker.selection]
-   [app.worker.snaps]
    [app.worker.thumbnails]
    [beicon.v2.core :as rx]
    [promesa.core :as p]))

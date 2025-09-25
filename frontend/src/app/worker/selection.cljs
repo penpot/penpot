@@ -17,46 +17,62 @@
    [app.common.types.modifiers :as ctm]
    [app.common.uuid :as uuid]
    [app.util.quadtree :as qdt]
-   [app.worker.impl :as impl]
-   [clojure.set :as set]
-   [okulary.core :as l]))
+   [clojure.set :as set]))
 
-;; FIXME: performance shape & rect static props
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; IMPL
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:const padding-percent 0.10)
 
-(defonce state (l/atom {}))
+(defn- index-shape
+  "A reducing function that ads a shape to the index"
+  [objects parents-index clip-index index shape]
+  (let [bounds
+        (cond
+          (and ^boolean (cfh/text-shape? shape)
+               ^boolean (some? (:position-data shape))
+               ^boolean (d/not-empty? (:position-data shape)))
+          (gst/shape->bounds shape)
 
-(defn make-index-shape
-  [objects parents-index clip-parents-index]
-  (fn [index shape]
-    (let [{:keys [x y width height]}
-          (cond
-            (and ^boolean (cfh/text-shape? shape)
-                 ^boolean (some? (:position-data shape))
-                 ^boolean (d/not-empty? (:position-data shape)))
-            (gst/shape->bounds shape)
+          :else
+          (grc/points->rect (:points shape)))
 
-            :else
-            (grc/points->rect (:points shape)))
+        bound
+        #js {:x (dm/get-prop bounds :x)
+             :y (dm/get-prop bounds :y)
+             :width (dm/get-prop bounds :width)
+             :height (dm/get-prop bounds :height)}
 
-          shape-bound #js {:x x :y y :width width :height height}
+        shape-id
+        (dm/get-prop shape :id)
 
-          parents      (get parents-index (:id shape))
-          clip-parents (get clip-parents-index (:id shape))
+        frame-id
+        (dm/get-prop shape :frame-id)
 
-          frame   (when (and (not= :frame (:type shape))
-                             (not= (:frame-id shape) uuid/zero))
-                    (get objects (:frame-id shape)))]
-      (qdt/insert index
-                  (:id shape)
-                  shape-bound
-                  (assoc shape
-                         :frame frame
-                         :clip-parents clip-parents
-                         :parents parents)))))
+        shape-type
+        (dm/get-prop shape :type)
 
-(defn objects-bounds
+        parents
+        (get parents-index shape-id)
+
+        clip-parents
+        (get clip-index shape-id)
+
+        frame
+        (when (and (not= :frame shape-type)
+                   (not= frame-id uuid/zero))
+          (get objects frame-id))]
+
+    (qdt/insert index
+                shape-id
+                bound
+                (assoc shape
+                       :frame frame
+                       :clip-parents clip-parents
+                       :parents parents))))
+
+(defn- objects-bounds
   "Calculates the bounds of the quadtree given a objects map."
   [objects]
   (-> objects
@@ -64,7 +80,7 @@
       vals
       gsh/shapes->rect))
 
-(defn add-padding-bounds
+(defn- add-padding-bounds
   "Adds a padding to the bounds defined as a percent in the constant `padding-percent`.
   For a value of 0.1 will add a 20% width increase (2 x padding)"
   [bounds]
@@ -81,41 +97,48 @@
 
 (defn- create-index
   [objects]
-  (let [shapes             (-> objects (dissoc uuid/zero) vals)
-        parents-index      (cfi/generate-child-all-parents-index objects)
-        clip-parents-index (cfi/create-clip-index objects parents-index)
+  (let [parents-index (cfi/generate-child-all-parents-index objects)
+        clip-index    (cfi/create-clip-index objects parents-index)
+        root-shapes   (cfh/get-immediate-children objects uuid/zero)
+        bounds        (-> root-shapes gsh/shapes->rect add-padding-bounds)
 
-        root-shapes        (cfh/get-immediate-children objects uuid/zero)
-        bounds             (-> root-shapes gsh/shapes->rect add-padding-bounds)
-
-        index-shape        (make-index-shape objects parents-index clip-parents-index)
-        initial-quadtree   (qdt/create (clj->js bounds))
-
-        index              (reduce index-shape initial-quadtree shapes)]
-
+        index         (reduce-kv #(index-shape objects parents-index clip-index %1 %3)
+                                 (qdt/create (clj->js bounds))
+                                 (dissoc objects uuid/zero))]
     {:index index :bounds bounds}))
 
+;; FIXME: optimize
 (defn- update-index
   [{index :index :as data} old-objects new-objects]
-  (let [changes? (fn [id]
-                   (not= (get old-objects id)
-                         (get new-objects id)))
+  (let [object-changed?
+        (fn [id]
+          (not= (get old-objects id)
+                (get new-objects id)))
 
-        changed-ids (into #{}
-                          (comp (filter #(not= % uuid/zero))
-                                (filter changes?)
-                                (mapcat #(into [%] (cfh/get-children-ids new-objects %))))
-                          (set/union (set (keys old-objects))
-                                     (set (keys new-objects))))
+        changed-ids
+        (into #{}
+              (comp (filter #(not= % uuid/zero))
+                    (filter object-changed?)
+                    (mapcat #(into [%] (cfh/get-children-ids new-objects %))))
 
-        shapes             (->> changed-ids (mapv #(get new-objects %)) (filterv (comp not nil?)))
-        parents-index      (cfi/generate-child-all-parents-index new-objects shapes)
-        clip-parents-index (cfi/create-clip-index new-objects parents-index)
+              (set/union (set (keys old-objects))
+                         (set (keys new-objects))))
 
-        new-index (qdt/remove-all index changed-ids)
+        shapes
+        (->> changed-ids
+             (map #(get new-objects %))
+             (filterv (comp not nil?)))
 
-        index-shape (make-index-shape new-objects parents-index clip-parents-index)
-        index (reduce index-shape new-index shapes)]
+        parents-index
+        (cfi/generate-child-all-parents-index new-objects shapes)
+
+        clip-index
+        (cfi/create-clip-index new-objects parents-index)
+
+        index
+        (reduce #(index-shape new-objects parents-index clip-index %1 %2)
+                (qdt/remove-all index changed-ids)
+                shapes)]
 
     (assoc data :index index)))
 
@@ -231,35 +254,36 @@
                 (map :id))
           result)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PUBLIC API
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod impl/handler :selection/initialize-page-index
-  [{:keys [page] :as message}]
-  (letfn [(add-page [state {:keys [id objects] :as page}]
-            (assoc state id (create-index objects)))]
-    (swap! state add-page page)
-    nil))
+(defn add-page
+  "Add a page index to the state"
+  [state {:keys [id objects] :as page}]
+  (assoc state id (create-index objects)))
 
-(defmethod impl/handler :selection/update-page-index
-  [{:keys [page-id old-page new-page] :as message}]
-  (swap! state update page-id
-         (fn [index]
-           (let [old-objects (:objects old-page)
-                 new-objects (:objects new-page)
-                 old-bounds  (:bounds index)
-                 new-bounds  (objects-bounds new-objects)]
+(defn update-page
+  "Update page index on the state"
+  [state old-page new-page]
+  (let [page-id (get old-page :id)]
+    (update state page-id
+            (fn [index]
+              (let [old-objects (:objects old-page)
+                    new-objects (:objects new-page)
+                    old-bounds  (:bounds index)
+                    new-bounds  (objects-bounds new-objects)]
 
-             ;; If the new bounds are contained within the old bounds
-             ;; we can update the index. Otherwise we need to
-             ;; re-create it.
-             (if (and (some? index)
-                      (grc/contains-rect? old-bounds new-bounds))
-               (update-index index old-objects new-objects)
-               (create-index new-objects)))))
-  nil)
+                ;; If the new bounds are contained within the old bounds
+                ;; we can update the index. Otherwise we need to
+                ;; re-create it.
+                (if (and (some? index)
+                         (grc/contains-rect? old-bounds new-bounds))
+                  (update-index index old-objects new-objects)
+                  (create-index new-objects)))))))
 
-(defmethod impl/handler :selection/query
-  [{:keys [page-id rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?]
-    :or {full-frame? false include-frames? false clip-children? true using-selrect? false}
-    :as message}]
-  (when-let [index (get @state page-id)]
+(defn query
+  [index {:keys [page-id rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?]
+          :or {full-frame? false include-frames? false clip-children? true using-selrect? false}}]
+  (when-let [index (get index page-id)]
     (query-index index rect frame-id full-frame? include-frames? ignore-groups? clip-children? using-selrect?)))

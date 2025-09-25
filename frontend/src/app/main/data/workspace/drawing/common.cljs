@@ -83,7 +83,7 @@
               (rx/of (dwsh/add-shape shape {:no-select? (= tool :curve)}))
               (if (cfh/frame-shape? shape)
                 (rx/concat
-                 (->> (mw/ask! {:cmd :selection/query
+                 (->> (mw/ask! {:cmd :index/query-selection
                                 :page-id page-id
                                 :rect (:selrect shape)
                                 :include-frames? true
