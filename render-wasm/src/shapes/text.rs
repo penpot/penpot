@@ -10,10 +10,12 @@ use skia_safe::{
     paint::{self, Paint},
     textlayout::ParagraphBuilder,
     textlayout::ParagraphStyle,
+    textlayout::PositionWithAffinity,
 };
 use std::collections::HashSet;
 
 use super::FontFamily;
+use crate::math::Point;
 use crate::shapes::{self, merge_fills};
 use crate::utils::uuid_from_u32;
 use crate::utils::{get_fallback_fonts, get_font_collection};
@@ -223,6 +225,22 @@ impl TextContent {
         self.bounds = Rect::from_ltrb(p1.x, p1.y, p2.x, p2.y);
     }
 
+    pub fn get_caret_position_at(&self, point: &Point) -> Option<PositionWithAffinity> {
+        let mut offset_y = 0.0;
+        let paragraphs = self.layout.paragraphs.iter().flatten();
+
+        for paragraph in paragraphs {
+            let start_y = offset_y;
+            let end_y = offset_y + paragraph.height();
+            if point.y > start_y && point.y < end_y {
+                let position_with_affinity = paragraph.get_glyph_position_at_coordinate(*point);
+                return Some(position_with_affinity);
+            }
+            offset_y += paragraph.height();
+        }
+        None
+    }
+
     /// Builds the ParagraphBuilders necessary to render
     /// this text.
     pub fn paragraph_builder_group_from_text(
@@ -275,8 +293,6 @@ impl TextContent {
 
     /// Performs an Auto Width text layout.
     fn text_layout_auto_width(&self) -> TextContentLayoutResult {
-        // TODO: Deberíamos comprobar primero que los párrafos
-        // no están generados.
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::MAX);
@@ -299,8 +315,6 @@ impl TextContent {
     /// Performs an Auto Height text layout.
     fn text_layout_auto_height(&self) -> TextContentLayoutResult {
         let width = self.width();
-        // TODO: Deberíamos primero comprobar si existen los
-        // paragraph builders para poder obtener el layout.
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::INFINITY);
@@ -337,18 +351,17 @@ impl TextContent {
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
         self.size.set_size(selrect.width(), selrect.height());
-        // 3. Width and Height Calculation
         match self.grow_type() {
             GrowType::AutoHeight => {
                 let result = self.text_layout_auto_height();
                 self.set_layout_from_result(result);
             }
             GrowType::AutoWidth => {
-                let result = self.text_layout_auto_width();
+                let result: TextContentLayoutResult = self.text_layout_auto_width();
                 self.set_layout_from_result(result);
             }
             GrowType::Fixed => {
-                let result = self.text_layout_fixed();
+                let result: TextContentLayoutResult = self.text_layout_fixed();
                 self.set_layout_from_result(result);
             }
         }

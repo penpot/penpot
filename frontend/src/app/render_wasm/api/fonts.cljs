@@ -98,6 +98,13 @@
             (:style font-data)
             emoji?
             fallback?)
+
+    (h/call wasm/internal-module "_update_shape_text_layout_for"
+            (aget shape-id-buffer 0)
+            (aget shape-id-buffer 1)
+            (aget shape-id-buffer 2)
+            (aget shape-id-buffer 3))
+
     true))
 
 (defn- fetch-font

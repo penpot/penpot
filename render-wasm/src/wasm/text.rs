@@ -1,8 +1,10 @@
 use macros::ToJs;
 
+use crate::math::{Matrix, Point};
 use crate::mem;
 use crate::shapes::{GrowType, RawTextData, Type};
-use crate::{with_current_shape_mut, STATE};
+use crate::utils::uuid_from_u32_quartet;
+use crate::{with_current_shape, with_current_shape_mut, with_state_mut, STATE};
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]
@@ -88,4 +90,42 @@ pub extern "C" fn update_shape_text_layout() {
             text_content.update_layout(shape.selrect);
         }
     });
+}
+
+#[no_mangle]
+pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
+    with_state_mut!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        if let Some(shape) = state.shapes.get_mut(&shape_id) {
+            if let Type::Text(text_content) = &mut shape.shape_type {
+                text_content.update_layout(shape.selrect);
+            }
+        }
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
+    with_current_shape!(state, |shape: &Shape| {
+        if let Type::Text(text_content) = &shape.shape_type {
+            let mut matrix = Matrix::new_identity();
+            let shape_matrix = shape.get_concatenated_matrix(&state.shapes);
+            let view_matrix = state.render_state.viewbox.get_matrix();
+            if let Some(inv_view_matrix) = view_matrix.invert() {
+                matrix.post_concat(&inv_view_matrix);
+                matrix.post_concat(&shape_matrix);
+
+                let mapped_point = matrix.map_point(Point::new(x, y));
+
+                if let Some(position_with_affinity) =
+                    text_content.get_caret_position_at(&mapped_point)
+                {
+                    return position_with_affinity.position;
+                }
+            }
+        } else {
+            panic!("Trying to update grow type in a shape that it's not a text shape");
+        }
+    });
+    -1
 }
