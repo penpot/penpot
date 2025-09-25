@@ -4,12 +4,12 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns frontend-tests.util-snap-data-test
+(ns frontend-tests.worker-snap-test
   (:require
    [app.common.files.builder :as fb]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.util.snap-data :as sd]
+   [app.worker.snap :as snap]
    [cljs.pprint :refer [pprint]]
    [cljs.test :as t :include-macros true]))
 
@@ -21,9 +21,9 @@
     (fn []
       (uuid/custom 123456789 (swap! counter inc)))))
 
-(t/deftest test-create-index
+(t/deftest create-index
   (t/testing "Create empty data"
-    (let [data (sd/make-snap-data)]
+    (let [data (snap/make-snap-data)]
       (t/is (some? data))))
 
   (t/testing "Add empty page (only root-frame)"
@@ -32,8 +32,8 @@
                    (fb/add-page {:name "Page 1"})
                    (fb/get-current-page))
 
-          data (-> (sd/make-snap-data)
-                   (sd/add-page page))]
+          data (-> (snap/make-snap-data)
+                   (snap/add-page page))]
       (t/is (some? data))))
 
   (t/testing "Create simple shape on root"
@@ -48,10 +48,10 @@
                       :height 100}))
           page  (fb/get-current-page state)
 
-          data  (-> (sd/make-snap-data)
-                    (sd/add-page page))
+          data  (-> (snap/make-snap-data)
+                    (snap/add-page page))
 
-          result-x (sd/query data (:id page) uuid/zero :x [0 100])]
+          result-x (snap/query data (:id page) uuid/zero :x [0 100])]
 
       (t/is (some? data))
 
@@ -82,11 +82,11 @@
           page     (fb/get-current-page state)
 
           ;; frame-id (::fb/last-id file)
-          data (-> (sd/make-snap-data)
-                   (sd/add-page page))
+          data (-> (snap/make-snap-data)
+                   (snap/add-page page))
 
-          result-zero-x (sd/query data (:id page) uuid/zero :x [0 100])
-          result-frame-x (sd/query data (:id page) frame-id :x [0 100])]
+          result-zero-x (snap/query data (:id page) uuid/zero :x [0 100])
+          result-frame-x (snap/query data (:id page) frame-id :x [0 100])]
 
       (t/is (some? data))
       (t/is (= (count result-zero-x) 3))
@@ -116,11 +116,11 @@
 
             page     (fb/get-current-page state)
 
-            data (-> (sd/make-snap-data)
-                     (sd/add-page page))
+            data (-> (snap/make-snap-data)
+                     (snap/add-page page))
 
-            result-zero-x (sd/query data (:id page) uuid/zero :x [0 100])
-            result-frame-x (sd/query data (:id page) frame-id :x [0 100])]
+            result-zero-x (snap/query data (:id page) uuid/zero :x [0 100])
+            result-frame-x (snap/query data (:id page) frame-id :x [0 100])]
 
         (t/is (some? data))
         (t/is (= (count result-zero-x) 3))
@@ -137,13 +137,13 @@
           frame-id (::fb/last-id state)
           page     (fb/get-current-page state)
 
-          data     (-> (sd/make-snap-data)
-                       (sd/add-page page))
+          data     (-> (snap/make-snap-data)
+                       (snap/add-page page))
 
-          result-zero-x  (sd/query data (:id page) uuid/zero :x [0 100])
-          result-zero-y  (sd/query data (:id page) uuid/zero :y [0 100])
-          result-frame-x (sd/query data (:id page) frame-id :x [0 100])
-          result-frame-y (sd/query data (:id page) frame-id :y [0 100])]
+          result-zero-x  (snap/query data (:id page) uuid/zero :x [0 100])
+          result-zero-y  (snap/query data (:id page) uuid/zero :y [0 100])
+          result-frame-x (snap/query data (:id page) frame-id :x [0 100])
+          result-frame-y (snap/query data (:id page) frame-id :y [0 100])]
 
       (t/is (some? data))
       ;; We can snap in the root
@@ -168,13 +168,13 @@
 
           page     (fb/get-current-page state)
 
-          data     (-> (sd/make-snap-data)
-                       (sd/add-page page))
+          data     (-> (snap/make-snap-data)
+                       (snap/add-page page))
 
-          result-zero-x (sd/query data (:id page) uuid/zero :x [0 100])
-          result-zero-y (sd/query data (:id page) uuid/zero :y [0 100])
-          result-frame-x (sd/query data (:id page) frame-id :x [0 100])
-          result-frame-y (sd/query data (:id page) frame-id :y [0 100])]
+          result-zero-x (snap/query data (:id page) uuid/zero :x [0 100])
+          result-zero-y (snap/query data (:id page) uuid/zero :y [0 100])
+          result-frame-x (snap/query data (:id page) frame-id :x [0 100])
+          result-frame-y (snap/query data (:id page) frame-id :y [0 100])]
 
       (t/is (some? data))
       ;; We can snap in the root
@@ -185,7 +185,7 @@
       (t/is (= (count result-frame-x) 1))
       (t/is (= (count result-frame-y) 0)))))
 
-(t/deftest test-update-index
+(t/deftest update-index
   (t/testing "Create frame on root and then remove it."
     (let [state   (-> (fb/create-state)
                       (fb/add-file {:name "Test"})
@@ -200,17 +200,17 @@
           shape-id (::fb/last-id state)
           page     (fb/get-current-page state)
 
-          data     (-> (sd/make-snap-data)
-                       (sd/add-page page))
+          data     (-> (snap/make-snap-data)
+                       (snap/add-page page))
 
           state     (-> state
                         (fb/delete-shape shape-id))
 
           new-page (fb/get-current-page state)
-          data     (sd/update-page data page new-page)
+          data     (snap/update-page data page new-page)
 
-          result-x (sd/query data (:id page) uuid/zero :x [0 100])
-          result-y (sd/query data (:id page) uuid/zero :y [0 100])]
+          result-x (snap/query data (:id page) uuid/zero :x [0 100])
+          result-y (snap/query data (:id page) uuid/zero :y [0 100])]
 
       (t/is (some? data))
       (t/is (= (count result-x) 0))
@@ -231,16 +231,16 @@
           page     (fb/get-current-page state)
 
           ;; frame-id (::fb/last-id state)
-          data (-> (sd/make-snap-data)
-                   (sd/add-page page))
+          data (-> (snap/make-snap-data)
+                   (snap/add-page page))
 
           state (fb/delete-shape state shape-id)
 
           new-page (fb/get-current-page state)
-          data (sd/update-page data page new-page)
+          data (snap/update-page data page new-page)
 
-          result-x (sd/query data (:id page) uuid/zero :x [0 100])
-          result-y (sd/query data (:id page) uuid/zero :y [0 100])]
+          result-x (snap/query data (:id page) uuid/zero :x [0 100])
+          result-y (snap/query data (:id page) uuid/zero :y [0 100])]
 
       (t/is (some? data))
       (t/is (= (count result-x) 0))
@@ -263,16 +263,16 @@
           state    (fb/close-board state)
 
           page     (fb/get-current-page state)
-          data     (-> (sd/make-snap-data)
-                       (sd/add-page page))
+          data     (-> (snap/make-snap-data)
+                       (snap/add-page page))
 
           state    (fb/delete-shape state shape-id)
           new-page (fb/get-current-page state)
 
-          data     (sd/update-page data page new-page)
+          data     (snap/update-page data page new-page)
 
-          result-zero-x  (sd/query data (:id page) uuid/zero :x [0 100])
-          result-frame-x (sd/query data (:id page) frame-id :x [0 100])]
+          result-zero-x  (snap/query data (:id page) uuid/zero :x [0 100])
+          result-frame-x (snap/query data (:id page) frame-id :x [0 100])]
 
       (t/is (some? data))
       (t/is (= (count result-zero-x) 3))
@@ -291,18 +291,18 @@
 
           frame-id (::fb/last-id state)
           page     (fb/get-current-page state)
-          data     (-> (sd/make-snap-data)
-                       (sd/add-page page))
+          data     (-> (snap/make-snap-data)
+                       (snap/add-page page))
 
           new-page (-> (fb/delete-guide state guide-id)
                        (fb/get-current-page))
 
-          data     (sd/update-page data page new-page)
+          data     (snap/update-page data page new-page)
 
-          result-zero-x  (sd/query data (:id page) uuid/zero :x [0 100])
-          result-zero-y  (sd/query data (:id page) uuid/zero :y [0 100])
-          result-frame-x (sd/query data (:id page) frame-id :x [0 100])
-          result-frame-y (sd/query data (:id page) frame-id :y [0 100])]
+          result-zero-x  (snap/query data (:id page) uuid/zero :x [0 100])
+          result-zero-y  (snap/query data (:id page) uuid/zero :y [0 100])
+          result-frame-x (snap/query data (:id page) frame-id :x [0 100])
+          result-frame-y (snap/query data (:id page) frame-id :y [0 100])]
 
       (t/is (some? data))
       ;; We can snap in the root
@@ -325,17 +325,17 @@
           guide-id (::fb/last-id file)
 
           page     (fb/get-current-page file)
-          data (-> (sd/make-snap-data) (sd/add-page page))
+          data (-> (snap/make-snap-data) (snap/add-page page))
 
           new-page (-> (fb/delete-guide file guide-id)
                        (fb/get-current-page))
 
-          data (sd/update-page data page new-page)
+          data (snap/update-page data page new-page)
 
-          result-zero-x (sd/query data (:id page) uuid/zero :x [0 100])
-          result-zero-y (sd/query data (:id page) uuid/zero :y [0 100])
-          result-frame-x (sd/query data (:id page) frame-id :x [0 100])
-          result-frame-y (sd/query data (:id page) frame-id :y [0 100])]
+          result-zero-x (snap/query data (:id page) uuid/zero :x [0 100])
+          result-zero-y (snap/query data (:id page) uuid/zero :y [0 100])
+          result-frame-x (snap/query data (:id page) frame-id :x [0 100])
+          result-frame-y (snap/query data (:id page) frame-id :y [0 100])]
       (t/is (some? data))
       ;; We can snap in the root
       (t/is (= (count result-zero-x) 0))
@@ -358,8 +358,8 @@
 
           frame-id (::fb/last-id state)
           page     (fb/get-current-page state)
-          data     (-> (sd/make-snap-data)
-                       (sd/add-page page))
+          data     (-> (snap/make-snap-data)
+                       (snap/add-page page))
 
           state    (fb/update-shape state frame-id
                                     (fn [shape]
@@ -370,12 +370,12 @@
 
 
           new-page (fb/get-current-page state)
-          data     (sd/update-page data page new-page)
+          data     (snap/update-page data page new-page)
 
-          result-zero-x-1 (sd/query data (:id page) uuid/zero :x [0 100])
-          result-frame-x-1 (sd/query data (:id page) frame-id :x [0 100])
-          result-zero-x-2 (sd/query data (:id page) uuid/zero :x [200 300])
-          result-frame-x-2 (sd/query data (:id page) frame-id :x [200 300])]
+          result-zero-x-1 (snap/query data (:id page) uuid/zero :x [0 100])
+          result-frame-x-1 (snap/query data (:id page) frame-id :x [0 100])
+          result-zero-x-2 (snap/query data (:id page) uuid/zero :x [200 300])
+          result-frame-x-2 (snap/query data (:id page) frame-id :x [200 300])]
 
       (t/is (some? data))
       (t/is (= (count result-zero-x-1) 0))
@@ -396,8 +396,8 @@
 
           shape-id (::fb/last-id state)
           page     (fb/get-current-page state)
-          data     (-> (sd/make-snap-data)
-                       (sd/add-page page))
+          data     (-> (snap/make-snap-data)
+                       (snap/add-page page))
 
           state     (fb/update-shape state shape-id
                                      (fn [shape]
@@ -408,10 +408,10 @@
 
           new-page (fb/get-current-page state)
           ;; FIXME: update
-          data     (sd/update-page data page new-page)
+          data     (snap/update-page data page new-page)
 
-          result-zero-x-1 (sd/query data (:id page) uuid/zero :x [0 100])
-          result-zero-x-2 (sd/query data (:id page) uuid/zero :x [200 300])]
+          result-zero-x-1 (snap/query data (:id page) uuid/zero :x [0 100])
+          result-zero-x-2 (snap/query data (:id page) uuid/zero :x [200 300])]
 
       (t/is (some? data))
       (t/is (= (count result-zero-x-1) 0))
@@ -432,22 +432,22 @@
 
           frame-id (::fb/last-id state)
           page     (fb/get-current-page state)
-          data     (-> (sd/make-snap-data) (sd/add-page page))
+          data     (-> (snap/make-snap-data) (snap/add-page page))
 
           new-page (-> (fb/update-guide state (assoc guide :position 150))
                        (fb/get-current-page))
 
-          data     (sd/update-page data page new-page)
+          data     (snap/update-page data page new-page)
 
-          result-zero-x-1 (sd/query data (:id page) uuid/zero :x [0 100])
-          result-zero-y-1 (sd/query data (:id page) uuid/zero :y [0 100])
-          result-frame-x-1 (sd/query data (:id page) frame-id :x [0 100])
-          result-frame-y-1 (sd/query data (:id page) frame-id :y [0 100])
+          result-zero-x-1 (snap/query data (:id page) uuid/zero :x [0 100])
+          result-zero-y-1 (snap/query data (:id page) uuid/zero :y [0 100])
+          result-frame-x-1 (snap/query data (:id page) frame-id :x [0 100])
+          result-frame-y-1 (snap/query data (:id page) frame-id :y [0 100])
 
-          result-zero-x-2 (sd/query data (:id page) uuid/zero :x [0 200])
-          result-zero-y-2 (sd/query data (:id page) uuid/zero :y [0 200])
-          result-frame-x-2 (sd/query data (:id page) frame-id :x [0 200])
-          result-frame-y-2 (sd/query data (:id page) frame-id :y [0 200])]
+          result-zero-x-2 (snap/query data (:id page) uuid/zero :x [0 200])
+          result-zero-y-2 (snap/query data (:id page) uuid/zero :y [0 200])
+          result-frame-x-2 (snap/query data (:id page) frame-id :x [0 200])
+          result-frame-y-2 (snap/query data (:id page) frame-id :y [0 200])]
 
       (t/is (some? data))
 

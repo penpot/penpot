@@ -84,7 +84,7 @@
   (let [value (get point coord)
         vbox @refs/vbox
         ranges [[(- value (/ 0.5 zoom)) (+ value (/ 0.5 zoom))]]]
-    (->> (mw/ask! {:cmd :snaps/range-query
+    (->> (mw/ask! {:cmd :index/query-snap
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
@@ -101,7 +101,7 @@
                     (mapv #(vector (- % snap-accuracy)
                                    (+ % snap-accuracy))))
         vbox @refs/vbox]
-    (->> (mw/ask! {:cmd :snaps/range-query
+    (->> (mw/ask! {:cmd :index/query-snap
                    :page-id page-id
                    :frame-id frame-id
                    :axis coord
@@ -217,7 +217,7 @@
 
 (defn select-shapes-area
   [page-id frame-id selected objects area]
-  (->> (mw/ask! {:cmd :selection/query
+  (->> (mw/ask! {:cmd :index/query-selection
                  :page-id page-id
                  :frame-id frame-id
                  :include-frames? true
