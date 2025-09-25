@@ -15,20 +15,9 @@
    [app.util.timers :as timers]
    [rumext.v2 :as mf]))
 
-(mf/defc editable-label
-  {::mf/wrap-props false}
-  [props]
-  (let [value             (unchecked-get props "value")
-        on-change         (unchecked-get props "on-change")
-        on-cancel         (unchecked-get props "on-cancel")
-        editing?          (unchecked-get props "editing")
-        dbl-click?        (unchecked-get props "disable-dbl-click")
-        class             (unchecked-get props "class")
-        tooltip           (unchecked-get props "tooltip")
-        display-value           (unchecked-get props "display-value")
-
-
-        final-class       (dm/str class " " (stl/css :editable-label))
+(mf/defc editable-label*
+  [{:keys [value class is-editing is-dbl-click-disabled tooltip display-value on-change on-cancel]}]
+  (let [final-class       (dm/str class " " (stl/css :editable-label))
         input-ref         (mf/use-ref nil)
         internal-editing* (mf/use-state false)
         internal-editing? (deref internal-editing*)
@@ -66,9 +55,9 @@
 
         on-dbl-click
         (mf/use-fn
-         (mf/deps dbl-click? start-edition)
+         (mf/deps is-dbl-click-disabled start-edition)
          (fn [_]
-           (when-not dbl-click?
+           (when-not is-dbl-click-disabled
              (start-edition))))
 
         on-key-up
@@ -82,8 +71,8 @@
              (kbd/enter? event)
              (accept-edition))))]
 
-    (mf/with-effect [editing? internal-editing? start-edition]
-      (when (and editing? (not internal-editing?))
+    (mf/with-effect [is-editing internal-editing? start-edition]
+      (when (and is-editing (not internal-editing?))
         (start-edition)))
 
     (if ^boolean internal-editing?
