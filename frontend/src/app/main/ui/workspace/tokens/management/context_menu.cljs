@@ -341,7 +341,7 @@
                           (:id token)))}]))
 
 (defn- allowed-shape-attributes [shapes]
-  (reduce into #{} (map #(ctt/shape-type->attributes (:type %)) shapes)))
+  (reduce into #{} (map #(ctt/shape-type->attributes (:type %) (:layout %)) shapes)))
 
 (defn menu-actions [{:keys [type token selected-shapes] :as context-data}]
   (let [context-data (assoc context-data :allowed-shape-attributes (allowed-shape-attributes selected-shapes))
@@ -445,7 +445,8 @@
                   (if (some? type)
                     (submenu-actions-selection-actions context-data)
                     (selection-actions context-data))
-                  (default-actions context-data))]
+                  (default-actions context-data))
+        entries (clean-separators entries)]
     (for [[index {:keys [title action selected? hint submenu no-selectable] :as entry}] (d/enumerate entries)]
       [:* {:key (dm/str title " " index)}
        (cond
