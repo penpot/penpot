@@ -13,6 +13,7 @@
    [app.config :as cfg]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -156,6 +157,15 @@
          (fn [index _event]
            (st/emit! (dc/detach-fill ids index))))
 
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token]
+           (let [attributes #{:fill}]
+             (st/emit! (dwta/unapply-token {:attributes attributes
+                                            :token token
+                                            :shape-ids ids})))))
+
         on-change-show-on-export
         (mf/use-fn
          (mf/deps ids)
@@ -225,6 +235,7 @@
                                :on-change on-change
                                :on-reorder on-reorder
                                :on-detach on-detach
+                               :on-detach-token on-detach-token
                                :on-remove on-remove
                                :disable-drag disable-drag?
                                :on-focus on-focus

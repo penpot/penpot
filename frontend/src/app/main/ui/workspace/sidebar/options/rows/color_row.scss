@@ -147,6 +147,7 @@
 .color-bullet-wrapper {
   display: flex;
   align-items: center;
+  position: relative;
   height: $sz-28;
   padding: 0 var(--sp-xxs) 0 var(--sp-s);
   border-radius: $br-8 0 0 $br-8;
@@ -254,4 +255,73 @@
   margin-inline-end: var(--sp-xs);
   margin-block-start: var(--sp-xxs);
   color: var(--color-foreground-secondary);
+}
+
+// TOKEN ROW
+
+.token-color-wrapper {
+  --token-color-wrapper-background-color: var(--color-background-tertiary);
+  --token-color-wrapper-foreground-color: var(--color-token-foreground);
+  --token-color-wrapper-border-color: var(--color-token-border);
+  --token-actions-display: none;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-xs);
+  height: $sz-32;
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  margin-inline-end: 0;
+  background: var(--token-color-wrapper-background-color);
+  border: $b-1 solid var(--token-color-wrapper-border-color);
+  border-radius: $br-8;
+  &:hover {
+    --token-color-wrapper-background-color: var(--color-token-background);
+    --token-color-wrapper-foreground-color: var(--color-foreground-primary);
+    --token-color-wrapper-border-color: var(--color-token-background);
+    --token-actions-display: flex;
+  }
+}
+.token-color-with-errors,
+.token-color-not-active {
+  --token-color-wrapper-background-color: var(--color-background-primary);
+  --token-color-wrapper-foreground-color: var(--color-foreground-secondary);
+  --token-color-wrapper-border-color: var(--color-token-border);
+  &:hover {
+    --token-color-wrapper-background-color: var(--color-background-primary);
+    --token-color-wrapper-foreground-color: var(--color-foreground-secondary);
+    --token-color-wrapper-border-color: var(--color-token-background);
+    --token-actions-display: flex;
+  }
+}
+
+.token-name {
+  @include t.use-typography("body-small");
+  @include textEllipsis;
+  color: var(--token-color-wrapper-foreground-color);
+  height: $sz-32;
+  display: flex;
+  align-items: center;
+}
+
+.token-name-tooltip {
+  color: var(--color-foreground-primary);
+}
+
+.token-actions {
+  display: var(--token-actions-display);
+  justify-self: flex-end;
+  align-items: center;
+}
+
+
+.error-dot{
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--color-foreground-error);
+  margin-left: var(--sp-xs);
+  position: absolute;
+  right: 1px;
+  top: 5px;
 }
