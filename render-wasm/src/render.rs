@@ -1334,6 +1334,9 @@ impl RenderState {
                             // Nested shapes shadowing - apply black shadow to child shapes too
                             for shadow_shape_id in element.children.iter() {
                                 let shadow_shape = tree.get(shadow_shape_id).unwrap();
+                                if shadow_shape.hidden {
+                                    continue;
+                                }
                                 let clip_bounds = node_render_state.get_nested_shadow_clip_bounds(
                                     element,
                                     modifiers.get(&element.id),
