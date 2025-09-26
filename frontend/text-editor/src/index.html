@@ -97,6 +97,11 @@
             <label for="text-transform-lowercase">Lowercase</label>
             <input id="text-transform-lowercase" type="radio" name="text-transform" value="lowercase" />
           </div>
+          <!-- Spell Check -->
+          <div class="form-group">
+            <label for="spell-check">Enable spell check</label>
+            <input id="spell-check" type="checkbox" />
+          </div>
         </fieldset>
         <fieldset>
           <legend>Debug</legend>
@@ -312,6 +317,7 @@
             "--fills": '[["^ ","~:fill-color","#000000","~:fill-opacity",1]]',
           },
           selectionImposterElement: textEditorSelectionImposterElement,
+          spellCheck: false, // Default to false
           debug: new SelectionControllerDebug({
             direction: document.getElementById("direction"),
             multiElement: document.getElementById("multi"),
@@ -353,6 +359,8 @@
         const textAlignCenterElement = document.getElementById("text-align-center");
         const textAlignRightElement = document.getElementById("text-align-right");
         const textAlignJustifyElement = document.getElementById("text-align-justify");
+
+        const spellCheckElement = document.getElementById("spell-check");
 
         const fonts = await loadFonts()
         console.log(fonts)
@@ -449,6 +457,14 @@
           textEditor.applyStylesToSelection({
             "font-style": e.target.value,
           });
+        });
+
+        spellCheckElement.addEventListener("change", (e) => {
+          if (debug.includes("events")) {
+            console.log(e);
+          }
+          textEditor.setSpellCheck(e.target.checked);
+          console.log("Spell check", e.target.checked ? "enabled" : "disabled");
         });
 
         function formatHTML(html, options) {

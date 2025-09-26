@@ -27,6 +27,20 @@
 
   color: transparent;
 
+  /* Spell check styling */
+  [spellcheck="true"] {
+    /* Ensure spell check underlines are visible */
+    &::spelling-error {
+      text-decoration-color: #ff4444;
+      text-decoration-thickness: 2px;
+    }
+    
+    &::grammar-error {
+      text-decoration-color: #44ff44;
+      text-decoration-thickness: 2px;
+    }
+  }
+
   [data-itype="paragraph"] {
     line-height: inherit;
     user-select: text;

@@ -77,6 +77,13 @@ export class TextEditor extends EventTarget {
   #styleDefaults = null;
 
   /**
+   * Spell check enabled flag.
+   *
+   * @type {boolean}
+   */
+  #spellCheckEnabled = false;
+
+  /**
    * FIXME: There is a weird case where the events
    * `beforeinput` and `input` have different `data` when
    * characters are deleted when the input type is
@@ -88,6 +95,10 @@ export class TextEditor extends EventTarget {
    * Constructor.
    *
    * @param {HTMLElement} element
+   * @param {Object} options - Configuration options
+   * @param {HTMLElement} options.selectionImposterElement - Element for selection imposter
+   * @param {Object} options.styleDefaults - Default style configuration
+   * @param {boolean} options.spellCheck - Enable/disable spell checking
    */
   constructor(element, options) {
     super();
@@ -96,6 +107,7 @@ export class TextEditor extends EventTarget {
 
     this.#element = element;
     this.#selectionImposterElement = options?.selectionImposterElement;
+    this.#spellCheckEnabled = options?.spellCheck ?? false;
     this.#events = {
       blur: this.#onBlur,
       focus: this.#onFocus,
@@ -124,7 +136,8 @@ export class TextEditor extends EventTarget {
         this.#element.setAttribute("contenteditable", "true");
       }
     }
-    if (this.#element.spellcheck) this.#element.spellcheck = false;
+    // Enable or disable spell checking based on configuration
+    this.#element.spellcheck = this.#spellCheckEnabled;
     if (this.#element.autocapitalize) this.#element.autocapitalize = false;
     if (!this.#element.autofocus) this.#element.autofocus = true;
     if (!this.#element.role || this.#element.role !== "textbox")
@@ -463,6 +476,26 @@ export class TextEditor extends EventTarget {
    */
   createInline(...args) {
     return createInline(...args);
+  }
+
+  /**
+   * Updates spell check setting.
+   *
+   * @param {boolean} enabled - Whether to enable spell checking
+   */
+  setSpellCheck(enabled) {
+    this.#spellCheckEnabled = enabled;
+    this.#element.spellcheck = enabled;
+    return this;
+  }
+
+  /**
+   * Gets current spell check setting.
+   *
+   * @returns {boolean}
+   */
+  getSpellCheck() {
+    return this.#spellCheckEnabled;
   }
 
   /**

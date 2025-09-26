@@ -82,7 +82,8 @@
 
         options
         #js {:styleDefaults style-defaults
-             :selectionImposterElement selection-node}
+             :selectionImposterElement selection-node
+             :spellCheck false} ; TODO: Make this configurable via user preferences
 
         instance
         (dwt/create-editor editor-node options)
