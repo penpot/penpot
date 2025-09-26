@@ -929,16 +929,18 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
 (mf/defc typography-value-inputs*
   [{:keys [default-value on-blur on-update-value token-resolve-result]}]
-  (let [typography-inputs (mf/use-memo typography-inputs)
+  (let [composite-token? (not (ctt/typography-composite-token-reference? (:value token-resolve-result)))
+        typography-inputs (mf/use-memo typography-inputs)
         errors-by-key (sd/collect-typography-errors token-resolve-result)]
     [:div {:class (stl/css :nested-input-row)}
      (for [[k {:keys [label placeholder icon]}] typography-inputs]
        (let [value (get default-value k)
              token-resolve-result
-             (-> {:resolved-value (let [v (get-in token-resolve-result [:resolved-value k])]
-                                    (when-not (str/empty? v) v))
-                  :errors (get errors-by-key k)}
-                 (d/without-nils))
+             (when composite-token?
+               (-> {:resolved-value (let [v (get-in token-resolve-result [:resolved-value k])]
+                                      (when-not (str/empty? v) v))
+                    :errors (get errors-by-key k)}
+                   (d/without-nils)))
 
              input-ref (mf/use-ref)
 
