@@ -92,8 +92,8 @@
                                  :switcher--lg (= size :lg))
             :on-click handle-toggle
             :on-key-down handle-keydown}
-      [:div {:class (stl/css :switcher__track)}
-       [:div {:class (stl/css :switcher__thumb)}]]]]))
+      [:div {:class (stl/css :switcher-track)}
+       [:div {:class (stl/css :switcher-thumb)}]]]]))
 
 ;; Export as default
 (def switcher switcher*)

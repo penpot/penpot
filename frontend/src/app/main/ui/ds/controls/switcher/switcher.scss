@@ -50,7 +50,7 @@ $switcher-transition-duration: 0.2s;
   
   // Focus ring using DS tokens - teal border around track
   &:focus-visible {
-    .switcher__track {
+    .switcher-track {
       outline: $b-2 solid var(--color-accent-tertiary);
       outline-offset: $b-2;
     }
@@ -65,22 +65,22 @@ $switcher-transition-duration: 0.2s;
       color: var(--color-foreground-secondary);
     }
     
-    .switcher__track {
+    .switcher-track {
       background-color: var(--color-background-tertiary);
       opacity: 0.6;
     }
     
-    &.is-checked .switcher__track {
+    &.is-checked .switcher-track {
       background-color: var(--color-background-quaternary);
       opacity: 0.6;
     }
     
-    .switcher__thumb {
+    .switcher-thumb {
       background-color: var(--color-foreground-secondary);
       opacity: 0.5;
     }
     
-    &.is-checked .switcher__thumb {
+    &.is-checked .switcher-thumb {
       background-color: var(--color-foreground-secondary);
       opacity: 0.6;
     }
@@ -88,63 +88,63 @@ $switcher-transition-duration: 0.2s;
   
   // Size variants - Medium (default)
   &.switcher--md {
-    .switcher__track {
+    .switcher-track {
       width: $switcher-md-track-width;
       height: $switcher-md-track-height;
     }
     
-    .switcher__thumb {
+    .switcher-thumb {
       width: $switcher-md-thumb-size;
       height: $switcher-md-thumb-size;
       top: calc((#{$switcher-md-track-height} - #{$switcher-md-thumb-size}) / 2);
       left: calc((#{$switcher-md-track-height} - #{$switcher-md-thumb-size}) / 2);
     }
     
-    &.is-checked .switcher__thumb {
+    &.is-checked .switcher-thumb {
       transform: translateX(calc(#{$switcher-md-track-width} - #{$switcher-md-track-height}));
     }
   }
   
   // Size variants - Small
   &.switcher--sm {
-    .switcher__track {
+    .switcher-track {
       width: $switcher-sm-track-width;
       height: $switcher-sm-track-height;
     }
     
-    .switcher__thumb {
+    .switcher-thumb {
       width: $switcher-sm-thumb-size;
       height: $switcher-sm-thumb-size;
       top: calc((#{$switcher-sm-track-height} - #{$switcher-sm-thumb-size}) / 2);
       left: calc((#{$switcher-sm-track-height} - #{$switcher-sm-thumb-size}) / 2);
     }
     
-    &.is-checked .switcher__thumb {
+    &.is-checked .switcher-thumb {
       transform: translateX(calc(#{$switcher-sm-track-width} - #{$switcher-sm-track-height}));
     }
   }
   
   // Size variants - Large
   &.switcher--lg {
-    .switcher__track {
+    .switcher-track {
       width: $switcher-lg-track-width;
       height: $switcher-lg-track-height;
     }
     
-    .switcher__thumb {
+    .switcher-thumb {
       width: $switcher-lg-thumb-size;
       height: $switcher-lg-thumb-size;
       top: calc((#{$switcher-lg-track-height} - #{$switcher-lg-thumb-size}) / 2);
       left: calc((#{$switcher-lg-track-height} - #{$switcher-lg-thumb-size}) / 2);
     }
     
-    &.is-checked .switcher__thumb {
+    &.is-checked .switcher-thumb {
       transform: translateX(calc(#{$switcher-lg-track-width} - #{$switcher-lg-track-height}));
     }
   }
 }
 
-.switcher__track {
+.switcher-track {
   position: relative;
   border-radius: 9999px; 
   background-color: var(--color-background-quaternary); 
@@ -165,7 +165,7 @@ $switcher-transition-duration: 0.2s;
   }
 }
 
-.switcher__thumb {
+.switcher-thumb {
   position: absolute;
   border-radius: 50%;
   background-color: var(--color-foreground-secondary); 
@@ -190,8 +190,8 @@ $switcher-transition-duration: 0.2s;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .switcher__track,
-  .switcher__thumb {
+  .switcher-track,
+  .switcher-thumb {
     transition: none;
   }
 }
