@@ -14,7 +14,6 @@
    [app.common.types.file :as ctf]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [clojure.pprint :refer [pprint]]
    [clojure.test :as t]
    [common-tests.types.shape-decode-encode-test :refer [json-roundtrip]]))
 

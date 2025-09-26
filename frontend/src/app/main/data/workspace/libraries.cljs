@@ -17,6 +17,7 @@
    [app.common.logic.libraries :as cll]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variants :as clv]
+   [app.common.path-names :as cpn]
    [app.common.time :as ct]
    [app.common.types.color :as ctc]
    [app.common.types.component :as ctk]
@@ -103,7 +104,7 @@
 
 (defn extract-path-if-missing
   [item]
-  (let [[path name] (cfh/parse-path-name (:name item))]
+  (let [[path name] (cpn/split-group-name (:name item))]
     (if (and
          (= (:name item) name)
          (contains? item :path))
@@ -145,7 +146,7 @@
 (defn- update-color*
   [it state color file-id]
   (let [data        (dsh/lookup-file-data state)
-        [path name] (cfh/parse-path-name (:name color))
+        [path name] (cpn/split-group-name (:name color))
         color       (assoc color :path path :name name)
         changes     (-> (pcb/empty-changes it)
                         (pcb/with-library-data data)
@@ -250,7 +251,7 @@
       (let [new-name (str/trim new-name)]
         (if (str/empty? new-name)
           (rx/empty)
-          (let [[path name] (cfh/parse-path-name new-name)
+          (let [[path name] (cpn/split-group-name new-name)
                 data        (dsh/lookup-file-data state)
                 object      (get-in data [:media id])
                 new-object  (assoc object :path path :name name)
@@ -327,7 +328,7 @@
     (watch [it state _]
       (when (and (some? new-name) (not= "" new-name))
         (let [data        (dsh/lookup-file-data state)
-              [path name] (cfh/parse-path-name new-name)
+              [path name] (cpn/split-group-name new-name)
               object      (get-in data [:typographies id])
               new-object  (assoc object :path path :name name)]
           (do-update-tipography it state new-object file-id))))))
@@ -449,7 +450,7 @@
     ptk/WatchEvent
     (watch [_ state _]
       (let [name        (str/trim name)
-            clean-name  (cfh/clean-path name)
+            clean-name  (cpn/clean-path name)
             valid?      (and (not (str/ends-with? name "/"))
                              (string? clean-name)
                              (not (str/blank? clean-name)))

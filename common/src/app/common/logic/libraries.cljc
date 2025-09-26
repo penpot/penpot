@@ -17,6 +17,7 @@
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
    [app.common.logic.variant-properties :as clvp]
+   [app.common.path-names :as cpn]
    [app.common.spec :as us]
    [app.common.types.component :as ctk]
    [app.common.types.components-list :as ctkl]
@@ -986,7 +987,7 @@
 (defn generate-rename-component
   "Generate the changes for rename the component with the given id, in the current file library."
   [changes id new-name library-data]
-  (let [[path name]   (cfh/parse-path-name new-name)]
+  (let [[path name]   (cpn/split-group-name new-name)]
     (-> changes
         (pcb/with-library-data library-data)
         (pcb/update-component id #(assoc % :path path :name name)))))
@@ -2235,7 +2236,7 @@
         variant-id  (when (ctk/is-variant? root) (:parent-id root))
         props       (when (ctk/is-variant? root) (get variant-props (:component-id root)))
 
-        [path name] (cfh/parse-path-name name)
+        [path name] (cpn/split-group-name name)
 
         [root-shape updated-shapes]
         (ctn/convert-shape-in-component root objects file-id)

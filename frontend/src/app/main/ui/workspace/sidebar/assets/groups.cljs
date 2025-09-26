@@ -7,7 +7,7 @@
 (ns app.main.ui.workspace.sidebar.assets.groups
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.files.helpers :as cfh]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.main.data.modal :as modal]
    [app.main.data.workspace :as dw]
@@ -25,7 +25,7 @@
 (mf/defc asset-group-title
   [{:keys [file-id section path group-open? on-rename on-ungroup on-group-combine-variants can-combine?]}]
   (when-not (empty? path)
-    (let [[other-path last-path truncated] (cfh/compact-path path 35 true)
+    (let [[other-path last-path truncated] (cpn/compact-path path 35 true)
           menu-state     (mf/use-state cmm/initial-context-menu-state)
           on-fold-group
           (mf/use-fn
@@ -94,7 +94,7 @@
   [assets reverse-sort?]
   (when-not (empty? assets)
     (reduce (fn [groups {:keys [path] :as asset}]
-              (let [path (cfh/split-path (or path ""))]
+              (let [path (cpn/split-path (or path ""))]
                 (update-in groups
                            (conj path "")
                            (fn [group]

@@ -17,6 +17,7 @@
    [app.common.geom.proportions :as gpp]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
+   [app.common.path-names :as cpn]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
    [app.common.types.fills :as types.fills]
@@ -569,7 +570,7 @@
        (when-let [shape-id (d/nilv shape-id (dm/get-in state [:workspace-local :shape-for-rename]))]
          (let [shape        (dsh/lookup-shape state shape-id)
                name         (str/trim name)
-               clean-name   (cfh/clean-path name)
+               clean-name   (cpn/clean-path name)
                valid?       (and (not (str/ends-with? name "/"))
                                  (string? clean-name)
                                  (not (str/blank? clean-name)))
@@ -946,8 +947,8 @@
             fdata     (dsh/lookup-file-data state file-id)
             component (cfv/get-primary-component fdata component-id)
             cpath     (:path component)
-            cpath     (cfh/split-path cpath)
-            paths     (map (fn [i] (cfh/join-path (take (inc i) cpath)))
+            cpath     (cpn/split-path cpath)
+            paths     (map (fn [i] (cpn/join-path (take (inc i) cpath)))
                            (range (count cpath)))]
         (rx/concat
          (rx/from (map #(set-assets-group-open file-id :components % true) paths))

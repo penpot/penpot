@@ -26,12 +26,12 @@
   [{:keys [themes active-theme-paths on-close grouped?]}]
   (when (seq themes)
     [:ul {:class (stl/css :theme-options)}
-     (for [[_ {:keys [group name] :as theme}] themes
-           :let [theme-id (ctob/theme-path theme)
+     (for [[_ {:keys [id name] :as theme}] themes
+           :let [theme-id (ctob/get-theme-path theme)
                  selected? (get active-theme-paths theme-id)
                  select-theme (fn [e]
                                 (dom/stop-propagation e)
-                                (st/emit! (dwtl/toggle-token-theme-active? group name))
+                                (st/emit! (dwtl/toggle-token-theme-active? id))
                                 (on-close))]]
        [:li {:key theme-id
              :role "option"

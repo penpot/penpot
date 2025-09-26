@@ -32,5 +32,3 @@
 
     (st/emit! (ptk/data-event ::ev/event {::ev/name "create-token-set" :name name})
               (dwtl/create-token-set name))))
-
-
