@@ -87,14 +87,9 @@ RUN set -ex; \
     apt-get -qq upgrade; \
     apt-get -qqy --no-install-recommends install \
         ca-certificates \
+        curl \
         fontconfig \
         fontforge \
-        python3 \
-        python3-tabulate \
-        tzdata \
-        woff-tools \
-        woff2 \
-        \
         libfontconfig1 \
         libfreetype6 \
         libglib2.0-0 \
@@ -113,6 +108,11 @@ RUN set -ex; \
         libxml2 \
         libzip4t64 \
         libzstd1 \
+        python3 \
+        python3-tabulate \
+        tzdata \
+        woff-tools \
+        woff2 \
     ; \
     find tmp/usr/share/zoneinfo/* -type d ! -name 'Etc' |xargs rm -rf; \
     rm -rf /var/lib /var/cache; \
