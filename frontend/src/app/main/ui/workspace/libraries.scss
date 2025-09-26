@@ -319,6 +319,14 @@
   }
 }
 
+.connected-to-wrapper {
+  display: block;
+}
+
+.connected-to-values {
+  color: var(--color-foreground-primary);
+}
+
 // Modal Component v2 update
 .modal-v2-info {
   width: px2rem(664);

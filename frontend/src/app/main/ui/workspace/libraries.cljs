@@ -30,6 +30,7 @@
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.ds.layout.tab-switcher :refer [tab-switcher*]]
    [app.main.ui.hooks :as h]
@@ -47,9 +48,6 @@
 
 (def ^:private add-icon
   (deprecated-icon/icon-xref :add (stl/css :add-icon)))
-
-(def ^:private detach-icon
-  (deprecated-icon/icon-xref :detach (stl/css :detach-icon)))
 
 (def ^:private library-icon
   (deprecated-icon/icon-xref :library (stl/css :library-icon)))
@@ -199,26 +197,65 @@
         empty-library? (empty-library? summary)
 
         selected       (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
+        dependencies   (mf/with-memo [shared-libraries]
+                         (into {} (map (fn [{:keys [id library-file-ids]}]
+                                         [id
+                                          (->> (str/split library-file-ids ",")
+                                               (map #(uuid/uuid %))
+                                               set)])
+                                       (vals shared-libraries))))
+
+        library-names  (mf/with-memo [shared-libraries]
+                         (into {} (map (fn [{:keys [id name]}]
+                                         [id name])
+                                       (vals shared-libraries))))
+
+        find-connected-to
+        (mf/use-fn
+         (mf/deps shared-libraries dependencies library-names)
+         (fn [library-id]
+           (->> dependencies
+                (filter (fn [[_ v]] (contains? v library-id)))
+                (map first))))
+
+        connected-to-linked?
+        (mf/use-fn
+         (mf/deps linked-libraries shared-libraries dependencies)
+         (fn [id]
+           (contains? linked-libraries id)))
 
 
         shared-libraries
-        (mf/with-memo [shared-libraries linked-libraries file-id search-term]
+        (mf/with-memo [shared-libraries linked-libraries file-id search-term dependencies]
           (when shared-libraries
             (->> (vals shared-libraries)
                  (remove #(= (:id %) file-id))
                  (remove #(contains? linked-libraries (:id %)))
                  (filter #(matches-search (:name %) search-term))
+                 (map #(assoc % :connected-to (find-connected-to (:id %))))
+                 (map #(assoc % :connected-to-names (->> (:connected-to %)
+                                                         (keep library-names))))
                  (sort-by (comp str/lower :name)))))
 
+
+
+
         linked-libraries
-        (mf/with-memo [linked-libraries]
+        (mf/with-memo [linked-libraries dependencies]
           (->> (vals linked-libraries)
+               (map #(assoc % :connected-to (find-connected-to (:id %))))
+               (map #(assoc % :connected-to-names (->> (:connected-to %)
+                                                       (keep library-names))))
                (sort-by (comp str/lower :name))))
+
 
         importing*       (mf/use-state nil)
         sample-libraries [{:id "penpot-design-system", :name "Design system example"}
                           {:id "wireframing-kit", :name "Wireframe library"}
                           {:id "whiteboarding-kit", :name "Whiteboarding Kit"}]
+
+
+
 
         change-search-term
         (mf/use-fn
@@ -311,22 +348,30 @@
                    :value (tr "common.publish")
                    :on-click publish}])]
 
-       (for [{:keys [id name data] :as library} linked-libraries]
-         [:div {:class (stl/css :section-list-item)
-                :key (dm/str id)
-                :data-testid "library-item"}
-          [:div {:class (stl/css :item-content)}
-           [:div {:class (stl/css :item-name)} name]
-           [:ul {:class (stl/css :item-contents)}
-            (let [summary (get-library-summary data)]
-              [:> library-description* {:summary summary}])]]
+       (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
+         (let [disabled? (some connected-to-linked? connected-to)]
+           [:div {:class (stl/css :section-list-item)
+                  :key (dm/str id)
+                  :data-testid "library-item"}
+            [:div {:class (stl/css :item-content)}
+             [:div {:class (stl/css :item-name)} name]
+             [:ul {:class (stl/css :item-contents)}
+              (let [summary (get-library-summary data)]
+                [:*
+                 [:> library-description* {:summary summary}]
+                 (when (seq connected-to)
+                   [:div {:class (stl/css :connected-to-wrapper)}
+                    [:span "(" (tr "workspace.libraries.connected-to") " "]
+                    [:span {:class (stl/css :connected-to-values)} (str/join ", " connected-to-names)]
+                    [:span ")"]])])]]
 
-          [:button {:class (stl/css :item-button)
-                    :type "button"
-                    :title (tr "workspace.libraries.unlink-library-btn")
-                    :data-library-id (dm/str id)
-                    :on-click unlink-library}
-           detach-icon]])]]
+            [:> icon-button* {:type "button"
+                              :aria-label (tr "workspace.libraries.unlink-library-btn")
+                              :icon i/detach
+                              :data-library-id (dm/str id)
+                              :variant "secondary"
+                              :disabled disabled?
+                              :on-click unlink-library}]]))]]
 
      [:div {:class (stl/css :shared-section)}
       [:> title-bar* {:collapsable false
