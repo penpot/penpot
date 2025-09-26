@@ -1,10 +1,10 @@
 worker_processes auto;
 pid /tmp/nginx.pid;
-include /etc/nginx/modules-enabled/*.conf;
+include /etc/nginx/overrides/main.d/*.conf;
 
 events {
     worker_connections 2048;
-    # multi_accept on;
+    multi_accept on;
 }
 
 http {
@@ -33,6 +33,11 @@ http {
     error_log /dev/stderr;
     access_log /dev/stdout;
 
+    proxy_connect_timeout 300s;
+    proxy_send_timeout 300s;
+    proxy_read_timeout 300s;
+    send_timeout 300s;
+
     gzip on;
     gzip_vary on;
     gzip_proxied any;
@@ -41,7 +46,7 @@ http {
     gzip_buffers 16 8k;
     gzip_http_version 1.1;
 
-    gzip_types text/plain text/css text/javascript application/javascript application/json application/transit+json;
+    gzip_types text/plain text/css text/javascript application/javascript application/json application/transit+json image/svg+xml;
 
     proxy_buffer_size 16k;
     proxy_busy_buffers_size 24k; # essentially, proxy_buffer_size + 2 small buffers of 4k
@@ -57,7 +62,14 @@ http {
     proxy_cache_valid any 48h;
     proxy_cache_key "$host$request_uri";
 
-    include /etc/nginx/overrides.d/*.conf;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Scheme $scheme;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+    include /etc/nginx/overrides/http.d/*.conf;
 
     server {
         listen 8080 default_server;
@@ -65,13 +77,6 @@ http {
 
         client_max_body_size $PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE;
         charset utf-8;
-
-        proxy_http_version 1.1;
-        proxy_set_header Host $http_host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Scheme $scheme;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 
         etag off;
 
@@ -119,12 +124,10 @@ http {
 
         location /api {
             proxy_pass $PENPOT_BACKEND_URI/api;
+            proxy_buffering off;
         }
 
         location /readyz {
-            proxy_http_version 1.1;
-            proxy_set_header Host $http_host;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_pass $PENPOT_BACKEND_URI$request_uri;
         }
 
@@ -134,8 +137,10 @@ http {
             proxy_pass $PENPOT_BACKEND_URI/ws/notifications;
         }
 
+        include /etc/nginx/overrides/server.d/*.conf;
+
         location / {
-            $INCLUDE_PROXIES
+            include /etc/nginx/overrides/location.d/*.conf;
 
             location ~ ^/js/config.js$ {
                 add_header Cache-Control "no-store, no-cache, max-age=0" always;
