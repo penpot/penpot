@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 export PENPOT_SECRET_KEY=super-secret-devenv-key
+export PENPOT_MANAGEMENT_API_SHARED_KEY=super-secret-management-api-key
 export PENPOT_HOST=devenv
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \

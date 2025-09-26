@@ -14,9 +14,9 @@
    [app.tokens :as tokens]
    [yetti.request :as yreq]))
 
-(def header-re #"^Token\s+(.*)")
+(def header-re #"(?i)^Token\s+(.*)")
 
-(defn- get-token
+(defn get-token
   [request]
   (some->> (yreq/get-header request "authorization")
            (re-matches header-re)
