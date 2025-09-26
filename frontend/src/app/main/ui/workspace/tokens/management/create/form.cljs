@@ -929,7 +929,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
 (mf/defc typography-value-inputs*
   [{:keys [default-value on-blur on-update-value token-resolve-result]}]
-  (let [composite-token? (not (ctt/typography-composite-token-reference? (:value token-resolve-result)))
+  (let [composite-token? (not (cto/typography-composite-token-reference? (:value token-resolve-result)))
         typography-inputs (mf/use-memo typography-inputs)
         errors-by-key (sd/collect-typography-errors token-resolve-result)]
     [:div {:class (stl/css :nested-input-row)}
@@ -997,10 +997,9 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                             token-resolve-result)}])
 
 (mf/defc typography-inputs*
-  [{:keys [default-value on-update-value on-external-update-value on-value-resolve clear-resolve-value] :rest props}]
+  [{:keys [default-value on-update-value on-external-update-value on-value-resolve clear-resolve-value custom-input-token-value-props] :rest props}]
   (let [;; Active Tab State
-        active-tab* (mf/use-state (if (cto/typography-composite-token-reference? default-value) :reference :composite))
-        active-tab (deref active-tab*)
+        {:keys [active-tab set-active-tab]} custom-input-token-value-props
         reference-tab-active? (= :reference active-tab)
         ;; Backup value ref
         ;; Used to restore the previously entered value when switching tabs
@@ -1020,12 +1019,12 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              (clear-resolve-value)
              ;; Restore the internal value from backup
              (on-external-update-value (get @backup-state-ref next-tab))
-             (reset! active-tab* next-tab))))
+             (set-active-tab next-tab))))
 
         ;; Store token value in the backup-state-ref
         on-update-reference-value
         (mf/use-fn
-         (mf/deps on-update-value active-tab)
+         (mf/deps on-update-value reference-tab-active?)
          (fn [e]
            (if reference-tab-active?
              (swap! backup-state-ref assoc :reference (dom/get-target-val e))
@@ -1061,7 +1060,27 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
 (mf/defc typography-form*
   [{:keys [token] :rest props}]
-  (let [on-get-token-value
+  (let [active-tab* (mf/use-state (if (cto/typography-composite-token-reference? (:value token)) :reference :composite))
+        active-tab (deref active-tab*)
+
+        custom-input-token-value-props
+        (mf/use-memo
+         (mf/deps active-tab)
+         (fn []
+           {:active-tab active-tab
+            :set-active-tab #(reset! active-tab* %)}))
+
+        ;; Remove the value from a stored token when it doesn't match the tab type
+        ;; We need this to keep the form disabled when there's an existing value that doesn't match the tab type
+        token
+        (mf/use-memo
+         (mf/deps token active-tab)
+         (fn []
+           (let [token-tab-type (if (cto/typography-composite-token-reference? (:value token)) :reference :composite)]
+             (cond-> token
+               (not= token-tab-type active-tab) (dissoc :value token)))))
+
+        on-get-token-value
         (mf/use-callback
          (fn [e prev-value]
            (let [token-type (obj/get e "tokenType")
@@ -1075,6 +1094,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
     [:> form*
      (mf/spread-props props {:token token
                              :custom-input-token-value typography-inputs*
+                             :custom-input-token-value-props custom-input-token-value-props
                              :validate-token validate-typography-token
                              :on-get-token-value on-get-token-value})]))
 
