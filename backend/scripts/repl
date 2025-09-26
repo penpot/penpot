@@ -31,8 +31,7 @@ export PENPOT_FLAGS="\
        disable-tiered-file-data-storage \
        enable-file-validation \
        enable-file-schema-validation \
-       enable-subscriptions \
-       disable-subscriptions-old";
+       enable-subscriptions";
 
 # Default deletion delay for devenv
 export PENPOT_DELETION_DELAY="24h"
@@ -78,8 +77,12 @@ export JAVA_OPTS="\
        -Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
        -Djdk.tracePinnedThreads=full \
        -Dim4java.useV7=true \
+       -XX:+UseShenandoahGC \
+       -XX:ShenandoahGCMode=generational \
+       -XX:+UseCompactObjectHeaders \
        -XX:+EnableDynamicAgentLoading \
        -XX:-OmitStackTraceInFastThrow  \
+       -XX:+UnlockExperimentalVMOptions \
        -XX:+UnlockDiagnosticVMOptions \
        -XX:+DebugNonSafepoints \
        --sun-misc-unsafe-memory-access=allow \
