@@ -852,7 +852,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
       {:placeholder (or placeholder (tr "workspace.tokens.token-font-family-value-enter"))
        :label label
        :aria-label aria-label
-       :value (or (:name font) default-value)
+       :default-value (or (:name font) default-value)
        :ref input-ref
        :on-blur on-blur
        :on-change on-update-value'
