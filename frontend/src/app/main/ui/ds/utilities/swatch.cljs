@@ -9,10 +9,11 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
+   [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.schema :as sm]
-   [app.common.types.color :as ct]
+  ;;  [app.common.types.color :as ct]
    [app.config :as cfg]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.color :as uc]
@@ -59,15 +60,17 @@
 
 (def ^:private schema:swatch
   [:map {:title "SchemaSwatch"}
-   [:background {:optional true} ct/schema:color]
+  ;;  TODO: Review schema
+  ;;  [:background {:optional true} ct/schema:color]
    [:class {:optional true} :string]
    [:size {:optional true} [:enum "small" "medium" "large"]]
    [:active {:optional true} ::sm/boolean]
+   [:has-errors {:optional true} [:maybe ::sm/boolean]]
    [:on-click {:optional true} ::sm/fn]])
 
 (mf/defc swatch*
   {::mf/schema (sm/schema schema:swatch)}
-  [{:keys [background on-click size active class tooltip-content]
+  [{:keys [background on-click size active class tooltip-content has-errors]
     :rest props}]
   (let [;; NOTE: this code is only relevant for storybook, because
         ;; storybook is unable to pass in a comfortable way a complex
@@ -92,6 +95,12 @@
         image          (:image background)
         format         (if id? "rounded" "square")
         element-id     (mf/use-id)
+        on-click
+        (mf/use-fn
+         (mf/deps background on-click)
+         (fn [event]
+           (when (fn? on-click)
+             (^function on-click background event))))
 
         class
         (dm/str class " " (stl/css-case
@@ -124,7 +133,12 @@
         (let [uri (cfg/resolve-file-media image)]
           [:span {:class (stl/css :swatch-image)
                   :style {:background-image (str/ffmt "url(%)" uri)}}])
-
+        has-errors
+        [:span {:class (stl/css :swatch-opacity)}
+         [:span {:class (stl/css :swatch-solid-side)
+                 :style {:background clr/background-primary}}]
+         [:span {:class (stl/css :swatch-opacity-side)
+                 :style {:background clr/background-primary}}]]
         :else
         [:span {:class (stl/css :swatch-opacity)}
          [:span {:class (stl/css :swatch-solid-side)

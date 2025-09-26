@@ -93,13 +93,13 @@
       (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
 
 (mf/defc colorpicker
-  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change]}]
+  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab]}]
   (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
 
         should-update?         (mf/use-var true)
         token-color            (contains? cfg/flags :token-color)
-        color-style*           (mf/use-state :direct-color)
+        color-style*           (mf/use-state (d/nilv tab :direct-color))
         color-style            (deref color-style*)
         toggle-token-color
         (mf/use-fn
@@ -726,6 +726,7 @@
            color-origin
            on-token-change
            on-close
+           tab
            on-accept]}]
   (let [vport       (mf/deref viewport)
         dirty?      (mf/use-var false)
@@ -783,5 +784,6 @@
                       :on-token-change on-token-change
                       :on-change on-change'
                       :origin origin
+                      :tab tab
                       :color-origin color-origin
                       :on-accept on-accept}]]))
