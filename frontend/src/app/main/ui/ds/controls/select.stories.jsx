@@ -9,6 +9,11 @@ import Components from "@target/components";
 
 const { Select } = Components;
 
+const variants = [
+  "default",
+  "ghost",
+];
+
 const options = [
   { id: "option-code", label: "Code" },
   { id: "option-design", label: "Design" },
@@ -29,12 +34,17 @@ export default {
   argTypes: {
     disabled: { control: "boolean" },
     emptyToEnd: { control: "boolean" },
+    variant: {
+      control: { type: "select" },
+      options: variants,
+    },
   },
   args: {
     disabled: false,
     options: options,
     emptyToEnd: false,
     defaultSelected: "option-code",
+    variant: variants[0],
   },
   parameters: {
     controls: {
@@ -50,6 +60,12 @@ export default {
 };
 
 export const Default = {};
+
+export const Ghost = {
+  args: {
+    variant: "ghost",
+  },
+};
 
 export const WithIcons = {
   args: {
