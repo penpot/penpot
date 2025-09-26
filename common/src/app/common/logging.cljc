@@ -49,6 +49,7 @@
    [app.common.exceptions :as ex]
    [app.common.pprint :as pp]
    [app.common.schema :as sm]
+   [app.common.time :as ct]
    [app.common.uuid :as uuid]
    [cuerdas.core :as str]
    [promesa.exec :as px]
@@ -221,36 +222,42 @@
   #?(:clj (inst-ms (java.time.Instant/now))
      :cljs (js/Date.now)))
 
+(defn emit-log
+  [props cause context logger level sync?]
+  (let [props    (cond-> props sync? deref)
+        ts       (current-timestamp)
+        gcontext *context*
+        logfn    (fn []
+                   (let [props   (if sync? props (deref props))
+                         props   (into (d/ordered-map) props)
+                         context (if (and (empty? gcontext)
+                                          (empty? context))
+                                   {}
+                                   (d/without-nils (merge gcontext context)))
+
+                         lrecord {::id (uuid/next)
+                                  ::timestamp ts
+                                  ::message (delay (build-message props))
+                                  ::props props
+                                  ::context context
+                                  ::level level
+                                  ::logger logger}
+                         lrecord (cond-> lrecord
+                                   (some? cause)
+                                   (assoc ::cause cause
+                                          ::trace (delay (build-stack-trace cause))))]
+                     (swap! log-record (constantly lrecord))))]
+    (if sync?
+      (logfn)
+      (px/exec! *default-executor* logfn))))
+
 (defmacro log!
   "Emit a new log record to the global log-record state (asynchronously). "
   [& props]
   (let [{:keys [::level ::logger ::context ::sync? cause] :or {sync? false}} props
         props (into [] msg-props-xf props)]
     `(when (enabled? ~logger ~level)
-       (let [props#   (cond-> (delay ~props) ~sync? deref)
-             ts#      (current-timestamp)
-             context# *context*
-             logfn#   (fn []
-                        (let [props#   (if ~sync? props# (deref props#))
-                              props#   (into (d/ordered-map) props#)
-                              cause#   ~cause
-                              context# (d/without-nils
-                                        (merge context# ~context))
-                              lrecord# {::id (uuid/next)
-                                        ::timestamp ts#
-                                        ::message (delay (build-message props#))
-                                        ::props props#
-                                        ::context context#
-                                        ::level ~level
-                                        ::logger ~logger}
-                              lrecord# (cond-> lrecord#
-                                         (some? cause#)
-                                         (assoc ::cause cause#
-                                                ::trace (delay (build-stack-trace cause#))))]
-                          (swap! log-record (constantly lrecord#))))]
-         (if ~sync?
-           (logfn#)
-           (px/exec! *default-executor* logfn#))))))
+       (emit-log (delay ~props) ~cause ~context ~logger ~level ~sync?))))
 
 #?(:clj
    (defn slf4j-log-handler
@@ -276,7 +283,8 @@
      (when (enabled? logger level)
        (let [hstyles (str/ffmt "font-weight: 600; color: %" (level->color level))
              mstyles (str/ffmt "font-weight: 300; color: %" (level->color level))
-             header  (str/concat "%c" (level->name level) " [" logger "] ")
+             ts      (ct/format-inst (ct/now) "kk:mm:ss.SSSS")
+             header  (str/concat "%c" (level->name level) " " ts  " [" logger "] ")
              message (str/concat header "%c" @message)]
 
          (js/console.group message hstyles mstyles)

@@ -40,6 +40,7 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.worker :as wrk]
+   [clojure.datafy :refer [datafy]]
    [clojure.java.io :as io]
    [clojure.pprint :refer [print-table]]
    [clojure.stacktrace :as strace]

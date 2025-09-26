@@ -112,14 +112,15 @@
     ;; FIXME: IMPORTANT: this code can have race conditions, because
     ;; we have no locks for updating team so, creating two files
     ;; concurrently can lead to lost team features updating
-
     (when-let [features (-> features
                             (set/difference (:features team))
                             (set/difference cfeat/no-team-inheritable-features)
                             (not-empty))]
-      (let [features (->> features
-                          (set/union (:features team))
-                          (db/create-array conn "text"))]
+      (let [features (-> features
+                         (set/union (:features team))
+                         (set/difference cfeat/no-team-inheritable-features)
+                         (into-array))]
+
         (db/update! conn :team
                     {:features features}
                     {:id (:id team)}

@@ -194,7 +194,7 @@
              (if (mf/ref-val hover-disabled-ref)
                (rx/of nil)
                (->> (mw/ask-buffered!
-                     {:cmd :selection/query
+                     {:cmd :index/query-selection
                       :page-id page-id
                       :rect rect
                       :include-frames? true

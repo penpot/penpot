@@ -8,6 +8,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.logging :as log]
+   [app.common.types.objects-map]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.auth :as da]

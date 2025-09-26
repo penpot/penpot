@@ -503,7 +503,7 @@
 
   (let [features (-> (cfeat/get-enabled-features cf/flags)
                      (set/difference cfeat/frontend-only-features)
-                     (cfeat/check-client-features! (:features params)))
+                     (set/difference cfeat/no-team-inheritable-features))
         params   (-> params
                      (assoc :profile-id profile-id)
                      (assoc :features features))

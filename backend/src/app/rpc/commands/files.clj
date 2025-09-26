@@ -342,14 +342,24 @@
           (cfeat/check-client-features! (:features params))
           (cfeat/check-file-features! (:features file)))
 
-      ;; This operation is needed for backward comapatibility with frontends that
-      ;; does not support pointer-map resolution mechanism; this just resolves the
-      ;; pointers on backend and return a complete file.
-      (if (and (contains? (:features file) "fdata/pointer-map")
-               (not (contains? (:features params) "fdata/pointer-map")))
-        (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-          (update file :data feat.fdata/process-pointers deref))
-        file))))
+      (as-> file file
+        ;; This operation is needed for backward comapatibility with
+        ;; frontends that does not support pointer-map resolution
+        ;; mechanism; this just resolves the pointers on backend and
+        ;; return a complete file
+        (if (and (contains? (:features file) "fdata/pointer-map")
+                 (not (contains? (:features params) "fdata/pointer-map")))
+          (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+            (update file :data feat.fdata/process-pointers deref))
+          file)
+
+        ;; This operation is needed for backward comapatibility with
+        ;; frontends that does not support objects-map mechanism; this
+        ;; just converts all objects map instaces to plain maps
+        (if (and (contains? (:features file) "fdata/objects-map")
+                 (not (contains? (:features params) "fdata/objects-map")))
+          (update file :data feat.fdata/process-objects (partial into {}))
+          file)))))
 
 ;; --- COMMAND QUERY: get-file-fragment (by id)
 
