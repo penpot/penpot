@@ -6,6 +6,7 @@
 
 (ns app.main.data.workspace.viewport
   (:require
+   [app.util.timers :as ts]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -102,6 +103,17 @@
     (update [_ state]
       (update state :workspace-local calculate-centered-viewbox position))))
 
+#_(defn measure-time-to-render []
+  (let [start (js/performance.now)]
+    (ts/request-animation-frame
+     (fn []
+       (js/scheduler.postTask
+        (fn []
+          (let [end (js/performance.now)]
+            (println ">>" (- end start)))
+          )
+        #js { "priority" "user-visible"})))))
+
 (defn update-viewport-position
   [{:keys [x y] :or {x identity y identity}}]
 
@@ -113,6 +125,10 @@
    (fn? y))
 
   (ptk/reify ::update-viewport-position
+    ;;ptk/EffectEvent
+    ;;(effect [_ _ _]
+    ;;  (measure-time-to-render))
+
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :vbox]

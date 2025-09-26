@@ -6,6 +6,8 @@
 
 (ns app.main.store
   (:require
+   [cuerdas.core :as str]
+   [app.util.timers :as ts]
    [app.common.logging :as log]
    [app.util.object :as obj]
    [app.util.timers :as tm]
@@ -29,6 +31,33 @@
 
 (def ^:dynamic *debug-events* false)
 
+(def current-measure (atom nil))
+(defn measure-time-to-render [event]
+  #_(if @current-measure
+    (swap! current-measure conj event)
+
+    (let [start (js/performance.now)]
+      (reset! current-measure [event])
+
+      (ts/request-animation-frame
+       #(js/scheduler.postTask
+         (fn []
+           (let [end (js/performance.now)]
+             (println
+              (str (- end start) "|" (str/join "," @current-measure)) ))
+           (reset! current-measure nil))
+         
+         #js { "priority" "user-blocking"}))))
+
+  
+  #_(let [start (js/performance.now)]
+    (ts/request-animation-frame
+     #(js/scheduler.postTask
+       (fn []
+         (let [end (js/performance.now)]
+           (println (str "[" event "]" (- end start)))))
+       #js { "priority" "user-blocking"}))))
+
 ;; Only created in development build
 (when *assert*
   (def debug-exclude-events
@@ -38,6 +67,7 @@
       :app.main.data.workspace.selection/change-hover-state})
 
   (set! on-event (fn [e]
+                   
                    (when (and *debug-events*
                               (ptk/event? e)
                               (not (debug-exclude-events (ptk/type e))))
@@ -45,7 +75,11 @@
 
 (defonce state
   (ptk/store {:resolve ptk/resolve
-              :on-event on-event
+              :on-event (fn [e]
+                          (when (ptk/event? e)
+                            (measure-time-to-render (ptk/type e)))
+                          (on-event e))
+              
               :on-error (fn [cause]
                           (when cause
                             #_(log/error :hint "unexpected exception on store" :cause cause)
