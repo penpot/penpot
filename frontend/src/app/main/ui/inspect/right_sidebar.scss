@@ -5,6 +5,7 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/typography.scss" as *;
+@use "ds/_sizes.scss" as *;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .settings-bar-right {
@@ -130,7 +131,7 @@
 }
 
 .inspect-tab-switcher-controls-color-space {
-  flex: 1;
+  flex: 1 0 $sz-24;
 }
 
 .inspect-tab-switcher-controls-tab {
