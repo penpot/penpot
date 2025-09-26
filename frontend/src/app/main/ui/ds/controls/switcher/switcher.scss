@@ -1,0 +1,197 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/colors.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+
+$switcher-sm-track-width: $sz-32;
+$switcher-sm-track-height: $sz-16;
+$switcher-sm-thumb-size: $sz-12;
+
+$switcher-md-track-width: $sz-40;
+$switcher-md-track-height: $sz-24;
+$switcher-md-thumb-size: $sz-16;
+
+$switcher-lg-track-width: $sz-48;
+$switcher-lg-track-height: $sz-28;
+$switcher-lg-thumb-size: $sz-24;
+
+$switcher-transition-duration: 0.2s;
+
+.switcher-wrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-s);
+}
+
+.switcher-label {
+  color: var(--color-foreground-primary);
+  cursor: pointer;
+  user-select: none;
+  
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.switcher {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  outline: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  
+  // Focus ring using DS tokens - teal border around track
+  &:focus-visible {
+    .switcher__track {
+      outline: $b-2 solid var(--color-accent-tertiary);
+      outline-offset: $b-2;
+    }
+  }
+  
+  // Disabled state
+  &.is-disabled {
+    cursor: not-allowed;
+    
+    .switcher-label {
+      cursor: not-allowed;
+      color: var(--color-foreground-secondary);
+    }
+    
+    .switcher__track {
+      background-color: var(--color-background-tertiary);
+      opacity: 0.6;
+    }
+    
+    &.is-checked .switcher__track {
+      background-color: var(--color-background-quaternary);
+      opacity: 0.6;
+    }
+    
+    .switcher__thumb {
+      background-color: var(--color-foreground-secondary);
+      opacity: 0.5;
+    }
+    
+    &.is-checked .switcher__thumb {
+      background-color: var(--color-foreground-secondary);
+      opacity: 0.6;
+    }
+  }
+  
+  // Size variants - Medium (default)
+  &.switcher--md {
+    .switcher__track {
+      width: $switcher-md-track-width;
+      height: $switcher-md-track-height;
+    }
+    
+    .switcher__thumb {
+      width: $switcher-md-thumb-size;
+      height: $switcher-md-thumb-size;
+      top: calc((#{$switcher-md-track-height} - #{$switcher-md-thumb-size}) / 2);
+      left: calc((#{$switcher-md-track-height} - #{$switcher-md-thumb-size}) / 2);
+    }
+    
+    &.is-checked .switcher__thumb {
+      transform: translateX(calc(#{$switcher-md-track-width} - #{$switcher-md-track-height}));
+    }
+  }
+  
+  // Size variants - Small
+  &.switcher--sm {
+    .switcher__track {
+      width: $switcher-sm-track-width;
+      height: $switcher-sm-track-height;
+    }
+    
+    .switcher__thumb {
+      width: $switcher-sm-thumb-size;
+      height: $switcher-sm-thumb-size;
+      top: calc((#{$switcher-sm-track-height} - #{$switcher-sm-thumb-size}) / 2);
+      left: calc((#{$switcher-sm-track-height} - #{$switcher-sm-thumb-size}) / 2);
+    }
+    
+    &.is-checked .switcher__thumb {
+      transform: translateX(calc(#{$switcher-sm-track-width} - #{$switcher-sm-track-height}));
+    }
+  }
+  
+  // Size variants - Large
+  &.switcher--lg {
+    .switcher__track {
+      width: $switcher-lg-track-width;
+      height: $switcher-lg-track-height;
+    }
+    
+    .switcher__thumb {
+      width: $switcher-lg-thumb-size;
+      height: $switcher-lg-thumb-size;
+      top: calc((#{$switcher-lg-track-height} - #{$switcher-lg-thumb-size}) / 2);
+      left: calc((#{$switcher-lg-track-height} - #{$switcher-lg-thumb-size}) / 2);
+    }
+    
+    &.is-checked .switcher__thumb {
+      transform: translateX(calc(#{$switcher-lg-track-width} - #{$switcher-lg-track-height}));
+    }
+  }
+}
+
+.switcher__track {
+  position: relative;
+  border-radius: 9999px; 
+  background-color: var(--color-background-quaternary); 
+  transition: background-color $switcher-transition-duration ease-in-out;
+  
+  // ON state - use success/teal color from DS
+  .switcher.is-checked & {
+    background-color: var(--color-accent-success);
+  }
+  
+  // Hover states (only when not disabled)
+  .switcher:not(.is-disabled):hover:not(.is-checked) & {
+    background-color: var(--color-background-quaternary);
+  }
+  
+  .switcher:not(.is-disabled):hover.is-checked & {
+    background-color: var(--color-accent-tertiary);
+  }
+}
+
+.switcher__thumb {
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--color-foreground-secondary); 
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: transform $switcher-transition-duration ease-in-out, background-color $switcher-transition-duration ease-in-out;
+  
+  // ON state - contrasting thumb (white in dark theme, dark in light theme)
+  .switcher.is-checked & {
+    background-color: var(--color-foreground-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  
+  // Hover states - contrasting thumb for OFF state
+  .switcher:not(.is-disabled):hover:not(.is-checked) & {
+    background-color: var(--color-foreground-primary);
+  }
+  
+  // Hover states - keep contrasting thumb for ON state
+  .switcher:not(.is-disabled):hover.is-checked & {
+    background-color: var(--color-foreground-primary);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switcher__track,
+  .switcher__thumb {
+    transition: none;
+  }
+}

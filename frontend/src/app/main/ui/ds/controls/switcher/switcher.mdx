@@ -1,0 +1,159 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from '@storybook/blocks';
+import * as SwitcherStories from "./switcher.stories";
+
+<Meta title="DS/Controls/Switcher" />
+
+# Switcher
+
+The `switcher*` component is a toggle control that allows users to switch between two states (on/off). It provides both controlled and uncontrolled modes, making it suitable for various use cases across the interface.
+
+<Canvas of={SwitcherStories.DefaultUncontrolled} />
+
+## Anatomy
+
+The switcher component consists of three main parts:
+
+- **Label** (optional): Text that describes what the switcher controls
+- **Track**: The pill-shaped background that indicates the current state
+- **Thumb**: The circular knob that moves between positions
+
+## Props
+
+| Name | Type | Default | Description | Required |
+|------|------|---------|-------------|----------|
+| `id` | `string` | auto-generated | Unique identifier for the switcher | No |
+| `label` | `string` | - | Text label displayed next to the switcher | No |
+| `checked` | `boolean` | - | Controlled checked state | No |
+| `default-checked` | `boolean` | `false` | Initial checked state for uncontrolled mode | No |
+| `on-change` | `function` | - | Callback fired when state changes `(new-checked, event) => void` | No |
+| `disabled` | `boolean` | `false` | Whether the switcher is disabled | No |
+| `size` | `"sm" \| "md" \| "lg"` | `"md"` | Size variant of the switcher | No |
+| `aria-label` | `string` | - | Accessible label when no visible label is provided | No |
+| `class` | `string` | - | Additional CSS classes | No |
+| `data-testid` | `string` | - | Test identifier for automated testing | No |
+
+## Usage Examples
+
+### Controlled vs Uncontrolled
+
+#### Uncontrolled (manages its own state)
+```clj
+[:> switcher* {:label "Enable notifications"
+               :default-checked false
+               :on-change (fn [checked event] 
+                           (js/console.log "New state:" checked))}]
+```
+
+#### Controlled (state managed externally)
+```clj
+(let [checked (r/atom false)]
+  [:> switcher* {:label "Enable notifications"
+                 :checked @checked
+                 :on-change (fn [new-checked event]
+                             (reset! checked new-checked))}])
+```
+
+<Canvas of={SwitcherStories.Controlled} />
+
+### Different Sizes
+
+The switcher supports three size variants: `"sm"`, `"md"` (default), and `"lg"`.
+
+```clj
+[:> switcher* {:size "sm" :label "Small"}]
+[:> switcher* {:size "md" :label "Medium"}]
+[:> switcher* {:size "lg" :label "Large"}]
+```
+
+<Canvas of={SwitcherStories.Sizes} />
+
+### Disabled State
+
+Disabled switchers are non-interactive and visually distinct.
+
+```clj
+[:> switcher* {:label "Disabled feature"
+               :disabled true
+               :default-checked false}]
+```
+
+<Canvas of={SwitcherStories.Disabled} />
+
+### Without Visible Label
+
+When no visible label is provided, use `aria-label` for accessibility.
+
+```clj
+[:> switcher* {:aria-label "Toggle dark mode"
+               :default-checked false}]
+```
+
+<Canvas of={SwitcherStories.WithoutVisibleLabel} />
+
+## Accessibility
+
+The switcher component follows accessibility best practices:
+
+- **Role**: Uses `role="switch"` for proper semantic meaning
+- **Keyboard Support**: 
+  - `Tab` to focus the switcher
+  - `Space` or `Enter` to toggle the state
+- **ARIA Attributes**:
+  - `aria-checked` reflects the current state
+  - `aria-disabled` when disabled
+  - `aria-label` for screen readers when no visible label
+- **Focus Management**: Visible focus ring for keyboard navigation
+
+<Canvas of={SwitcherStories.Accessibility} />
+
+## Design Tokens
+
+The switcher component uses the following design system tokens:
+
+### Colors
+- **OFF state track**: `--color-background-quaternary` (muted gray)
+- **ON state track**: `--color-accent-success` (green/teal)
+- **Thumb**: `--color-background-primary` (white/light)
+- **Label**: `--color-foreground-primary`
+- **Focus ring**: `--color-accent-primary`
+
+### Sizes
+- **Small**: Track 32×16px, Thumb 12px
+- **Medium**: Track 40×24px, Thumb 16px  
+- **Large**: Track 48×28px, Thumb 24px
+
+### Spacing
+- **Label gap**: `--sp-s` (8px)
+
+## Usage Guidelines
+
+### When to Use
+
+- For binary settings that take effect immediately
+- To enable/disable features or functionality
+- In preference panels and configuration screens
+- For toggling between two distinct states
+
+### When Not to Use
+
+- For actions that require confirmation (use buttons instead)
+- For multiple choice selections (use radio buttons or select)
+- For temporary states that need explicit "Apply" action
+
+### Best Practices
+
+- Always provide clear labels that describe what will happen when toggled
+- Use consistent sizing within the same interface area
+- Consider the immediate impact of the toggle action
+- Group related switchers logically
+- Provide feedback for state changes when appropriate
+
+## Interactive Example
+
+<Canvas of={SwitcherStories.Interactive} />
