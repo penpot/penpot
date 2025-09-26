@@ -756,8 +756,9 @@
       (perf/end-measure "set-object")
       pending)))
 
+
 (defn process-pending
-  [pending]
+  [pending shapes]
   (let [event (js/CustomEvent. "wasm:set-objects-finished")
         pending (-> (d/index-by :key :callback pending) vals)]
     (if (not-empty? pending)
@@ -766,6 +767,19 @@
            (rx/tap (fn [_] (request-render "set-objects")))
            (rx/reduce conj [])
            (rx/subs! (fn [_]
+                       (doseq [shape (->> shapes
+                                          (filter identity)
+                                          (filter (fn [shape]
+                                                    (let [type (dm/get-prop shape :type)
+                                                          content (get shape :content)]
+                                                      (or (= type :text) (some? content))))))]
+                         (let [shape-id (dm/get-prop shape :id)
+                               shape-id-buffer (uuid/get-u32 shape-id)]
+                           (h/call wasm/internal-module "_update_shape_text_layout_for"
+                                   (aget shape-id-buffer 0)
+                                   (aget shape-id-buffer 1)
+                                   (aget shape-id-buffer 2)
+                                   (aget shape-id-buffer 3))))
                        (clear-drawing-cache)
                        (request-render "pending-finished")
                        (.dispatchEvent ^js js/document event))))
@@ -773,11 +787,10 @@
         (clear-drawing-cache)
         (request-render "pending-finished")
         (.dispatchEvent ^js js/document event)))))
-
 (defn process-object
   [shape]
   (let [pending (set-object [] shape)]
-    (process-pending pending)))
+    (process-pending pending [shape])))
 
 (defn set-objects
   [objects]
@@ -792,7 +805,7 @@
               (recur (inc index) (into pending pending')))
             pending))]
     (perf/end-measure "set-objects")
-    (process-pending pending)))
+    (process-pending pending shapes)))
 
 (defn clear-focus-mode
   []
