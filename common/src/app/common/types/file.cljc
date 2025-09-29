@@ -414,7 +414,8 @@
         slot-inst (find-swap-slot shape-inst container-inst file libraries)]
     (when (some? slot-inst)
       (or (= slot-main slot-inst)
-          (= (:id shape-main) slot-inst)))))
+          (= (:id shape-main) slot-inst)
+          (= (:shape-ref shape-main) slot-inst)))))
 
 (defn- find-next-related-swap-shape-id
   "Go up from the chain of references shapes that will eventually lead to the shape
