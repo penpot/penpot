@@ -82,7 +82,7 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(log/set-level! :trace)
+(log/set-level! :info)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
