@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.logging :as log]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.fonts :as fonts]
@@ -114,7 +115,12 @@
                                 :uri font-url
                                 :response-type :buffer})
                    (rx/map (fn [{:keys [body]}]
-                             (store-font-buffer shape-id font-data body emoji? fallback?))))})
+                             (store-font-buffer shape-id font-data body emoji? fallback?)))
+                   (rx/catch (fn [cause]
+                               (log/error :hint "Could not fetch font"
+                                          :font-url font-url
+                                          :cause cause)
+                               (rx/empty))))})
 
 (defn- google-font-ttf-url
   [font-id font-variant-id]
