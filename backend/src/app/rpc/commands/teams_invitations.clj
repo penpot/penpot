@@ -224,62 +224,112 @@
 (def ^:private xf:map-email (map :email))
 
 (defn- create-team-invitations
-  [{:keys [::db/conn] :as cfg} {:keys [profile team role emails] :as params}]
-  (let [emails           (set emails)
+  "Unified function to handle both create and resend team invitations.
+  Accepts either:
+  - emails (set) + role (single role for all emails)
+  - invitations (vector of {:email :role} maps)"
+  [{:keys [::db/conn] :as cfg} {:keys [profile team role emails invitations] :as params}]
+  (let [;; Normalize input to a consistent format: [{:email :role}]
+        invitation-data  (cond
+                           ;; Case 1: emails + single role (create invitations style)
+                           (and emails role)
+                           (map (fn [email] {:email email :role role}) emails)
 
-        join-requests    (->> (get-valid-access-request-profiles conn (:id team))
-                              (d/index-by :email))
+                           ;; Case 2: invitations with individual roles (resend invitations style)
+                           (some? invitations)
+                           invitations
 
-        team-members     (into #{} xf:map-email
-                               (teams/get-team-members conn (:id team)))
+                           :else
+                           (throw (ex-info "Invalid parameters: must provide either emails+role or invitations" {})))
 
-        invitations      (into #{}
-                               (comp
-                                ;;  We don't re-send inviation to
-                                ;;  already existing members
-                                (remove team-members)
+        invitation-emails (into #{} (map :email) invitation-data)
+
+        join-requests     (->> (get-valid-access-request-profiles conn (:id team))
+                               (d/index-by :email))
+
+        team-members      (into #{} xf:map-email
+                                (teams/get-team-members conn (:id team)))
+
+        invitations       (into #{}
+                                (comp
+                                ;; We don't re-send invitations to
+                                ;; already existing members
+                                 (remove #(contains? team-members (:email %)))
                                 ;; We don't send invitations to
                                 ;; join-requested members
-                                (remove join-requests)
-                                (map (fn [email] (assoc params :email email)))
-                                (keep (partial create-invitation cfg)))
-                               emails)]
+                                 (remove #(contains? join-requests (:email %)))
+                                 (map (fn [{:keys [email role]}]
+                                        (create-invitation cfg
+                                                           (-> params
+                                                               (assoc :email email)
+                                                               (assoc :role role)))))
+                                 (remove nil?))
+                                invitation-data)]
 
     ;; For requested invitations, do not send invitation emails, add
     ;; the user directly to the team
     (->> join-requests
-         (filter #(contains? emails (key %)))
-         (map val)
-         (run! (partial add-member-to-team conn profile team role)))
+         (filter #(contains? invitation-emails (key %)))
+         (map (fn [[email member]]
+                (let [role (:role (first (filter #(= (:email %) email) invitation-data)))]
+                  (add-member-to-team conn profile team role member))))
+         (doall))
 
     invitations))
 
 (def ^:private schema:create-team-invitations
-  [:map {:title "create-team-invitations"}
-   [:team-id ::sm/uuid]
-   [:role types.team/schema:role]
-   [:emails [::sm/set ::sm/email]]])
+  [:and
+   [:map {:title "create-team-invitations"}
+    [:team-id ::sm/uuid]
+    ;; Support both formats:
+    ;; 1. emails (set) + role (single role for all)
+    ;; 2. invitations (vector of {:email :role} maps)
+    [:emails {:optional true} [::sm/set ::sm/email]]
+    [:role {:optional true} types.team/schema:role]
+    [:invitations {:optional true} [:vector [:map
+                                             [:email ::sm/email]
+                                             [:role types.team/schema:role]]]]]
+
+   ;; Ensure exactly one format is provided
+   [:fn (fn [params]
+          (let [has-emails-role (and (contains? params :emails)
+                                     (contains? params :role))
+                has-invitations (contains? params :invitations)]
+            (and (or has-emails-role has-invitations)
+                 (not (and has-emails-role has-invitations)))))]])
 
 (def ^:private max-invitations-by-request-threshold
   "The number of invitations can be sent in a single rpc request"
   25)
 
 (sv/defmethod ::create-team-invitations
-  "A rpc call that allow to send a single or multiple invitations to
-  join the team."
+  "A rpc call that allows to send single or multiple invitations to join the team.
+
+  Supports two parameter formats:
+  1. emails (set) + role (single role for all emails)
+  2. invitations (vector of {:email :role} maps for individual roles)"
   {::doc/added "1.17"
    ::doc/module :teams
    ::sm/params schema:create-team-invitations}
-  [cfg {:keys [::rpc/profile-id team-id emails] :as params}]
+  [cfg {:keys [::rpc/profile-id team-id role emails] :as params}]
   (let [perms    (teams/get-permissions cfg profile-id team-id)
         profile  (db/get-by-id cfg :profile profile-id)
-        emails   (into #{} (map profile/clean-email) emails)]
+        ;; Determine which format is being used
+        using-emails-format? (and emails role)
+        ;; Handle both parameter formats
+        emails   (if using-emails-format?
+                   (into #{} (map profile/clean-email) emails)
+                   #{})
+        ;; Calculate total invitation count for both formats
+        invitation-count (if using-emails-format?
+                           (count emails)
+                           (count (:invitations params)))]
 
     (when-not (:is-admin perms)
       (ex/raise :type :validation
                 :code :insufficient-permissions))
 
-    (when (> (count emails) max-invitations-by-request-threshold)
+    (when (> invitation-count max-invitations-by-request-threshold)
       (ex/raise :type :validation
                 :code :max-invitations-by-request
                 :hint "the maximum of invitation on single request is reached"
@@ -288,7 +338,7 @@
     (-> cfg
         (assoc ::quotes/profile-id profile-id)
         (assoc ::quotes/team-id team-id)
-        (assoc ::quotes/incr (count emails))
+        (assoc ::quotes/incr invitation-count)
         (quotes/check! {::quotes/id ::quotes/invitations-per-team}
                        {::quotes/id ::quotes/profiles-per-team}))
 
@@ -304,7 +354,12 @@
                                   (-> params
                                       (assoc :profile profile)
                                       (assoc :team team)
-                                      (assoc :emails emails)))]
+                                      ;; Pass parameters in the correct format for the unified function
+                                      (cond-> using-emails-format?
+                                        ;; If using emails+role format, ensure both are present
+                                        (assoc :emails emails :role role)
+                                        ;; If using invitations format, the :invitations key is already in params
+                                        (not using-emails-format?) identity)))]
 
       (with-meta {:total (count invitations)
                   :invitations invitations}
