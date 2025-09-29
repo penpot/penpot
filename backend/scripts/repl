@@ -78,13 +78,13 @@ export JAVA_OPTS="\
        -Djdk.tracePinnedThreads=full \
        -Dim4java.useV7=true \
        -XX:+UseShenandoahGC \
-       -XX:ShenandoahGCMode=generational \
-       -XX:+UseCompactObjectHeaders \
        -XX:+EnableDynamicAgentLoading \
        -XX:-OmitStackTraceInFastThrow  \
        -XX:+UnlockExperimentalVMOptions \
        -XX:+UnlockDiagnosticVMOptions \
        -XX:+DebugNonSafepoints \
+       -XX:ShenandoahGCMode=generational \
+       -XX:+UseCompactObjectHeaders \
        --sun-misc-unsafe-memory-access=allow \
        --enable-preview \
        --enable-native-access=ALL-UNNAMED";
