@@ -94,7 +94,7 @@
                              (->> stream
                                   (rx/filter mse/pointer-event?)
                                   (rx/filter #(= :viewport (mse/get-pointer-source %)))
-                                  (rx/pipe (rxs/throttle 50))
+                                  (rx/pipe (rxs/throttle 200))  ;; Reduced from 50ms to 200ms (5 updates/sec instead of 20)
                                   (rx/map #(handle-pointer-send file-id (:pt %)))))
 
                             (rx/take-until stopper))]

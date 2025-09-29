@@ -153,7 +153,9 @@
   [{:keys [::mbus/msgbus]} {:keys [::ws/id ::ws/state ::ws/output-ch ::session-id ::profile-id]} {:keys [file-id] :as params}]
   (l/trace :fn "handle-message" :event "subscribe-file" :file-id file-id :conn-id id)
   (let [psub (::file-subscription @state)
-        fch  (sp/chan :buf (sp/dropping-buffer 64)
+        ;; Changed from dropping-buffer to sliding-buffer to preserve recent messages
+        ;; Increased size to 128 to reduce message loss during high traffic
+        fch  (sp/chan :buf (sp/sliding-buffer 128)
                       :xf  (remove #(= (:session-id %) session-id)))]
 
     (let [subs {:file-id file-id :channel fch :topic file-id}]

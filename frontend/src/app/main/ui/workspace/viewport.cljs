@@ -63,18 +63,25 @@
 
 (defn apply-modifiers-to-selected
   [selected objects text-modifiers modifiers]
+  ;; Only process shapes that actually have modifiers applied
+  ;; to avoid unnecessary recalculation
   (reduce
    (fn [objects id]
-     (update
-      objects id
-      (fn [shape]
-        (cond-> shape
-          (and (cfh/text-shape? shape) (contains? text-modifiers id))
-          (dwm/apply-text-modifier (get text-modifiers id))
+     (let [has-text-modifier? (and (contains? text-modifiers id)
+                                   (cfh/text-shape? (get objects id)))
+           has-modifier? (contains? modifiers id)]
+       ;; Skip shape if it has no modifiers to apply
+       (if (or has-text-modifier? has-modifier?)
+         (update
+          objects id
+          (fn [shape]
+            (cond-> shape
+              has-text-modifier?
+              (dwm/apply-text-modifier (get text-modifiers id))
 
-          (contains? modifiers id)
-          (gsh/transform-shape (dm/get-in modifiers [id :modifiers]))))))
-
+              has-modifier?
+              (gsh/transform-shape (dm/get-in modifiers [id :modifiers])))))
+         objects)))
    objects
    selected))
 

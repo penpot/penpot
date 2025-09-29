@@ -162,7 +162,7 @@
     ::db/password   (cf/get :database-password)
     ::db/read-only  (cf/get :database-readonly false)
     ::db/min-size   (cf/get :database-min-pool-size 0)
-    ::db/max-size   (cf/get :database-max-pool-size 60)
+    ::db/max-size   (cf/get :database-max-pool-size 200)  ;; Increased from 60 to 200 for better concurrency
     ::mtx/metrics   (ig/ref ::mtx/metrics)}
 
    ;; Default netty IO pool (shared between several services)

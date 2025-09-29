@@ -31,12 +31,18 @@
    [app.util.blob :as blob]
    [app.util.pointer-map :as pmap]
    [app.worker :as-alias wrk]
+   [clojure.core.cache.wrapped :as cache]
    [clojure.set :as set]
    [cuerdas.core :as str]
    [datoteka.fs :as fs]
    [datoteka.io :as io]))
 
 (set! *warn-on-reflection* true)
+
+;; Cache for library resolution results (TTL: 5 minutes)
+;; Invalidated when file library relationships change
+(def ^:private library-cache
+  (cache/ttl-cache-factory {} :ttl (* 5 60 1000)))
 
 (def ^:dynamic *state* nil)
 (def ^:dynamic *options* nil)
@@ -256,12 +262,17 @@
      FROM libs AS l")
 
 (defn get-libraries
-  "Get all libraries ids related to provided file ids"
+  "Get all libraries ids related to provided file ids (with caching)"
   [cfg ids]
-  (db/run! cfg (fn [{:keys [::db/conn]}]
-                 (let [ids' (db/create-array conn "uuid" ids)]
-                   (->> (db/exec! conn [sql:get-libraries ids'])
-                        (into #{} xf-map-id))))))
+  (let [cache-key (vec (sort ids))]
+    (cache/lookup-or-miss
+     library-cache
+     cache-key
+     (fn [_]
+       (db/run! cfg (fn [{:keys [::db/conn]}]
+                      (let [ids' (db/create-array conn "uuid" ids)]
+                        (->> (db/exec! conn [sql:get-libraries ids'])
+                             (into #{} xf-map-id)))))))))
 
 (defn get-file-object-thumbnails
   "Return all file object thumbnails for a given file."
