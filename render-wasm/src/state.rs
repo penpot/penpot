@@ -5,8 +5,7 @@ mod shapes_pool;
 pub use shapes_pool::*;
 
 use crate::render::RenderState;
-use crate::shapes::Shape;
-use crate::shapes::StructureEntry;
+use crate::shapes::{Shape, Type, StructureEntry};
 use crate::tiles;
 use crate::uuid::Uuid;
 
@@ -24,17 +23,19 @@ pub(crate) struct State {
     pub modifiers: HashMap<Uuid, skia::Matrix>,
     pub scale_content: HashMap<Uuid, f32>,
     pub structure: HashMap<Uuid, Vec<StructureEntry>>,
+    pub marked_shapes: Vec<Uuid>,
 }
 
 impl State {
     pub fn new(width: i32, height: i32) -> Self {
-        State {
+        Self {
             render_state: RenderState::new(width, height),
             current_id: None,
             shapes: ShapesPool::new(),
             modifiers: HashMap::new(),
             scale_content: HashMap::new(),
             structure: HashMap::new(),
+            marked_shapes: Vec::new(),
         }
     }
 
@@ -56,6 +57,7 @@ impl State {
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
+        self.update_marked_shapes();
         self.render_state.start_render_loop(
             &self.shapes,
             &self.modifiers,
@@ -219,5 +221,31 @@ impl State {
         }
 
         None
+    }
+
+    pub fn mark_shape(&mut self, shape_id: Uuid) {
+        println!("mark_shape {}", shape_id);
+        self.marked_shapes.push(shape_id);
+    }
+
+    pub fn has_marked_shapes(&self) -> bool {
+        !self.marked_shapes.is_empty()
+    }
+
+    pub fn update_marked_shapes(&mut self) -> bool {
+        self.render_state.fonts.list_registered_fonts();
+        if !self.has_marked_shapes() {
+            println!("update_marked_shapes -> false");
+            return false;
+        }
+        while let Some(shape_id) = self.marked_shapes.pop() {
+            if let Some(shape) = self.shapes.get_mut(&shape_id) {
+                if let Type::Text(text_content) = &mut shape.shape_type {
+                    text_content.update_layout(shape.selrect);
+                }
+            }
+        }
+        println!("update_marked_shapes -> true");
+        true
     }
 }

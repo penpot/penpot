@@ -84,6 +84,7 @@
         ptr  (h/call wasm/internal-module "_alloc_bytes" size)
         heap (gobj/get ^js wasm/internal-module "HEAPU8")
         mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+
     (.set mem (js/Uint8Array. font-array-buffer))
     (h/call wasm/internal-module "_store_font"
             (aget shape-id-buffer 0)
@@ -131,6 +132,7 @@
   (when asset-id
     (let [uri (font-id->ttf-url (:font-id font-data) asset-id (:font-variant-id font-data))
           id-buffer (uuid/get-u32 (:wasm-id font-data))
+          shape-id-buffer (uuid/get-u32 shape-id)
           font-data (assoc font-data :family-id-buffer id-buffer)
           font-stored? (not= 0 (h/call wasm/internal-module "_is_font_uploaded"
                                        (aget id-buffer 0)
@@ -141,6 +143,11 @@
                                        (:style font-data)
                                        emoji?))]
       (when-not font-stored?
+        (h/call wasm/internal-module "_mark_shape"
+                (aget shape-id-buffer 0)
+                (aget shape-id-buffer 1)
+                (aget shape-id-buffer 2)
+                (aget shape-id-buffer 3))
         (fetch-font shape-id font-data uri emoji? fallback?)))))
 
 (defn serialize-font-style
@@ -216,7 +223,6 @@
 (defn store-fonts
   [shape-id fonts]
   (keep (fn [font] (store-font shape-id font)) fonts))
-
 
 (defn add-emoji-font
   [fonts]

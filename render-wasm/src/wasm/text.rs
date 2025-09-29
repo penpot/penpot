@@ -2,7 +2,8 @@ use macros::ToJs;
 
 use crate::mem;
 use crate::shapes::{GrowType, RawTextData, Type};
-use crate::{with_current_shape_mut, STATE};
+use crate::{with_state_mut, with_current_shape_mut, STATE};
+use crate::utils::uuid_from_u32_quartet;
 
 #[derive(Debug, PartialEq, Clone, Copy, ToJs)]
 #[repr(u8)]
@@ -86,6 +87,33 @@ pub extern "C" fn update_shape_text_layout() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
         if let Type::Text(text_content) = &mut shape.shape_type {
             text_content.update_layout(shape.selrect);
+        }
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn mark_shape(a: u32, b: u32, c: u32, d: u32) {
+    with_state_mut!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        state.mark_shape(shape_id);
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn update_marked_shapes() {
+    with_state_mut!(state, {
+        state.update_marked_shapes();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
+    with_state_mut!(state, {
+        let shape_id = uuid_from_u32_quartet(a, b, c, d);
+        if let Some(shape) = state.shapes.get_mut(&shape_id) {
+            if let Type::Text(text_content) = &mut shape.shape_type {
+                text_content.update_layout(shape.selrect);
+            }
         }
     });
 }

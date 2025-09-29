@@ -52,6 +52,19 @@ impl FontStore {
         self.debug_font = debug_font;
     }
 
+    pub fn list_registered_fonts(&self) {
+        println!("fontmgrs {}", self.font_collection.font_managers_count());
+        if let Some(fallback_font_mgr) = self.font_collection.fallback_manager() {
+            for font in fallback_font_mgr {
+                println!("{:?}", font);
+            }
+        }
+        println!("families {}", self.font_mgr.count_families());
+        for font in self.font_mgr.family_names() {
+            println!("{:?}", font);
+        }
+    }
+
     pub fn font_provider(&self) -> &textlayout::TypefaceFontProvider {
         &self.font_provider
     }

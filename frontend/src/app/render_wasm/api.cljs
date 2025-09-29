@@ -641,8 +641,6 @@
                   (f/add-noto-fonts langs))
               result (f/store-fonts shape-id updated-fonts)]
 
-          (h/call wasm/internal-module "_update_shape_text_layout")
-
           result)))))
 
 (defn set-shape-text
@@ -760,6 +758,7 @@
   [pending]
   (let [event (js/CustomEvent. "wasm:set-objects-finished")
         pending (-> (d/index-by :key :callback pending) vals)]
+    (prn "pending" pending)
     (if (not-empty? pending)
       (->> (rx/from pending)
            (rx/merge-map (fn [callback] (callback)))
