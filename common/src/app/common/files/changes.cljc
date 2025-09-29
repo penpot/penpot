@@ -376,19 +376,19 @@
      [:type [:= :set-token]]
      [:set-id ::sm/uuid]
      [:token-id ::sm/uuid]
-     [:token [:maybe ctob/schema:token-attrs]]]]
+     [:attrs [:maybe ctob/schema:token-attrs]]]]
 
    [:set-token-set
     [:map {:title "SetTokenSetChange"}
      [:type [:= :set-token-set]]
      [:id ::sm/uuid]
-     [:token-set [:maybe ctob/schema:token-set-attrs]]]]
+     [:attrs [:maybe ctob/schema:token-set-attrs]]]]
 
    [:set-token-theme
     [:map {:title "SetTokenThemeChange"}
      [:type [:= :set-token-theme]]
      [:id ::sm/uuid]
-     [:theme [:maybe ctob/schema:token-theme-attrs]]]]
+     [:attrs [:maybe ctob/schema:token-theme-attrs]]]]
 
    [:set-active-token-themes
     [:map {:title "SetActiveTokenThemes"}
@@ -976,54 +976,54 @@
   (assoc data :tokens-lib tokens-lib))
 
 (defmethod process-change :set-token
-  [data {:keys [set-id token-id token]}]
+  [data {:keys [set-id token-id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not token)
+                (not attrs)
                 (ctob/delete-token lib' set-id token-id)
 
                 (not (ctob/get-token lib' set-id token-id))
-                (ctob/add-token lib' set-id (ctob/make-token token))
+                (ctob/add-token lib' set-id (ctob/make-token attrs))
 
                 :else
                 (ctob/update-token lib' set-id token-id
                                    (fn [prev-token]
-                                     (ctob/make-token (merge prev-token token)))))))))
+                                     (ctob/make-token (merge prev-token attrs)))))))))
 
 (defmethod process-change :set-token-set
-  [data {:keys [id token-set]}]
+  [data {:keys [id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not token-set)
+                (not attrs)
                 (ctob/delete-set lib' id)
 
                 (not (ctob/get-set lib' id))
-                (ctob/add-set lib' (ctob/make-token-set token-set))
+                (ctob/add-set lib' (ctob/make-token-set attrs))
 
                 :else
-                (ctob/update-set lib' id (fn [_] (ctob/make-token-set token-set))))))))
+                (ctob/update-set lib' id (fn [_] (ctob/make-token-set attrs))))))))
 
 (defmethod process-change :set-token-theme
-  [data {:keys [id theme]}]
+  [data {:keys [id attrs]}]
   (update data :tokens-lib
           (fn [lib]
             (let [lib' (ctob/ensure-tokens-lib lib)]
               (cond
-                (not theme)
+                (not attrs)
                 (ctob/delete-theme lib' id)
 
                 (not (ctob/get-theme lib' id))
-                (ctob/add-theme lib' (ctob/make-token-theme theme))
+                (ctob/add-theme lib' (ctob/make-token-theme attrs))
 
                 :else
                 (ctob/update-theme lib'
                                    id
                                    (fn [prev-token-theme]
-                                     (ctob/make-token-theme (merge prev-token-theme theme)))))))))
+                                     (ctob/make-token-theme (merge prev-token-theme attrs)))))))))
 
 (defmethod process-change :set-active-token-themes
   [data {:keys [theme-paths]}]

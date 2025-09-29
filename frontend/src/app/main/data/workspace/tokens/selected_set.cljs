@@ -35,4 +35,4 @@
   (when-let [set-id (get-selected-token-set-id state)]
     (some-> (dsh/lookup-file-data state)
             (get :tokens-lib)
-            (ctob/get-tokens-map set-id))))
+            (ctob/get-tokens set-id))))

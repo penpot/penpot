@@ -693,7 +693,7 @@
   [sets]
   (map (fn [s]
          {:set    (ctob/get-name s)
-          :tokens (ctob/get-tokens-seq- s)})  ;; TODO: this function should be moved to common.logic and refactored
+          :tokens (vals (ctob/get-tokens- s))})  ;; TODO: this function should be moved to common.logic and refactored
        sets))
 
 (defn- filter-active-sets

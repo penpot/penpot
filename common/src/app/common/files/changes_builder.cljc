@@ -950,11 +950,11 @@
         (update :redo-changes conj {:type :set-token
                                     :set-id set-id
                                     :token-id token-id
-                                    :token token})
+                                    :attrs (datafy token)})
         (update :undo-changes conj {:type :set-token
                                     :set-id set-id
                                     :token-id token-id
-                                    :token prev-token})
+                                    :attrs (datafy prev-token)})
         (apply-changes-local))))
 
 (defn set-token-set
@@ -966,10 +966,10 @@
     (-> changes
         (update :redo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy token-set)})
+                                    :attrs (datafy token-set)})
         (update :undo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy prev-token-set)})
+                                    :attrs (datafy prev-token-set)})
         (apply-changes-local))))
 
 (defn rename-token-set
@@ -981,10 +981,10 @@
     (-> changes
         (update :redo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy (ctob/rename prev-token-set new-name))})
+                                    :attrs (datafy (ctob/rename prev-token-set new-name))})
         (update :undo-changes conj {:type :set-token-set
                                     :id id
-                                    :token-set (datafy prev-token-set)})
+                                    :attrs (datafy prev-token-set)})
         (apply-changes-local))))
 
 (defn set-token-theme [changes id theme]
@@ -995,10 +995,10 @@
     (-> changes
         (update :redo-changes conj {:type :set-token-theme
                                     :id id
-                                    :theme theme})
+                                    :attrs (datafy theme)})
         (update :undo-changes conj {:type :set-token-theme
                                     :id id
-                                    :theme prev-theme})
+                                    :attrs (datafy prev-theme)})
         (apply-changes-local))))
 
 (defn set-active-token-themes

@@ -165,8 +165,7 @@
   (delete-token- [_ id] "delete a token from the list")
   (get-token- [_ id] "get a token by its id")
   (get-token-by-name- [_ name] "get a token by its name")
-  (get-tokens-seq- [_] "return an ordered sequence of all tokens in the set")
-  (get-tokens-map- [_] "return a map of tokens in the set, indexed by token-name"))
+  (get-tokens- [_] "return a map of tokens in the set, indexed by token-name"))
 
 ;; TODO: this structure is temporary. It's needed to be able to migrate TokensLib
 ;; from 1.2 to 1.3 when TokenSet datatype was changed to a deftype. This should
@@ -275,10 +274,7 @@
     (assert (string? name) "expected string for `name`")
     (get tokens name))
 
-  (get-tokens-seq- [_]
-    (vals tokens))
-
-  (get-tokens-map- [_]
+  (get-tokens- [_]
     tokens))
 
 (defmethod pp/simple-dispatch TokenSet [^TokenSet obj]
@@ -909,8 +905,7 @@ Will return a value that matches this schema:
 `:partial` Mixed active state of nested sets")
   (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
   (get-all-tokens [_] "all tokens in the lib")
-  (get-tokens-seq [_ set-id] "return an ordered sequence of all tokens in a set")
-  (get-tokens-map [_ set-id] "return a map of tokens in the set, indexed by token-name")
+  (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name")
   (validate [_]))
 
 (declare parse-multi-set-dtcg-json)
@@ -1296,7 +1291,7 @@ Will return a value that matches this schema:
           active-set-names (filter theme-set-names all-set-names)
           tokens           (reduce (fn [tokens set-name]
                                      (let [set (get-set-by-name this set-name)]
-                                       (merge tokens (get-tokens-map- set))))
+                                       (merge tokens (get-tokens- set))))
                                    (d/ordered-map)
                                    active-set-names)]
       tokens))
@@ -1304,19 +1299,14 @@ Will return a value that matches this schema:
   (get-all-tokens [this]
     (reduce
      (fn [tokens' set]
-       (into tokens' (map (fn [x] [(:name x) x]) (get-tokens-seq- set))))
+       (into tokens' (map (fn [x] [(:name x) x]) (vals (get-tokens- set)))))
      {}
      (get-sets this)))
 
-  (get-tokens-seq [this set-id]
+  (get-tokens [this set-id]
     (some-> this
             (get-set set-id)
-            (get-tokens-seq-)))
-
-  (get-tokens-map [this set-id]
-    (some-> this
-            (get-set set-id)
-            (get-tokens-map-)))
+            (get-tokens-)))
 
   (validate [_]
     (and (valid-token-sets? sets)
@@ -1769,7 +1759,7 @@ Will return a value that matches this schema:
         sets (->> (get-sets tokens-lib)
                   (map (fn [token-set]
                          (let [name   (get-name token-set)
-                               tokens (get-tokens-map- token-set)]
+                               tokens (get-tokens- token-set)]
                            [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
                   (into {}))]
     (-> sets
@@ -1789,7 +1779,7 @@ Will return a value that matches this schema:
              (filter (partial instance? TokenSet))
              (map (fn [set]
                     [(get-name set)
-                     (tokens-tree (get-tokens-map- set) :update-token-fn token->dtcg-token)])))
+                     (tokens-tree (get-tokens- set) :update-token-fn token->dtcg-token)])))
 
         ordered-set-names
         (mapv first name-set-tuples)
