@@ -198,12 +198,7 @@
 
         selected       (h/use-shared-state mdc/colorpalette-selected-broadcast-key :recent)
         dependencies   (mf/with-memo [shared-libraries]
-                         (into {} (map (fn [{:keys [id library-file-ids]}]
-                                         [id
-                                          (->> (str/split library-file-ids ",")
-                                               (map #(uuid/uuid %))
-                                               set)])
-                                       (vals shared-libraries))))
+                         (into {} (map (juxt :id :library-file-ids) (vals shared-libraries))))
 
         library-names  (mf/with-memo [shared-libraries]
                          (into {} (map (fn [{:keys [id name]}]
@@ -212,21 +207,13 @@
 
         find-connected-to
         (mf/use-fn
-         (mf/deps shared-libraries dependencies library-names)
+         (mf/deps dependencies)
          (fn [library-id]
            (->> dependencies
-                (filter (fn [[_ v]] (contains? v library-id)))
-                (map first))))
-
-        connected-to-linked?
-        (mf/use-fn
-         (mf/deps linked-libraries shared-libraries dependencies)
-         (fn [id]
-           (contains? linked-libraries id)))
-
+                (keep (fn [[k v]] (when (contains? v library-id) k))))))
 
         shared-libraries
-        (mf/with-memo [shared-libraries linked-libraries file-id search-term dependencies]
+        (mf/with-memo [shared-libraries linked-libraries file-id search-term]
           (when shared-libraries
             (->> (vals shared-libraries)
                  (remove #(= (:id %) file-id))
@@ -237,24 +224,22 @@
                                                          (keep library-names))))
                  (sort-by (comp str/lower :name)))))
 
-
-
-
         linked-libraries
-        (mf/with-memo [linked-libraries dependencies]
+        (mf/with-memo [linked-libraries find-connected-to library-names]
           (->> (vals linked-libraries)
                (map #(assoc % :connected-to (find-connected-to (:id %))))
                (map #(assoc % :connected-to-names (->> (:connected-to %)
                                                        (keep library-names))))
                (sort-by (comp str/lower :name))))
 
+        linked-libraries-ids (mf/with-memo [linked-libraries]
+                               (into #{} (map :id) linked-libraries))
+
 
         importing*       (mf/use-state nil)
         sample-libraries [{:id "penpot-design-system", :name "Design system example"}
                           {:id "wireframing-kit", :name "Wireframe library"}
                           {:id "whiteboarding-kit", :name "Whiteboarding Kit"}]
-
-
 
 
         change-search-term
@@ -349,7 +334,7 @@
                    :on-click publish}])]
 
        (for [{:keys [id name data connected-to connected-to-names] :as library} linked-libraries]
-         (let [disabled? (some connected-to-linked? connected-to)]
+         (let [disabled? (some #(contains? linked-libraries-ids %) connected-to)]
            [:div {:class (stl/css :section-list-item)
                   :key (dm/str id)
                   :data-testid "library-item"}

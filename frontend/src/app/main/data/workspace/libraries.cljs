@@ -1406,17 +1406,6 @@
                         (fn [state]
                           (update state :thumbnails merge thumbnails))))))))))
 
-(defn- all-used-libraries [libraries root-id]
-  (letfn [(collect [id visited]
-            (if (visited id)
-              visited
-              (let [deps (get-in libraries [id :library-file-ids])]
-                (reduce (fn [v dep]
-                          (collect dep v))
-                        (conj visited id)
-                        deps))))]
-    (disj (collect root-id #{}) root-id)))
-
 (defn link-file-to-library
   [file-id library-id]
   (ptk/reify ::attach-library
@@ -1437,25 +1426,15 @@
                                             (or (nil? (:data lib))
                                                 (empty? (:data lib)))))
                                   (map first)
-                                  set)
-
-            libraries (update-vals libraries
-                                   (fn [library]
-                                     (assoc library
-                                            :library-file-ids
-                                            (->> (str/split (:library-file-ids library) #",")
-                                                 (remove empty?)
-                                                 (mapv uuid/uuid)))))
-            libraries-to-load (as-> (all-used-libraries libraries library-id) $
-                                (remove loaded-libraries $)
-                                (conj $ library-id))]
+                                  set)]
         (rx/concat
          (rx/merge
           (->> (rp/cmd! :link-file-to-library {:file-id file-id :library-id library-id})
-               (rx/ignore))
-          (->> libraries-to-load
-               (rx/from)
-               (rx/map #(load-library-file file-id %))))
+               (rx/merge-map (fn [libraries-to-load]
+                               (as-> libraries-to-load $
+                                 (remove loaded-libraries $)
+                                 (conj $ library-id)
+                                 (map #(load-library-file file-id %) $))))))
          (rx/of (ptk/reify ::attach-library-finished))
          (when (pos? variants-count)
            (->> (rp/cmd! :get-library-usage {:file-id library-id})
