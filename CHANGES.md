@@ -28,7 +28,6 @@
   services which use netty internally (redis connection, S3 SDK client). This
   configuration is not very commonly used so don't expected real impact on any user.
 
-
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
@@ -43,7 +42,7 @@
 - Fix paste behavior according to the selected element [Taiga #11979](https://tree.taiga.io/project/penpot/issue/11979)
 - Fix problem with export size [#7160](https://github.com/penpot/penpot/issues/7160)
 
-## 2.10.0 (Unreleased)
+## 2.10.0
 
 ### :rocket: Epics and highlights
 
