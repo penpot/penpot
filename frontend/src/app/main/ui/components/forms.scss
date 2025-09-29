@@ -4,7 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_utils.scss" as *;
 
 // INPUT
 .input-wrapper {
@@ -15,33 +19,34 @@
   position: relative;
   &.valid {
     input {
-      border: deprecated.$s-1 solid var(--input-border-color-success);
+      border: $b-1 solid var(--input-border-color-success);
       @extend .disabled-input;
       &:hover,
       &:focus {
-        border: deprecated.$s-1 solid var(--input-border-color-success);
+        border: $b-1 solid var(--input-border-color-success);
       }
     }
   }
   &.invalid {
     input {
-      border: deprecated.$s-1 solid var(--input-border-color-error);
+      border: $b-1 solid var(--input-border-color-error);
       @extend .disabled-input;
       &:hover,
       &:focus {
-        border: deprecated.$s-1 solid var(--input-border-color-error);
+        border: $b-1 solid var(--input-border-color-error);
       }
     }
   }
   &.valid .help-icon,
   &.invalid .help-icon {
-    right: deprecated.$s-40;
+    right: px2rem(40);
   }
 }
 
 .input-with-label-form {
-  @include deprecated.flexColumn;
-  gap: deprecated.$s-8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
   justify-content: flex-start;
   align-items: flex-start;
   height: 100%;
@@ -57,12 +62,12 @@
     width: 100%;
     max-width: 100%;
     height: 100%;
-    padding: 0 deprecated.$s-8;
+    padding: 0 var(--sp-s);
 
     &:focus {
       outline: none;
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
-      border-radius: deprecated.$br-8;
+      border: $b-1 solid var(--input-border-color-focus);
+      border-radius: $br-8;
     }
   }
 
@@ -73,7 +78,7 @@
   input:-webkit-autofill:active {
     -webkit-text-fill-color: var(--input-foreground-color-active);
     -webkit-box-shadow: inset 0 0 20px 20px var(--input-background-color);
-    border: deprecated.$s-1 solid var(--input-border-color);
+    border: $b-1 solid var(--input-border-color);
     -webkit-background-clip: text;
     transition: background-color 5000s ease-in-out 0s;
     caret-color: var(--input-foreground-color-active);
@@ -82,27 +87,27 @@
 
 .input-and-icon {
   position: relative;
-  width: var(--input-width, calc(100% - deprecated.$s-1));
+  width: var(--input-width, calc(100% - #{$b-1}));
   min-width: var(--input-min-width);
-  height: var(--input-height, deprecated.$s-32);
+  height: var(--input-height, #{$sz-32});
 }
 
 .help-icon {
   cursor: pointer;
   position: absolute;
-  right: deprecated.$s-16;
-  top: calc(50% - deprecated.$s-8);
+  right: var(--sp-l);
+  top: calc(50% - var(--sp-s));
   svg {
     @extend .button-icon-small;
     stroke: var(--color-foreground-secondary);
-    width: deprecated.$s-16;
-    height: deprecated.$s-16;
+    width: var(--sp-l);
+    height: var(--sp-l);
   }
 }
 
 .invalid-icon {
-  width: deprecated.$s-16;
-  height: deprecated.$s-16;
+  width: var(--sp-l);
+  height: var(--sp-l);
   background: var(--input-border-color-error);
   border-radius: 50%;
   display: flex;
@@ -110,28 +115,28 @@
   justify-content: center;
   position: absolute;
   right: var(--input-icon-padding);
-  top: calc(50% - deprecated.$s-8);
+  top: calc(50% - var(--sp-s));
   svg {
-    width: deprecated.$s-12;
-    height: deprecated.$s-12;
+    width: var(--sp-m);
+    height: var(--sp-m);
     stroke: var(--input-background-color);
   }
 }
 
 .valid-icon {
-  width: deprecated.$s-16;
-  height: deprecated.$s-16;
+  width: var(--sp-l);
+  height: var(--sp-l);
   background: var(--input-border-color-success);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: absolute;
-  right: deprecated.$s-16;
-  top: calc(50% - deprecated.$s-8);
+  right: var(--sp-l);
+  top: calc(50% - var(--sp-s));
   svg {
-    width: deprecated.$s-12;
-    height: deprecated.$s-12;
+    width: var(--sp-m);
+    height: var(--sp-m);
     fill: var(--input-border-color-success);
     stroke: var(--input-background-color);
   }
@@ -140,25 +145,25 @@
 .error {
   color: var(--input-border-color-error);
   width: 100%;
-  font-size: deprecated.$fs-14;
+  @include t.use-typography("body-medium");
 }
 
 .hint {
-  @include deprecated.bodySmallTypography;
+  @include t.use-typography("body-small");
   width: 99%;
-  margin-block-start: deprecated.$s-8;
+  margin-block-start: var(--sp-s);
   color: var(--modal-text-foreground-color);
 }
 
 .checkbox {
   @extend .input-checkbox;
   .checkbox-label {
-    @include deprecated.bodySmallTypography;
+    @include t.use-typography("body-small");
     display: flex;
     align-items: center;
     flex-direction: row-reverse;
-    gap: deprecated.$s-6;
-    min-height: deprecated.$s-32;
+    gap: px2rem(6);
+    min-height: $sz-32;
     cursor: pointer;
     span {
       @extend .checkbox-icon;
@@ -181,23 +186,25 @@
 // SELECT
 .custom-select {
   @extend .select-wrapper;
-  height: deprecated.$s-32;
+  height: $sz-32;
   .input-container {
-    @include deprecated.flexRow;
-    height: deprecated.$s-32;
+    display: flex;
+    flex-direction: row;
+    height: $sz-32;
     width: 100%;
-    border-radius: deprecated.$br-8;
-    border: deprecated.$s-1 solid var(--input-border-color);
+    border-radius: $br-8;
+    border: $b-1 solid var(--input-border-color);
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
     .main-content {
-      @include deprecated.flexColumn;
-      @include deprecated.bodySmallTypography;
+      display: flex;
+      flex-direction: column;
+      @include t.use-typography("body-small");
       position: relative;
       justify-content: center;
       flex-grow: 1;
       height: 100%;
-      padding: deprecated.$s-8;
+      padding: var(--sp-s);
 
       .label {
         color: var(--input-foreground-color);
@@ -211,9 +218,11 @@
       }
     }
     .icon {
-      @include deprecated.flexCenter;
-      height: deprecated.$s-32;
-      width: deprecated.$s-24;
+      display: flex;
+  align-items: center;
+  justify-content: center;
+      height: $sz-32;
+      width: $sz-24;
       pointer-events: none;
       svg {
         @extend .button-icon-small;
@@ -224,40 +233,40 @@
 
     &.disabled {
       background-color: var(--input-background-color-disabled);
-      border: deprecated.$s-1 solid var(--input-border-color-disabled);
+      border: $b-1 solid var(--input-border-color-disabled);
       color: var(--input-foreground-color-disabled);
     }
     &.focus {
       outline: none;
       color: var(--input-foreground-color-active);
       background-color: var(--input-background-color-active);
-      border: deprecated.$s-1 solid var(--input-border-color-active);
+      border: $b-1 solid var(--input-border-color-active);
     }
   }
 
   select {
     @extend .menu-dropdown;
-    @include deprecated.bodySmallTypography;
+    @include t.use-typography("body-small");
     box-sizing: border-box;
     position: absolute;
     top: 0;
     left: 0;
-    min-height: deprecated.$s-32;
+    min-height: $sz-32;
     height: auto;
     width: calc(100% - 1px);
-    padding: 0 deprecated.$s-12;
+    padding: 0 var(--sp-m);
     margin: 0;
     border: none;
     opacity: 0;
-    z-index: deprecated.$z-index-10;
+    z-index: 10;
     background-color: transparent;
     cursor: pointer;
     option {
-      @include deprecated.bodySmallTypography;
+      @include t.use-typography("body-small");
       color: var(--title-foreground-color-hover);
       background-color: var(--menu-background-color);
       appearance: none;
-      height: deprecated.$s-32;
+      height: $sz-32;
     }
   }
 }
@@ -267,7 +276,7 @@
   @extend .button-primary;
   &:disabled {
     @extend .button-disabled;
-    min-height: deprecated.$s-32;
+    min-height: $sz-32;
   }
 }
 
@@ -276,33 +285,38 @@
   display: flex;
   flex-direction: column;
   position: relative;
-  min-height: deprecated.$s-40;
-  max-height: deprecated.$s-180;
+  min-height: $sz-40;
+  max-height: px2rem(180);
   width: 100%;
   overflow-y: hidden;
   .inside-input {
-    @include deprecated.removeInputStyle;
-    @include deprecated.bodySmallTypography;
-    @include deprecated.textEllipsis;
+    border: none;
+    background: none;
+    outline: none;
+    appearance: none;
+    @include t.use-typography("body-small");
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     width: 100%;
-    max-width: calc(100% - deprecated.$s-1);
-    min-height: deprecated.$s-32;
+    max-width: calc(100% - #{$b-1});
+    min-height: $sz-32;
     padding-top: 0;
-    height: deprecated.$s-32;
-    padding: deprecated.$s-8;
+    height: $sz-32;
+    padding: var(--sp-s);
     margin: 0;
-    border-radius: deprecated.$br-8;
+    border-radius: $br-8;
     color: var(--input-foreground-color-active);
     background-color: var(--input-background-color);
     &:focus {
       outline: none;
-      border: deprecated.$s-1 solid var(--input-border-color-focus);
+      border: $b-1 solid var(--input-border-color-focus);
     }
     &.invalid {
-      border: deprecated.$s-1 solid var(--input-border-color-error);
+      border: $b-1 solid var(--input-border-color-error);
       &:hover,
       &:focus {
-        border: deprecated.$s-1 solid var(--input-border-color-error);
+        border: $b-1 solid var(--input-border-color-error);
       }
     }
   }
@@ -312,31 +326,35 @@
   .selected-items {
     display: flex;
     flex-wrap: wrap;
-    gap: deprecated.$s-4;
-    max-height: deprecated.$s-136;
-    padding: deprecated.$s-4 0;
+    gap: var(--sp-xs);
+    max-height: px2rem(136);
+    padding: var(--sp-xs) 0;
     overflow-y: scroll;
     .selected-item {
       .around {
-        @include deprecated.flexRow;
-        height: deprecated.$s-24;
+        display: flex;
+        flex-direction: row;
+        height: $sz-24;
         width: fit-content;
-        padding-left: deprecated.$s-6;
-        border-radius: deprecated.$br-6;
+        padding-inline-start: px2rem(6);
+        border-radius: $br-6;
         background-color: var(--pill-background-color);
-        border: deprecated.$s-1 solid var(--pill-background-color);
+        border: $b-1 solid var(--pill-background-color);
         box-sizing: border-box;
         .text {
-          @include deprecated.bodySmallTypography;
-          padding-right: deprecated.$s-8;
+          @include t.use-typography("body-small");
+          padding-inline-end: var(--sp-s);
           color: var(--pill-foreground-color);
         }
 
         .icon {
-          @include deprecated.flexCenter;
-          @include deprecated.buttonStyle;
-          height: deprecated.$s-32;
-          width: deprecated.$s-24;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          user-select: none;
+          height: $sz-32;
+          width: $sz-24;
           svg {
             @extend .button-icon-small;
             stroke: var(--icon-foreground);
@@ -360,31 +378,32 @@
 .custom-radio {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: deprecated.$s-16;
+  gap: var(--sp-l);
 }
 
 .radio-label {
-  @include deprecated.bodySmallTypography;
-  @include deprecated.flexRow;
+  @include t.use-typography("body-small");
+  display: flex;
+    flex-direction: row;
   align-items: flex-start;
-  gap: deprecated.$s-8;
-  min-height: deprecated.$s-32;
+  gap: var(--sp-s);
+  min-height: $sz-32;
   height: fit-content;
-  border-radius: deprecated.$br-8;
-  padding: deprecated.$s-8;
+  border-radius: $br-8;
+  padding: var(--sp-s);
   color: var(--input-foreground-color-rest);
-  border: deprecated.$s-1 solid transparent;
+  border: $b-1 solid transparent;
   &:focus,
   &:focus-within {
     outline: none;
-    border: deprecated.$s-1 solid var(--input-border-color-active);
+    border: $b-1 solid var(--input-border-color-active);
   }
 }
 
 .radio-dot {
-  height: deprecated.$s-8;
-  width: deprecated.$s-8;
-  border-radius: deprecated.$br-circle;
+  height: var(--sp-s);
+  width: var(--sp-s);
+  border-radius: $br-circle;
   background-color: var(--color-background-tertiary);
 }
 
@@ -395,16 +414,16 @@
 
 .radio-icon {
   @extend .checkbox-icon;
-  border-radius: deprecated.$br-circle;
+  border-radius: $br-circle;
 }
 
 .radio-label-image {
-  @include deprecated.smallTitleTipography;
+  @include t.use-typography("title-small");
   display: grid;
   grid-template-rows: auto auto 0px;
   justify-items: center;
   gap: 0;
-  border-radius: deprecated.$br-8;
+  border-radius: $br-8;
   margin: 0;
   border: 1px solid var(--color-background-tertiary);
   cursor: pointer;
@@ -414,28 +433,30 @@
   &:focus,
   &:focus-within {
     outline: none;
-    border: deprecated.$s-1 solid var(--input-border-color-active);
+    border: $b-1 solid var(--input-border-color-active);
   }
   .image-text {
     color: var(--input-foreground-color-rest);
     display: grid;
     align-self: center;
-    margin-bottom: deprecated.$s-16;
-    padding-inline: deprecated.$s-8;
+    margin-block-end: var(--sp-l);
+    padding-inline: var(--sp-s);
     text-align: center;
   }
 }
 
 .image-inside {
-  margin: deprecated.$s-16;
+  margin: var(--sp-l);
   background-size: 100%;
   background-repeat: no-repeat;
   background-position: center;
 }
 
 .icon-inside {
-  margin: deprecated.$s-16;
-  @include deprecated.flexCenter;
+  margin: var(--sp-l);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   svg {
     width: 40px;
     height: 60px;
@@ -447,10 +468,10 @@
 //TEXTAREA
 
 .textarea-label {
-  @include deprecated.uppercaseTitleTipography;
+  @include t.use-typography("headline-medium");
   color: var(--modal-title-foreground-color);
   text-transform: uppercase;
-  margin-bottom: deprecated.$s-8;
+  margin-block-end: var(--sp-s);
 }
 
 .textarea-wrapper {
