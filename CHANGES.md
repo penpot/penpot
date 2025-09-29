@@ -4,27 +4,30 @@
 
 ### :rocket: Epics and highlights
 
-### :boom: Breaking changes & Deprecations
+- Deprecated configuration variables with the prefix `PENPOT_ASSETS_*`, and will be
+  removed in future versions:
 
-- Remove already deprecated configuration variables with the prefix
-  `PENPOT_ASSETS_*` (replaced by variables named with
-  `PENPOT_OBJECTS_STORAGE_*`.
+  - The `PENPOT_ASSETS_STORAGE_BACKEND` becomes `PENPOT_OBJECTS_STORAGE_BACKEND` and its
+    values passes from (`assets-fs` or `assets-s3`) to (`fs` or `s3`)
+  - The `PENPOT_STORAGE_ASSETS_FS_DIRECTORY` becomes `PENPOT_OBJECTS_STORAGE_FS_DIRECTORY`
+  - The `PENPOT_STORAGE_ASSETS_S3_BUCKET` becomes `PENPOT_OBJECTS_STORAGE_S3_BUCKET`
+  - The `PENPOT_STORAGE_ASSETS_S3_REGION` becomes `PENPOT_OBJECTS_STORAGE_S3_REGION`
+  - The `PENPOT_STORAGE_ASSETS_S3_ENDPOINT` becomes `PENPOT_OBJECTS_STORAGE_S3_ENDPOINT`
+  - The `PENPOT_STORAGE_ASSETS_S3_IO_THREADS` replaced (see below)
 
-- Replace the `PENPOT_OBJECTS_STORAGE_S3_IO_THREADS` with a more
-  general configuration `PENPOT_NETTY_IO_THREADS` used to configure a
-  shared netty resources across different services which use netty
-  internally (redis connection, S3 SDK client). This configuration is
-  not very commonly used so don't expected real impact on any user.
+- Add `PENPOT_NETTY_IO_THREADS` and `PENPOT_EXECUTOR_THREADS` variables to provide the
+  control over concurrency of the shared resources used by netty. Penpot uses the netty IO
+  threads for AWS S3 SDK and Redis/Valkey communication, and the EXEC threads to perform
+  out of HTTP serving threads tasks such that cache invalidation, S3 response completion,
+  configuration reloading and many other auxiliar tasks. By default they use a half number
+  if available cpus with a minumum of 2 for both executors. You should not touch that
+  variables unless you are know what you are doing.
 
-- Add `PENPOT_NETTY_IO_THREADS` and `PENPOT_EXECUTOR_THREADS`
-  variables for provide the control over concurrency of the shared
-  resources used by netty. Penpot uses the netty IO threads for AWS S3
-  SDK and Redis/Valkey communication, and the EXEC threads to perform
-  out of HTTP serving threads tasks such that cache invalidation, S3
-  response completion, configuration reloading and many other auxiliar
-  tasks. By default they use a half number if available cpus with a
-  minumum of 2 for both executors. You should not touch that variables
-  unless you are really know what you are doing.
+- Replace the `PENPOT_STORAGE_ASSETS_S3_IO_THREADS` with a more general configuration
+  `PENPOT_NETTY_IO_THREADS` used to configure a shared netty resources across different
+  services which use netty internally (redis connection, S3 SDK client). This
+  configuration is not very commonly used so don't expected real impact on any user.
+
 
 ### :heart: Community contributions (Thank you!)
 
@@ -181,7 +184,7 @@
 
 **Penpot Library**
 
-The initial prototype is completly reworked for provide a more consistent API
+The initial prototype is completly reworked to provide a more consistent API
 and to have proper validation and params decoding. All the details can be found
 on [its own changelog](library/CHANGES.md)
 
