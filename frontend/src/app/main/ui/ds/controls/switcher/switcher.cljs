@@ -41,7 +41,7 @@
         controlled? (some? checked)
         current-checked (if controlled? checked internal-checked)
         
-        ;; Handle toggle
+        ;; Toggle handler
         handle-toggle (mf/use-fn
                        (mf/deps controlled? current-checked on-change internal-checked*)
                        (fn [event]
@@ -52,7 +52,7 @@
                              (when on-change
                                (on-change new-checked event))))))
         
-        ;; Handle keyboard events
+        ;; Keyboard events
         handle-keydown (mf/use-fn
                         (mf/deps handle-toggle)
                         (fn [event]

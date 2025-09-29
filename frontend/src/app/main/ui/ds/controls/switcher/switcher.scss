@@ -30,13 +30,9 @@ $switcher-transition-duration: 0.2s;
 }
 
 .switcher-label {
-  color: var(--color-foreground-primary);
+  color: var(--title-foreground-color);
   cursor: pointer;
   user-select: none;
-  
-  &:hover {
-    color: var(--color-foreground-primary);
-  }
 }
 
 .switcher {
@@ -48,7 +44,6 @@ $switcher-transition-duration: 0.2s;
   background: transparent;
   padding: 0;
   
-  // Focus ring using DS tokens - teal border around track
   &:focus-visible {
     .switcher-track {
       outline: $b-2 solid var(--color-accent-tertiary);
@@ -62,7 +57,7 @@ $switcher-transition-duration: 0.2s;
     
     .switcher-label {
       cursor: not-allowed;
-      color: var(--color-foreground-secondary);
+      color: var(--text-foreground-color);
     }
     
     .switcher-track {
@@ -146,16 +141,14 @@ $switcher-transition-duration: 0.2s;
 
 .switcher-track {
   position: relative;
-  border-radius: 9999px; 
+  border-radius: $br-full; 
   background-color: var(--color-background-quaternary); 
   transition: background-color $switcher-transition-duration ease-in-out;
   
-  // ON state - use success/teal color from DS
   .switcher.is-checked & {
     background-color: var(--color-accent-success);
   }
   
-  // Hover states (only when not disabled)
   .switcher:not(.is-disabled):hover:not(.is-checked) & {
     background-color: var(--color-background-quaternary);
   }
@@ -172,18 +165,15 @@ $switcher-transition-duration: 0.2s;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
   transition: transform $switcher-transition-duration ease-in-out, background-color $switcher-transition-duration ease-in-out;
   
-  // ON state - contrasting thumb (white in dark theme, dark in light theme)
   .switcher.is-checked & {
     background-color: var(--color-foreground-primary);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
   }
   
-  // Hover states - contrasting thumb for OFF state
   .switcher:not(.is-disabled):hover:not(.is-checked) & {
     background-color: var(--color-foreground-primary);
   }
   
-  // Hover states - keep contrasting thumb for ON state
   .switcher:not(.is-disabled):hover.is-checked & {
     background-color: var(--color-foreground-primary);
   }
