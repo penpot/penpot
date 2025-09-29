@@ -22,7 +22,6 @@
    [app.common.types.component :as ctc]
    [app.common.types.fills :as types.fills]
    [app.common.types.shape :as cts]
-   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
@@ -44,7 +43,6 @@
    [app.main.data.workspace.common :as dwc]
    [app.main.data.workspace.drawing :as dwd]
    [app.main.data.workspace.edition :as dwe]
-   [app.main.data.workspace.fix-broken-shapes :as fbs]
    [app.main.data.workspace.fix-deleted-fonts :as fdf]
    [app.main.data.workspace.groups :as dwg]
    [app.main.data.workspace.guides :as dwgu]
@@ -71,7 +69,6 @@
    [app.main.features.pointer-map :as fpmap]
    [app.main.repo :as rp]
    [app.main.router :as rt]
-   [app.main.worker :as mw]
    [app.render-wasm :as wasm]
    [app.render-wasm.api :as api]
    [app.util.dom :as dom]
@@ -85,7 +82,7 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(log/set-level! :debug)
+(log/set-level! :trace)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
@@ -159,18 +156,9 @@
   (->> (fpmap/resolve-file file)
        (rx/map :data)
        (rx/map process-fills)
-       (rx/mapcat
-        (fn [{:keys [pages-index] :as data}]
-          (->> (rx/from (seq pages-index))
-               (rx/mapcat
-                (fn [[id page]]
-                  (let [page (update page :objects ctst/start-page-index)]
-                    (->> (mw/ask! {:cmd :index/initialize-page-index :page page})
-                         (rx/map (fn [_] [id page]))))))
-               (rx/reduce conj {})
-               (rx/map (fn [pages-index]
-                         (let [data (assoc data :pages-index pages-index)]
-                           (assoc file :data (d/removem (comp t/pointer? val) data))))))))))
+       (rx/map
+        (fn [data]
+          (assoc file :data (d/removem (comp t/pointer? val) data))))))
 
 (defn- check-libraries-synchronozation
   [file-id libraries]
@@ -244,8 +232,7 @@
     ptk/WatchEvent
     (watch [_ _ _]
       (rx/of (dp/check-open-plugin)
-             (fdf/fix-deleted-fonts)
-             (fbs/fix-broken-shapes)))))
+             (fdf/fix-deleted-fonts-for-local-library file-id)))))
 
 (defn- bundle-fetched
   [{:keys [file file-id thumbnails] :as bundle}]
@@ -281,6 +268,8 @@
   (ptk/reify ::fetch-bundle
     ptk/WatchEvent
     (watch [_ _ stream]
+      (log/debug :hint "fetch bundle" :file-id (dm/str file-id))
+
       (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
         (->> (rx/zip (rp/cmd! :get-file {:id file-id :features features})
                      (get-file-object-thumbnails file-id))
@@ -289,6 +278,7 @@
               (fn [[file thumbnails]]
                 (->> (resolve-file file)
                      (rx/map (fn [file]
+                               (log/trace :hint "file resolved" :file-id file-id)
                                {:file file
                                 :file-id file-id
                                 :features features
@@ -358,6 +348,10 @@
                    (rx/map deref)
                    (rx/mapcat
                     (fn [{:keys [file]}]
+                      (log/debug :hint "bundle fetched"
+                                 :team-id (dm/str team-id)
+                                 :file-id (dm/str file-id))
+
                       (rx/of (dpj/initialize-project (:project-id file))
                              (dwn/initialize team-id file-id)
                              (dwsl/initialize-shape-layout)

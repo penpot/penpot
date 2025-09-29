@@ -4,7 +4,7 @@
 ;;
 ;; Copyright (c) KALEIDOS INC
 
-(ns app.util.snap-data
+(ns app.worker.snap
   "Data structure that holds and retrieves the data to make the snaps.
    Internally is implemented with a balanced binary tree that queries by range.
    https://en.wikipedia.org/wiki/Range_tree"

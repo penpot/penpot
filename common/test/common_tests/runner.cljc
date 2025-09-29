@@ -41,6 +41,7 @@
    [common-tests.types.components-test]
    [common-tests.types.fill-test]
    [common-tests.types.modifiers-test]
+   [common-tests.types.objects-map-test]
    [common-tests.types.path-data-test]
    [common-tests.types.shape-decode-encode-test]
    [common-tests.types.shape-interactions-test]
@@ -90,9 +91,10 @@
    'common-tests.time-test
    'common-tests.types.absorb-assets-test
    'common-tests.types.components-test
-   'common-tests.types.modifiers-test
-   'common-tests.types.path-data-test
    'common-tests.types.fill-test
+   'common-tests.types.modifiers-test
+   'common-tests.types.objects-map-test
+   'common-tests.types.path-data-test
    'common-tests.types.shape-decode-encode-test
    'common-tests.types.shape-interactions-test
    'common-tests.types.tokens-lib-test

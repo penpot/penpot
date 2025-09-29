@@ -15,6 +15,7 @@
    [app.common.types.components-list :as ctkl]
    [app.common.types.container :as ctn]
    [app.common.types.page :as ctp]
+   [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.main.data.changes :as dch]
@@ -23,12 +24,14 @@
    [app.main.data.helpers :as dsh]
    [app.main.data.persistence :as-alias dps]
    [app.main.data.workspace.drawing :as dwd]
+   [app.main.data.workspace.fix-deleted-fonts :as fdf]
    [app.main.data.workspace.layout :as layout]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.thumbnails :as dwth]
    [app.main.errors]
    [app.main.features :as features]
    [app.main.router :as rt]
+   [app.main.worker :as mw]
    [app.render-wasm.shape :as wasm.shape]
    [app.util.http :as http]
    [app.util.i18n :as i18n :refer [tr]]
@@ -56,16 +59,21 @@
                   (some? metadata)   (cf/resolve-file-media metadata)
                   (some? fill-image) (cf/resolve-file-media fill-image))))))
 
+(defn- get-page-cache
+  [state file-id page-id]
+  (dm/get-in state [:workspace-cache [file-id page-id]]))
 
 (defn- initialize-page*
   "Second phase of page initialization, once we know the page is
   available in the state"
-  [file-id page-id page]
+  [file-id page-id]
   (ptk/reify ::initialize-page*
     ptk/UpdateEvent
     (update [_ state]
-      ;; selection; when user abandon the current page, the selection is lost
-      (let [local (dm/get-in state [:workspace-cache [file-id page-id]] default-workspace-local)]
+      (let [state (dsh/update-page state file-id page-id #(update % :objects ctst/start-page-index))
+            page  (dsh/lookup-page state file-id page-id)
+            local (or (get-page-cache state file-id page-id) default-workspace-local)]
+
         (-> state
             (assoc :current-page-id page-id)
             (assoc :workspace-local (assoc local :selected (d/ordered-set)))
@@ -75,11 +83,16 @@
             (update :workspace-layout layout/load-layout-flags)
             (update :workspace-global layout/load-layout-state))))
 
-    ptk/EffectEvent
-    (effect [_ _ _]
-      (let [uris  (into #{} xf:collect-file-media (:objects page))]
-        (->> (rx/from uris)
-             (rx/subs! #(http/fetch-data-uri % false)))))))
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [page (dsh/lookup-page state file-id page-id)
+            uris (into #{} xf:collect-file-media (:objects page))]
+        (rx/merge
+         (->> (rx/from uris)
+              (rx/map #(http/fetch-data-uri % false))
+              (rx/ignore))
+         (->> (mw/ask! {:cmd :index/initialize :page page})
+              (rx/ignore)))))))
 
 (defn initialize-page
   [file-id page-id]
@@ -89,9 +102,10 @@
   (ptk/reify ::initialize-page
     ptk/WatchEvent
     (watch [_ state _]
-      (if-let [page (dsh/lookup-page state file-id page-id)]
+      (if (dsh/lookup-page state file-id page-id)
         (rx/concat
-         (rx/of (initialize-page* file-id page-id page)
+         (rx/of (initialize-page* file-id page-id)
+                (fdf/fix-deleted-fonts-for-page file-id page-id)
                 (dwth/watch-state-changes file-id page-id)
                 (dwl/watch-component-changes))
          (let [profile (:profile state)

@@ -158,7 +158,6 @@
 
                           tpoint   (ct/tpoint)]
 
-
                       (when (not= (:vern params)
                                   (:vern file))
                         (ex/raise :type :validation
@@ -181,14 +180,14 @@
                                               (set/difference (:features team))
                                               (set/difference cfeat/no-team-inheritable-features)
                                               (not-empty))]
-                        (let [features (->> features
-                                            (set/union (:features team))
-                                            (db/create-array conn "text"))]
+                        (let [features (-> features
+                                           (set/union (:features team))
+                                           (set/difference cfeat/no-team-inheritable-features)
+                                           (into-array))]
                           (db/update! conn :team
                                       {:features features}
                                       {:id (:id team)}
                                       {::db/return-keys false})))
-
 
                       (mtx/run! metrics {:id :update-file-changes :inc (count changes)})
 
