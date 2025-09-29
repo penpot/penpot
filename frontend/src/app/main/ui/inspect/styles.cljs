@@ -19,6 +19,7 @@
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
    [app.main.ui.inspect.styles.panels.layout :refer [layout-panel*]]
    [app.main.ui.inspect.styles.panels.layout-element :refer [layout-element-panel*]]
+   [app.main.ui.inspect.styles.panels.svg :refer [svg-panel*]]
    [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
    [app.main.ui.inspect.styles.panels.variants-panel :refer [variants-panel*]]
    [app.main.ui.inspect.styles.panels.visibility :refer [visibility-panel*]]
@@ -83,16 +84,11 @@
 
         tokens-lib         (mf/deref refs/tokens-lib)
         active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
-        active-sets
-        (mf/with-memo [tokens-lib]
-          (some-> tokens-lib (ctob/get-active-themes-set-names)))
-        active-tokens
-        (mf/with-memo [tokens-lib]
-          (if tokens-lib
-            (ctob/get-tokens-in-active-sets tokens-lib)
-            {}))
-        resolved-active-tokens
-        (sd/use-resolved-tokens* active-tokens)
+        active-sets        (mf/with-memo [tokens-lib]
+                             (some-> tokens-lib (ctob/get-active-themes-set-names)))
+        active-tokens      (mf/with-memo [tokens-lib]
+                             (some-> tokens-lib (ctob/get-tokens-in-active-sets)))
+        resolved-active-tokens (sd/use-resolved-tokens* active-tokens)
         has-visibility-props? (mf/use-fn
                                (fn [shape]
                                  (let [shape-type (:type shape)]
@@ -169,6 +165,13 @@
                [:> visibility-panel* {:shapes shapes
                                       :objects objects
                                       :resolved-tokens resolved-active-tokens}]]))
+          ;; SVG PANEL
+          :svg
+          (let [shape (first shapes)]
+            (when (seq (:svg-attrs shape))
+              [:> style-box* {:panel :svg}
+               [:> svg-panel* {:shape shape
+                               :objects objects}]]))
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
