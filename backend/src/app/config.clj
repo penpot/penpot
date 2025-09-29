@@ -217,6 +217,13 @@
     [:netty-io-threads {:optional true} ::sm/int]
     [:executor-threads {:optional true} ::sm/int]
 
+    ;; DEPRECATED
+    [:assets-storage-backend {:optional true} :keyword]
+    [:storage-assets-fs-directory {:optional true} :string]
+    [:storage-assets-s3-bucket {:optional true} :string]
+    [:storage-assets-s3-region {:optional true} :keyword]
+    [:storage-assets-s3-endpoint {:optional true} ::sm/uri]
+
     [:objects-storage-backend {:optional true} :keyword]
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]

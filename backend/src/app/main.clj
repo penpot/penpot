@@ -461,15 +461,21 @@
      :assets-fs (ig/ref :app.storage.fs/backend)}}
 
    :app.storage.s3/backend
-   {::sto.s3/region   (cf/get :objects-storage-s3-region)
-    ::sto.s3/endpoint (cf/get :objects-storage-s3-endpoint)
-    ::sto.s3/bucket   (cf/get :objects-storage-s3-bucket)
+   {::sto.s3/region     (or (cf/get :storage-assets-s3-region)
+                            (cf/get :objects-storage-s3-region))
+    ::sto.s3/endpoint   (or (cf/get :storage-assets-s3-endpoint)
+                            (cf/get :objects-storage-s3-endpoint))
+    ::sto.s3/bucket     (or (cf/get :storage-assets-s3-bucket)
+                            (cf/get :objects-storage-s3-bucket))
+    ::sto.s3/io-threads (or (cf/get :storage-assets-s3-io-threads)
+                            (cf/get :objects-storage-s3-io-threads))
 
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}
 
    :app.storage.fs/backend
-   {::sto.fs/directory (cf/get :objects-storage-fs-directory)}})
+   {::sto.fs/directory (or (cf/get :storage-assets-fs-directory)
+                           (cf/get :objects-storage-fs-directory))}})
 
 (def worker-config
   {::wrk/cron
