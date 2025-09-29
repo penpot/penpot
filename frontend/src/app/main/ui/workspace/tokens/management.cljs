@@ -82,7 +82,7 @@
         ;; select the first one from the list of sets
         selected-token-set-tokens
         (when selected-token-set-id
-          (some-> tokens-lib (ctob/get-tokens-map selected-token-set-id)))
+          (some-> tokens-lib (ctob/get-tokens selected-token-set-id)))
 
         tokens
         (mf/with-memo [active-tokens selected-token-set-tokens]

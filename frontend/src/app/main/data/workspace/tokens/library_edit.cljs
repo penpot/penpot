@@ -410,7 +410,7 @@
           (when-let [token (ctob/get-token tokens-lib
                                            (ctob/get-id token-set)
                                            token-id)]
-            (let [tokens (ctob/get-tokens-seq tokens-lib (ctob/get-id token-set))
+            (let [tokens (vals (ctob/get-tokens tokens-lib (ctob/get-id token-set)))
                   unames (map :name tokens)
                   suffix (tr "workspace.tokens.duplicate-suffix")
                   copy-name (cfh/generate-unique-name (:name token) unames :suffix suffix)]
