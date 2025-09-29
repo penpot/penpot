@@ -15,6 +15,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
+   [app.main.ui.inspect.styles.panels.blur :refer [blur-panel*]]
    [app.main.ui.inspect.styles.panels.fill :refer [fill-panel*]]
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
    [app.main.ui.inspect.styles.panels.layout :refer [layout-panel*]]
@@ -63,6 +64,8 @@
    (not (contains? #{:text :group} (:type shape)))
    (seq (:fills shape))))
 
+(defn- has-blur? [shape]
+  (:blur shape))
 
 (defn- get-shape-type
   [shapes first-shape first-component]
@@ -172,6 +175,13 @@
               [:> style-box* {:panel :svg}
                [:> svg-panel* {:shape shape
                                :objects objects}]]))
+          ;; BLUR PANEL
+          :blur
+          (let [shapes (->> shapes (filter has-blur?))]
+            (when (seq shapes)
+              [:> style-box* {:panel :blur}
+               [:> blur-panel* {:shapes shapes
+                                :objects objects}]]))
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
