@@ -27,7 +27,9 @@
 
 (defn get-legacy-backend
   []
-  (let [name (cf/get :assets-storage-backend)]
+  (when-let [name (cf/get :assets-storage-backend)]
+    (l/wrn :hint "using deprecated configuration, please read 2.11 release notes"
+           :href "https://github.com/penpot/penpot/releases/tag/2.11.0")
     (case name
       :assets-fs :fs
       :assets-s3 :s3
