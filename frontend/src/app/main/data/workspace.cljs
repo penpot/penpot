@@ -153,6 +153,9 @@
 
 (defn- resolve-file
   [file]
+  (log/inf :hint "resolve file"
+           :file-id (str (:id file))
+           :features (str/join " " (:features file)))
   (->> (fpmap/resolve-file file)
        (rx/map :data)
        (rx/map process-fills)
