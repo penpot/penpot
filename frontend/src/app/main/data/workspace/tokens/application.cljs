@@ -489,7 +489,7 @@
                                                 (or
                                                  (and (ctsl/any-layout-immediate-child? objects shape)
                                                       (some ctt/spacing-margin-keys attributes))
-                                                 (ctt/any-appliable-attr? attributes (:type shape))))))
+                                                 (ctt/any-appliable-attr? attributes (:type shape) (:layout shape))))))
                           shape-ids (d/nilv (keys shapes)  [])
                           any-variant? (->> shapes vals (some ctk/is-variant?) boolean)
 

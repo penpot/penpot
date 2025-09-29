@@ -303,10 +303,10 @@
                  frame-1' (cths/get-shape file' :frame-1)
                  frame-2' (cths/get-shape file' :frame-2)]
              (t/testing "shape `:applied-tokens` got updated"
-               (t/is (= (:p1 (:applied-tokens frame-1')) (:name token-target')))
-               (t/is (= (:p2 (:applied-tokens frame-1')) (:name token-target')))
-               (t/is (= (:p3 (:applied-tokens frame-1')) (:name token-target')))
-               (t/is (= (:p4 (:applied-tokens frame-1')) (:name token-target')))
+               (t/is (= (:p1 (:applied-tokens frame-1')) nil))
+               (t/is (= (:p2 (:applied-tokens frame-1')) nil))
+               (t/is (= (:p3 (:applied-tokens frame-1')) nil))
+               (t/is (= (:p4 (:applied-tokens frame-1')) nil))
 
                (t/is (= (:p1 (:applied-tokens frame-2')) (:name token-target')))
                (t/is (= (:p2 (:applied-tokens frame-2')) (:name token-target')))

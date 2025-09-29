@@ -157,7 +157,9 @@
    :enable-dashboard-templates-section
    :enable-google-fonts-provider
    :enable-component-thumbnails
-   :enable-render-wasm-dpr])
+   :enable-render-wasm-dpr
+   :enable-token-units
+   :enable-token-typography-types])
 
 (defn parse
   [& flags]
