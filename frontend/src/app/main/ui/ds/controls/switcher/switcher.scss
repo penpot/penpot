@@ -27,12 +27,30 @@ $switcher-transition-duration: 0.2s;
   display: flex;
   align-items: center;
   gap: var(--sp-s);
+  padding: 0;
+  
+  // Focus ring using DS tokens - on wrapper cascading to track
+  &:focus-visible {
+    .switcher-track {
+      outline: $b-2 solid var(--color-accent-primary);
+      outline-offset: $b-2;
+    }
+  }
 }
 
 .switcher-label {
-  color: var(--title-foreground-color);
+  color: var(--color-foreground-primary);
   cursor: pointer;
   user-select: none;
+  
+  &:hover {
+    color: var(--color-foreground-primary);
+  }
+}
+
+.switcher-label.is-disabled {
+  cursor: not-allowed;
+  color: var(--color-foreground-secondary);
 }
 
 .switcher {
@@ -44,42 +62,7 @@ $switcher-transition-duration: 0.2s;
   background: transparent;
   padding: 0;
   
-  &:focus-visible {
-    .switcher-track {
-      outline: $b-2 solid var(--color-accent-tertiary);
-      outline-offset: $b-2;
-    }
-  }
   
-  // Disabled state
-  &.is-disabled {
-    cursor: not-allowed;
-    
-    .switcher-label {
-      cursor: not-allowed;
-      color: var(--text-foreground-color);
-    }
-    
-    .switcher-track {
-      background-color: var(--color-background-tertiary);
-      opacity: 0.6;
-    }
-    
-    &.is-checked .switcher-track {
-      background-color: var(--color-background-quaternary);
-      opacity: 0.6;
-    }
-    
-    .switcher-thumb {
-      background-color: var(--color-foreground-secondary);
-      opacity: 0.5;
-    }
-    
-    &.is-checked .switcher-thumb {
-      background-color: var(--color-foreground-secondary);
-      opacity: 0.6;
-    }
-  }
   
   // Size variants - Medium (default)
   &.switcher--md {
@@ -177,6 +160,31 @@ $switcher-transition-duration: 0.2s;
   .switcher:not(.is-disabled):hover.is-checked & {
     background-color: var(--color-foreground-primary);
   }
+}
+
+// Flat modifier-based selectors for states
+.switcher.is-disabled {
+  cursor: not-allowed;
+}
+
+.switcher-track.is-disabled {
+  background-color: var(--color-background-tertiary);
+  opacity: 0.6;
+}
+
+.switcher-track.is-disabled.is-checked {
+  background-color: var(--color-background-quaternary);
+  opacity: 0.6;
+}
+
+.switcher-thumb.is-disabled {
+  background-color: var(--color-foreground-secondary);
+  opacity: 0.5;
+}
+
+.switcher-thumb.is-disabled.is-checked {
+  background-color: var(--color-foreground-secondary);
+  opacity: 0.6;
 }
 
 @media (prefers-reduced-motion: reduce) {

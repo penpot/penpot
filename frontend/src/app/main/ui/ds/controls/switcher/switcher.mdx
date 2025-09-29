@@ -7,7 +7,7 @@
 import { Canvas, Meta } from '@storybook/blocks';
 import * as SwitcherStories from "./switcher.stories";
 
-<Meta title="DS/Controls/Switcher" />
+<Meta title="Controls/Switcher" />
 
 # Switcher
 
@@ -26,7 +26,7 @@ The switcher component consists of three main parts:
 ## Props
 
 | Name | Type | Default | Description | Required |
-|------|------|---------|-------------|----------|
+| ---- | ---- | ------- | ----------- | -------- |
 | `id` | `string` | auto-generated | Unique identifier for the switcher | No |
 | `label` | `string` | - | Text label displayed next to the switcher | No |
 | `checked` | `boolean` | - | Controlled checked state | No |
@@ -75,15 +75,13 @@ The switcher supports three size variants: `"sm"`, `"md"` (default), and `"lg"`.
 
 ### Disabled State
 
-Disabled switchers are non-interactive and visually distinct.
+Disabled switchers are non-interactive and visually distinct. You can control the disabled state using the `disabled` prop in the controls panel.
 
 ```clj
 [:> switcher* {:label "Disabled feature"
                :disabled true
                :default-checked false}]
 ```
-
-<Canvas of={SwitcherStories.Disabled} />
 
 ### Without Visible Label
 
@@ -96,22 +94,6 @@ When no visible label is provided, use `aria-label` for accessibility.
 
 <Canvas of={SwitcherStories.WithoutVisibleLabel} />
 
-## Accessibility
-
-The switcher component follows accessibility best practices:
-
-- **Role**: Uses `role="switch"` for proper semantic meaning
-- **Keyboard Support**: 
-  - `Tab` to focus the switcher
-  - `Space` or `Enter` to toggle the state
-- **ARIA Attributes**:
-  - `aria-checked` reflects the current state
-  - `aria-disabled` when disabled
-  - `aria-label` for screen readers when no visible label
-- **Focus Management**: Visible focus ring for keyboard navigation
-
-<Canvas of={SwitcherStories.Accessibility} />
-
 ## Design Tokens
 
 The switcher component uses the following design system tokens:
@@ -119,11 +101,9 @@ The switcher component uses the following design system tokens:
 ### Colors
 - **OFF state track**: `--color-background-quaternary` (muted gray)
 - **ON state track**: `--color-accent-success` (green/teal)
-- **OFF state thumb**: `--color-foreground-secondary` (gray)
-- **ON state thumb**: `--color-foreground-primary` (white in dark theme, black in light theme)
-- **Hover state thumb**: `--color-foreground-primary` (contrasting color)
+- **Thumb**: `--color-background-primary` (white/light)
 - **Label**: `--color-foreground-primary`
-- **Focus ring**: `--color-accent-tertiary` (teal in dark theme, purple in light theme)
+- **Focus ring**: `--color-accent-primary`
 
 ### Sizes
 - **Small**: Track 32×16px, Thumb 12px

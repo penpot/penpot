@@ -10,7 +10,7 @@ import Components from "@target/components";
 const { Switcher } = Components;
 
 export default {
-  title: "DS/Controls/Switcher",
+  title: "Controls/Switcher",
   component: Components.Switcher,
   argTypes: {
     checked: {
@@ -87,50 +87,6 @@ export const Controlled = {
   },
 };
 
-export const Sizes = {
-  render: () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <Switcher
-        size="sm"
-        label="Small switcher"
-        defaultChecked={false}
-        data-testid="small-switcher"
-      />
-      <Switcher
-        size="md"
-        label="Medium switcher"
-        defaultChecked={true}
-        data-testid="medium-switcher"
-      />
-      <Switcher
-        size="lg"
-        label="Large switcher"
-        defaultChecked={false}
-        data-testid="large-switcher"
-      />
-    </div>
-  ),
-};
-
-export const Disabled = {
-  render: () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <Switcher
-        label="Disabled (off)"
-        disabled={true}
-        defaultChecked={false}
-        data-testid="disabled-off"
-      />
-      <Switcher
-        label="Disabled (on)"
-        disabled={true}
-        defaultChecked={true}
-        data-testid="disabled-on"
-      />
-    </div>
-  ),
-};
-
 export const WithLongLabel = {
   args: {
     label: "This is a very long label that demonstrates how the switcher component handles text wrapping and layout when the label content is extensive",
@@ -150,33 +106,6 @@ export const WithoutVisibleLabel = {
   },
   render: ({ ...args }) => (
     <Switcher {...args} data-testid="no-label-switcher" />
-  ),
-};
-
-export const Accessibility = {
-  render: () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-      <div>
-        <p style={{ marginBottom: "8px", fontSize: "14px", color: "#666" }}>
-          Try using Tab to focus and Space/Enter to toggle:
-        </p>
-        <Switcher
-          label="Keyboard accessible switcher"
-          defaultChecked={false}
-          data-testid="keyboard-switcher"
-        />
-      </div>
-      <div>
-        <p style={{ marginBottom: "8px", fontSize: "14px", color: "#666" }}>
-          Screen reader accessible (no visible label):
-        </p>
-        <Switcher
-          aria-label="Toggle feature X"
-          defaultChecked={true}
-          data-testid="screen-reader-switcher"
-        />
-      </div>
-    </div>
   ),
 };
 
@@ -211,7 +140,8 @@ export const Interactive = {
         <div style={{ 
           marginTop: "16px", 
           padding: "12px", 
-          backgroundColor: "#f5f5f5", 
+          backgroundColor: "#f5f5f5",
+          color: "#000",
           borderRadius: "4px",
           fontSize: "14px"
         }}>

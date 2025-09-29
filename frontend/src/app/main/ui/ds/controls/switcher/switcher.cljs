@@ -28,7 +28,7 @@
 (mf/defc switcher*
   {::mf/forward-ref true
    ::mf/schema schema:switcher}
-  [{:keys [id label checked default-checked on-change disabled size aria-label class data-testid] :rest props} ref]
+  [{:keys [id label checked default-checked on-change disabled size aria-label class] :rest props} ref]
   (let [id (or id (mf/use-id))
         size (keyword (d/nilv size "md"))
         disabled (d/nilv disabled false)
@@ -68,12 +68,16 @@
                               (handle-toggle event)))
         
         has-label (not (str/blank? label))
-        effective-aria-label (or aria-label (when-not has-label "Toggle switch"))]
+        effective-aria-label (if has-label
+                              (or aria-label label)
+                              "Toggle switch")]
     
-    [:div {:class (dm/str class " " (stl/css-case :switcher-wrapper true))}
+    [:div {:class (dm/str class " " (stl/css-case :switcher-wrapper true))
+           :data-testid (.-data-testid props)}
      (when has-label
        [:label {:for id
-                :class (stl/css :switcher-label)
+                :class (stl/css-case :switcher-label true
+                                     :is-disabled disabled)
                 :on-click handle-label-click}
         label])
      [:div {:id id
@@ -83,7 +87,6 @@
             :aria-checked current-checked
             :aria-disabled disabled
             :aria-label effective-aria-label
-            :data-testid data-testid
             :class (stl/css-case :switcher true
                                  :is-checked current-checked
                                  :is-disabled disabled
@@ -92,8 +95,12 @@
                                  :switcher--lg (= size :lg))
             :on-click handle-toggle
             :on-key-down handle-keydown}
-      [:div {:class (stl/css :switcher-track)}
-       [:div {:class (stl/css :switcher-thumb)}]]]]))
+      [:div {:class (stl/css-case :switcher-track true
+                                  :is-checked current-checked
+                                  :is-disabled disabled)}
+       [:div {:class (stl/css-case :switcher-thumb true
+                                   :is-checked current-checked
+                                   :is-disabled disabled)}]]]]))
 
 ;; Export as default
 (def switcher switcher*)
