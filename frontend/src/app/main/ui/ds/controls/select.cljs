@@ -52,17 +52,20 @@
    [:disabled {:optional true} :boolean]
    [:default-selected {:optional true} :string]
    [:empty-to-end {:optional true} [:maybe :boolean]]
-   [:on-change {:optional true} fn?]])
+   [:on-change {:optional true} fn?]
+   [:variant {:optional true} [:maybe [:enum "default" "ghost"]]]])
 
 (mf/defc select*
   {::mf/schema schema:select}
-  [{:keys [options class disabled default-selected empty-to-end on-change] :rest props}]
+  [{:keys [options class disabled default-selected empty-to-end on-change variant] :rest props}]
   (let [;; NOTE: we use mfu/bean here for transparently handle
         ;; options provide as clojure data structures or javascript
         ;; plain objects and lists.
         options      (if (array? options)
                        (mfu/bean options)
                        options)
+
+        variant      (d/nilv variant "default")
 
         empty-to-end (d/nilv empty-to-end false)
         is-open*     (mf/use-state false)
@@ -162,7 +165,7 @@
                      (reset! focused-id* nil)))))))
 
         props
-        (mf/spread-props props {:class [class (stl/css :select)]
+        (mf/spread-props props {:class [class (stl/css :select) (stl/css-case :variant-ghost (= variant "ghost"))]
                                 :role "combobox"
                                 :aria-controls listbox-id
                                 :aria-haspopup "listbox"

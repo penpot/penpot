@@ -167,6 +167,7 @@
              [:div {:class (stl/css :inspect-tab-switcher-controls-color-space)}
               [:> select* {:options color-spaces
                            :default-selected "hex"
+                           :variant "ghost"
                            :on-change handle-change-color-space}]]
              [:div {:class (stl/css :inspect-tab-switcher-controls-tab)}
               [:> select* {:options tabs
