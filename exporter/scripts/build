@@ -11,10 +11,7 @@ yarn install || exit 1;
 rm -rf target
 
 # Build the application
-clojure -M:dev:shadow-cljs release main;
-
-# Remove source
-rm -rf target/app;
+yarn run build;
 
 # Copy package*.json files
 cp ../.yarnrc.yml target/;
