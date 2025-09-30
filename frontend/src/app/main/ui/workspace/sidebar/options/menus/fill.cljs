@@ -69,8 +69,8 @@
              n-vals  (unchecked-get n-props "values")
              o-fills (get o-vals :fills)
              n-fills (get n-vals :fills)
-             o-shapes-with-children (get o-vals :shapes-with-children)
-             n-shapes-with-children (get n-vals :shapes-with-children)
+             o-objects (get o-vals :objects)
+             n-objects (get n-vals :objects)
              o-applied-tokens (get o-vals :applied-tokens)
              n-applied-tokens (get n-vals :applied-tokens)
              o-hide  (get o-vals :hide-fill-on-export)
@@ -78,11 +78,11 @@
          (and (identical? o-hide n-hide)
               (identical? o-applied-tokens n-applied-tokens)
               (identical? o-fills n-fills)
-              (identical? o-shapes-with-children n-shapes-with-children)))))
+              (identical? o-objects n-objects)))))
 
 (mf/defc fill-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values applied-tokens shapes shapes-with-children]}]
+  [{:keys [ids type values applied-tokens shapes objects]}]
 
   (let [fills          (get values :fills)
         hide-on-export (get values :hide-fill-on-export false)
@@ -163,16 +163,6 @@
          (fn [index _event]
            (st/emit! (dc/detach-fill ids index))))
 
-        on-detach-token
-        (mf/use-fn
-         (mf/deps ids)
-         (fn [token]
-           (let [attributes #{:fill}]
-
-             (st/emit! (dwta/unapply-token {:attributes attributes
-                                            :token token
-                                            :shape-ids ids})))))
-
         on-change-show-on-export
         (mf/use-fn
          (mf/deps ids)
@@ -195,14 +185,33 @@
 
         on-token-change
         (mf/use-fn
-         (mf/deps shapes shapes-with-children)
+         (mf/deps shapes objects)
          (fn [_ token]
-           (let [is-group (= :group (:type (first shapes)))
-                 shapes (if is-group
-                          shapes-with-children
-                          shapes)]
-             (st/emit! (dwta/toggle-token {:token token
-                                           :shapes shapes})))))]
+           (let [expanded-shapes
+                 (if (= 1 (count shapes))
+                   (let [shape (first shapes)]
+                     (if (= (:type shape) :group)
+                       (keep objects (:shapes shape))
+                       [shape]))
+
+                   (mapcat (fn [shape]
+                             (if (= (:type shape) :group)
+                               (keep objects (:shapes shape))
+                               [shape]))
+                           shapes))]
+
+             (st/emit!
+              (dwta/toggle-token {:token token
+                                  :attrs #{:fill}
+                                  :shapes expanded-shapes})))))
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token]
+           (st/emit! (dwta/unapply-token {:attributes #{:fill}
+                                          :token token
+                                          :shape-ids ids}))))]
 
     (mf/with-layout-effect [hide-on-export]
       (when-let [checkbox (mf/ref-val checkbox-ref)]

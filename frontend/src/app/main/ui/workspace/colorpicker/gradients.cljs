@@ -52,6 +52,10 @@
        (str/join ", ")
        (str/ffmt "linear-gradient(90deg, %1)")))
 
+(defn- stop->hex-color
+  [stop]
+  (select-keys stop [:color :opacity]))
+
 (mf/defc stop-input-row*
   {::mf/private true}
   [{:keys [stop
@@ -156,7 +160,7 @@
      [:> color-row*
       {:disable-gradient true
        :disable-picker true
-       :color stop
+       :color (stop->hex-color stop)
        :index index
        :origin :gradient
        :on-change handle-change-stop-color

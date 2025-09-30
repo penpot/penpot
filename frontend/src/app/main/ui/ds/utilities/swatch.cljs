@@ -9,11 +9,10 @@
   (:require-macros
    [app.main.style :as stl])
   (:require
-   [app.common.colors :as clr]
    [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.schema :as sm]
-  ;;  [app.common.types.color :as ct]
+   [app.common.types.color :as ct]
    [app.config :as cfg]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.util.color :as uc]
@@ -60,8 +59,7 @@
 
 (def ^:private schema:swatch
   [:map {:title "SchemaSwatch"}
-  ;;  TODO: Review schema
-  ;;  [:background {:optional true} ct/schema:color]
+   [:background {:optional true} ct/schema:color]
    [:class {:optional true} :string]
    [:size {:optional true} [:enum "small" "medium" "large"]]
    [:active {:optional true} ::sm/boolean]
@@ -134,11 +132,8 @@
           [:span {:class (stl/css :swatch-image)
                   :style {:background-image (str/ffmt "url(%)" uri)}}])
         has-errors
-        [:span {:class (stl/css :swatch-opacity)}
-         [:span {:class (stl/css :swatch-solid-side)
-                 :style {:background clr/background-primary}}]
-         [:span {:class (stl/css :swatch-opacity-side)
-                 :style {:background clr/background-primary}}]]
+        [:span {:class (stl/css :swatch-error)}]
+
         :else
         [:span {:class (stl/css :swatch-opacity)}
          [:span {:class (stl/css :swatch-solid-side)

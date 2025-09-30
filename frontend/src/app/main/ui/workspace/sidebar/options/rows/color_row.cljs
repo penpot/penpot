@@ -85,7 +85,6 @@
         token-name (:name token)
         resolved (:resolved-value token)
         not-active (and (some? active-tokens) (nil? token))
-        ;;  value (dwta/value->color resolved)
         id (dm/str (:id token) "-name")
         swatch-tooltip-content (cond
                                  not-active
@@ -104,6 +103,7 @@
                                 [:div
                                  [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
                                  [:span {:class (stl/css :token-name-tooltip)} color-token]]))]
+
     [:div {:class (stl/css :color-info)}
      [:div {:class (stl/css-case :token-color-wrapper true
                                  :token-color-with-errors has-errors
@@ -137,12 +137,10 @@
          :icon i/tokens}]]]]))
 
 (mf/defc color-row*
-  ;; TODO: Add schema
   [{:keys [index color class disable-gradient disable-opacity disable-image disable-picker hidden
            on-change on-reorder on-detach on-open on-close on-remove origin on-detach-token
            disable-drag on-focus on-blur select-only select-on-focus on-token-change applied-token]}]
   (let [libraries        (mf/deref refs/files)
-        ;; ??
         on-change        (h/use-ref-callback on-change)
         on-token-change  (h/use-ref-callback on-token-change)
 

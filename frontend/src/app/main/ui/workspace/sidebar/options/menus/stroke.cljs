@@ -38,8 +38,8 @@
    :stroke-cap-end])
 
 (mf/defc stroke-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps" "applied-tokens" "shapes" "shapes-with-children"]))]}
-  [{:keys [ids type values show-caps disable-stroke-style applied-tokens shapes shapes-with-children] :as props}]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps" "applied-tokens" "shapes" "objects"]))]}
+  [{:keys [ids type values show-caps disable-stroke-style applied-tokens shapes objects] :as props}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")
@@ -210,7 +210,7 @@
                              :title (tr "workspace.options.stroke-color")
                              :index index
                              :shapes shapes
-                             :shapes-with-children shapes-with-children
+                             :objects objects
                              :show-caps show-caps
                              :on-color-change on-color-change
                              :on-color-detach on-color-detach

@@ -903,10 +903,7 @@ test.describe("Tokens: Themes modal", () => {
         .click({ button: "right" });
       await tokenContextMenuForToken.getByText("Fill").click();
 
-      const inputColor = workspacePage.page.getByRole("textbox", {
-        name: "Color",
-      });
-      await expect(inputColor).toHaveValue("000000");
+            await workspacePage.page.getByLabel("Name: colors.black");
     });
 
     test("User applies typography token to a text shape", async ({ page }) => {
