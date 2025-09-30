@@ -30,7 +30,8 @@
         shapes (mf/with-memo [shape] [shape])
 
         applied-tokens
-        (get shape :applied-tokens)
+        (when (seq (get shape :applied-tokens))
+          (get shape :applied-tokens))
 
         measure-values
         (select-keys shape measure-attrs)
@@ -127,7 +128,9 @@
      [:& stroke-menu {:ids ids
                       :type type
                       :show-caps true
-                      :values stroke-values}]
+                      :values stroke-values
+                      :shapes shapes
+                      :applied-tokens applied-tokens}]
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids

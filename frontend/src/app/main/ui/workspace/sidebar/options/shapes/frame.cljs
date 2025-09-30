@@ -149,7 +149,9 @@
 
      [:& stroke-menu {:ids ids
                       :type shape-type
-                      :values stroke-values}]
+                      :values stroke-values
+                      :shapes shapes
+                      :applied-tokens applied-tokens}]
      [:> color-selection-menu* {:type shape-type
                                 :shapes shapes-with-children
                                 :file-id file-id

@@ -535,4 +535,5 @@
    :line-height #{:line-height :number}
    :font-size #{:font-size}
    :letter-spacing #{:letter-spacing}
-   :fill #{:color}})
+   :fill #{:color}
+   :stroke-color #{:color}})

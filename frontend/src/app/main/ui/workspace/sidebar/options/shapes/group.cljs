@@ -99,7 +99,7 @@
         [blur-ids blur-values]
         (get-attrs shapes objects :blur)
 
-        [stroke-ids stroke-values]
+        [stroke-ids stroke-values stroke-tokens]
         (get-attrs shapes objects :stroke)
 
         [text-ids text-values]
@@ -152,7 +152,12 @@
          :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
+       [:& stroke-menu {:type type
+                        :ids stroke-ids
+                        :values stroke-values
+                        :shapes shapes
+                        :shapes-with-children shapes-with-children
+                        :applied-tokens stroke-tokens}])
 
      [:> color-selection-menu*
       {:type type
