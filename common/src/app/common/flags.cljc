@@ -135,7 +135,11 @@
     :subscriptions
     :subscriptions-old
     :frontend-binary-fills
-    :inspect-styles})
+    :inspect-styles
+
+    ;; Security layer middleware that filters request by fetch
+    ;; metadata headers
+    :sec-fetch-metadata-middleware})
 
 (def all-flags
   (set/union email login varia))
