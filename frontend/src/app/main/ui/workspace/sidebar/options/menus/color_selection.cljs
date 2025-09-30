@@ -21,15 +21,22 @@
 (defn- prepare-colors
   [shapes file-id libraries]
   (let [data           (into [] (remove nil? (dwc/extract-all-colors shapes file-id libraries)))
-        groups         (d/group-by :attrs #(dissoc % :attrs) data)
-        all-colors     (distinct (mapv :attrs data))
 
+        split-tokens-named (group-by :token? data)
+        tokens     (get split-tokens-named true [])
+        all-tokens (distinct (mapv :token-name tokens))
+        not-tokens (get split-tokens-named nil [])
+
+        groups         (d/group-by :attrs #(dissoc % :attrs) not-tokens)
+        all-colors     (distinct (mapv :attrs data))
         tmp            (group-by #(some? (:id %)) all-colors)
         library-colors (get tmp true)
         colors         (get tmp false)]
     {:groups groups
      :all-colors all-colors
      :colors colors
+     :tokens tokens
+     :all-tokens all-tokens
      :library-colors library-colors}))
 
 (def xf:map-shape-id
@@ -50,7 +57,7 @@
 (mf/defc color-selection-menu*
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [{:keys [shapes file-id libraries]}]
-  (let [{:keys [groups library-colors colors]}
+  (let [{:keys [groups library-colors colors tokens all-tokens]}
         (mf/with-memo [file-id shapes libraries]
           (prepare-colors shapes file-id libraries))
 
@@ -92,7 +99,7 @@
 
         on-close
         (mf/use-fn #(mf/set-ref-val! prev-colors-ref []))
-
+        
         on-detach
         (mf/use-fn
          (fn [color]
@@ -173,6 +180,29 @@
              :on-open on-open
              :on-close on-close}])
 
+         (when (and (false? @expand-color) (< 3 (count colors)))
+           [:button  {:class (stl/css :more-colors-btn)
+                      :on-click #(reset! expand-color true)}
+            (tr "workspace.options.more-colors")])]
+        
+        [:div {:class (stl/css :selected-color-group)}
+         (for [[index token] (d/enumerate (cond->> all-tokens (not @expand-color) (take 3)))]
+           (let [color (some #(when (= (:token-name %) token)
+                                (:attrs %))
+                             tokens)]
+
+             [:> color-row*
+              {:key index
+               :color color
+               :index index
+               :select-only select-only
+               :on-change #(on-change %1 color %2)
+               :origin :color-selection
+               :on-token-change #(on-token-change %1 %2 color)
+               :on-open on-open
+               :applied-token token
+               :on-close on-close}]))
+        
          (when (and (false? @expand-color) (< 3 (count colors)))
            [:button  {:class (stl/css :more-colors-btn)
                       :on-click #(reset! expand-color true)}

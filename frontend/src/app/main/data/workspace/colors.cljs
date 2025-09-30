@@ -1225,22 +1225,56 @@
        :shape-id (:shape-id fill)
        :index (:index fill)})))
 
+(defn- applied-tokens->color-att
+  "Extract applied tokens from a shape.
+   Returns a vector of maps with token metadata:
+   - :token? true
+   - :token-type (:stroke-color, :fill, etc.)
+   - :token-name (the applied token name)
+   - :token-value (the current resolved value in the shape)
+   - :shape-id (the shape id)"
+  [shape]
+  (let [applied (get shape :applied-tokens)
+        shape-id (:id shape)]
+    (mapv (fn [[token-type token-name]]
+            (let [token-val (case token-type
+                              :stroke-color (some-> shape :strokes first :stroke-color)
+                              :fill        (some-> shape :fills first :fill-color)
+                              nil)
+                  prop (if (= token-type :fill)
+                         :fill
+                         :stroke)
+                  attrs (if (= token-type :fill)
+                          (types.fills/fill->color (first (:fills shape)))
+                          (clr/stroke->color (first (:strokes shape))))]
+              {:attrs attrs
+               :prop prop
+               :token? true
+               :token-type token-type
+               :token-name token-name
+               :token-value token-val
+               :shape-id shape-id}))
+          applied)))
+
 (defn extract-all-colors
   [shapes file-id libraries]
   (reduce
    (fn [result shape]
      (let [fill-obj   (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:fills shape))
            stroke-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:strokes shape))
-           shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))]
+           shadow-obj (map-indexed #(assoc %2 :shape-id (:id shape) :index %1) (:shadow shape))
+           applied    (applied-tokens->color-att shape)]
        (if (= :text (:type shape))
          (-> result
              (into (keep #(stroke->color-att % file-id libraries)) stroke-obj)
              (into (map #(shadow->color-att % file-id libraries)) shadow-obj)
-             (into (extract-text-colors shape file-id libraries)))
+             (into (extract-text-colors shape file-id libraries))
+             (into (remove nil? applied)))
 
          (-> result
              (into (keep #(fill->color-att % file-id libraries)) fill-obj)
              (into (keep #(stroke->color-att % file-id libraries)) stroke-obj)
-             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)))))
+             (into (map #(shadow->color-att % file-id libraries)) shadow-obj)
+             (into (remove nil? applied))))))
    []
    shapes))

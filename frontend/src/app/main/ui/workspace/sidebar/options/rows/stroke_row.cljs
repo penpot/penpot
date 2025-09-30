@@ -62,6 +62,7 @@
                         [nil nil])
 
         stroke-color-token (:stroke-color applied-tokens)
+
         on-color-change-refactor
         (mf/use-fn
          (mf/deps index on-color-change)
@@ -125,7 +126,6 @@
                                   :shapes expanded-shapes})))))
 
         stroke-style (or (:stroke-style stroke) :solid)
-
 
         stroke-style-options
         (mf/with-memo [stroke-style]
