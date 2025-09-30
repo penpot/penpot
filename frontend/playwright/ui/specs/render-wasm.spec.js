@@ -1,14 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { WorkspacePage } from "../pages/WorkspacePage";
-import { BaseWebSocketPage } from "../pages/BaseWebSocketPage";
 
 test.beforeEach(async ({ page }) => {
   await WorkspacePage.init(page);
-  await BaseWebSocketPage.mockRPC(
-    page,
-    "get-teams",
-    "get-teams-render-wasm.json",
-  );
+  await WorkspacePage.mockConfigFlags(page, [
+    "enable-feature-render-wasm",
+    "enable-render-wasm-dpr",
+  ]);
 });
 
 test("BUG 10867 - Crash when loading comments", async ({ page }) => {
