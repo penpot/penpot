@@ -1,5 +1,5 @@
-use crate::performance;
 use crate::shapes::Shape;
+use crate::{mem, performance, with_current_shape, with_current_shape_mut, STATE};
 
 use skia_safe::{self as skia, IRect, Paint, RRect};
 
@@ -410,4 +410,25 @@ impl TileTextureCache {
     pub fn clear(&mut self) {
         self.grid.clear();
     }
+}
+
+#[no_mangle]
+pub extern "C" fn download_png(_ptr: *const u8, _len: usize) -> *mut u8 {
+    let mut png_bytes: Vec<u8> = Vec::new();
+    unsafe {
+        if let Some(state) = STATE.as_mut() {
+            let png_base64 = state
+                .render_state
+                .surfaces
+                .base64_snapshot(SurfaceId::Target);
+            if let Ok(decoded) = general_purpose::STANDARD.decode(png_base64) {
+                png_bytes = decoded;
+            }
+        }
+    }
+
+    let mut buffer = Vec::with_capacity(4 + png_bytes.len());
+    buffer.extend_from_slice(&(png_bytes.len() as u32).to_le_bytes());
+    buffer.extend_from_slice(&png_bytes);
+    mem::write_bytes(buffer)
 }
