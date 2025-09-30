@@ -29,6 +29,7 @@ $pink-400: #ff6fe0;
 
 $purple-200: #e1d2f5;
 $purple-400: #bb97d8;
+$purple-500: #a977d1;
 $purple-600: #8c33eb;
 $purple-700: #6911d4;
 $purple-600-10: #8c33eb1a;
@@ -76,6 +77,8 @@ $grayish-red: #bfbfbf;
   --color-accent-quaternary: #{$pink-400};
   --color-accent-overlay: #{$purple-700-60};
   --color-accent-select: #{$purple-600-10};
+  --color-accent-action: #{$purple-400};
+  --color-accent-action-hover: #{$purple-500};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-200};
@@ -98,6 +101,9 @@ $grayish-red: #bfbfbf;
   --color-foreground-primary: #{$black};
   --color-foreground-secondary: #{$blue-teal-700};
 
+  --color-static-white: #{$white};
+  --color-static-black: #{$black};
+
   --color-shadow-dark: #{color.change($gray-200, $alpha: 0.6)};
   --color-overlay-default: #{$white-60};
   --color-overlay-onboarding: #{$white-90};
@@ -119,6 +125,8 @@ $grayish-red: #bfbfbf;
   --color-accent-quaternary: #{$pink-400};
   --color-accent-overlay: #{$mint-150-60};
   --color-accent-select: #{$mint-250-10};
+  --color-accent-action: #{$purple-400};
+  --color-accent-action-hover: #{$purple-500};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-950};
@@ -140,6 +148,9 @@ $grayish-red: #bfbfbf;
 
   --color-foreground-primary: #{$white};
   --color-foreground-secondary: #{$grayish-blue-500};
+
+  --color-static-white: #{$white};
+  --color-static-black: #{$black};
 
   --color-shadow-dark: #{color.change($black, $alpha: 0.6)};
   --color-overlay-default: #{$gray-950-60};
