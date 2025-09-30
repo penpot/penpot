@@ -82,7 +82,7 @@
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
-(log/set-level! :trace)
+(log/set-level! :info)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Workspace Initialization
@@ -152,6 +152,9 @@
 
 (defn- resolve-file
   [file]
+  (log/inf :hint "resolve file"
+           :file-id (str (:id file))
+           :features (str/join " " (:features file)))
   (->> (fpmap/resolve-file file)
        (rx/map :data)
        (rx/map process-fills)

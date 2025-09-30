@@ -23,7 +23,7 @@
    [okulary.core :as l]
    [promesa.core :as p]))
 
-(log/set-level! :info)
+(log/set-level! :debug)
 
 (def google-fonts
   (preload-gfonts "fonts/gfonts.2025.05.19.json"))
@@ -121,11 +121,11 @@
 
 (defmethod load-font :default
   [{:keys [backend] :as font}]
-  (log/warn :msg "no implementation found for" :backend backend))
+  (log/wrn :msg "no implementation found for" :backend backend))
 
 (defmethod load-font :builtin
   [{:keys [id ::on-loaded] :as font}]
-  (log/debug :hint "load-font" :font-id id :backend "builtin")
+  (log/dbg :hint "load-font" :font-id id :backend "builtin")
   (when (fn? on-loaded)
     (on-loaded id)))
 
@@ -157,7 +157,7 @@
 (defmethod load-font :google
   [{:keys [id ::on-loaded] :as font}]
   (when (exists? js/window)
-    (log/info :hint "load-font" :font-id id :backend "google")
+    (log/dbg :hint "load-font" :font-id id :backend "google")
     (let [url (generate-gfonts-url font)]
       (->> (fetch-gfont-css url)
            (rx/map process-gfont-css)
@@ -197,7 +197,7 @@
 (defmethod load-font :custom
   [{:keys [id ::on-loaded] :as font}]
   (when (exists? js/window)
-    (log/info :hint "load-font" :font-id id :backend "custom")
+    (log/dbg :hint "load-font" :font-id id :backend "custom")
     (let [css (generate-custom-font-css font)]
       (add-font-css! id css)
       (when (fn? on-loaded)
@@ -210,7 +210,7 @@
 (defn ensure-loaded!
   ([font-id] (ensure-loaded! font-id nil))
   ([font-id variant-id]
-   (log/debug :action "try-ensure-loaded!" :font-id font-id :variant-id variant-id)
+   (log/dbg :action "try-ensure-loaded!" :font-id font-id :variant-id variant-id)
    (if-not (exists? js/window)
     ;; If we are in the worker environment, we just mark it as loaded
     ;; without really loading it.
