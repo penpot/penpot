@@ -11,7 +11,7 @@ const { Switcher } = Components;
 
 export default {
   title: "Controls/Switcher",
-  component: Components.Switcher,
+  component: Switcher,
   argTypes: {
     checked: {
       control: { type: "boolean" },
@@ -44,16 +44,15 @@ export default {
     },
   },
   args: {
-    label: "Enable notifications",
     disabled: false,
     size: "md",
     defaultChecked: false,
   },
   parameters: {
-    controls: { exclude: ["id", "class", "dataTestid"] },
+    controls: { exclude: ["id", "class", "dataTestid", "on-change"] },
   },
   render: ({ onChange, ...args }) => (
-    <Switcher {...args} onChange={onChange} data-testid="switcher" />
+    <Switcher {...args} onChange={onChange} data-testid="switcher" label="Enable notifications" />
   ),
 };
 

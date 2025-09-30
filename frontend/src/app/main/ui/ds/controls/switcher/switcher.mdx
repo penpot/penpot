@@ -5,7 +5,7 @@
   Copyright (c) KALEIDOS INC */ }
 
 import { Canvas, Meta } from '@storybook/blocks';
-import * as SwitcherStories from "./switcher.stories";
+import * as Switcher from "./switcher.stories";
 
 <Meta title="Controls/Switcher" />
 
@@ -13,7 +13,7 @@ import * as SwitcherStories from "./switcher.stories";
 
 The `switcher*` component is a toggle control that allows users to switch between two states (on/off). It provides both controlled and uncontrolled modes, making it suitable for various use cases across the interface.
 
-<Canvas of={SwitcherStories.DefaultUncontrolled} />
+<Canvas of={Switcher.DefaultUncontrolled} />
 
 ## Anatomy
 
@@ -59,7 +59,7 @@ The switcher component consists of three main parts:
                              (reset! checked new-checked))}])
 ```
 
-<Canvas of={SwitcherStories.Controlled} />
+<Canvas of={Switcher.Controlled} />
 
 ### Different Sizes
 
@@ -70,8 +70,6 @@ The switcher supports three size variants: `"sm"`, `"md"` (default), and `"lg"`.
 [:> switcher* {:size "md" :label "Medium"}]
 [:> switcher* {:size "lg" :label "Large"}]
 ```
-
-<Canvas of={SwitcherStories.Sizes} />
 
 ### Disabled State
 
@@ -92,7 +90,7 @@ When no visible label is provided, use `aria-label` for accessibility.
                :default-checked false}]
 ```
 
-<Canvas of={SwitcherStories.WithoutVisibleLabel} />
+<Canvas of={Switcher.WithoutVisibleLabel} />
 
 ## Design Tokens
 
@@ -138,4 +136,4 @@ The switcher component uses the following design system tokens:
 
 ## Interactive Example
 
-<Canvas of={SwitcherStories.Interactive} />
+<Canvas of={Switcher.Interactive} />
