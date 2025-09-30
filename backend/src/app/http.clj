@@ -19,6 +19,7 @@
    [app.http.errors :as errors]
    [app.http.management :as mgmt]
    [app.http.middleware :as mw]
+   [app.http.security :as sec]
    [app.http.session :as session]
    [app.http.websocket :as-alias ws]
    [app.main :as-alias main]
@@ -167,6 +168,7 @@
   [_ cfg]
   (rr/router
    [["" {:middleware [[mw/server-timing]
+                      [sec/sec-fetch-metadata]
                       [mw/params]
                       [mw/format-response]
                       [session/soft-auth cfg]
