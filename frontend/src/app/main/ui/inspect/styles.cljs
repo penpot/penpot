@@ -20,6 +20,7 @@
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
    [app.main.ui.inspect.styles.panels.layout :refer [layout-panel*]]
    [app.main.ui.inspect.styles.panels.layout-element :refer [layout-element-panel*]]
+   [app.main.ui.inspect.styles.panels.stroke :refer [stroke-panel*]]
    [app.main.ui.inspect.styles.panels.svg :refer [svg-panel*]]
    [app.main.ui.inspect.styles.panels.tokens-panel :refer [tokens-panel*]]
    [app.main.ui.inspect.styles.panels.variants-panel :refer [variants-panel*]]
@@ -63,6 +64,9 @@
   (and
    (not (contains? #{:text :group} (:type shape)))
    (seq (:fills shape))))
+
+(defn- has-stroke? [shape]
+  (seq (:strokes shape)))
 
 (defn- has-blur? [shape]
   (:blur shape))
@@ -157,8 +161,17 @@
               [:> style-box* {:panel :fill}
                [:> fill-panel* {:color-space color-space
                                 :shapes shapes
-                                :objects objects
                                 :resolved-tokens resolved-active-tokens}]]))
+
+          ;; STROKE PANEL
+          :stroke
+          (let [shapes (filter has-stroke? shapes)]
+            (when (seq shapes)
+              [:> style-box* {:panel :stroke}
+               [:> stroke-panel* {:color-space color-space
+                                  :shapes shapes
+                                  :objects objects
+                                  :resolved-tokens resolved-active-tokens}]]))
 
           ;; VISIBILITY PANEL
           :visibility

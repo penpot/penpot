@@ -35,6 +35,7 @@
    :border-end-end-radius     :string-or-size-array
    :border-width              :border-width
    :border-style              :border-style
+   :border-color              :border-color
    :box-shadow                :shadows
    :filter                    :blur
    :gap                       :size-array
@@ -122,6 +123,10 @@
   [value]
   (fmt/format-pixels (:width value)))
 
+(defn- format-border-color
+  [value options]
+  (format-color (:color value) options))
+
 (defn- format-size-array
   [value]
   (cond
@@ -189,6 +194,7 @@
       :border (format-border value options)
       :border-style (format-border-style value)
       :border-width (format-border-width value)
+      :border-color (format-border-color value options)
       :size-array (format-size-array value)
       :string-or-size-array (format-string-or-size-array value)
       :keyword (format-keyword value)

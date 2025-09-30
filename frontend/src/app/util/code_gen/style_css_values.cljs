@@ -243,6 +243,11 @@
   (when-not (cgc/svg-markup? stroke)
     (get-stroke-data stroke)))
 
+(defn- get-border-color
+  [stroke]
+  (when-not (cgc/svg-markup? stroke)
+    (get-stroke-data stroke)))
+
 (defn- get-box-shadow
   [shape]
   (when-not (cgc/svg-markup? shape)
@@ -529,6 +534,7 @@
     :border (get-border shape)
     :border-style (get-border-style shape)
     :border-width (get-border-width shape)
+    :border-color (get-border-color shape)
     :border-radius (get-border-radius shape)
     :border-start-start-radius (get-border-start-start-radius shape)
     :border-start-end-radius (get-border-start-end-radius shape)

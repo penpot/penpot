@@ -18,6 +18,7 @@
    [app.util.i18n :refer [tr]]
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
+   [cuerdas.core :as str]
    [rumext.v2 :as mf]))
 
 (def ^:private schema:color-properties-row
@@ -47,6 +48,7 @@
                                     (d/coalesce 1)
                                     (* 100)
                                     (fmt/format-number)) "%"))
+
         formatted-color-value (mf/use-memo
                                (mf/deps color)
                                #(cond
@@ -63,19 +65,23 @@
                                   (some? (:image color)) (tr "media.image")
                                   :else "none"))
 
+        css-term (-> term
+                     (str/replace #" " "-")
+                     (str/replace #"([A-Z])" "-$1")
+                     (str/lower)
+                     (str/replace #"^-" ""))
 
-        copiable-value
-        (mf/use-memo
-         (mf/deps color formatted-color-value color-opacity color-image-url token)
-         #(if (some? token)
-            (:name token)
-            (cond
-              (:color color) (if (= format "hex")
-                               (dm/str "background: " color-value "; opacity: " color-opacity ";")
-                               (dm/str "background: " formatted-color-value ";"))
-              (:gradient color) (dm/str "background: " (uc/color->background color) ";")
-              (:image color) (dm/str "background: url(" color-image-url ") no-repeat center center / cover;")
-              :else "none")))
+        copiable-value (mf/use-memo
+                        (mf/deps color formatted-color-value color-opacity color-image-url token)
+                        #(if (some? token)
+                           (:name token)
+                           (cond
+                             (:color color) (if (= format "hex")
+                                              (dm/str css-term ": " color-value "; opacity: " color-opacity ";")
+                                              (dm/str css-term ": " formatted-color-value ";"))
+                             (:gradient color) (dm/str css-term ": " (uc/color->background color) ";")
+                             (:image color) (dm/str css-term ": url(" color-image-url ") no-repeat center center / cover;")
+                             :else "none")))
         copy-attr
         (mf/use-fn
          (mf/deps copied formatted-color-value)
