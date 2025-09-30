@@ -269,7 +269,6 @@
                                :applied-token fill-token-applied
                                :on-token-change on-token-change
                                :origin :fill
-                               :shape-type type
                                :select-on-focus (not disable-drag?)
                                :on-blur on-blur}]))])
 

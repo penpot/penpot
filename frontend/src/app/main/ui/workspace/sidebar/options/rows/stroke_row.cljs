@@ -62,7 +62,6 @@
                         [nil nil])
 
         stroke-color-token (:stroke-color applied-tokens)
-
         on-color-change-refactor
         (mf/use-fn
          (mf/deps index on-color-change)
