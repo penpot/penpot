@@ -37,3 +37,19 @@
    :compile (fn [_ _]
               (when (contains? cf/flags :sec-fetch-metadata-middleware)
                 wrap-sec-fetch-metadata))})
+
+(defn- wrap-client-header-check
+  "Check for a penpot custom header to be present as additional CSRF
+  protection"
+  [handler]
+  (fn [request]
+    (let [client (yreq/get-header request "x-client")]
+      (if (some? client)
+        (handler request)
+        {::yres/status 403}))))
+
+(def client-header-check
+  {:name ::client-header-check
+   :compile (fn [_ _]
+              (when (contains? cf/flags :client-header-check-middleware)
+                wrap-client-header-check))})
