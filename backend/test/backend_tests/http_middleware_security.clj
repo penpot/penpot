@@ -44,4 +44,16 @@
     (t/is (= 200 (::yres/status resp5)))
     (t/is (= 403 (::yres/status resp6)))))
 
+(t/deftest client-header-check
+  (let [request1 (mock-request :get "some")
+        request2 (mock-request :post nil)
+
+        handler  (fn [request]
+                   {::yres/status 200})
+        handler  (#'sec/wrap-client-header-check handler)
+        resp1    (handler request1)
+        resp2    (handler request2)]
+
+    (t/is (= 200 (::yres/status resp1)))
+    (t/is (= 403 (::yres/status resp2)))))
 

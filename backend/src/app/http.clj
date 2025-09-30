@@ -189,7 +189,8 @@
 
      (::ws/routes cfg)
 
-     ["/api" {:middleware [[mw/cors]]}
+     ["/api" {:middleware [[mw/cors]
+                           [sec/client-header-check]]}
       (::oidc/routes cfg)
       (::rpc.doc/routes cfg)
       (::rpc/routes cfg)]]]))

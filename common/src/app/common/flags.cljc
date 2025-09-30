@@ -139,7 +139,11 @@
 
     ;; Security layer middleware that filters request by fetch
     ;; metadata headers
-    :sec-fetch-metadata-middleware})
+    :sec-fetch-metadata-middleware
+
+    ;; Security layer middleware that check the precense of x-client
+    ;; http headers and enables an addtional csrf protection
+    :client-header-check-middleware})
 
 (def all-flags
   (set/union email login varia))
