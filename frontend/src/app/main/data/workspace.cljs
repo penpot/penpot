@@ -90,7 +90,6 @@
 
 (declare ^:private workspace-initialized)
 (declare ^:private fetch-libraries)
-(declare ^:private libraries-fetched)
 
 ;; --- Initialize Workspace
 
@@ -185,16 +184,6 @@
     (update [_ state]
       (update state :files assoc (:id library) library))))
 
-(defn- libraries-fetched
-  [file-id libraries]
-  (ptk/reify ::libraries-fetched
-    ptk/UpdateEvent
-    (update [_ state]
-      (update state :files merge
-              (->> libraries
-                   (map #(assoc % :library-of file-id))
-                   (d/index-by :id))))))
-
 (defn- fetch-libraries
   [file-id features]
   (ptk/reify ::fetch-libries
@@ -204,7 +193,7 @@
            (rx/mapcat
             (fn [libraries]
               (rx/concat
-               (rx/of (libraries-fetched file-id libraries))
+               (rx/of (dwl/libraries-fetched file-id libraries))
                (rx/merge
                 (->> (rx/from libraries)
                      (rx/merge-map

@@ -608,8 +608,16 @@
     {:components components
      :variant-ids variant-ids}))
 
+;;coalesce(string_agg(flr.library_file_id::text, ','), '') as library_file_ids
 (def ^:private sql:team-shared-files
-  "select f.id,
+  "with file_library_agg as (
+    select flr.file_id,
+           coalesce(array_agg(flr.library_file_id) filter (where flr.library_file_id is not null), '{}') as library_file_ids
+    from file_library_rel flr
+    group by flr.file_id
+   )
+
+   select f.id,
           f.revn,
           f.vern,
           f.data,
@@ -622,10 +630,12 @@
           f.version,
           f.is_shared,
           ft.media_id,
-          p.team_id
+          p.team_id,
+          fla.library_file_ids
      from file as f
     inner join project as p on (p.id = f.project_id)
      left join file_thumbnail as ft on (ft.file_id = f.id and ft.revn = f.revn and ft.deleted_at is null)
+     left join file_library_agg as fla on fla.file_id = f.id
     where f.is_shared = true
       and f.deleted_at is null
       and p.deleted_at is null
@@ -669,6 +679,8 @@
                                (dissoc :media-id)
                                (assoc :thumbnail-id media-id))
                            (dissoc row :media-id))))
+                  (map (fn [row]
+                         (update row :library-file-ids db/decode-pgarray #{})))
                   (map #(assoc % :library-summary (get-library-summary cfg %)))
                   (map #(dissoc % :data))))))
 
@@ -1065,6 +1077,7 @@
    [:library-id ::sm/uuid]])
 
 (sv/defmethod ::link-file-to-library
+  "Link a file to a library. Returns the recursive list of libraries used by that library"
   {::doc/added "1.17"
    ::webhooks/event? true
    ::sm/params schema:link-file-to-library}
@@ -1078,7 +1091,8 @@
               (fn [{:keys [::db/conn]}]
                 (check-edition-permissions! conn profile-id file-id)
                 (check-edition-permissions! conn profile-id library-id)
-                (link-file-to-library conn params))))
+                (link-file-to-library conn params)
+                (bfc/get-libraries cfg [library-id]))))
 
 ;; --- MUTATION COMMAND: unlink-file-from-library
 
