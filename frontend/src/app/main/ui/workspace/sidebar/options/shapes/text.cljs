@@ -180,7 +180,9 @@
      [:& stroke-menu {:ids ids
                       :type type
                       :values stroke-values
-                      :disable-stroke-style true}]
+                      :shapes shapes
+                      :disable-stroke-style true
+                      :applied-tokens applied-tokens}]
 
      (when (= :multiple (:fills fill-values))
        [:> color-selection-menu*

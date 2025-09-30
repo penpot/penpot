@@ -127,7 +127,9 @@
      [:& stroke-menu {:ids ids
                       :type type
                       :show-caps true
-                      :values stroke-values}]
+                      :values stroke-values
+                      :shapes shapes
+                      :applied-tokens applied-tokens}]
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
      [:& blur-menu {:ids ids
                     :values (select-keys shape [:blur])}]

@@ -126,7 +126,9 @@
 
      [:& stroke-menu {:ids ids
                       :type type
-                      :values stroke-values}]
+                      :shapes shapes
+                      :values stroke-values
+                      :applied-tokens applied-tokens}]
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
 

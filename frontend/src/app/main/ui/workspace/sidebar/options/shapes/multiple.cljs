@@ -214,21 +214,23 @@
 
         merge-token-values
         (fn [acc shape-attrs applied-tokens]
-          (reduce
-           (fn [accum shape-attr]
-             (let [token-attrs (tt/shape-attr->token-attrs shape-attr)]
-               (reduce
-                (fn [a t-attr]
-                  (let [new-val  (get applied-tokens t-attr)
-                        existing (get a t-attr ::not-found)]
-                    (cond
-                      (= existing ::not-found) (assoc a t-attr new-val)
-                      (= existing new-val)     a
-                      :else                    (assoc a t-attr :multiple))))
-                accum
-                token-attrs)))
-           acc
-           shape-attrs))
+          (if (seq applied-tokens)
+            (reduce
+             (fn [accum shape-attr]
+               (let [token-attrs (tt/shape-attr->token-attrs shape-attr)]
+                 (reduce
+                  (fn [a t-attr]
+                    (let [new-val  (get applied-tokens t-attr)
+                          existing (get a t-attr ::not-found)]
+                      (cond
+                        (= existing ::not-found) (assoc a t-attr new-val)
+                        (= existing new-val)     a
+                        :else                    (assoc a t-attr :multiple))))
+                  accum
+                  token-attrs)))
+             acc
+             shape-attrs)
+            acc))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
@@ -391,7 +393,7 @@
         [blur-ids blur-values]
         (get-attrs shapes objects :blur)
 
-        [stroke-ids stroke-values]
+        [stroke-ids stroke-values stroke-tokens]
         (get-attrs shapes objects :stroke)
 
         [exports-ids exports-values]
@@ -480,7 +482,9 @@
                         :ids stroke-ids
                         :show-caps show-caps?
                         :values stroke-values
-                        :disable-stroke-style has-text?}])
+                        :shapes shapes
+                        :disable-stroke-style has-text?
+                        :applied-tokens stroke-tokens}])
 
      (when-not (empty? shapes)
        [:> color-selection-menu*
