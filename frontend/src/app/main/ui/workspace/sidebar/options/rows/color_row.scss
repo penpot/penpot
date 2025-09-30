@@ -282,6 +282,7 @@
     --token-actions-display: flex;
   }
 }
+
 .token-color-with-errors,
 .token-color-not-active {
   --token-color-wrapper-background-color: var(--color-background-primary);
@@ -315,12 +316,12 @@
 }
 
 .error-dot {
-  width: 4px;
-  height: 4px;
+  width: px2rem(4);
+  height: px2rem(4);
   border-radius: 50%;
   background-color: var(--color-foreground-error);
   margin-left: var(--sp-xs);
   position: absolute;
-  right: 1px;
-  top: 5px;
+  right: px2rem(1);
+  top: px2rem(5);
 }

@@ -148,7 +148,7 @@
          :ids fill-ids
          :values fill-values
          :shapes shapes
-         :shapes-with-children shapes-with-children
+         :objects objects
          :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
@@ -156,7 +156,7 @@
                         :ids stroke-ids
                         :values stroke-values
                         :shapes shapes
-                        :shapes-with-children shapes-with-children
+                        :objects objects
                         :applied-tokens stroke-tokens}])
 
      [:> color-selection-menu*

@@ -475,6 +475,7 @@
                             :ids fill-ids
                             :values fill-values
                             :shapes shapes
+                            :objects objects
                             :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
@@ -483,6 +484,7 @@
                         :show-caps show-caps?
                         :values stroke-values
                         :shapes shapes
+                        :objects objects
                         :disable-stroke-style has-text?
                         :applied-tokens stroke-tokens}])
 
