@@ -929,6 +929,7 @@ impl Shape {
                 // FIXME: This should panic! I've removed it temporarily until
                 // we fix the problems with shapes without parents.
                 // panic!("Parent can't be found");
+                break;
             }
         }
 
@@ -957,6 +958,7 @@ impl Shape {
                 // FIXME: This should panic! I've removed it temporarily until
                 // we fix the problems with shapes without parents.
                 // panic!("Parent can't be found");
+                break;
             }
         }
         matrix
