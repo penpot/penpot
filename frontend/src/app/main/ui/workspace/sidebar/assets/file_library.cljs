@@ -363,13 +363,16 @@
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))
 
+        variants-counter
+        (mf/with-memo [library]
+          (-> (group-by :variant-id (ctkl/components-seq library))
+              (update-vals count)))
+
         count-variants
         (mf/use-fn
-         (mf/deps library)
+         (mf/deps variants-counter)
          (fn [variant-id]
-           (->> (ctkl/components-seq library)
-                (filterv #(= variant-id (:variant-id %)))
-                count)))]
+           (get variants-counter variant-id)))]
 
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default

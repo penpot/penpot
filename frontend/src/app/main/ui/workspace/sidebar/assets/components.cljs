@@ -267,6 +267,7 @@
            [:div {:class (stl/css-case :component-group-drop-space true
                                        :component-group-drop-space-small (not dragging?))}])
 
+         ;; FIXME: This could be in the thousands. We need to think about paginate this
          (for [component components]
            [:> components-item*
             {:component component

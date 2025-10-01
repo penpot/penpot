@@ -631,7 +631,13 @@
                               (str/upper (tr "workspace.assets.local-library"))
                               (dm/get-in libraries [current-library-id :name]))
 
-        current-lib-data    (get-in libraries [current-library-id :data])
+        current-lib-data    (mf/with-memo [libraries]
+                              (get-in libraries [current-library-id :data]))
+
+        current-lib-counts  (mf/with-memo [current-lib-data]
+                              (-> (group-by :variant-id
+                                            (ctkl/components-seq current-lib-data))
+                                  (update-vals count)))
 
         components          (->> (get-in libraries [current-library-id :data :components])
                                  vals
@@ -640,9 +646,7 @@
                                  (map #(assoc % :full-name (cpn/merge-path-item-with-dot (:path %) (:name %)))))
 
         count-variants      (fn [component]
-                              (->> (ctkl/components-seq current-lib-data)
-                                   (filterv #(= (:variant-id component) (:variant-id %)))
-                                   count))
+                              (get current-lib-counts (:variant-id component)))
 
         get-subgroups       (fn [path]
                               (let [split-path (cpn/split-path path)]
@@ -767,6 +771,7 @@
 
        [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
                                    :component-list (not (:listing-thumbs? filters)))}
+        ;; FIXME: This could be in the thousands. We need to think about paginate this
         (for [item items]
           (if (:id item)
             (let [data       (dm/get-in libraries [current-library-id :data])

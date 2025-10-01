@@ -80,6 +80,7 @@
 - Retrieve variants with nested components [Taiga #10277](https://tree.taiga.io/project/penpot/us/10277)
 - Create variants in bulk from existing components [Taiga #7926](https://tree.taiga.io/project/penpot/us/7926)
 - Alternative ways of creating variants - Button Design Tab [Taiga #10316](https://tree.taiga.io/project/penpot/us/10316)
+- Fix problem with component swapping panel [Taiga #12175](https://tree.taiga.io/project/penpot/issue/12175)
 
 ### :bug: Bugs fixed
 

@@ -76,11 +76,8 @@
 
 (defn get-shape
   [container shape-id]
-
-  (assert (check-container container))
   (assert (uuid? shape-id)
           "expected valid uuid for `shape-id`")
-
   (-> container
       (get :objects)
       (get shape-id)))
