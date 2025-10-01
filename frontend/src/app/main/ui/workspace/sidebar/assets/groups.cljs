@@ -22,20 +22,20 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc asset-group-title
-  [{:keys [file-id section path group-open? on-rename on-ungroup on-group-combine-variants can-combine?]}]
+(mf/defc asset-group-title*
+  [{:keys [file-id section path is-group-open on-rename on-ungroup on-group-combine-variants is-can-combine]}]
   (when-not (empty? path)
     (let [[other-path last-path truncated] (cpn/compact-path path 35 true)
           menu-state     (mf/use-state cmm/initial-context-menu-state)
           on-fold-group
           (mf/use-fn
-           (mf/deps file-id section path group-open?)
+           (mf/deps file-id section path is-group-open)
            (fn [event]
              (dom/stop-propagation event)
              (st/emit! (dw/set-assets-group-open file-id
                                                  section
                                                  path
-                                                 (not group-open?)))))
+                                                 (not is-group-open)))))
           on-context-menu
           (mf/use-fn
            (fn [event]
@@ -50,7 +50,7 @@
        [:div {:class (stl/css :group-title)
               :on-context-menu on-context-menu}
         [:> title-bar* {:collapsable    true
-                        :collapsed      (not group-open?)
+                        :collapsed      (not is-group-open)
                         :all-clickable  true
                         :on-collapsed   on-fold-group
                         :title          (mf/html [:* (when-not (empty? other-path)
@@ -61,7 +61,7 @@
                                                           :title (when truncated path)}
                                                    last-path]])}]
 
-        [:& cmm/assets-context-menu
+        [:> cmm/assets-context-menu*
          {:on-close on-close-menu
           :state @menu-state
           :options (cond-> [{:name    (tr "workspace.assets.rename")
@@ -70,7 +70,7 @@
                             {:name    (tr "workspace.assets.ungroup")
                              :id      "assets-ungroup-group"
                              :handler  #(on-ungroup path)}]
-                     can-combine?
+                     is-can-combine
                      (conj
                       {:name    (tr "workspace.shape.menu.combine-as-variants")
                        :id      "assets-combine-as-variants"
