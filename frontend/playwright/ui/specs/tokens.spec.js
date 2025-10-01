@@ -1006,9 +1006,16 @@ test.describe("Tokens: Themes modal", () => {
       const referenceTabButton =
         tokensUpdateCreateModal.getByTestId("reference-opt");
       await referenceTabButton.click();
+
+      // Empty reference tab should be disabled
+      await expect(saveButton).toBeDisabled();
+
       const compositeTabButton =
         tokensUpdateCreateModal.getByTestId("composite-opt");
       await compositeTabButton.click();
+
+      // Filled composite tab should be enabled
+      await expect(saveButton).toBeEnabled();
 
       // Verify all values are preserved after switching tabs
       await expect(fontSizeField).toHaveValue(originalValues.fontSize);

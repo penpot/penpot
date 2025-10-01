@@ -261,7 +261,7 @@
 
 (defonce form-token-cache-atom (atom nil))
 
-;; Component -------------------------------------------------------------------
+;; Form Component --------------------------------------------------------------
 
 (mf/defc form*
   "Form component to edit or create a token of any token type.
@@ -636,6 +636,123 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                     :disabled disabled?}
         (tr "labels.save")]]]]))
 
+;; Tabs Component --------------------------------------------------------------
+
+(mf/defc composite-reference-input*
+  [{:keys [default-value on-blur on-update-value token-resolve-result reference-label reference-icon is-reference-fn]}]
+  [:> input-token*
+   {:aria-label (tr "labels.reference")
+    :placeholder (tr "workspace.tokens.reference-composite")
+    :icon reference-icon
+    :default-value (when (is-reference-fn default-value) default-value)
+    :on-blur on-blur
+    :on-change on-update-value
+    :token-resolve-result (when (or
+                                 (:errors token-resolve-result)
+                                 (string? (:value token-resolve-result)))
+                            token-resolve-result)}])
+
+(mf/defc composite-tabs*
+  [{:keys [default-value
+           on-update-value
+           on-external-update-value
+           on-value-resolve
+           clear-resolve-value
+           custom-input-token-value-props]
+    :rest props}]
+  (let [;; Active Tab State
+        {:keys [active-tab set-active-tab composite-tab reference-icon title update-composite-backup-value is-reference-fn]} custom-input-token-value-props
+        reference-tab-active? (= :reference active-tab)
+        ;; Backup value ref
+        ;; Used to restore the previously entered value when switching tabs
+        ;; Uses ref to not trigger state updates during update
+        backup-state-ref (mf/use-var
+                          (if reference-tab-active?
+                            {:reference default-value}
+                            {:composite default-value}))
+        default-value (get @backup-state-ref active-tab)
+
+        on-toggle-tab
+        (mf/use-fn
+         (mf/deps active-tab on-external-update-value on-value-resolve clear-resolve-value)
+         (fn []
+           (let [next-tab (if (= active-tab :composite) :reference :composite)]
+             ;; Clear the resolved value so it wont show up before the next-tab value has resolved
+             (clear-resolve-value)
+             ;; Restore the internal value from backup
+             (on-external-update-value (get @backup-state-ref next-tab))
+             (set-active-tab next-tab))))
+
+        ;; Store updated value in backup-state-ref
+        on-update-value'
+        (mf/use-fn
+         (mf/deps on-update-value reference-tab-active? update-composite-backup-value)
+         (fn [e]
+           (if reference-tab-active?
+             (swap! backup-state-ref assoc :reference (dom/get-target-val e))
+             (swap! backup-state-ref update :composite #(update-composite-backup-value % e)))
+           (on-update-value e)))]
+    [:div {:class (stl/css :typography-inputs-row)}
+     [:div {:class (stl/css :title-bar)}
+      [:div {:class (stl/css :title)} title]
+      [:& radio-buttons {:class (stl/css :listing-options)
+                         :selected (if reference-tab-active? "reference" "composite")
+                         :on-change on-toggle-tab
+                         :name "reference-composite-tab"}
+       [:& radio-button {:icon deprecated-icon/layers
+                         :value "composite"
+                         :title (tr "workspace.tokens.individual-tokens")
+                         :id "composite-opt"}]
+       [:& radio-button {:icon deprecated-icon/tokens
+                         :value "reference"
+                         :title (tr "workspace.tokens.use-reference")
+                         :id "reference-opt"}]]]
+     [:div {:class (stl/css :typography-inputs)}
+      (if reference-tab-active?
+        [:> composite-reference-input*
+         (mf/spread-props props {:default-value default-value
+                                 :on-update-value on-update-value'
+                                 :reference-icon reference-icon
+                                 :is-reference-fn is-reference-fn})]
+        [:> composite-tab
+         (mf/spread-props props {:default-value default-value
+                                 :on-update-value on-update-value'})])]]))
+
+(mf/defc composite-form*
+  "Wrapper around form* that manages composite/reference tab state.
+   Takes the same props as form* plus a function to determine if a token value is a reference."
+  [{:keys [token is-reference-fn composite-tab reference-icon title update-composite-backup-value] :rest props}]
+  (let [active-tab* (mf/use-state (if (is-reference-fn (:value token)) :reference :composite))
+        active-tab (deref active-tab*)
+
+        custom-input-token-value-props
+        (mf/use-memo
+         (mf/deps active-tab composite-tab reference-icon title update-composite-backup-value is-reference-fn)
+         (fn []
+           {:active-tab active-tab
+            :set-active-tab #(reset! active-tab* %)
+            :composite-tab composite-tab
+            :reference-icon reference-icon
+            :title title
+            :update-composite-backup-value update-composite-backup-value
+            :is-reference-fn is-reference-fn}))
+
+        ;; Remove the value from a stored token when it doesn't match the tab type
+        ;; We need this to keep the form disabled when there's an existing value that doesn't match the tab type
+        token
+        (mf/use-memo
+         (mf/deps token active-tab is-reference-fn)
+         (fn []
+           (let [token-tab-type (if (is-reference-fn (:value token)) :reference :composite)]
+             (cond-> token
+               (not= token-tab-type active-tab) (dissoc :value token)))))]
+    [:> form*
+     (mf/spread-props props {:token token
+                             :custom-input-token-value composite-tabs*
+                             :custom-input-token-value-props custom-input-token-value-props})]))
+
+;; Token Type Forms ------------------------------------------------------------
+
 ;; FIXME: this function has confusing name
 (defn- hex->value
   [hex]
@@ -983,121 +1100,37 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
               :on-change on-change
               :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}])]))]))
 
-(mf/defc typography-reference-input*
-  [{:keys [default-value on-blur on-update-value token-resolve-result]}]
-  [:> input-token*
-   {:aria-label (tr "labels.reference")
-    :placeholder (tr "workspace.tokens.reference-composite")
-    :icon i/text-typography
-    :default-value (when (cto/typography-composite-token-reference? default-value) default-value)
-    :on-blur on-blur
-    :on-change on-update-value
-    :token-resolve-result (when (or
-                                 (:errors token-resolve-result)
-                                 (string? (:value token-resolve-result)))
-                            token-resolve-result)}])
-
-(mf/defc typography-inputs*
-  [{:keys [default-value on-update-value on-external-update-value on-value-resolve clear-resolve-value custom-input-token-value-props] :rest props}]
-  (let [;; Active Tab State
-        {:keys [active-tab set-active-tab]} custom-input-token-value-props
-        reference-tab-active? (= :reference active-tab)
-        ;; Backup value ref
-        ;; Used to restore the previously entered value when switching tabs
-        ;; Uses ref to not trigger state updates during update
-        backup-state-ref (mf/use-var
-                          (if reference-tab-active?
-                            {:reference default-value}
-                            {:composite default-value}))
-        default-value (get @backup-state-ref active-tab)
-
-        on-toggle-tab
-        (mf/use-fn
-         (mf/deps active-tab on-external-update-value on-value-resolve clear-resolve-value)
-         (fn []
-           (let [next-tab (if (= active-tab :composite) :reference :composite)]
-             ;; Clear the resolved value so it wont show up before the next-tab value has resolved
-             (clear-resolve-value)
-             ;; Restore the internal value from backup
-             (on-external-update-value (get @backup-state-ref next-tab))
-             (set-active-tab next-tab))))
-
-        ;; Store token value in the backup-state-ref
-        on-update-reference-value
-        (mf/use-fn
-         (mf/deps on-update-value reference-tab-active?)
-         (fn [e]
-           (if reference-tab-active?
-             (swap! backup-state-ref assoc :reference (dom/get-target-val e))
-             (let [token-type (obj/get e "tokenType")
-                   token-value (dom/get-target-val e)
-                   token-value (cond-> token-value
-                                 (= :font-family token-type) (cto/split-font-family))]
-               (swap! backup-state-ref assoc-in [:composite token-type] token-value)))
-           (on-update-value e)))
-
-        input-props (mf/spread-props props {:default-value default-value
-                                            :on-update-value on-update-reference-value})]
-    [:div {:class (stl/css :typography-inputs-row)}
-     [:div {:class (stl/css :title-bar)}
-      [:div {:class (stl/css :title)}
-       (tr "labels.typography")]
-      [:& radio-buttons {:class (stl/css :listing-options)
-                         :selected (if reference-tab-active? "reference" "composite")
-                         :on-change on-toggle-tab
-                         :name "reference-composite-tab"}
-       [:& radio-button {:icon deprecated-icon/layers
-                         :value "composite"
-                         :title (tr "workspace.tokens.individual-tokens")
-                         :id "composite-opt"}]
-       [:& radio-button {:icon deprecated-icon/tokens
-                         :value "reference"
-                         :title (tr "workspace.tokens.use-reference")
-                         :id "reference-opt"}]]]
-     [:div {:class (stl/css :typography-inputs)}
-      (if reference-tab-active?
-        [:> typography-reference-input* input-props]
-        [:> typography-value-inputs* input-props])]]))
-
 (mf/defc typography-form*
   [{:keys [token] :rest props}]
-  (let [active-tab* (mf/use-state (if (cto/typography-composite-token-reference? (:value token)) :reference :composite))
-        active-tab (deref active-tab*)
-
-        custom-input-token-value-props
-        (mf/use-memo
-         (mf/deps active-tab)
-         (fn []
-           {:active-tab active-tab
-            :set-active-tab #(reset! active-tab* %)}))
-
-        ;; Remove the value from a stored token when it doesn't match the tab type
-        ;; We need this to keep the form disabled when there's an existing value that doesn't match the tab type
-        token
-        (mf/use-memo
-         (mf/deps token active-tab)
-         (fn []
-           (let [token-tab-type (if (cto/typography-composite-token-reference? (:value token)) :reference :composite)]
-             (cond-> token
-               (not= token-tab-type active-tab) (dissoc :value token)))))
-
-        on-get-token-value
+  (let [on-get-token-value
         (mf/use-callback
-         (fn [e prev-value]
+         (fn [e prev-composite-value]
            (let [token-type (obj/get e "tokenType")
                  input-value (dom/get-target-val e)
                  reference-value-input? (not token-type)]
              (cond
                reference-value-input? input-value
 
-               (empty? input-value) (dissoc prev-value token-type)
-               :else (assoc prev-value token-type input-value)))))]
-    [:> form*
+               (empty? input-value) (dissoc prev-composite-value token-type)
+               :else (assoc prev-composite-value token-type input-value)))))
+
+        update-composite-backup-value
+        (mf/use-callback
+         (fn [prev-composite-value e]
+           (let [token-type (obj/get e "tokenType")
+                 token-value (dom/get-target-val e)
+                 token-value (cond-> token-value
+                               (= :font-family token-type) (cto/split-font-family))]
+             (assoc prev-composite-value token-type token-value))))]
+    [:> composite-form*
      (mf/spread-props props {:token token
-                             :custom-input-token-value typography-inputs*
-                             :custom-input-token-value-props custom-input-token-value-props
+                             :composite-tab typography-value-inputs*
+                             :reference-icon i/text-typography
+                             :is-reference-fn cto/typography-composite-token-reference?
+                             :title (tr "labels.typography")
                              :validate-token validate-typography-token
-                             :on-get-token-value on-get-token-value})]))
+                             :on-get-token-value on-get-token-value
+                             :update-composite-backup-value update-composite-backup-value})]))
 
 (mf/defc form-wrapper*
   [{:keys [token token-type] :as props}]
