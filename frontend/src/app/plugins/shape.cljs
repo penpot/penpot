@@ -41,6 +41,7 @@
    [app.main.data.workspace.shape-layout :as dwsl]
    [app.main.data.workspace.shapes :as dwsh]
    [app.main.data.workspace.texts :as dwt]
+   [app.main.data.workspace.variants :as dwv]
    [app.main.repo :as rp]
    [app.main.store :as st]
    [app.plugins.flex :as flex]
@@ -57,6 +58,8 @@
 
 (declare shape-proxy)
 (declare shape-proxy?)
+;; This is injected from plugin/librraies
+(def variant-proxy)
 
 (defn interaction-proxy? [p]
   (obj/type-of? p "InteractionProxy"))
@@ -761,6 +764,8 @@
 
 
            ;; Interactions
+
+
            :interactions
            {:this true
             :get
@@ -1234,7 +1239,6 @@
                (let [guide (u/proxy->ruler-guide value)]
                  (st/emit! (dwgu/remove-guide guide)))))
 
-
            :applyToken
            (fn [_property _token]
              ;; TODO
@@ -1251,16 +1255,34 @@
              ;; TODO swap component
              )
 
-           :isVariantCopy
+           :isVariantHead
            (fn []
-             ;; TODO
-             )
+             (let [shape     (u/locate-shape file-id page-id id)
+                   component (u/locate-library-component file-id (:component-id shape))]
+               (and (ctk/instance-head? shape) (ctk/is-variant? component))))
+
+           :isVariantContainer
+           (fn []
+             (let [shape     (u/locate-shape file-id page-id id)]
+               (ctk/is-variant-container? shape)))
 
            :switchVariant
-           (fn [_property _value]
-             ;; TODO validate input
-             ;; TODO switch variant
-             ))
+           (fn [pos value]
+             (let [shape     (u/locate-shape file-id page-id id)
+                   component (u/locate-library-component file-id (:component-id shape))]
+               (when  (and component (ctk/is-variant? component))
+                 (st/emit! (dwv/variants-switch {:shapes [shape] :pos pos :val value})))))
+
+           :combineAsVariants
+           (fn [ids]
+             (let [shape     (u/locate-shape file-id page-id id)
+                   component (u/locate-library-component file-id (:component-id shape))
+                   ids (->> ids
+                            (map uuid/uuid)
+                            (into #{id}))]
+               (when  (and component (not (ctk/is-variant? component)))
+                 (st/emit!
+                  (dwv/combine-as-variants ids {:trigger "plugin:combine-as-variants"}))))))
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
@@ -1377,7 +1399,16 @@
                        (u/display-not-valid :verticalSizing "Plugin doesn't have 'content:write' permission")
 
                        :else
-                       (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))})))
+                       (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}
+
+
+                {:name "variants"
+                 :enumerable false
+                 :get
+                 (fn [self]
+                   (let [shape (-> self u/proxy->shape)]
+                     (when (ctk/is-variant-container? shape)
+                       (variant-proxy plugin-id file-id (:id shape)))))})))
 
          (cond-> (cfh/text-shape? data) (text/add-text-props plugin-id))
 
