@@ -670,7 +670,8 @@
                                             (ctkl/components-seq current-lib-data))
                                   (update-vals count)))
 
-        components          (->> (get-in libraries [current-library-id :data :components])
+        components          (->> current-lib-data
+                                 :components
                                  vals
                                  (remove #(true? (:deleted %)))
                                  (remove #(cfv/is-secondary-variant? % current-lib-data))

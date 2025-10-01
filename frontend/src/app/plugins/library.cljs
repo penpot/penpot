@@ -8,12 +8,15 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
    [app.common.schema :as sm]
    [app.common.types.color :as clr]
+   [app.common.types.component :as ctk]
    [app.common.types.file :as ctf]
    [app.common.types.typography :as ctt]
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.plugins :as dp]
    [app.main.data.workspace.libraries :as dwl]
    [app.main.data.workspace.texts :as dwt]
@@ -614,9 +617,7 @@
 
 (defn get-variant-components
   [file-id variant-id]
-  (->> (dm/get-in (u/locate-file file-id) [:data :components])
-       (map second)
-       (filter #(= (:variant-id %) variant-id))))
+  (cfv/find-variant-components (-> file-id u/locate-file :data) variant-id))
 
 (declare lib-component-proxy)
 
@@ -640,15 +641,8 @@
                  (set)
                  (apply array)))}
 
-    :errors
-    {:this true
-     :get (fn [_]
-            ;; TODO
-            )}
-
     :currentValues
     (fn [property]
-      ;; TODO: validate input
       (->> (get-variant-components file-id id)
            (map
             (fn [{:keys [variant-properties]}]
@@ -658,31 +652,39 @@
            (set)
            (apply array)))
 
-    :deleteProperty
-    (fn [_property]
-      ;; TODO
-      )
-
-    :findComponents
-    (fn [props]
-      ;; TODO: Parse input
-      ;; TODO: Probably not the best way to find the components
-      (letfn [(match-props [{:keys [variant-properties]}]
-                (->> (js/Object.keys props)
-                     (every? (fn [p]
-                               (= (obj/get props p)
-                                  (-> (d/seek #(= (:name %) p) variant-properties)
-                                      :value))))))]
-        (->> (get-variant-components file-id id)
-             (filter match-props)
-             (keep :id)
-             (map #(lib-component-proxy plugin-id file-id %))
-             (apply array))))
+    :variantComponents
+    (fn []
+      (->> (get-variant-components file-id id)
+           (map :id)
+           (map #(lib-component-proxy plugin-id file-id %))
+           (apply array)))
 
     :addVariant
     (fn []
-      ;; TODO
-      )))
+      (st/emit!
+       (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant"})
+       (dwv/add-new-variant id)))
+
+
+    :addProperty
+    (fn []
+      (st/emit!
+       (ev/event {::ev/name "add-new-property" ::ev/origin "plugin:add-property"})
+       (dwv/add-new-property id {:property-value "Value 1"})))
+
+    :removeProperty
+    (fn [pos]
+      (st/emit!
+       (ev/event {::ev/name "remove-property" ::ev/origin "plugin:remove-property"})
+       (dwv/remove-property id pos)))
+
+    :renameProperty
+    (fn [pos name]
+      (st/emit!
+       (dwv/update-property-name id pos name {:trigger "plugin:rename-property"})))))
+
+
+(set! shape/variant-proxy variant-proxy)
 
 (defn lib-component-proxy? [p]
   (obj/type-of? p "LibraryComponentProxy"))
@@ -837,30 +839,61 @@
         (when (some? root)
           (shape/shape-proxy plugin-id file-id (:main-instance-page component) (:id root)))))
 
+    :isVariant
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (ctk/is-variant? component)))
+
     :variants
     {:enumerable false
      :get
      (fn []
        (let [component (u/locate-library-component file-id id)]
-         (when (some? (:variant-id component))
+         (when (ctk/is-variant? component)
            (variant-proxy plugin-id file-id (:variant-id component)))))}
 
     :variantProps
     {:get
      (fn []
        (let [component (u/locate-library-component file-id id)]
-         (when (some? (:variant-id component))
+         (when (ctk/is-variant? component)
            (->> (:variant-properties component)
                 (reduce
                  (fn [acc {:keys [name value]}]
                    (obj/set! acc name value))
                  #js {})))))}
 
-    :variantErrors
-    {:get (fn [])}
+    :variantError
+    {:get (fn []
+            (let [file (u/locate-file file-id)
+                  component (u/locate-library-component file-id id)
+                  root (ctf/get-component-root (:data file) component)]
+              (when (ctk/is-variant? component)
+                (:variant-error root))))}
+
+    :transformInVariant
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (when (and component
+                   (not (ctk/is-variant? component)))
+          (st/emit!
+           (ev/event {::ev/name "transform-in-variant"  ::ev/origin "plugin:transform-in-variant"})
+           (dwv/transform-in-variant (:main-instance-id component))))))
+
+    :addVariant
+    (fn []
+      (let [component (u/locate-library-component file-id id)]
+        (when (and component
+                   (ctk/is-variant? component))
+          (st/emit!
+           (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant-from-component"})
+           (dwv/add-new-variant (:main-instance-id component))))))
 
     :setVariantProperty
-    (fn [_property _value])))
+    (fn [pos value]
+      (st/emit!
+       (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
+       (dwv/update-property-value id pos value)))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))
@@ -901,27 +934,14 @@
     {:this true
      :get
      (fn [_]
-       (let [file (u/locate-file file-id)
-             components
-             (concat
-              (->> file
-                   :data
-                   :components
-                   (remove (comp :deleted second))
-                   (remove (comp :variant-id second))
-                   (map first)
-                   (map #(lib-component-proxy plugin-id file-id %)))
-
-              (->> file
-                   :data
-                   :components
-                   (remove (comp :deleted second))
-                   (filter (comp :variant-id second))
-                   (map second)
-                   (group-by :variant-id)
-                   ;; TODO: This is not the way to locate the variant main component
-                   (map (comp :id first second))
-                   (map #(lib-component-proxy plugin-id file-id %))))]
+       (let [file       (u/locate-file file-id)
+             data       (:data file)
+             components (->> data
+                             :components
+                             (remove (comp :deleted second))
+                             (remove (comp #(cfv/is-secondary-variant? % data) second))
+                             (map first)
+                             (map #(lib-component-proxy plugin-id file-id %)))]
          (apply array components)))}
 
     :tokens
