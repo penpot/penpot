@@ -626,14 +626,17 @@
        (map (fn [[group grouped-sets]]
               (if group
                 {:group group
-                 :sets  (map #(last (str/split (:set %) #"/")) grouped-sets)
+                 :sets  (map (fn [{:keys [id set]}]
+                               {:id id
+                                :name (last (str/split set #"/"))})
+                             grouped-sets)
                  :tokens (->> grouped-sets
                               (mapcat :tokens)
                               (map :name)
                               distinct)}
-                (map (fn [{:keys [set tokens]}]
+                (map (fn [{:keys [id set tokens]}]
                        {:group nil
-                        :sets [set]
+                        :sets [{:id id :name set}]
                         :tokens (map :name tokens)})
                      grouped-sets))))
        flatten))
@@ -693,6 +696,7 @@
   [sets]
   (map (fn [s]
          {:set    (ctob/get-name s)
+          :id     (ctob/get-id s)
           :tokens (vals (ctob/get-tokens- s))})  ;; TODO: this function should be moved to common.logic and refactored
        sets))
 

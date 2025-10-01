@@ -160,10 +160,12 @@
          (fn [_]
            (let [;; We want to create a token on the first set
                  ;; if there are many in this group
-                 path-set (group->paths set)]
+                 path-set (group->paths set)
+                 id (:id (first (:sets set)))]
              (st/emit! (dcm/go-to-workspace :layout :tokens)
-                       (ptk/data-event :expand-token-sets {:paths path-set})
-                       (dwtl/set-selected-token-set-id (ctob/get-id set))
+                       (when path-set
+                         (ptk/data-event :expand-token-sets {:paths path-set}))
+                       (dwtl/set-selected-token-set-id id)
                        (dwtl/set-token-type-section-open :color true)
                        (let [{:keys [modal title]} (get dwta/token-properties :color)
                              window-size (dom/get-window-size)
@@ -231,8 +233,8 @@
 
 (defn- label-group-or-set [{:keys [group sets]}]
   (if group
-    (str group " (" (str/join ", " sets) ")")
-    (first sets)))
+    (str group " (" (str/join ", " (map :name sets)) ")")
+    (:name (first sets))))
 
 (defn- filter-combined-tokens
   "Filters the combined-tokens structure by token name.
