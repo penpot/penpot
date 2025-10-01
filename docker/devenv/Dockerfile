@@ -310,6 +310,7 @@ RUN set -ex; \
       fonts-wqy-zenhei \
       fonts-tlwg-loma-otf \
       fonts-freefont-ttf \
+      poppler-utils \
       \
       libasound2t64 \
       libatk-bridge2.0-0t64 \

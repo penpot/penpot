@@ -47,6 +47,20 @@
         (update :data update-data)
         (update :features conj "fdata/objects-map"))))
 
+(defn disable-objects-map
+  [file & _opts]
+  (let [update-page
+        (fn [page]
+          (update page :objects #(into {} %)))
+
+        update-data
+        (fn [fdata]
+          (update fdata :pages-index d/update-vals update-page))]
+
+    (-> file
+        (update :data update-data)
+        (update :features disj "fdata/objects-map"))))
+
 (defn process-objects
   "Apply a function to all objects-map on the file. Usualy used for convert
   the objects-map instances to plain maps"

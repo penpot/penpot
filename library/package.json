@@ -1,6 +1,6 @@
 {
   "name": "@penpot/library",
-  "version": "1.0.7",
+  "version": "1.0.9",
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
@@ -35,13 +35,11 @@
     "watch:test": "node --test --watch",
     "watch": "yarn run clear:shadow-cache && clojure -M:dev:shadow-cljs watch library"
   },
-  "dependencies": {
-    "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
-    "date-fns": "^4.1.0"
-  },
   "devDependencies": {
     "@types/node": "^22.12.0",
+    "@zip.js/zip.js": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch",
     "concurrently": "^9.1.2",
+    "date-fns": "^4.1.0",
     "nodemon": "^3.1.9",
     "source-map-support": "^0.5.21"
   }
