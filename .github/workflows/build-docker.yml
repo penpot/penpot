@@ -61,7 +61,7 @@ jobs:
       - name: Build and push Backend Docker image
         uses: docker/build-push-action@v6
         env:
-          DOCKER_IMAGE: 'penpotapp/backend'
+          DOCKER_IMAGE: 'backend'
           BUNDLE_PATH: './bundle-backend'
         with:
           context: ./docker/images/
@@ -75,7 +75,7 @@ jobs:
       - name: Build and push Frontend Docker image
         uses: docker/build-push-action@v6
         env:
-          DOCKER_IMAGE: 'penpotapp/frontend'
+          DOCKER_IMAGE: 'frontend'
           BUNDLE_PATH: './bundle-frontend'
         with:
           context: ./docker/images/
@@ -89,7 +89,7 @@ jobs:
       - name: Build and push Exporter Docker image
         uses: docker/build-push-action@v6
         env:
-          DOCKER_IMAGE: 'penpotapp/exporter'
+          DOCKER_IMAGE: 'exporter'
           BUNDLE_PATH: './bundle-exporter'
         with:
           context: ./docker/images/
