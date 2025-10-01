@@ -13,9 +13,9 @@ jobs:
       build_wasm: "yes"
       build_storybook: "yes"
 
-  # build-docker:
-  #   needs: build-bundle
-  #   uses: ./.github/workflows/build-docker.yml
-  #   secrets: inherit
-  #   with:
-  #     gh_ref: "staging"
+  build-docker:
+    needs: build-bundle
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    with:
+      gh_ref: "staging"
