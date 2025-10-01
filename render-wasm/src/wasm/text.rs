@@ -385,6 +385,17 @@ pub extern "C" fn update_shape_text_layout_for(a: u32, b: u32, c: u32, d: u32) {
 }
 
 #[no_mangle]
+pub extern "C" fn update_shape_text_layout_for_all() {
+    with_state_mut!(state, {
+        for shape in state.shapes.iter_mut() {
+            if let Type::Text(text_content) = &mut shape.shape_type {
+                text_content.update_layout(shape.selrect);
+            }
+        }
+    });
+}
+
+#[no_mangle]
 pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
     with_current_shape!(state, |shape: &Shape| {
         if let Type::Text(text_content) = &shape.shape_type {

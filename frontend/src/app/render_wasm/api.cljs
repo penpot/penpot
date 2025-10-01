@@ -791,6 +791,7 @@
            (rx/subs! (fn [_]
                        (clear-drawing-cache)
                        (request-render "pending-finished")
+                       (h/call wasm/internal-module "_update_shape_text_layout_for_all")
                        (.dispatchEvent ^js js/document event))))
       (do
         (clear-drawing-cache)
