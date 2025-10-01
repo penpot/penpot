@@ -71,6 +71,7 @@
   --button-add-background-color-hover: var(--color-accent-action-hover);
   --button-add-icon-color: var(--color-static-white);
 
+  cursor: pointer;
   fill: var(--button-add-background-color);
   &:hover {
     --button-add-background-color: var(--button-add-background-color-hover);
