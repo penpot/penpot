@@ -619,7 +619,7 @@ impl RenderState {
                 let inner_shadows = shape.inner_shadow_paints();
                 let blur_filter = shape.image_filter(1.);
                 let count_inner_strokes = shape.count_visible_inner_strokes();
-                let mut paragraphs = text_content.paragraph_builder_group_from_text(None);
+                let mut paragraph_builders = text_content.paragraph_builder_group_from_text(None);
                 let mut paragraphs_with_shadows =
                     text_content.paragraph_builder_group_from_text(Some(true));
                 let mut stroke_paragraphs_list = shape
@@ -693,7 +693,7 @@ impl RenderState {
                         Some(self),
                         None,
                         &shape,
-                        &mut paragraphs,
+                        &mut paragraph_builders,
                         Some(fills_surface_id),
                         None,
                         blur_filter.as_ref(),

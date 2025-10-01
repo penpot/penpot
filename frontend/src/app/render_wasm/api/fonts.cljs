@@ -98,6 +98,13 @@
             (:style font-data)
             emoji?
             fallback?)
+
+    (h/call wasm/internal-module "_update_shape_text_layout_for"
+            (aget shape-id-buffer 0)
+            (aget shape-id-buffer 1)
+            (aget shape-id-buffer 2)
+            (aget shape-id-buffer 3))
+
     true))
 
 (defn- fetch-font
@@ -217,7 +224,6 @@
   [shape-id fonts]
   (keep (fn [font] (store-font shape-id font)) fonts))
 
-
 (defn add-emoji-font
   [fonts]
   (conj fonts {:font-id "gfont-noto-color-emoji"
@@ -274,7 +280,6 @@
    :symbols     {:font-id "gfont-noto-sans-symbols"       :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :symbols-2   {:font-id "gfont-noto-sans-symbols-2" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}
    :music       {:font-id "gfont-noto-music" :font-variant-id "regular" :style 0 :weight 400 :is-fallback true}})
-
 
 (defn add-noto-fonts [fonts languages]
   (reduce (fn [acc lang]
