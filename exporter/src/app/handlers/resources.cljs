@@ -7,9 +7,9 @@
 (ns app.handlers.resources
   "Temporal resources management."
   (:require
-   ["archiver" :as arc]
-   ["fs" :as fs]
-   ["path" :as path]
+   ["archiver$default" :as arc]
+   ["node:fs" :as fs]
+   ["node:path" :as path]
    [app.common.exceptions :as ex]
    [app.common.uuid :as uuid]
    [app.util.mime :as mime]

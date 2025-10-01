@@ -28,7 +28,7 @@
     "ws": "^8.18.3"
   },
   "scripts": {
-    "clear:shadow-cache": "rm -rf .shadow-cljs",
+    "clear:shadow-cache": "rm -rf .shadow-cljs && rm -rf target",
     "watch:app": "clojure -M:dev:shadow-cljs watch main",
     "watch": "yarn run clear:shadow-cache && yarn run watch:app",
     "build:app": "clojure -M:dev:shadow-cljs release main",
