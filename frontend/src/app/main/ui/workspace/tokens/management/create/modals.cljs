@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -88,7 +89,8 @@
                        :icon i/close
                        :variant "action"
                        :aria-label (tr "labels.close")}]
-     [:> form-wrapper* {:token token
+     [:> form-wrapper* {:is-create (not (ctob/token? token))
+                        :token token
                         :action action
                         :selected-token-set-id selected-token-set-id
                         :token-type token-type
