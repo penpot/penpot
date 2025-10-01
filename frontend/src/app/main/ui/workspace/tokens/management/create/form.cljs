@@ -277,7 +277,8 @@ on-get-token-value: Custom function to get the input value from the dom
 Custom component props:
 custom-input-token-value: Custom component for editing/displaying the token value
 custom-input-token-value-props: Custom props passed to the custom-input-token-value merged with the default props"
-  [{:keys [token
+  [{:keys [is-create
+           token
            token-type
            selected-token-set-id
            action
@@ -292,8 +293,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
            custom-input-token-value
            custom-input-token-value-props]
     :or {validate-token default-validate-token}}]
-  (let [create? (not (instance? ctob/Token token))
-        token (or token {:type token-type})
+  (let [token (or token {:type token-type})
         token-properties (dwta/get-token-properties token)
         tokens-in-selected-set (mf/deref refs/workspace-all-tokens-in-selected-set)
 
@@ -451,7 +451,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 
         on-submit
         (mf/use-fn
-         (mf/deps create? validate-name validate-descripion token active-theme-tokens validate-token)
+         (mf/deps is-create validate-name validate-descripion token active-theme-tokens validate-token)
          (fn [e]
            (dom/prevent-default e)
            ;; We have to re-validate the current form values before submitting
@@ -478,7 +478,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                     (rx/subs!
                      (fn [valid-token]
                        (st/emit!
-                        (if create?
+                        (if is-create
                           (dwtl/create-token {:name final-name
                                               :type token-type
                                               :value (:value valid-token)
@@ -534,9 +534,10 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
     ;; Update the value when editing an existing token
     ;; so the user doesn't have to interact with the form to validate the token
     (mf/use-effect
-     (mf/deps create? resolved-tokens token token-resolve-result set-resolve-value)
+     (mf/deps is-create token resolved-tokens token-resolve-result set-resolve-value)
      (fn []
-       (when (and (not create?)
+       (when (and (not is-create)
+                  (:value token) ;; Don't retrigger this effect when switching tabs on composite tokens
                   (not token-resolve-result)
                   resolved-tokens)
          (-> (get resolved-tokens @token-name-ref)
