@@ -12,6 +12,7 @@
    [app.common.types.color :as clr]
    [app.common.types.shape.attrs :refer [default-color]]
    [app.common.types.token :as tk]
+   [app.config :as cfg]
    [app.main.data.modal :as modal]
    [app.main.data.workspace.colors :as dwc]
    [app.main.refs :as refs]
@@ -140,7 +141,8 @@
   [{:keys [index color class disable-gradient disable-opacity disable-image disable-picker hidden
            on-change on-reorder on-detach on-open on-close on-remove origin on-detach-token
            disable-drag on-focus on-blur select-only select-on-focus on-token-change applied-token]}]
-  (let [libraries        (mf/deref refs/files)
+  (let [token-color      (contains? cfg/flags :token-color)
+        libraries        (mf/deref refs/files)
         on-change        (h/use-ref-callback on-change)
         on-token-change  (h/use-ref-callback on-token-change)
 
@@ -336,7 +338,7 @@
      (when (some? on-reorder)
        [:> reorder-handler* {:ref dref}])
      (cond
-       applied-token
+       (and token-color applied-token)
        [:> color-token-row* {:active-tokens tokens
                              :color-token applied-token
                              :color (dissoc color :ref-id :ref-file)
