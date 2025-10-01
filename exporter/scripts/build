@@ -13,6 +13,9 @@ rm -rf target
 # Build the application
 clojure -M:dev:shadow-cljs release main;
 
+# Remove source
+rm -rf target/app;
+
 # Copy package*.json files
 cp ../.yarnrc.yml target/;
 cp yarn.lock target/;

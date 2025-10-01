@@ -18,7 +18,7 @@
 
 (defn- create-client
   [uri]
-  (let [^js client (new redis/default uri)]
+  (let [^js client (new redis uri)]
     (.on client "connect"
          (fn [] (l/info :hint "redis connection established" :uri uri)))
     (.on client "error"
