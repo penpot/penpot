@@ -7,6 +7,7 @@
 (ns app.main.ui.inspect.styles.rows.properties-row
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data :as d]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
    [app.util.i18n :refer [tr]]
@@ -26,7 +27,7 @@
 (mf/defc properties-row*
   {::mf/schema schema:properties-row}
   [{:keys [class term detail token property copiable]}]
-  (let [copiable? (or copiable false)
+  (let [copiable? (d/nilv copiable false)
         detail? (not (or (nil? detail) (str/blank? detail)))
         detail (if detail? detail "-")
         copied* (mf/use-state false)
@@ -51,12 +52,10 @@
                         :content #(mf/html
                                    [:div {:class (stl/css :tooltip-token)}
                                     [:div {:class (stl/css :tooltip-token-title)} (tr "inspect.tabs.styles.token.resolved-value")]
-                                    [:div {:class (stl/css :tooltip-token-value)} (:value token)]])}
-           [:> property-detail-copiable* {:detail detail
-                                          :token token
+                                    [:div {:class (stl/css :tooltip-token-value)} (:resolved-value token)]])}
+           [:> property-detail-copiable* {:token token
                                           :copied copied
-                                          :on-click copy-attr}]]
-          [:> property-detail-copiable* {:detail detail
-                                         :copied copied
-                                         :on-click copy-attr}])
+                                          :on-click copy-attr} detail]]
+          [:> property-detail-copiable* {:copied copied
+                                         :on-click copy-attr} detail])
         detail)]]))

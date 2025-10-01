@@ -101,18 +101,16 @@
                                    [:div {:class (stl/css :tooltip-token-title)}
                                     (tr "inspect.tabs.styles.token.resolved-value")]
                                    [:div {:class (stl/css :tooltip-token-value)}
-                                    (:value token)]])}
-          [:> property-detail-copiable* {:detail formatted-color-value
-                                         :color color
+                                    (:resolved-value token)]])}
+          [:> property-detail-copiable* {:color color
                                          :token token
                                          :copied copied
-                                         :on-click copy-attr}]]
+                                         :on-click copy-attr} formatted-color-value]]
 
 
-         [:> property-detail-copiable* {:detail formatted-color-value
-                                        :color color
+         [:> property-detail-copiable* {:color color
                                         :copied copied
-                                        :on-click copy-attr}])]]
+                                        :on-click copy-attr} formatted-color-value])]]
      (when (:image color)
        [:div {:class (stl/css :color-image-preview)}
         [:div {:class (stl/css :color-image-preview-wrapper)}
