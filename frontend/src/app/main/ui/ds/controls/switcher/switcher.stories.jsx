@@ -13,10 +13,6 @@ export default {
   title: "Controls/Switcher",
   component: Switcher,
   argTypes: {
-    checked: {
-      control: { type: "boolean" },
-      description: "Controlled checked state",
-    },
     defaultChecked: {
       control: { type: "boolean" },
       description: "Default checked state for uncontrolled mode",
@@ -33,15 +29,7 @@ export default {
       options: ["sm", "md", "lg"],
       control: { type: "select" },
       description: "Size variant of the switcher",
-    },
-    "aria-label": {
-      control: { type: "text" },
-      description: "Accessible label when no visible label is provided",
-    },
-    onChange: {
-      action: "changed",
-      description: "Callback fired when the switcher state changes",
-    },
+    }
   },
   args: {
     disabled: false,
@@ -100,7 +88,6 @@ export const WithLongLabel = {
 
 export const WithoutVisibleLabel = {
   args: {
-    "aria-label": "Toggle dark mode",
     defaultChecked: false,
   },
   render: ({ ...args }) => (

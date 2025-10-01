@@ -87,11 +87,11 @@
                                       :aria-disabled disabled
                                       :aria-label effective-aria-label
                                       :class (stl/css-case :switcher true
-                                                           :is-checked current-checked
-                                                           :is-disabled disabled
-                                                           :switcher--sm (= size "sm")
-                                                           :switcher--md (= size "md")
-                                                           :switcher--lg (= size "lg"))
+                                                           :switcher-checked current-checked
+                                                           :switcher-disabled disabled
+                                                           :switcher-sm (= size "sm")
+                                                           :switcher-md (= size "md")
+                                                           :switcher-lg (= size "lg"))
                                       :on-click handle-toggle
                                       :on-key-down handle-keydown})]
 
@@ -99,13 +99,11 @@
      (when has-label
        [:label {:for id
                 :class (stl/css-case :switcher-label true
-                                     :is-disabled disabled)
+                                     :switcher-label-disabled disabled)
                 :on-click handle-label-click}
         label])
      [:> :div props
       [:div {:class (stl/css-case :switcher-track true
-                                  :is-checked current-checked
-                                  :is-disabled disabled)}
+                                  :switcher-track-disabled disabled)}
        [:div {:class (stl/css-case :switcher-thumb true
-                                   :is-checked current-checked
-                                   :is-disabled disabled)}]]]]))
+                                   :switcher-thumb-disabled disabled)}]]]]))

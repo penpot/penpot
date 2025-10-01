@@ -24,36 +24,42 @@ $switcher-lg-thumb-size: $sz-24;
 $switcher-transition-duration: 0.2s;
 
 .switcher-wrapper {
+  --switcher-track-outline: none;
+  --switcher-track-outline-offset: 0;
+  
   display: flex;
   align-items: center;
   gap: var(--sp-s);
   padding: 0;
   
-  // Focus ring using DS tokens - on wrapper cascading to track
   &:focus-visible {
-    .switcher-track {
-      outline: $b-2 solid var(--color-accent-primary);
-      outline-offset: $b-2;
-    }
+    --switcher-track-outline: $b-2 solid var(--color-accent-primary);
+    --switcher-track-outline-offset: #{$b-2};
   }
 }
 
 .switcher-label {
-  color: var(--color-foreground-primary);
+  --switcher-label-color: var(--color-foreground-secondary);
+  
+  color: var(--switcher-label-color);
   cursor: pointer;
   user-select: none;
-  
-  &:hover {
-    color: var(--color-foreground-primary);
-  }
 }
 
-.switcher-label.is-disabled {
+.switcher-label-disabled {
   cursor: not-allowed;
   color: var(--color-foreground-secondary);
 }
 
 .switcher {
+  --switcher-track-width: #{$switcher-md-track-width};
+  --switcher-track-height: #{$switcher-md-track-height};
+  --switcher-thumb-size: #{$switcher-md-thumb-size};
+  --switcher-thumb-transform: translateX(0);
+  --switcher-track-bg: var(--color-background-quaternary);
+  --switcher-thumb-bg: var(--color-foreground-secondary);
+  --switcher-thumb-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  
   position: relative;
   display: inline-block;
   cursor: pointer;
@@ -62,129 +68,100 @@ $switcher-transition-duration: 0.2s;
   background: transparent;
   padding: 0;
   
-  
-  
-  // Size variants - Medium (default)
-  &.switcher--md {
-    .switcher-track {
-      width: $switcher-md-track-width;
-      height: $switcher-md-track-height;
-    }
-    
-    .switcher-thumb {
-      width: $switcher-md-thumb-size;
-      height: $switcher-md-thumb-size;
-      top: calc((#{$switcher-md-track-height} - #{$switcher-md-thumb-size}) / 2);
-      left: calc((#{$switcher-md-track-height} - #{$switcher-md-thumb-size}) / 2);
-    }
-    
-    &.is-checked .switcher-thumb {
-      transform: translateX(calc(#{$switcher-md-track-width} - #{$switcher-md-track-height}));
-    }
+  &:hover:not(.switcher-disabled) {
+    --switcher-thumb-bg: var(--color-foreground-primary);
   }
+}
+
+// Size variants - Small
+.switcher-sm {
+  --switcher-track-width: #{$switcher-sm-track-width};
+  --switcher-track-height: #{$switcher-sm-track-height};
+  --switcher-thumb-size: #{$switcher-sm-thumb-size};
+}
+
+// Size variants - Medium (default)
+.switcher-md {
+  --switcher-track-width: #{$switcher-md-track-width};
+  --switcher-track-height: #{$switcher-md-track-height};
+  --switcher-thumb-size: #{$switcher-md-thumb-size};
+}
+
+// Size variants - Large
+.switcher-lg {
+  --switcher-track-width: #{$switcher-lg-track-width};
+  --switcher-track-height: #{$switcher-lg-track-height};
+  --switcher-thumb-size: #{$switcher-lg-thumb-size};
+}
+
+// Checked state
+.switcher-checked {
+  --switcher-track-bg: var(--color-accent-success);
+  --switcher-thumb-bg: var(--color-foreground-primary);
+  --switcher-thumb-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
   
-  // Size variants - Small
-  &.switcher--sm {
-    .switcher-track {
-      width: $switcher-sm-track-width;
-      height: $switcher-sm-track-height;
-    }
-    
-    .switcher-thumb {
-      width: $switcher-sm-thumb-size;
-      height: $switcher-sm-thumb-size;
-      top: calc((#{$switcher-sm-track-height} - #{$switcher-sm-thumb-size}) / 2);
-      left: calc((#{$switcher-sm-track-height} - #{$switcher-sm-thumb-size}) / 2);
-    }
-    
-    &.is-checked .switcher-thumb {
-      transform: translateX(calc(#{$switcher-sm-track-width} - #{$switcher-sm-track-height}));
-    }
+  &:hover:not(.switcher-disabled) {
+    --switcher-track-bg: var(--color-accent-tertiary);
   }
+}
+
+.switcher-checked.switcher-sm {
+  --switcher-thumb-transform: translateX(calc(#{$switcher-sm-track-width} - #{$switcher-sm-track-height}));
+}
+
+.switcher-checked.switcher-md {
+  --switcher-thumb-transform: translateX(calc(#{$switcher-md-track-width} - #{$switcher-md-track-height}));
+}
+
+.switcher-checked.switcher-lg {
+  --switcher-thumb-transform: translateX(calc(#{$switcher-lg-track-width} - #{$switcher-lg-track-height}));
+}
+
+// Disabled state
+.switcher-disabled {
+  cursor: not-allowed;
   
-  // Size variants - Large
-  &.switcher--lg {
-    .switcher-track {
-      width: $switcher-lg-track-width;
-      height: $switcher-lg-track-height;
-    }
-    
-    .switcher-thumb {
-      width: $switcher-lg-thumb-size;
-      height: $switcher-lg-thumb-size;
-      top: calc((#{$switcher-lg-track-height} - #{$switcher-lg-thumb-size}) / 2);
-      left: calc((#{$switcher-lg-track-height} - #{$switcher-lg-thumb-size}) / 2);
-    }
-    
-    &.is-checked .switcher-thumb {
-      transform: translateX(calc(#{$switcher-lg-track-width} - #{$switcher-lg-track-height}));
-    }
+  &:not(.switcher-checked) {
+    --switcher-track-bg: var(--color-background-tertiary);
+    --switcher-thumb-bg: var(--color-foreground-secondary);
   }
+}
+
+.switcher-disabled.switcher-checked {
+  --switcher-track-bg: var(--color-background-quaternary);
+  --switcher-thumb-bg: var(--color-foreground-secondary);
 }
 
 .switcher-track {
   position: relative;
-  border-radius: $br-full; 
-  background-color: var(--color-background-quaternary); 
+  width: var(--switcher-track-width);
+  height: var(--switcher-track-height);
+  border-radius: $br-full;
+  background-color: var(--switcher-track-bg);
   transition: background-color $switcher-transition-duration ease-in-out;
-  
-  .switcher.is-checked & {
-    background-color: var(--color-accent-success);
-  }
-  
-  .switcher:not(.is-disabled):hover:not(.is-checked) & {
-    background-color: var(--color-background-quaternary);
-  }
-  
-  .switcher:not(.is-disabled):hover.is-checked & {
-    background-color: var(--color-accent-tertiary);
-  }
+  outline: var(--switcher-track-outline);
+  outline-offset: var(--switcher-track-outline-offset);
+}
+
+.switcher-track-disabled {
+  opacity: 0.6;
 }
 
 .switcher-thumb {
   position: absolute;
+  width: var(--switcher-thumb-size);
+  height: var(--switcher-thumb-size);
+  top: calc((var(--switcher-track-height) - var(--switcher-thumb-size)) / 2);
+  left: calc((var(--switcher-track-height) - var(--switcher-thumb-size)) / 2);
   border-radius: 50%;
-  background-color: var(--color-foreground-secondary); 
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  background-color: var(--switcher-thumb-bg);
+  box-shadow: var(--switcher-thumb-shadow);
+  transform: var(--switcher-thumb-transform);
   transition: transform $switcher-transition-duration ease-in-out, background-color $switcher-transition-duration ease-in-out;
-  
-  .switcher.is-checked & {
-    background-color: var(--color-foreground-primary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
-  }
-  
-  .switcher:not(.is-disabled):hover:not(.is-checked) & {
-    background-color: var(--color-foreground-primary);
-  }
-  
-  .switcher:not(.is-disabled):hover.is-checked & {
-    background-color: var(--color-foreground-primary);
-  }
 }
 
-// Flat modifier-based selectors for states
-.switcher.is-disabled {
-  cursor: not-allowed;
-}
-
-.switcher-track.is-disabled {
-  background-color: var(--color-background-tertiary);
-  opacity: 0.6;
-}
-
-.switcher-track.is-disabled.is-checked {
-  background-color: var(--color-background-quaternary);
-  opacity: 0.6;
-}
-
-.switcher-thumb.is-disabled {
-  background-color: var(--color-foreground-secondary);
+.switcher-thumb-disabled {
   opacity: 0.5;
-}
-
-.switcher-thumb.is-disabled.is-checked {
-  background-color: var(--color-foreground-secondary);
-  opacity: 0.6;
 }
 
 @media (prefers-reduced-motion: reduce) {
