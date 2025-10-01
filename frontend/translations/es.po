@@ -1198,6 +1198,10 @@ msgstr "Desvincular token"
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "Este token no está disponible en ningún set ni tema activo."
 
+#: src/app/main/ui/ds/controls/switcher/switcher.cljs:78
+msgid "ds.switcher.aria-label"
+msgstr "Etiqueta del switcher"
+
 #: src/app/main/data/auth.cljs:314
 msgid "errors.auth-provider-not-allowed"
 msgstr "El proveedor de autenticación no permitido para este perfil de usuario"

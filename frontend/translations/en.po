@@ -1186,6 +1186,10 @@ msgstr "Detach token"
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "This token is not available in any active set or theme."
 
+#: src/app/main/ui/ds/controls/switcher/switcher.cljs:78
+msgid "ds.switcher.aria-label"
+msgstr "Switcher label"
+
 #: src/app/main/data/auth.cljs:314
 msgid "errors.auth-provider-not-allowed"
 msgstr "Auth provider not allowed for this profile"

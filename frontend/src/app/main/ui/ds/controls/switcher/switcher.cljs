@@ -75,9 +75,7 @@
         has-label (not (str/blank? label))
         effective-aria-label (if has-label
                                (or aria-label label)
-                              ;;  TODO: Add translation string
-                              ;;  (tr "linea de traduccion")
-                               "Toggle switch")
+                               (tr "ds.switcher.aria-label"))
 
         props (mf/spread-props props {:id id
                                       :ref ref
