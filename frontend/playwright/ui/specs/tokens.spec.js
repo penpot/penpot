@@ -881,7 +881,8 @@ test.describe("Tokens: Themes modal", () => {
   test.describe("Tokens: Apply token", () => {
     test("User applies color token to a shape", async ({ page }) => {
       const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
-        await setupTokensFile(page);
+      await setupTokensFile(page);
+      await workspacePage.mockConfigFlags(["enable-color-token"]);
 
       await page.getByRole("tab", { name: "Layers" }).click();
 
@@ -903,7 +904,7 @@ test.describe("Tokens: Themes modal", () => {
         .click({ button: "right" });
       await tokenContextMenuForToken.getByText("Fill").click();
 
-            await workspacePage.page.getByLabel("Name: colors.black");
+      await expect(workspacePage.page.getByLabel("Name: colors.black")).toBeVisible();
     });
 
     test("User applies typography token to a text shape", async ({ page }) => {
@@ -1014,9 +1015,7 @@ test.describe("Tokens: Themes modal", () => {
       await expect(letterSpacingField).toHaveValue(
         originalValues.letterSpacing,
       );
-      await expect(lineHeightField).toHaveValue(
-        originalValues.lineHeight,
-      );
+      await expect(lineHeightField).toHaveValue(originalValues.lineHeight);
       await expect(textCaseField).toHaveValue(originalValues.textCase);
       await expect(textDecorationField).toHaveValue(
         originalValues.textDecoration,
