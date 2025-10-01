@@ -16,7 +16,7 @@
   [file-id group name]
   (let [file (u/locate-file file-id)
         tokens-lib (->> file :data :tokens-lib)]
-    (cttl/get-theme tokens-lib group name)))
+    #_(cttl/get-theme tokens-lib group name)))
 
 (defn locate-token-set
   [file-id set-name]
@@ -28,7 +28,7 @@
   [file-id set-name token-id]
   (let [file (u/locate-file file-id)
         tokens-lib (->> file :data :tokens-lib)]
-    (cttl/get-token-in-set tokens-lib set-name token-id)))
+    #_(cttl/get-token-in-set tokens-lib set-name token-id)))
 
 (defn token-proxy
   [plugin-id file-id set-name id]
@@ -86,9 +86,9 @@
        (let [file (u/locate-file file-id)
              tokens-lib (->> file :data :tokens-lib)
              token-set (cttl/get-set tokens-lib set-name)]
-         (->> (cttl/get-tokens token-set)
-              (map #(token-proxy plugin-id file-id set-name (:id %)))
-              (apply array))))}))
+         #_(->> (cttl/get-tokens token-set)
+                (map #(token-proxy plugin-id file-id set-name (:id %)))
+                (apply array))))}))
 
 (defn theme-proxy
   [plugin-id file-id group name]
