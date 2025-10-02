@@ -913,38 +913,80 @@
                              :custom-input-token-value color-picker*
                              :custom-input-token-value-props custom-input-token-value-props})]))
 
+;; TODO l10n
+(def ^:private shadow-inputs
+  #(d/ordered-map
+    :x
+    {:label "x"
+     :placeholder "x"}
+    :y
+    {:label "y"
+     :placeholder "y"}
+    :blur
+    {:label "blur"
+     :placeholder "blur"}
+    :spread
+    {:label "spread"
+     :placeholder "spread"}
+    :color
+    {:label "color"
+     :placeholder "color"}))
+
+(mf/defc box-shadow-inputs*
+  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled]}]
+  (let [on-remove-shadow
+        (mf/use-callback
+         (mf/deps shadow-idx on-remove-shadow)
+         #(on-remove-shadow shadow-idx))]
+    [:div
+     [:> icon-button* {:icon i/add
+                       :on-click on-add-shadow
+                       ;; TODO l10n
+                       :aria-label "Add shadow"}]
+     [:> icon-button* {:variant "ghost"
+                       :icon i/remove
+                       :on-click on-remove-shadow
+                       :disabled is-remove-disabled
+                       ;; TODO l10n
+                       :aria-label "Remove shadow"}]
+     (for [[k {:keys [label placeholder]}] (shadow-inputs)]
+       [:div {:key (str k)
+              :class (stl/css :input-row)}
+        [:> input-token*
+         {:aria-label label
+          :placeholder placeholder
+          :default-value (get shadow k)}]])]))
+
 (mf/defc box-shadow-value-inputs*
   [{:keys [default-value on-blur on-update-value token-resolve-result]}]
-  (let [composite-token? (not (cto/box-shadow-composite-token-reference? (:value token-resolve-result)))
+  (let [shadows* (mf/use-state (or default-value [{}]))
+        shadows (deref shadows*)
+        shadows-count (count shadows)
+
+        on-add-shadow
+        (mf/use-callback
+         (mf/deps shadows)
+         #(swap! shadows* conj {}))
+
+        on-remove-shadow
+        (mf/use-callback
+         (mf/deps shadows)
+         (fn [idx]
+           (swap! shadows* d/remove-at-index idx)))
+
         #_#_errors-by-key (sd/collect-typography-errors token-resolve-result)]
-    [:div {:class (stl/css :nested-input-row)}
-     "Box shadow"
-     #_(for [[k {:keys [label placeholder icon]}] typography-inputs]
-         (let [value (get default-value k)
-               token-resolve-result
-               (when composite-token?
-                 (-> {:resolved-value (let [v (get-in token-resolve-result [:resolved-value k])]
-                                        (when-not (str/empty? v) v))
-                      :errors (get errors-by-key k)}
-                     (d/without-nils)))
-
-               on-change
-               (mf/use-fn
-                ;; Passing token-type via event to prevent deep function adapting & passing of type
-                (fn [e]
-                  (-> (obj/set! e "tokenType" k)
-                      (on-update-value))))]
-
-           [:div {:key (str k)
-                  :class (stl/css :input-row)}
-            [:> input-token*
-             {:aria-label label
-              :placeholder placeholder
-              :default-value value
-              :on-blur on-blur
-              :icon icon
-              :on-change on-change
-              :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}]]))]))
+    [:div
+     [:div {:class (stl/css :nested-input-row)}
+      (for [[shadow-idx shadow] (d/enumerate shadows)
+            :let [is-remove-disabled (= shadows-count 1)
+                  key (str shadow-idx shadows-count)]]
+        [:div {:key key
+               :class (stl/css :nested-input-row)}
+         [:> box-shadow-inputs* {:is-remove-disabled is-remove-disabled
+                                 :shadow-idx shadow-idx
+                                 :on-add-shadow on-add-shadow
+                                 :on-remove-shadow on-remove-shadow
+                                 :shadow shadow}]])]]))
 
 (mf/defc box-shadow-form*
   [{:keys [token] :rest props}]
@@ -974,7 +1016,7 @@
                              :composite-tab box-shadow-value-inputs*
                              :reference-icon i/text-typography
                              :is-reference-fn cto/typography-composite-token-reference?
-                             :title (tr "labels.typography")
+                             :title "Box shadows"
                              :validate-token validate-typography-token
                              :on-get-token-value on-get-token-value
                              :update-composite-backup-value update-composite-backup-value})]))
