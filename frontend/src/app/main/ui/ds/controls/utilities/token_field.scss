@@ -25,7 +25,7 @@
   inline-size: 100%;
   background: var(--token-field-bg-color);
   border-radius: $br-8;
-  padding: var(--sp-xs) var(--sp-s);
+  padding: var(--sp-xs);
   outline: $b-1 solid var(--token-field-outline-color);
 
   &:hover {

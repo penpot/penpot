@@ -601,6 +601,7 @@
                                                         {:content property
                                                          :id property}
                                                         [:> icon* {:icon-id icon
+                                                                   :size "s"
                                                                    :aria-labelledby property
                                                                    :class (stl/css :icon)}]]))
                                 :slot-end (when-not disabled
@@ -634,6 +635,7 @@
                                                       {:content property
                                                        :id property}
                                                       [:> icon* {:icon-id icon
+                                                                 :size "s"
                                                                  :aria-labelledby property
                                                                  :class (stl/css :icon)}]]))
                               :token-wrapper-ref token-wrapper-ref

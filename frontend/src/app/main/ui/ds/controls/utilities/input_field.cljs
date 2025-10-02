@@ -58,6 +58,14 @@
                                 :type (d/nilv type "text")
                                 :id id
                                 :max-length (d/nilv max-length max-input-length)})
+        inside-class (stl/css-case :input-wrapper true
+                                   :has-hint has-hint
+                                   :hint-type-hint (= hint-type "hint")
+                                   :hint-type-warning (= hint-type "warning")
+                                   :hint-type-error (= hint-type "error")
+                                   :variant-seamless (= variant "seamless")
+                                   :variant-dense (= variant "dense")
+                                   :variant-comfortable (= variant "comfortable"))
         on-icon-click
         (mf/use-fn
          (mf/deps ref)
@@ -66,14 +74,7 @@
              (dom/select-node input-node)
              (dom/focus! input-node))))]
 
-    [:div {:class (dm/str class " " (stl/css-case :input-wrapper true
-                                                  :has-hint has-hint
-                                                  :hint-type-hint (= hint-type "hint")
-                                                  :hint-type-warning (= hint-type "warning")
-                                                  :hint-type-error (= hint-type "error")
-                                                  :variant-seamless (= variant "seamless")
-                                                  :variant-dense (= variant "dense")
-                                                  :variant-comfortable (= variant "comfortable")))}
+    [:div {:class [inside-class class]}
      (when (some? slot-start)
        slot-start)
      (when (some? icon)
