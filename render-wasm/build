@@ -20,4 +20,6 @@ cp target/wasm32-unknown-emscripten/$_BUILD_MODE/render_wasm.wasm ../frontend/re
 
 sed -i "s/render_wasm.wasm/$_BUILD_NAME.wasm?version=develop/g" ../frontend/resources/public/js/$_BUILD_NAME.js;
 
+exit $?
+
 popd
