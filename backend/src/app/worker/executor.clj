@@ -17,7 +17,8 @@
    io.netty.channel.nio.NioEventLoopGroup
    io.netty.util.concurrent.DefaultEventExecutorGroup
    java.util.concurrent.ExecutorService
-   java.util.concurrent.ThreadFactory))
+   java.util.concurrent.ThreadFactory
+   java.util.concurrent.TimeUnit))
 
 (set! *warn-on-reflection* true)
 
@@ -61,7 +62,10 @@
 
 (defmethod ig/halt-key! ::wrk/netty-io-executor
   [_ instance]
-  (px/shutdown! instance))
+  (deref (.shutdownGracefully ^NioEventLoopGroup instance
+                              (long 100)
+                              (long 1000)
+                              TimeUnit/MILLISECONDS)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; IO Offload Executor
