@@ -13,8 +13,13 @@ href="https://community.penpot.app/t/self-hosting-penpot-i/2336" target="_blank"
 about self-hosting</a> in Penpot community.
 
 **There is absolutely no difference between <a
-href="https://design.penpot.app">our SaaS offer</a> for Penpot and your
+href="https://design.penpot.app" target="_blank">our SaaS offer</a> for Penpot and your
 self-hosted Penpot platform!**
+<p class="advice">
+Docker images are published shortly after the SaaS update: 
+<a
+href="https://community.penpot.app/t/why-do-self-hosted-versions-lag-behind-new-releases/9897" target="_blank">Why do self hosted versions lag behind new releases?</a>
+</p>
 
 There are three main options for creating a Penpot instance:
 
@@ -22,7 +27,7 @@ There are three main options for creating a Penpot instance:
 2. Using <a href="https://docker.com" target="_blank">Docker</a> tool.
 3. Using <a href="https://kubernetes.io/" target="_blank">Kubernetes</a>.
 
-<p class="advice">
+<p>
 The recommended way is to use Elestio, since it's simpler, fully automatic and still greatly flexible.
 Use Docker if you already know the tool, if need full control of the process or have extra requirements
 and do not want to depend on any external provider, or need to do any special customization.
