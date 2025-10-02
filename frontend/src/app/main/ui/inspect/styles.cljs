@@ -15,6 +15,7 @@
    [app.common.types.tokens-lib :as ctob]
    [app.main.data.style-dictionary :as sd]
    [app.main.refs :as refs]
+   [app.main.ui.context :as ctx]
    [app.main.ui.inspect.styles.panels.blur :refer [blur-panel*]]
    [app.main.ui.inspect.styles.panels.fill :refer [fill-panel*]]
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
@@ -89,9 +90,11 @@
         active-themes      (mf/deref refs/workspace-active-theme-paths-no-hidden)
         active-sets        (mf/with-memo [tokens-lib]
                              (some-> tokens-lib (ctob/get-active-themes-set-names)))
-        active-tokens      (mf/with-memo [tokens-lib]
-                             (some-> tokens-lib (ctob/get-tokens-in-active-sets)))
-        resolved-active-tokens (sd/use-resolved-tokens* active-tokens)
+        active-tokens*    (mf/use-ctx ctx/active-tokens)
+        active-tokens
+        (mf/with-memo [active-tokens*]
+          (delay active-tokens*))
+        _ (prn "active-tokens" active-tokens)
         has-visibility-props? (mf/use-fn
                                (fn [shape]
                                  (let [shape-type (:type shape)]
@@ -121,7 +124,7 @@
           [:> style-box* {:panel :geometry}
            [:> geometry-panel* {:shapes shapes
                                 :objects objects
-                                :resolved-tokens resolved-active-tokens}]]
+                                :resolved-tokens @active-tokens}]]
          ;;  LAYOUT PANEL
           :layout
           (let [layout-shapes (->> shapes (filter ctl/any-layout?))]
@@ -129,7 +132,7 @@
               [:> style-box* {:panel :layout}
                [:> layout-panel* {:shapes layout-shapes
                                   :objects objects
-                                  :resolved-tokens resolved-active-tokens}]]))
+                                  :resolved-tokens @active-tokens}]]))
          ;;  LAYOUT ELEMENT PANEL
           :layout-element
           (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
@@ -148,7 +151,7 @@
                 [:> style-box* {:panel panel}
                  [:> layout-element-panel* {:shapes shapes
                                             :objects objects
-                                            :resolved-tokens resolved-active-tokens
+                                            :resolved-tokens @active-tokens
                                             :layout-element-properties layout-element-properties}]])))
           ;; FILL PANEL
           :fill
@@ -158,7 +161,7 @@
                [:> fill-panel* {:color-space color-space
                                 :shapes shapes
                                 :objects objects
-                                :resolved-tokens resolved-active-tokens}]]))
+                                :resolved-tokens @active-tokens}]]))
 
           ;; VISIBILITY PANEL
           :visibility
@@ -167,7 +170,7 @@
               [:> style-box* {:panel :visibility}
                [:> visibility-panel* {:shapes shapes
                                       :objects objects
-                                      :resolved-tokens resolved-active-tokens}]]))
+                                      :resolved-tokens @active-tokens}]]))
           ;; SVG PANEL
           :svg
           (let [shape (first shapes)]

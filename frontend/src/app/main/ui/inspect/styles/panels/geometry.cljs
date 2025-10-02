@@ -41,8 +41,8 @@
   [property shape resolved-tokens]
   (let [shape-tokens (:applied-tokens shape)
         applied-tokens-in-shape (get-applied-tokens-in-shape shape-tokens property)
-        token (get resolved-tokens applied-tokens-in-shape)]
-    token))
+        resolved-token  (get resolved-tokens applied-tokens-in-shape)]
+    resolved-token))
 
 (mf/defc geometry-panel*
   [{:keys [shapes objects resolved-tokens]}]

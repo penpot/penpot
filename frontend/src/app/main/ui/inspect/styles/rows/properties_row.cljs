@@ -51,7 +51,7 @@
                         :content #(mf/html
                                    [:div {:class (stl/css :tooltip-token)}
                                     [:div {:class (stl/css :tooltip-token-title)} (tr "inspect.tabs.styles.token.resolved-value")]
-                                    [:div {:class (stl/css :tooltip-token-value)} (:value token)]])}
+                                    [:div {:class (stl/css :tooltip-token-value)} (:resolved-value token)]])}
            [:> property-detail-copiable* {:detail detail
                                           :token token
                                           :copied copied

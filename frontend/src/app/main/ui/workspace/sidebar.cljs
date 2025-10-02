@@ -303,6 +303,7 @@
 
     [:> (mf/provider muc/sidebar) {:value :right}
      [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
+      [:> (mf/provider muc/active-tokens) {:value active-tokens}
       [:aside
        {:class (stl/css-case :right-settings-bar true
                              :not-expand (not can-be-expanded?)
@@ -341,7 +342,7 @@
           (let [props (mf/spread-props props
                                        {:on-change-section on-change-section
                                         :on-expand on-expand})]
-            [:> options-toolbox* props]))]]]]))
+            [:> options-toolbox* props]))]]]]]))
 
 (mf/defc sidebar*
   [{:keys [layout file file-id page-id section drawing-tool selected]}]

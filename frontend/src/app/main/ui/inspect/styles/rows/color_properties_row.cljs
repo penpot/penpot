@@ -95,7 +95,7 @@
                                    [:div {:class (stl/css :tooltip-token-title)}
                                     (tr "inspect.tabs.styles.token.resolved-value")]
                                    [:div {:class (stl/css :tooltip-token-value)}
-                                    (:value token)]])}
+                                    (:resolved-value token)]])}
           [:> property-detail-copiable* {:detail formatted-color-value
                                          :color color
                                          :token token
