@@ -69,7 +69,11 @@
 (mf/defc color-token-row*
   {::mf/private true}
   [{:keys [active-tokens color-token color on-swatch-click-token detach-token open-modal-from-token]}]
-  (let [active-tokens (if (delay? active-tokens)
+  (let [;; `active-tokens` may be provided as a `delay` (lazy computation). 
+        ;; In that case we must deref it (`@active-tokens`) to force evaluation 
+        ;; and obtain the actual value. If it’s already realized (not a delay), 
+        ;; we just use it directly.
+        active-tokens (if (delay? active-tokens)
                         @active-tokens
                         active-tokens)
 
@@ -126,13 +130,11 @@
       [:div {:class (stl/css :token-actions)}
        [:> icon-button*
         {:variant "action"
-         :class (stl/css :detach-btn2)
          :aria-label (tr "ds.inputs.token-field.detach-token")
          :on-click on-detach-token
          :icon i/detach}]
        [:> icon-button*
         {:variant "action"
-         :class (stl/css :detach-btn2)
          :aria-label (tr "ds.inputs.numeric-input.open-token-list-dropdown")
          :on-click open-modal-from-token
          :icon i/tokens}]]]]))
@@ -145,6 +147,9 @@
         libraries        (mf/deref refs/files)
         on-change        (h/use-ref-callback on-change)
         on-token-change  (h/use-ref-callback on-token-change)
+        color-without-hash (mf/use-memo
+                            (mf/deps color)
+                            #(-> color :color clr/remove-hash))
 
         file-id          (or (:ref-file color) (:file-id color))
         color-id         (or (:ref-id color) (:id color))
@@ -405,7 +410,7 @@
         [:span {:class (stl/css :color-input-wrapper)}
          [:> color-input* {:value (if has-multiple-colors
                                     ""
-                                    (-> color :color clr/remove-hash))
+                                    color-without-hash)
                            :placeholder (tr "settings.multiple")
                            :data-index index
                            :class (stl/css :color-input)

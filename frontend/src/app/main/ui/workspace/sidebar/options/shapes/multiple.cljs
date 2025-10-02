@@ -212,24 +212,33 @@
             (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
             :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
 
+        merge-attr
+        (fn [acc applied-tokens t-attr]
+          "Merges a single token attribute (`t-attr`) into the accumulator map.
+           - If the attribute is not present, associates it with the new value.
+           - If the existing value equals the new value, keeps the accumulator unchanged.
+           - If there is a conflict, sets the value to `:multiple`."
+          (let [new-val  (get applied-tokens t-attr)
+                existing (get acc t-attr ::not-found)]
+            (cond
+              (= existing ::not-found) (assoc acc t-attr new-val)
+              (= existing new-val)     acc
+              :else                    (assoc acc t-attr :multiple))))
+
+        merge-shape-attr
+        (fn [acc applied-tokens shape-attr]
+          "Merges all token attributes derived from a single shape attribute
+           into the accumulator map using `merge-attr`."
+          (let [token-attrs (tt/shape-attr->token-attrs shape-attr)]
+            (reduce #(merge-attr %1 applied-tokens %2) acc token-attrs)))
+
         merge-token-values
         (fn [acc shape-attrs applied-tokens]
+          "Merges token values across all shape attributes.  
+           For each shape attribute, its corresponding token attributes are merged
+           into the accumulator. If applied tokens are empty, the accumulator is returned unchanged."
           (if (seq applied-tokens)
-            (reduce
-             (fn [accum shape-attr]
-               (let [token-attrs (tt/shape-attr->token-attrs shape-attr)]
-                 (reduce
-                  (fn [a t-attr]
-                    (let [new-val  (get applied-tokens t-attr)
-                          existing (get a t-attr ::not-found)]
-                      (cond
-                        (= existing ::not-found) (assoc a t-attr new-val)
-                        (= existing new-val)     a
-                        :else                    (assoc a t-attr :multiple))))
-                  accum
-                  token-attrs)))
-             acc
-             shape-attrs)
+            (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs)
             acc))
 
         extract-attrs

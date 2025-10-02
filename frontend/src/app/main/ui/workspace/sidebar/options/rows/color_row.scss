@@ -11,8 +11,6 @@
 @use "ds/_utils.scss" as *;
 
 .color-data {
-  --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
-
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
@@ -43,7 +41,7 @@
   align-items: center;
   flex: 1;
   gap: var(--sp-xxs);
-  height: $sz-32;
+  block-size: $sz-32;
   border-radius: $br-8;
   background-color: var(--color-background-primary);
 
@@ -62,9 +60,9 @@
   align-items: center;
   flex-grow: 1;
   gap: var(--sp-xs);
-  height: $sz-32;
-  min-width: 0;
-  width: 100%;
+  block-size: $sz-32;
+  min-inline-size: 0;
+  inline-size: 100%;
   padding: 0;
   margin-inline-end: 0;
   border: $b-1 solid var(--color-name-wrapper-boder-color);
@@ -126,8 +124,8 @@
   display: flex;
   align-items: center;
   flex-grow: 1;
-  height: $sz-28;
-  width: 100%;
+  block-size: $sz-28;
+  inline-size: 100%;
   padding: 0;
   margin: 0;
   background-color: var(--color-name-wrapper-background-color);
@@ -148,7 +146,7 @@
   display: flex;
   align-items: center;
   position: relative;
-  height: $sz-28;
+  block-size: $sz-28;
   padding: 0 var(--sp-xxs) 0 var(--sp-s);
   border-radius: $br-8 0 0 $br-8;
   background-color: transparent;
@@ -162,8 +160,8 @@
   border: none;
   background: none;
   outline: none;
-  height: $sz-28;
-  width: 100%;
+  block-size: $sz-28;
+  inline-size: 100%;
   flex-grow: 1;
   margin: var(--sp-xxs) 0;
   padding: 0 0 0 px2rem(6);
@@ -186,8 +184,8 @@
   @include t.use-typography("body-small");
   display: flex;
   align-items: center;
-  height: $sz-32;
-  width: px2rem(60);
+  block-size: $sz-32;
+  inline-size: px2rem(60);
   border-radius: 0 $br-8 $br-8 0;
   border: $b-1 solid var(--opacity-input-boder-color);
   background-color: var(--opacity-input-background-color);
@@ -229,10 +227,10 @@
 
 .opacity-input {
   @include textEllipsis;
-  height: $sz-28;
-  min-width: $sz-28;
+  block-size: $sz-28;
+  min-inline-size: $sz-28;
   flex-grow: 1;
-  width: 100%;
+  inline-size: 100%;
   padding: 0;
   border-radius: 0 $br-8 $br-8 0;
   border: none;
@@ -251,7 +249,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: $sz-32;
+  block-size: $sz-32;
   margin-inline-end: var(--sp-xs);
   margin-block-start: var(--sp-xxs);
   color: var(--color-foreground-secondary);
@@ -267,9 +265,9 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: var(--sp-xs);
-  height: $sz-32;
-  min-width: 0;
-  width: 100%;
+  block-size: $sz-32;
+  min-inline-size: 0;
+  inline-size: 100%;
   padding: 0;
   margin-inline-end: 0;
   background: var(--token-color-wrapper-background-color);
@@ -300,7 +298,7 @@
   @include t.use-typography("body-small");
   @include textEllipsis;
   color: var(--token-color-wrapper-foreground-color);
-  height: $sz-32;
+  block-size: $sz-32;
   display: flex;
   align-items: center;
 }
@@ -316,12 +314,12 @@
 }
 
 .error-dot {
-  width: px2rem(4);
-  height: px2rem(4);
+  inline-size: px2rem(4);
+  block-size: px2rem(4);
   border-radius: 50%;
   background-color: var(--color-foreground-error);
-  margin-left: var(--sp-xs);
+  margin-inline-start: var(--sp-xs);
   position: absolute;
-  right: px2rem(1);
-  top: px2rem(5);
+  inset-inline-end: px2rem(1);
+  inset-block-start: px2rem(5);
 }
