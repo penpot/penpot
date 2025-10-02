@@ -8,8 +8,9 @@ use crate::{with_current_shape_mut, STATE};
 #[repr(u8)]
 #[allow(dead_code)]
 pub enum RawShadowStyle {
-    Drop = 0,
-    Inner = 1,
+    // NOTE: Odd naming to comply with cljs value
+    DropShadow = 0,
+    InnerShadow = 1,
 }
 
 impl From<u8> for RawShadowStyle {
@@ -21,8 +22,8 @@ impl From<u8> for RawShadowStyle {
 impl From<RawShadowStyle> for ShadowStyle {
     fn from(value: RawShadowStyle) -> Self {
         match value {
-            RawShadowStyle::Drop => Self::Drop,
-            RawShadowStyle::Inner => Self::Inner,
+            RawShadowStyle::DropShadow => Self::Drop,
+            RawShadowStyle::InnerShadow => Self::Inner,
         }
     }
 }
