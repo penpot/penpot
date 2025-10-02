@@ -81,6 +81,26 @@
                                        #(assoc % :variant-error value))))))
 
 
+(defn generate-reorder-variant-poperties
+  [changes variant-id from-pos to-space-between-pos]
+  (let [data               (pcb/get-library-data changes)
+        objects            (pcb/get-objects changes)
+        related-components (cfv/find-variant-components data objects variant-id)]
+    (reduce (fn [changes component]
+              (let [props   (:variant-properties component)
+                    props   (ctv/reorder-by-moving-to-position props from-pos to-space-between-pos)
+                    main-id (:main-instance-id component)
+                    name    (ctv/properties-to-name props)]
+                (-> changes
+                    (pcb/update-component (:id component)
+                                          #(assoc % :variant-properties props)
+                                          {:apply-changes-local-library? true})
+                    (pcb/update-shapes [main-id]
+                                       #(assoc % :variant-name name)))))
+            changes
+            related-components)))
+
+
 (defn generate-add-new-property
   [changes variant-id & {:keys [fill-values? editing? property-name property-value]}]
   (let [data               (pcb/get-library-data changes)

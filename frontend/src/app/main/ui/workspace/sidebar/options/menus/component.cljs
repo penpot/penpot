@@ -29,6 +29,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -1050,6 +1051,49 @@
       (into (remove empty?) v)
       (into (filter empty?) v)))
 
+(mf/defc variant-item*
+  [{:keys [pos property is-remove-disabled on-remove on-blur on-reorder]}]
+  (let [values (->> (:value property)
+                    (move-empty-items-to-end)
+                    (replace {"" "--"})
+                    (str/join ", "))
+
+        on-drop
+        (mf/use-fn
+         (fn [relative-pos data]
+           (let [from-pos             (:from-pos data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc pos) pos)]
+             (on-reorder from-pos to-space-between-pos))))
+
+        [dprops dref]
+        (h/use-sortable
+         :data-type "penpot/variant-property"
+         :on-drop on-drop
+         :draggable? true
+         :data {:from-pos pos})]
+
+    [:div {:class (stl/css-case :variant-item true
+                                :dnd-over-top (= (:over dprops) :top)
+                                :dnd-over-bot (= (:over dprops) :bot))}
+     (when (some? on-reorder)
+       [:> reorder-handler* {:ref dref}])
+
+     [:div {:class (stl/css :variant-property-row)}
+      [:> input-with-meta* {:value (:name property)
+                            :data-position pos
+                            :meta values
+                            :is-editing (:editing? (meta property))
+                            :max-length ctv/property-max-length
+                            :on-blur on-blur}]
+      [:> icon-button* {:variant "ghost"
+                        :icon i/remove
+                        :data-position pos
+                        :aria-label (if is-remove-disabled
+                                      (tr "workspace.shape.menu.remove-variant-property.last-property")
+                                      (tr "workspace.shape.menu.remove-variant-property"))
+                        :on-click on-remove
+                        :disabled is-remove-disabled}]]]))
+
 (mf/defc variant-menu*
   [{:keys [shapes]}]
   (let [multi?             (> (count shapes) 1)
@@ -1080,6 +1124,7 @@
 
         properties         (mf/with-memo [data objects variant-id]
                              (cfv/extract-properties-values data objects (:id shape)))
+        single-property?   (= (count properties) 1)
 
         open*              (mf/use-state true)
         open?              (deref open*)
@@ -1162,6 +1207,11 @@
                 (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:button-design-tab"})
                 (dwv/remove-property variant-id pos))))))
 
+        reorder-properties
+        (mf/use-fn
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))
+
         select-shapes-with-malformed
         (mf/use-fn
          (mf/deps malformed-ids)
@@ -1235,30 +1285,16 @@
                              :icon i/add}]]
 
           (when-not multi?
-            [:div {:class (stl/css :variant-property-list)}
-             (for [[pos property] (map-indexed vector properties)]
-               (let [last-prop? (<= (count properties) 1)
-                     values     (->> (:value property)
-                                     (move-empty-items-to-end)
-                                     (replace {"" "--"})
-                                     (str/join ", "))
-                     is-editing (:editing? (meta property))]
-                 [:div {:key (str (:id shape) pos)
-                        :class (stl/css :variant-property-row)}
-                  [:> input-with-meta* {:value (:name property)
-                                        :meta values
-                                        :is-editing is-editing
-                                        :max-length ctv/property-max-length
-                                        :data-position pos
-                                        :on-blur update-property-name}]
-                  [:> icon-button* {:variant "ghost"
-                                    :aria-label (if last-prop?
-                                                  (tr "workspace.shape.menu.remove-variant-property.last-property")
-                                                  (tr "workspace.shape.menu.remove-variant-property"))
-                                    :on-click remove-property
-                                    :data-position pos
-                                    :icon i/remove
-                                    :disabled last-prop?}]]))])
+            [:& h/sortable-container {}
+             [:div {:class (stl/css :variant-property-list)}
+              (for [[pos property] (map-indexed vector properties)]
+                [:> variant-item* {:key (str (:id shape) pos)
+                                   :pos pos
+                                   :property property
+                                   :is-remove-disabled single-property?
+                                   :on-remove remove-property
+                                   :on-blur update-property-name
+                                   :on-reorder reorder-properties}])]])
 
           (if malformed?
             [:div {:class (stl/css :variant-warning-wrapper)}
