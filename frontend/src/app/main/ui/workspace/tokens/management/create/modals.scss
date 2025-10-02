@@ -16,7 +16,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   &.token-modal-large {
-    min-block-size: 38rem;
+    max-block-size: 95vh;
   }
 }
 
