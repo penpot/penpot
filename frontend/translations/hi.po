@@ -7029,10 +7029,6 @@ msgstr "थीम संपादित करें"
 msgid "workspace.tokens.edit-themes"
 msgstr "थीम्स संपादित करें"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "टोकन संपादित करें"
-
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
 msgstr "टोकन मान रिक्त नहीं हो सकता"

@@ -6395,10 +6395,6 @@ msgstr "Upravit motiv"
 msgid "workspace.tokens.edit-themes"
 msgstr "Upravit motivy"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Upravit token"
-
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:540
 msgid "workspace.tokens.enter-token-name"
 msgstr "Zadejte název tokenu %s"

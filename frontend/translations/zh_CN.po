@@ -6783,10 +6783,6 @@ msgstr "编辑主题"
 msgid "workspace.tokens.edit-themes"
 msgstr "编辑主题"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "编辑 token"
-
 #: src/app/main/data/workspace/tokens/errors.cljs:15
 msgid "workspace.tokens.error-parse"
 msgstr "导入错误：不能解析 JSON。"

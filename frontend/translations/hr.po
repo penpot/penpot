@@ -6416,10 +6416,6 @@ msgstr "Uredite temu"
 msgid "workspace.tokens.edit-themes"
 msgstr "Uredite teme"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Uredite token"
-
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:540
 msgid "workspace.tokens.enter-token-name"
 msgstr "Unesite %s naziv tokena"

@@ -7079,10 +7079,6 @@ msgstr "Modifica tema"
 msgid "workspace.tokens.edit-themes"
 msgstr "Modifica temi"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Modifica token"
-
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
 msgstr "Il valore del token non può essere vuoto"

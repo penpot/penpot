@@ -548,7 +548,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
      [:div {:class (stl/css :token-rows)}
       [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :form-modal-title)}
        (if (= action "edit")
-         (tr "workspace.tokens.edit-token")
+         (tr "workspace.tokens.edit-token" token-type)
          (tr "workspace.tokens.create-token" token-type))]
 
       [:div {:class (stl/css :input-row)}
