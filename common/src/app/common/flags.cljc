@@ -123,6 +123,7 @@
     :token-color
     :token-typography-types
     :token-typography-composite
+    :token-shadow
     :transit-readable-response
     :user-feedback
     ;; TODO: remove this flag.

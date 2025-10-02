@@ -54,6 +54,7 @@
 (def token-type->dtcg-token-type
   {:boolean         "boolean"
    :border-radius   "borderRadius"
+   :shadow          "shadow"
    :color           "color"
    :dimensions      "dimension"
    :font-family     "fontFamilies"
@@ -77,7 +78,8 @@
       ;; Allow these properties to be imported with singular key names for backwards compability
       (assoc "fontWeight" :font-weight
              "fontSize" :font-size
-             "fontFamily" :font-family)))
+             "fontFamily" :font-family
+             "boxShadow" :shadow)))
 
 (def composite-token-type->dtcg-token-type
   "Custom set of conversion keys for composite typography token with `:line-height` available.
@@ -114,6 +116,12 @@
    [:r4 {:optional true} token-name-ref]])
 
 (def border-radius-keys (schema-keys schema:border-radius))
+
+(def ^:private schema:shadow
+  [:map {:title "ShadowTokenAttrs"}
+   [:shadow {:optional true} token-name-ref]])
+
+(def shadow-keys (schema-keys schema:shadow))
 
 (def ^:private schema:stroke-width
   [:map
@@ -271,6 +279,7 @@
 
 (def all-keys (set/union color-keys
                          border-radius-keys
+                         shadow-keys
                          stroke-width-keys
                          sizing-keys
                          opacity-keys
@@ -289,6 +298,7 @@
   [:merge {:title "AppliedTokens"}
    schema:tokens
    schema:border-radius
+   schema:shadow
    schema:sizing
    schema:spacing
    schema:rotation
@@ -334,6 +344,7 @@
      (font-weight-keys shape-attr)     #{shape-attr :typography}
 
      (border-radius-keys shape-attr) #{shape-attr}
+     (shadow-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
@@ -361,6 +372,7 @@
              rotation-keys
              sizing-keys
              opacity-keys
+             shadow-keys
              position-attributes))
 
 (def rect-attributes
@@ -444,6 +456,30 @@
                                      spacing-margin-keys)]
     (unapply-token-id shape layout-item-attrs)))
 
+(def tokens-by-input
+  "A map from input name to applicable token for that input."
+  {:width #{:sizing :dimensions}
+   :height #{:sizing :dimensions}
+   :max-width #{:sizing :dimensions}
+   :max-height #{:sizing :dimensions}
+   :x #{:spacing :dimensions}
+   :y #{:spacing :dimensions}
+   :rotation #{:number :rotation}
+   :border-radius #{:border-radius :dimensions}
+   :row-gap #{:spacing :dimensions}
+   :column-gap #{:spacing :dimensions}
+   :horizontal-padding #{:spacing :dimensions}
+   :vertical-padding #{:spacing :dimensions}
+   :sided-paddings #{:spacing :dimensions}
+   :horizontal-margin #{:spacing :dimensions}
+   :vertical-margin #{:spacing :dimensions}
+   :sided-margins #{:spacing :dimensions}
+   :line-height #{:line-height :number}
+   :font-size #{:font-size}
+   :letter-spacing #{:letter-spacing}
+   :fill #{:color}
+   :stroke-color #{:color}})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TYPOGRAPHY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -514,26 +550,11 @@
   [token-value]
   (string? token-value))
 
-(def tokens-by-input
-  "A map from input name to applicable token for that input."
-  {:width #{:sizing :dimensions}
-   :height #{:sizing :dimensions}
-   :max-width #{:sizing :dimensions}
-   :max-height #{:sizing :dimensions}
-   :x #{:spacing :dimensions}
-   :y #{:spacing :dimensions}
-   :rotation #{:number :rotation}
-   :border-radius #{:border-radius :dimensions}
-   :row-gap #{:spacing :dimensions}
-   :column-gap #{:spacing :dimensions}
-   :horizontal-padding #{:spacing :dimensions}
-   :vertical-padding #{:spacing :dimensions}
-   :sided-paddings #{:spacing :dimensions}
-   :horizontal-margin #{:spacing :dimensions}
-   :vertical-margin #{:spacing :dimensions}
-   :sided-margins #{:spacing :dimensions}
-   :line-height #{:line-height :number}
-   :font-size #{:font-size}
-   :letter-spacing #{:letter-spacing}
-   :fill #{:color}
-   :stroke-color #{:color}})
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SHADOW
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn shadow-composite-token-reference?
+  "Predicate if a shadow composite token is a reference value - a string pointing to another reference token."
+  [token-value]
+  (string? token-value))

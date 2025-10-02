@@ -34,7 +34,9 @@
   (let [token-units? (contains? cf/flags :token-units)
         token-typography-composite-types? (contains? cf/flags :token-typography-composite)
         token-typography-types? (contains? cf/flags :token-typography-types)
+        token-shadow? (contains? cf/flags :token-shadow)
         all-types (cond-> dwta/token-properties
+                    (not token-shadow?) (dissoc :shadow)
                     (not token-units?) (dissoc :number)
                     (not token-typography-composite-types?) (remove-keys ctt/typography-token-keys)
                     (not token-typography-types?) (remove-keys ctt/ff-typography-keys))

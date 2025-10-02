@@ -7,8 +7,14 @@ test.beforeEach(async ({ page }) => {
   await BaseWebSocketPage.mockRPC(page, "get-teams", "get-teams-tokens.json");
 });
 
-const setupEmptyTokensFile = async (page) => {
+const setupEmptyTokensFile = async (page, options = {}) => {
+  const { flags = [] } = options;
+
   const workspacePage = new WorkspacePage(page);
+  if (flags.length > 0) {
+    await workspacePage.mockConfigFlags(flags);
+  }
+
   await workspacePage.setupEmptyFile();
   await workspacePage.mockRPC(
     "get-team?id=*",
@@ -1155,6 +1161,228 @@ test.describe("Tokens: Themes modal", () => {
         name: newTokenTitle,
       });
       await expect(newToken).toBeVisible();
+    });
+
+        test("User adds shadow token with multiple shadows and applies it to shape", async ({
+      page,
+    }) => {
+      const { tokensUpdateCreateModal, tokensSidebar, workspacePage, tokenContextMenuForToken } =
+        await setupTokensFile(page, { flags: ["enable-token-shadow"] });
+
+      const tokensTabPanel = page.getByRole("tabpanel", { name: "tokens" });
+
+      await test.step("Stage 1: Basic open", async () => {
+        // User adds shadow via the sidebar
+        await tokensTabPanel
+          .getByRole("button", { name: "Add Token: Shadow" })
+          .click();
+
+        await expect(tokensUpdateCreateModal).toBeVisible();
+
+        const nameField = tokensUpdateCreateModal.getByLabel("Name");
+        await nameField.fill("shadow.primary");
+
+        // User adds first shadow with a color from the color ramp
+        const firstShadowFields = tokensUpdateCreateModal.getByTestId(
+          "shadow-input-fields-0",
+        );
+        await expect(firstShadowFields).toBeVisible();
+
+        // Fill in the shadow values
+        const offsetXInput = firstShadowFields.getByLabel("X");
+        const offsetYInput = firstShadowFields.getByLabel("Y");
+        const blurInput = firstShadowFields.getByLabel("Blur");
+        const spreadInput = firstShadowFields.getByLabel("Spread");
+
+        await offsetXInput.fill("2");
+        await offsetYInput.fill("2");
+        await blurInput.fill("4");
+        await spreadInput.fill("0");
+
+        // Add color using the color picker
+        const colorBullet = firstShadowFields.getByTestId(
+          "token-form-color-bullet",
+        );
+        await colorBullet.click();
+
+        // Click on the color ramp to select a color
+        const valueSaturationSelector = tokensUpdateCreateModal.getByTestId(
+          "value-saturation-selector",
+        );
+        await expect(valueSaturationSelector).toBeVisible();
+        await valueSaturationSelector.click({ position: { x: 50, y: 50 } });
+
+        // Verify that a color value was set
+        const colorInput = firstShadowFields.getByLabel("Color");
+        const firstColorValue = await colorInput.inputValue();
+        await expect(firstColorValue).toMatch(/^rgb(.*)$/);
+
+        // Wait for validation to complete
+        await expect(tokensUpdateCreateModal.getByText(/Resolved value:/).first()).toBeVisible();
+
+        // Save button should be enabled
+        const submitButton = tokensUpdateCreateModal.getByRole("button", {
+          name: "Save",
+        });
+        await expect(submitButton).toBeEnabled();
+      });
+
+      await test.step("Stage 2: Shadow adding/removing works", async () => {
+        const firstShadowFields = tokensUpdateCreateModal.getByTestId(
+          "shadow-input-fields-0",
+        );
+        const colorInput = firstShadowFields.getByLabel("Color");
+        const firstColorValue = await colorInput.inputValue();
+
+        // User adds a second shadow
+        const addButton = firstShadowFields.getByTestId("shadow-add-button-0");
+        await addButton.click();
+
+        const secondShadowFields = tokensUpdateCreateModal.getByTestId(
+          "shadow-input-fields-1",
+        );
+        await expect(secondShadowFields).toBeVisible();
+
+        // User adds a third shadow
+        const addButton2 = secondShadowFields.getByTestId("shadow-add-button-1");
+        await addButton2.click();
+
+        const thirdShadowFields = tokensUpdateCreateModal.getByTestId(
+          "shadow-input-fields-2",
+        );
+        await expect(thirdShadowFields).toBeVisible();
+
+        // User adds values for the third shadow
+        const thirdOffsetXInput = thirdShadowFields.getByLabel("X");
+        const thirdOffsetYInput = thirdShadowFields.getByLabel("Y");
+        const thirdBlurInput = thirdShadowFields.getByLabel("Blur");
+        const thirdSpreadInput = thirdShadowFields.getByLabel("Spread");
+        const thirdColorInput = thirdShadowFields.getByLabel("Color");
+
+        await thirdOffsetXInput.fill("10");
+        await thirdOffsetYInput.fill("10");
+        await thirdBlurInput.fill("20");
+        await thirdSpreadInput.fill("5");
+        await thirdColorInput.fill("#FF0000");
+
+        // User removes the 2nd shadow
+        const removeButton2 = secondShadowFields.getByTestId("shadow-remove-button-1");
+        await removeButton2.click();
+
+        // Verify second shadow is removed
+        await expect(secondShadowFields.getByTestId("shadow-add-button-3")).not.toBeVisible();
+
+        // Verify that the first shadow kept its values
+        const firstOffsetXValue = await firstShadowFields.getByLabel("X").inputValue();
+        const firstOffsetYValue = await firstShadowFields.getByLabel("Y").inputValue();
+        const firstBlurValue = await firstShadowFields.getByLabel("Blur").inputValue();
+        const firstSpreadValue = await firstShadowFields.getByLabel("Spread").inputValue();
+        const firstColorValueAfter = await firstShadowFields.getByLabel("Color").inputValue();
+
+        await expect(firstOffsetXValue).toBe("2");
+        await expect(firstOffsetYValue).toBe("2");
+        await expect(firstBlurValue).toBe("4");
+        await expect(firstSpreadValue).toBe("0");
+        await expect(firstColorValueAfter).toBe(firstColorValue);
+
+        // Verify that the third shadow (now second) kept its values
+        // After removing index 1, the third shadow becomes the second shadow at index 1
+        const newSecondShadowFields = tokensUpdateCreateModal.getByTestId(
+          "shadow-input-fields-1",
+        );
+        await expect(newSecondShadowFields).toBeVisible();
+
+        const secondOffsetXValue = await newSecondShadowFields.getByLabel("X").inputValue();
+        const secondOffsetYValue = await newSecondShadowFields.getByLabel("Y").inputValue();
+        const secondBlurValue = await newSecondShadowFields.getByLabel("Blur").inputValue();
+        const secondSpreadValue = await newSecondShadowFields.getByLabel("Spread").inputValue();
+        const secondColorValue = await newSecondShadowFields.getByLabel("Color").inputValue();
+
+        await expect(secondOffsetXValue).toBe("10");
+        await expect(secondOffsetYValue).toBe("10");
+        await expect(secondBlurValue).toBe("20");
+        await expect(secondSpreadValue).toBe("5");
+        await expect(secondColorValue).toBe("#FF0000");
+      });
+
+      await test.step("Stage 3: Restore when switching tabs works", async () => {
+        const firstShadowFields = tokensUpdateCreateModal.getByTestId(
+          "shadow-input-fields-0",
+        );
+        const newSecondShadowFields = tokensUpdateCreateModal.getByTestId(
+          "shadow-input-fields-1",
+        );
+        const colorInput = firstShadowFields.getByLabel("Color");
+        const firstColorValue = await colorInput.inputValue();
+
+        // Switch to reference tab
+        const referenceTabButton = tokensUpdateCreateModal.getByTestId("reference-opt");
+        await referenceTabButton.click();
+
+        // Verify we're in reference mode - the composite fields should not be visible
+        await expect(firstShadowFields).not.toBeVisible();
+
+        // Switch back to composite tab
+        const compositeTabButton = tokensUpdateCreateModal.getByTestId("composite-opt");
+        await compositeTabButton.click();
+
+        // Verify that shadows are restored
+        await expect(firstShadowFields).toBeVisible();
+        await expect(newSecondShadowFields).toBeVisible();
+
+        // Verify first shadow values are still there
+        const restoredFirstOffsetX = await firstShadowFields.getByLabel("X").inputValue();
+        const restoredFirstOffsetY = await firstShadowFields.getByLabel("Y").inputValue();
+        const restoredFirstBlur = await firstShadowFields.getByLabel("Blur").inputValue();
+        const restoredFirstSpread = await firstShadowFields.getByLabel("Spread").inputValue();
+        const restoredFirstColor = await firstShadowFields.getByLabel("Color").inputValue();
+
+        await expect(restoredFirstOffsetX).toBe("2");
+        await expect(restoredFirstOffsetY).toBe("2");
+        await expect(restoredFirstBlur).toBe("4");
+        await expect(restoredFirstSpread).toBe("0");
+        await expect(restoredFirstColor).toBe(firstColorValue);
+
+        // Verify second shadow values are still there
+        const restoredSecondOffsetX = await newSecondShadowFields.getByLabel("X").inputValue();
+        const restoredSecondOffsetY = await newSecondShadowFields.getByLabel("Y").inputValue();
+        const restoredSecondBlur = await newSecondShadowFields.getByLabel("Blur").inputValue();
+        const restoredSecondSpread = await newSecondShadowFields.getByLabel("Spread").inputValue();
+        const restoredSecondColor = await newSecondShadowFields.getByLabel("Color").inputValue();
+
+        await expect(restoredSecondOffsetX).toBe("10");
+        await expect(restoredSecondOffsetY).toBe("10");
+        await expect(restoredSecondBlur).toBe("20");
+        await expect(restoredSecondSpread).toBe("5");
+        await expect(restoredSecondColor).toBe("#FF0000");
+      });
+
+      await test.step("Stage 4: Layer application works", async () => {
+        // Save the token
+        const submitButton = tokensUpdateCreateModal.getByRole("button", {
+          name: "Save",
+        });
+        await submitButton.click();
+        await expect(tokensUpdateCreateModal).not.toBeVisible();
+
+        // Verify token appears in sidebar
+        const shadowToken = tokensSidebar.getByRole("button", {
+          name: "shadow.primary",
+        });
+        await expect(shadowToken).toBeEnabled();
+
+        // Apply the shadow
+        await workspacePage.clickLayers();
+        await workspacePage.clickLeafLayer("Button");
+
+        const shadowSection = workspacePage.rightSidebar.getByText("Drop shadow");
+        await expect(shadowSection).toHaveCount(0);
+
+        await page.getByRole("tab", { name: "Tokens" }).click();
+        await shadowToken.click();
+
+        await expect(shadowSection).toHaveCount(2);
+      });
     });
   });
 });
