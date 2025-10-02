@@ -324,6 +324,26 @@
 (defn collect-typography-errors [token]
   (group-by :typography-key (:errors token)))
 
+(defn collect-shadow-errors [token shadow-index]
+  (group-by :box-shadow-key
+            (filter #(= (:shadow-index %) shadow-index)
+                    (:errors token))))
+
+(defn- parse-sd-token-box-shadow-value
+  "Parses box-shadow value and validates it."
+  [value]
+  (cond
+    ;; Reference value (string)
+    (string? value) {:value value}
+
+    ;; Array of shadows
+    (sequential? value) {:value value}
+
+    ;; Empty value
+    (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
+
+    :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}))
+
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
   The `get-origin-token` argument should be a function that takes an
@@ -364,6 +384,7 @@
                                (parse-atomic-typography-value (:type origin-token) value)
                                (case (:type origin-token)
                                  :typography (parse-composite-typography-value value)
+                                 :box-shadow (parse-sd-token-box-shadow-value value)
                                  :color (parse-sd-token-color-value value)
                                  :opacity (parse-sd-token-opacity-value value)
                                  :stroke-width (parse-sd-token-stroke-width-value value)

@@ -913,6 +913,72 @@
                              :custom-input-token-value color-picker*
                              :custom-input-token-value-props custom-input-token-value-props})]))
 
+(mf/defc box-shadow-value-inputs*
+  [{:keys [default-value on-blur on-update-value token-resolve-result]}]
+  (let [composite-token? (not (cto/box-shadow-composite-token-reference? (:value token-resolve-result)))
+        #_#_errors-by-key (sd/collect-typography-errors token-resolve-result)]
+    [:div {:class (stl/css :nested-input-row)}
+     "Box shadow"
+     #_(for [[k {:keys [label placeholder icon]}] typography-inputs]
+         (let [value (get default-value k)
+               token-resolve-result
+               (when composite-token?
+                 (-> {:resolved-value (let [v (get-in token-resolve-result [:resolved-value k])]
+                                        (when-not (str/empty? v) v))
+                      :errors (get errors-by-key k)}
+                     (d/without-nils)))
+
+               on-change
+               (mf/use-fn
+                ;; Passing token-type via event to prevent deep function adapting & passing of type
+                (fn [e]
+                  (-> (obj/set! e "tokenType" k)
+                      (on-update-value))))]
+
+           [:div {:key (str k)
+                  :class (stl/css :input-row)}
+            [:> input-token*
+             {:aria-label label
+              :placeholder placeholder
+              :default-value value
+              :on-blur on-blur
+              :icon icon
+              :on-change on-change
+              :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}]]))]))
+
+(mf/defc box-shadow-form*
+  [{:keys [token] :rest props}]
+  (let [on-get-token-value
+        (mf/use-callback
+         (fn [e prev-composite-value]
+           (let [token-type-at-index (obj/get e "tokenTypeAtIndex")
+                 input-value (dom/get-target-val e)
+                 reference-value-input? (not token-type-at-index)]
+             (cond
+               reference-value-input? input-value
+
+               (empty? input-value) (d/dissoc-in prev-composite-value token-type-at-index)
+               :else (assoc-in prev-composite-value token-type-at-index input-value)))))
+
+        update-composite-backup-value
+        (mf/use-callback
+         (fn [prev-composite-value e]
+           (let [token-type-at-index (obj/get e "tokenTypeAtIndex")
+                 token-value (dom/get-target-val e)]
+             (if (seq token-value)
+               (assoc-in prev-composite-value token-type-at-index token-value)
+               ;; Remove empty values so they don't retrigger validation when switching tabs
+               (d/dissoc-in prev-composite-value token-type-at-index)))))]
+    [:> composite-form*
+     (mf/spread-props props {:token token
+                             :composite-tab box-shadow-value-inputs*
+                             :reference-icon i/text-typography
+                             :is-reference-fn cto/typography-composite-token-reference?
+                             :title (tr "labels.typography")
+                             :validate-token validate-typography-token
+                             :on-get-token-value on-get-token-value
+                             :update-composite-backup-value update-composite-backup-value})]))
+
 (mf/defc font-selector-wrapper*
   [{:keys [font input-ref on-select-font on-close-font-selector]}]
   (let [current-font* (mf/use-state (or font
@@ -1158,6 +1224,7 @@
     (case token-type'
       :color [:> color-form* props]
       :typography [:> typography-form* props]
+      :box-shadow [:> box-shadow-form* props]
       :font-family [:> font-family-form* props]
       :text-case [:> text-case-form* props]
       :text-decoration [:> text-decoration-form* props]

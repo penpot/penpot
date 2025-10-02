@@ -149,6 +149,56 @@
                           :ignore-touched true
                           :changed-sub-attr [:stroke-color]}))))
 
+
+(defn- shadow-value->shadow
+  "Converts a box-shadow token value (single shadow object) to Penpot shadow format."
+  [shadow-obj]
+  #_(when (map? shadow-obj)
+      (let [color-value (get shadow-obj "color" (:color shadow-obj))
+            x (get shadow-obj "x" (:x shadow-obj) "0")
+            y (get shadow-obj "y" (:y shadow-obj) "0")
+            blur (get shadow-obj "blur" (:blur shadow-obj) "0")
+            spread (get shadow-obj "spread" (:spread shadow-obj) "0")
+            shadow-type (get shadow-obj "type" (:type shadow-obj) "dropShadow")
+            style (if (= shadow-type "innerShadow") :inner-shadow :drop-shadow)]
+        (when-let [color (value->color color-value)]
+          {:id (uuid/next)
+           :style style
+           :offset-x (js/parseFloat x)
+           :offset-y (js/parseFloat y)
+           :blur (js/parseFloat blur)
+           :spread (js/parseFloat spread)
+           :hidden false
+           :color color}))))
+
+(defn update-box-shadow
+  ([value shape-ids attributes]
+   (update-box-shadow value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (let [shadows (cond
+                   ;; Array of shadows
+                   (and (sequential? value) (not (string? value)))
+                   (->> value
+                        (keep shadow-value->shadow)
+                        (into []))
+
+                   ;; Single shadow object
+                   (map? value)
+                   (when-let [shadow (shadow-value->shadow value)]
+                     [shadow])
+
+                   ;; Empty or invalid
+                   :else
+                   [])]
+     (when (seq shadows)
+       (dwsh/update-shapes shape-ids
+                           (fn [shape]
+                             (assoc shape :shadow shadows))
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :page-id page-id
+                            :attrs [:shadow]})))))
+
 (defn update-fill-stroke
   ([value shape-ids attributes]
    (update-fill-stroke value shape-ids attributes nil))
@@ -642,6 +692,14 @@
     :modal {:key :tokens/border-radius
             :fields [{:label "Border Radius"
                       :key :border-radius}]}}
+
+   :box-shadow
+   {:title "Box Shadow"
+    :attributes ctt/box-shadow-keys
+    :on-update-shape update-box-shadow
+    :modal {:key :tokens/box-shadow
+            :fields [{:label "Box Shadow"
+                      :key :box-shadow}]}}
 
    :color
    {:title "Color"

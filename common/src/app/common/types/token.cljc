@@ -54,6 +54,7 @@
 (def token-type->dtcg-token-type
   {:boolean         "boolean"
    :border-radius   "borderRadius"
+   :box-shadow      "boxShadow"
    :color           "color"
    :dimensions      "dimension"
    :font-family     "fontFamilies"
@@ -114,6 +115,12 @@
    [:r4 {:optional true} token-name-ref]])
 
 (def border-radius-keys (schema-keys schema:border-radius))
+
+(def ^:private schema:box-shadow
+  [:map {:title "BoxShadowTokenAttrs"}
+   [:box-shadow {:optional true} token-name-ref]])
+
+(def box-shadow-keys (schema-keys schema:box-shadow))
 
 (def ^:private schema:stroke-width
   [:map
@@ -271,6 +278,7 @@
 
 (def all-keys (set/union color-keys
                          border-radius-keys
+                         box-shadow-keys
                          stroke-width-keys
                          sizing-keys
                          opacity-keys
@@ -289,6 +297,7 @@
   [:merge {:title "AppliedTokens"}
    schema:tokens
    schema:border-radius
+   schema:box-shadow
    schema:sizing
    schema:spacing
    schema:rotation
@@ -333,7 +342,10 @@
      (text-decoration-keys shape-attr) #{shape-attr :typography}
      (font-weight-keys shape-attr)     #{shape-attr :typography}
 
+     (= :shadow shape-attr) #{:box-shadow}
+
      (border-radius-keys shape-attr) #{shape-attr}
+     (box-shadow-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
@@ -347,6 +359,7 @@
     :fill :fills
     :stroke-color :strokes
     :stroke-width :strokes
+    :box-shadow :shadow
     token-attr))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -361,6 +374,7 @@
              rotation-keys
              sizing-keys
              opacity-keys
+             box-shadow-keys
              position-attributes))
 
 (def rect-attributes
@@ -444,6 +458,30 @@
                                      spacing-margin-keys)]
     (unapply-token-id shape layout-item-attrs)))
 
+(def tokens-by-input
+  "A map from input name to applicable token for that input."
+  {:width #{:sizing :dimensions}
+   :height #{:sizing :dimensions}
+   :max-width #{:sizing :dimensions}
+   :max-height #{:sizing :dimensions}
+   :x #{:spacing :dimensions}
+   :y #{:spacing :dimensions}
+   :rotation #{:number :rotation}
+   :border-radius #{:border-radius :dimensions}
+   :row-gap #{:spacing :dimensions}
+   :column-gap #{:spacing :dimensions}
+   :horizontal-padding #{:spacing :dimensions}
+   :vertical-padding #{:spacing :dimensions}
+   :sided-paddings #{:spacing :dimensions}
+   :horizontal-margin #{:spacing :dimensions}
+   :vertical-margin #{:spacing :dimensions}
+   :sided-margins #{:spacing :dimensions}
+   :line-height #{:line-height :number}
+   :font-size #{:font-size}
+   :letter-spacing #{:letter-spacing}
+   :fill #{:color}
+   :stroke-color #{:color}})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TYPOGRAPHY
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -514,26 +552,11 @@
   [token-value]
   (string? token-value))
 
-(def tokens-by-input
-  "A map from input name to applicable token for that input."
-  {:width #{:sizing :dimensions}
-   :height #{:sizing :dimensions}
-   :max-width #{:sizing :dimensions}
-   :max-height #{:sizing :dimensions}
-   :x #{:spacing :dimensions}
-   :y #{:spacing :dimensions}
-   :rotation #{:number :rotation}
-   :border-radius #{:border-radius :dimensions}
-   :row-gap #{:spacing :dimensions}
-   :column-gap #{:spacing :dimensions}
-   :horizontal-padding #{:spacing :dimensions}
-   :vertical-padding #{:spacing :dimensions}
-   :sided-paddings #{:spacing :dimensions}
-   :horizontal-margin #{:spacing :dimensions}
-   :vertical-margin #{:spacing :dimensions}
-   :sided-margins #{:spacing :dimensions}
-   :line-height #{:line-height :number}
-   :font-size #{:font-size}
-   :letter-spacing #{:letter-spacing}
-   :fill #{:color}
-   :stroke-color #{:color}})
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; BOX SHADOW
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn box-shadow-composite-token-reference?
+  "Predicate if a box-shadow composite token is a reference value - a string pointing to another reference token."
+  [token-value]
+  (string? token-value))

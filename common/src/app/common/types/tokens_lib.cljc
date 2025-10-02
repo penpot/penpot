@@ -1552,6 +1552,37 @@ Will return a value that matches this schema:
     ;; Reference value
     value))
 
+(defn- convert-dtcg-box-shadow-composite
+  "Convert box-shadow token value from DTCG format to internal format."
+  [value]
+  (cond
+    ;; Array of shadows
+    (sequential? value)
+    (mapv (fn [shadow]
+            (if (map? shadow)
+              (-> shadow
+                  (set/rename-keys {"x" :x
+                                    "y" :y
+                                    "blur" :blur
+                                    "spread" :spread
+                                    "color" :color
+                                    "type" :type})
+                  (select-keys [:x :y :blur :spread :color :type]))
+              shadow))
+          value)
+    ;; Reference value (string)
+    (string? value) value
+    ;; Single shadow object
+    (map? value) (-> value
+                     (set/rename-keys {"x" :x
+                                       "y" :y
+                                       "blur" :blur
+                                       "spread" :spread
+                                       "color" :color
+                                       "type" :type})
+                     (select-keys [:x :y :blur :spread :color :type]))
+    :else value))
+
 (defn- flatten-nested-tokens-json
   "Convert a tokens tree in the decoded json fragment into a flat map,
    being the keys the token paths after joining the keys with '.'."
@@ -1574,6 +1605,7 @@ Will return a value that matches this schema:
                                          (case token-type
                                            :font-family (convert-dtcg-font-family token-value)
                                            :typography (convert-dtcg-typography-composite token-value)
+                                           :box-shadow (convert-dtcg-box-shadow-composite token-value)
                                            token-value))
                                        :description (get v "$description")))
              ;; Discard unknown type tokens
@@ -1739,11 +1771,45 @@ Will return a value that matches this schema:
      {} value)
     value))
 
+(defn- box-shadow-token->dtcg-token
+  "Convert box-shadow token value from internal format to DTCG format."
+  [value]
+  (cond
+    ;; Array of shadows
+    (sequential? value)
+    (mapv (fn [shadow]
+            (if (map? shadow)
+              (-> shadow
+                  (set/rename-keys {:x "x"
+                                    :y "y"
+                                    :blur "blur"
+                                    :spread "spread"
+                                    :color "color"
+                                    :type "type"})
+                  (select-keys ["x" "y" "blur" "spread" "color" "type"]))
+              shadow))
+          value)
+    ;; Reference value (string)
+    (string? value) value
+    ;; Single shadow object
+    (map? value) (-> value
+                     (set/rename-keys {:x "x"
+                                       :y "y"
+                                       :blur "blur"
+                                       :spread "spread"
+                                       :color "color"
+                                       :type "type"})
+                     (select-keys ["x" "y" "blur" "spread" "color" "type"]))
+    :else value))
+
 (defn- token->dtcg-token [token]
   (cond-> {"$value" (cond-> (:value token)
                       ;; Transform typography token values
                       (= :typography (:type token))
-                      typography-token->dtcg-token)
+                      typography-token->dtcg-token
+                      ;; Transform box-shadow token values
+                      (= :box-shadow (:type token))
+                      box-shadow-token->dtcg-token)
            "$type" (cto/token-type->dtcg-token-type (:type token))}
     (:description token) (assoc "$description" (:description token))))
 
