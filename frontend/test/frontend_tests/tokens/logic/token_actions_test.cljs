@@ -469,6 +469,44 @@
                (t/is (= (:stroke-width (:applied-tokens rect-without-stroke')) (:name token-target')))
                (t/is (= (get-in rect-without-stroke' [:strokes 0 :stroke-width]) 10))))))))))
 
+(t/deftest test-apply-shadow
+  (t/testing "applies shadow token and updates the shapes with shadow"
+    (t/async
+      done
+      (let [shadow-token {:name "shadow.sm"
+                          :value [{:offsetX 10
+                                   :offsetY 10
+                                   :blur 10
+                                   :spread 10
+                                   :color "rgba(0,0,0,0.5)"
+                                   :inset false}]
+                          :type :shadow}
+            file (-> (setup-file-with-tokens)
+                     (update-in [:data :tokens-lib]
+                                #(ctob/add-token % (cthi/id :set-a)
+                                                 (ctob/make-token shadow-token))))
+            store (ths/setup-store file)
+            rect-1 (cths/get-shape file :rect-1)
+            events [(dwta/apply-token {:shape-ids [(:id rect-1)]
+                                       :attributes #{:shadow}
+                                       :token (toht/get-token file "shadow.sm")
+                                       :on-update-shape dwta/update-shadow})]]
+        (tohs/run-store-async
+         store done events
+         (fn [new-state]
+           (let [file' (ths/get-file-from-state new-state)
+                 token-target' (toht/get-token file' "shadow.sm")
+                 rect-1' (cths/get-shape file' :rect-1)
+                 shadow (first (:shadow rect-1'))]
+             (t/testing "token got applied to rect with shadow and shape shadow got updated"
+               (t/is (= (:shadow (:applied-tokens rect-1')) (:name token-target')))
+               (t/is (= (:offset-x shadow) 10))
+               (t/is (= (:offset-y shadow) 10))
+               (t/is (= (:blur shadow) 10))
+               (t/is (= (:spread shadow) 10))
+               (t/is (= (get-in shadow [:color :color]) "#000000"))
+               (t/is (= (get-in shadow [:color :opacity]) 0.5))))))))))
+
 (t/deftest test-apply-font-size
   (t/testing "applies font-size token and updates the text font-size"
     (t/async

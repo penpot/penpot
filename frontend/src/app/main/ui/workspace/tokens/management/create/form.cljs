@@ -214,6 +214,24 @@
   (when (empty? (:value token))
     (wte/get-error-code :error.token/empty-input)))
 
+(defn check-shadow-token-self-reference
+  "Check token when any of the attributes in a shadow's value have a self-reference."
+  [token]
+  (let [token-name (:name token)
+        shadow-values (:value token)]
+    (some (fn [[shadow-idx shadow-map]]
+            (some (fn [[k v]]
+                    (when-let [err (check-self-reference token-name v)]
+                      (assoc err :shadow-key k :shadow-index shadow-idx)))
+                  shadow-map))
+          (d/enumerate shadow-values))))
+
+(defn check-empty-shadow-token [token]
+  (when (or (empty? (:value token))
+            (some (fn [shadow] (not-every? #(contains? shadow %) [:offsetX :offsetY :blur :spread :color]))
+                  (:value token)))
+    (wte/get-error-code :error.token/empty-input)))
+
 (defn validate-typography-token
   [{:keys [token-value] :as props}]
   (cond
@@ -230,6 +248,27 @@
                       (d/update-when :font-family #(if (string? %) (cto/split-font-family %) %)))))
         (assoc :validators [check-empty-typography-token
                             check-typography-token-self-reference])
+        (default-validate-token))))
+
+(defn validate-shadow-token
+  [{:keys [token-value] :as props}]
+  (cond
+    ;; Entering form without a value - show no error just resolve nil
+    (nil? token-value) (rx/of nil)
+    ;; Validate refrence string
+    (cto/shadow-composite-token-reference? token-value) (default-validate-token props)
+    ;; Validate composite token
+    :else
+    (-> props
+        (update :token-value (fn [value]
+                               (->> (or value [])
+                                    (mapv (fn [shadow]
+                                            (d/update-when shadow :inset #(cond
+                                                                            (boolean? %) %
+                                                                            (= "true" %) true
+                                                                            :else false)))))))
+        (assoc :validators [check-empty-shadow-token
+                            check-shadow-token-self-reference])
         (default-validate-token))))
 
 (defn use-debonced-resolve-callback
@@ -690,6 +729,13 @@
              (on-external-update-value (get @backup-state-ref next-tab))
              (set-active-tab next-tab))))
 
+        update-composite-value
+        (mf/use-fn
+         (fn [f]
+           (clear-resolve-value)
+           (swap! backup-state-ref f)
+           (on-external-update-value (get @backup-state-ref :composite))))
+
         ;; Store updated value in backup-state-ref
         on-update-value'
         (mf/use-fn
@@ -724,7 +770,8 @@
                                  :is-reference-fn is-reference-fn})]
         [:> composite-tab
          (mf/spread-props props {:default-value default-value
-                                 :on-update-value on-update-value'})])]]))
+                                 :on-update-value on-update-value'
+                                 :update-composite-value update-composite-value})])]]))
 
 (mf/defc composite-form*
   "Wrapper around form* that manages composite/reference tab state.
@@ -828,7 +875,8 @@
          (fn []
            (let [open? (not color-ramp-open?)]
              (reset! color-ramp-open* open?)
-             (on-display-colorpicker open?))))
+             (when on-display-colorpicker
+               (on-display-colorpicker open?)))))
 
         swatch
         (mf/html
@@ -912,6 +960,278 @@
                              :on-value-resolve on-value-resolve
                              :custom-input-token-value color-picker*
                              :custom-input-token-value-props custom-input-token-value-props})]))
+
+(mf/defc shadow-color-picker-wrapper*
+  "Wrapper for color-picker* that passes shadow color state from parent.
+   Similar to color-form* but receives color state from shadow-value-inputs*."
+  [{:keys [placeholder label default-value input-ref on-update-value on-external-update-value token-resolve-result shadow-color]}]
+  (let [;; Use the color state passed from parent (shadow-value-inputs*)
+        resolved-color (get token-resolve-result :resolved-value)
+        color (or shadow-color resolved-color default-value "")
+
+        custom-input-token-value-props
+        (mf/use-memo
+         (mf/deps color)
+         (fn []
+           {:color color}))]
+
+    [:> color-picker*
+     {:placeholder placeholder
+      :label label
+      :default-value default-value
+      :input-ref input-ref
+      :on-update-value on-update-value
+      :on-external-update-value on-external-update-value
+      :custom-input-token-value-props custom-input-token-value-props
+      :token-resolve-result token-resolve-result}]))
+
+(def ^:private shadow-inputs
+  #(d/ordered-map
+    :offsetX
+    {:label (tr "workspace.tokens.shadow-x")
+     :placeholder (tr "workspace.tokens.shadow-x")}
+    :offsetY
+    {:label (tr "workspace.tokens.shadow-y")
+     :placeholder (tr "workspace.tokens.shadow-y")}
+    :blur
+    {:label (tr "workspace.tokens.shadow-blur")
+     :placeholder (tr "workspace.tokens.shadow-blur")}
+    :spread
+    {:label (tr "workspace.tokens.shadow-spread")
+     :placeholder (tr "workspace.tokens.shadow-spread")}
+    :color
+    {:label (tr "workspace.tokens.shadow-color")
+     :placeholder (tr "workspace.tokens.shadow-color")}
+    :inset
+    {:label (tr "workspace.tokens.shadow-inset")
+     :placeholder (tr "workspace.tokens.shadow-inset")}))
+
+(mf/defc inset-type-select*
+  [{:keys [default-value shadow-idx label on-change]}]
+  (let [selected* (mf/use-state (or (str default-value) "false"))
+        selected (deref selected*)
+
+        on-change
+        (mf/use-fn
+         (mf/deps on-change selected shadow-idx)
+         (fn [value e]
+           (obj/set! e "tokenValue" (if (= "true" value) true false))
+           (on-change e)
+           (reset! selected* (str value))))]
+    [:div {:class (stl/css :input-row)}
+     [:div {:class (stl/css :inset-label)} label]
+     [:& radio-buttons {:selected selected
+                        :on-change on-change
+                        :name (str "inset-select-" shadow-idx)}
+      [:& radio-button {:value "false"
+                        :title "false"
+                        :icon "❌"
+                        :id (str "inset-default-" shadow-idx)}]
+      [:& radio-button {:value "true"
+                        :title "true"
+                        :icon "✅"
+                        :id (str "inset-false-" shadow-idx)}]]]))
+
+(mf/defc shadow-input*
+  [{:keys [default-value label placeholder shadow-idx input-type on-update-value on-external-update-value token-resolve-result errors-by-key shadow-color]}]
+  (let [color-input-ref (mf/use-ref)
+
+        on-change
+        (mf/use-fn
+         (mf/deps shadow-idx input-type on-update-value)
+         (fn [e]
+           (-> (obj/set! e "tokenTypeAtIndex" [shadow-idx input-type])
+               (on-update-value))))
+
+        on-external-update-value'
+        (mf/use-fn
+         (mf/deps shadow-idx input-type on-external-update-value)
+         (fn [v]
+           (on-external-update-value [shadow-idx input-type] v)))
+
+        resolved (get-in token-resolve-result [:resolved-value shadow-idx input-type])
+
+        errors (get errors-by-key input-type)
+
+        should-show? (or (some? resolved) (seq errors))
+
+        token-prop (when should-show?
+                     (d/without-nils
+                      {:resolved-value resolved
+                       :errors errors}))]
+    (case input-type
+      :inset
+      [:> inset-type-select*
+       {:default-value default-value
+        :shadow-idx shadow-idx
+        :label label
+        :on-change on-change}]
+      :color
+      [:> shadow-color-picker-wrapper*
+       {:placeholder placeholder
+        :label label
+        :default-value default-value
+        :input-ref color-input-ref
+        :on-update-value on-change
+        :on-external-update-value on-external-update-value'
+        :token-resolve-result token-prop
+        :shadow-color shadow-color
+        :data-testid (str "shadow-color-input-" shadow-idx)}]
+      [:div {:class (stl/css :input-row)
+             :data-testid (str "shadow-" (name input-type) "-input-" shadow-idx)}
+       [:> input-token*
+        {:label label
+         :placeholder placeholder
+         :default-value default-value
+         :on-change on-change
+         :token-resolve-result token-prop}]])))
+
+(mf/defc shadow-input-fields*
+  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value token-resolve-result errors-by-key on-external-update-value shadow-color] :as props}]
+  (let [on-remove-shadow
+        (mf/use-fn
+         (mf/deps shadow-idx on-remove-shadow)
+         #(on-remove-shadow shadow-idx))]
+    [:div {:data-testid (str "shadow-input-fields-" shadow-idx)}
+     [:> icon-button* {:icon i/add
+                       :type "button"
+                       :on-click on-add-shadow
+                       :data-testid (str "shadow-add-button-" shadow-idx)
+                       :aria-label (tr "workspace.tokens.shadow-add-shadow")}]
+     [:> icon-button* {:variant "ghost"
+                       :type "button"
+                       :icon i/remove
+                       :on-click on-remove-shadow
+                       :disabled is-remove-disabled
+                       :data-testid (str "shadow-remove-button-" shadow-idx)
+                       :aria-label (tr "workspace.tokens.shadow-remove-shadow")}]
+     (for [[input-type {:keys [label placeholder]}] (shadow-inputs)]
+       [:> shadow-input*
+        {:key (str input-type shadow-idx)
+         :input-type input-type
+         :label label
+         :placeholder placeholder
+         :shadow-idx shadow-idx
+         :default-value (get shadow input-type)
+         :on-update-value on-update-value
+         :token-resolve-result token-resolve-result
+         :errors-by-key errors-by-key
+         :on-external-update-value on-external-update-value
+         :shadow-color shadow-color}])]))
+
+(mf/defc shadow-value-inputs*
+  [{:keys [default-value on-update-value token-resolve-result update-composite-value] :as props}]
+  (let [shadows* (mf/use-state (or default-value [{}]))
+        shadows (deref shadows*)
+        shadows-count (count shadows)
+        composite-token? (not (cto/typography-composite-token-reference? (:value token-resolve-result)))
+
+        ;; Maintain a map of color states for each shadow to prevent reset on add/remove
+        shadow-colors* (mf/use-state {})
+        shadow-colors (deref shadow-colors*)
+
+        ;; Initialize color states for each shadow index
+        _ (mf/use-effect
+           (mf/deps shadows)
+           (fn []
+             (doseq [[idx shadow] (d/enumerate shadows)]
+               (when-not (contains? shadow-colors idx)
+                 (let [resolved-color (get-in token-resolve-result [:resolved-value idx :color])
+                       initial-color (or resolved-color (get shadow :color) "")]
+                   (swap! shadow-colors* assoc idx initial-color))))))
+
+        ;; Define on-external-update-value here where we have access to on-update-value
+        on-external-update-value
+        (mf/use-callback
+         (mf/deps on-update-value shadow-colors*)
+         (fn [token-type-at-index value]
+           (let [[idx token-type] token-type-at-index
+                 e (js-obj)]
+             ;; Update shadow color state if this is a color update
+             (when (= token-type :color)
+               (swap! shadow-colors* assoc idx value))
+             (obj/set! e "tokenTypeAtIndex" token-type-at-index)
+             (obj/set! e "target" #js {:value value})
+             (on-update-value e))))
+
+        on-add-shadow
+        (mf/use-fn
+         (mf/deps shadows update-composite-value)
+         (fn []
+           (update-composite-value
+            (fn [state]
+              (let [new-state (update state :composite (fnil conj []) {})]
+                (reset! shadows* (:composite new-state))
+                new-state)))))
+
+        on-remove-shadow
+        (mf/use-fn
+         (mf/deps shadows update-composite-value)
+         (fn [idx]
+           (update-composite-value
+            (fn [state]
+              (let [new-state (update state :composite d/remove-at-index idx)]
+                (reset! shadows* (:composite new-state))
+                new-state)))))]
+    [:div {:class (stl/css :nested-input-row)}
+     (for [[shadow-idx shadow] (d/enumerate shadows)
+           :let [is-remove-disabled (= shadows-count 1)
+                 key (str shadows-count shadow-idx)
+                 errors-by-key (when composite-token?
+                                 (sd/collect-shadow-errors token-resolve-result shadow-idx))]]
+       [:div {:key key
+              :class (stl/css :nested-input-row)}
+        [:> shadow-input-fields*
+         {:is-remove-disabled is-remove-disabled
+          :shadow-idx shadow-idx
+          :on-add-shadow on-add-shadow
+          :on-remove-shadow on-remove-shadow
+          :shadow shadow
+          :on-update-value on-update-value
+          :token-resolve-result token-resolve-result
+          :errors-by-key errors-by-key
+          :on-external-update-value on-external-update-value
+          :shadow-color (get shadow-colors shadow-idx "")}]])]))
+
+(mf/defc shadow-form*
+  [{:keys [token] :rest props}]
+  (let [on-get-token-value
+        (mf/use-callback
+         (fn [e prev-composite-value]
+           (let [prev-composite-value (or prev-composite-value [])
+                 [idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
+                 input-value (case token-type
+                               :inset (obj/get e "tokenValue")
+                               (dom/get-target-val e))
+                 reference-value-input? (not token-type-at-index)]
+             (cond
+               reference-value-input? input-value
+               (and (string? input-value) (empty? input-value)) (update prev-composite-value idx dissoc token-type)
+               :else (assoc-in prev-composite-value token-type-at-index input-value)))))
+
+        update-composite-backup-value
+        (mf/use-callback
+         (fn [prev-composite-value e]
+           (let [[idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
+                 token-value (case token-type
+                               :inset (obj/get e "tokenValue")
+                               (dom/get-target-val e))
+                 valid? (case token-type
+                          :inset (boolean? token-value)
+                          (seq token-value))]
+             (if valid?
+               (assoc-in (or prev-composite-value []) token-type-at-index token-value)
+               ;; Remove empty values so they don't retrigger validation when switching tabs
+               (update prev-composite-value idx dissoc token-type)))))]
+    [:> composite-form*
+     (mf/spread-props props {:token token
+                             :composite-tab shadow-value-inputs*
+                             :reference-icon i/text-typography
+                             :is-reference-fn cto/typography-composite-token-reference?
+                             :title (tr "workspace.tokens.shadow-title")
+                             :validate-token validate-shadow-token
+                             :on-get-token-value on-get-token-value
+                             :update-composite-backup-value update-composite-backup-value})]))
 
 (mf/defc font-selector-wrapper*
   [{:keys [font input-ref on-select-font on-close-font-selector]}]
@@ -1158,6 +1478,7 @@
     (case token-type'
       :color [:> color-form* props]
       :typography [:> typography-form* props]
+      :shadow [:> shadow-form* props]
       :font-family [:> font-family-form* props]
       :text-case [:> text-case-form* props]
       :text-decoration [:> text-decoration-form* props]

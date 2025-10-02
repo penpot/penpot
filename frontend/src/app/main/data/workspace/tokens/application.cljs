@@ -149,6 +149,36 @@
                           :ignore-touched true
                           :changed-sub-attr [:stroke-color]}))))
 
+(defn value->shadow
+  "Transform a token shadow value into penpot shadow data structure"
+  [value]
+  (mapv (fn [{:keys [offsetX offsetY blur spread color inset]}]
+          {:id (random-uuid)
+           :hidden false
+           :offset-x offsetX
+           :offset-y offsetY
+           :blur blur
+           :color (value->color color)
+           :spread spread
+           :style
+           (case inset
+             true :inner-shadow
+             :drop-shadow)})
+        value))
+
+(defn update-shadow
+  ([value shape-ids attributes]
+   (update-shadow value shape-ids attributes nil))
+  ([value shape-ids _attributes page-id]
+   (when (sequential? value)
+     (let [shadows (value->shadow value)]
+       (dwsh/update-shapes shape-ids
+                           #(assoc % :shadow shadows)
+                           {:reg-objects? true
+                            :ignore-touched true
+                            :page-id page-id
+                            :attrs [:shadow]})))))
+
 (defn update-fill-stroke
   ([value shape-ids attributes]
    (update-fill-stroke value shape-ids attributes nil))
@@ -642,6 +672,14 @@
     :modal {:key :tokens/border-radius
             :fields [{:label "Border Radius"
                       :key :border-radius}]}}
+
+   :shadow
+   {:title "Shadow"
+    :attributes ctt/shadow-keys
+    :on-update-shape update-shadow
+    :modal {:key :tokens/shadow
+            :fields [{:label "Shadow"
+                      :key :shadow}]}}
 
    :color
    {:title "Color"

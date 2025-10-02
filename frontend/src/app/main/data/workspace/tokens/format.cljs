@@ -15,7 +15,13 @@
    :line-height "Line Height"
    :letter-spacing "Letter Spacing"
    :text-case "Text Case"
-   :text-decoration "Text Decoration"})
+   :text-decoration "Text Decoration"
+   :offsetX "X"
+   :offsetY "Y"
+   :blur "Blur"
+   :spread "Spread"
+   :color "Color"
+   :inset "Inner Shadow"})
 
 (defn format-token-value
   "Converts token value of any shape to a string."
@@ -25,6 +31,9 @@
     (->> (map (fn [[k v]] (str "- " (category-dictionary k) ": " (format-token-value v))) token-value)
          (str/join "\n")
          (str "\n"))
+
+    (and (sequential? token-value) (every? map? token-value))
+    (str/join "\n" (map format-token-value token-value))
 
     (sequential? token-value)
     (str/join ", " token-value)

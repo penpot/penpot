@@ -1,3 +1,50 @@
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1135
+msgid "workspace.tokens.shadow-title"
+msgstr "Sombras"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:943
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:946
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:949
+msgid "workspace.tokens.shadow-blur"
+msgstr "Blur"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:952
+msgid "workspace.tokens.shadow-spread"
+msgstr "Spread"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:955
+msgid "workspace.tokens.shadow-color"
+msgstr "Color"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:958
+msgid "workspace.tokens.shadow-inset"
+msgstr "Interior"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "La extensión (spread) de la sombra debe ser mayor o igual a 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "El desenfoque (blur) de la sombra debe ser mayor o igual a 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr "Tipo de sombra no válida: solo se aceptan 'innerShadow' o 'dropShadow'"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1037
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "Añadir Sombra"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1044
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "Eliminar Sombra"
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-07 16:35+0000\n"
