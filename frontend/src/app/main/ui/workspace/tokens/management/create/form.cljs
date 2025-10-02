@@ -642,7 +642,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
   [{:keys [default-value on-blur on-update-value token-resolve-result reference-label reference-icon is-reference-fn]}]
   [:> input-token*
    {:aria-label (tr "labels.reference")
-    :placeholder (tr "workspace.tokens.reference-composite")
+    :placeholder reference-label
     :icon reference-icon
     :default-value (when (is-reference-fn default-value) default-value)
     :on-blur on-blur
@@ -661,7 +661,14 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
            custom-input-token-value-props]
     :rest props}]
   (let [;; Active Tab State
-        {:keys [active-tab set-active-tab composite-tab reference-icon title update-composite-backup-value is-reference-fn]} custom-input-token-value-props
+        {:keys [active-tab
+                composite-tab
+                is-reference-fn
+                reference-icon
+                reference-label
+                set-active-tab
+                title
+                update-composite-backup-value]} custom-input-token-value-props
         reference-tab-active? (= :reference active-tab)
         ;; Backup value ref
         ;; Used to restore the previously entered value when switching tabs
@@ -713,6 +720,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
          (mf/spread-props props {:default-value default-value
                                  :on-update-value on-update-value'
                                  :reference-icon reference-icon
+                                 :reference-label reference-label
                                  :is-reference-fn is-reference-fn})]
         [:> composite-tab
          (mf/spread-props props {:default-value default-value
@@ -733,6 +741,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
             :set-active-tab #(reset! active-tab* %)
             :composite-tab composite-tab
             :reference-icon reference-icon
+            :reference-label (tr "workspace.tokens.reference-composite")
             :title title
             :update-composite-backup-value update-composite-backup-value
             :is-reference-fn is-reference-fn}))
@@ -1103,7 +1112,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
 (mf/defc typography-form*
   [{:keys [token] :rest props}]
   (let [on-get-token-value
-        (mf/use-callback
+        (mf/use-fn
          (fn [e prev-composite-value]
            (let [token-type (obj/get e "tokenType")
                  input-value (dom/get-target-val e)
@@ -1115,13 +1124,16 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                :else (assoc prev-composite-value token-type input-value)))))
 
         update-composite-backup-value
-        (mf/use-callback
+        (mf/use-fn
          (fn [prev-composite-value e]
            (let [token-type (obj/get e "tokenType")
                  token-value (dom/get-target-val e)
                  token-value (cond-> token-value
                                (= :font-family token-type) (cto/split-font-family))]
-             (assoc prev-composite-value token-type token-value))))]
+             (if (seq token-value)
+               (assoc prev-composite-value token-type token-value)
+               ;; Remove empty values so they don't retrigger validation when switching tabs
+               (dissoc prev-composite-value token-type)))))]
     [:> composite-form*
      (mf/spread-props props {:token token
                              :composite-tab typography-value-inputs*
