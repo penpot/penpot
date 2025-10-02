@@ -26,7 +26,7 @@
     token))
 
 (mf/defc fill-panel*
-  [{:keys [shapes _objects resolved-tokens color-space]}]
+  [{:keys [shapes resolved-tokens color-space]}]
   [:div {:class (stl/css :fill-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class "fill-shape"}
