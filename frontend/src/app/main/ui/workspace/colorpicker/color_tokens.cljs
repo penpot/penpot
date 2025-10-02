@@ -9,7 +9,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as-alias ev]
@@ -104,7 +103,7 @@
 
 (mf/defc set-section*
   {::mf/private true}
-  [{:keys [collapsed toggle-sets-open set name color-origin on-token-change] :rest props}]
+  [{:keys [collapsed toggle-sets-open group-or-set name color-origin on-token-change] :rest props}]
 
   (let [list-style* (mf/use-state :list)
         list-style  (deref list-style*)
@@ -156,12 +155,12 @@
 
         create-token-on-set
         (mf/use-fn
-         (mf/deps set)
+         (mf/deps group-or-set)
          (fn [_]
            (let [;; We want to create a token on the first set
                  ;; if there are many in this group
-                 path-set (group->paths set)
-                 id (:id (first (:sets set)))]
+                 path-set (group->paths group-or-set)
+                 id (:id (first (:sets group-or-set)))]
              (st/emit! (dcm/go-to-workspace :layout :tokens)
                        (when path-set
                          (ptk/data-event :expand-token-sets {:paths path-set}))
@@ -217,7 +216,7 @@
                                    :list-view (= list-style :list)
                                    :grid-view (= list-style :grid))}
 
-        (for [token (:tokens set)]
+        (for [token (:tokens group-or-set)]
           (let [selected? (if (= color-origin :fill)
                             (= has-color-tokens? (:name token))
                             (= has-stroke-tokens? (:name token)))]
@@ -322,7 +321,7 @@
                 :color-origin color-origin
                 :on-token-change on-token-change
                 :name name
-                :set combined-sets}]))]
+                :group-or-set combined-sets}]))]
          [:> token-empty-state*])]
       [:> token-empty-state*])))
 

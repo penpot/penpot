@@ -23,10 +23,10 @@
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: var(--sp-xs);
-  width: 100%;
+  inline-size: 100%;
   border-radius: $br-8;
   padding: var(--sp-xs);
-  height: $sz-28;
+  block-size: $sz-28;
   border: none;
   cursor: pointer;
   &:hover {
@@ -48,7 +48,7 @@
 .color-token-selected-grid {
   border: $b-1 solid var(--color-accent-primary);
   border-radius: $br-4;
-  width: fit-content;
+  inline-size: fit-content;
 }
 
 .token-selected-icon {
@@ -63,7 +63,7 @@
 }
 
 .color-tokens-section {
-  max-height: $sz-430;
+  max-block-size: $sz-430;
   display: flex;
   flex-direction: column;
   gap: var(--sp-s);
@@ -98,7 +98,7 @@
   text-transform: none;
   display: flex;
   overflow: hidden;
-  min-height: var(--sp-xxxl);
+  min-block-size: var(--sp-xxxl);
   padding-block-start: var(--sp-xs);
 }
 
@@ -120,7 +120,7 @@
 
 .set-title-icon {
   color: var(--arrow-color);
-  height: $sz-28;
+  block-size: $sz-28;
   padding-block-start: var(--sp-xxs);
 }
 
