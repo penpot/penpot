@@ -281,6 +281,24 @@ test("Renders a file with different text shadows combinations", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
+test("Renders a file with multiple text shadows in order", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile(
+    "render-wasm/get-file-text-shadows-order.json",
+  );
+
+  await workspace.goToWorkspace({
+    id: "48ffa82f-6950-81b5-8006-e49a2a39657f",
+    pageId: "48ffa82f-6950-81b5-8006-e49a2a396580",
+  });
+
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
 test("Renders a file with text in frames and different strokes, shadows, and blurs", async ({
   page,
 }) => {

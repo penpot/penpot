@@ -1202,7 +1202,7 @@ impl Shape {
 
     pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {
         let drop_shadows: Vec<&crate::shapes::shadows::Shadow> =
-            self.drop_shadows().filter(|s| !s.hidden()).collect();
+            self.drop_shadows().rev().filter(|s| !s.hidden()).collect();
         drop_shadows
             .into_iter()
             .map(|shadow| {
@@ -1216,7 +1216,7 @@ impl Shape {
 
     pub fn inner_shadow_paints(&self) -> Vec<skia_safe::Paint> {
         let inner_shadows: Vec<&crate::shapes::shadows::Shadow> =
-            self.inner_shadows().filter(|s| !s.hidden()).collect();
+            self.inner_shadows().rev().filter(|s| !s.hidden()).collect();
         inner_shadows
             .into_iter()
             .map(|shadow| {
