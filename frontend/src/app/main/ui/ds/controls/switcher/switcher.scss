@@ -170,3 +170,19 @@ $switcher-transition-duration: 0.2s;
     transition: none;
   }
 }
+
+// Light mode color overrides
+:global(.light) {
+  .switcher {
+    --switcher-track-bg: var(--color-background-secondary);
+    --switcher-thumb-bg: var(--color-foreground-secondary);
+  }
+  
+  .switcher-checked {
+    --switcher-track-bg: var(--color-accent-primary-muted);
+    --switcher-thumb-bg: var(--color-background-default);
+    &:hover {
+      --switcher-thumb-bg: var(--color-background-default);
+    }
+  }
+}
