@@ -262,6 +262,28 @@
          (dch/commit-changes changes)
          (dwu/commit-undo-transaction undo-id))))))
 
+(defn reorder-variant-poperties
+  "Reorder properties by moving a property from some position to some space between positions"
+  [variant-id from-pos to-space-between-pos]
+  (ptk/reify ::reorder-variant-properties
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page-id (:current-page-id state)
+            data    (dsh/lookup-file-data state)
+            objects (-> (dsh/get-page data page-id)
+                        (get :objects))
+
+            changes (-> (pcb/empty-changes it page-id)
+                        (pcb/with-library-data data)
+                        (pcb/with-objects objects)
+                        (clvp/generate-reorder-variant-poperties variant-id from-pos to-space-between-pos))
+
+            undo-id (js/Symbol)]
+        (rx/of
+         (dwu/start-undo-transaction undo-id)
+         (dch/commit-changes changes)
+         (dwu/commit-undo-transaction undo-id))))))
+
 (defn- set-variant-id
   "Sets the variant-id on a component"
   [component-id variant-id]
