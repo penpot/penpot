@@ -181,6 +181,7 @@ $switcher-transition-duration: 0.2s;
   .switcher-checked {
     --switcher-track-bg: var(--color-accent-primary-muted);
     --switcher-thumb-bg: var(--color-background-default);
+
     &:hover {
       --switcher-thumb-bg: var(--color-background-default);
     }
