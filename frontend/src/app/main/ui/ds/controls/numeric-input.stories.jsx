@@ -44,8 +44,9 @@ export default {
     property: "search",
   },
   parameters: {
-    controls: { exclude: ["tokens"] },
+    controls: { exclude: ["tokens"] }
   },
+
   render: ({ ...args }) => <NumericInput {...args} />,
 };
 
@@ -115,6 +116,14 @@ export const WithTokens = {
           unit: "px",
         },
       ],
+    },
+  },
+    parameters: {
+    controls: { exclude: ["tokens"] },
+    docs: {
+      story: {
+        height: "320px",
+      },
     },
   },
   render: ({ ...args }) => <NumericInput {...args} />,

@@ -566,13 +566,13 @@
     (watch [_ _ _]
       (let [{:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
-            unapply-tokens?
-            (cft/shapes-token-applied? token shapes (or all-attributes attributes))
 
+            unapply-tokens?
+            (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))
             shape-ids (map :id shapes)]
         (if unapply-tokens?
           (rx/of
-           (unapply-token {:attributes (or all-attributes attributes)
+           (unapply-token {:attributes (or attrs all-attributes attributes)
                            :token token
                            :shape-ids shape-ids}))
           (rx/of

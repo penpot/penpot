@@ -149,6 +149,32 @@
                 j)))
           indices)))
 
+(defn- sort-groups-and-tokens
+  "Sorts both the groups and the tokens inside them alphabetically.
+
+   Input:
+   A map where:
+   - keys are groups (keywords or strings, e.g. :dimensions, :colors)
+   - values are vectors of token maps, each containing at least a :name key
+
+   Example input:
+   {:dimensions [{:name \"tres\"} {:name \"quini\"}]
+    :colors    [{:name \"azul\"} {:name \"rojo\"}]}
+
+   Output:
+   A sorted map where:
+   - groups are ordered alphabetically by key
+   - tokens inside each group are sorted alphabetically by :name
+
+   Example output:
+   {:colors    [{:name \"azul\"} {:name \"rojo\"}]
+    :dimensions [{:name \"quini\"} {:name \"tres\"}]}"
+
+  [groups->tokens]
+  (into (sorted-map) ;; ensure groups are ordered alphabetically by their key
+        (for [[group tokens] groups->tokens]
+          [group (sort-by :name tokens)])))
+
 (def ^:private schema:icon
   [:and :string [:fn #(contains? icon-list %)]])
 
@@ -260,11 +286,13 @@
         (mf/with-memo [tokens filter-id]
           (delay
             (let [tokens  (if (delay? tokens) @tokens tokens)
+
+                  sorted-tokens (sort-groups-and-tokens tokens)
                   partial (extract-partial-brace-text filter-id)
                   options (if (seq partial)
-                            (filter-token-groups-by-name tokens partial)
-                            tokens)
-                  no-sets? (nil? tokens)]
+                            (filter-token-groups-by-name sorted-tokens partial)
+                            sorted-tokens)
+                  no-sets? (nil? sorted-tokens)]
               (generate-dropdown-options options no-sets?))))
 
         selected-id*
@@ -601,6 +629,7 @@
                                                         {:content property
                                                          :id property}
                                                         [:> icon* {:icon-id icon
+                                                                   :size "s"
                                                                    :aria-labelledby property
                                                                    :class (stl/css :icon)}]]))
                                 :slot-end (when-not disabled
@@ -634,6 +663,7 @@
                                                       {:content property
                                                        :id property}
                                                       [:> icon* {:icon-id icon
+                                                                 :size "s"
                                                                  :aria-labelledby property
                                                                  :class (stl/css :icon)}]]))
                               :token-wrapper-ref token-wrapper-ref
