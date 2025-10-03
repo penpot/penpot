@@ -301,6 +301,46 @@
        (mapv (fn [val] {:id val
                         :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
 
+(mf/defc component-variant-main-instance-item*
+  [{:keys [pos prop options on-prop-name-blur on-prop-value-change on-reorder]}]
+  (let [on-drop
+        (mf/use-fn
+         (fn [relative-pos data]
+           (let [from-pos             (:from-pos data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc pos) pos)]
+             (on-reorder from-pos to-space-between-pos))))
+
+        [dprops dref]
+        (h/use-sortable
+         :data-type "penpot/variant-property-single"
+         :on-drop on-drop
+         :draggable? true
+         :data {:from-pos pos})]
+
+    [:div {:class (stl/css-case :variant-item true
+                                :dnd-over-top (= (:over dprops) :top)
+                                :dnd-over-bot (= (:over dprops) :bot))}
+     (when (some? on-reorder)
+       [:> reorder-handler* {:ref dref}])
+
+     [:div {:class (stl/css :variant-property-container)}
+      [:div {:class (stl/css :variant-property-name-wrapper)}
+       [:> input-with-meta* {:value (:name prop)
+                             :is-editing (:editing? (meta prop))
+                             :max-length ctv/property-max-length
+                             :data-position pos
+                             :on-blur on-prop-name-blur}]]
+
+      [:div {:class (stl/css :variant-property-value-wrapper)}
+       (let [mixed-value? (= (:value prop) false)]
+         [:> combobox* {:id (str "variant-prop-" pos)
+                        :placeholder (if mixed-value? (tr "settings.multiple") "--")
+                        :default-selected (if mixed-value? "" (:value prop))
+                        :options options
+                        :empty-to-end true
+                        :max-length ctv/property-max-length
+                        :on-change on-prop-value-change}])]]]))
+
 (mf/defc component-variant-main-instance*
   [{:keys [components shapes data]}]
   (let [component      (first components)
@@ -357,30 +397,24 @@
                            int)]
              (when (seq value)
                (st/emit!
-                (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))]
+                (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))
+
+        reorder-properties
+        (mf/use-fn
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))]
 
     [:*
-     [:div {:class (stl/css :variant-property-list)}
-      (for [[pos prop] (map-indexed vector properties)]
-        [:div {:key (str variant-id "-" pos)
-               :class (stl/css :variant-property-container)}
-
-         [:div {:class (stl/css :variant-property-name-wrapper)}
-          [:> input-with-meta* {:value (:name prop)
-                                :is-editing (:editing? (meta prop))
-                                :max-length ctv/property-max-length
-                                :data-position pos
-                                :on-blur update-property-name}]]
-
-         [:div {:class (stl/css :variant-property-value-wrapper)}
-          (let [mixed-value? (= (:value prop) false)]
-            [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
-                           :placeholder (if mixed-value? (tr "settings.multiple") "--")
-                           :default-selected (if mixed-value? "" (:value prop))
-                           :options (get-options (:name prop))
-                           :empty-to-end true
-                           :max-length ctv/property-max-length
-                           :on-change (partial update-property-value pos)}])]])]
+     [:& h/sortable-container {}
+      [:div {:class (stl/css :variant-property-list)}
+       (for [[pos prop] (map-indexed vector properties)]
+         [:> component-variant-main-instance-item* {:key (str variant-id "-" pos)
+                                                    :pos pos
+                                                    :prop prop
+                                                    :options (get-options (:name prop))
+                                                    :on-prop-name-blur update-property-name
+                                                    :on-prop-value-change (partial update-property-value pos)
+                                                    :on-reorder reorder-properties}])]]
 
      (if malformed-msg
        [:div {:class (stl/css :variant-warning-wrapper)}
