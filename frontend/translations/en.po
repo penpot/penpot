@@ -1190,6 +1190,10 @@ msgstr "This token is not in any active set or has an invalid value."
 msgid "color-row.token-color-row.deleted-token"
 msgstr "This token does not exists or has been deleted."
 
+#: src/app/main/ui/ds/controls/switcher/switcher.cljs:78
+msgid "ds.switcher.aria-label"
+msgstr "Switcher label"
+
 #: src/app/main/data/auth.cljs:314
 msgid "errors.auth-provider-not-allowed"
 msgstr "Auth provider not allowed for this profile"

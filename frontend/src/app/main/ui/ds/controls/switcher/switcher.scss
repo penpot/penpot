@@ -1,0 +1,175 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/colors.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+
+$switcher-sm-track-width: $sz-32;
+$switcher-sm-track-height: $sz-16;
+$switcher-sm-thumb-size: $sz-12;
+
+$switcher-md-track-width: $sz-40;
+$switcher-md-track-height: $sz-24;
+$switcher-md-thumb-size: $sz-16;
+
+$switcher-lg-track-width: $sz-48;
+$switcher-lg-track-height: $sz-28;
+$switcher-lg-thumb-size: $sz-24;
+
+$switcher-transition-duration: 0.2s;
+
+.switcher {
+  --switcher-track-outline-color: transparent;
+  --switcher-track-outline-offset: 0;
+  --switcher-track-width: #{$switcher-md-track-width};
+  --switcher-track-height: #{$switcher-md-track-height};
+  --switcher-track-bg: var(--color-background-quaternary);
+  --switcher-track-opacity: 1;
+
+  --switcher-thumb-transform: translateX(0);
+  --switcher-thumb-size: #{$switcher-md-thumb-size};
+  --switcher-thumb-bg: var(--color-foreground-secondary);
+  --switcher-thumb-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --switcher-thumb-opacity: 1;
+
+  --switcher-label-foreground-color: var(--color-foreground-secondary);
+  --switcher-cursor: pointer;
+
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--sp-s);
+  padding: 0;
+  inline-size: fit-content;
+  outline: none;
+  cursor: var(--switcher-cursor);
+
+  &:focus-visible {
+    --switcher-track-outline: $b-2 solid var(--color-accent-primary);
+    --switcher-track-outline-offset: #{$b-2};
+    --switcher-track-outline-color: var(--color-accent-primary);
+  }
+
+  &:disabled,
+  &[disabled] {
+    --switcher-label-foreground-color: var(--color-foreground-secondary);
+    --switcher-cursor: not-allowed;
+    --switcher-track-opacity: 0.6;
+    --switcher-thumb-opacity: 0.5;
+    --switcher-track-background: var(--color-background-tertiary);
+  }
+}
+
+.switcher-label {
+  color: var(--switcher-label-foreground-color);
+  user-select: none;
+}
+
+.switcher-track {
+  position: relative;
+  inline-size: var(--switcher-track-width);
+  block-size: var(--switcher-track-height);
+  border-radius: $br-full;
+  background-color: var(--switcher-track-bg);
+  transition: background-color $switcher-transition-duration ease-in-out;
+  outline: $b-2 solid var(--switcher-track-outline-color);
+  outline-offset: var(--switcher-track-outline-offset);
+  opacity: var(--switcher-track-opacity);
+  &:hover {
+    --switcher-thumb-bg: var(--color-static-white);
+  }
+}
+
+.switcher-thumb {
+  position: absolute;
+  inline-size: var(--switcher-thumb-size);
+  block-size: var(--switcher-thumb-size);
+  inset-block-start: calc((var(--switcher-track-height) - var(--switcher-thumb-size)) / 2);
+  inset-inline-start: calc((var(--switcher-track-height) - var(--switcher-thumb-size)) / 2);
+  border-radius: 50%;
+  background-color: var(--switcher-thumb-bg);
+  opacity: var(--switcher-thumb-opacity);
+  box-shadow: var(--switcher-thumb-shadow);
+  transform: var(--switcher-thumb-transform);
+  transition:
+    transform $switcher-transition-duration ease-in-out,
+    background-color $switcher-transition-duration ease-in-out;
+}
+
+// Size variants - Small
+.switcher-sm {
+  --switcher-track-width: #{$switcher-sm-track-width};
+  --switcher-track-height: #{$switcher-sm-track-height};
+  --switcher-thumb-size: #{$switcher-sm-thumb-size};
+}
+
+// Size variants - Medium (default)
+.switcher-md {
+  --switcher-track-width: #{$switcher-md-track-width};
+  --switcher-track-height: #{$switcher-md-track-height};
+  --switcher-thumb-size: #{$switcher-md-thumb-size};
+}
+
+// Size variants - Large
+.switcher-lg {
+  --switcher-track-width: #{$switcher-lg-track-width};
+  --switcher-track-height: #{$switcher-lg-track-height};
+  --switcher-thumb-size: #{$switcher-lg-thumb-size};
+}
+
+// Checked state
+.switcher-checked {
+  --switcher-track-bg: var(--color-accent-success);
+  --switcher-thumb-bg: var(--color-static-white);
+  --switcher-thumb-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  &:hover {
+    --switcher-track-bg: var(--color-accent-tertiary);
+  }
+}
+
+.switcher-track-disabled-checked {
+  --switcher-track-bg: var(--color-background-tertiary);
+  &:hover {
+    --switcher-track-bg: var(--color-background-tertiary);
+  }
+}
+
+.switcher-checked.switcher-sm {
+  --switcher-thumb-transform: translateX(calc(#{$switcher-sm-track-width} - #{$switcher-sm-track-height}));
+}
+
+.switcher-checked.switcher-md {
+  --switcher-thumb-transform: translateX(calc(#{$switcher-md-track-width} - #{$switcher-md-track-height}));
+}
+
+.switcher-checked.switcher-lg {
+  --switcher-thumb-transform: translateX(calc(#{$switcher-lg-track-width} - #{$switcher-lg-track-height}));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switcher-track,
+  .switcher-thumb {
+    transition: none;
+  }
+}
+
+// TODO: Create new tier two tokens that represent this element
+// // Light mode color overrides
+// :global(.light) {
+//   .switcher {
+//     --switcher-track-bg: var(--color-background-secondary);
+//   }
+
+//   .switcher-checked {
+//     --switcher-track-bg: var(--color-accent-primary-muted);
+
+//     &:hover {
+//       --switcher-thumb-bg: var(--color-background-default);
+//     }
+//   }
+// }

@@ -1,0 +1,61 @@
+{ /* This Source Code Form is subject to the terms of the Mozilla Public
+  License, v. 2.0. If a copy of the MPL was not distributed with this
+  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+  Copyright (c) KALEIDOS INC */ }
+
+import { Canvas, Meta } from '@storybook/blocks';
+import * as Switcher from "./switcher.stories";
+
+<Meta title="Controls/Switcher" />
+
+# Switcher
+
+The `switcher*` component is a toggle control that allows users to switch between two states (on/off).
+
+<Canvas of={Switcher.Default} />
+
+## Anatomy
+
+The switcher component consists of three main parts:
+
+- **Label** (optional): Text that describes what the switcher controls
+- **Track**: The pill-shaped background that indicates the current state
+- **Thumb**: The circular knob that moves between positions
+
+
+## Variants
+
+### Different Sizes
+
+The switcher supports three size variants: `"sm"`, `"md"` (default), and `"lg"`.
+
+```clj
+[:> switcher* {:size "sm" :label "Small"}]
+[:> switcher* {:size "md" :label "Medium"}]
+[:> switcher* {:size "lg" :label "Large"}]
+```
+
+### Without Visible Label
+
+When no visible label is provided, use `aria-label` for accessibility.
+
+```clj
+[:> switcher* {:aria-label "Toggle dark mode"
+               :default-checked false}]
+```
+
+<Canvas of={Switcher.WithoutVisibleLabel} />
+
+## Usage Guidelines
+
+### When to Use
+
+- For binary settings that take effect immediately
+- In preference panels and configuration screens
+
+### When Not to Use
+
+- For actions that require confirmation (use buttons instead)
+- For multiple choice selections (use radio buttons or select)
+- For temporary states that need explicit "Apply" action
