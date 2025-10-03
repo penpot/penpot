@@ -52,6 +52,7 @@
    [cuerdas.core :as str])
   #?(:clj
      (:import
+      java.time.Clock
       java.time.Duration
       java.time.Instant
       java.time.OffsetDateTime
@@ -63,10 +64,15 @@
       java.time.temporal.TemporalAmount
       java.time.temporal.TemporalUnit)))
 
+#?(:clj (def ^:dynamic *clock* (Clock/systemDefaultZone)))
+
 (defn now
-  []
-  #?(:clj (Instant/now)
-     :cljs (new js/Date)))
+  ([]
+   #?(:clj (Instant/now *clock*)
+      :cljs (new js/Date)))
+  ([clock]
+   #?(:cljs (throw (js/Error. "not implemented" {:clock clock}))
+      :clj (Instant/now ^Clock clock))))
 
 ;; --- DURATION
 
@@ -319,12 +325,16 @@
                 :cljs (js/Error. "unsupported type"))))))
 
 (defn in-future
-  [v]
-  (plus (now) v))
+  ([v]
+   (plus (now) v))
+  ([clock v]
+   (plus (now clock) v)))
 
 (defn in-past
-  [v]
-  (minus (now) v))
+  ([v]
+   (minus (now) v))
+  ([clock v]
+   (minus (now clock) v)))
 
 #?(:clj
    (defn diff

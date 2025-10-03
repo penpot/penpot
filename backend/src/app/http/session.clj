@@ -332,16 +332,16 @@
 
 (def ^:private
   sql:delete-expired
-  "delete from http_session
-    where updated_at < now() - ?::interval
+  "DELETE FROM http_session
+    WHERE updated_at < ?::timestamptz
        or (updated_at is null and
-           created_at < now() - ?::interval)")
+           created_at < ?::timestamptz)")
 
 (defn- collect-expired-tasks
   [{:keys [::db/conn ::tasks/max-age]}]
-  (let [interval (db/interval max-age)
-        result   (db/exec-one! conn [sql:delete-expired interval interval])
-        result   (:next.jdbc/update-count result)]
+  (let [threshold (ct/minus (ct/now) max-age)
+        result    (-> (db/exec-one! conn [sql:delete-expired threshold threshold])
+                      (db/get-update-count))]
     (l/debug :task "gc"
              :hint "clean http sessions"
              :deleted result)
@@ -350,4 +350,5 @@
 (defmethod ig/init-key ::tasks/gc
   [_ {:keys [::tasks/max-age] :as cfg}]
   (l/debug :hint "initializing session gc task" :max-age max-age)
-  (fn [_] (db/tx-run! cfg collect-expired-tasks)))
+  (fn [_]
+    (db/tx-run! cfg collect-expired-tasks)))
