@@ -135,24 +135,11 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps selected-shapes selected color-origin)
+         (mf/deps selected-shapes)
          (fn [event token]
            (dom/stop-propagation event)
            (when (seq selected-shapes)
-             (if (= :color-selection color-origin)
-               (on-token-change event token)
-               (let [attributes (if (= color-origin :stroke) #{:stroke-color} #{:fill})
-                     shape-ids (into #{} (map :id selected-shapes))]
-                 (if (or
-                      (and (= (:name token) has-stroke-tokens?) (= color-origin :stroke))
-                      (and (= (:name token) has-color-tokens?) (= color-origin :fill)))
-                   (st/emit! (dwta/unapply-token {:attributes attributes
-                                                  :token token
-                                                  :shape-ids shape-ids}))
-                   (st/emit! (dwta/apply-token {:shape-ids shape-ids
-                                                :attributes attributes
-                                                :token token
-                                                :on-update-shape dwta/update-fill-stroke}))))))))
+             (on-token-change event token))))
 
         create-token-on-set
         (mf/use-fn

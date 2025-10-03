@@ -63,11 +63,12 @@
    [:class {:optional true} :string]
    [:size {:optional true} [:enum "small" "medium" "large"]]
    [:active {:optional true} ::sm/boolean]
+   [:has-errors {:optional true} [:maybe ::sm/boolean]]
    [:on-click {:optional true} ::sm/fn]])
 
 (mf/defc swatch*
   {::mf/schema (sm/schema schema:swatch)}
-  [{:keys [background on-click size active class tooltip-content]
+  [{:keys [background on-click size active class tooltip-content has-errors]
     :rest props}]
   (let [;; NOTE: this code is only relevant for storybook, because
         ;; storybook is unable to pass in a comfortable way a complex
@@ -92,6 +93,12 @@
         image          (:image background)
         format         (if id? "rounded" "square")
         element-id     (mf/use-id)
+        on-click
+        (mf/use-fn
+         (mf/deps background on-click)
+         (fn [event]
+           (when (fn? on-click)
+             (^function on-click background event))))
 
         class
         (dm/str class " " (stl/css-case
@@ -124,6 +131,8 @@
         (let [uri (cfg/resolve-file-media image)]
           [:span {:class (stl/css :swatch-image)
                   :style {:background-image (str/ffmt "url(%)" uri)}}])
+        has-errors
+        [:span {:class (stl/css :swatch-error)}]
 
         :else
         [:span {:class (stl/css :swatch-opacity)}

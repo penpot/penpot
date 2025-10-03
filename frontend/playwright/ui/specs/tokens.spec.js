@@ -46,7 +46,7 @@ const setupTokensFile = async (page, options = {}) => {
   } = options;
 
   const workspacePage = new WorkspacePage(page);
-  if (flags.length) {
+  if (flags.length > 0) {
     await workspacePage.mockConfigFlags(flags);
   }
 
@@ -879,7 +879,10 @@ test.describe("Tokens: Themes modal", () => {
   });
 
   test.describe("Tokens: Apply token", () => {
-    test("User applies color token to a shape", async ({ page }) => {
+    // When deleting the "enable-token-color" flag, permanently remove this test.
+    test("User applies color token to a shape without tokens on design-tab", async ({
+      page,
+    }) => {
       const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
         await setupTokensFile(page);
 
@@ -907,6 +910,35 @@ test.describe("Tokens: Themes modal", () => {
         name: "Color",
       });
       await expect(inputColor).toHaveValue("000000");
+    });
+
+    test("User applies color token to a shape", async ({ page }) => {
+      const { workspacePage, tokensSidebar, tokenContextMenuForToken } =
+        await setupTokensFile(page, { flags: ["enable-token-color"] });
+
+      await page.getByRole("tab", { name: "Layers" }).click();
+
+      await workspacePage.layers
+        .getByTestId("layer-row")
+        .filter({ hasText: "Button" })
+        .click();
+
+      const tokensTabButton = page.getByRole("tab", { name: "Tokens" });
+      await tokensTabButton.click();
+
+      await tokensSidebar
+        .getByRole("button")
+        .filter({ hasText: "Color" })
+        .click();
+
+      await tokensSidebar
+        .getByRole("button", { name: "colors.black" })
+        .click({ button: "right" });
+      await tokenContextMenuForToken.getByText("Fill").click();
+
+      await expect(
+        workspacePage.page.getByLabel("Name: colors.black"),
+      ).toBeVisible();
     });
 
     test("User applies typography token to a text shape", async ({ page }) => {
@@ -1024,9 +1056,7 @@ test.describe("Tokens: Themes modal", () => {
       await expect(letterSpacingField).toHaveValue(
         originalValues.letterSpacing,
       );
-      await expect(lineHeightField).toHaveValue(
-        originalValues.lineHeight,
-      );
+      await expect(lineHeightField).toHaveValue(originalValues.lineHeight);
       await expect(textCaseField).toHaveValue(originalValues.textCase);
       await expect(textDecorationField).toHaveValue(
         originalValues.textDecoration,

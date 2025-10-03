@@ -13,6 +13,7 @@
    [app.config :as cfg]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -68,16 +69,24 @@
              n-vals  (unchecked-get n-props "values")
              o-fills (get o-vals :fills)
              n-fills (get n-vals :fills)
+             o-objects (get o-vals :objects)
+             n-objects (get n-vals :objects)
+             o-applied-tokens (get o-vals :applied-tokens)
+             n-applied-tokens (get n-vals :applied-tokens)
              o-hide  (get o-vals :hide-fill-on-export)
              n-hide  (get n-vals :hide-fill-on-export)]
          (and (identical? o-hide n-hide)
-              (identical? o-fills n-fills)))))
+              (identical? o-applied-tokens n-applied-tokens)
+              (identical? o-fills n-fills)
+              (identical? o-objects n-objects)))))
 
 (mf/defc fill-menu*
   {::mf/wrap [#(mf/memo' % check-props)]}
-  [{:keys [ids type values]}]
+  [{:keys [ids type values applied-tokens shapes objects]}]
+
   (let [fills          (get values :fills)
         hide-on-export (get values :hide-fill-on-export false)
+        fill-token-applied (:fill applied-tokens)
 
         ^boolean
         multiple?      (= :multiple fills)
@@ -172,7 +181,37 @@
          #(reset! disable-drag* true))
 
         on-blur
-        (mf/use-fn #(reset! disable-drag* false))]
+        (mf/use-fn #(reset! disable-drag* false))
+
+        on-token-change
+        (mf/use-fn
+         (mf/deps shapes objects)
+         (fn [_ token]
+           (let [expanded-shapes
+                 (if (= 1 (count shapes))
+                   (let [shape (first shapes)]
+                     (if (= (:type shape) :group)
+                       (keep objects (:shapes shape))
+                       [shape]))
+
+                   (mapcat (fn [shape]
+                             (if (= (:type shape) :group)
+                               (keep objects (:shapes shape))
+                               [shape]))
+                           shapes))]
+
+             (st/emit!
+              (dwta/toggle-token {:token token
+                                  :attrs #{:fill}
+                                  :shapes expanded-shapes})))))
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token]
+           (st/emit! (dwta/unapply-token {:attributes #{:fill}
+                                          :token token
+                                          :shape-ids ids}))))]
 
     (mf/with-layout-effect [hide-on-export]
       (when-let [checkbox (mf/ref-val checkbox-ref)]
@@ -223,9 +262,12 @@
                                :on-change on-change
                                :on-reorder on-reorder
                                :on-detach on-detach
+                               :on-detach-token on-detach-token
                                :on-remove on-remove
                                :disable-drag disable-drag?
                                :on-focus on-focus
+                               :applied-token fill-token-applied
+                               :on-token-change on-token-change
                                :origin :fill
                                :select-on-focus (not disable-drag?)
                                :on-blur on-blur}]))])

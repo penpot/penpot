@@ -9,6 +9,8 @@
   (:require
    [app.common.data :as d]
    [app.common.types.color :as ctc]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.store :as st]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.select :refer [select]]
@@ -37,8 +39,12 @@
            disable-drag
            on-focus
            on-blur
+           applied-tokens
+           on-detach-token
            disable-stroke-style
-           select-on-focus]}]
+           select-on-focus
+           shapes
+           objects]}]
 
   (let [on-drop
         (fn [_ data]
@@ -55,27 +61,29 @@
                                 :name (str "Border row" index)})
                         [nil nil])
 
+        stroke-color-token (:stroke-color applied-tokens)
+
         on-color-change-refactor
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-color-change)
          (fn [color]
            (on-color-change index color)))
 
         on-color-detach
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-color-detach)
          (fn [color]
            (on-color-detach index color)))
 
         on-remove
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-remove)
          #(on-remove index))
 
         stroke-width (:stroke-width stroke)
 
         on-width-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-stroke-width-change)
          #(on-stroke-width-change index %))
 
@@ -91,11 +99,34 @@
             {:value :outer :label (tr "workspace.options.stroke.outer")}]))
 
         on-alignment-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-stroke-alignment-change)
          #(on-stroke-alignment-change index (keyword %)))
 
+        on-token-change
+        (mf/use-fn
+         (mf/deps shapes objects)
+         (fn [_ token]
+           (let [expanded-shapes
+                 (if (= 1 (count shapes))
+                   (let [shape (first shapes)]
+                     (if (= (:type shape) :group)
+                       (keep objects (:shapes shape))
+                       [shape]))
+
+                   (mapcat (fn [shape]
+                             (if (= (:type shape) :group)
+                               (keep objects (:shapes shape))
+                               [shape]))
+                           shapes))]
+
+             (st/emit!
+              (dwta/toggle-token {:token token
+                                  :attrs #{:stroke-color}
+                                  :shapes expanded-shapes})))))
+
         stroke-style (or (:stroke-style stroke) :solid)
+
 
         stroke-style-options
         (mf/with-memo [stroke-style]
@@ -108,19 +139,25 @@
             {:value :mixed :label (tr "workspace.options.stroke.mixed")}]))
 
         on-style-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-stroke-style-change)
          #(on-stroke-style-change index (keyword %)))
 
         on-caps-start-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-stroke-cap-start-change)
          #(on-stroke-cap-start-change index (keyword %)))
 
         on-caps-end-change
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-stroke-cap-end-change)
          #(on-stroke-cap-end-change index (keyword %)))
+
+        on-detach-token-color
+        (mf/use-fn
+         (mf/deps on-detach-token)
+         (fn [token]
+           (on-detach-token token #{:stroke-color})))
 
         stroke-caps-options
         [{:value nil :label (tr "workspace.options.stroke-cap.none")}
@@ -135,7 +172,7 @@
          {:value :square :label (tr "workspace.options.stroke-cap.square") :icon :stroke-squared}]
 
         on-cap-switch
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps index on-stroke-cap-switch)
          #(on-stroke-cap-switch index))]
 
@@ -156,8 +193,11 @@
                      :on-detach on-color-detach
                      :on-remove on-remove
                      :disable-drag disable-drag
+                     :applied-token stroke-color-token
+                     :on-detach-token on-detach-token-color
+                     :on-token-change on-token-change
                      :on-focus on-focus
-                     :origin :stroke
+                     :origin :stroke-color
                      :select-on-focus select-on-focus
                      :on-blur on-blur}]
 

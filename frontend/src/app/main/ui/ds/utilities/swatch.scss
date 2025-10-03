@@ -20,7 +20,6 @@
   border: $b-1 solid var(--border-color);
   border-radius: var(--border-radius);
   overflow: hidden;
-
   &:focus {
     --border-color: var(--color-accent-primary);
   }
@@ -108,4 +107,8 @@
 .swatch-opacity-side {
   flex: 1;
   display: block;
+}
+
+.swatch-error {
+  background: var(--color-background-primary);
 }

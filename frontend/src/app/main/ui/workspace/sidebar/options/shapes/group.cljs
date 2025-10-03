@@ -90,7 +90,7 @@
         [constraint-ids constraint-values]
         (get-attrs shapes objects :constraint)
 
-        [fill-ids fill-values]
+        [fill-ids fill-values fill-tokens]
         (get-attrs shapes objects :fill)
 
         [shadow-ids]
@@ -99,7 +99,7 @@
         [blur-ids blur-values]
         (get-attrs shapes objects :blur)
 
-        [stroke-ids stroke-values]
+        [stroke-ids stroke-values stroke-tokens]
         (get-attrs shapes objects :stroke)
 
         [text-ids text-values]
@@ -143,10 +143,21 @@
        [:& constraints-menu {:ids constraint-ids :values constraint-values}])
 
      (when-not (empty? fill-ids)
-       [:> fill/fill-menu* {:type type :ids fill-ids :values fill-values}])
+       [:> fill/fill-menu*
+        {:type type
+         :ids fill-ids
+         :values fill-values
+         :shapes shapes
+         :objects objects
+         :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
-       [:& stroke-menu {:type type :ids stroke-ids :values stroke-values}])
+       [:& stroke-menu {:type type
+                        :ids stroke-ids
+                        :values stroke-values
+                        :shapes shapes
+                        :objects objects
+                        :applied-tokens stroke-tokens}])
 
      [:> color-selection-menu*
       {:type type

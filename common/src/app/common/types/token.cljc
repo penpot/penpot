@@ -534,4 +534,6 @@
    :sided-margins #{:spacing :dimensions}
    :line-height #{:line-height :number}
    :font-size #{:font-size}
-   :letter-spacing #{:letter-spacing}})
+   :letter-spacing #{:letter-spacing}
+   :fill #{:color}
+   :stroke-color #{:color}})

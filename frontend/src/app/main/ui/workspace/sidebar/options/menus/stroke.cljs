@@ -12,6 +12,7 @@
    [app.common.types.stroke :as cts]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -37,8 +38,8 @@
    :stroke-cap-end])
 
 (mf/defc stroke-menu
-  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps"]))]}
-  [{:keys [ids type values show-caps disable-stroke-style] :as props}]
+  {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps" "applied-tokens" "shapes" "objects"]))]}
+  [{:keys [ids type values show-caps disable-stroke-style applied-tokens shapes objects] :as props}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")
@@ -167,7 +168,14 @@
                    (reset! disable-drag true))
 
         on-blur (fn [_]
-                  (reset! disable-drag false))]
+                  (reset! disable-drag false))
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token attrs]
+           (st/emit! (dwta/unapply-token {:attributes attrs
+                                          :token token
+                                          :shape-ids ids}))))]
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
@@ -201,6 +209,8 @@
                              :stroke value
                              :title (tr "workspace.options.stroke-color")
                              :index index
+                             :shapes shapes
+                             :objects objects
                              :show-caps show-caps
                              :on-color-change on-color-change
                              :on-color-detach on-color-detach
@@ -212,6 +222,8 @@
                              :on-stroke-cap-start-change on-stroke-cap-start-change
                              :on-stroke-cap-end-change on-stroke-cap-end-change
                              :on-stroke-cap-switch on-stroke-cap-switch
+                             :applied-tokens applied-tokens
+                             :on-detach-token on-detach-token
                              :on-remove on-remove
                              :on-reorder (handle-reorder index)
                              :disable-drag disable-drag

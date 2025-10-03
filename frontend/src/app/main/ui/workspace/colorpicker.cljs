@@ -47,7 +47,8 @@
    [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [rumext.v2.util :as mfu]))
 
 ;; --- Refs
 
@@ -93,13 +94,13 @@
       (dom/set-css-property! node "--saturation-grad-to" (format-hsl hsl-to)))))
 
 (mf/defc colorpicker
-  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change]}]
+  [{:keys [data disable-gradient disable-opacity disable-image on-change on-accept origin combined-tokens color-origin on-token-change tab]}]
   (let [state                  (mf/deref refs/colorpicker)
         node-ref               (mf/use-ref)
 
         should-update?         (mf/use-var true)
         token-color            (contains? cfg/flags :token-color)
-        color-style*           (mf/use-state :direct-color)
+        color-style*           (mf/use-state (d/nilv tab :direct-color))
         color-style            (deref color-style*)
         toggle-token-color
         (mf/use-fn
@@ -364,7 +365,7 @@
             :icon i/hsva
             :id "hsva"}])
 
-        show-tokens? (contains? #{:fill :stroke :color-selection} color-origin)]
+        show-tokens? (contains? #{:fill :stroke-color :color-selection} color-origin)]
 
     ;; Initialize colorpicker state
     (mf/with-effect []
@@ -726,12 +727,16 @@
            color-origin
            on-token-change
            on-close
+           tab
            on-accept]}]
   (let [vport       (mf/deref viewport)
         dirty?      (mf/use-var false)
         last-change (mf/use-var nil)
         position    (d/nilv position :left)
         style       (calculate-position vport position x y (some? (:gradient data)))
+        active-tokens (if (object? active-tokens)
+                        (mfu/bean active-tokens)
+                        active-tokens)
 
         on-change'
         (mf/use-fn
@@ -752,6 +757,10 @@
           (some-> tokens-lib
                   (ctob/get-active-themes-set-names)))
 
+        active-tokens (if (delay? active-tokens)
+                        @active-tokens
+                        active-tokens)
+
         color-tokens (:color active-tokens)
 
         grouped-tokens-by-set
@@ -762,7 +771,7 @@
                   (filter-active-sets active-sets-names)
                   (filter-non-empty-sets)
                   (group-sets)
-                  (combine-groups-with-resolved color-tokens)))]
+                  (combine-groups-with-resolved  color-tokens)))]
 
     (mf/with-effect []
       (st/emit! (st/emit! (dsc/push-shortcuts ::colorpicker sc/shortcuts)))
@@ -783,5 +792,6 @@
                       :on-token-change on-token-change
                       :on-change on-change'
                       :origin origin
+                      :tab tab
                       :color-origin color-origin
                       :on-accept on-accept}]]))

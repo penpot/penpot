@@ -17,6 +17,7 @@
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
    [app.common.types.text :as txt]
+   [app.common.types.token :as tt]
    [app.common.weak :as weak]
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
@@ -211,18 +212,34 @@
             (= attr-group :blur)   (attrs/get-attrs-multi [v1 v2] attrs blur-eq blur-sel)
             :else                  (attrs/get-attrs-multi [v1 v2] attrs)))
 
+        merge-attr
+        (fn [acc applied-tokens t-attr]
+          "Merges a single token attribute (`t-attr`) into the accumulator map.
+           - If the attribute is not present, associates it with the new value.
+           - If the existing value equals the new value, keeps the accumulator unchanged.
+           - If there is a conflict, sets the value to `:multiple`."
+          (let [new-val  (get applied-tokens t-attr)
+                existing (get acc t-attr ::not-found)]
+            (cond
+              (= existing ::not-found) (assoc acc t-attr new-val)
+              (= existing new-val)     acc
+              :else                    (assoc acc t-attr :multiple))))
+
+        merge-shape-attr
+        (fn [acc applied-tokens shape-attr]
+          "Merges all token attributes derived from a single shape attribute
+           into the accumulator map using `merge-attr`."
+          (let [token-attrs (tt/shape-attr->token-attrs shape-attr)]
+            (reduce #(merge-attr %1 applied-tokens %2) acc token-attrs)))
+
         merge-token-values
-        (fn [acc keys attrs]
-          (reduce
-           (fn [accum key]
-             (let [new-val (get attrs key)
-                   existing (get accum key ::not-found)]
-               (cond
-                 (= existing ::not-found) (assoc accum key new-val)
-                 (= existing new-val)     accum
-                 :else                    (assoc accum key :multiple))))
-           acc
-           keys))
+        (fn [acc shape-attrs applied-tokens]
+          "Merges token values across all shape attributes.  
+           For each shape attribute, its corresponding token attributes are merged
+           into the accumulator. If applied tokens are empty, the accumulator is returned unchanged."
+          (if (seq applied-tokens)
+            (reduce #(merge-shape-attr %1 applied-tokens %2) acc shape-attrs)
+            acc))
 
         extract-attrs
         (fn [[ids values token-acc] {:keys [id type applied-tokens] :as shape}]
@@ -263,8 +280,8 @@
 
               :children
               (let [children (->> (:shapes shape []) (map #(get objects %)))
-                    [new-ids new-values] (get-attrs* children objects attr-group)]
-                [(d/concat-vec ids new-ids) (merge-attrs values new-values) {}])
+                    [new-ids new-values tokens] (get-attrs* children objects attr-group)]
+                [(d/concat-vec ids new-ids) (merge-attrs values new-values) tokens])
 
               [])))]
 
@@ -376,7 +393,7 @@
         [constraint-ids constraint-values]
         (get-attrs shapes objects :constraint)
 
-        [fill-ids fill-values]
+        [fill-ids fill-values fill-tokens]
         (get-attrs shapes objects :fill)
 
         [shadow-ids shadow-values]
@@ -385,7 +402,7 @@
         [blur-ids blur-values]
         (get-attrs shapes objects :blur)
 
-        [stroke-ids stroke-values]
+        [stroke-ids stroke-values stroke-tokens]
         (get-attrs shapes objects :stroke)
 
         [exports-ids exports-values]
@@ -463,14 +480,22 @@
        [:& ot/text-menu {:type type :ids text-ids :values text-values}])
 
      (when-not (empty? fill-ids)
-       [:> fill/fill-menu* {:type type :ids fill-ids :values fill-values}])
+       [:> fill/fill-menu* {:type type
+                            :ids fill-ids
+                            :values fill-values
+                            :shapes shapes
+                            :objects objects
+                            :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
        [:& stroke-menu {:type type
                         :ids stroke-ids
                         :show-caps show-caps?
                         :values stroke-values
-                        :disable-stroke-style has-text?}])
+                        :shapes shapes
+                        :objects objects
+                        :disable-stroke-style has-text?
+                        :applied-tokens stroke-tokens}])
 
      (when-not (empty? shapes)
        [:> color-selection-menu*
