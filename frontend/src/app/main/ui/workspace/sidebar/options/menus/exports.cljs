@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.main.data.exports.assets :as de]
    [app.main.data.workspace.shapes :as dwsh]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.select :refer [select]]
@@ -17,6 +18,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.exports.assets]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.i18n :refer [c tr]]
    [app.util.keyboard :as kbd]
@@ -52,6 +54,8 @@
         open*   (mf/use-state true)
         open?   (deref open*)
 
+        render-wasm? (features/use-feature "render-wasm/v1")
+
         state   (mf/deref refs/export)
 
         in-progress?
@@ -67,6 +71,8 @@
         shapes-with-exports
         (mf/with-memo [shapes]
           (filter (comp seq :exports) shapes))
+
+        render-wasm? (features/use-feature "render-wasm/v1")
 
         sname
         (when (seqable? exports)
@@ -86,39 +92,41 @@
          (mf/deps ids page-id file-id exports)
          (fn [event]
            (dom/prevent-default event)
-           (if (= :multiple type)
+           (if render-wasm?
+             (wasm.api/download-as-png)
+             (do (if (= :multiple type)
              ;; I can select multiple shapes all of them with no export settings and one of them with only one
              ;; In that situation we must export it directly
-             (if (and (= 1 (count shapes-with-exports)) (= 1 (-> shapes-with-exports first :exports count)))
-               (let [shape       (-> shapes-with-exports first)
-                     export      (-> shape :exports first)
-                     suffix      (:suffix export)
-                     sname       (cond-> (:name shape)
-                                   (some? suffix)
-                                   (str suffix))
-                     defaults    {:page-id page-id
-                                  :file-id file-id
-                                  :name sname
-                                  :object-id (:id (first shapes-with-exports))}
-                     full-export (merge export defaults)]
-                 (st/emit!
-                  (de/request-simple-export {:export full-export})
-                  (de/export-shapes-event [full-export] "workspace:sidebar")))
-               (st/emit!
-                (de/show-workspace-export-dialog {:selected (reverse ids) :origin "workspace:sidebar"})))
+                   (if (and (= 1 (count shapes-with-exports)) (= 1 (-> shapes-with-exports first :exports count)))
+                     (let [shape       (-> shapes-with-exports first)
+                           export      (-> shape :exports first)
+                           suffix      (:suffix export)
+                           sname       (cond-> (:name shape)
+                                         (some? suffix)
+                                         (str suffix))
+                           defaults    {:page-id page-id
+                                        :file-id file-id
+                                        :name sname
+                                        :object-id (:id (first shapes-with-exports))}
+                           full-export (merge export defaults)]
+                       (st/emit!
+                        (de/request-simple-export {:export full-export})
+                        (de/export-shapes-event [full-export] "workspace:sidebar")))
+                     (st/emit!
+                      (de/show-workspace-export-dialog {:selected (reverse ids) :origin "workspace:sidebar"})))
 
              ;; In other all cases we only allowed to have a single
              ;; shape-id because multiple shape-ids are handled
              ;; separately by the export-modal.
-             (let [defaults {:page-id page-id
-                             :file-id file-id
-                             :name sname
-                             :object-id (first ids)}
-                   exports  (mapv #(merge % defaults) exports)]
+                   (let [defaults {:page-id page-id
+                                   :file-id file-id
+                                   :name sname
+                                   :object-id (first ids)}
+                         exports  (mapv #(merge % defaults) exports)]
 
-               (st/emit!
-                (de/request-export {:exports exports})
-                (de/export-shapes-event exports "workspace:sidebar"))))))
+                     (st/emit!
+                      (de/request-export {:exports exports})
+                      (de/export-shapes-event exports "workspace:sidebar"))))))))
 
 
         ;; TODO: maybe move to specific events for avoid to have this logic here?
