@@ -72,7 +72,7 @@
         highlighted    (hooks/use-equal-memo highlighted)
         root           (get objects uuid/zero)]
     [:div {:class (stl/css :element-list) :data-testid "layer-item"}
-     [:& hooks/sortable-container {}
+     [:> hooks/sortable-container* {}
       (for [[index id] (reverse (d/enumerate (:shapes root)))]
         (when-let [obj (get objects id)]
           (if (cfh/frame-shape? obj)

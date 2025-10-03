@@ -29,6 +29,7 @@
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
+   [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
    [app.main.ui.components.search-bar :refer [search-bar*]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
@@ -300,7 +301,47 @@
        (mapv (fn [val] {:id val
                         :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
 
-(mf/defc component-variant-main-instance*
+(mf/defc component-variant-item*
+  [{:keys [pos prop options on-prop-name-blur on-prop-value-change on-reorder]}]
+  (let [on-drop
+        (mf/use-fn
+         (fn [relative-pos data]
+           (let [from-pos             (:from-pos data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc pos) pos)]
+             (on-reorder from-pos to-space-between-pos))))
+
+        [dprops dref]
+        (h/use-sortable
+         :data-type "penpot/variant-property-single"
+         :on-drop on-drop
+         :draggable? true
+         :data {:from-pos pos})]
+
+    [:div {:class (stl/css-case :variant-item true
+                                :dnd-over-top (= (:over dprops) :top)
+                                :dnd-over-bot (= (:over dprops) :bot))}
+     (when (some? on-reorder)
+       [:> reorder-handler* {:ref dref}])
+
+     [:div {:class (stl/css :variant-property-container)}
+      [:div {:class (stl/css :variant-property-name-wrapper)}
+       [:> input-with-meta* {:value (:name prop)
+                             :is-editing (:editing? (meta prop))
+                             :max-length ctv/property-max-length
+                             :data-position pos
+                             :on-blur on-prop-name-blur}]]
+
+      [:div {:class (stl/css :variant-property-value-wrapper)}
+       (let [mixed-value? (= (:value prop) false)]
+         [:> combobox* {:id (str "variant-prop-" pos)
+                        :placeholder (if mixed-value? (tr "settings.multiple") "--")
+                        :default-selected (if mixed-value? "" (:value prop))
+                        :options options
+                        :empty-to-end true
+                        :max-length ctv/property-max-length
+                        :on-change on-prop-value-change}])]]]))
+
+(mf/defc component-variant*
   [{:keys [components shapes data]}]
   (let [component      (first components)
 
@@ -356,30 +397,24 @@
                            int)]
              (when (seq value)
                (st/emit!
-                (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))]
+                (dwv/update-property-name variant-id pos value {:trigger "workspace:design-tab-variant"}))))))
+
+        reorder-properties
+        (mf/use-fn
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))]
 
     [:*
-     [:div {:class (stl/css :variant-property-list)}
-      (for [[pos prop] (map-indexed vector properties)]
-        [:div {:key (str variant-id "-" pos)
-               :class (stl/css :variant-property-container)}
-
-         [:div {:class (stl/css :variant-property-name-wrapper)}
-          [:> input-with-meta* {:value (:name prop)
-                                :is-editing (:editing? (meta prop))
-                                :max-length ctv/property-max-length
-                                :data-position pos
-                                :on-blur update-property-name}]]
-
-         [:div {:class (stl/css :variant-property-value-wrapper)}
-          (let [mixed-value? (= (:value prop) false)]
-            [:> combobox* {:id (str "variant-prop-" variant-id "-" pos)
-                           :placeholder (if mixed-value? (tr "settings.multiple") "--")
-                           :default-selected (if mixed-value? "" (:value prop))
-                           :options (get-options (:name prop))
-                           :empty-to-end true
-                           :max-length ctv/property-max-length
-                           :on-change (partial update-property-value pos)}])]])]
+     [:> h/sortable-container* {}
+      [:div {:class (stl/css :variant-property-list)}
+       (for [[pos prop] (map-indexed vector properties)]
+         [:> component-variant-item* {:key (str variant-id "-" pos)
+                                      :pos pos
+                                      :prop prop
+                                      :options (get-options (:name prop))
+                                      :on-prop-name-blur update-property-name
+                                      :on-prop-value-change (partial update-property-value pos)
+                                      :on-reorder reorder-properties}])]]
 
      (if malformed-msg
        [:div {:class (stl/css :variant-warning-wrapper)}
@@ -471,7 +506,7 @@
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
-      (for [[pos prop] (map vector (range) props-first)]
+      (for [[pos prop] (map-indexed vector props-first)]
         (let [mixed-value? (not-every? #(= (:value prop) (:value (nth % pos))) properties)
               options (cond-> (get-options (:name prop))
                         mixed-value?
@@ -548,7 +583,7 @@
         [:> icon* {:icon-id i/variant
                    :size "s"}]])]))
 
-(mf/defc component-group-item*
+(mf/defc component-swap-group*
   [{:keys [item on-enter-group]}]
   (let [group-name (:name item)
         on-group-click #(on-enter-group group-name)]
@@ -767,7 +802,8 @@
        (when (:listing-thumbs? filters)
          [:div {:class (stl/css :component-list)}
           (for [item groups]
-            [:> component-group-item* {:item item :on-enter-group on-enter-group}])])
+            [:> component-swap-group* {:item item
+                                       :on-enter-group on-enter-group}])])
 
        [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
                                    :component-list (not (:listing-thumbs? filters)))}
@@ -793,7 +829,7 @@
                                         :listing-thumbs (:listing-thumbs? filters)
                                         :num-variants (count-variants item)}])
 
-            [:> component-group-item* {:item item
+            [:> component-swap-group* {:item item
                                        :key (:name item)
                                        :on-enter-group on-enter-group}]))]]]]))
 
@@ -814,9 +850,8 @@
                 :on-click (partial do-action action)}
            [:span {:class (stl/css :dropdown-label)} title]]))]]))
 
-(mf/defc component-menu
-  {::mf/props :obj}
-  [{:keys [shapes swap-opened?]}]
+(mf/defc component-menu*
+  [{:keys [shapes is-swap-opened]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
 
         libraries       (mf/deref refs/files)
@@ -929,7 +964,7 @@
     (when (seq shapes)
       [:div {:class (stl/css :element-set)}
        [:div {:class (stl/css :element-title)}
-        (if swap-opened?
+        (if is-swap-opened
           [:button {:class (stl/css :title-back)
                     :on-click on-component-back}
            [:> icon* {:icon-id i/arrow-left
@@ -972,7 +1007,7 @@
                                            :without-menu (not show-menu?))
                       :data-testid "swap-component-btn"
                       :on-click open-component-panel
-                      :disabled (or swap-opened? (not can-swap?))}
+                      :disabled (or is-swap-opened (not can-swap?))}
 
              [:div {:class (stl/css :component-icon)}
               [:> icon* {:size "s"
@@ -1011,25 +1046,25 @@
                                :on-click add-new-property
                                :icon i/add}])]
 
-          (when swap-opened?
+          (when is-swap-opened
             [:> component-swap* {:shapes copies}])
 
           (when (and is-variant?
                      (not main-instance?)
                      (not (:deleted component))
-                     (not swap-opened?)
+                     (not is-swap-opened)
                      (or (not multi) same-variant?))
             [:> component-variant-copy* {:current-file-id current-file-id
                                          :components components
                                          :shapes shapes
                                          :component-file-data data}])
 
-          (when (and is-variant? main-instance? same-variant? (not swap-opened?))
-            [:> component-variant-main-instance* {:components components
-                                                  :shapes shapes
-                                                  :data data}])
+          (when (and is-variant? main-instance? same-variant? (not is-swap-opened))
+            [:> component-variant* {:components components
+                                    :shapes shapes
+                                    :data data}])
 
-          (when (and (not swap-opened?) (not multi))
+          (when (and (not is-swap-opened) (not multi))
             [:> component-annotation* {:id id
                                        :shape shape
                                        :component component
@@ -1050,7 +1085,50 @@
       (into (remove empty?) v)
       (into (filter empty?) v)))
 
-(mf/defc variant-menu*
+(mf/defc component-variant-main-item*
+  [{:keys [pos property is-remove-disabled on-remove on-blur on-reorder]}]
+  (let [values (->> (:value property)
+                    (move-empty-items-to-end)
+                    (replace {"" "--"})
+                    (str/join ", "))
+
+        on-drop
+        (mf/use-fn
+         (fn [relative-pos data]
+           (let [from-pos             (:from-pos data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc pos) pos)]
+             (on-reorder from-pos to-space-between-pos))))
+
+        [dprops dref]
+        (h/use-sortable
+         :data-type "penpot/variant-property"
+         :on-drop on-drop
+         :draggable? true
+         :data {:from-pos pos})]
+
+    [:div {:class (stl/css-case :variant-item true
+                                :dnd-over-top (= (:over dprops) :top)
+                                :dnd-over-bot (= (:over dprops) :bot))}
+     (when (some? on-reorder)
+       [:> reorder-handler* {:ref dref}])
+
+     [:div {:class (stl/css :variant-property-row)}
+      [:> input-with-meta* {:value (:name property)
+                            :data-position pos
+                            :meta values
+                            :is-editing (:editing? (meta property))
+                            :max-length ctv/property-max-length
+                            :on-blur on-blur}]
+      [:> icon-button* {:variant "ghost"
+                        :icon i/remove
+                        :data-position pos
+                        :aria-label (if is-remove-disabled
+                                      (tr "workspace.shape.menu.remove-variant-property.last-property")
+                                      (tr "workspace.shape.menu.remove-variant-property"))
+                        :on-click on-remove
+                        :disabled is-remove-disabled}]]]))
+
+(mf/defc component-variant-main*
   [{:keys [shapes]}]
   (let [multi?             (> (count shapes) 1)
 
@@ -1080,6 +1158,7 @@
 
         properties         (mf/with-memo [data objects variant-id]
                              (cfv/extract-properties-values data objects (:id shape)))
+        single-property?   (= (count properties) 1)
 
         open*              (mf/use-state true)
         open?              (deref open*)
@@ -1162,6 +1241,11 @@
                 (ev/event {::ev/name "variant-remove-property" ::ev/origin "workspace:button-design-tab"})
                 (dwv/remove-property variant-id pos))))))
 
+        reorder-properties
+        (mf/use-fn
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))
+
         select-shapes-with-malformed
         (mf/use-fn
          (mf/deps malformed-ids)
@@ -1235,30 +1319,16 @@
                              :icon i/add}]]
 
           (when-not multi?
-            [:div {:class (stl/css :variant-property-list)}
-             (for [[pos property] (map-indexed vector properties)]
-               (let [last-prop? (<= (count properties) 1)
-                     values     (->> (:value property)
-                                     (move-empty-items-to-end)
-                                     (replace {"" "--"})
-                                     (str/join ", "))
-                     is-editing (:editing? (meta property))]
-                 [:div {:key (str (:id shape) pos)
-                        :class (stl/css :variant-property-row)}
-                  [:> input-with-meta* {:value (:name property)
-                                        :meta values
-                                        :is-editing is-editing
-                                        :max-length ctv/property-max-length
-                                        :data-position pos
-                                        :on-blur update-property-name}]
-                  [:> icon-button* {:variant "ghost"
-                                    :aria-label (if last-prop?
-                                                  (tr "workspace.shape.menu.remove-variant-property.last-property")
-                                                  (tr "workspace.shape.menu.remove-variant-property"))
-                                    :on-click remove-property
-                                    :data-position pos
-                                    :icon i/remove
-                                    :disabled last-prop?}]]))])
+            [:> h/sortable-container* {}
+             [:div {:class (stl/css :variant-property-list)}
+              (for [[pos property] (map-indexed vector properties)]
+                [:> component-variant-main-item* {:key (str (:id shape) pos)
+                                                  :pos pos
+                                                  :property property
+                                                  :is-remove-disabled single-property?
+                                                  :on-remove remove-property
+                                                  :on-blur update-property-name
+                                                  :on-reorder reorder-properties}])]])
 
           (if malformed?
             [:div {:class (stl/css :variant-warning-wrapper)}

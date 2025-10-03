@@ -754,3 +754,22 @@
     outline: deprecated.$s-1 solid var(--color-accent-primary);
   }
 }
+
+.variant-item {
+  @include deprecated.flexColumn;
+  position: relative;
+
+  --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
+
+  &:hover {
+    --reorder-icon-visibility: visible;
+  }
+
+  &.dnd-over-top {
+    --reorder-top-display: block;
+  }
+
+  &.dnd-over-bot {
+    --reorder-bottom-display: block;
+  }
+}

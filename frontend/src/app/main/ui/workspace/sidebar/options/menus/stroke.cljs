@@ -203,7 +203,7 @@
                              :on-click handle-remove-all
                              :icon i/remove}]]
           (seq strokes)
-          [:& h/sortable-container {}
+          [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
              [:& stroke-row {:key (dm/str "stroke-" index)
                              :stroke value

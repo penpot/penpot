@@ -22,7 +22,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-attrs blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-attrs exports-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
@@ -234,7 +234,7 @@
 
         merge-token-values
         (fn [acc shape-attrs applied-tokens]
-          "Merges token values across all shape attributes.  
+          "Merges token values across all shape attributes.
            For each shape attribute, its corresponding token attributes are merged
            into the accumulator. If applied tokens are empty, the accumulator is returned unchanged."
           (if (seq applied-tokens)
@@ -455,7 +455,7 @@
          :shapes shapes}])
 
      (when (some? components)
-       [:& component-menu {:shapes components}])
+       [:> component-menu* {:shapes components}])
 
      [:& layout-container-menu
       {:type type
