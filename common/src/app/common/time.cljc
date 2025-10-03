@@ -67,12 +67,9 @@
 #?(:clj (def ^:dynamic *clock* (Clock/systemDefaultZone)))
 
 (defn now
-  ([]
-   #?(:clj (Instant/now *clock*)
-      :cljs (new js/Date)))
-  ([clock]
-   #?(:cljs (throw (js/Error. "not implemented" {:clock clock}))
-      :clj (Instant/now ^Clock clock))))
+  []
+  #?(:clj (Instant/now *clock*)
+     :cljs (new js/Date)))
 
 ;; --- DURATION
 
@@ -325,16 +322,12 @@
                 :cljs (js/Error. "unsupported type"))))))
 
 (defn in-future
-  ([v]
-   (plus (now) v))
-  ([clock v]
-   (plus (now clock) v)))
+  [v]
+  (plus (now) v))
 
 (defn in-past
-  ([v]
-   (minus (now) v))
-  ([clock v]
-   (minus (now clock) v)))
+  [v]
+  (minus (now) v))
 
 #?(:clj
    (defn diff

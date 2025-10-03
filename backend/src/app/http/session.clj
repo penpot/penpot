@@ -72,7 +72,7 @@
   (sm/validator schema:params))
 
 (defn- prepare-session-params
-  [key params]
+  [params key]
   (assert (string? key) "expected key to be a string")
   (assert (not (str/blank? key)) "expected key to be not empty")
   (assert (valid-params? params) "expected valid params")
@@ -90,7 +90,9 @@
       (db/exec-one! pool (sql/select :http-session {:id token})))
 
     (write! [_ key params]
-      (let [params (prepare-session-params key params)]
+      (let [params (-> params
+                       (assoc :created-at (ct/now))
+                       (prepare-session-params key))]
         (db/insert! pool :http-session params)
         params))
 
@@ -113,7 +115,9 @@
         (get @cache token))
 
       (write! [_ key params]
-        (let [params (prepare-session-params key params)]
+        (let [params (-> params
+                         (assoc :created-at (ct/now))
+                         (prepare-session-params key))]
           (swap! cache assoc key params)
           params))
 
@@ -150,16 +154,15 @@
 (declare ^:private gen-token)
 
 (defn create-fn
-  [{:keys [::manager ::setup/props]} profile-id]
+  [{:keys [::manager] :as cfg} profile-id]
   (assert (manager? manager) "expected valid session manager")
   (assert (uuid? profile-id) "expected valid uuid for profile-id")
 
   (fn [request response]
     (let [uagent  (yreq/get-header request "user-agent")
           params  {:profile-id profile-id
-                   :user-agent uagent
-                   :created-at (ct/now)}
-          token   (gen-token props params)
+                   :user-agent uagent}
+          token   (gen-token cfg params)
           session (write! manager token params)]
       (l/trace :hint "create" :profile-id (str profile-id))
       (-> response
@@ -181,14 +184,14 @@
           (clear-auth-data-cookie)))))
 
 (defn- gen-token
-  [props {:keys [profile-id created-at]}]
-  (tokens/generate props {:iss "authentication"
-                          :iat created-at
-                          :uid profile-id}))
+  [cfg {:keys [profile-id created-at]}]
+  (tokens/generate cfg {:iss "authentication"
+                        :iat created-at
+                        :uid profile-id}))
 (defn- decode-token
-  [props token]
+  [cfg token]
   (when token
-    (tokens/verify props {:token token :iss "authentication"})))
+    (tokens/verify cfg {:token token :iss "authentication"})))
 
 (defn- get-token
   [request]
@@ -208,12 +211,12 @@
          (neg? (compare default-renewal-max-age elapsed)))))
 
 (defn- wrap-soft-auth
-  [handler {:keys [::manager ::setup/props]}]
+  [handler {:keys [::manager] :as cfg}]
   (assert (manager? manager) "expected valid session manager")
   (letfn [(handle-request [request]
             (try
               (let [token  (get-token request)
-                    claims (decode-token props token)]
+                    claims (decode-token cfg token)]
                 (cond-> request
                   (map? claims)
                   (-> (assoc ::token-claims claims)
@@ -256,7 +259,7 @@
 (defn- assign-auth-token-cookie
   [response {token :id updated-at :updated-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
-        created-at (or updated-at (ct/now))
+        created-at updated-at
         renewal    (ct/plus created-at default-renewal-max-age)
         expires    (ct/plus created-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
@@ -279,7 +282,7 @@
         domain     (cf/get :auth-data-cookie-domain)
         cname      default-auth-data-cookie-name
 
-        created-at (or updated-at (ct/now))
+        created-at updated-at
         renewal    (ct/plus created-at default-renewal-max-age)
         expires    (ct/plus created-at max-age)
 
@@ -313,12 +316,9 @@
       (string? domain)
       (update :cookies assoc cname {:domain domain :path "/" :value "" :max-age 0}))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK: SESSION GC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; FIXME: MOVE
 
 (defmethod ig/assert-key ::tasks/gc
   [_ params]

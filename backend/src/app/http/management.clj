@@ -79,8 +79,7 @@
 (defn- authenticate
   [cfg request]
   (let [token  (-> request :params :token)
-        props  (get cfg ::setup/props)
-        result (tokens/verify props {:token token :iss "authentication"})]
+        result (tokens/verify cfg {:token token :iss "authentication"})]
     {::yres/status 200
      ::yres/body result}))
 
