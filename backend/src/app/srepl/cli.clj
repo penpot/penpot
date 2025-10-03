@@ -129,8 +129,7 @@
 (defmethod exec-command "authenticate"
   [{:keys [token]}]
   (when-let [system (get-current-system)]
-    (let [props  (get system ::setup/props)]
-      (tokens/verify props {:token token :iss "authentication"}))))
+    (tokens/verify system {:token token :iss "authentication"})))
 
 (def ^:private schema:get-customer
   [:map [:id ::sm/uuid]])
