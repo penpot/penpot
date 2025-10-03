@@ -7411,7 +7411,7 @@ msgstr "Editar temas"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
 msgid "workspace.tokens.edit-token"
-msgstr "Editar token"
+msgstr "Editar token de %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"

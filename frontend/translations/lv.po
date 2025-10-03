@@ -7167,10 +7167,6 @@ msgstr "Labot izskatu"
 msgid "workspace.tokens.edit-themes"
 msgstr "Labot izskatus"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Labot tekstvienību"
-
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
 msgstr "Tekstvienības vērtība nevar būt tukša"

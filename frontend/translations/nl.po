@@ -7231,10 +7231,6 @@ msgstr "Thema bewerken"
 msgid "workspace.tokens.edit-themes"
 msgstr "Thema's bewerken"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Token bewerken"
-
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
 msgstr "De tokenwaarde mag niet leeg zijn"

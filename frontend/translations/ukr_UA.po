@@ -7163,10 +7163,6 @@ msgstr "Редагувати тему"
 msgid "workspace.tokens.edit-themes"
 msgstr "Редагувати теми"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Редагувати токен"
-
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
 msgstr "Значення токену не може бути порожнім"

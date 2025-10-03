@@ -6829,10 +6829,6 @@ msgstr "Theme bearbeiten"
 msgid "workspace.tokens.edit-themes"
 msgstr "Themes bearbeiten"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Token bearbeiten"
-
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:540
 msgid "workspace.tokens.enter-token-name"
 msgstr "%s Token-Name eingeben"

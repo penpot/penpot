@@ -6670,10 +6670,6 @@ msgstr "Sunting tema"
 msgid "workspace.tokens.edit-themes"
 msgstr "Sunting tema"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
-msgid "workspace.tokens.edit-token"
-msgstr "Sunting token"
-
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:540
 msgid "workspace.tokens.enter-token-name"
 msgstr "Masukkan nama token %s"

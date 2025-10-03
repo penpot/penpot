@@ -266,17 +266,17 @@
 (mf/defc form*
   "Form component to edit or create a token of any token type.
 
-Callback props:
-validate-token: Function to validate and resolve an editing token, see `default-validate-token`.
-on-value-resolve: Will be called when a token value is resolved
-                  Used to sync external state (like color picker)
-on-get-token-value: Custom function to get the input value from the dom
-                    (As there might be multiple inputs passed for `custom-input-token-value`)
-                    Can also be used to manipulate the value (E.g.: Auto-prepending # for hex colors)
+   Callback props:
+   validate-token: Function to validate and resolve an editing token, see `default-validate-token`.
+   on-value-resolve: Will be called when a token value is resolved
+                     Used to sync external state (like color picker)
+   on-get-token-value: Custom function to get the input value from the dom
+                       (As there might be multiple inputs passed for `custom-input-token-value`)
+                       Can also be used to manipulate the value (E.g.: Auto-prepending # for hex colors)
 
-Custom component props:
-custom-input-token-value: Custom component for editing/displaying the token value
-custom-input-token-value-props: Custom props passed to the custom-input-token-value merged with the default props"
+   Custom component props:
+   custom-input-token-value: Custom component for editing/displaying the token value
+   custom-input-token-value-props: Custom props passed to the custom-input-token-value merged with the default props"
   [{:keys [is-create
            token
            token-type
@@ -378,7 +378,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
         value-ref (mf/use-ref (:value token))
 
         token-resolve-result* (mf/use-state (get resolved-tokens (cft/token-identifier token)))
-        token-resolve-result (deref token-resolve-result*)
+        token-resolve-result  (deref token-resolve-result*)
 
         clear-resolve-value
         (mf/use-fn
@@ -1060,14 +1060,19 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
         typography-inputs (mf/use-memo typography-inputs)
         errors-by-key (sd/collect-typography-errors token-resolve-result)]
     [:div {:class (stl/css :nested-input-row)}
-     (for [[k {:keys [label placeholder icon]}] typography-inputs]
-       (let [value (get default-value k)
-             token-resolve-result
-             (when composite-token?
-               (-> {:resolved-value (let [v (get-in token-resolve-result [:resolved-value k])]
-                                      (when-not (str/empty? v) v))
-                    :errors (get errors-by-key k)}
-                   (d/without-nils)))
+     (for [[token-type {:keys [label placeholder icon]}] typography-inputs]
+       (let [value (get default-value token-type)
+             resolved (get-in token-resolve-result [:resolved-value token-type])
+             errors   (get errors-by-key token-type)
+
+             should-show? (or (and (some? resolved)
+                                   (not= value (str resolved)))
+                              (seq errors))
+
+             token-prop  (when (and composite-token? should-show?)
+                           (d/without-nils
+                            {:resolved-value (when-not (str/empty? resolved) resolved)
+                             :errors errors}))
 
              input-ref (mf/use-ref)
 
@@ -1075,21 +1080,22 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
              (mf/use-fn
               (mf/deps on-update-value)
               (fn [next-value]
-                (let [el (mf/ref-val input-ref)]
-                  (dom/set-value! el next-value)
-                  (on-update-value #js {:target el
+                (let [element (mf/ref-val input-ref)]
+                  (dom/set-value! element next-value)
+                  (on-update-value #js {:target element
                                         :tokenType :font-family}))))
 
              on-change
              (mf/use-fn
+              (mf/deps token-type)
               ;; Passing token-type via event to prevent deep function adapting & passing of type
-              (fn [e]
-                (-> (obj/set! e "tokenType" k)
+              (fn [event]
+                (-> (obj/set! event "tokenType" token-type)
                     (on-update-value))))]
 
-         [:div {:key (str k)
+         [:div {:key (str token-type)
                 :class (stl/css :input-row)}
-          (case k
+          (case token-type
             :font-family
             [:> font-picker-combobox*
              {:aria-label label
@@ -1099,7 +1105,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
               :on-blur on-blur
               :on-update-value on-change
               :on-external-update-value on-external-update-value
-              :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}]
+              :token-resolve-result token-prop}]
             [:> input-token*
              {:aria-label label
               :placeholder placeholder
@@ -1107,7 +1113,7 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
               :on-blur on-blur
               :icon icon
               :on-change on-change
-              :token-resolve-result (when (seq token-resolve-result) token-resolve-result)}])]))]))
+              :token-resolve-result token-prop}])]))]))
 
 (mf/defc typography-form*
   [{:keys [token] :rest props}]
@@ -1145,8 +1151,10 @@ custom-input-token-value-props: Custom props passed to the custom-input-token-va
                              :update-composite-backup-value update-composite-backup-value})]))
 
 (mf/defc form-wrapper*
-  [{:keys [token token-type] :as props}]
-  (let [token-type' (or (:type token) token-type)]
+  [{:keys [token token-type] :rest props}]
+  (let [token-type' (or (:type token) token-type)
+        props (mf/spread-props props {:token-type token-type'
+                                      :token token})]
     (case token-type'
       :color [:> color-form* props]
       :typography [:> typography-form* props]
