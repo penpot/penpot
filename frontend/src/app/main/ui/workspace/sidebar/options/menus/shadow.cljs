@@ -24,7 +24,6 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
@@ -160,10 +159,15 @@
       [:div {:class (stl/css :basic-options)}
        [:div {:class (stl/css-case :shadow-info true
                                    :hidden hidden?)}
-        [:button {:class (stl/css-case :more-options true
-                                       :selected is-open)
-                  :on-click on-toggle-open}
-         deprecated-icon/menu]
+        [:> icon-button* {:on-click on-toggle-open
+                          :variant "secondary"
+                          :disabled hidden?
+                          :class (stl/css-case
+                                  :disabled hidden?
+                                  :more-options true
+                                  :selected is-open)
+                          :aria-label "open more options"
+                          :icon i/menu}]
         [:div {:class (stl/css :type-select)}
          [:& select
           {:class (stl/css :shadow-type-select)
