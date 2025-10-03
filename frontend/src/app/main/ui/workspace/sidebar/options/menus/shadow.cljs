@@ -356,7 +356,7 @@
                               :icon i/remove}]]]]
 
          (some? shadows)
-         [:& h/sortable-container {}
+         [:> h/sortable-container* {}
           [:div {:class (stl/css :element-set-content)}
            (for [{:keys [::index id] :as shadow} shadows]
              [:> shadow-entry*

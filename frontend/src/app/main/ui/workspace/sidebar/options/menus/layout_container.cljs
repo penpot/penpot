@@ -812,7 +812,7 @@
       [:button {:class (stl/css :add-column) :on-click add-track} deprecated-icon/add]]
 
      (when expanded?
-       [:& h/sortable-container {}
+       [:> h/sortable-container* {}
         [:div {:class (stl/css :grid-tracks-info-container)}
          (for [[index column] (d/enumerate column-values)]
            [:& grid-track-info {:key (dm/str index "-" (d/name type))
