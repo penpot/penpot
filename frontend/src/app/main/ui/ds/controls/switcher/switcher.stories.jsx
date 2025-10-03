@@ -34,45 +34,16 @@ export default {
   args: {
     disabled: false,
     size: "md",
-    defaultChecked: false,
+    defaultChecked: false
   },
   parameters: {
     controls: { exclude: ["id", "class", "dataTestid", "on-change"] },
   },
   render: ({ onChange, ...args }) => (
-    <Switcher {...args} onChange={onChange} data-testid="switcher" label="Enable notifications" />
+    <Switcher {...args} onChange={onChange} label="Enable notifications"/>
   ),
 };
-
-export const DefaultUncontrolled = {
-  args: {
-    label: "Enable notifications",
-    defaultChecked: false,
-  },
-};
-
-export const Controlled = {
-  render: ({ onChange, ...args }) => {
-    const [checked, setChecked] = React.useState(false);
-    
-    const handleChange = (newChecked, event) => {
-      setChecked(newChecked);
-      if (onChange) onChange(newChecked, event);
-    };
-    
-    return (
-      <Switcher
-        {...args}
-        checked={checked}
-        onChange={handleChange}
-        data-testid="controlled-switcher"
-      />
-    );
-  },
-  args: {
-    label: "Controlled switcher",
-  },
-};
+export const Default = {};
 
 export const WithLongLabel = {
   args: {
@@ -81,7 +52,7 @@ export const WithLongLabel = {
   },
   render: ({ ...args }) => (
     <div style={{ maxWidth: "300px" }}>
-      <Switcher {...args} data-testid="long-label-switcher" />
+      <Switcher {...args}/>
     </div>
   ),
 };
@@ -91,54 +62,6 @@ export const WithoutVisibleLabel = {
     defaultChecked: false,
   },
   render: ({ ...args }) => (
-    <Switcher {...args} data-testid="no-label-switcher" />
+    <Switcher {...args}  aria-label="Enable notification"/>
   ),
-};
-
-export const Interactive = {
-  render: () => {
-    const [notifications, setNotifications] = React.useState(true);
-    const [darkMode, setDarkMode] = React.useState(false);
-    const [autoSave, setAutoSave] = React.useState(true);
-    
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        <Switcher
-          label="Enable notifications"
-          checked={notifications}
-          onChange={(checked) => setNotifications(checked)}
-          data-testid="notifications-switcher"
-        />
-        <Switcher
-          label="Dark mode"
-          checked={darkMode}
-          onChange={(checked) => setDarkMode(checked)}
-          data-testid="dark-mode-switcher"
-        />
-        <Switcher
-          label="Auto-save documents"
-          checked={autoSave}
-          onChange={(checked) => setAutoSave(checked)}
-          disabled={!notifications}
-          data-testid="auto-save-switcher"
-        />
-        
-        <div style={{ 
-          marginTop: "16px", 
-          padding: "12px", 
-          backgroundColor: "#f5f5f5",
-          color: "#000",
-          borderRadius: "4px",
-          fontSize: "14px"
-        }}>
-          <strong>Current state:</strong>
-          <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px" }}>
-            <li>Notifications: {notifications ? "On" : "Off"}</li>
-            <li>Dark mode: {darkMode ? "On" : "Off"}</li>
-            <li>Auto-save: {autoSave ? "On" : "Off"}</li>
-          </ul>
-        </div>
-      </div>
-    );
-  },
 };
