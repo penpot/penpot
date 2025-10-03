@@ -44,6 +44,7 @@
 - Fix problem with export size [Github #7160](https://github.com/penpot/penpot/issues/7160)
 - Fix multi level library dependencies [Taiga #12155](https://tree.taiga.io/project/penpot/issue/12155)
 - Fix component context menu options order in assets tab [Taiga #11941](https://tree.taiga.io/project/penpot/issue/11941)
+- Fix error updating library [Taiga #12218](https://tree.taiga.io/project/penpot/issue/12218)
 
 ## 2.10.0
 

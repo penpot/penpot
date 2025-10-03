@@ -555,13 +555,20 @@
                        (pcb/with-objects (:objects container)))]
       (if-let [shape (first shapes)]
         (recur (next shapes)
-               (generate-sync-shape asset-type
-                                    changes
-                                    library-id
-                                    container
-                                    shape
-                                    libraries
-                                    current-file-id))
+               (let [objects' (pcb/get-objects changes)
+                     shape'   (get objects' (:id shape))]
+                 ;; The shape could have been deleted in previous changes, if this nested component
+                 ;; comes from components-v1 era or if there has been some error with the swap slot.
+                 ;; In that case, we just skip it.
+                 (if shape'
+                   (generate-sync-shape asset-type
+                                        changes
+                                        library-id
+                                        container
+                                        shape'
+                                        libraries
+                                        current-file-id)
+                   changes)))
         changes))))
 
 (defmulti uses-assets?
@@ -657,7 +664,8 @@
 
     (if (= new-content old-content)
       changes
-      changes')))
+      (-> changes'
+          (pcb/apply-changes-local)))))
 
 
 ;; ---- Component synchronization helpers ----
@@ -1180,6 +1188,7 @@
     (let [child-inst (first children-inst)
           child-main (first children-main)]
       (shape-log :trace (:id shape-inst) container-inst
+                 :msg "Comparing"
                  :main (str (:name child-main) " " (pretty-uuid (:id child-main)))
                  :inst (str (:name child-inst) " " (pretty-uuid (:id child-inst))))
       (cond
@@ -1194,7 +1203,8 @@
 
         :else
         (if (or (ctk/is-main-of? child-main child-inst)
-                (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries) (not reset?)))
+                (and (ctf/match-swap-slot? child-main child-inst container-inst container-main file libraries)
+                     (not reset?)))
           (recur (next children-inst)
                  (next children-main)
                  (if (ctk/is-main-of? child-main child-inst)
@@ -1202,10 +1212,12 @@
                    (swapped-cb changes child-inst child-main)))
 
           (let [child-inst' (d/seek #(or (ctk/is-main-of? child-main %)
-                                         (and (ctf/match-swap-slot? child-main % container-inst container-main file libraries) (not reset?)))
+                                         (and (ctf/match-swap-slot? child-main % container-inst container-main file libraries)
+                                              (not reset?)))
                                     children-inst)
                 child-main' (d/seek #(or (ctk/is-main-of? % child-inst)
-                                         (and (ctf/match-swap-slot? % child-inst container-inst container-main file libraries) (not reset?)))
+                                         (and (ctf/match-swap-slot? % child-inst container-inst container-main file libraries)
+                                              (not reset?)))
                                     children-main)]
             (cond
               (nil? child-inst')
@@ -1315,7 +1327,8 @@
 
     (if (and (ctk/touched-group? parent-shape :shapes-group) omit-touched?)
       changes
-      changes')))
+      (-> changes'
+          (pcb/apply-changes-local)))))
 
 (defn- add-shape-to-main
   [changes shape index component component-container page root-instance root-main]
@@ -1419,7 +1432,8 @@
         changes' (reduce mod-obj-change changes' updated-shapes)
         changes' (reduce del-obj-change changes' new-shapes)]
 
-    changes'))
+    (-> changes'
+        (pcb/apply-changes-local))))
 
 (defn- remove-shape
   [changes shape container omit-touched?]
@@ -1472,7 +1486,8 @@
 
     (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
-      changes')))
+      (-> changes'
+          (pcb/apply-changes-local)))))
 
 (defn- move-shape
   [changes shape index-before index-after container omit-touched?]
@@ -1509,7 +1524,8 @@
 
     (if (and (ctk/touched-group? parent :shapes-group) omit-touched?)
       changes
-      changes')))
+      (-> changes'
+          (pcb/apply-changes-local)))))
 
 (defn change-touched
   [changes dest-shape origin-shape container
@@ -1553,7 +1569,8 @@
                                          :id (:id dest-shape)
                                          :operations
                                          [{:type :set-touched
-                                           :touched (:touched dest-shape)}]})))))))
+                                           :touched (:touched dest-shape)}]}))
+            (pcb/apply-changes-local))))))
 
 (defn- change-remote-synced
   [changes shape container remote-synced?]
@@ -1582,7 +1599,8 @@
                                        :id (:id shape)
                                        :operations
                                        [{:type :set-remote-synced
-                                         :remote-synced (:remote-synced shape)}]}))))))
+                                         :remote-synced (:remote-synced shape)}]}))
+          (pcb/apply-changes-local)))))
 
 (defn- update-tokens
   "Token synchronization algorithm. Copy the applied tokens that have changed
@@ -1620,7 +1638,8 @@
                                        :operations [{:type :set
                                                      :attr :applied-tokens
                                                      :val dest-tokens
-                                                     :ignore-touched true}]}))))))
+                                                     :ignore-touched true}]}))
+          (pcb/apply-changes-local)))))
 
 (defn- generate-update-tokens
   [changes container dest-shape origin-shape touched omit-touched?]
@@ -1663,7 +1682,8 @@
         (update :undo-changes concat [(make-change
                                        container
                                        {:type :reg-objects
-                                        :shapes all-parents})]))))
+                                        :shapes all-parents})])
+        (pcb/apply-changes-local))))
 
 
 (defn- text-change-value

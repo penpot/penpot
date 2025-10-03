@@ -256,7 +256,7 @@
 
 (defn group->swap-slot
   [group]
-  (parse-uuid (subs (name group) 10)))
+  (parse-uuid (subs (name group) 10)))  ;; 10 is the length of "swap-slot-"
 
 (defn get-swap-slot
   "If the shape has a :touched group in the form :swap-slot-<uuid>, get the id."
