@@ -44,7 +44,8 @@
 (def default-headers
   {"Content-Type" "text/event-stream;charset=UTF-8"
    "Cache-Control" "no-cache, no-store, max-age=0, must-revalidate"
-   "Pragma" "no-cache"})
+   "Pragma" "no-cache"
+   "X-Accel-Buffering" "no"})
 
 (defn response
   [handler & {:keys [buf] :or {buf 32} :as opts}]
