@@ -6,7 +6,7 @@
 
 (ns app.util.debug)
 
-(defonce state (atom #{#_:events}))
+(defonce state (atom #{:events}))
 
 (def options
   #{;; Displays the bounding box for the shapes

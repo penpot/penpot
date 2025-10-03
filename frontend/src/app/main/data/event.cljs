@@ -10,8 +10,10 @@
    [app.common.data :as d]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.math :as math]
    [app.common.time :as ct]
    [app.config :as cf]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.util.globals :as g]
    [app.util.http :as http]
@@ -183,10 +185,93 @@
 
     (rx/of nil)))
 
+(defn store-performace-info
+  []
+  (letfn [(micro-benchmark [state]
+            (let [start (js/performance.now)]
+              (doseq [i (range 0 1e6)]
+                (* (math/sin i) (math/sqrt i)))
+              (let [end (js/performance.now)]
+                (assoc-in state [:performance-info :bench-result] (- end start)))))
+
+          (count-shapes [file]
+            (if file
+              (->> file :data :pages-index vals
+                   (map (comp count :objects))
+                   (reduce +))
+              0))
+
+          (count-library-data [files {:keys [id]}]
+            (let [data (get-in files [id :data])]
+              {:components (count (:components data))
+               :colors (count (:colors data))
+               :typographies (count (:typographies data))}))
+
+          (save-file-data []
+            (ptk/reify ::store-performance-info-save-file-data
+              ptk/UpdateEvent
+              (update [_ state]
+                (let [file-id (get state :current-file-id)
+                      file (get-in state [:files file-id])
+                      file-size (count-shapes file)
+
+                      libraries
+                      (-> (refs/select-libraries (:files state) (:id file))
+                          (update-vals (partial count-library-data (:files state))))
+
+                      lib-sizes
+                      (->> libraries
+                           (vals)
+                           (reduce (fn [acc {:keys [components colors typographies]}]
+                                     (-> acc
+                                         (update :components + components)
+                                         (update :colors + colors)
+                                         (update :typographies + typographies)))))]
+                  (-> state
+                      (assoc-in [:performance-info :file-size] file-size)
+                      (assoc-in [:performance-info :library-sizes] lib-sizes)
+                      (assoc-in [:performance-info :file-start-time] (js/performance.now)))))))]
+
+    (ptk/reify ::store-performace-info
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            micro-benchmark
+            (assoc-in [:performance-info :app-start-time] (js/performance.now))))
+
+      ptk/WatchEvent
+      (watch [_ _ stream]
+        (->> stream
+             (rx/filter #(= (ptk/type %) :app.main.data.workspace/all-libraries-resolved))
+             (rx/take 1)
+             (rx/map save-file-data)))
+
+      ptk/EffectEvent
+      (effect [_ _ _]
+        #_(let [observer
+              (js/PerformanceObserver.
+               (fn [list]
+                 (doseq [entry (.getEntries list)]
+                   (case (.-entryType entry)
+                     "event"
+                     (.log js/console "EVENT" (.-duration entry) (.-name entry))
+
+                     "longtask"
+                     (.log js/console "LONGTASK" (.-duration entry))
+
+                     nil))
+
+                 ))]
+          (.observe observer #js {:entryTypes #js ["event" "longtask"]}))))))
+
 (defn initialize
   []
   (when (contains? cf/flags :audit-log)
     (ptk/reify ::initialize
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (rx/of (store-performace-info)))
+
       ptk/EffectEvent
       (effect [_ _ stream]
         (let [session (atom nil)

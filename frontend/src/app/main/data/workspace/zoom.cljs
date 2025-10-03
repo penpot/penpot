@@ -6,6 +6,8 @@
 
 (ns app.main.data.workspace.zoom
   (:require
+   [app.util.perf :as perf]
+   [app.util.timers :as ts]
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
@@ -19,6 +21,17 @@
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
+
+#_(defn measure-time-to-render []
+  (let [start (js/performance.now)]
+    (ts/request-animation-frame
+     (fn []
+       (js/scheduler.postTask
+        (fn []
+          (let [end (js/performance.now)]
+            (println ">>" (- end start)))
+          )
+        #js { "priority" "user-visible"})))))
 
 (defn impl-update-zoom
   [{:keys [vbox] :as local} center zoom]
@@ -38,6 +51,10 @@
    (increase-zoom ::auto))
   ([center]
    (ptk/reify ::increase-zoom
+     ptk/EffectEvent
+     (effect [self _ _]
+       (perf/measure-time-to-render (ptk/type self)))
+
      ptk/UpdateEvent
      (update [_ state]
        (let [center (if (= center ::auto) @ms/mouse-position center)]
@@ -49,6 +66,10 @@
    (decrease-zoom ::auto))
   ([center]
    (ptk/reify ::decrease-zoom
+     ptk/EffectEvent
+     (effect [self _ _]
+       (perf/measure-time-to-render (ptk/type self)))
+
      ptk/UpdateEvent
      (update [_ state]
        (let [center (if (= center ::auto) @ms/mouse-position center)]
@@ -60,6 +81,10 @@
    (set-zoom nil scale))
   ([center scale]
    (ptk/reify ::set-zoom
+     ptk/EffectEvent
+     (effect [self _ _]
+       (perf/measure-time-to-render (ptk/type self)))
+
      ptk/UpdateEvent
      (update [_ state]
        (let [vp (dm/get-in state [:workspace-local :vbox])
