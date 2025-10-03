@@ -105,13 +105,14 @@
       (into frontend-only-features)
       (into backend-only-features)))
 
-(sm/register!
- ^{::sm/type ::features}
- [:schema
-  {:title "FileFeatures"
-   ::smdj/inline true
-   :gen/gen (smg/subseq supported-features)}
-  [::sm/set :string]])
+(def schema:features
+  (sm/register!
+   ^{::sm/type ::features}
+   [:schema
+    {:title "FileFeatures"
+     ::smdj/inline true
+     :gen/gen (smg/subseq supported-features)}
+    [::sm/set :string]]))
 
 (defn- flag->feature
   "Translate a flag to a feature name"
