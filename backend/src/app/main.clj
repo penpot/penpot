@@ -334,7 +334,7 @@
    :app.rpc.doc/routes
    {:app.rpc/methods (ig/ref :app.rpc/methods)}
 
-   :app.rpc/routes
+   ::rpc/routes
    {::rpc/methods     (ig/ref :app.rpc/methods)
     ::db/pool         (ig/ref ::db/pool)
     ::session/manager (ig/ref ::session/manager)
@@ -425,6 +425,9 @@
     ;; NOTE: this dependency is only necessary for proper initialization ordering, props
     ;; module requires the migrations to run before initialize.
     ::migrations (ig/ref :app.migrations/migrations)}
+
+   ::setup/clock
+   {}
 
    :app.loggers.audit.archive-task/handler
    {::setup/props        (ig/ref ::setup/props)

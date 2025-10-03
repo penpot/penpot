@@ -345,12 +345,12 @@
 
 (defn- request-email-change!
   [{:keys [::db/conn] :as cfg} {:keys [profile email] :as params}]
-  (let [token   (tokens/generate (::setup/props cfg)
+  (let [token   (tokens/generate cfg
                                  {:iss :change-email
                                   :exp (ct/in-future "15m")
                                   :profile-id (:id profile)
                                   :email email})
-        ptoken  (tokens/generate (::setup/props cfg)
+        ptoken  (tokens/generate cfg
                                  {:iss :profile-identity
                                   :profile-id (:id profile)
                                   :exp (ct/in-future {:days 30})})]

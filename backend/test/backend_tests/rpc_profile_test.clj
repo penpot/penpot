@@ -514,8 +514,7 @@
           (t/is (= 0 (:call-count @mock))))))))
 
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-1
-  (let [sprops (:app.setup/props th/*system*)
-        itoken (tokens/generate sprops
+  (let [itoken (tokens/generate th/*system*
                                 {:iss :team-invitation
                                  :exp (ct/in-future "48h")
                                  :role :editor
@@ -543,8 +542,7 @@
       (t/is (string? (:invitation-token result))))))
 
 (t/deftest prepare-and-register-with-invitation-and-enabled-registration-2
-  (let [sprops (:app.setup/props th/*system*)
-        itoken (tokens/generate sprops
+  (let [itoken (tokens/generate th/*system*
                                 {:iss :team-invitation
                                  :exp (ct/in-future "48h")
                                  :role :editor
@@ -565,8 +563,7 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-1
   (with-redefs [app.config/flags [:disable-registration]]
-    (let [sprops (:app.setup/props th/*system*)
-          itoken (tokens/generate sprops
+    (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
                                    :role :editor
@@ -586,8 +583,7 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-registration-2
   (with-redefs [app.config/flags [:disable-registration]]
-    (let [sprops (:app.setup/props th/*system*)
-          itoken (tokens/generate sprops
+    (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
                                    :role :editor
@@ -608,8 +604,7 @@
 
 (t/deftest prepare-and-register-with-invitation-and-disabled-login-with-password
   (with-redefs [app.config/flags [:disable-login-with-password]]
-    (let [sprops (:app.setup/props th/*system*)
-          itoken (tokens/generate sprops
+    (let [itoken (tokens/generate th/*system*
                                   {:iss :team-invitation
                                    :exp (ct/in-future "48h")
                                    :role :editor

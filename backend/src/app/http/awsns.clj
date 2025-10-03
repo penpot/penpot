@@ -107,7 +107,7 @@
   [cfg headers]
   (let [tdata (get headers "x-penpot-data")]
     (when-not (str/empty? tdata)
-      (let [result (tokens/verify (::setup/props cfg) {:token tdata :iss :profile-identity})]
+      (let [result (tokens/verify cfg {:token tdata :iss :profile-identity})]
         (:profile-id result)))))
 
 (defn- parse-notification
