@@ -266,7 +266,9 @@
                                :on-remove on-remove
                                :disable-drag disable-drag?
                                :on-focus on-focus
-                               :applied-token fill-token-applied
+                               :applied-token (if (= index 0)
+                                                fill-token-applied
+                                                nil)
                                :on-token-change on-token-change
                                :origin :fill
                                :select-on-focus (not disable-drag?)
