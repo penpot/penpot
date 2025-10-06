@@ -79,6 +79,9 @@ $grayish-red: #bfbfbf;
   --color-accent-select: #{$purple-600-10};
   --color-accent-action: #{$purple-400};
   --color-accent-action-hover: #{$purple-500};
+  --color-accent-ui-base: #{$purple-200};
+  --color-accent-ui-hover: #{$purple-600};
+  --color-accent-ui-active: #{$gray-200};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-200};
@@ -127,6 +130,9 @@ $grayish-red: #bfbfbf;
   --color-accent-select: #{$mint-250-10};
   --color-accent-action: #{$purple-400};
   --color-accent-action-hover: #{$purple-500};
+  --color-accent-ui-base: #{$green-500};
+  --color-accent-ui-hover: #{$mint-250};
+  --color-accent-ui-active: #{$gray-800};
 
   --color-accent-success: #{$green-500};
   --color-background-success: #{$green-950};

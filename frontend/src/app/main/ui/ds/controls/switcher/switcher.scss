@@ -28,7 +28,7 @@ $switcher-transition-duration: 0.2s;
   --switcher-track-outline-offset: 0;
   --switcher-track-width: #{$switcher-md-track-width};
   --switcher-track-height: #{$switcher-md-track-height};
-  --switcher-track-bg: var(--color-background-quaternary);
+  --switcher-track-bg: var(--color-accent-ui-active);
   --switcher-track-opacity: 1;
 
   --switcher-thumb-transform: translateX(0);
@@ -124,11 +124,11 @@ $switcher-transition-duration: 0.2s;
 
 // Checked state
 .switcher-checked {
-  --switcher-track-bg: var(--color-accent-success);
+  --switcher-track-bg: var(--color-accent-ui-base);
   --switcher-thumb-bg: var(--color-static-white);
   --switcher-thumb-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
   &:hover {
-    --switcher-track-bg: var(--color-accent-tertiary);
+    --switcher-track-bg: var(--color-accent-ui-hover);
   }
 }
 
@@ -157,19 +157,3 @@ $switcher-transition-duration: 0.2s;
     transition: none;
   }
 }
-
-// TODO: Create new tier two tokens that represent this element
-// // Light mode color overrides
-// :global(.light) {
-//   .switcher {
-//     --switcher-track-bg: var(--color-background-secondary);
-//   }
-
-//   .switcher-checked {
-//     --switcher-track-bg: var(--color-accent-primary-muted);
-
-//     &:hover {
-//       --switcher-thumb-bg: var(--color-background-default);
-//     }
-//   }
-// }
