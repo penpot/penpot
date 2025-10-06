@@ -577,8 +577,8 @@ __metadata:
     date-fns: "npm:^4.1.0"
     generic-pool: "npm:^3.9.0"
     inflation: "npm:^2.1.0"
-    ioredis: "npm:^5.7.0"
-    playwright: "npm:^1.55.0"
+    ioredis: "npm:^5.8.1"
+    playwright: "npm:^1.55.1"
     raw-body: "npm:^3.0.1"
     source-map-support: "npm:^0.5.21"
     svgo: "penpot/svgo#v3.1"
@@ -761,9 +761,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ioredis@npm:^5.7.0":
-  version: 5.8.0
-  resolution: "ioredis@npm:5.8.0"
+"ioredis@npm:^5.8.1":
+  version: 5.8.1
+  resolution: "ioredis@npm:5.8.1"
   dependencies:
     "@ioredis/commands": "npm:1.4.0"
     cluster-key-slot: "npm:^1.1.0"
@@ -774,7 +774,7 @@ __metadata:
     redis-errors: "npm:^1.2.0"
     redis-parser: "npm:^3.0.0"
     standard-as-callback: "npm:^2.1.0"
-  checksum: 10c0/66fad6283c6d9052b4aa0987d592c1bf6c9471304eb0edf0c9d18024b1b38028adf29c05f1cf114b90f5bdb516576f897a654946e8c29568f404ac33cd3b9d19
+  checksum: 10c0/4ed66444017150da027bce940a24bf726994691e2a7b3aa11d52f8aeb37f258068cc171af4d9c61247acafc28eb086fa8a7c79420b8e8d2907d2f74f39584465
   languageName: node
   linkType: hard
 
@@ -1114,7 +1114,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"playwright@npm:^1.55.0":
+"playwright@npm:^1.55.1":
   version: 1.55.1
   resolution: "playwright@npm:1.55.1"
   dependencies:

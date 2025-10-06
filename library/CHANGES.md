@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.0.10
+
+- Enable variant/v1 feature by default
+- Add variant attrs handling to addComponent method
+
+
 ## 1.0.9
 
 - Fix dependencies declaration on package.json

@@ -320,14 +320,18 @@
      [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
      [:path {:optional true} :string]
      [:main-instance-id ::sm/uuid]
-     [:main-instance-page ::sm/uuid]]]
+     [:main-instance-page ::sm/uuid]
+     ;; Only used by external processes (like Penpot SDK)
+     [:variant-id {:optional true} ::sm/uuid]
+     [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 
    [:mod-component
     [:map {:title "ModComponentChange"}
      [:type [:= :mod-component]]
      [:id ::sm/uuid]
-     [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
      [:name {:optional true} :string]
+     [:path {:optional true} :string]
+     [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
      [:variant-id {:optional true} ::sm/uuid]
      [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 

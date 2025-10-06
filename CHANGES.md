@@ -31,6 +31,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
+
 - New composite token: Typography [Taiga #10200](https://tree.taiga.io/project/penpot/us/10200)
 - Show current Penpot version [Taiga #11603](https://tree.taiga.io/project/penpot/us/11603)
 - Switch several variant copies at the same time [Taiga #11411](https://tree.taiga.io/project/penpot/us/11411)
@@ -46,6 +47,18 @@
 - Fix multi level library dependencies [Taiga #12155](https://tree.taiga.io/project/penpot/issue/12155)
 - Fix component context menu options order in assets tab [Taiga #11941](https://tree.taiga.io/project/penpot/issue/11941)
 - Fix error updating library [Taiga #12218](https://tree.taiga.io/project/penpot/issue/12218)
+
+
+## 2.10.1 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Improve workpace file loading [Github 7366](https://github.com/penpot/penpot/pull/7366)
+
+### :bug: Bugs fixed
+
+- Fix regression with text shapes creation with Plugins API [Taiga #12244](https://tree.taiga.io/project/penpot/issue/12244)
+
 
 ## 2.10.0
 
