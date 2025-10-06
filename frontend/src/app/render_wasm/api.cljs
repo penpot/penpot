@@ -678,6 +678,20 @@
   [grow-type]
   (h/call wasm/internal-module "_set_shape_grow_type" (sr/translate-grow-type grow-type)))
 
+(defn download-as-png []
+  []
+  (let [offset (-> (h/call wasm/internal-module "_download_png")
+                   (mem/->offset-32))
+        heap   (mem/get-heap-u32)
+        length (aget heap offset)
+        data   (mem/slice heap
+                          (+ offset 1)
+                          (* length path.impl/SEGMENT-U32-SIZE))
+        blob   (js/Blob. #js [data] #js {:type "image/png"})
+        url    (js/URL.createObjectURL blob)]
+    (mem/free)
+    (js/window.open url "_blank")))
+
 (defn get-text-dimensions
   ([id]
    (use-shape id)
