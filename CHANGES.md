@@ -31,6 +31,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
+- New composite token: Typography [Taiga #10200](https://tree.taiga.io/project/penpot/us/10200)
 - Show current Penpot version [Taiga #11603](https://tree.taiga.io/project/penpot/us/11603)
 - Switch several variant copies at the same time [Taiga #11411](https://tree.taiga.io/project/penpot/us/11411)
 - Invitations management improvements [Taiga #3479](https://tree.taiga.io/project/penpot/us/3479)
