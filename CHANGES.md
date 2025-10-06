@@ -1,6 +1,13 @@
 # CHANGELOG
 
-## 2.10.0 (Unreleased)
+## 2.10.1 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Improve workpace file loading [Github 7366](https://github.com/penpot/penpot/pull/7366)
+
+
+## 2.10.0
 
 ### :rocket: Epics and highlights
 
