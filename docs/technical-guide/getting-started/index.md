@@ -12,22 +12,32 @@ If you need more context you can look at the <a
 href="https://community.penpot.app/t/self-hosting-penpot-i/2336" target="_blank">post
 about self-hosting</a> in Penpot community.
 
-**There is absolutely no difference between <a
-href="https://design.penpot.app">our SaaS offer</a> for Penpot and your
-self-hosted Penpot platform!**
-
-There are three main options for creating a Penpot instance:
-
-1. Using the platform of our partner <a href="https://elest.io/open-source/penpot" target="_blank">Elestio</a>.
-2. Using <a href="https://docker.com" target="_blank">Docker</a> tool.
-3. Using <a href="https://kubernetes.io/" target="_blank">Kubernetes</a>.
+<strong>The experience stays the same, whether you use
+Penpot <a href="https://design.penpot.app" target="_blank">in the cloud</a>
+or self-hosted.</strong>
 
 <p class="advice">
-The recommended way is to use Elestio, since it's simpler, fully automatic and still greatly flexible.
-Use Docker if you already know the tool, if need full control of the process or have extra requirements
-and do not want to depend on any external provider, or need to do any special customization.
+Docker images are published shortly after the SaaS update:
+<a href="https://community.penpot.app/t/why-do-self-hosted-versions-lag-behind-new-releases/9897" target="_blank">Why do self hosted versions lag behind new releases?</a>
 </p>
+
+These are the main options to configure your Penpot instance:
+
+1. Deploy with [docker compose][2]
+2. Use Kubernetes in its different flavors:
+    - Deploy the [official Helm Chart][3]
+    - Deploy in [Openshift][4]
+    - Deploy in [Rancher][5]
+3. Other official options:
+    - [Elestio][6]
+    - [Truenas][7]
 
 Or you can try [other options][1], offered by Penpot community.
 
 [1]: /technical-guide/getting-started/unofficial-options/
+[2]: /technical-guide/getting-started/docker/
+[3]: /technical-guide/getting-started/kubernetes/
+[4]: /technical-guide/getting-started/kubernetes/#using-openshift%3F
+[5]: /technical-guide/getting-started/kubernetes/#using-rancher%3F
+[6]: /technical-guide/getting-started/elestio/
+[7]: https://apps.truenas.com/catalog/penpot/
