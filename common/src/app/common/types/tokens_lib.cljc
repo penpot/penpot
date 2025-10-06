@@ -352,19 +352,23 @@
 (def check-token-set
   (sm/check-fn schema:token-set :hint "expected valid token set"))
 
+(defn map->token-set
+  [& {:as attrs}]
+  (TokenSet. (:id attrs)
+             (:name attrs)
+             (:description attrs)
+             (:modified-at attrs)
+             (:tokens attrs)))
+
 (defn make-token-set
   [& {:as attrs}]
-  (let [attrs (-> attrs
-                  (update :id #(or % (uuid/next)))
-                  (update :modified-at #(or % (ct/now)))
-                  (update :tokens #(into (d/ordered-map) %))
-                  (update :description d/nilv "")
-                  (check-token-set-attrs))]
-    (TokenSet. (:id attrs)
-               (:name attrs)
-               (:description attrs)
-               (:modified-at attrs)
-               (:tokens attrs))))
+  (-> attrs
+      (update :id #(or % (uuid/next)))
+      (update :modified-at #(or % (ct/now)))
+      (update :tokens #(into (d/ordered-map) %))
+      (update :description d/nilv "")
+      (check-token-set-attrs)
+      (map->token-set)))
 
 (def ^:private set-prefix "S-")
 
@@ -516,10 +520,21 @@
                          [:fn d/ordered-map?]]]}}
    [:ref ::node]])
 
+(defn- not-repeated-ids
+  [sets]
+  ;; TODO: this check will not be necessary after refactoring the internal structure of TokensLib
+  ;; since we'll use a map of sets indexed by id. Thus, it should be removed.
+  (let [ids  (->> (tree-seq d/ordered-map? vals sets)
+                  (filter (partial instance? TokenSet))
+                  (map get-id))
+        ids' (set ids)]
+    (= (count ids) (count ids'))))
+
 (def ^:private schema:token-sets
   [:and {:title "TokenSets"}
    [:map-of :string  schema:token-set-node]
-   [:fn d/ordered-map?]])
+   [:fn d/ordered-map?]
+   [:fn not-repeated-ids]])
 
 (def ^:private check-token-sets
   (sm/check-fn schema:token-sets :hint "expected valid token sets"))
@@ -1355,8 +1370,15 @@ Will return a value that matches this schema:
               data
               (d/oassoc data hidden-theme-name (make-hidden-theme))))))
 
+(defn map->tokens-lib
+  "Make a new instance of TokensLib from a map, but skiping all
+  validation; it is used for create new instances from trusted
+  sources"
+  [& {:keys [sets themes active-themes]}]
+  (TokensLib. sets themes active-themes))
+
 (defn make-tokens-lib
-  "Create an empty or prepopulated tokens library."
+  "Make a new instance of TokensLib from a map and validates the input"
   [& {:keys [sets themes active-themes]}]
   (let [sets          (or sets (d/ordered-map))
         themes        (-> (or themes (d/ordered-map))
@@ -1824,7 +1846,12 @@ Will return a value that matches this schema:
      nil
      decoded-json)))
 
-;; === Serialization handlers for RPC API (transit)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SERIALIZATION (TRANSIT)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Serialization used for communicate data in transit between backend
+;; and the frontend
 
 (t/add-handlers!
  {:id "penpot/tokens-lib"
@@ -1847,18 +1874,49 @@ Will return a value that matches this schema:
   :wfn datafy
   :rfn #(map->Token %)})
 
-;; === Serialization handlers for database (fressian)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; MIGRATIONS HELPERS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn fix-duplicate-token-set-ids
+  "Given an instance of TokensLib fixes it internal sets data sturcture
+  for ensure each set has unique id;
+
+  Specific function for file data migrations"
+  [tokens-lib]
+  (let [seen-ids
+        (volatile! #{})
+
+        migrate-set-node
+        (fn recurse [node]
+          (if (token-set? node)
+            (if (contains? @seen-ids (get-id node))
+              (-> (datafy node)
+                  (assoc :id (uuid/next))
+                  (map->token-set))
+              (do
+                (vswap! seen-ids conj (get-id node))
+                node))
+            (d/update-vals node recurse)))]
+
+    (-> (datafy tokens-lib)
+        (update :sets d/update-vals migrate-set-node)
+        (map->tokens-lib))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SERIALIZATION (FRESIAN)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Serialization used for the internal storage on the file data, it
+;; uses and, space and cpu efficient fresian serialization.
 
 #?(:clj
-   (defn- read-tokens-lib-v1-1
-     "Reads the tokens lib data structure and ensures that hidden
-     theme exists and adds missing ID on themes"
-     [r]
-     (let [sets          (fres/read-object! r)
-           themes        (fres/read-object! r)
-           active-themes (fres/read-object! r)
+   (defn- migrate-to-v1-2
+     "Migrate the TokensLib data structure internals to v1.2 version; it
+     expects input from v1.1 version"
+     [{:keys [themes] :as params}]
 
-           ;; Ensure we have at least a hidden theme
+     (let [;; Ensure we have at least a hidden theme
            themes
            (ensure-hidden-theme themes)
 
@@ -1877,22 +1935,18 @@ Will return a value that matches this schema:
                                        (keys themes)))))
                    themes
                    (keys themes))]
-
-       (->TokensLib sets themes active-themes))))
+       (assoc params :themes themes))))
 
 #?(:clj
-   (defn- read-tokens-lib-v1-2
-     "Reads the tokens lib data structure and add ids to tokens, sets and themes."
-     [r]
-     (let [sets          (fres/read-object! r)
-           themes        (fres/read-object! r)
-           active-themes (fres/read-object! r)
-
-           migrate-token
+   (defn- migrate-to-v1-3
+     "Migrate the TokensLib data structure internals to v1.3 version; it
+  expects input from v1.2 version"
+     [{:keys [sets themes] :as params}]
+     (let [migrate-token
            (fn [token]
              (assoc token :id (uuid/next)))
 
-           migrate-sets-node
+           migrate-set-node
            (fn recurse [node]
              (if (token-set-legacy? node)
                (make-token-set
@@ -1902,7 +1956,7 @@ Will return a value that matches this schema:
                (d/update-vals node recurse)))
 
            sets
-           (d/update-vals sets migrate-sets-node)
+           (d/update-vals sets migrate-set-node)
 
            migrate-theme
            (fn [theme]
@@ -1912,9 +1966,12 @@ Will return a value that matches this schema:
                  (assoc theme
                         :id uuid/zero
                         :external-id "")
-                 (assoc theme                             ;; Rename the :id field to :external-id, and add
-                        :id (or (uuid/parse* (:id theme)) ;; a new :id that is the same as the old if if
-                                (uuid/next))              ;; this is an uuid, else a new uuid is generated.
+                 ;; Rename the :id field to :external-id, and add a
+                 ;; new :id that is the same as the old if if this is an
+                 ;; uuid, else a new uuid is generated.
+                 (assoc theme
+                        :id (or (uuid/parse* (:id theme))
+                                (uuid/next))
                         :external-id (:id theme)))))
 
            migrate-theme-group
@@ -1924,7 +1981,54 @@ Will return a value that matches this schema:
            themes
            (d/update-vals themes migrate-theme-group)]
 
-       (->TokensLib sets themes active-themes))))
+       (assoc params
+              :themes themes
+              :sets sets))))
+
+#?(:clj
+   (defn- migrate-to-v1-4
+     "Migrate the TokensLib data structure internals to v1.2 version; it
+  expects input from v1.3 version"
+     [params]
+     (let [migrate-set-node
+           (fn recurse [node]
+             (if (token-set-legacy? node)
+               (make-token-set node)
+               (d/update-vals node recurse)))]
+
+       (update params :sets d/update-vals migrate-set-node))))
+
+#?(:clj
+   (defn- read-tokens-lib-v1-1
+     "Reads the tokens lib data structure and ensures that hidden
+     theme exists and adds missing ID on themes"
+     [r]
+     (let [sets          (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)]
+
+       (-> {:sets sets
+            :themes themes
+            :active-themes active-themes}
+           (migrate-to-v1-2)
+           (migrate-to-v1-3)
+           (migrate-to-v1-4)
+           (map->tokens-lib)))))
+
+#?(:clj
+   (defn- read-tokens-lib-v1-2
+     "Reads the tokens lib data structure and add ids to tokens, sets and themes."
+     [r]
+     (let [sets          (fres/read-object! r)
+           themes        (fres/read-object! r)
+           active-themes (fres/read-object! r)]
+
+       (-> {:sets sets
+            :themes themes
+            :active-themes active-themes}
+           (migrate-to-v1-3)
+           (migrate-to-v1-4)
+           (map->tokens-lib)))))
 
 #?(:clj
    (defn- read-tokens-lib-v1-3
@@ -1933,18 +2037,13 @@ Will return a value that matches this schema:
      [r]
      (let [sets          (fres/read-object! r)
            themes        (fres/read-object! r)
-           active-themes (fres/read-object! r)
+           active-themes (fres/read-object! r)]
 
-           migrate-sets-node
-           (fn recurse [node]
-             (if (token-set-legacy? node)
-               (make-token-set node)
-               (d/update-vals node recurse)))
-
-           sets
-           (d/update-vals sets migrate-sets-node)]
-
-       (->TokensLib sets themes active-themes))))
+       (-> {:sets sets
+            :themes themes
+            :active-themes active-themes}
+           (migrate-to-v1-4)
+           (map->tokens-lib)))))
 
 #?(:clj
    (defn- write-tokens-lib
