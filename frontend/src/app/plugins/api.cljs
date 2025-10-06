@@ -338,8 +338,9 @@
         :else
         (let [page  (dsh/lookup-page @st/state)
               shape (-> (cts/setup-shape {:type :text :x 0 :y 0 :grow-type :auto-width})
-                        (txt/change-text text)
+                        (update :content txt/change-text text)
                         (assoc :position-data nil))
+
               changes
               (-> (cb/empty-changes)
                   (cb/with-page page)
