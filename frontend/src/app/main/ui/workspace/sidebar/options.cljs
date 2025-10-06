@@ -23,7 +23,7 @@
    [app.main.ui.workspace.sidebar.options.drawing :as drawing]
    [app.main.ui.workspace.sidebar.options.menus.align :refer [align-options*]]
    [app.main.ui.workspace.sidebar.options.menus.bool :refer [bool-options*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu*]]
    [app.main.ui.workspace.sidebar.options.menus.grid-cell :as grid-cell]
    [app.main.ui.workspace.sidebar.options.menus.interactions :refer [interactions-menu]]
    [app.main.ui.workspace.sidebar.options.menus.layout-container :as layout-container]
@@ -89,7 +89,7 @@
   {::mf/private true}
   [{:keys [panel]}]
   (when (= (:type panel) :component-swap)
-    [:& component-menu {:shapes (:shapes panel) :swap-opened? true}]))
+    [:> component-menu* {:shapes (:shapes panel) :is-swap-opened true}]))
 
 (mf/defc design-menu*
   {::mf/private true}

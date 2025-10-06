@@ -34,6 +34,7 @@
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.select :refer [select*]]
@@ -301,7 +302,7 @@
        (mapv (fn [val] {:id val
                         :label (if (str/blank? val) (str "(" (tr "labels.empty") ")") val)}))))
 
-(mf/defc component-variant-main-instance-item*
+(mf/defc component-variant-property*
   [{:keys [pos prop options on-prop-name-blur on-prop-value-change on-reorder]}]
   (let [on-drop
         (mf/use-fn
@@ -312,12 +313,12 @@
 
         [dprops dref]
         (h/use-sortable
-         :data-type "penpot/variant-property-single"
+         :data-type "penpot/variant-property"
          :on-drop on-drop
          :draggable? true
          :data {:from-pos pos})]
 
-    [:div {:class (stl/css-case :variant-item true
+    [:div {:class (stl/css-case :variant-property true
                                 :dnd-over-top (= (:over dprops) :top)
                                 :dnd-over-bot (= (:over dprops) :bot))}
      (when (some? on-reorder)
@@ -341,7 +342,7 @@
                         :max-length ctv/property-max-length
                         :on-change on-prop-value-change}])]]]))
 
-(mf/defc component-variant-main-instance*
+(mf/defc component-variant*
   [{:keys [components shapes data]}]
   (let [component      (first components)
 
@@ -405,19 +406,19 @@
            (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))]
 
     [:*
-     [:& h/sortable-container {}
+     [:> h/sortable-container* {}
       [:div {:class (stl/css :variant-property-list)}
        (for [[pos prop] (map-indexed vector properties)]
-         [:> component-variant-main-instance-item* {:key (str variant-id "-" pos)
-                                                    :pos pos
-                                                    :prop prop
-                                                    :options (get-options (:name prop))
-                                                    :on-prop-name-blur update-property-name
-                                                    :on-prop-value-change (partial update-property-value pos)
-                                                    :on-reorder reorder-properties}])]]
+         [:> component-variant-property* {:key (str variant-id "-" pos)
+                                          :pos pos
+                                          :prop prop
+                                          :options (get-options (:name prop))
+                                          :on-prop-name-blur update-property-name
+                                          :on-prop-value-change (partial update-property-value pos)
+                                          :on-reorder reorder-properties}])]]
 
      (if malformed-msg
-       [:div {:class (stl/css :variant-warning-wrapper)}
+       [:div {:class (stl/css :variant-warning)}
         [:> icon* {:icon-id i/msg-neutral
                    :class (stl/css :variant-warning-darken)}]
         [:div {:class (stl/css :variant-warning-highlight)}
@@ -426,7 +427,7 @@
          (tr "workspace.options.component.variant.malformed.structure.example")]]
 
        (when duplicated-msg
-         [:div {:class (stl/css :variant-warning-wrapper)}
+         [:div {:class (stl/css :variant-warning)}
           [:> icon* {:icon-id i/msg-neutral
                      :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
@@ -506,7 +507,7 @@
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
-      (for [[pos prop] (map vector (range) props-first)]
+      (for [[pos prop] (map-indexed vector props-first)]
         (let [mixed-value? (not-every? #(= (:value prop) (:value (nth % pos))) properties)
               options (cond-> (get-options (:name prop))
                         mixed-value?
@@ -527,7 +528,7 @@
                          :key (str (:value prop) "-" key)}]]]))]
 
      (if (seq malformed-comps)
-       [:div {:class (stl/css :variant-warning-wrapper)}
+       [:div {:class (stl/css :variant-warning)}
         [:> icon* {:icon-id i/msg-neutral
                    :class (stl/css :variant-warning-darken)}]
         [:div {:class (stl/css :variant-warning-highlight)}
@@ -537,7 +538,7 @@
          (tr "workspace.options.component.variant.malformed.locate")]]
 
        (when (seq duplicated-comps)
-         [:div {:class (stl/css :variant-warning-wrapper)}
+         [:div {:class (stl/css :variant-warning)}
           [:> icon* {:icon-id i/msg-neutral
                      :class (stl/css :variant-warning-darken)}]
           [:div {:class (stl/css :variant-warning-highlight)}
@@ -558,43 +559,40 @@
 
         item-ref       (mf/use-ref)
         visible?       (h/use-visible item-ref :once? true)]
-    [:div {:ref item-ref
-           :class (stl/css-case :component-item (not listing-thumbs)
-                                :grid-cell listing-thumbs
-                                :selected (= (:id item) component-id)
-                                :disabled loop)
-           :key (str "swap-item-" (:id item))
-           :on-click on-select}
+    [:button {:ref item-ref
+              :key (str "swap-item-" (:id item))
+              :class (stl/css-case :swap-item-list (not listing-thumbs)
+                                   :swap-item-grid listing-thumbs
+                                   :selected (= (:id item) component-id))
+              :on-click on-select
+              :disabled loop}
      (when visible?
-       [:> cmm/component-item-thumbnail*
-        {:file-id (:file-id item)
-         :class (stl/css :component-img)
-         :root-shape root-shape
-         :component item
-         :container container}])
+       [:> cmm/component-item-thumbnail* {:file-id (:file-id item)
+                                          :class (stl/css :swap-item-thumbnail)
+                                          :root-shape root-shape
+                                          :component item
+                                          :container container}])
      [:span {:title (if is-search (:full-name item) (:name item))
-             :class (stl/css-case :component-name true
-                                  :selected (= (:id item) component-id))}
+             :class (stl/css :swap-item-name)}
       (if is-search (:full-name item) (:name item))]
      (when (ctk/is-variant? item)
-       [:span {:class (stl/css-case :variant-mark-cell listing-thumbs
-                                    :variant-icon true)
+       [:span {:class (stl/css :swap-item-variant-icon)
                :title (tr "workspace.assets.components.num-variants" num-variants)}
         [:> icon* {:icon-id i/variant
                    :size "s"}]])]))
 
-(mf/defc component-group-item*
+(mf/defc component-swap-group-title*
   [{:keys [item on-enter-group]}]
-  (let [group-name (:name item)
+  (let [group-name     (:name item)
         on-group-click #(on-enter-group group-name)]
-    [:div {:class (stl/css :component-group)
+    [:div {:class (stl/css :swap-group)
            :on-click on-group-click
            :title group-name}
 
-     [:span {:class (stl/css :component-group-name)}
+     [:span {:class (stl/css :swap-group-name)}
       (cpn/last-path group-name)]
 
-     [:> icon* {:class (stl/css :component-group-icon)
+     [:> icon* {:class (stl/css :swap-group-icon)
                 :variant "ghost"
                 :icon-id i/arrow-right
                 :size "s"}]]))
@@ -656,7 +654,7 @@
 
         filters             (deref filters*)
 
-        is-search?          (not (str/blank? (:term filters)))
+        search?             (not (str/blank? (:term filters)))
 
         current-library-id  (if (contains? libraries (:file-id filters))
                               (:file-id filters)
@@ -697,15 +695,15 @@
                              (distinct)
                              (filter #(= (cpn/butlast-path %) (:path filters))))
 
-        groups              (when-not is-search?
+        groups              (when-not search?
                               (->> (sort (sequence xform components))
                                    (map (fn [name] {:name name}))))
 
-        components          (if is-search?
+        components          (if search?
                               (filter #(str/includes? (str/lower (:full-name %)) (str/lower (:term filters))) components)
                               (filter #(= (:path %) (:path filters)) components))
 
-        items               (if (or is-search? (:listing-thumbs? filters))
+        items               (if (or search? (:listing-thumbs? filters))
                               (sort-by :full-name components)
                               (->> (concat groups components)
                                    (sort-by :name)))
@@ -721,7 +719,8 @@
         ;; Get the ids of the components that are parents of the shapes, to avoid loops
         parent-components (mapcat find-parent-components shapes)
 
-        libraries-options  (map (fn [library] {:value (:id library) :label (:name library)})
+        libraries-options  (map (fn [library] {:value (:id library)
+                                               :label (:name library)})
                                 (vals libraries))
 
         on-library-change
@@ -749,63 +748,60 @@
         (mf/use-fn
          (fn [style]
            (swap! filters* assoc :listing-thumbs? (= style "grid"))))
-        filter-path-with-dots (->> (:path filters) (cpn/split-path) (cpn/join-path-with-dot))]
 
-    [:div {:class (stl/css :component-swap)}
-     [:div {:class (stl/css :element-set-title)}
+        filter-path-with-dots (->> (:path filters)
+                                   (cpn/split-path)
+                                   (cpn/join-path-with-dot))]
+
+    [:div {:class (stl/css :swap)}
+     [:div {:class (stl/css :swap-title)}
       [:span (tr "workspace.options.component.swap")]]
-     [:div {:class (stl/css :component-swap-content)}
-      [:div {:class (stl/css :fields-wrapper)}
-       [:div {:class (stl/css :search-field)}
-        [:> search-bar* {:on-change on-search-term-change
-                         :on-clear on-search-clear-click
-                         :class (stl/css :search-wrapper)
-                         :id "swap-component-search-filter"
-                         :value (:term filters)
-                         :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
-                         :icon-id i/search}]]
-
-       [:& select {:class (stl/css :select-library)
-                   :default-value current-library-id
+     [:div {:class (stl/css :swap-content)}
+      [:div {:class (stl/css :swap-filters)}
+       [:> search-bar* {:id "swap-component-search-filter"
+                        :icon-id i/search
+                        :value (:term filters)
+                        :placeholder (str (tr "labels.search") " " (get-in libraries [current-library-id :name]))
+                        :on-change on-search-term-change
+                        :on-clear on-search-clear-click}]
+       [:& select {:default-value current-library-id
                    :options libraries-options
                    :on-change on-library-change}]]
 
-      [:div  {:class (stl/css :swap-wrapper)}
-       [:div {:class (stl/css :library-name-wrapper)}
-        [:div {:class (stl/css :library-name)} current-lib-name]
+      [:div  {:class (stl/css :swap-library)}
+       [:div {:class (stl/css :swap-library-title)}
+        [:div {:class (stl/css :swap-library-name)} current-lib-name]
+        [:& radio-buttons {:selected (if (:listing-thumbs? filters) "grid" "list")
+                           :on-change toggle-list-style
+                           :name "swap-listing-style"}
+         [:& radio-button {:icon deprecated-icon/view-as-list
+                           :value "list"
+                           :id "swap-opt-list"}]
+         [:& radio-button {:icon deprecated-icon/flex-grid
+                           :value "grid"
+                           :id "swap-opt-grid"}]]]
 
-        [:div {:class (stl/css :listing-options-wrapper)}
-         [:& radio-buttons {:class (stl/css :listing-options)
-                            :selected (if (:listing-thumbs? filters) "grid" "list")
-                            :on-change toggle-list-style
-                            :name "swap-listing-style"}
-          [:& radio-button {:icon deprecated-icon/view-as-list
-                            :value "list"
-                            :id "swap-opt-list"}]
-          [:& radio-button {:icon deprecated-icon/flex-grid
-                            :value "grid"
-                            :id "swap-opt-grid"}]]]]
-
-       (when-not (or is-search? (str/empty? (:path filters)))
-         [:button {:class (stl/css :component-path)
+       (when-not (or search? (str/empty? (:path filters)))
+         [:button {:class (stl/css :swap-library-back)
                    :on-click on-go-back
                    :title filter-path-with-dots}
           [:> icon* {:icon-id i/arrow-left
                      :size "s"}]
-          [:span {:class (stl/css :path-name)}
+          [:span {:class (stl/css :swap-library-back-name)}
            filter-path-with-dots]])
 
        (when (empty? items)
-         [:div {:class (stl/css :component-list-empty)}
+         [:div {:class (stl/css :swap-library-empty)}
           (tr "workspace.options.component.swap.empty")]) ;;TODO review this empty space
 
        (when (:listing-thumbs? filters)
-         [:div {:class (stl/css :component-list)}
+         [:div
           (for [item groups]
-            [:> component-group-item* {:item item :on-enter-group on-enter-group}])])
+            [:> component-swap-group-title* {:item item
+                                             :on-enter-group on-enter-group}])])
 
-       [:div {:class (stl/css-case :component-grid (:listing-thumbs? filters)
-                                   :component-list (not (:listing-thumbs? filters)))}
+       [:div {:class (stl/css-case :swap-library-grid (:listing-thumbs? filters)
+                                   :swap-library-list (not (:listing-thumbs? filters)))}
         ;; FIXME: This could be in the thousands. We need to think about paginate this
         (for [item items]
           (if (:id item)
@@ -824,34 +820,78 @@
                                         :root-shape root-shape
                                         :container container
                                         :component-id component-id
-                                        :is-search is-search?
+                                        :is-search search?
                                         :listing-thumbs (:listing-thumbs? filters)
                                         :num-variants (count-variants item)}])
 
-            [:> component-group-item* {:item item
-                                       :key (:name item)
-                                       :on-enter-group on-enter-group}]))]]]]))
+            [:> component-swap-group-title* {:item item
+                                             :key (:name item)
+                                             :on-enter-group on-enter-group}]))]]]]))
 
-(mf/defc component-ctx-menu*
-  [{:keys [menu-entries on-close show main-instance]}]
-  (let [do-action
+(mf/defc component-pill*
+  [{:keys [icon text subtext menu-entries disabled on-click]}]
+  (let [menu-open* (mf/use-state false)
+        menu-open? (deref menu-open*)
+
+        menu-entries? (seq menu-entries)
+
+        on-menu-click
+        (mf/use-fn
+         (mf/deps menu-open* menu-open?)
+         (fn [event]
+           (dom/prevent-default event)
+           (dom/stop-propagation event)
+           (reset! menu-open* (not menu-open?))))
+
+        on-menu-close
+        (mf/use-fn
+         (mf/deps menu-open*)
+         #(reset! menu-open* false))
+
+        do-action
         (fn [action event]
           (dom/stop-propagation event)
           (action)
-          (on-close))]
-    [:& dropdown {:show show :on-close on-close}
-     [:ul {:class (stl/css-case :custom-select-dropdown true
-                                :not-main (not main-instance))}
-      (for [{:keys [title action]} menu-entries]
-        (when (some? title)
-          [:li {:key title
-                :class (stl/css :dropdown-element)
-                :on-click (partial do-action action)}
-           [:span {:class (stl/css :dropdown-label)} title]]))]]))
+          (on-menu-close))]
 
-(mf/defc component-menu
-  {::mf/props :obj}
-  [{:keys [shapes swap-opened?]}]
+    [:div {:class (stl/css :pill)}
+     [:button {:class (stl/css-case :pill-btn true
+                                    :with-menu menu-entries?)
+               :data-testid "component-pill-button"
+               :on-click on-click
+               :disabled disabled}
+
+      [:div {:class (stl/css :pill-btn-icon)}
+       [:> icon* {:size "s"
+                  :icon-id icon}]]
+
+      [:div {:class (stl/css :pill-btn-name)}
+       [:div {:class (stl/css :pill-btn-text)}
+        text]
+       (when subtext
+         [:div {:class (stl/css :pill-btn-subtext)}
+          subtext])]]
+
+     (when menu-entries?
+       [:div {:class (stl/css :pill-actions)}
+        [:button {:class (stl/css-case :pill-actions-btn true
+                                       :selected menu-open?)
+                  :on-click on-menu-click}
+         [:> icon* {:icon-id i/menu}]]
+
+        [:& dropdown {:show menu-open?
+                      :on-close on-menu-close}
+         [:ul {:class (stl/css-case :pill-actions-dropdown true
+                                    :extended subtext)}
+          (for [{:keys [title action]} menu-entries]
+            (when (some? title)
+              [:li {:key title
+                    :class (stl/css :pill-actions-dropdown-item)
+                    :on-click (partial do-action action)}
+               [:span title]]))]]])]))
+
+(mf/defc component-menu*
+  [{:keys [shapes is-swap-opened]}]
   (let [current-file-id (mf/use-ctx ctx/current-file-id)
 
         libraries       (mf/deref refs/files)
@@ -862,7 +902,6 @@
                                :menu-open false}))
         state           (deref state*)
         open?           (:show-content state)
-        menu-open?      (:menu-open state)
 
         shapes          (filter ctk/instance-head? shapes)
         multi           (> (count shapes) 1)
@@ -890,18 +929,8 @@
         main-instance?  (ctk/main-instance? shape)
 
         toggle-content
-        (mf/use-fn #(swap! state* update :show-content not))
-
-        on-menu-click
         (mf/use-fn
-         (fn [event]
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (swap! state* update :menu-open not)))
-
-        on-menu-close
-        (mf/use-fn
-         #(swap! state* assoc :menu-open false))
+         #(swap! state* update :show-content not))
 
         on-click-variant-title-help
         (mf/use-fn
@@ -958,14 +987,13 @@
            (swap! state* update :render inc)))
 
         menu-entries (cmm/generate-components-menu-entries shapes {:for-design-tab? true})
-        show-menu?   (seq menu-entries)
         path         (->> component (:path) (cpn/split-path) (cpn/join-path-with-dot))]
 
     (when (seq shapes)
-      [:div {:class (stl/css :element-set)}
-       [:div {:class (stl/css :element-title)}
-        (if swap-opened?
-          [:button {:class (stl/css :title-back)
+      [:div {:class (stl/css :component-section)}
+       [:div {:class (stl/css :component-title)}
+        (if is-swap-opened
+          [:button {:class (stl/css :component-title-swap)
                     :on-click on-component-back}
            [:> icon* {:icon-id i/arrow-left
                       :size "s"}]
@@ -976,9 +1004,9 @@
                            :collapsed    (not open?)
                            :on-collapsed toggle-content
                            :title        (tr "workspace.options.component")
-                           :class        (stl/css :title-spacing-component)
-                           :title-class  (stl/css :title-bar-variant)}
-            [:span {:class (stl/css :copy-text)}
+                           :class        (stl/css :component-title-bar)
+                           :title-class  (stl/css :component-title-bar-title)}
+            [:span {:class (stl/css :component-title-bar-type)}
              (if main-instance?
                (if is-variant?
                  (tr "labels.variant")
@@ -998,82 +1026,56 @@
                                :icon i/variant}])])]
 
        (when open?
-         [:div {:class (stl/css :element-content)}
-          [:div {:class (stl/css :component-line)}
-
-           [:div {:class (stl/css :component-wrapper)}
-
-            [:button {:class (stl/css-case :component-name-wrapper true
-                                           :without-menu (not show-menu?))
-                      :data-testid "swap-component-btn"
-                      :on-click open-component-panel
-                      :disabled (or swap-opened? (not can-swap?))}
-
-             [:div {:class (stl/css :component-icon)}
-              [:> icon* {:size "s"
-                         :icon-id (if main-instance?
-                                    (if is-variant? i/variant i/component)
-                                    i/component-copy)}]]
-
-             [:div {:class (stl/css :component-name-outside)}
-              [:div {:class (stl/css :component-name)}
-               [:span {:class (stl/css :component-name-inside)}
-                (if (and multi (not same-variant?))
-                  (tr "settings.multiple")
-                  (cpn/last-path shape-name))]]
-
-              (when (and can-swap? (or (not multi) same-variant?))
-                [:div {:class (stl/css :component-parent-name)}
-                 (if (:deleted component)
-                   (tr "workspace.options.component.unlinked")
-                   (cpn/merge-path-item-with-dot path (:name component)))])]]
-
-            (when show-menu?
-              [:div {:class (stl/css :component-actions)}
-               [:button {:class (stl/css-case :component-menu-btn true
-                                              :selected menu-open?)
-                         :on-click on-menu-click}
-                [:> icon* {:icon-id i/menu}]]
-
-               [:> component-ctx-menu* {:show menu-open?
-                                        :on-close on-menu-close
-                                        :menu-entries menu-entries
-                                        :main-instance main-instance?}]])]
-
+         [:div {:class (stl/css :component-content)}
+          [:div {:class (stl/css :component-pill)}
+           [:> component-pill* {:icon (if main-instance?
+                                        (if is-variant? i/variant i/component)
+                                        i/component-copy)
+                                :text (if (and multi (not same-variant?))
+                                        (tr "settings.multiple")
+                                        (cpn/last-path shape-name))
+                                :subtext (when (and can-swap? (or (not multi) same-variant?))
+                                           (if (:deleted component)
+                                             (tr "workspace.options.component.unlinked")
+                                             (cpn/merge-path-item-with-dot path (:name component))))
+                                :on-click open-component-panel
+                                :disabled (or is-swap-opened (not can-swap?))
+                                :menu-entries menu-entries}]
            (when (and is-variant? main-instance?)
              [:> icon-button* {:variant "ghost"
                                :aria-label (tr "workspace.shape.menu.add-variant-property")
                                :on-click add-new-property
                                :icon i/add}])]
 
-          (when swap-opened?
+          (when is-swap-opened
             [:> component-swap* {:shapes copies}])
 
           (when (and is-variant?
                      (not main-instance?)
                      (not (:deleted component))
-                     (not swap-opened?)
+                     (not is-swap-opened)
                      (or (not multi) same-variant?))
             [:> component-variant-copy* {:current-file-id current-file-id
                                          :components components
                                          :shapes shapes
                                          :component-file-data data}])
 
-          (when (and is-variant? main-instance? same-variant? (not swap-opened?))
-            [:> component-variant-main-instance* {:components components
-                                                  :shapes shapes
-                                                  :data data}])
+          (when (and is-variant? main-instance? same-variant? (not is-swap-opened))
+            [:> component-variant* {:components components
+                                    :shapes shapes
+                                    :data data}])
 
-          (when (and (not swap-opened?) (not multi))
+          (when (and (not is-swap-opened) (not multi))
             [:> component-annotation* {:id id
                                        :shape shape
                                        :component component
                                        :rerender-fn rerender-fn}])
 
           (when (and multi all-main? (not any-variant?))
-            [:button {:class (stl/css :combine-variant-button)
-                      :on-click on-combine-as-variants}
-             [:span (tr "workspace.shape.menu.combine-as-variants")]])
+            [:> button* {:variant "secondary"
+                         :class (stl/css :component-combine)
+                         :on-click on-combine-as-variants}
+             (tr "workspace.shape.menu.combine-as-variants")])
 
           (when (dbg/enabled? :display-touched)
             [:div ":touched " (str (:touched shape))])])])))
@@ -1085,7 +1087,7 @@
       (into (remove empty?) v)
       (into (filter empty?) v)))
 
-(mf/defc variant-item*
+(mf/defc component-variant-main-property*
   [{:keys [pos property is-remove-disabled on-remove on-blur on-reorder]}]
   (let [values (->> (:value property)
                     (move-empty-items-to-end)
@@ -1101,12 +1103,12 @@
 
         [dprops dref]
         (h/use-sortable
-         :data-type "penpot/variant-property"
+         :data-type "penpot/variant-main-property"
          :on-drop on-drop
          :draggable? true
          :data {:from-pos pos})]
 
-    [:div {:class (stl/css-case :variant-item true
+    [:div {:class (stl/css-case :variant-property true
                                 :dnd-over-top (= (:over dprops) :top)
                                 :dnd-over-bot (= (:over dprops) :bot))}
      (when (some? on-reorder)
@@ -1128,7 +1130,7 @@
                         :on-click on-remove
                         :disabled is-remove-disabled}]]]))
 
-(mf/defc variant-menu*
+(mf/defc component-variant-main*
   [{:keys [shapes]}]
   (let [multi?             (> (count shapes) 1)
 
@@ -1163,9 +1165,6 @@
         open*              (mf/use-state true)
         open?              (deref open*)
 
-        menu-open*         (mf/use-state false)
-        menu-open?         (deref menu-open*)
-
         show-in-assets-panel
         (mf/use-fn
          (mf/deps variants)
@@ -1197,19 +1196,6 @@
         toggle-content
         (mf/use-fn
          #(swap! open* not))
-
-        on-menu-click
-        (mf/use-fn
-         (mf/deps menu-open* menu-open?)
-         (fn [event]
-           (dom/prevent-default event)
-           (dom/stop-propagation event)
-           (reset! menu-open* (not menu-open?))))
-
-        on-menu-close
-        (mf/use-fn
-         (mf/deps menu-open*)
-         #(reset! menu-open* false))
 
         on-click-variant-title-help
         (mf/use-fn
@@ -1257,81 +1243,56 @@
          #(st/emit! (dw/select-shapes (into (d/ordered-set) duplicated-ids))))]
 
     (when (seq shapes)
-      [:div {:class (stl/css :element-set)}
-       [:div {:class (stl/css :element-title)}
+      [:div {:class (stl/css :component-section)}
+       [:div {:class (stl/css :component-title)}
 
         [:*
          [:> title-bar* {:collapsable  true
                          :collapsed    (not open?)
                          :on-collapsed toggle-content
                          :title        (tr "workspace.options.component")
-                         :class        (stl/css :title-spacing-component)
-                         :title-class  (stl/css :title-bar-variant)}
-          [:span {:class (stl/css :copy-text)}
+                         :class        (stl/css :component-title-bar)
+                         :title-class  (stl/css :component-title-bar-title)}
+          [:span {:class (stl/css :component-title-bar-type)}
            (tr "workspace.options.component.main")]]
 
-         [:div {:class (stl/css :title-actions)}
-          [:> icon-button* {:variant "ghost"
-                            :aria-label (tr "workspace.options.component.variants-help-modal.title")
-                            :on-click on-click-variant-title-help
-                            :icon i/help}]
-          [:> icon-button* {:variant "ghost"
-                            :aria-label (tr "workspace.shape.menu.add-variant")
-                            :on-click (partial create-variant "workspace:button-design-tab-component")
-                            :icon i/variant}]]]]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.options.component.variants-help-modal.title")
+                           :on-click on-click-variant-title-help
+                           :icon i/help}]
+         [:> icon-button* {:variant "ghost"
+                           :aria-label (tr "workspace.shape.menu.add-variant")
+                           :on-click (partial create-variant "workspace:button-design-tab-component")
+                           :icon i/variant}]]]
 
        (when open?
-         [:div {:class (stl/css :element-content)}
-          [:div {:class (stl/css :component-line)}
-
-           [:div {:class (stl/css :component-wrapper)}
-
-            [:button {:class (stl/css :component-name-wrapper)
-                      :disabled true}
-
-             [:div {:class (stl/css :component-icon)}
-              [:> icon* {:size "s"
-                         :icon-id i/component}]]
-
-             [:div {:class (stl/css :component-name-outside)}
-              [:div {:class (stl/css :component-name)}
-               [:span {:class (stl/css :component-name-inside)}
-                (if multi?
-                  (tr "settings.multiple")
-                  (cpn/last-path shape-name))]]]]
-
-            (when-not multi?
-              [:div {:class (stl/css :component-actions)}
-
-               [:button {:class (stl/css-case :component-menu-btn true
-                                              :selected menu-open?)
-                         :on-click on-menu-click}
-                [:> icon* {:icon-id i/menu}]]
-
-               [:> component-ctx-menu* {:show menu-open?
-                                        :on-close on-menu-close
-                                        :menu-entries menu-entries
-                                        :main-instance true}]])]
-
+         [:div {:class (stl/css :component-content)}
+          [:div {:class (stl/css :component-pill)}
+           [:> component-pill* {:icon i/component
+                                :text (if multi?
+                                        (tr "settings.multiple")
+                                        (cpn/last-path shape-name))
+                                :disabled true
+                                :menu-entries menu-entries}]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.shape.menu.add-variant-property")
                              :on-click (partial add-new-property "workspace:button-design-tab-component")
                              :icon i/add}]]
 
           (when-not multi?
-            [:& h/sortable-container {}
+            [:> h/sortable-container* {}
              [:div {:class (stl/css :variant-property-list)}
               (for [[pos property] (map-indexed vector properties)]
-                [:> variant-item* {:key (str (:id shape) pos)
-                                   :pos pos
-                                   :property property
-                                   :is-remove-disabled single-property?
-                                   :on-remove remove-property
-                                   :on-blur update-property-name
-                                   :on-reorder reorder-properties}])]])
+                [:> component-variant-main-property* {:key (str (:id shape) pos)
+                                                      :pos pos
+                                                      :property property
+                                                      :is-remove-disabled single-property?
+                                                      :on-remove remove-property
+                                                      :on-blur update-property-name
+                                                      :on-reorder reorder-properties}])]])
 
           (if malformed?
-            [:div {:class (stl/css :variant-warning-wrapper)}
+            [:div {:class (stl/css :variant-warning)}
              [:> icon* {:icon-id i/msg-neutral
                         :class (stl/css :variant-warning-darken)}]
              [:div {:class (stl/css :variant-warning-highlight)}
@@ -1341,7 +1302,7 @@
               (tr "workspace.options.component.variant.malformed.group.locate")]]
 
             (when duplicated?
-              [:div {:class (stl/css :variant-warning-wrapper)}
+              [:div {:class (stl/css :variant-warning)}
                [:> icon* {:icon-id i/msg-neutral
                           :class (stl/css :variant-warning-darken)}]
                [:div {:class (stl/css :variant-warning-highlight)}

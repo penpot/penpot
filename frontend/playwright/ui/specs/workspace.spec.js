@@ -271,7 +271,7 @@ test("Bug 9066 - Problem with grid layout", async ({ page }) => {
   await workspacePage.clickToggableLayer("Group");
   await page.getByText("A", { exact: true }).click();
 
-  await workspacePage.rightSidebar.getByTestId("swap-component-btn").click();
+  await workspacePage.rightSidebar.getByTestId("component-pill-button").click();
 
   await page.getByTitle("C", { exact: true }).click();
 

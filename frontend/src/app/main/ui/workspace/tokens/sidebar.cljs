@@ -51,7 +51,7 @@
       (when-not token-set-new-path
         [:> tsetslist/inline-add-button*])
 
-      [:> h/sortable-container {}
+      [:> h/sortable-container* {}
        [:> tsets/sets-list*
         {:tokens-lib tokens-lib
          :new-path token-set-new-path
