@@ -35,7 +35,7 @@
 
 (defn add-component
   [fdata {:keys [id name path main-instance-id main-instance-page annotation variant-id variant-properties]}]
-  (let [fdata          (update fdata :components assoc id (touch {:id id :name name :path path}))]
+  (let [fdata (update fdata :components assoc id (touch {:id id :name name :path path}))]
     (cond-> (update-in fdata [:components id] assoc :main-instance-id main-instance-id :main-instance-page main-instance-page)
       annotation (update-in [:components id] assoc :annotation annotation)
       variant-id (update-in [:components id] assoc :variant-id variant-id)
@@ -83,9 +83,11 @@
 
                                          (nil? variant-properties)
                                          (dissoc :variant-properties))
+
+                              ;; The set of properties that doesn't mark a component as touched
                               diff     (set/difference
                                         (ctk/diff-components component new-comp)
-                                        #{:annotation :modified-at :variant-id :variant-properties})] ;; The set of properties that doesn't mark a component as touched
+                                        #{:annotation :modified-at :variant-id :variant-properties})]
 
                           (if (empty? diff)
                             new-comp
