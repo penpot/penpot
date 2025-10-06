@@ -932,10 +932,25 @@
     {:label "color"
      :placeholder "color"}))
 
-(mf/defc box-shadow-inputs*
-  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled]}]
+(mf/defc box-shadow-input*
+  [{:keys [default-value label placeholder shadow shadow-idx input-type on-update-value]}]
+  (let [on-change
+        (mf/use-fn
+         (mf/deps shadow-idx input-type on-update-value)
+         (fn [e]
+           (-> (obj/set! e "tokenTypeAtIndex" [shadow-idx input-type])
+               (on-update-value))))]
+    [:div {:class (stl/css :input-row)}
+     [:> input-token*
+      {:aria-label label
+       :placeholder placeholder
+       :default-value default-value
+       :on-change on-change}]]))
+
+(mf/defc box-shadow-input-fields*
+  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value]}]
   (let [on-remove-shadow
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shadow-idx on-remove-shadow)
          #(on-remove-shadow shadow-idx))]
     [:div
@@ -949,68 +964,73 @@
                        :disabled is-remove-disabled
                        ;; TODO l10n
                        :aria-label "Remove shadow"}]
-     (for [[k {:keys [label placeholder]}] (shadow-inputs)]
-       [:div {:key (str k)
-              :class (stl/css :input-row)}
-        [:> input-token*
-         {:aria-label label
-          :placeholder placeholder
-          :default-value (get shadow k)}]])]))
+     (for [[input-type {:keys [label placeholder]}] (shadow-inputs)]
+       [:> box-shadow-input*
+        {:key (str input-type shadow-idx)
+         :input-type input-type
+         :label label
+         :placeholder placeholder
+         :shadow-idx shadow-idx
+         :default-value (get shadow input-type)
+         :on-update-value on-update-value}])]))
 
 (mf/defc box-shadow-value-inputs*
-  [{:keys [default-value on-blur on-update-value token-resolve-result]}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result on-update-value]}]
   (let [shadows* (mf/use-state (or default-value [{}]))
         shadows (deref shadows*)
         shadows-count (count shadows)
 
         on-add-shadow
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shadows)
          #(swap! shadows* conj {}))
 
         on-remove-shadow
-        (mf/use-callback
+        (mf/use-fn
          (mf/deps shadows)
          (fn [idx]
            (swap! shadows* d/remove-at-index idx)))
 
         #_#_errors-by-key (sd/collect-typography-errors token-resolve-result)]
-    [:div
-     [:div {:class (stl/css :nested-input-row)}
-      (for [[shadow-idx shadow] (d/enumerate shadows)
-            :let [is-remove-disabled (= shadows-count 1)
-                  key (str shadow-idx shadows-count)]]
-        [:div {:key key
-               :class (stl/css :nested-input-row)}
-         [:> box-shadow-inputs* {:is-remove-disabled is-remove-disabled
-                                 :shadow-idx shadow-idx
-                                 :on-add-shadow on-add-shadow
-                                 :on-remove-shadow on-remove-shadow
-                                 :shadow shadow}]])]]))
+    (js/console.log "default-value" default-value)
+    [:div {:class (stl/css :nested-input-row)}
+
+     (for [[shadow-idx shadow] (d/enumerate shadows)
+           :let [is-remove-disabled (= shadows-count 1)
+                 key (str shadows-count shadow-idx)]]
+       [:div {:key key
+              :class (stl/css :nested-input-row)}
+        [:> box-shadow-input-fields*
+         {:is-remove-disabled is-remove-disabled
+          :shadow-idx shadow-idx
+          :on-add-shadow on-add-shadow
+          :on-remove-shadow on-remove-shadow
+          :shadow shadow
+          :on-update-value on-update-value}]])]))
 
 (mf/defc box-shadow-form*
   [{:keys [token] :rest props}]
   (let [on-get-token-value
         (mf/use-callback
          (fn [e prev-composite-value]
-           (let [token-type-at-index (obj/get e "tokenTypeAtIndex")
+           (let [[idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
                  input-value (dom/get-target-val e)
                  reference-value-input? (not token-type-at-index)]
              (cond
                reference-value-input? input-value
 
-               (empty? input-value) (d/dissoc-in prev-composite-value token-type-at-index)
+               (empty? input-value) (update prev-composite-value idx dissoc token-type)
                :else (assoc-in prev-composite-value token-type-at-index input-value)))))
 
         update-composite-backup-value
         (mf/use-callback
          (fn [prev-composite-value e]
-           (let [token-type-at-index (obj/get e "tokenTypeAtIndex")
+           (let [[idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
                  token-value (dom/get-target-val e)]
              (if (seq token-value)
-               (assoc-in prev-composite-value token-type-at-index token-value)
+               (assoc-in (or prev-composite-value []) token-type-at-index token-value)
                ;; Remove empty values so they don't retrigger validation when switching tabs
-               (d/dissoc-in prev-composite-value token-type-at-index)))))]
+               (update prev-composite-value idx dissoc token-type)))))]
     [:> composite-form*
      (mf/spread-props props {:token token
                              :composite-tab box-shadow-value-inputs*
