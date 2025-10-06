@@ -200,7 +200,8 @@
     "layout/grid"
     "components/v2"
     "plugins/runtime"
-    "design-tokens/v1"})
+    "design-tokens/v1"
+    "variants/v1"})
 
 ;; WORKAROUND: the same as features
 (def available-migrations
