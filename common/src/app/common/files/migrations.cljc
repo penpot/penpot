@@ -33,6 +33,7 @@
    [app.common.types.shape.shadow :as ctss]
    [app.common.types.shape.text :as ctst]
    [app.common.types.text :as types.text]
+   [app.common.types.tokens-lib :as types.tokens-lib]
    [app.common.uuid :as uuid]
    [clojure.set :as set]
    [cuerdas.core :as str]))
@@ -1612,6 +1613,10 @@
           (update component :path #(d/nilv % "")))]
     (d/update-when data :components d/update-vals update-component)))
 
+(defmethod migrate-data "0014-fix-tokens-lib-duplicate-ids"
+  [data _]
+  (update data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1681,4 +1686,5 @@
          "0010-fix-swap-slots-pointing-non-existent-shapes"
          "0011-fix-invalid-text-touched-flags"
          "0012-fix-position-data"
-         "0013-fix-component-path"]))
+         "0013-fix-component-path"
+         "0014-fix-tokens-lib-duplicate-ids"]))
