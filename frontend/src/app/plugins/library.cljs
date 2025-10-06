@@ -665,7 +665,6 @@
        (ev/event {::ev/name "add-new-variant" ::ev/origin "plugin:add-variant"})
        (dwv/add-new-variant id)))
 
-
     :addProperty
     (fn []
       (st/emit!
@@ -674,15 +673,24 @@
 
     :removeProperty
     (fn [pos]
-      (st/emit!
-       (ev/event {::ev/name "remove-property" ::ev/origin "plugin:remove-property"})
-       (dwv/remove-property id pos)))
+      (if (not (nat-int? pos))
+        (u/display-not-valid :pos pos)
+        (st/emit!
+         (ev/event {::ev/name "remove-property" ::ev/origin "plugin:remove-property"})
+         (dwv/remove-property id pos))))
 
     :renameProperty
     (fn [pos name]
-      (st/emit!
-       (dwv/update-property-name id pos name {:trigger "plugin:rename-property"})))))
+      (cond
+        (not (nat-int? pos))
+        (u/display-not-valid :pos pos)
 
+        (not (string? name))
+        (u/display-not-valid :name name)
+
+        :else
+        (st/emit!
+         (dwv/update-property-name id pos name {:trigger "plugin:rename-property"}))))))
 
 (set! shape/variant-proxy variant-proxy)
 
@@ -891,9 +899,17 @@
 
     :setVariantProperty
     (fn [pos value]
-      (st/emit!
-       (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
-       (dwv/update-property-value id pos value)))))
+      (cond
+        (not (nat-int? pos))
+        (u/display-not-valid :pos pos)
+
+        (not (string? name))
+        (u/display-not-valid :name name)
+
+        :else
+        (st/emit!
+         (ev/event {::ev/name "variant-edit-property-value" ::ev/origin "plugin:edit-property-value"})
+         (dwv/update-property-value id pos value))))))
 
 (defn library-proxy? [p]
   (obj/type-of? p "LibraryProxy"))

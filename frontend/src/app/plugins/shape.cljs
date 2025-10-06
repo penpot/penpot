@@ -1268,21 +1268,31 @@
 
            :switchVariant
            (fn [pos value]
-             (let [shape     (u/locate-shape file-id page-id id)
-                   component (u/locate-library-component file-id (:component-id shape))]
-               (when  (and component (ctk/is-variant? component))
-                 (st/emit! (dwv/variants-switch {:shapes [shape] :pos pos :val value})))))
+             (cond
+               (not (nat-int? pos))
+               (u/display-not-valid :pos pos)
+
+               (not (string? value))
+               (u/display-not-valid :value value)
+
+               :else
+               (let [shape     (u/locate-shape file-id page-id id)
+                     component (u/locate-library-component file-id (:component-id shape))]
+                 (when  (and component (ctk/is-variant? component))
+                   (st/emit! (dwv/variants-switch {:shapes [shape] :pos pos :val value}))))))
 
            :combineAsVariants
            (fn [ids]
-             (let [shape     (u/locate-shape file-id page-id id)
-                   component (u/locate-library-component file-id (:component-id shape))
-                   ids (->> ids
-                            (map uuid/uuid)
-                            (into #{id}))]
-               (when  (and component (not (ctk/is-variant? component)))
-                 (st/emit!
-                  (dwv/combine-as-variants ids {:trigger "plugin:combine-as-variants"}))))))
+             (if (or (not (seq ids)) (not (every? uuid/parse* ids)))
+               (u/display-not-valid :ids ids)
+               (let [shape     (u/locate-shape file-id page-id id)
+                     component (u/locate-library-component file-id (:component-id shape))
+                     ids (->> ids
+                              (map uuid/uuid)
+                              (into #{id}))]
+                 (when  (and component (not (ctk/is-variant? component)))
+                   (st/emit!
+                    (dwv/combine-as-variants ids {:trigger "plugin:combine-as-variants"})))))))
 
          (cond-> (or (cfh/frame-shape? data) (cfh/group-shape? data) (cfh/svg-raw-shape? data) (cfh/bool-shape? data))
            (crc/add-properties!
@@ -1400,7 +1410,6 @@
 
                        :else
                        (st/emit! (dwsl/update-layout #{id} {:layout-item-v-sizing value})))))}
-
 
                 {:name "variants"
                  :enumerable false
