@@ -48,6 +48,7 @@
 - Fix component context menu options order in assets tab [Taiga #11941](https://tree.taiga.io/project/penpot/issue/11941)
 - Fix error updating library [Taiga #12218](https://tree.taiga.io/project/penpot/issue/12218)
 - Fix Restoring a variant in another file makes it overlap the existing variant [Taiga #12049](https://tree.taiga.io/project/penpot/issue/12049)
+- Fix auto-width changes to fixed when switching variants [Taiga #12172](https://tree.taiga.io/project/penpot/issue/12172)
 
 
 ## 2.10.1 (Unreleased)

@@ -2029,9 +2029,13 @@
               reset-pos-data? (and
                                (not skip-operations?)
                                (cfh/text-shape? previous-shape)
-                               (= attr :position-data)
+                               (or (= attr :position-data) (= attr :selrect))
                                (not= (:position-data previous-shape) (:position-data current-shape))
                                (touched :geometry-group))
+
+              skip-operations? (or skip-operations?
+                                   ;; If we are going to reset the position data, skip the selrect attr
+                                   (and reset-pos-data? (= attr :selrect)))
 
               attr-val
               (when-not skip-operations?
