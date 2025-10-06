@@ -983,7 +983,7 @@
          :on-update-value on-update-value}])]))
 
 (mf/defc box-shadow-value-inputs*
-  [{:keys [default-value on-blur on-update-value token-resolve-result on-update-value update-backup-state]}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result update-backup-state]}]
   (let [shadows* (mf/use-state (or default-value [{}]))
         shadows (deref shadows*)
         shadows-count (count shadows)

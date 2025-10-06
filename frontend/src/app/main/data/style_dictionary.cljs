@@ -324,11 +324,6 @@
 (defn collect-typography-errors [token]
   (group-by :typography-key (:errors token)))
 
-(defn collect-shadow-errors [token shadow-index]
-  (group-by :box-shadow-key
-            (filter #(= (:shadow-index %) shadow-index)
-                    (:errors token))))
-
 (defn- parse-sd-token-box-shadow-value
   "Parses box-shadow value and validates it."
   [value]
@@ -343,6 +338,11 @@
     (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
 
     :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}))
+
+(defn collect-shadow-errors [token shadow-index]
+  (group-by :box-shadow-key
+            (filter #(= (:shadow-index %) shadow-index)
+                    (:errors token))))
 
 (defn process-sd-tokens
   "Converts a StyleDictionary dictionary with resolved tokens (aka `sd-tokens`) back to clojure.
