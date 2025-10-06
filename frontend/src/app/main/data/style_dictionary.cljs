@@ -324,6 +324,7 @@
 (defn collect-typography-errors [token]
   (group-by :typography-key (:errors token)))
 
+
 (defn- parse-sd-token-box-shadow-value
   "Parses box-shadow value and validates it."
   [value]
@@ -332,7 +333,7 @@
     (string? value) {:value value}
 
     ;; Array of shadows
-    (sequential? value) {:value value}
+    (js/Array.isArray value) (-> {:value (js->clj value :keywordize-keys true)})
 
     ;; Empty value
     (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}

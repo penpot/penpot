@@ -232,6 +232,21 @@
                             check-typography-token-self-reference])
         (default-validate-token))))
 
+(defn validate-box-shadow-token
+  [{:keys [token-value] :as props}]
+  (cond
+    ;; Entering form without a value - show no error just resolve nil
+    (nil? token-value) (rx/of nil)
+    ;; Validate refrence string
+    (cto/typography-composite-token-reference? token-value) (default-validate-token props)
+    ;; Validate composite token
+    :else
+    (-> props
+        (update :token-value (fn [v] (or v [])))
+        (assoc :validators [#_check-empty-typography-token
+                            #_check-typography-token-self-reference])
+        (default-validate-token))))
+
 (defn use-debonced-resolve-callback
   "Resolves a token values using `StyleDictionary`.
    This function is debounced as the resolving might be an expensive calculation.
@@ -245,7 +260,10 @@
          (fn [value]
            (let [timeout-id (js/Symbol)
                  ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
-                 timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)]
+                 timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)
+                 callback (fn [x]
+                            (js/console.log "x" x)
+                            (callback x))]
              (mf/set-ref-val! timeout-id-ref timeout-id)
              (js/setTimeout
               (fn []
@@ -1054,7 +1072,7 @@
                              :reference-icon i/text-typography
                              :is-reference-fn cto/typography-composite-token-reference?
                              :title "Box shadows"
-                             :validate-token validate-typography-token
+                             :validate-token validate-box-shadow-token
                              :on-get-token-value on-get-token-value
                              :update-composite-backup-value update-composite-backup-value})]))
 
