@@ -158,7 +158,8 @@
    :enable-component-thumbnails
    :enable-render-wasm-dpr
    :enable-token-units
-   :enable-token-typography-types])
+   :enable-token-typography-types
+   :enable-feature-fdata-objects-map])
 
 (defn parse
   [& flags]

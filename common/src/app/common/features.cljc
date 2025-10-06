@@ -67,11 +67,6 @@
     "design-tokens/v1"
     "variants/v1"})
 
-;; A set of features that should not be propagated to team on creating
-;; or modifying a file
-(def no-team-inheritable-features
-  #{"fdata/path-data"})
-
 ;; A set of features which only affects on frontend and can be enabled
 ;; and disabled freely by the user any time. This features does not
 ;; persist on file features field but can be permanently enabled on
@@ -85,8 +80,14 @@
 ;; Features that are mainly backend only or there are a proper
 ;; fallback when frontend reports no support for it
 (def backend-only-features
-  #{"fdata/objects-map"
-    "fdata/pointer-map"})
+  #{"fdata/pointer-map"
+    "fdata/objects-map"})
+
+;; A set of features that should not be propagated to team on creating
+;; or modifying a file or creating or modifying a team
+(def no-team-inheritable-features
+  #{"fdata/path-data"
+    "fdata/shape-data-type"})
 
 ;; This is a set of features that does not require an explicit
 ;; migration like components/v2 or the migration is not mandatory to
@@ -221,8 +222,6 @@
                 :feature not-supported
                 :hint (str/ffmt "enabled feature '%' not present in file (missing migration)"
                                 not-supported)))
-
-    (check-supported-features! file-features)
 
     ;; Components v1 is deprecated
     (when-not (contains? file-features "components/v2")

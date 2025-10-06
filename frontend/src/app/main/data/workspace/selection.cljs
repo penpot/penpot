@@ -344,7 +344,7 @@
 
          (if (some? selrect)
            (->> (ask-worker
-                 {:cmd :selection/query
+                 {:cmd :index/query-selection
                   :page-id page-id
                   :rect selrect
                   :include-frames? true

@@ -14,8 +14,9 @@
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
 
-;; This event will update the file so the texts with non existing custom fonts try to be fixed.
-;; This can happen when:
+;; This event will update the file so the texts with non existing
+;; custom fonts try to be fixed. This can happen when:
+;;
 ;; - Exporting/importing files to different teams or penpot instances
 ;; - Moving files from one team to another in the same instance
 ;; - Custom fonts are explicitly deleted in the team area
@@ -23,112 +24,99 @@
 (defn- calculate-alternative-font-id
   [value]
   (let [fonts (deref fonts/fontsdb)]
-    (->> (vals fonts)
-         (filter #(= (:family %) value))
-         (first)
-         :id)))
+    (reduce-kv (fn [_ _ font]
+                 (if (= (:family font) value)
+                   (reduced (:id font))
+                   nil))
+               nil
+               fonts)))
 
 (defn- has-invalid-font-family?
   [node]
-  (let [fonts               (deref fonts/fontsdb)
-        font-family         (:font-family node)
-        alternative-font-id (calculate-alternative-font-id font-family)]
+  (let [fonts (deref fonts/fontsdb)
+        font-family (:font-family node)]
     (and (some? font-family)
-         (nil? (get fonts (:font-id node)))
-         (some? alternative-font-id))))
+         (nil? (get fonts (:font-id node))))))
 
-(defn- should-fix-deleted-font-shape?
+(defn- shape-has-invalid-font-family??
   [shape]
-  (let [text-nodes (txt/node-seq txt/is-text-node? (:content shape))]
-    (and (cfh/text-shape? shape)
-         (some has-invalid-font-family? text-nodes))))
-
-(defn- should-fix-deleted-font-component?
-  [component]
-  (let [xf (comp (map val)
-                 (filter should-fix-deleted-font-shape?))]
-    (first (sequence xf (:objects component)))))
+  (and (cfh/text-shape? shape)
+       (some has-invalid-font-family?
+             (txt/node-seq txt/is-text-node? (:content shape)))))
 
 (defn- fix-deleted-font
   [node]
-  (let [alternative-font-id (calculate-alternative-font-id (:font-family node))]
-    (cond-> node
-      (some? alternative-font-id) (assoc :font-id alternative-font-id))))
+  (if-let [alternative-font-id (calculate-alternative-font-id (:font-family node))]
+    (assoc node :font-id alternative-font-id)
+    node))
 
-(defn- fix-deleted-font-shape
+(defn- fix-shape-content
   [shape]
-  (let [transform (partial txt/transform-nodes has-invalid-font-family? fix-deleted-font)]
-    (update shape :content transform)))
+  (txt/transform-nodes has-invalid-font-family? fix-deleted-font
+                       (:content shape)))
 
-(defn- fix-deleted-font-component
-  [component]
-  (update component
-          :objects
-          (fn [objects]
-            (update-vals objects fix-deleted-font-shape))))
-
-(defn fix-deleted-font-typography
+(defn- fix-typography
   [typography]
-  (let [alternative-font-id (calculate-alternative-font-id (:font-family typography))]
-    (cond-> typography
-      (some? alternative-font-id) (assoc :font-id alternative-font-id))))
+  (if-let [alternative-font-id (calculate-alternative-font-id (:font-family typography))]
+    (assoc typography :font-id alternative-font-id)
+    typography))
 
-(defn- generate-deleted-font-shape-changes
+(defn- generate-page-changes
   [{:keys [objects id]}]
-  (sequence
-   (comp (map val)
-         (filter should-fix-deleted-font-shape?)
-         (map (fn [shape]
-                {:type :mod-obj
-                 :id (:id shape)
-                 :page-id id
-                 :operations [{:type :set
-                               :attr :content
-                               :val (:content (fix-deleted-font-shape shape))}
-                              {:type :set
-                               :attr :position-data
-                               :val nil}]})))
-   objects))
+  (reduce-kv (fn [changes shape-id shape]
+               (if (shape-has-invalid-font-family?? shape)
+                 (conj changes {:type :mod-obj
+                                :id shape-id
+                                :page-id id
+                                :operations [{:type :set
+                                              :attr :content
+                                              :val (fix-shape-content shape)}
+                                             {:type :set
+                                              :attr :position-data
+                                              :val nil}]})
+                 changes))
+             []
+             objects))
 
-(defn- generate-deleted-font-components-changes
+(defn- generate-library-changes
   [fdata]
-  (sequence
-   (comp (map val)
-         (filter should-fix-deleted-font-component?)
-         (map (fn [component]
-                {:type :mod-component
-                 :id (:id component)
-                 :objects (-> (fix-deleted-font-component component) :objects)})))
-   (:components fdata)))
+  (reduce-kv (fn [changes _ typography]
+               (if (has-invalid-font-family? typography)
+                 (conj changes {:type :mod-typography
+                                :typography (fix-typography typography)})
+                 changes))
+             []
+             (:typographies fdata)))
 
-(defn- generate-deleted-font-typography-changes
-  [fdata]
-  (sequence
-   (comp (map val)
-         (filter has-invalid-font-family?)
-         (map (fn [typography]
-                {:type :mod-typography
-                 :typography (fix-deleted-font-typography typography)})))
-   (:typographies fdata)))
-
-(defn fix-deleted-fonts
-  []
-  (ptk/reify ::fix-deleted-fonts
+(defn fix-deleted-fonts-for-local-library
+  "Looks the file local library for deleted fonts and emit changes if
+  invalid but fixable typographyes found."
+  [file-id]
+  (ptk/reify ::fix-deleted-fonts-for-local-library
     ptk/WatchEvent
     (watch [it state _]
-      (let [fdata              (dsh/lookup-file-data state)
-            pages              (:pages-index fdata)
-
-            shape-changes      (mapcat generate-deleted-font-shape-changes (vals pages))
-            components-changes (generate-deleted-font-components-changes fdata)
-            typography-changes (generate-deleted-font-typography-changes fdata)
-            changes            (concat shape-changes
-                                       components-changes
-                                       typography-changes)]
-        (if (seq changes)
+      (let [fdata (dsh/lookup-file-data state file-id)]
+        (when-let [changes (-> (generate-library-changes fdata)
+                               (not-empty))]
           (rx/of (dwc/commit-changes
                   {:origin it
-                   :redo-changes (vec changes)
+                   :redo-changes changes
                    :undo-changes []
-                   :save-undo? false}))
-          (rx/empty))))))
+                   :save-undo? false})))))))
+
+;; FIXME: would be nice to not execute this code twice per page in the
+;; same working session, maybe some local memoization can improve that
+
+(defn fix-deleted-fonts-for-page
+  [file-id page-id]
+  (ptk/reify ::fix-deleted-fonts-for-page
+    ptk/WatchEvent
+    (watch [it state _]
+      (let [page (dsh/lookup-page state file-id page-id)]
+        (when-let [changes (-> (generate-page-changes page)
+                               (not-empty))]
+          (rx/of (dwc/commit-changes
+                  {:origin it
+                   :redo-changes changes
+                   :undo-changes []
+                   :save-undo? false})))))))

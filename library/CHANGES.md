@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 1.0.9
+
+- Fix dependencies declaration on package.json
+
+
+## 1.0.8
+
+- Update penpot runtime
+
+
 ## 1.0.7
 
 - Add the ability to provide refereron creating build context

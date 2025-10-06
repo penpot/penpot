@@ -1,6 +1,17 @@
 # CHANGELOG
 
-## 2.10.0 (Unreleased)
+## 2.10.1 (Unreleased)
+
+### :sparkles: New features & Enhancements
+
+- Improve workpace file loading [Github 7366](https://github.com/penpot/penpot/pull/7366)
+
+### :bug: Bugs fixed
+
+- Fix regression with text shapes creation with Plugins API [Taiga #12244](https://tree.taiga.io/project/penpot/issue/12244)
+
+
+## 2.10.0
 
 ### :rocket: Epics and highlights
 
