@@ -679,6 +679,11 @@
                             {:composite default-value}))
         default-value (get @backup-state-ref active-tab)
 
+        update-backup-state
+        (mf/use-fn
+         (fn [f]
+           (swap! backup-state-ref f)))
+
         on-toggle-tab
         (mf/use-fn
          (mf/deps active-tab on-external-update-value on-value-resolve clear-resolve-value)
@@ -724,7 +729,8 @@
                                  :is-reference-fn is-reference-fn})]
         [:> composite-tab
          (mf/spread-props props {:default-value default-value
-                                 :on-update-value on-update-value'})])]]))
+                                 :on-update-value on-update-value'
+                                 :update-backup-state update-backup-state})])]]))
 
 (mf/defc composite-form*
   "Wrapper around form* that manages composite/reference tab state.
@@ -955,10 +961,12 @@
          #(on-remove-shadow shadow-idx))]
     [:div
      [:> icon-button* {:icon i/add
+                       :type "button"
                        :on-click on-add-shadow
                        ;; TODO l10n
                        :aria-label "Add shadow"}]
      [:> icon-button* {:variant "ghost"
+                       :type "button"
                        :icon i/remove
                        :on-click on-remove-shadow
                        :disabled is-remove-disabled
@@ -975,24 +983,32 @@
          :on-update-value on-update-value}])]))
 
 (mf/defc box-shadow-value-inputs*
-  [{:keys [default-value on-blur on-update-value token-resolve-result on-update-value]}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result on-update-value update-backup-state]}]
   (let [shadows* (mf/use-state (or default-value [{}]))
         shadows (deref shadows*)
         shadows-count (count shadows)
 
         on-add-shadow
         (mf/use-fn
-         (mf/deps shadows)
-         #(swap! shadows* conj {}))
+         (mf/deps shadows update-backup-state)
+         (fn []
+           (update-backup-state
+            (fn [state]
+              (let [new-state (update state :composite (fnil conj []) {})]
+                (reset! shadows* (:composite new-state))
+                new-state)))))
 
         on-remove-shadow
         (mf/use-fn
-         (mf/deps shadows)
+         (mf/deps shadows update-backup-state)
          (fn [idx]
-           (swap! shadows* d/remove-at-index idx)))
+           (update-backup-state
+            (fn [state]
+              (let [new-state (update state :composite d/remove-at-index idx)]
+                (reset! shadows* (:composite new-state))
+                new-state)))))
 
         #_#_errors-by-key (sd/collect-typography-errors token-resolve-result)]
-    (js/console.log "default-value" default-value)
     [:div {:class (stl/css :nested-input-row)}
 
      (for [[shadow-idx shadow] (d/enumerate shadows)
