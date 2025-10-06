@@ -1029,7 +1029,8 @@
   (let [on-get-token-value
         (mf/use-callback
          (fn [e prev-composite-value]
-           (let [[idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
+           (let [prev-composite-value (or prev-composite-value [])
+                 [idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
                  input-value (dom/get-target-val e)
                  reference-value-input? (not token-type-at-index)]
              (cond
