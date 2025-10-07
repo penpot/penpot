@@ -476,11 +476,15 @@
   [_ {:keys [params] :as request}]
   (let [offset (some-> params :offset str/trim not-empty ct/duration)
         reset? (contains? params :reset)]
-    (if (or reset? (zero? (inst-ms offset)))
-      (clock/set-offset! nil)
-      (clock/set-offset! offset))
-    {::yres/status 302
-     ::yres/headers {"location" "/dbg"}}))
+    (if (= "production" (cf/get :tenant))
+      {::yres/status 501
+       ::yres/body "OPERATION NOT ALLOWED"}
+      (do
+        (if (or reset? (zero? (inst-ms offset)))
+          (clock/set-offset! nil)
+          (clock/set-offset! offset))
+        {::yres/status 302
+         ::yres/headers {"location" "/dbg"}}))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; OTHER SMALL VIEWS/HANDLERS
