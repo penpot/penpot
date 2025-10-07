@@ -6,197 +6,168 @@
 
 @use "ds/_borders.scss" as *;
 @use "ds/_sizes.scss" as *;
+@use "ds/_utils.scss" as *;
 @use "ds/spacing.scss" as *;
 @use "ds/typography.scss" as t;
 
 @use "refactor/common-refactor.scss" as deprecated;
 
-// component-annotation needs to be redesigned & refactored
-.component-annotation {
+.annotation {
   @include t.use-typography("body-small");
   grid-column: span 8;
   color: var(--color-foreground-secondary);
   border-radius: $br-8;
-
-  .annotation-title {
-    display: flex;
-    align-items: center;
-    height: $sz-32;
-
-    &.expanded {
-      border-bottom: $b-1 solid var(--color-background-quaternary);
-    }
-
-    &.expandeable {
-      cursor: pointer;
-    }
-
-    div {
-      display: flex;
-      align-items: center;
-      line-height: 2.5;
-    }
-
-    .icon-arrow {
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: $sz-28;
-      height: $sz-32;
-      display: flex;
-      margin: 0;
-      padding: 0;
-
-      svg {
-        @extend .button-icon;
-        stroke: var(--color-foreground-secondary);
-        width: $sz-16;
-        height: $sz-16;
-      }
-
-      &.expanded svg {
-        transform: rotate(90deg);
-      }
-    }
-
-    .icon {
-      cursor: pointer;
-      display: none;
-      justify-content: center;
-      align-items: center;
-      width: $sz-28;
-      height: $sz-32;
-      border-radius: $br-8;
-      margin: 0;
-      padding: 0;
-
-      svg {
-        @extend .button-icon;
-        stroke: var(--color-foreground-secondary);
-        width: $sz-16;
-        height: $sz-16;
-      }
-
-      &.icon-tick:hover,
-      &.icon-edit:hover {
-        svg {
-          stroke: var(--color-accent-success);
-        }
-      }
-
-      &.icon-tick.invalid:hover {
-        cursor: default;
-
-        svg {
-          stroke: var(--color-foreground-secondary);
-        }
-      }
-
-      &.icon-cross:hover,
-      &.icon-trash:hover {
-        svg {
-          stroke: var(--color-accent-error);
-        }
-      }
-    }
-
-    .annotation-text {
-      flex-grow: 1;
-      margin-left: var(--sp-m);
-    }
-
-    &:hover {
-      .icon {
-        display: flex;
-      }
-    }
-  }
 
   &.editing {
     border: $b-1 solid var(--color-accent-primary);
 
     .annotation-title {
       border-bottom: $b-1 solid var(--entry-border-color-disabled);
-
-      .icon {
-        display: flex;
-      }
     }
 
-    textarea {
-      min-height: $sz-252;
+    .annotation-title-icon-action {
+      display: flex;
+    }
+
+    .annotation-title-name {
+      margin-inline-start: var(--sp-m);
+    }
+
+    .annotation-textarea {
+      min-block-size: $sz-252;
     }
   }
 
   &.creating {
     border: $b-1 solid var(--color-accent-primary);
 
-    .annotation-title .icon {
+    .annotation-title .annotation-title-icon-action {
       display: flex;
     }
 
-    textarea {
-      min-height: $sz-252;
+    .annotation-title-name {
+      margin-inline-start: var(--sp-m);
+    }
+
+    .annotation-textarea {
+      min-block-size: $sz-252;
     }
   }
+}
 
-  .hidden {
-    display: none;
+.annotation-title {
+  display: flex;
+  align-items: center;
+  block-size: $sz-32;
 
-    svg {
-      display: none;
-    }
+  &.expanded {
+    border-bottom: $b-1 solid var(--color-background-quaternary);
   }
 
-  .counter {
-    @include t.use-typography("body-small");
-    text-align: right;
+  &.expandeable {
+    cursor: pointer;
+  }
+
+  &:hover {
+    .annotation-title-icon-action {
+      display: flex;
+    }
+  }
+}
+
+.annotation-title-name {
+  flex-grow: 1;
+}
+
+.annotation-title-icon-arrow {
+  margin: 0 var(--sp-xs);
+}
+
+.annotation-title-actions {
+  display: flex;
+  align-items: center;
+  line-height: 2.5;
+}
+
+.annotation-title-icon-action {
+  cursor: pointer;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  inline-size: $sz-28;
+  block-size: $sz-32;
+  border-radius: $br-8;
+  margin: 0;
+  padding: 0;
+}
+
+.annotation-title-icon-ok:hover {
+  color: var(--color-accent-success);
+
+  &.disabled {
+    cursor: default;
     color: var(--color-foreground-secondary);
-    margin: 0 var(--sp-s) var(--sp-s) 0;
   }
+}
 
-  // Auto growing text
-  .grow-wrap {
-    // easy way to plop the elements on top of each other and have them both sized based on the tallest one's height
-    display: grid;
+.annotation-title-icon-nok:hover {
+  color: var(--color-accent-error);
+}
 
-    &:after {
-      // The space is needed to preventy jumpy behavior
-      content: attr(data-replicated-value) " ";
-      white-space: pre-wrap;
-      visibility: hidden;
-    }
+.annotation-body-hidden {
+  display: none;
+}
 
-    textarea {
-      background-color: var(--color-background-primary);
-      color: var(--color-foreground-primary);
-      padding: var(--sp-m);
+// Auto growing text
+.annotation-body {
+  // easy way to plop the elements on top of each other and have them both sized based on the tallest one's height
+  display: grid;
 
-      border: none;
-      overflow: hidden;
-      outline: none;
+  &:after {
+    // The space is needed to preventy jumpy behavior
+    content: attr(data-replicated-value) " ";
+    white-space: pre-wrap;
+    visibility: hidden;
 
-      -webkit-box-shadow: none;
-      -moz-box-shadow: none;
-      box-shadow: none;
+    /* Identical styling required!! */
+    font: inherit;
+    overflow-wrap: anywhere;
 
-      resize: none;
-      /*remove the resize handle on the bottom right*/
-    }
+    padding: var(--sp-m);
 
-    textarea,
-    &:after {
-      /* Identical styling required!! */
-      font: inherit;
-      overflow-wrap: anywhere;
-
-      padding: 10px;
-
-      /* Place on top of each other */
-      grid-area: 1 / 1 / 2 / 2;
-    }
+    /* Place on top of each other */
+    grid-area: 1 / 1 / 2 / 2;
   }
+}
+
+.annotation-textarea {
+  background-color: var(--color-background-primary);
+  color: var(--color-foreground-primary);
+  padding: var(--sp-m);
+
+  border: none;
+  overflow: hidden;
+  outline: none;
+
+  box-shadow: none;
+
+  resize: none;
+
+  /* Identical styling required!! */
+  font: inherit;
+  overflow-wrap: anywhere;
+
+  padding: var(--sp-m);
+
+  /* Place on top of each other */
+  grid-area: 1 / 1 / 2 / 2;
+}
+
+.annotation-counter {
+  @include t.use-typography("body-small");
+  text-align: right;
+  color: var(--color-foreground-secondary);
+  margin: 0 var(--sp-s) var(--sp-s) 0;
 }
 
 .swap-item-list {
@@ -212,9 +183,9 @@
   @include t.use-typography("body-small");
   display: flex;
   align-items: center;
-  padding: 1px var(--sp-m) 1px 1px;
+  padding: px2rem(1) var(--sp-m) px2rem(1) px2rem(1);
   gap: var(--sp-s);
-  height: calc($sz-32 + $sz-12);
+  block-size: calc($sz-32 + $sz-12);
   border-radius: $br-8;
   background-color: var(--swap-item-background-color);
   color: var(--swap-item-foreground-color);
@@ -224,8 +195,8 @@
     flex: 0 0 $sz-40;
     background-color: var(--swap-item-thumbnail-background-color);
     border-radius: $br-6;
-    height: $sz-40;
-    width: $sz-40;
+    block-size: $sz-40;
+    inline-size: $sz-40;
     padding: var(--sp-xxs);
   }
 
@@ -273,13 +244,14 @@
   flex-wrap: wrap;
   position: relative;
   padding: var(--sp-s);
+  border: none;
   border-radius: $br-8;
   background-color: var(--swap-item-thumbnail-background-color);
   overflow: hidden;
 
   .swap-item-thumbnail {
-    height: 100%;
-    width: 100%;
+    block-size: 100%;
+    inline-size: 100%;
     object-fit: contain;
   }
 
@@ -291,10 +263,10 @@
     text-align: left;
     display: none;
     position: absolute;
-    left: var(--sp-xs);
-    bottom: var(--sp-xs);
-    height: var(--sp-xxl);
-    width: calc(100% - var(--sp-xs) - var(--sp-xs));
+    inset-inline-start: var(--sp-xs);
+    inset-block-end: var(--sp-xs);
+    block-size: var(--sp-xxl);
+    inline-size: calc(100% - var(--sp-s));
     padding: var(--sp-xs);
     column-gap: var(--sp-xs);
     border-radius: $br-4;
@@ -306,8 +278,8 @@
 
   .swap-item-variant-icon {
     position: absolute;
-    right: var(--sp-xxs);
-    top: var(--sp-xxs);
+    inset-inline-end: var(--sp-xxs);
+    inset-block-start: var(--sp-xxs);
     background-color: var(--color-background-tertiary);
   }
 
@@ -323,10 +295,10 @@
     &::before {
       content: " ";
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      inset-inline-start: 0;
+      inset-inline-end: 0;
+      inset-block-start: 0;
+      inset-block-end: 0;
       border: calc($b-2 * 2) solid var(--swap-item-border-inner-color-selected);
       border-radius: $br-8;
     }
@@ -354,8 +326,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: $sz-24;
-  width: $sz-24;
+  block-size: $sz-24;
+  inline-size: $sz-24;
   color: var(--color-accent-secondary);
   border-radius: $br-8;
 }
@@ -365,7 +337,7 @@
   cursor: pointer;
   display: grid;
   grid-template-columns: 1fr var(--sp-m);
-  height: $sz-32;
+  block-size: $sz-32;
   align-items: center;
 
   &:hover {
@@ -395,7 +367,7 @@
   @include t.use-typography("headline-small");
   display: flex;
   align-items: center;
-  height: $sz-32;
+  block-size: $sz-32;
   padding-inline-start: var(--sp-xxs);
   color: var(--color-foreground-secondary);
 }
@@ -437,8 +409,8 @@
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
-  width: 100%;
-  height: $sz-32;
+  inline-size: 100%;
+  block-size: $sz-32;
   padding: 0;
   border: 0;
   background-color: var(--color-background-primary);
@@ -451,7 +423,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: rtl;
-  height: $sz-32;
+  block-size: $sz-32;
   padding: var(--sp-s) 0 var(--sp-s) var(--sp-xxs);
 }
 
@@ -491,8 +463,8 @@
   display: flex;
   align-items: center;
   gap: var(--sp-xs);
-  width: 100%;
-  height: $sz-32;
+  inline-size: 100%;
+  block-size: $sz-32;
   padding: 0;
   border: 0;
   border-radius: $br-8;
@@ -512,7 +484,7 @@
 
 .component-title-bar-type {
   @include t.use-typography("body-small");
-  height: 100%;
+  block-size: 100%;
   display: flex;
   align-items: center;
   color: var(--color-foreground-secondary);
@@ -545,7 +517,7 @@
 .pill {
   display: flex;
   flex-grow: 1;
-  gap: 1px;
+  gap: px2rem(1);
 }
 
 .pill-btn {
@@ -575,7 +547,7 @@
 
 .pill-btn-icon {
   display: flex;
-  height: $sz-32;
+  block-size: $sz-32;
   align-items: center;
   color: var(--color-foreground-secondary);
 }
@@ -583,7 +555,7 @@
 .pill-btn-name {
   display: flex;
   flex-direction: column;
-  min-height: $sz-32;
+  min-block-size: $sz-32;
   padding: var(--sp-s) 0 var(--sp-s) var(--sp-xxs);
   border-radius: $br-8 0 0 $br-8;
   overflow: hidden;
@@ -597,7 +569,7 @@
   white-space: nowrap;
   direction: rtl;
   text-align: left;
-  height: $sz-16;
+  block-size: $sz-16;
 }
 
 .pill-btn-subtext {
@@ -607,7 +579,7 @@
   white-space: nowrap;
   direction: rtl;
   text-align: left;
-  height: $sz-16;
+  block-size: $sz-16;
   color: var(--color-foreground-secondary);
 }
 
@@ -619,8 +591,8 @@
 .pill-actions-btn {
   @extend .button-secondary;
   cursor: unset;
-  height: 100%;
-  width: 100%;
+  block-size: 100%;
+  inline-size: 100%;
   border-radius: 0 $br-8 $br-8 0;
 
   &.selected {
@@ -630,12 +602,12 @@
 
 .pill-actions-dropdown {
   @extend .dropdown-wrapper;
-  right: 0;
-  left: unset;
-  width: $sz-252;
+  inline-size: $sz-252;
+  inset-inline-end: 0;
+  inset-inline-start: unset;
 
   &.extended {
-    top: $sz-48;
+    inset-block-start: $sz-48;
   }
 }
 

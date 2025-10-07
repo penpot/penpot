@@ -151,12 +151,11 @@
                                 (dw/set-annotations-id-for-create nil))
                               (dw/update-component-annotation component-id nil)
                               (rerender-fn)))]
-             (st/emit! (modal/show
-                        {:type :confirm
-                         :title (tr "modals.delete-component-annotation.title")
-                         :message (tr "modals.delete-component-annotation.message")
-                         :accept-label (tr "ds.confirm-ok")
-                         :on-accept on-accept})))))]
+             (st/emit! (modal/show {:type :confirm
+                                    :title (tr "modals.delete-component-annotation.title")
+                                    :message (tr "modals.delete-component-annotation.message")
+                                    :accept-label (tr "ds.confirm-ok")
+                                    :on-accept on-accept})))))]
 
     (mf/with-effect [shape-id state create-id creating?]
       (when-let [textarea (mf/ref-val textarea-ref)]
@@ -173,31 +172,28 @@
           (st/emit! (dw/set-annotations-id-for-create nil)))))
 
     (when (or creating? annotation)
-      [:div {:class (stl/css-case
-                     :component-annotation true
-                     :editing editing?
-                     :creating creating?)}
-       [:div {:class (stl/css-case
-                      :annotation-title true
-                      :expandeable (not (or editing? creating?))
-                      :expanded expanded?)
+      [:div {:class (stl/css-case :annotation true
+                                  :editing editing?
+                                  :creating creating?)}
+       [:div {:class (stl/css-case :annotation-title true
+                                   :expandeable (not (or editing? creating?))
+                                   :expanded expanded?)
               :on-click on-toggle-expand}
 
         (if (or editing? creating?)
-          [:span {:class (stl/css :annotation-text)}
+          [:span {:class (stl/css :annotation-title-name)}
            (if editing?
              (tr "workspace.options.component.edit-annotation")
              (tr "workspace.options.component.create-annotation"))]
 
           [:*
-           [:span {:class (stl/css-case
-                           :icon-arrow true
-                           :expanded expanded?)}
-            deprecated-icon/arrow]
-           [:span {:class (stl/css :annotation-text)}
+           [:> icon* {:icon-id (if expanded? i/arrow-down i/arrow-right)
+                      :class (stl/css :annotation-title-icon-arrow)
+                      :size "s"}]
+           [:span {:class (stl/css :annotation-title-name)}
             (tr "workspace.options.component.annotation")]])
 
-        [:div {:class (stl/css :icons-wrapper)}
+        [:div {:class (stl/css :annotation-title-actions)}
          (when (and ^boolean main-instance?
                     ^boolean expanded?)
            (if (or ^boolean editing?
@@ -207,40 +203,41 @@
                               (tr "labels.create")
                               (tr "labels.save"))
                      :on-click on-save
-                     :class (stl/css-case
-                             :icon true
-                             :icon-tick true
-                             :invalid invalid-text?)}
-               deprecated-icon/tick]
-              [:div {:class (stl/css :icon :icon-cross)
+                     :class (stl/css :annotation-title-icon-action)}
+               [:> icon* {:icon-id i/tick
+                          :class (stl/css-case :annotation-title-icon-ok true
+                                               :disabled invalid-text?)}]]
+              [:div {:class (stl/css :annotation-title-icon-action)
                      :title (tr "labels.discard")
                      :on-click on-discard}
-               deprecated-icon/close]]
+               [:> icon* {:icon-id i/close
+                          :class (stl/css :annotation-title-icon-nok)}]]]
 
              [:*
-              [:div {:class (stl/css :icon :icon-edit)
+              [:div {:class (stl/css :annotation-title-icon-action)
                      :title (tr "labels.edit")
                      :on-click on-edit}
-               deprecated-icon/curve]
-              [:div {:class (stl/css :icon :icon-trash)
+               [:> icon* {:icon-id i/curve
+                          :class (stl/css :annotation-title-icon-ok)}]]
+              [:div {:class (stl/css :annotation-title-icon-action)
                      :title (tr "labels.delete")
                      :on-click on-delete-annotation}
-               deprecated-icon/delete]]))]]
+               [:> icon* {:icon-id i/delete
+                          :class (stl/css :annotation-title-icon-nok)}]]]))]]
 
-       [:div {:class (stl/css-case :hidden (not expanded?))}
-        [:div {:class (stl/css :grow-wrap)}
-         [:div {:class (stl/css :texarea-copy)}]
-         [:textarea
-          {:ref textarea-ref
-           :id "annotation-textarea"
-           :data-debug annotation
-           :auto-focus (or editing? creating?)
-           :maxLength 300
-           :on-input adjust-textarea-size
-           :default-value annotation
-           :read-only (not (or creating? editing?))}]]
+       [:div {:class (stl/css-case :annotation-body-hidden (not expanded?))}
+        [:div {:class (stl/css :annotation-body)}
+         [:textarea {:ref textarea-ref
+                     :id "annotation-textarea"
+                     :class (stl/css :annotation-textarea)
+                     :data-debug annotation
+                     :auto-focus (or editing? creating?)
+                     :max-length 300
+                     :on-input adjust-textarea-size
+                     :default-value annotation
+                     :read-only (not (or creating? editing?))}]]
         (when (or editing? creating?)
-          [:div {:class (stl/css  :counter)} (str size "/300")])]])))
+          [:div {:class (stl/css :annotation-counter)} (str size "/300")])]])))
 
 (defn- get-variant-malformed-warning-message
   "Receive a list of booleans, one for each selected variant, indicating if that variant
