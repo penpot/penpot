@@ -104,12 +104,6 @@
           :shape shape
           :attrs (conj txt/text-fill-attrs :fills)})
 
-        fill-values
-        (if (not (contains? fill-values :fills))
-          ;; Old fill format
-          {:fills [fill-values]}
-          fill-values)
-
         text-values
         (merge
          (select-keys shape [:grow-type])
