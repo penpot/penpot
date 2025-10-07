@@ -66,13 +66,6 @@
    [integrant.core :as ig]
    [promesa.exec :as px]))
 
-(def ^:private default-timeout
-  (ct/duration 400))
-
-(def ^:private default-options
-  {:codec rds/string-codec
-   :timeout default-timeout})
-
 (def ^:private bucket-rate-limit-script
   {::rscript/name ::bucket-rate-limit
    ::rscript/path "app/rpc/rlimit/bucket.lua"})
@@ -177,11 +170,11 @@
               :hint (str/ffmt "looks like '%' does not have a valid format" opts))))
 
 (defmethod process-limit :bucket
-  [redis user-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
+  [rconn user-id now {:keys [::key ::params ::service ::capacity ::interval ::rate] :as limit}]
   (let [script    (-> bucket-rate-limit-script
                       (assoc ::rscript/keys [(str key "." service "." user-id)])
                       (assoc ::rscript/vals (conj params (->seconds now))))
-        result    (rds/eval redis script)
+        result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)
         reset     (* (/ (inst-ms interval) rate)
@@ -199,13 +192,13 @@
         (assoc ::lresult/remaining remaining))))
 
 (defmethod process-limit :window
-  [redis user-id now {:keys [::nreq ::unit ::key ::service] :as limit}]
+  [rconn user-id now {:keys [::nreq ::unit ::key ::service] :as limit}]
   (let [ts        (ct/truncate now unit)
         ttl       (ct/diff now (ct/plus ts {unit 1}))
         script    (-> window-rate-limit-script
                       (assoc ::rscript/keys [(str key "." service "." user-id "." (ct/format-inst ts))])
                       (assoc ::rscript/vals [nreq (->seconds ttl)]))
-        result    (rds/eval redis script)
+        result    (rds/eval rconn script)
         allowed?  (boolean (nth result 0))
         remaining (nth result 1)]
     (l/trace :hint "limit processed"
@@ -220,9 +213,9 @@
         (assoc ::lresult/remaining remaining)
         (assoc ::lresult/reset (ct/plus ts {unit 1})))))
 
-(defn- process-limits!
-  [redis user-id limits now]
-  (let [results   (into [] (map (partial process-limit redis user-id now)) limits)
+(defn- process-limits
+  [rconn user-id limits now]
+  (let [results   (into [] (map (partial process-limit rconn user-id now)) limits)
         remaining (->> results
                        (d/index-by ::name ::lresult/remaining)
                        (uri/map->query-string))
@@ -259,34 +252,25 @@
         (some-> request inet/parse-request)
         uuid/zero)))
 
-(defn process-request!
-  [{:keys [::rpc/rlimit ::rds/redis ::skey ::sname] :as cfg} params]
-  (when-let [limits (get-limits rlimit skey sname)]
-    (let [redis  (rds/get-or-connect redis ::rpc/rlimit default-options)
-          uid    (get-uid params)
-          ;; FIXME: why not clasic try/catch?
-          result (ex/try! (process-limits! redis uid limits (ct/now)))]
-
-      (l/trc :hint "process-limits"
-             :service sname
-             :remaining (::remaingin result)
-             :reset (::reset result))
-
-      (cond
-        (ex/exception? result)
-        (do
-          (l/error :hint "error on processing rate-limit" :cause result)
-          {::enabled false})
-
-        (contains? cf/flags :soft-rpc-rlimit)
+(defn- process-request'
+  [{:keys [::rds/conn] :as cfg} limits params]
+  (try
+    (let [uid    (get-uid params)
+          result (process-limits conn uid limits (ct/now))]
+      (if (contains? cf/flags :soft-rpc-rlimit)
         {::enabled false}
+        result))
+    (catch Throwable cause
+      (l/error :hint "error on processing rate-limit" :cause cause)
+      {::enabled false})))
 
-        :else
-        result))))
+(defn- process-request
+  [{:keys [::rpc/rlimit ::skey ::sname] :as cfg} params]
+  (when-let [limits (get-limits rlimit skey sname)]
+    (rds/run! cfg process-request' limits params)))
 
 (defn wrap
-  [{:keys [::rpc/rlimit ::rds/redis] :as cfg} f mdata]
-  (assert (rds/redis? redis) "expected a valid redis instance")
+  [{:keys [::rpc/rlimit] :as cfg} f mdata]
   (assert (or (nil? rlimit) (valid-rlimit-instance? rlimit)) "expected a valid rlimit instance")
 
   (if rlimit
@@ -298,7 +282,7 @@
 
       (fn [hcfg params]
         (if @enabled
-          (let [result (process-request! cfg params)]
+          (let [result (process-request cfg params)]
             (if (::enabled result)
               (if (::allowed result)
                 (-> (f hcfg params)
@@ -399,7 +383,7 @@
   (when-let [path (cf/get :rpc-rlimit-config)]
     (and (fs/exists? path) (fs/regular-file? path) path)))
 
-(defmethod ig/assert-key :app.rpc/rlimit
+(defmethod ig/assert-key ::rpc/rlimit
   [_ {:keys [::wrk/executor]}]
   (assert (sm/valid? ::wrk/executor executor) "expect valid executor"))
 

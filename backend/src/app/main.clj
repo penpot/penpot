@@ -181,9 +181,9 @@
    ::mtx/routes
    {::mtx/metrics (ig/ref ::mtx/metrics)}
 
-   ::rds/redis
-   {::rds/uri      (cf/get :redis-uri)
-    ::mtx/metrics  (ig/ref ::mtx/metrics)
+   ::rds/client
+   {::rds/uri
+    (cf/get :redis-uri)
 
     ::wrk/netty-executor
     (ig/ref ::wrk/netty-executor)
@@ -191,9 +191,14 @@
     ::wrk/netty-io-executor
     (ig/ref ::wrk/netty-io-executor)}
 
+   ::rds/pool
+   {::rds/client  (ig/ref ::rds/client)
+    ::mtx/metrics (ig/ref ::mtx/metrics)}
+
    ::mbus/msgbus
-   {::wrk/executor  (ig/ref ::wrk/netty-executor)
-    ::rds/redis     (ig/ref ::rds/redis)}
+   {::wrk/executor (ig/ref ::wrk/netty-executor)
+    ::rds/client   (ig/ref ::rds/client)
+    ::mtx/metrics  (ig/ref ::mtx/metrics)}
 
    :app.storage.tmp/cleaner
    {::wrk/executor (ig/ref ::wrk/netty-executor)}
@@ -315,13 +320,14 @@
    :app.rpc/methods
    {::http.client/client (ig/ref ::http.client/client)
     ::db/pool            (ig/ref ::db/pool)
+    ::rds/pool           (ig/ref ::rds/pool)
     ::wrk/executor       (ig/ref ::wrk/netty-executor)
     ::session/manager    (ig/ref ::session/manager)
     ::ldap/provider      (ig/ref ::ldap/provider)
     ::sto/storage        (ig/ref ::sto/storage)
     ::mtx/metrics        (ig/ref ::mtx/metrics)
     ::mbus/msgbus        (ig/ref ::mbus/msgbus)
-    ::rds/redis          (ig/ref ::rds/redis)
+    ::rds/client         (ig/ref ::rds/client)
 
     ::rpc/climit         (ig/ref ::rpc/climit)
     ::rpc/rlimit         (ig/ref ::rpc/rlimit)
@@ -515,7 +521,7 @@
         :task :audit-log-gc})]}
 
    ::wrk/dispatcher
-   {::rds/redis   (ig/ref ::rds/redis)
+   {::rds/client  (ig/ref ::rds/client)
     ::mtx/metrics (ig/ref ::mtx/metrics)
     ::db/pool     (ig/ref ::db/pool)
     ::wrk/tenant  (cf/get :tenant)}
@@ -524,7 +530,7 @@
    {::wrk/parallelism (cf/get ::worker-default-parallelism 1)
     ::wrk/queue       :default
     ::wrk/tenant      (cf/get :tenant)
-    ::rds/redis       (ig/ref ::rds/redis)
+    ::rds/client      (ig/ref ::rds/client)
     ::wrk/registry    (ig/ref ::wrk/registry)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}
@@ -533,7 +539,7 @@
    {::wrk/parallelism (cf/get ::worker-webhook-parallelism 1)
     ::wrk/queue       :webhooks
     ::wrk/tenant      (cf/get :tenant)
-    ::rds/redis       (ig/ref ::rds/redis)
+    ::rds/client      (ig/ref ::rds/client)
     ::wrk/registry    (ig/ref ::wrk/registry)
     ::mtx/metrics     (ig/ref ::mtx/metrics)
     ::db/pool         (ig/ref ::db/pool)}})
