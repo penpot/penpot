@@ -68,13 +68,13 @@
                 resolved-token (get-resolved-token property shape resolved-tokens)
                 has-token (has-token? resolved-token stroke-type idx)]
             (if (= property :border-color)
-              [:> color-properties-row* {:key (dm/str "stroke-" property "-" idx (:color stroke-type))
+              [:> color-properties-row* {:key (str idx property)
                                          :term property-name
                                          :color stroke-type
                                          :token (when has-token resolved-token)
                                          :format color-space
                                          :copiable true}]
-              [:> properties-row* {:key  (dm/str "stroke-" property "-" idx (:color stroke-type))
+              [:> properties-row* {:key  (str idx property)
                                    :term (d/name property-name)
                                    :detail (dm/str value)
                                    :token (when has-token resolved-token)
