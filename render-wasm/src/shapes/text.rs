@@ -475,7 +475,7 @@ impl Paragraph {
                 .unwrap_or(&self.children[0]);
 
             let mut strut_style = skia::textlayout::StrutStyle::default();
-            let line_height = self.line_height.max(1.0);
+            let line_height = self.line_height.max(0.0);
             strut_style.set_font_size(reference_child.font_size);
             strut_style.set_height(line_height);
             strut_style.set_height_override(true);
