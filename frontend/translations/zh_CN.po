@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -2208,6 +2208,7 @@ msgid "labels.product-design"
 msgstr "产品或UX设计"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "产品经理/项目经理"
 
