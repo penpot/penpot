@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: Corentin Noël <tintou@noel.tf>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -2342,6 +2342,7 @@ msgid "labels.product-design"
 msgstr "Product Design ou UX Design"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "Gestionnaire de produit ou de projet"
 
