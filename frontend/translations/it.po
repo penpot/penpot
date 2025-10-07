@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-09-06 07:02+0000\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
 "Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
 "it/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13.1-rc\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -893,6 +893,7 @@ msgid "dashboard.plugins.bad-url"
 msgstr "L'URL del plugin non è corretto"
 
 #: src/app/main/ui/dashboard.cljs:205
+#, fuzzy
 msgid "dashboard.plugins.parse-error"
 msgstr "Impossibile analizzare il manifesto del plugin"
 
@@ -2315,6 +2316,7 @@ msgid "labels.product-design"
 msgstr "Design del prodotto o UX"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "Gestione del prodotto"
 
@@ -7765,6 +7767,7 @@ msgid "ds.inputs.token-field.detach-token"
 msgstr "Scollega token"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "Questo token non è disponibile in nessun set o tema attivo."
 
@@ -7937,6 +7940,7 @@ msgstr ""
 "nel font corrente"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
+#, fuzzy
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Inserisci: 400, Bold, 700 Italico, o {alias}"
 
