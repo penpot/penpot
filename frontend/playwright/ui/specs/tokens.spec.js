@@ -174,7 +174,7 @@ test.describe("Tokens: Tokens Tab", () => {
     ).toBeEnabled();
 
     // Tokens tab panel should have two tokens with the color red / #ff0000
-    await expect(tokensTabPanel.getByTitle("#ff0000")).toHaveCount(2);
+    await expect(tokensTabPanel.getByRole("button", {name: "#ff0000"})).toHaveCount(2);
 
     // Global set has been auto created and is active
     await expect(

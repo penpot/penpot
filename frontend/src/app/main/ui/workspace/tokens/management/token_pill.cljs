@@ -17,9 +17,9 @@
    [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.data.workspace.tokens.format :as dwtf]
    [app.main.refs :as refs]
-   [app.main.ui.components.color-bullet :refer [color-bullet]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
+   [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
    [clojure.set :as set]
@@ -298,7 +298,8 @@
          :class (stl/css :token-pill-icon)}]
 
        color
-       [:& color-bullet {:color color :mini true}]
+       [:> swatch* {:background color
+                    :size "small"}]
 
        status-icon?
        [:> token-status-icon*

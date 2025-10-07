@@ -623,6 +623,7 @@
                                 :on-key-down on-key-down
                                 :on-focus on-focus
                                 :on-change store-raw-value
+                                :variant "comfortable"
                                 :disabled disabled
                                 :slot-start (when icon
                                               (mf/html [:> tooltip*

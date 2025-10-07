@@ -276,7 +276,7 @@
   &:hover {
     --token-color-wrapper-background-color: var(--color-token-background);
     --token-color-wrapper-foreground-color: var(--color-foreground-primary);
-    --token-color-wrapper-border-color: var(--color-token-background);
+    --token-color-wrapper-border-color: var(--color-token-accent);
     --token-actions-display: flex;
   }
 }
