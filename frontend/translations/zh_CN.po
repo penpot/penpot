@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-09-06 07:01+0000\n"
-"Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
+"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Weblate 5.13.1-rc\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -824,6 +824,7 @@ msgid "dashboard.plugins.bad-url"
 msgstr "插件 URL 不正确"
 
 #: src/app/main/ui/dashboard.cljs:205
+#, fuzzy
 msgid "dashboard.plugins.parse-error"
 msgstr "不能解析插件清单"
 
@@ -2476,6 +2477,7 @@ msgid "loader.tips.03.message"
 msgstr "使用熟悉的类CSS布局控制灵活设计。"
 
 #: src/app/main/ui/ds/product/loader.cljs:24
+#, fuzzy
 msgid "loader.tips.03.title"
 msgstr "像 CSS 一样自动布局"
 
