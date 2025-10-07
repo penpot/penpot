@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: \"Amerey.eu\" <info@amerey.eu>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Czech <https://hosted.weblate.org/projects/penpot/frontend/cs/"
 ">\n"
 "Language: cs\n"
@@ -2084,6 +2084,7 @@ msgid "labels.product-design"
 msgstr "Produktový nebo UX design"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "Produktový nebo projektový manažer"
 
