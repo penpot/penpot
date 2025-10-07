@@ -349,10 +349,6 @@
         render-wasm?
         (features/use-feature "render-wasm/v1")
 
-        cap-stops?
-        (or ^boolean render-wasm?
-            ^boolean (contains? cfg/flags :frontend-binary-fills))
-
         tabs
         (mf/with-memo []
           [{:aria-label (tr "workspace.libraries.colors.rgba")
@@ -447,7 +443,7 @@
          (when (= selected-mode :gradient)
            [:> gradients*
             {:type (:type state)
-             :stops (if cap-stops? (vec (take types.fills/MAX-GRADIENT-STOPS (:stops state))) (:stops state))
+             :stops (if render-wasm? (vec (take types.fills/MAX-GRADIENT-STOPS (:stops state))) (:stops state))
              :editing-stop (:editing-stop state)
              :on-stop-edit-start handle-stop-edit-start
              :on-stop-edit-finish handle-stop-edit-finish
@@ -644,13 +640,13 @@
 
 (defn- combine-groups-with-resolved
   "Replaces token names in grouped sets with their full resolved token objects.
-  
+
      Input:
      - groups: [{:group \"brand\"
                  :sets [\"light\" \"dark\"]
                  :tokens [\"background\" \"foreground\"]} ...]
      - resolved-tokens: [{:name \"background\" :type \"color\" :value \"{red-100}\" ...} ...]
-  
+
      Output:
      [{:group \"brand\"
        :sets [\"light\" \"dark\"]
@@ -672,11 +668,11 @@
 
 (defn- filter-non-empty-sets
   "Removes sets that have no tokens.
-  
+
    Input:
    [{:set \"brand/light\" :tokens []}
     {:set \"brand/dark\"  :tokens [{:name \"background\"}]}]
-  
+
    Output:
    [{:set \"brand/dark\" :tokens [{:name \"background\"}]}]"
   [sets]
@@ -686,11 +682,11 @@
 
 (defn- add-tokens-to-sets
   "Extracts set name and its tokens from raw set objects.
-  
+
      Input:
      A vector of set objects (raw domain type), each compatible with:
      {:id ... :name \"brand/light\" :tokens {...}}
-  
+
      Output:
      A vector of simplified maps:
      [{:set \"brand/light\" :tokens [{:name \"background\" ...} ...]}]"
@@ -703,14 +699,14 @@
 
 (defn- filter-active-sets
   "Filters sets to only include those whose :set value is in active-set-names.
-  
+
      Input:
      - sets: [{:set \"brand/light\" :tokens [...]},
               {:set \"brand/dark\" :tokens [...]},
               {:set \"primitivos\" :tokens [...]},
               ...]
      - active-set-names: #{\"brand/light\" \"primitivos\"}
-  
+
      Output:
      [{:set \"brand/light\" :tokens [...]}
       {:set \"primitivos\" :tokens [...]}]"

@@ -16,7 +16,6 @@
    [app.common.math :as mth]
    [app.common.types.color :as cc]
    [app.common.types.fills :as types.fills]
-   [app.config :as cfg]
    [app.main.data.workspace.colors :as dc]
    [app.main.features :as features]
    [app.main.refs :as refs]
@@ -134,8 +133,8 @@
 
         handler-state (mf/use-state {:display? false :offset 0 :hover nil})
 
-        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-        can-add-stop? (if cap-stops? (< (count stops) types.fills/MAX-GRADIENT-STOPS) true)
+        render-wasm?  (features/use-feature "render-wasm/v1")
+        can-add-stop? (if render-wasm? (< (count stops) types.fills/MAX-GRADIENT-STOPS) true)
 
         endpoint-on-pointer-down
         (fn [position event]
@@ -525,8 +524,8 @@
         shape        (mf/deref shape-ref)
         state        (mf/deref refs/colorpicker)
         gradient     (:gradient state)
-        cap-stops?   (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-        stops        (if cap-stops?
+        render-wasm? (features/use-feature "render-wasm/v1")
+        stops        (if render-wasm?
                        (vec (take types.fills/MAX-GRADIENT-STOPS (:stops state)))
                        (:stops state))
         editing-stop (:editing-stop state)]

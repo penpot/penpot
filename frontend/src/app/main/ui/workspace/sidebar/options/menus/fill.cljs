@@ -10,10 +10,10 @@
    [app.common.types.color :as clr]
    [app.common.types.fills :as types.fills]
    [app.common.types.shape.attrs :refer [default-color]]
-   [app.config :as cfg]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.colors :as dc]
    [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.features :as feat]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -29,24 +29,11 @@
   #{:fills :hide-fill-on-export})
 
 (def ^:private
-  xf:take-max-fills
-  (take types.fills/MAX-FILLS))
-
-(def ^:private
-  xf:enumerate
+  xf:process-fills
   (map-indexed
    (fn [index item]
      (let [color (types.fills/fill->color item)]
        (with-meta item {:index index :color color})))))
-
-(def ^:private ^boolean binary-fills-enabled?
-  (contains? cfg/flags :frontend-binary-fills))
-
-(def ^:private
-  xf:process-fills
-  (if binary-fills-enabled?
-    (comp xf:take-max-fills xf:enumerate)
-    xf:enumerate))
 
 (defn- prepare-fills
   "Internal helper hook that prepares fills"
@@ -88,6 +75,9 @@
         hide-on-export (get values :hide-fill-on-export false)
         fill-token-applied (:fill applied-tokens)
 
+        render-wasm?   (feat/use-feature "render-wasm/v1")
+
+
         ^boolean
         multiple?      (= :multiple fills)
 
@@ -109,7 +99,7 @@
         checkbox-ref   (mf/use-ref)
 
         can-add-fills?
-        (if binary-fills-enabled?
+        (if render-wasm?
           (and (not multiple?)
                (< (count fills) types.fills/MAX-FILLS))
           (not ^boolean multiple?))

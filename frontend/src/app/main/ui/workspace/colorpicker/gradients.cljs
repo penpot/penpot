@@ -12,7 +12,6 @@
    [app.common.math :as mth]
    [app.common.types.color :as cc]
    [app.common.types.fills :as types.fills]
-   [app.config :as cfg]
    [app.main.features :as features]
    [app.main.ui.components.numeric-input :refer [numeric-input*]]
    [app.main.ui.components.reorder-handler :refer [reorder-handler*]]
@@ -293,8 +292,12 @@
          (fn []
            (when on-reverse-stops
              (on-reverse-stops))))
-        cap-stops? (or (features/use-feature "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
-        add-stop-disabled? (when cap-stops? (>= (count stops) types.fills/MAX-GRADIENT-STOPS))]
+
+        cap-stops?
+        (features/use-feature "render-wasm/v1")
+
+        add-stop-disabled?
+        (when cap-stops? (>= (count stops) types.fills/MAX-GRADIENT-STOPS))]
 
     [:div {:class (stl/css :gradient-panel)}
      [:div {:class (stl/css :gradient-preview)}

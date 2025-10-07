@@ -134,7 +134,6 @@
     :hide-release-modal
     :subscriptions
     :subscriptions-old
-    :frontend-binary-fills
     :inspect-styles
 
     ;; Security layer middleware that filters request by fetch
