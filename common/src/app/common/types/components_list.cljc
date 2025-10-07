@@ -8,7 +8,6 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
-   [app.common.features :as cfeat]
    [app.common.time :as dt]
    [app.common.types.component :as ctk]
    [clojure.set :as set]))
@@ -43,55 +42,53 @@
 
 (defn mod-component
   [file-data {:keys [id name path main-instance-id main-instance-page objects annotation variant-id variant-properties modified-at]}]
-  (let [wrap-objects-fn cfeat/*wrap-with-objects-map-fn*]
-    (d/update-in-when file-data [:components id]
-                      (fn [component]
-                        (let [objects  (some-> objects wrap-objects-fn)
-                              new-comp (cond-> component
-                                         (some? name)
-                                         (assoc :name name)
+  (d/update-in-when file-data [:components id]
+                    (fn [component]
+                      (let [new-comp (cond-> component
+                                       (some? name)
+                                       (assoc :name name)
 
-                                         (some? path)
-                                         (assoc :path path)
+                                       (some? path)
+                                       (assoc :path path)
 
-                                         (some? main-instance-id)
-                                         (assoc :main-instance-id main-instance-id)
+                                       (some? main-instance-id)
+                                       (assoc :main-instance-id main-instance-id)
 
-                                         (some? main-instance-page)
-                                         (assoc :main-instance-page main-instance-page)
+                                       (some? main-instance-page)
+                                       (assoc :main-instance-page main-instance-page)
 
-                                         (some? objects)
-                                         (assoc :objects objects)
+                                       (some? objects)
+                                       (assoc :objects objects)
 
-                                         (some? modified-at)
-                                         (assoc :modified-at modified-at)
+                                       (some? modified-at)
+                                       (assoc :modified-at modified-at)
 
-                                         (some? annotation)
-                                         (assoc :annotation annotation)
+                                       (some? annotation)
+                                       (assoc :annotation annotation)
 
-                                         (nil? annotation)
-                                         (dissoc :annotation)
+                                       (nil? annotation)
+                                       (dissoc :annotation)
 
-                                         (some? variant-id)
-                                         (assoc :variant-id variant-id)
+                                       (some? variant-id)
+                                       (assoc :variant-id variant-id)
 
-                                         (nil? variant-id)
-                                         (dissoc :variant-id)
+                                       (nil? variant-id)
+                                       (dissoc :variant-id)
 
-                                         (some? variant-properties)
-                                         (assoc :variant-properties variant-properties)
+                                       (some? variant-properties)
+                                       (assoc :variant-properties variant-properties)
 
-                                         (nil? variant-properties)
-                                         (dissoc :variant-properties))
+                                       (nil? variant-properties)
+                                       (dissoc :variant-properties))
 
-                              ;; The set of properties that doesn't mark a component as touched
-                              diff     (set/difference
-                                        (ctk/diff-components component new-comp)
-                                        #{:annotation :modified-at :variant-id :variant-properties})]
+                            ;; The set of properties that doesn't mark a component as touched
+                            diff     (set/difference
+                                      (ctk/diff-components component new-comp)
+                                      #{:annotation :modified-at :variant-id :variant-properties})]
 
-                          (if (empty? diff)
-                            new-comp
-                            (touch new-comp)))))))
+                        (if (empty? diff)
+                          new-comp
+                          (touch new-comp))))))
 
 (defn get-component
   ([file-data component-id]
