@@ -13,7 +13,7 @@ pub fn render_fill_inner_shadows(
     surface_id: SurfaceId,
 ) {
     if shape.has_fills() {
-        for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
+        for shadow in shape.inner_shadows_visible() {
             render_fill_inner_shadow(render_state, shape, shadow, antialias, surface_id);
         }
     }
@@ -38,7 +38,7 @@ pub fn render_stroke_inner_shadows(
     surface_id: SurfaceId,
 ) {
     if !shape.has_fills() {
-        for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
+        for shadow in shape.inner_shadows_visible() {
             let filter = shadow.get_inner_shadow_filter();
             strokes::render(
                 render_state,
@@ -61,7 +61,7 @@ pub fn render_text_path_stroke_drop_shadows(
     stroke: &Stroke,
     antialias: bool,
 ) {
-    for shadow in shape.drop_shadows().rev().filter(|s| !s.hidden()) {
+    for shadow in shape.drop_shadows_visible() {
         let stroke_shadow = shadow.get_drop_shadow_filter();
         strokes::render_text_paths(
             render_state,
@@ -84,7 +84,7 @@ pub fn render_text_path_stroke_inner_shadows(
     stroke: &Stroke,
     antialias: bool,
 ) {
-    for shadow in shape.inner_shadows().rev().filter(|s| !s.hidden()) {
+    for shadow in shape.inner_shadows_visible() {
         let stroke_shadow = shadow.get_inner_shadow_filter();
         strokes::render_text_paths(
             render_state,
