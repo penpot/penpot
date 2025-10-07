@@ -399,6 +399,7 @@
 
         reorder-properties
         (mf/use-fn
+         (mf/deps variant-id)
          (fn [from-pos to-space-between-pos]
            (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))]
 
@@ -1226,6 +1227,7 @@
 
         reorder-properties
         (mf/use-fn
+         (mf/deps variant-id)
          (fn [from-pos to-space-between-pos]
            (st/emit! (dwv/reorder-variant-poperties variant-id from-pos to-space-between-pos))))
 

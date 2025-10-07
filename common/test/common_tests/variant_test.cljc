@@ -187,4 +187,20 @@
       (t/is (= (ctv/reorder-by-moving-to-position props 3 2) [{:name "border" :value "no"}
                                                               {:name "color" :value "blue"}
                                                               {:name "background" :value "none"}
-                                                              {:name "shadow" :value "yes"}])))))
+                                                              {:name "shadow" :value "yes"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 0 5) [{:name "color" :value "blue"}
+                                                              {:name "shadow" :value "yes"}
+                                                              {:name "background" :value "none"}
+                                                              {:name "border" :value "no"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 3 -1) [{:name "background" :value "none"}
+                                                               {:name "border" :value "no"}
+                                                               {:name "color" :value "blue"}
+                                                               {:name "shadow" :value "yes"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 5 -1) [{:name "background" :value "none"}
+                                                               {:name "border" :value "no"}
+                                                               {:name "color" :value "blue"}
+                                                               {:name "shadow" :value "yes"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props -1 5) [{:name "color" :value "blue"}
+                                                               {:name "shadow" :value "yes"}
+                                                               {:name "background" :value "none"}
+                                                               {:name "border" :value "no"}])))))

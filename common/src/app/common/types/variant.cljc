@@ -315,11 +315,11 @@
   "Reorder a vector by moving one of their items from some position to some space between positions.
    It clamps the position numbers to a valid range."
   [props from-pos to-space-between-pos]
-  (let [num-props  (count props)
-        num-spaces (inc num-props)
+  (let [max-space-pos  (count props)
+        max-prop-pos   (dec max-space-pos)
 
-        from-pos             (max 0 (min num-props from-pos))
-        to-space-between-pos (max 0 (min num-spaces to-space-between-pos))]
+        from-pos             (max 0 (min max-prop-pos from-pos))
+        to-space-between-pos (max 0 (min max-space-pos to-space-between-pos))]
 
     (if (= from-pos to-space-between-pos)
       props
