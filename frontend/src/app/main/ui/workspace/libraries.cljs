@@ -610,8 +610,7 @@
         linked-libraries
         (mf/with-memo [linked-libraries file-id]
           (d/removem (fn [[_ lib]]
-                       (or (:is-indirect lib)
-                           (= (:id lib) file-id)))
+                       (= (:id lib) file-id))
                      linked-libraries))
 
         shared-libraries

@@ -142,7 +142,11 @@
 
     ;; Security layer middleware that check the precense of x-client
     ;; http headers and enables an addtional csrf protection
-    :client-header-check-middleware})
+    :client-header-check-middleware
+
+    ;; A temporal flag, enables backend code use more extensivelly
+    ;; redis for caching data
+    :redis-cache})
 
 (def all-flags
   (set/union email login varia))

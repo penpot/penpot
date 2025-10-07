@@ -27,6 +27,7 @@
    [app.loggers.webhooks :as webhooks]
    [app.metrics :as mtx]
    [app.msgbus :as mbus]
+   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as climit]
    [app.rpc.commands.files :as files]
@@ -44,6 +45,7 @@
 (declare ^:private update-file*)
 (declare ^:private process-changes-and-validate)
 (declare ^:private take-snapshot?)
+(declare ^:private invalidate-caches!)
 
 ;; PUBLIC API; intended to be used outside of this module
 (declare update-file!)
@@ -261,6 +263,9 @@
 
       (persist-file! cfg file)
 
+      (when (contains? cf/flags :redis-cache)
+        (invalidate-caches! cfg file))
+
       ;; Send asynchronous notifications
       (send-notifications! cfg params file)
 
@@ -300,6 +305,12 @@
                 {::db/return-keys false})
 
     (bfc/update-file! cfg file)))
+
+(defn- invalidate-caches!
+  [cfg {:keys [id] :as file}]
+  (rds/run! cfg (fn [{:keys [::rds/conn]}]
+                  (let [key (str files/file-summary-cache-key-prefix id)]
+                    (rds/del conn key)))))
 
 (defn- attach-snapshot
   "Attach snapshot data to the file. This should be called before the

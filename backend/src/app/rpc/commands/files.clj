@@ -17,6 +17,7 @@
    [app.common.schema :as sm]
    [app.common.schema.desc-js-like :as-alias smdj]
    [app.common.time :as ct]
+   [app.common.transit :as t]
    [app.common.types.components-list :as ctkl]
    [app.common.types.file :as ctf]
    [app.common.uri :as uri]
@@ -28,6 +29,7 @@
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
    [app.msgbus :as mbus]
+   [app.redis :as rds]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
@@ -208,8 +210,7 @@
   schema:get-file
   [:map {:title "get-file"}
    [:features {:optional true} ::cfeat/features]
-   [:id ::sm/uuid]
-   [:project-id {:optional true} ::sm/uuid]])
+   [:id ::sm/uuid]])
 
 (defn get-minimal-file
   [cfg id & {:as opts}]
@@ -513,23 +514,100 @@
 
 ;; --- COMMAND QUERY: get-team-shared-files
 
-(defn- components-and-variants
-  "Return a set with all the variant-ids, and a list of components, but with
-   only one component by variant"
-  [components]
-  (let [{:keys [variant-ids components]}
-        (reduce (fn [{:keys [variant-ids components] :as acc} {:keys [variant-id] :as component}]
-                  (cond
-                    (nil? variant-id)
-                    {:variant-ids variant-ids :components (conj components component)}
-                    (contains? variant-ids variant-id)
-                    acc
-                    :else
-                    {:variant-ids (conj variant-ids variant-id) :components (conj components component)}))
-                {:variant-ids #{} :components []}
-                components)]
-    {:components components
-     :variant-ids variant-ids}))
+(defn- get-components-with-variants
+  "Return a set with all the variant-ids, and a list of components, but
+  with only one component by variant.
+
+  Returns a vector of unique components and a set of all variant ids"
+  [fdata]
+  (loop [variant-ids #{}
+         components' []
+         components  (ctkl/components-seq fdata)]
+    (if-let [{:keys [variant-id] :as component} (first components)]
+      (cond
+        (nil? variant-id)
+        (recur variant-ids
+               (conj components' component)
+               (rest components))
+
+        (contains? variant-ids variant-id)
+        (recur variant-ids
+               components'
+               (rest components))
+
+        :else
+        (recur (conj variant-ids variant-id)
+               (conj components' component)
+               (rest components)))
+
+      [(d/index-by :id components') variant-ids])))
+
+(defn- sample-assets
+  [assets limit]
+  (let [assets (into [] (map val) assets)]
+    {:count (count assets)
+     :sample (->> assets
+                  (sort-by #(str/lower (:name %)))
+                  (into [] (take limit)))}))
+
+(defn- calculate-library-summary
+  "Calculate the file library summary (counters and samples)"
+  [{:keys [data] :as file}]
+  (let [load-objects
+        (fn [sample]
+          (mapv #(ctf/load-component-objects data %) sample))
+
+        [components variant-ids]
+        (get-components-with-variants data)
+
+        components-sample
+        (-> (sample-assets components 4)
+            (update :sample load-objects))]
+
+    {:components components-sample
+     :variants {:count (count variant-ids)}
+     :colors (sample-assets (:colors data) 3)
+     :typographies (sample-assets (:typographies data) 3)}))
+
+(def ^:private file-summary-cache-key-ttl
+  (ct/duration {:days 30}))
+
+(def file-summary-cache-key-prefix
+  "penpot.library-summary.")
+
+(defn- get-file-with-summary
+  "Get a file without data with a summary of its local library content"
+  [cfg id]
+  (let [get-from-cache
+        (fn [{:keys [::rds/conn]} cache-key]
+          (when-let [result (rds/get conn cache-key)]
+            (let [file    (bfc/get-file cfg id :load-data? false)
+                  summary (t/decode-str result)]
+              (-> (assoc file :library-summary summary)
+                  (dissoc :data)))))
+
+        calculate-from-db
+        (fn []
+          (let [file   (bfc/get-file cfg id :migrate? false)
+                result (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
+                         (calculate-library-summary file))]
+            (-> file
+                (assoc :library-summary result)
+                (dissoc :legacy-data)
+                (dissoc :data))))
+
+        persist-to-cache
+        (fn [{:keys [::rds/conn]} data cache-key]
+          (rds/set conn cache-key (t/encode-str data)
+                   (rds/build-set-args {:ex file-summary-cache-key-ttl})))]
+
+    (if (contains? cf/flags :redis-cache)
+      (let [cache-key (str file-summary-cache-key-prefix id)]
+        (or (rds/run! cfg get-from-cache cache-key)
+            (let [file (calculate-from-db)]
+              (rds/run! cfg persist-to-cache (:library-summary file) cache-key)
+              file)))
+      (calculate-from-db))))
 
 (def ^:private sql:team-shared-files
   "WITH file_library_agg AS (
@@ -547,50 +625,23 @@
      LEFT JOIN file_thumbnail AS ft ON (ft.file_id = f.id AND ft.revn = f.revn AND ft.deleted_at IS NULL)
      LEFT JOIN file_library_agg AS fla ON (fla.file_id = f.id)
     WHERE f.is_shared = true
-      AND f.deleted_at is null
-      AND p.deleted_at is null
+      AND f.deleted_at IS NULL
+      AND p.deleted_at IS NULL
       AND p.team_id = ?
     ORDER BY f.modified_at DESC")
-
-(defn- get-library-summary
-  [{:keys [data] :as file}]
-  (let [assets-sample
-        (fn [assets limit]
-          (let [sorted-assets (->> (vals assets)
-                                   (sort-by #(str/lower (:name %))))]
-            {:count (count sorted-assets)
-             :sample (into [] (take limit sorted-assets))}))
-        load-objects
-        (fn [component]
-          (ctf/load-component-objects data component))
-
-        comps-and-variants
-        (components-and-variants (ctkl/components-seq data))
-
-        components
-        (into {} (map (juxt :id identity) (:components comps-and-variants)))
-
-        components-sample
-        (-> (assets-sample components 4)
-            (update :sample #(mapv load-objects %))
-            (assoc :variants-count (-> comps-and-variants :variant-ids count)))]
-
-    {:components components-sample
-     :media (assets-sample (:media data) 3)
-     :colors (assets-sample (:colors data) 3)
-     :typographies (assets-sample (:typographies data) 3)}))
 
 (defn- get-team-shared-files
   [{:keys [::db/conn] :as cfg} {:keys [team-id profile-id]}]
   (teams/check-read-permissions! conn profile-id team-id)
-  (let [xform (map (fn [{:keys [id library-file-ids]}]
-                     (let [file (bfc/get-file cfg id :migrate? false)
-                           summ (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-                                  (get-library-summary file))]
-                       (-> file
-                           (dissoc :data)
-                           (assoc :library-file-ids (db/decode-pgarray library-file-ids #{}))
-                           (assoc :library-summary summ)))))]
+
+  (let [process-row
+        (fn [{:keys [id library-file-ids]}]
+          (let [file (get-file-with-summary cfg id)]
+            (assoc file :library-file-ids (db/decode-pgarray library-file-ids #{}))))
+
+        xform
+        (map process-row)]
+
     (->> (db/plan conn [sql:team-shared-files team-id] {:fetch-size 1})
          (transduce xform conj #{}))))
 
@@ -604,6 +655,28 @@
    ::sm/params schema:get-team-shared-files}
   [cfg {:keys [::rpc/profile-id] :as params}]
   (db/tx-run! cfg get-team-shared-files (assoc params :profile-id profile-id)))
+
+;; --- COMMAND QUERY: get-file-summary
+
+(defn- get-file-summary
+  [cfg id]
+  (let [file (get-file-with-summary cfg id)]
+    (-> (:library-summary file)
+        (assoc :name (:name file)))))
+
+(def ^:private
+  schema:get-file-summary
+  [:map {:title "get-file-summary"}
+   [:id ::sm/uuid]])
+
+(sv/defmethod ::get-file-summary
+  "Retrieve a file summary by its ID. Only authenticated users."
+  {::doc/added "1.20"
+   ::sm/params schema:get-file-summary}
+  [cfg {:keys [::rpc/profile-id id] :as params}]
+  (check-read-permissions! cfg profile-id id)
+  (get-file-summary cfg id))
+
 
 ;; --- COMMAND QUERY: get-file-libraries
 
@@ -622,7 +695,6 @@
 
 
 ;; --- COMMAND QUERY: Files that use this File library
-
 
 (def ^:private sql:library-using-files
   "SELECT f.id,
@@ -692,43 +764,6 @@
   (dm/with-open [conn (db/open pool)]
     (teams/check-read-permissions! conn profile-id team-id)
     (get-team-recent-files conn team-id)))
-
-
-;; --- COMMAND QUERY: get-file-summary
-
-
-(defn- get-file-summary
-  [{:keys [::db/conn] :as cfg} {:keys [profile-id id project-id] :as params}]
-  (check-read-permissions! conn profile-id id)
-  (let [team (teams/get-team conn
-                             :profile-id profile-id
-                             :project-id project-id
-                             :file-id id)
-
-        file (bfc/get-file cfg id
-                           :project-id project-id
-                           :read-only? true)]
-
-    (-> (cfeat/get-team-enabled-features cf/flags team)
-        (cfeat/check-client-features! (:features params))
-        (cfeat/check-file-features! (:features file)))
-
-    (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
-      (let [components-and-variants (components-and-variants (ctkl/components-seq (:data file)))]
-        {:name             (:name file)
-         :components-count (-> components-and-variants :components count)
-         :variants-count   (-> components-and-variants :variant-ids count)
-         :graphics-count   (count (get-in file [:data :media] []))
-         :colors-count     (count (get-in file [:data :colors] []))
-         :typography-count (count (get-in file [:data :typographies] []))}))))
-
-(sv/defmethod ::get-file-summary
-  "Retrieve a file summary by its ID. Only authenticated users."
-  {::doc/added "1.20"
-   ::sm/params schema:get-file}
-  [cfg {:keys [::rpc/profile-id] :as params}]
-  (db/tx-run! cfg get-file-summary (assoc params :profile-id profile-id)))
-
 
 ;; --- COMMAND QUERY: get-file-info
 

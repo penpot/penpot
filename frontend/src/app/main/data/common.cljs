@@ -10,7 +10,6 @@
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.schema :as sm]
-   [app.common.types.components-list :as ctkl]
    [app.common.types.team :as ctt]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as modal]
@@ -105,32 +104,21 @@
   [file-id add-shared]
   (ptk/reify ::show-shared-dialog
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [features (get state :features)
-            file     (dsh/lookup-file state)
-            data     (get file :data)]
-
-        (->> (if (and data file)
-               (rx/of {:name             (:name file)
-                       :components-count (count (ctkl/components-seq data))
-                       :graphics-count   (count (:media data))
-                       :colors-count     (count (:colors data))
-                       :typography-count (count (:typographies data))})
-               (rp/cmd! :get-file-summary {:id file-id :features features}))
-             (rx/map (fn [summary]
-                       (let [count (+ (:components-count summary)
-                                      (:graphics-count summary)
-                                      (:colors-count summary)
-                                      (:typography-count summary))]
-                         (modal/show
-                          {:type :confirm
-                           :title (tr "modals.add-shared-confirm.message" (:name summary))
-                           :message (if (zero? count) (tr "modals.add-shared-confirm-empty.hint") (tr "modals.add-shared-confirm.hint"))
-                           :cancel-label (if (zero? count) (tr "labels.cancel") :omit)
-                           :accept-label (tr "modals.add-shared-confirm.accept")
-                           :accept-style :primary
-                           :on-accept add-shared})))))))))
-
+    (watch [_ _ _]
+      (->> (rp/cmd! :get-file-summary {:id file-id})
+           (rx/map (fn [summary]
+                     (let [count (+ (-> summary :components :count)
+                                    (-> summary :graphics :count)
+                                    (-> summary :colors :count)
+                                    (-> summary :typographies :count))]
+                       (modal/show
+                        {:type :confirm
+                         :title (tr "modals.add-shared-confirm.message" (:name summary))
+                         :message (if (zero? count) (tr "modals.add-shared-confirm-empty.hint") (tr "modals.add-shared-confirm.hint"))
+                         :cancel-label (if (zero? count) (tr "labels.cancel") :omit)
+                         :accept-label (tr "modals.add-shared-confirm.accept")
+                         :accept-style :primary
+                         :on-accept add-shared}))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Exportations
