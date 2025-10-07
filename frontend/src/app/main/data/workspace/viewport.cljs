@@ -14,6 +14,7 @@
    [app.common.geom.rect :as gpr]
    [app.common.geom.shapes :as gsh]
    [app.common.math :as mth]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.util.mouse :as mse]
    [beicon.v2.core :as rx]
@@ -113,6 +114,8 @@
    (fn? y))
 
   (ptk/reify ::update-viewport-position
+    ev/PerformanceEvent
+
     ptk/UpdateEvent
     (update [_ state]
       (update-in state [:workspace-local :vbox]

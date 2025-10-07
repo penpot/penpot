@@ -10,13 +10,17 @@
    [app.common.data :as d]
    [app.common.json :as json]
    [app.common.logging :as l]
+   [app.common.math :as math]
    [app.common.time :as ct]
    [app.config :as cf]
+   [app.main.refs :as refs]
    [app.main.repo :as rp]
+   [app.main.store :as st]
    [app.util.globals :as g]
    [app.util.http :as http]
    [app.util.i18n :as i18n]
    [app.util.object :as obj]
+   [app.util.perf :as perf]
    [app.util.storage :as storage]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
@@ -33,6 +37,25 @@
 
 ;; Defines the time window (in ms) within events belong to the same session.
 (def session-timeout (* 1000 60 30))
+
+
+;; Min time for a long task to be reported to telemetry
+(def min-longtask-time 1000)
+
+;; Min time between long task reports
+(def debounce-longtask-time 1000)
+
+;; Min time for a long task to be reported to telemetry
+(def min-browser-event-time 1000)
+
+;; Min time between long task reports
+(def debounce-browser-event-time 1000)
+
+;; Min time for a long task to be reported to telemetry
+(def min-performace-event-time 1000)
+
+;; Min time between long task reports
+(def debounce-performance-event-time 1000)
 
 ;; --- CONTEXT
 
@@ -77,6 +100,8 @@
 
 (defprotocol Event
   (-data [_] "Get event data"))
+
+(defprotocol PerformanceEvent)
 
 (defn- coerce-to-string
   [v]
@@ -148,6 +173,48 @@
          :context context
          :props   props}))))
 
+(defn performance-payload
+  ([result]
+   (let [props      (aget result 0)
+         profile-id (aget result 1)]
+     (performance-payload profile-id props)))
+  ([profile-id props]
+   (let [{:keys [performance-info]} @st/state]
+     {:type    "action"
+      :name    "performance"
+      :context (merge @context performance-info)
+      :props   props
+      :profile-id profile-id})))
+
+(defn- process-performance-event
+  [result]
+  (let [event      (aget result 0)
+        profile-id (aget result 1)]
+
+    (if (and (satisfies? PerformanceEvent event)
+             (exists? js/globalThis)
+             (exists? (.-requestAnimationFrame js/globalThis))
+             (exists? (.-scheduler js/globalThis))
+             (exists? (.-postTask (.-scheduler js/globalThis))))
+      (rx/create
+       (fn [subs]
+         (let [start (perf/timestamp)]
+           (js/requestAnimationFrame
+            #(js/scheduler.postTask
+              (fn []
+                (let [time (- (perf/timestamp) start)]
+                  (when (> time min-performace-event-time)
+                    (rx/push!
+                     subs
+                     (performance-payload
+                      profile-id
+                      {::event (str (ptk/type event))
+                       :time time}))))
+                (rx/end! subs))
+              #js {"priority" "user-blocking"})))
+         nil))
+      (rx/empty))))
+
 (defn- process-event
   [event]
   (cond
@@ -183,10 +250,118 @@
 
     (rx/of nil)))
 
+
+(defn performance-observer-event-stream
+  []
+  (if (and (exists? js/globalThis)
+           (exists? (.-PerformanceObserver js/globalThis)))
+    (rx/create
+     (fn [subs]
+       (let [observer
+             (js/PerformanceObserver.
+              (fn [list]
+                (doseq [entry (.getEntries list)]
+                  (when (and (= "event" (.-entryType entry))
+                             (> (.-duration entry) min-browser-event-time))
+                    (rx/push!
+                     subs
+                     {::event :observer-event
+                      :duration (.-duration entry)
+                      :event-name (.-name entry)})))))]
+         (.observe observer #js {:entryTypes #js ["event"]})
+         (fn []
+           (.disconnect observer)))))
+    (rx/empty)))
+
+(defn performance-observer-longtask-stream
+  []
+  (if (and (exists? js/globalThis)
+           (exists? (.-PerformanceObserver js/globalThis)))
+    (rx/create
+     (fn [subs]
+       (let [observer
+             (js/PerformanceObserver.
+              (fn [list]
+                (doseq [entry (.getEntries list)]
+                  (when (and (= "longtask" (.-entryType entry))
+                             (> (.-duration entry) min-longtask-time))
+                    (rx/push! subs
+                              {::event :observer-longtask
+                               :duration (.-duration entry)})))))]
+         (.observe observer #js {:entryTypes #js ["longtask"]})
+         (fn []
+           (.disconnect observer)))))
+    (rx/empty)))
+
+(defn store-performace-info
+  []
+  (letfn [(micro-benchmark [state]
+            (let [start (js/performance.now)]
+              (doseq [i (range 0 1e6)]
+                (* (math/sin i) (math/sqrt i)))
+              (let [end (js/performance.now)]
+                (assoc-in state [:performance-info :bench-result] (- end start)))))
+
+          (count-shapes [file]
+            (if file
+              (->> file :data :pages-index vals
+                   (map (comp count :objects))
+                   (reduce +))
+              0))
+
+          (count-library-data [files {:keys [id]}]
+            (let [data (get-in files [id :data])]
+              {:components (count (:components data))
+               :colors (count (:colors data))
+               :typographies (count (:typographies data))}))
+
+          (save-file-data []
+            (ptk/reify ::store-performance-info-save-file-data
+              ptk/UpdateEvent
+              (update [_ state]
+                (let [file-id (get state :current-file-id)
+                      file (get-in state [:files file-id])
+                      file-size (count-shapes file)
+
+                      libraries
+                      (-> (refs/select-libraries (:files state) (:id file))
+                          (update-vals (partial count-library-data (:files state))))
+
+                      lib-sizes
+                      (->> libraries
+                           (vals)
+                           (reduce (fn [acc {:keys [components colors typographies]}]
+                                     (-> acc
+                                         (update :components + components)
+                                         (update :colors + colors)
+                                         (update :typographies + typographies)))))]
+                  (-> state
+                      (assoc-in [:performance-info :file-size] file-size)
+                      (assoc-in [:performance-info :library-sizes] lib-sizes)
+                      (assoc-in [:performance-info :file-start-time] (js/performance.now)))))))]
+
+    (ptk/reify ::store-performace-info
+      ptk/UpdateEvent
+      (update [_ state]
+        (-> state
+            micro-benchmark
+            (assoc-in [:performance-info :app-start-time] (js/performance.now))))
+
+      ptk/WatchEvent
+      (watch [_ _ stream]
+        (->> stream
+             (rx/filter #(= (ptk/type %) :app.main.data.workspace/all-libraries-resolved))
+             (rx/take 1)
+             (rx/map save-file-data))))))
+
 (defn initialize
   []
   (when (contains? cf/flags :audit-log)
     (ptk/reify ::initialize
+      ptk/WatchEvent
+      (watch [_ _ _]
+        (rx/of (store-performace-info)))
+
       ptk/EffectEvent
       (effect [_ _ stream]
         (let [session (atom nil)
@@ -223,13 +398,30 @@
                          (fn []
                            (l/debug :hint "audit persistence terminated"))))
 
-          (->> stream
-               (rx/with-latest-from profile)
-               (rx/map (fn [result]
-                         (let [event      (aget result 0)
-                               profile-id (aget result 1)]
-                           (some-> (process-event event)
-                                   (update :profile-id #(or % profile-id))))))
+          (->> (rx/merge
+                (->> stream
+                     (rx/with-latest-from profile)
+                     (rx/map (fn [result]
+                               (let [event      (aget result 0)
+                                     profile-id (aget result 1)]
+                                 (some-> (process-event event)
+                                         (update :profile-id #(or % profile-id)))))))
+
+                (->> (performance-observer-event-stream)
+                     (rx/with-latest-from profile)
+                     (rx/map performance-payload)
+                     (rx/debounce debounce-browser-event-time))
+
+                (->> (performance-observer-longtask-stream)
+                     (rx/with-latest-from profile)
+                     (rx/map performance-payload)
+                     (rx/debounce debounce-longtask-time))
+
+                (->> stream
+                     (rx/with-latest-from profile)
+                     (rx/merge-map process-performance-event)
+                     (rx/debounce debounce-performance-event-time)))
+
                (rx/filter :profile-id)
                (rx/map (fn [event]
                          (let [session* (or @session (ct/now))
