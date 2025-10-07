@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-09-03 09:02+0000\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
 "Last-Translator: Corentin Noël <tintou@noel.tf>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.13.1-dev\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -904,6 +904,7 @@ msgid "dashboard.plugins.bad-url"
 msgstr "L'URL de l'extension est incorrect"
 
 #: src/app/main/ui/dashboard.cljs:205
+#, fuzzy
 msgid "dashboard.plugins.parse-error"
 msgstr "Impossible de traiter la définition de l'extension"
 
@@ -7161,6 +7162,7 @@ msgid "workspace.tokens.edit-themes"
 msgstr "Modifier les thèmes"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
+#, fuzzy
 msgid "workspace.tokens.edit-token"
 msgstr "Modifier le token"
 
@@ -7896,6 +7898,7 @@ msgid "ds.inputs.numeric-input.open-token-list-dropdown"
 msgstr "Ouvrir la liste des tokens"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "Ce token n'est pas disponible dans la collection ou le thème actif."
 
@@ -7920,6 +7923,7 @@ msgid "workspace.tokens.no-token-files-found"
 msgstr "Aucun token, collection ou thème n'ont été trouvés dans ce fichier."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
+#, fuzzy
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Entrer : 400, Bold, 700 Italic ou {alias}"
 
