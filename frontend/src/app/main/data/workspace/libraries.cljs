@@ -1421,9 +1421,9 @@
 
     ptk/WatchEvent
     (watch [_ state _]
-      (let [libraries (:shared-files state)
-            library   (get libraries library-id)
-            variants-count (-> library :library-summary :components :variants-count)
+      (let [libraries        (:shared-files state)
+            library          (get libraries library-id)
+            variants-count   (-> library :library-summary :variants count)
 
             loaded-libraries (->> (dsh/lookup-libraries state)
                                   (remove (fn [[_ lib]]

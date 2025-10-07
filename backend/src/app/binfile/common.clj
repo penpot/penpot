@@ -159,7 +159,7 @@
   [cfg id & {:as opts}]
   (db/get-with-sql cfg [sql:get-minimal-file id] opts))
 
-(def sql:get-file
+(def sql:files-with-data
   "SELECT f.id,
           f.project_id,
           f.created_at,
