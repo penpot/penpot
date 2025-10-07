@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-09-16 10:02+0000\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
 "Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/hi/"
 ">\n"
@@ -887,6 +887,7 @@ msgid "dashboard.plugins.bad-url"
 msgstr "प्लगइन URL ग़लत है"
 
 #: src/app/main/ui/dashboard.cljs:205
+#, fuzzy
 msgid "dashboard.plugins.parse-error"
 msgstr "प्लगइन मैनिफेस्ट को पार्स नहीं कर सकते"
 
@@ -2273,6 +2274,7 @@ msgid "labels.product-design"
 msgstr "उत्पाद या UX डिज़ाइन"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "उत्पाद प्रबंधन"
 
@@ -2534,6 +2536,7 @@ msgid "loader.tips.03.message"
 msgstr "परिचित CSS-जैसे लेआउट नियंत्रण के साथ लचीले ढंग से डिज़ाइन करें।"
 
 #: src/app/main/ui/ds/product/loader.cljs:24
+#, fuzzy
 msgid "loader.tips.03.title"
 msgstr "CSS जैसा ऑटो लेआउट"
 
