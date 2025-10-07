@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-29 15:01+0000\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
@@ -8,9 +8,10 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
-"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
-"X-Generator: Weblate 5.13.1-dev\n"
+"Plural-Forms: nplurals=3; plural="
+"(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : "
+"((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -887,6 +888,7 @@ msgid "dashboard.plugins.bad-url"
 msgstr "Spraudņa URL ir nepareizs"
 
 #: src/app/main/ui/dashboard.cljs:205
+#, fuzzy
 msgid "dashboard.plugins.parse-error"
 msgstr "Nevar apstrādāt spraudņa manifestu"
 
@@ -2573,6 +2575,7 @@ msgid "loader.tips.03.message"
 msgstr "Dizaina pielāgojamība ar pazīstamām CSS līdzīgām izkārtojuma vadīklām."
 
 #: src/app/main/ui/ds/product/loader.cljs:24
+#, fuzzy
 msgid "loader.tips.03.title"
 msgstr "Automātisks izkārtojums kā CSS"
 
@@ -7828,6 +7831,7 @@ msgid "ds.inputs.token-field.detach-token"
 msgstr "Atdalīt tekstvienību"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "Šī tekstvienība nav pieejama nevienā aktīvajā kopā vai izskatā."
 
