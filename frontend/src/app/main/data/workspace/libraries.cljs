@@ -710,11 +710,14 @@
             (fn [ids]
               (let [parent-ids (when update-layout?
                                  (map #(-> (get objects %) :parent-id) ids))]
-                (rx/of
-                 (dws/select-shapes ids)
-                 dwz/zoom-to-selected-shape
+                (rx/concat
+                 (rx/of
+                  (dws/select-shapes ids)
+                  dwz/zoom-to-selected-shape)
                  (when update-layout?
-                   (ptk/data-event :layout/update {:ids parent-ids})))))
+                   (->> (rx/of (ptk/data-event :layout/update {:ids parent-ids}))
+                       ;; Delay so the navigation can finish
+                        (rx/delay 250))))))
 
             redirect-to-page
             (fn [page-id ids]
