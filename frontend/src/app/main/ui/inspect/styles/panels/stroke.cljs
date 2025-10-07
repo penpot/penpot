@@ -15,7 +15,7 @@
    [app.util.code-gen.style-css :as css]
    [rumext.v2 :as mf]))
 
-(def ^:private properties [:border-style :border-width :border-color])
+(def ^:private properties [:border-color :border-style :border-width])
 
 (defn- stroke->color [shape]
   {:color (:stroke-color shape)
@@ -45,29 +45,38 @@
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
+;; Current token implementation on fills only supports one token per shape and has to be the first fill
+;; This must be improved in the future
+(defn- has-token?
+  "Returns true if the resolved token matches the color and is the first fill (idx = 0)."
+  [resolved-token stroke-type idx]
+  (and (= (:resolved-value resolved-token) (:color stroke-type))
+       (= 0 idx)))
+
 (mf/defc stroke-panel*
   [{:keys [shapes objects resolved-tokens color-space]}]
   [:div {:class (stl/css :stroke-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class "stroke-shape"}
-      (for [stroke (:strokes shape)]
+      (for [[idx stroke] (map-indexed vector (:strokes shape))]
         (for [property properties]
           (let [property property
                 value (css/get-css-value objects stroke property)
                 stroke-type (stroke->color stroke)
                 property-name (cmm/get-css-rule-humanized property)
                 property-value (css/get-css-property objects stroke property)
-                resolved-token (get-resolved-token property shape resolved-tokens)]
+                resolved-token (get-resolved-token property shape resolved-tokens)
+                has-token (has-token? resolved-token stroke-type idx)]
             (if (= property :border-color)
-              [:> color-properties-row* {:key (dm/str "stroke-property-" (:id shape) (:color stroke-type))
+              [:> color-properties-row* {:key (dm/str "stroke-" property "-" idx (:color stroke-type))
                                          :term property-name
                                          :color stroke-type
-                                         :token resolved-token
+                                         :token (when has-token resolved-token)
                                          :format color-space
                                          :copiable true}]
-              [:> properties-row* {:key (dm/str "svg-property-" (d/name property))
+              [:> properties-row* {:key  (dm/str "stroke-" property "-" idx (:color stroke-type))
                                    :term (d/name property-name)
                                    :detail (dm/str value)
-                                   :token resolved-token
+                                   :token (when has-token resolved-token)
                                    :property property-value
                                    :copiable true}]))))])])
