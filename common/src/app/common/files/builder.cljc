@@ -129,8 +129,8 @@
    [:file-id {:optional true} ::sm/uuid]
    [:page-id {:optional true} ::sm/uuid]
    [:frame-id {:optional true} ::sm/uuid]
-   [:name {:optional true} ::sm/text]
-   [:path {:optional true} ::sm/text]
+   [:name {:optional true} :string]
+   [:path {:optional true} :string]
    [:variant-id {:optional true} ::sm/uuid]
    [:variant-properties {:optional true} [:vector types.variant/schema:variant-property]]])
 
@@ -465,7 +465,7 @@
          {:type :add-component
           :id component-id
           :name (or name "anonmous")
-          :path path
+          :path (d/nilv path "")
           :main-instance-id frame-id
           :main-instance-page page-id
           :variant-id variant-id

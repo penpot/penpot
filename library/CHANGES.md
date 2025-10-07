@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.0.11
+
+- Set correct path if it is not provided on addComponent
+
+
 ## 1.0.10
 
 - Enable variant/v1 feature by default
