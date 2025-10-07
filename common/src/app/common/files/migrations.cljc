@@ -1605,6 +1605,13 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0013-fix-component-path"
+  [data _]
+  (let [update-component
+        (fn [component]
+          (update component :path #(d/nilv % "")))]
+    (d/update-when data :components d/update-vals update-component)))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1673,4 +1680,5 @@
          "0009-add-partial-text-touched-flags"
          "0010-fix-swap-slots-pointing-non-existent-shapes"
          "0011-fix-invalid-text-touched-flags"
-         "0012-fix-position-data"]))
+         "0012-fix-position-data"
+         "0013-fix-component-path"]))

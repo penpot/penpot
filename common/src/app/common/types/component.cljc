@@ -23,7 +23,7 @@
    [:map
     [:id ::sm/uuid]
     [:name :string]
-    [:path {:optional true} [:maybe :string]]
+    [:path :string]
     [:modified-at {:optional true} ::ct/inst]
     [:objects {:gen/max 10 :optional true} ctp/schema:objects]
     [:main-instance-id ::sm/uuid]

@@ -317,8 +317,7 @@
      [:type [:= :add-component]]
      [:id ::sm/uuid]
      [:name :string]
-     [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
-     [:path {:optional true} :string]
+     [:path :string]
      [:main-instance-id ::sm/uuid]
      [:main-instance-page ::sm/uuid]
      ;; Only used by external processes (like Penpot SDK)
@@ -331,7 +330,6 @@
      [:id ::sm/uuid]
      [:name {:optional true} :string]
      [:path {:optional true} :string]
-     [:shapes {:optional true} [:vector {:gen/max 3} ::sm/any]]
      [:variant-id {:optional true} ::sm/uuid]
      [:variant-properties {:optional true} [:vector ctv/schema:variant-property]]]]
 
