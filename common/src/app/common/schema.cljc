@@ -853,6 +853,11 @@
 ;;    ::oapi/type "string"
 ;;    ::oapi/format "number"}})
 
+#?(:clj
+   (register!
+    {:type ::atom
+     :pred #(instance? clojure.lang.Atom %)}))
+
 (register!
  {:type ::fn
   :pred fn?})
