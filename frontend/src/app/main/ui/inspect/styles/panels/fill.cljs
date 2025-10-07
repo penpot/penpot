@@ -7,7 +7,6 @@
 (ns app.main.ui.inspect.styles.panels.fill
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.common.types.fills :as types.fills]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
@@ -25,25 +24,36 @@
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
+;; Current token implementation on fills only supports one token per shape and has to be the first fill
+;; This must be improved in the future
+(defn- has-token?
+  "Returns true if the resolved token matches the color and is the first fill (idx = 0)."
+  [resolved-token color-type idx]
+  (and (= (:resolved-value resolved-token) (:color color-type))
+       (= 0 idx)))
+
 (mf/defc fill-panel*
   [{:keys [shapes resolved-tokens color-space]}]
   [:div {:class (stl/css :fill-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class "fill-shape"}
-      (for [fill (:fills shape [])]
+      (for [[idx fill] (map-indexed vector (:fills shape))]
         (let [property :background
               color-type (types.fills/fill->color fill) ;; can be :color, :gradient or :image
               property-name (cmm/get-css-rule-humanized property)
-              resolved-token (get-resolved-token shape resolved-tokens)]
+              resolved-token (get-resolved-token shape resolved-tokens)
+              has-token (has-token? resolved-token color-type idx)]
+
           (if (:color color-type)
-            [:> color-properties-row* {:key (dm/str "fill-property-" (:id shape) (:color color-type))
+            [:> color-properties-row* {:key idx
                                        :term property-name
                                        :color color-type
-                                       :token resolved-token
+                                       :token (when has-token resolved-token)
                                        :format color-space
                                        :copiable true}]
             (if (or (:gradient color-type) (:image color-type))
-              [:> color-properties-row* {:term property-name
+              [:> color-properties-row* {:key idx
+                                         :term property-name
                                          :color color-type
                                          :copiable true}]
               [:span "background-image"]))))])])
