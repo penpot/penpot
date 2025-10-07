@@ -6,6 +6,8 @@
   org.clojure/data.fressian {:mvn/version "1.1.0"}
   org.clojure/clojurescript {:mvn/version "1.12.42"}
 
+  org.apache.commons/commons-pool2 {:mvn/version "2.12.1"}
+
   ;; Logging
   org.apache.logging.log4j/log4j-api {:mvn/version "2.25.1"}
   org.apache.logging.log4j/log4j-core {:mvn/version "2.25.1"}

@@ -23,6 +23,7 @@
    [app.main :as-alias main]
    [app.metrics :as mtx]
    [app.msgbus :as-alias mbus]
+   [app.redis :as rds]
    [app.rpc.climit :as climit]
    [app.rpc.cond :as cond]
    [app.rpc.helpers :as rph]
@@ -261,6 +262,7 @@
    ::session/manager
    ::http.client/client
    ::db/pool
+   ::rds/pool
    ::mbus/msgbus
    ::sto/storage
    ::mtx/metrics
