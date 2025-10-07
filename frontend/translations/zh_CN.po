@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: Jun Fang <junfang123@gmail.com>\n"
+"Last-Translator: DoubleCat <zerozedwm@gmail.com>\n"
 "Language-Team: Chinese (Simplified Han script) <https://hosted.weblate.org/"
 "projects/penpot/frontend/zh_Hans/>\n"
 "Language: zh_CN\n"
@@ -7238,6 +7238,7 @@ msgid "ds.inputs.numeric-input.no-matches"
 msgstr "无匹配项。"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "该token于任意活动集合或主题皆不可用。"
 
