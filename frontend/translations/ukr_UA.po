@@ -3989,22 +3989,6 @@ msgstr "Виділити курсивом"
 msgid "shortcuts.join-nodes"
 msgstr "Приєднати вузли"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Зменшити відступ між літерами на 1"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Збільшити відступ між літерами на 1"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Зменшити висоту лінії на 1"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Збільшити висоту лінії на 1"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Перемкнути рядок через"

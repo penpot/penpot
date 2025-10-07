@@ -3958,22 +3958,6 @@ msgstr "Attiva/Disattiva corsivo"
 msgid "shortcuts.join-nodes"
 msgstr "Unisci nodi"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Diminuisci spaziatura tra le lettere"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Aumenta spaziatura tra le lettere"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Diminuisci interlinea"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Aumenta interlinea"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Attiva/disattiva testo barrato"
@@ -7791,10 +7775,6 @@ msgstr "L’email non corrisponde all’invito."
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
 msgid "inspect.tabs.computed"
 msgstr "Calcolato"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:107
-msgid "inspect.tabs.styles"
-msgstr "Stili"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"

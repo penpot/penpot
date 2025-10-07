@@ -3332,22 +3332,6 @@ msgstr "İtalik yazı aç/kapat"
 msgid "shortcuts.join-nodes"
 msgstr "Düğümlere katıl"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Harf aralığını azalt"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Harf aralığını artır"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Satır yüksekliğini azalt"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Satır yüksekliğini artır"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Üstü çizili yazı aç/kapat"

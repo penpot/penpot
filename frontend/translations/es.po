@@ -1855,10 +1855,6 @@ msgstr "Información"
 msgid "labels.styles"
 msgstr "Estilos"
 
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.blur"
-msgstr "Desenfoque"
-
 #: src/app/main/ui/inspect/styles/properties_row.cljs:48
 msgid "inspect.tabs.styles.token.resolved-value"
 msgstr "Valor resuelto:"
@@ -1866,30 +1862,6 @@ msgstr "Valor resuelto:"
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.geometry"
 msgstr "Tamaño y posición"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.layout"
-msgstr "Layout"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.layout-element"
-msgstr "Layout de elemento"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.shadow"
-msgstr "Sombra"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.stroke"
-msgstr "Borde"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.svg"
-msgstr "SVG"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.text"
-msgstr "Texto"
 
 #: src/app/main/ui/inspect/styles/style_box.cljs:12
 msgid "inspect.tabs.styles.panel.toggle-style"
@@ -1902,10 +1874,6 @@ msgstr "Sets y temas de tokens"
 #: src/app/main/ui/inspect/styles/style_box.cljs:10
 msgid "inspect.tabs.styles.panel.variant"
 msgstr "Propiedades de las variantes"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:12
-msgid "inspect.tabs.styles.panel.visibility"
-msgstr "Visibilidad"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"

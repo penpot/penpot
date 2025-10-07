@@ -3916,22 +3916,6 @@ msgstr "इटैलिक टॉगल करें"
 msgid "shortcuts.join-nodes"
 msgstr "नोड्स जोड़ें"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "अक्षर अंतर घटाएँ"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "अक्षर अंतर बढ़ाएँ"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "रेखा की ऊंचाई घटाएँ"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "लाइन की ऊंचाई बढ़ाएँ"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "लाइन को टॉगल करें"

@@ -2688,22 +2688,6 @@ msgstr "Yipàdà ítalikì"
 msgid "shortcuts.join-nodes"
 msgstr "Dàràpọ̀ awọn ipàdé"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Din aayé lẹ́tà kù"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Alekun aayé lẹ́tà"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Dinkù gígà ílà"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Ílà ton gá sókè"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Íyìpàdà ílà to yọ̀rí"

@@ -3895,22 +3895,6 @@ msgstr "Umschalten auf Kursivdruck"
 msgid "shortcuts.join-nodes"
 msgstr "Punkte verbinden"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Buchstabenabstand verringern"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Buchstabenabstand erhöhen"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Zeilenhöhe verringern"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Zeilenhöhe erhöhen"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Durchgestrichen"
@@ -7312,10 +7296,6 @@ msgstr "Durchgestrichen"
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
 msgid "inspect.tabs.computed"
 msgstr "Berechnet"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:107
-msgid "inspect.tabs.styles"
-msgstr "Stile"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"

@@ -3968,22 +3968,6 @@ msgstr "Pārslēgt slīprakstu"
 msgid "shortcuts.join-nodes"
 msgstr "Savienot mezglus"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Samazināt burtstarpu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Palielināt burtstarpu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Samazināt līnijas augstumu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Palielināt līnijas augstumu"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Pārslēgt svītrojumu"
@@ -7850,10 +7834,6 @@ msgstr "Šī tekstvienība nav pieejama nevienā aktīvajā kopā vai izskatā."
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
 msgid "inspect.tabs.computed"
 msgstr "Aprēķinātās"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:107
-msgid "inspect.tabs.styles"
-msgstr "Stili"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"

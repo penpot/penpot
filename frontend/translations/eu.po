@@ -2571,22 +2571,6 @@ msgstr "Aktibatu/desaktibatu etzana"
 msgid "shortcuts.join-nodes"
 msgstr "Elkartu nodoak"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Hizkien arteko espazioa txikitu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Hizkien arteko espazioa handitu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "Lerroen arteko tartea txikitu"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "Lerroen arteko tartea handitu"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "Aktibatu/desaktibatu marratzea"

@@ -3739,22 +3739,6 @@ msgstr "切换斜体"
 msgid "shortcuts.join-nodes"
 msgstr "链接节点"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "减少字母间距"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "减少字母间距"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "减少行高"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "增加行高"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "切换删除线"
@@ -7274,10 +7258,6 @@ msgstr "已达到单次请求中可邀请的电子邮件数量上限（%s）"
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
 msgid "inspect.tabs.computed"
 msgstr "计算"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:107
-msgid "inspect.tabs.styles"
-msgstr "样式"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"

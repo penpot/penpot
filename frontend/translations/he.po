@@ -3909,22 +3909,6 @@ msgstr "החלפת מצב נטוי"
 msgid "shortcuts.join-nodes"
 msgstr "צירוף מפרקים"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "הקטנת ריווח תווים"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "הגדלת ריווח תווים"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:129
-msgid "shortcuts.line-height-dec"
-msgstr "הנמכת שורה"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:130
-msgid "shortcuts.line-height-inc"
-msgstr "הגבהת שורה"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:131
 msgid "shortcuts.line-through"
 msgstr "החלפת מצב קו חוצה"
@@ -7854,10 +7838,6 @@ msgstr "האסימון הזה לא זמין באף ערכה או ערכת עיצ
 #: src/app/main/ui/inspect/right_sidebar.cljs:109
 msgid "inspect.tabs.computed"
 msgstr "מחושב"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:107
-msgid "inspect.tabs.styles"
-msgstr "סגנונות"
 
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"

@@ -2159,10 +2159,6 @@ msgstr "Wega ebe azụ"
 msgid "shortcuts.duplicate"
 msgstr "Mkpị"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Leta mmụba oghere"
-
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:164
 msgid "shortcuts.paste"
 msgstr "Nyado"

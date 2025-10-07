@@ -2924,11 +2924,3 @@ msgstr "Togol condong"
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:126
 msgid "shortcuts.join-nodes"
 msgstr "Sambung nod"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:127
-msgid "shortcuts.letter-spacing-dec"
-msgstr "Kurangkan jarak huruf"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Penambahan jarak huruf"
