@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-09-01 09:02+0000\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -8,9 +8,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
-"n % 10 == 0) ? 2 : 3));\n"
-"X-Generator: Weblate 5.13.1-dev\n"
+"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : "
+"((n > 10 && n % 10 == 0) ? 2 : 3));\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -861,6 +861,7 @@ msgid "dashboard.plugins.bad-url"
 msgstr "כתובת התוסף שגויה"
 
 #: src/app/main/ui/dashboard.cljs:205
+#, fuzzy
 msgid "dashboard.plugins.parse-error"
 msgstr "לא ניתן לפענח את המניפסט/מצהר של התוסף"
 
@@ -2276,6 +2277,7 @@ msgid "labels.product-design"
 msgstr "עיצוב מוצר או חוויית לקוח"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "ניהול מוצר"
 
@@ -2545,6 +2547,7 @@ msgid "loader.tips.03.message"
 msgstr "עיצוב גמיש עם פקדים מוכרים דמויי CSS."
 
 #: src/app/main/ui/ds/product/loader.cljs:24
+#, fuzzy
 msgid "loader.tips.03.title"
 msgstr "פריסה אוטומטית כמו CSS"
 
@@ -7832,6 +7835,7 @@ msgid "ds.inputs.token-field.detach-token"
 msgstr "ניתוק אסימון"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "האסימון הזה לא זמין באף ערכה או ערכת עיצוב פעילה."
 
