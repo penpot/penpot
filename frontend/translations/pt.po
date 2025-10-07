@@ -179,7 +179,7 @@ msgstr "A solução de código aberto para design e prototipagem."
 msgid "auth.terms-and-privacy-agreement"
 msgstr "Concordo com os [termos de serviço](%s) e a [política de privacidade](%s)."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:927, src/app/main/ui/workspace/main_menu.cljs:156
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:884, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Termos de serviço"
 
@@ -206,7 +206,7 @@ msgstr "...branding, ilustrações, materiais de marketing, etc."
 msgid "comments.mentions.not-found"
 msgstr "Nenhuma pessoa encontrada para @%s"
 
-#: src/app/main/ui/workspace/libraries.cljs:308
+#: src/app/main/ui/workspace/libraries.cljs:333
 msgid "common.publish"
 msgstr "Publicar"
 
@@ -278,7 +278,7 @@ msgstr "Compartilhar protótipos"
 msgid "common.share-link.view-all"
 msgstr "Selecionar tudo"
 
-#: src/app/main/ui/workspace/libraries.cljs:304
+#: src/app/main/ui/workspace/libraries.cljs:329
 msgid "common.unpublish"
 msgstr "Despublicar"
 
@@ -401,7 +401,7 @@ msgstr "O token não tem data de expiração"
 msgid "dashboard.add-file"
 msgstr "Adicionar arquivo"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:620
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:648
 msgid "dashboard.add-shared"
 msgstr "Adicionar como Biblioteca Compartilhada"
 
@@ -409,10 +409,10 @@ msgstr "Adicionar como Biblioteca Compartilhada"
 msgid "dashboard.change-email"
 msgstr "Alterar e-mail"
 
-#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:524, src/app/main/data/workspace/pages.cljs:178
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(copiar)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:328
+#: src/app/main/ui/dashboard/sidebar.cljs:329
 msgid "dashboard.create-new-team"
 msgstr "Criar nova equipe"
