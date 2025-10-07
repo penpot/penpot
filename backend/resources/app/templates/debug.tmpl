@@ -45,7 +45,41 @@ Debug Main Page
       </form>
     </fieldset>
 
+    <fieldset>
+      <legend>VIRTUAL CLOCK</legend>
 
+      <desc>
+        <p>
+          CURRENT CLOCK: <b>{{current-clock}}</b>
+          <br />
+          CURRENT OFFSET: <b>{{current-offset}}</b>
+          <br />
+          CURRENT TIME: <b>{{current-time}}</b>
+        </p>
+
+        <p>Examples: 3h, -7h, 24h (allowed suffixes: h, s)</p>
+      </desc>
+
+      <form method="post" action="/dbg/actions/set-virtual-clock">
+        <div class="row">
+          <input type="text" name="offset" placeholder="3h" value="" />
+        </div>
+
+        <div class="row">
+          <label for="force-verify">Are you sure?</label>
+          <input id="force-verify" type="checkbox" name="force" />
+          <br />
+          <small>
+            This is a just a security double check for prevent non intentional submits.
+          </small>
+        </div>
+
+        <div class="row">
+          <input type="submit" name="submit" value="Submit" />
+          <input type="submit" name="reset" value="Reset" />
+        </div>
+      </form>
+    </fieldset>
 
   </section>
 

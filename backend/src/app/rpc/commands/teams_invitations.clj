@@ -43,7 +43,7 @@
 
 (defn- create-invitation-token
   [cfg {:keys [profile-id valid-until team-id member-id member-email role]}]
-  (tokens/generate (::setup/props cfg)
+  (tokens/generate cfg
                    {:iss :team-invitation
                     :exp valid-until
                     :profile-id profile-id
@@ -54,12 +54,8 @@
 
 (defn- create-profile-identity-token
   [cfg profile-id]
-
-  (dm/assert!
-   "expected valid uuid for profile-id"
-   (uuid? profile-id))
-
-  (tokens/generate (::setup/props cfg)
+  (assert (uuid? profile-id) "expected valid uuid for profile-id")
+  (tokens/generate cfg
                    {:iss :profile-identity
                     :profile-id profile-id
                     :exp (ct/in-future {:days 30})}))
@@ -522,7 +518,7 @@
 
 (defn- check-existing-team-access-request
   "Checks if an existing team access request is still valid"
-  [conn team-id profile-id]
+  [{:keys [::db/conn]} team-id profile-id]
   (when-let [request (db/get* conn :team-access-request
                               {:team-id team-id
                                :requester-id profile-id})]
@@ -540,8 +536,8 @@
 
 (defn- upsert-team-access-request
   "Create or update team access request for provided team and profile-id"
-  [conn team-id requester-id]
-  (check-existing-team-access-request conn team-id requester-id)
+  [{:keys [::db/conn] :as cfg} team-id requester-id]
+  (check-existing-team-access-request cfg team-id requester-id)
   (let [valid-until     (ct/in-future {:hours 24})
         auto-join-until (ct/in-future {:days 7})
         request-id      (uuid/next)]
@@ -603,7 +599,7 @@
     (teams/check-email-bounce conn (:email team-owner) false)
     (teams/check-email-spam conn (:email team-owner) true)
 
-    (let [request (upsert-team-access-request conn team-id profile-id)
+    (let [request (upsert-team-access-request cfg team-id profile-id)
           factory (cond
                     (and (some? file) (:is-default team) is-viewer)
                     eml/request-file-access-yourpenpot-view

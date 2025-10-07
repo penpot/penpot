@@ -38,7 +38,7 @@
    ::doc/module :auth
    ::sm/params schema:verify-token}
   [cfg {:keys [token] :as params}]
-  (let [claims (tokens/verify (::setup/props cfg) {:token token})]
+  (let [claims (tokens/verify cfg {:token token})]
     (db/tx-run! cfg process-token params claims)))
 
 (defmethod process-token :change-email
