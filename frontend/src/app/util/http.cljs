@@ -51,7 +51,8 @@
 
 (defn default-headers
   []
-  {"x-frontend-version" (:full cfg/version)})
+  {"x-frontend-version" (:full cfg/version)
+   "x-client" (str "penpot-frontend/" (:full cfg/version))})
 
 (defn fetch
   [{:keys [method uri query headers body mode omit-default-headers credentials]
