@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -2310,6 +2310,7 @@ msgid "labels.product-design"
 msgstr "Produktu vai lietotāju pieredzes dizains"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "Produktu vai projektu vadītājs"
 
