@@ -1,19 +1,19 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
-"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
-"Language-Team: French "
-"<https://hosted.weblate.org/projects/penpot/frontend/fr/>\n"
+"PO-Revision-Date: 2025-09-03 09:02+0000\n"
+"Last-Translator: Corentin Noël <tintou@noel.tf>\n"
+"Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
+"fr/>\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.13.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
-msgstr "Avez-vous déjà un compte ?"
+msgstr "Vous avez déjà un compte ?"
 
 #: src/app/main/ui/auth/recovery_request.cljs:113, src/app/main/ui/auth/register.cljs:238
 msgid "auth.check-mail"
@@ -23,7 +23,7 @@ msgstr "Vérifiez vos emails"
 #, unused
 msgid "auth.check-your-email"
 msgstr ""
-"Vérifiez votre email et cliquez sur le lien pour vérifier et commencer à "
+"Vérifiez votre e-mail et cliquez sur le lien pour vérifier et commencer à "
 "utiliser Penpot."
 
 #: src/app/main/ui/auth/recovery.cljs:67
@@ -146,8 +146,8 @@ msgstr "Pas encore de compte ?"
 #: src/app/main/ui/auth/register.cljs:351
 msgid "auth.register-account-tagline"
 msgstr ""
-"Faites nous savoir ce que nous devons vous montrer sur le tableau de bord "
-"et dans les emails."
+"Faites nous savoir ce que nous devons vous montrer sur le tableau de bord et "
+"dans les e-mails."
 
 #: src/app/main/ui/auth/register.cljs:350
 msgid "auth.register-account-title"
@@ -1488,7 +1488,7 @@ msgstr "Une erreur inattendue s’est produite."
 
 #: src/app/main/ui/auth/verify_token.cljs:62
 msgid "errors.unexpected-token"
-msgstr "Token inconnu"
+msgstr "Jeton inconnu"
 
 #, unused
 msgid "errors.validation"
@@ -1575,7 +1575,7 @@ msgstr ""
 
 #: src/app/main/ui/settings/feedback.cljs:65
 msgid "feedback.title"
-msgstr "Email"
+msgstr "E-mail"
 
 #: src/app/main/ui/settings/feedback.cljs:102
 msgid "feedback.twitter-go-to"
@@ -7096,7 +7096,7 @@ msgstr "Ajouter un nouveau thème"
 
 #: src/app/main/ui/workspace/tokens/sets/context_menu.cljs:60
 msgid "workspace.tokens.add-set-to-group"
-msgstr "Ajouter le composant à ce groupe"
+msgstr "Ajouter la collection à ce groupe"
 
 #: src/app/main/ui/workspace/tokens/management/group.cljs:113
 msgid "workspace.tokens.add-token"
@@ -7146,11 +7146,11 @@ msgstr "En créer un."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:534
 msgid "workspace.tokens.create-token"
-msgstr "Créer une nouvelle unité de style %s"
+msgstr "Créer un nouveau token %s"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:337
 msgid "workspace.tokens.delete"
-msgstr "Supprimer l'unité de style"
+msgstr "Supprimer le token"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:154
 msgid "workspace.tokens.delete-theme-title"
@@ -7158,7 +7158,7 @@ msgstr "Supprimer le thème"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:334
 msgid "workspace.tokens.duplicate"
-msgstr "Dupliquer l'unité de style"
+msgstr "Dupliquer le token"
 
 #: src/app/main/data/workspace/tokens/library_edit.cljs:201, src/app/main/data/workspace/tokens/library_edit.cljs:405
 msgid "workspace.tokens.duplicate-suffix"
@@ -7166,7 +7166,7 @@ msgstr "copie"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:321
 msgid "workspace.tokens.edit"
-msgstr "Modifier l'unité de style"
+msgstr "Modifier le token"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:328
 msgid "workspace.tokens.edit-theme-title"
@@ -7176,13 +7176,17 @@ msgstr "Modifier le thème"
 msgid "workspace.tokens.edit-themes"
 msgstr "Modifier les thèmes"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:533
+msgid "workspace.tokens.edit-token"
+msgstr "Modifier le token"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
 msgstr "La valeur du token doit être renseignée"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:540
 msgid "workspace.tokens.enter-token-name"
-msgstr "Entrez le nom de l'unité de style %s"
+msgstr "Entrez le nom du token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:15
 msgid "workspace.tokens.error-parse"
@@ -7228,7 +7232,7 @@ msgstr "Nom du groupe"
 #: src/app/main/ui/workspace/tokens/sets.cljs
 #, unused
 msgid "workspace.tokens.grouping-set-alert"
-msgstr "Le groupement des collections d'unité de style n'est pas encore supporté."
+msgstr "Le groupement des collections de tokens n'est pas encore supporté."
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:232
 msgid "workspace.tokens.import-button-prefix"
@@ -7270,18 +7274,18 @@ msgstr "Importer des tokens"
 #, unused
 msgid "workspace.tokens.import-tooltip"
 msgstr ""
-"L'importation d'un fichier JSON remplacera toutes vos unités de style, "
-"collections et thèmes"
+"L'importation d'un fichier JSON remplacera tous vos tokens, collections et "
+"thèmes"
 
 #: src/app/main/ui/workspace/tokens/import/modal.cljs:246
 msgid "workspace.tokens.import-warning"
 msgstr ""
-"L'importation des tokens va remplacer tous vos tokens, collections et "
-"thèmes actuels."
+"L'importation des tokens va remplacer tous vos tokens, collections et thèmes "
+"actuels."
 
 #: src/app/main/ui/workspace/tokens/management.cljs:141
 msgid "workspace.tokens.inactive-set"
-msgstr "Inactif"
+msgstr "Inactive"
 
 #: src/app/main/ui/workspace/tokens/management.cljs:132
 msgid "workspace.tokens.inactive-set-description"
@@ -7296,20 +7300,19 @@ msgstr "Couleur non valide : %s"
 #: src/app/main/data/workspace/tokens/errors.cljs:23
 msgid "workspace.tokens.invalid-json"
 msgstr ""
-"Erreur d'importation : données de l'unité de style non valides dans le "
-"fichier JSON."
+"Erreur d'importation : données du token non valides dans le fichier JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:27
 msgid "workspace.tokens.invalid-json-token-name"
-msgstr "Erreur lors de l'importation : nom de token non valide au format JSON."
+msgstr "Erreur lors de l'importation : nom du token non valide au format JSON."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:28
 msgid "workspace.tokens.invalid-json-token-name-detail"
 msgstr ""
 "« %s » n'est pas un nom de token valide.\n"
-"Les noms de tokens ne doivent pas comporter de lettres et de chiffres "
-"séparés par des caractères « . » et ne doivent pas commencer par le symbole "
-"« $ »."
+"Les noms des tokens ne doivent pas comporter de lettres et de chiffres "
+"séparés par des caractères « . » et ne doivent pas commencer par le symbole «"
+" $ »."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:81
 msgid "workspace.tokens.invalid-text-case-token-value"
@@ -7320,12 +7323,12 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/errors.cljs:85
 msgid "workspace.tokens.invalid-text-decoration-token-value"
 msgstr ""
-"Valeur du token non valide : seules les valeurs Aucune, Souligné et Barré "
-"sont acceptées"
+"Valeur du token non valide : seules les valeurs none, underline et strike-"
+"through sont acceptées"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
-msgstr "Valeur de l'unité de style non valide : %s"
+msgstr "Valeur du token non valide : %s"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:191
 msgid "workspace.tokens.label.group"
@@ -7357,7 +7360,7 @@ msgstr "Taille min."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
 msgid "workspace.tokens.missing-references"
-msgstr "Références de l'unité de style manquantes : "
+msgstr "Références du token manquantes : "
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:148
 msgid "workspace.tokens.more-options"
@@ -7401,7 +7404,7 @@ msgstr "%s collections actives"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:53
 msgid "workspace.tokens.number-too-large"
-msgstr "Valeur de l'unité de style non valide. La valeur est trop grande : %s"
+msgstr "Valeur du token non valide. La valeur est trop grande : %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
 msgid "workspace.tokens.opacity-range"
@@ -7410,7 +7413,6 @@ msgstr ""
 "ou 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Valeur initiale : %s"
 
@@ -7432,7 +7434,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "Erreurs de référence : "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Valeur déduite : %s"
 
@@ -7446,7 +7447,7 @@ msgstr "Sélectionner la collection."
 
 #: src/app/main/data/workspace/tokens/errors.cljs:45
 msgid "workspace.tokens.self-reference"
-msgstr "L'unité de style s'auto-référence"
+msgstr "Le token s'auto-référence"
 
 #: src/app/main/ui/workspace/tokens/sets/lists.cljs:64
 msgid "workspace.tokens.set-edit-placeholder"
@@ -7455,13 +7456,12 @@ msgstr "Entrez le nom (utilisez « / » pour les groupes)"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:343
 msgid "workspace.tokens.set-selection-theme"
 msgstr ""
-"Définissez les collections d'unité de style à utiliser pour cette option du "
-"thème :"
+"Définissez les collections de tokens à utiliser pour cette option du thème :"
 
 #: src/app/main/ui/workspace/tokens/token_pill.cljs:47
 #, unused
 msgid "workspace.tokens.set.not-active"
-msgstr "La collection de l'unité de style n'est pas active"
+msgstr "La collection de tokens n'est pas active"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:143
 msgid "workspace.tokens.sets-hint"
@@ -7527,14 +7527,14 @@ msgstr "Nom"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:66
 msgid "workspace.tokens.token-name-validation-error"
 msgstr ""
-" n'est pas un nom d'unité de style valide.\n"
-"Les noms des unités de style doivent contenir uniquement des lettres et "
-"chiffres séparés par des caractères . et ne doivent pas commencer par $."
+" n'est pas un nom de token valide.\n"
+"Les noms des tokens doivent contenir uniquement des lettres et chiffres "
+"séparés par des caractères . et ne doivent pas commencer par $."
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
 #, unused
 msgid "workspace.tokens.token-not-resolved"
-msgstr "Impossible de trouver une référence d'unité de style ayant comme nom : %s"
+msgstr "Impossible de trouver une référence de token ayant comme nom : %s"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:567
 msgid "workspace.tokens.token-value"
@@ -7546,7 +7546,7 @@ msgstr "Entrez une valeur ou un alias avec {alias}"
 
 #: src/app/main/ui/workspace/tokens/management.cljs:131
 msgid "workspace.tokens.tokens-section-title"
-msgstr "UNITÉS DE STYLE -  %s"
+msgstr "TOKENS -  %s"
 
 #: src/app/main/ui/workspace/tokens/sidebar.cljs:125
 msgid "workspace.tokens.tools"
@@ -7570,7 +7570,8 @@ msgstr "Valeur non valide : les unités ne sont pas autorisées."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:563
 msgid "workspace.tokens.warning-name-change"
-msgstr "Si vous renommez ce token, toute référence à son ancien nom sera incorrecte."
+msgstr ""
+"Si vous renommez ce token, toute référence à son ancien nom sera incorrecte."
 
 #: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:145
 msgid "workspace.toolbar.assets"
@@ -7901,3 +7902,51 @@ msgstr "Les versions auto-enregistrées seront gardées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Aucun token n'est applicable dans la collection ou le thème actif."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Ouvrir la liste des tokens"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Ce token n'est pas disponible dans la collection ou le thème actif."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Détacher le token"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Aucune correspondance."
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Calculé"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "Styles"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Info sur la couche"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "Aucun token, collection ou thème n'ont été trouvés dans ce fichier."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Entrer : 400, Bold, 700 Italic ou {alias}"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:591
+msgid "labels.mixed-values"
+msgstr "Mélangé"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:729
+msgid "labels.sources"
+msgstr "Sources"

@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
+"PO-Revision-Date: 2025-09-16 10:02+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
-"Language-Team: Hindi "
-"<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
+"Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/hi/"
+">\n"
 "Language: hi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4422,7 +4422,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "आप %s हैं!"
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "आप इस योजना के साथ %s से हमारा समर्थन कर रहे हैं"
 
@@ -7218,7 +7217,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "अपारदर्शिता 0 और 100% या 0 और 1 (जैसे 50% या 0.5) के बीच होनी चाहिए।"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:145
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "मूल मान: %s"
 
@@ -7240,7 +7238,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "संदर्भ त्रुटियाँ: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:39, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:44, src/app/main/ui/workspace/tokens/management/token_pill.cljs:146
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "समाधानित मान: %s"
 
@@ -7308,7 +7305,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "थीम्स सूची"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:589, src/app/main/ui/workspace/tokens/management/create/form.cljs:590
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "वर्णन"
 

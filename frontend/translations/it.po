@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-28 10:46+0000\n"
+"PO-Revision-Date: 2025-09-06 07:02+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13\n"
+"X-Generator: Weblate 5.13.1-rc\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -4466,7 +4466,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Sei %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Ci supporti con questo piano dal %s"
 
@@ -7764,3 +7763,394 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:611
+msgid "ds.inputs.numeric-input.open-token-list-dropdown"
+msgstr "Apri elenco token"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:98
+msgid "ds.inputs.numeric-input.no-applicable-tokens"
+msgstr "Nessun token applicabile nei set o temi attivi."
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:99
+msgid "ds.inputs.numeric-input.no-matches"
+msgstr "Nessuna corrispondenza trovata."
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:84
+msgid "ds.inputs.token-field.detach-token"
+msgstr "Scollega token"
+
+#: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+msgid "ds.inputs.token-field.no-active-token-option"
+msgstr "Questo token non è disponibile in nessun set o tema attivo."
+
+#: src/app/main/ui/auth/register.cljs:89
+msgid "errors.email-does-not-match-invitation"
+msgstr "L’email non corrisponde all’invito."
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:109
+msgid "inspect.tabs.computed"
+msgstr "Calcolato"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107
+msgid "inspect.tabs.styles"
+msgstr "Stili"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:165
+msgid "inspect.tabs.switcher.label"
+msgstr "Informazioni livello"
+
+#: src/app/main/ui/ds/controls/numeric_input.cljs:591
+msgid "labels.mixed-values"
+msgstr "Misto"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:750
+msgid "labels.pinned-projects"
+msgstr "Progetti in evidenza"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:729
+msgid "labels.sources"
+msgstr "Fonti"
+
+#: src/app/main/ui/dashboard/subscription.cljs:85
+msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
+msgstr "Piano Enterprise (prova)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:64
+#, markdown
+msgid "subscription.dashboard.power-up.professional.bottom-text"
+msgstr ""
+"Ottieni spazio extra, recupero file e altro per i tuoi team con il piano "
+"Unlimited. [Potenzia ora!|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:78
+#, markdown
+msgid "subscription.dashboard.power-up.unlimited.bottom-text"
+msgstr ""
+"Ottieni spazio illimitato, recupero file esteso ed editor illimitati per "
+"tutti i tuoi team, ad un prezzo fisso. "
+"[Dai un’occhiata al piano Enterprise.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:168
+msgid "subscription.dashboard.professional-dashboard-cta-title"
+msgstr ""
+"Hai %s editor nei team di tua proprietà, mentre il tuo piano Professional ne "
+"copre fino a 8."
+
+#: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "Spazio di archiviazione illimitato"
+
+#: src/app/main/ui/settings/subscription.cljs:133
+msgid "subscription.settings.management.dialog.editors"
+msgstr "Editor"
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:80
+msgid "workspace.assets.component-group-options"
+msgstr "Opzioni gruppo componenti"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:499
+msgid "workspace.options.component.variant.duplicated.copy.locate"
+msgstr "Individua varianti in conflitto"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:496
+msgid "workspace.options.component.variant.duplicated.copy.title"
+msgstr ""
+"Questo componente ha varianti in conflitto. Verifica che ciascuna variante "
+"abbia un set di valori di proprietà univoci."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1246
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Individua varianti duplicate"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1243
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Alcune varianti hanno proprietà e valori identici"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:267
+msgid "workspace.options.component.variant.duplicated.single.all"
+msgstr ""
+"Queste varianti hanno proprietà e valori identici. Modifica i valori "
+"affinché possano essere distinti."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:264
+msgid "workspace.options.component.variant.duplicated.single.one"
+msgstr ""
+"Questa variante ha proprietà e valori identici ad un'altra variante. "
+"Modifica i valori affinché possano essere distinti."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:270
+msgid "workspace.options.component.variant.duplicated.single.some"
+msgstr ""
+"Alcune di queste varianti hanno proprietà e valori identici. Modifica i "
+"valori affinché possano essere distinti."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:486
+msgid "workspace.options.component.variant.malformed.copy"
+msgstr ""
+"Questo componente ha varianti con nomi non validi. Verifica che ogni "
+"variante rispetti la struttura corretta."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:489
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Individua varianti non valide"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:54
+msgid "workspace.options.component.variants-help-modal.intro"
+msgstr ""
+"Per mantenere le modifiche quando si passa da una variante all’altra, Penpot "
+"collega i livelli che:"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:91
+msgid "workspace.options.component.variants-help-modal.outro"
+msgstr ""
+"La modifica di uno qualsiasi di questi elementi (ad es. rinominare o "
+"raggruppare un livello) interrompe la connessione, ma annullando la modifica "
+"verrà ripristinata."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:67
+msgid "workspace.options.component.variants-help-modal.rule1"
+msgstr "Condividono lo stesso nome."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:76
+msgid "workspace.options.component.variants-help-modal.rule2"
+msgstr "Sono dello stesso tipo."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:77
+msgid "workspace.options.component.variants-help-modal.rule2.detail"
+msgstr ""
+"Rettangoli, ellissi, tracciati e operazioni booleane sono considerati dello "
+"stesso tipo."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:87
+msgid "workspace.options.component.variants-help-modal.rule3"
+msgstr "Si trovano allo stesso livello gerarchico."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr "Gruppi, tavole da disegno e layout sono considerati equivalenti."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:935, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1157, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:47
+msgid "workspace.options.component.variants-help-modal.title"
+msgstr "Come rimangono connesse le varianti"
+
+#: src/app/main/ui/workspace/plugins.cljs:285
+msgid "workspace.plugins.permissions.allow-localstorage"
+msgstr "Memorizza i dati nel browser."
+
+#: src/app/main/ui/workspace/context_menu.cljs:615, src/app/main/ui/workspace/sidebar/assets/components.cljs:638, src/app/main/ui/workspace/sidebar/assets/groups.cljs:74, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1021
+msgid "workspace.shape.menu.combine-as-variants"
+msgstr "Combina come varianti"
+
+#: src/app/main/ui/workspace/sidebar/assets/components.cljs:640
+msgid "workspace.shape.menu.combine-as-variants-error"
+msgstr "I componenti devono essere nella stessa pagina"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1221
+msgid "workspace.shape.menu.remove-variant-property.last-property"
+msgstr "Le varianti devono avere almeno una proprietà"
+
+#: src/app/main/data/workspace/tokens/application.cljs:366
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Errore nell’impostazione del peso/stile del font. Questo stile non esiste "
+"nel font corrente"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:877, src/app/main/ui/workspace/tokens/management/create/form.cljs:889
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Inserisci: 400, Bold, 700 Italico, o {alias}"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:232
+msgid "workspace.tokens.import-button-prefix"
+msgstr "Importa %s"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Cartella"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "File JSON singolo"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:270
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "File ZIP"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Valore del peso del font non valido: usa valori numerici (100-950) o nomi "
+"standard (thin, light, regular, bold, ecc.) eventualmente seguiti da 'Italic'"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"Valore del token non valido: sono accettati solo none, Uppercase, Lowercase "
+"o Capitalize"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Valore del token non valido: sono accettati solo none, underline e strike-"
+"through"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:148
+msgid "workspace.tokens.more-options"
+msgstr "Fai clic con il tasto destro per vedere le opzioni"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "Nessun token, set o tema trovato in questo file."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:865, src/app/main/ui/workspace/tokens/management/create/form.cljs:895
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "Inserisci: none | uppercase | lowercase | capitalize or {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:871, src/app/main/ui/workspace/tokens/management/create/form.cljs:898
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Inserisci decorazione del testo: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:827
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Seleziona famiglia di caratteri"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:834, src/app/main/ui/workspace/tokens/management/create/form.cljs:885
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Famiglia di caratteri"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"Esegui subito l’upgrade a Unlimited o Enterprise per sbloccare più editor, "
+"spazio di archiviazione e recupero file. [Abbonati ora.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"Il tuo team continua a crescere! Il tuo piano Unlimited copre fino a %s "
+"editor, ma ora ne hai %s."
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"Esegui subito l’upgrade per adeguarti al numero attuale di editor. "
+"[Abbonati ora.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"Solo i nuovi editor nei team di tua proprietà verranno conteggiati per la "
+"fatturazione futura. Rimane valido un costo fisso di 175 $/mese per oltre 25 "
+"editor."
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Invita persone con il piano Unlimited"
+
+#: src/app/main/ui/settings/subscription.cljs:39
+msgid "subscription.settings.editors"
+msgstr "(x %s editor)"
+
+#: src/app/main/ui/settings/subscription.cljs:393, src/app/main/ui/settings/subscription.cljs:403, src/app/main/ui/settings/subscription.cljs:455
+msgid "subscription.settings.enterprise.autosave"
+msgstr "Versioni di salvataggio automatico a 90 giorni e recupero file"
+
+#: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/settings/subscription.cljs:456
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Fattura mensile fissa"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "Attualmente hai %s persona nei tuoi team che può modificare."
+msgstr[1] "Attualmente hai %s persone nei tuoi team che possono modificare."
+
+#: src/app/main/ui/settings/subscription.cljs:138
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr ""
+"(Proprietari, Amministratore ed Editor. I Visualizzatori non vengono "
+"considerati Editor)"
+
+#: src/app/main/ui/settings/subscription.cljs:181
+msgid "subscription.settings.management.dialog.input-error"
+msgstr ""
+"Non puoi impostare un numero di editor inferiore a quello attuale. Modifica "
+"il ruolo (editor/admin in visualizzatore) per le persone che non modificano "
+"effettivamente i file nelle impostazioni del team."
+
+#: src/app/main/ui/settings/subscription.cljs:184
+msgid "subscription.settings.management.dialog.unlimited-capped-warning"
+msgstr ""
+"Suggerimento: puoi aumentare ora il numero di posti per anticipare gli "
+"inviti. Con oltre 25 editor nei team, pagherai un costo fisso di 175 $/mese."
+
+#: src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:427
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr "Versioni di salvataggio automatico a 7 giorni e recupero file"
+
+#: src/app/main/ui/settings/subscription.cljs:359, src/app/main/ui/settings/subscription.cljs:426
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10GB di spazio di archiviazione"
+
+#: src/app/main/ui/settings/subscription.cljs:361, src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr "Team illimitati. Fino a 8 editor nei team di tua proprietà."
+
+#: src/app/main/ui/settings/subscription.cljs:238
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "Grazie per aver scelto il piano Penpot %s!"
+
+#: src/app/main/ui/settings/subscription.cljs:369, src/app/main/ui/settings/subscription.cljs:381, src/app/main/ui/settings/subscription.cljs:441
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr "Versioni di salvataggio automatico a 30 giorni e recupero file"
+
+#: src/app/main/ui/settings/subscription.cljs:368, src/app/main/ui/settings/subscription.cljs:380, src/app/main/ui/settings/subscription.cljs:440
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25GB di spazio di archiviazione"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:56
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr "Se desideri aumentare questo limite, scrivici a [%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"Se desideri aumentare questo limite, scrivi al proprietario del team [%s]"
+"(mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:57
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-owner"
+msgstr ""
+"Se desideri aumentare questo limite, "
+"[esegui l'upgrade del tuo piano|target:self](%s)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:833, src/app/main/ui/workspace/tokens/management/create/form.cljs:886
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Famiglia di caratteri o elenco di caratteri separati da virgola (,)"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:47
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr ""
+"L’importazione è stata completata con successo. Alcuni token non sono stati "
+"inclusi."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Valore non valido: % non è consentito."
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr "Questa versione è bloccata da %s e non può essere modificata"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "Questa versione è bloccata da te"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Versione bloccata - può essere modificata solo dal creatore"
