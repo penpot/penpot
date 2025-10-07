@@ -181,8 +181,30 @@
           fd.data AS data
      FROM file AS f
      LEFT JOIN file_data AS fd ON (fd.file_id = f.id AND fd.id = f.id)
-    INNER JOIN project AS p ON (p.id = f.project_id)
-   WHERE f.id = ?")
+    INNER JOIN project AS p ON (p.id = f.project_id)")
+
+(def sql:get-file
+  (str sql:files-with-data " WHERE f.id = ?"))
+
+(def sql:get-file-without-data
+  (str "WITH files AS (" sql:files-with-data ")"
+       "SELECT f.id,
+               f.project_id,
+               f.created_at,
+               f.modified_at,
+               f.deleted_at,
+               f.name,
+               f.is_shared,
+               f.has_media_trimmed,
+               f.revn,
+               f.ignore_sync_until,
+               f.comment_thread_seqn,
+               f.features,
+               f.version,
+               f.vern,
+               f.team_id
+          FROM files AS f
+         WHERE f.id = ?"))
 
 (defn- migrate-file
   [{:keys [::db/conn] :as cfg} {:keys [read-only?]} {:keys [id] :as file}]
@@ -212,11 +234,13 @@
            decode?
            skip-locked?
            include-deleted?
+           load-data?
            throw-if-not-exists?
            lock-for-update?
            lock-for-share?]
     :or {lock-for-update? false
          lock-for-share? false
+         load-data? true
          migrate? true
          decode? true
          include-deleted? false
@@ -225,17 +249,25 @@
     :as options}]
 
   (assert (db/connection? conn) "expected cfg with valid connection")
+  (when (and (not load-data?)
+             (or lock-for-share? lock-for-share? skip-locked?))
+    (throw (IllegalArgumentException. "locking is incompatible when `load-data?` is false")))
 
   (let [sql
+        (if load-data?
+          sql:get-file
+          sql:get-file-without-data)
+
+        sql
         (cond
           lock-for-update?
-          (str sql:get-file " FOR UPDATE of f")
+          (str sql " FOR UPDATE of f")
 
           lock-for-share?
-          (str sql:get-file " FOR SHARE of f")
+          (str sql " FOR SHARE of f")
 
           :else
-          sql:get-file)
+          sql)
 
         sql
         (if skip-locked?
@@ -253,23 +285,25 @@
             (d/update-when :metadata fdata/decode-metadata))]
 
     (if file
-      (let [file
-            (->> file
-                 (fmigr/resolve-applied-migrations cfg)
-                 (fdata/resolve-file-data cfg))
+      (if load-data?
+        (let [file
+              (->> file
+                   (fmigr/resolve-applied-migrations cfg)
+                   (fdata/resolve-file-data cfg))
 
-            will-migrate?
-            (and migrate? (fmg/need-migration? file))]
+              will-migrate?
+              (and migrate? (fmg/need-migration? file))]
 
-        (if decode?
-          (cond->> (fdata/decode-file-data cfg file)
-            (and realize? (not will-migrate?))
-            (fdata/realize cfg)
+          (if decode?
+            (cond->> (fdata/decode-file-data cfg file)
+              (and realize? (not will-migrate?))
+              (fdata/realize cfg)
 
-            will-migrate?
-            (migrate-file cfg options))
+              will-migrate?
+              (migrate-file cfg options))
 
-          file))
+            file))
+        file)
 
       (when-not (or skip-locked? (not throw-if-not-exists?))
         (ex/raise :type :not-found
