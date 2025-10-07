@@ -17,6 +17,7 @@
 
 (def ^:const PARAGRAPH-ATTR-U8-SIZE 44)
 (def ^:const LEAF-ATTR-U8-SIZE 60)
+(def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
 (defn- encode-text
   "Into an UTF8 buffer. Returns an ArrayBuffer instance"
@@ -26,28 +27,27 @@
 
 (defn- write-leaf-fills
   [offset dview fills]
-  (reduce (fn [offset fill]
-            (let [opacity  (get fill :fill-opacity 1.0)
-                  color    (get fill :fill-color)
-                  gradient (get fill :fill-color-gradient)
-                  image    (get fill :fill-image)]
+  (let [new-ofset (reduce (fn [offset fill]
+                            (let [opacity  (get fill :fill-opacity 1.0)
+                                  color    (get fill :fill-color)
+                                  gradient (get fill :fill-color-gradient)
+                                  image    (get fill :fill-image)]
 
-              (cond
-                (some? color)
-                (types.fills.impl/write-solid-fill offset dview opacity color)
+                              (cond
+                                (some? color)
+                                (types.fills.impl/write-solid-fill offset dview opacity color)
 
-                (some? gradient)
-                (types.fills.impl/write-gradient-fill offset dview opacity gradient)
+                                (some? gradient)
+                                (types.fills.impl/write-gradient-fill offset dview opacity gradient)
 
-                (some? image)
-                (types.fills.impl/write-image-fill offset dview opacity image))))
+                                (some? image)
+                                (types.fills.impl/write-image-fill offset dview opacity image))))
 
-          offset
-          fills))
+                          offset
+                          fills)
+        padding-fills (max 0 (- MAX-TEXT-FILLS (count fills)))]
+    (+ new-ofset (* padding-fills types.fills.impl/FILL-U8-SIZE))))
 
-(defn- get-total-fills
-  [leaves]
-  (reduce #(+ %1 (count (:fills %2))) 0 leaves))
 
 (defn- write-paragraph
   [offset dview paragraph]
@@ -86,8 +86,7 @@
 
                   text-buffer (encode-text (get leaf :text))
                   text-length (mem/size text-buffer)
-                  fills       (get leaf :fills)
-                  total-fills (count fills)
+                  fills       (take MAX-TEXT-FILLS (get leaf :fills))
 
                   font-variant-id
                   (get leaf :font-variant-id)
@@ -127,7 +126,7 @@
                   (mem/write-uuid dview (d/nilv font-variant-id uuid/zero))
 
                   (mem/write-i32 dview text-length)
-                  (mem/write-i32 dview total-fills)
+                  (mem/write-i32 dview (count fills))
                   (mem/assert-written offset LEAF-ATTR-U8-SIZE)
 
                   (write-leaf-fills dview fills))))
@@ -139,11 +138,9 @@
   ;; [<num-leaves> <paragraph_attributes> <leaves_attributes> <text>]
   [leaves paragraph text]
   (let [num-leaves    (count leaves)
-        fills-size    (* types.fills.impl/FILL-U8-SIZE
-                         (get-total-fills leaves))
+        fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
         metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
-                         (* num-leaves LEAF-ATTR-U8-SIZE)
-                         fills-size)
+                         (* num-leaves (+ LEAF-ATTR-U8-SIZE fills-size)))
 
         text-buffer   (encode-text text)
         text-size     (mem/size text-buffer)
