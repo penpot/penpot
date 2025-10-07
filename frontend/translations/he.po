@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
+"PO-Revision-Date: 2025-10-08 18:07+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
-"Language-Team: Hebrew "
-"<https://hosted.weblate.org/projects/penpot/frontend/he/>\n"
+"Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
+"he/>\n"
 "Language: he\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : ((n > 10 && "
-"n % 10 == 0) ? 2 : 3));\n"
+"Plural-Forms: nplurals=4; plural=(n == 1) ? 0 : ((n == 2) ? 1 : "
+"((n > 10 && n % 10 == 0) ? 2 : 3));\n"
 "X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
@@ -1169,7 +1169,7 @@ msgstr "ניתוק אסימון"
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:40, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:96, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:103
 msgid "ds.inputs.token-field.no-active-token-option"
-msgstr "האסימון הזה לא זמין באף ערכה או ערכת עיצוב פעילה."
+msgstr "האסימון הזה לא זמין באף ערכה או שהערך שלו שגוי."
 
 #: src/app/main/data/auth.cljs:314
 msgid "errors.auth-provider-not-allowed"
@@ -4532,7 +4532,6 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "התוכנית שלך היא %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:413
-#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "תמכת בנו עם התוכנית הזאת מאז: %s"
 
@@ -7475,7 +7474,6 @@ msgid "workspace.tokens.opacity-range"
 msgstr "שקיפות צריכה להיות בין 0 ל־100% או 0 ו־1 (כלומר 50% או 0.5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
-#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "ערך מקורי: %s"
 
@@ -7497,7 +7495,6 @@ msgid "workspace.tokens.reference-error"
 msgstr "שגיאות הפניה: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
-#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "ערך פתור: %s"
 
@@ -7565,7 +7562,6 @@ msgid "workspace.tokens.themes-list"
 msgstr "רשימת ערכות עיצוב"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:608, src/app/main/ui/workspace/tokens/management/create/form.cljs:609
-#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "תיאור"
 
@@ -7964,3 +7960,212 @@ msgstr "גרסאות שנשמרו אוטומטית תישמרנה למשך %s י
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "לחיצה תסגור את הנתיב"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "האסימון הזה לא קיים או שנמחק."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"אין אסימוני צבע זמינים. נא לבדוק ערכות/ערכות עיצוב פעילות או להוסיף אסימונים "
+"חדשים."
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "תימחקנה ההזמנות שמיועדות אל:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "תישלחנה מחדש ההזמנות שמיועדות אל:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "מחיקת הזמנות"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "שליחת הזמנות מחדש"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "סידור לפי תפקיד"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "סידור לפי מצב"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "העתקה ללוח הגזירים"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "גודל ומקום"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "החלפת חשיפת הלוח %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "ערכות אסימונים וערכות עיצוב"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "ערכות פעילות"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "ערכות עיצוב פעילות"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "מאפייני הגוון"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "ערך פתור:"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "על Penpot"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "טשטוש"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "צבע"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1030
+msgid "labels.community-contributions"
+msgstr "קהילה ותרומות"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "מילוי"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1019
+msgid "labels.help-learning"
+msgstr "עזרה ולמידה"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "פריסה"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "labels.learning-center"
+msgstr "מרכז הלמידה"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:878
+msgid "labels.penpot-changelog"
+msgstr "יומן השינויים של Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:804
+msgid "labels.penpot-hub"
+msgstr "המרכז של Penpot"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
+msgid "labels.reference"
+msgstr "הפניה"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "שליחה מחדש"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "צל"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "קו מתאר"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
+msgid "labels.styles"
+msgstr "סגנונות"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "טקסט"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
+msgid "labels.typography"
+msgstr "טיפוגרפיה"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "הגוון"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:872
+msgid "labels.version-notes"
+msgstr "הערות לגרסה %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "חשיפה"
+
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "ההזמנה נמחקה בהצלחה"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "יצירת רכיב / הגוון"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
+msgid "workspace.tokens.use-reference"
+msgstr "להשתמש בהפניה"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
+msgid "workspace.tokens.reference-composite"
+msgstr "נא למלא כינוי לטיפוגרפיית אסימון"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "הוספת ריווח תווים או {alias}"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "ערך שגוי: חייב להפנות לאסימון טיפוגרפיה מרוכב."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
+msgid "workspace.tokens.individual-tokens"
+msgstr "להשתמש באסימונים עצמאיים"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:551
+msgid "workspace.tokens.edit-token"
+msgstr "עריכת אסימון %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"גובה השורה תלוי בגודל הגופן. יש להוסיף גודל גופן כדי לקבל את הערך הפתור."
+
+#: src/app/main/ui/workspace/libraries.cljs:349
+msgid "workspace.libraries.connected-to"
+msgstr "מחובר אל"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:463
+msgid "workspace.component.switch.loop-error-multi"
+msgstr "לא ניתן לכבות/להדליק חלק מהעותקים. אי אפשר לקנן את הרכיבים בתוך עצמם."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
+msgid "workspace.component.swap.loop-error"
+msgstr "אי אפשר לקנן את הרכיבים בתוך עצמם."
+
+#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
+msgid "workspace.colorpicker.color-tokens"
+msgstr "אסימוני צבע"
+
+#: src/app/main/ui/dashboard/subscription.cljs:156
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
+msgstr ""
+"רק עורכים חדשים על פני הצוותים שבבעלותך מחושבים בחיובים העתידיים. 175$ בחודש "
+"בלי תוספות עדיין חלים על ‎25+‎ עורכים."
