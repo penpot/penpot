@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-31 06:05+0000\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13.1-dev\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -892,6 +892,7 @@ msgid "dashboard.plugins.bad-url"
 msgstr "De URL van de plug-in is onjuist"
 
 #: src/app/main/ui/dashboard.cljs:205
+#, fuzzy
 msgid "dashboard.plugins.parse-error"
 msgstr "Kan het plug-inmanifest niet verwerken"
 
@@ -2323,6 +2324,7 @@ msgid "labels.product-design"
 msgstr "Product- of UX-ontwerp"
 
 #: src/app/main/ui/onboarding/questions.cljs:90
+#, fuzzy
 msgid "labels.product-management"
 msgstr "Product management"
 
@@ -7953,6 +7955,7 @@ msgid "ds.inputs.numeric-input.no-applicable-tokens"
 msgstr "Geen tokens van toepassing in actieve verzamelingen of thema's."
 
 #: src/app/main/ui/ds/controls/utilities/token_field.cljs:39
+#, fuzzy
 msgid "ds.inputs.token-field.no-active-token-option"
 msgstr "Dit token is niet beschikbaar in een actieve verzameling of thema."
 
