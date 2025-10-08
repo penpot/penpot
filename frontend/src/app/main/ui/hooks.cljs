@@ -65,10 +65,10 @@
 
 (def sortable-ctx (mf/create-context nil))
 
-(mf/defc sortable-container
-  [{:keys [children] :as props}]
+(mf/defc sortable-container*
+  [{:keys [children]}]
   (let [global-drag-end (mf/use-memo #(rx/subject))]
-    [:& (mf/provider sortable-ctx) {:value global-drag-end}
+    [:> (mf/provider sortable-ctx) {:value global-drag-end}
      children]))
 
 

@@ -356,7 +356,7 @@
                          :icon i/add}]]]
 
      [:div {:class (stl/css :gradient-stops-list)}
-      [:& h/sortable-container {}
+      [:> h/sortable-container* {}
        (for [[index stop] (d/enumerate stops)]
          [:> stop-input-row*
           {:key index

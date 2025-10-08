@@ -37,6 +37,7 @@
 - Switch several variant copies at the same time [Taiga #11411](https://tree.taiga.io/project/penpot/us/11411)
 - Invitations management improvements [Taiga #3479](https://tree.taiga.io/project/penpot/us/3479)
 - Alternative ways of creating variants - Button Viewport [Taiga #11931](https://tree.taiga.io/project/penpot/us/11931)
+- Reorder properties for a component [Taiga #10225](https://tree.taiga.io/project/penpot/us/10225)
 
 ### :bug: Bugs fixed
 

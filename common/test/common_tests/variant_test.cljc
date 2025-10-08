@@ -159,3 +159,48 @@
 
     (t/testing "update-number-in-repeated-prop-names"
       (t/is (= (ctv/update-number-in-repeated-prop-names props) numbered-props)))))
+
+
+(t/deftest reorder-by-moving-to-position
+  (let [props [{:name "border" :value "no"}
+               {:name "color" :value "blue"}
+               {:name "shadow" :value "yes"}
+               {:name "background" :value "none"}]]
+
+    (t/testing "reorder-by-moving-to-position"
+      (t/is (= (ctv/reorder-by-moving-to-position props 0 2) [{:name "color" :value "blue"}
+                                                              {:name "border" :value "no"}
+                                                              {:name "shadow" :value "yes"}
+                                                              {:name "background" :value "none"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 0 3) [{:name "color" :value "blue"}
+                                                              {:name "shadow" :value "yes"}
+                                                              {:name "border" :value "no"}
+                                                              {:name "background" :value "none"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 0 4) [{:name "color" :value "blue"}
+                                                              {:name "shadow" :value "yes"}
+                                                              {:name "background" :value "none"}
+                                                              {:name "border" :value "no"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 3 0) [{:name "background" :value "none"}
+                                                              {:name "border" :value "no"}
+                                                              {:name "color" :value "blue"}
+                                                              {:name "shadow" :value "yes"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 3 2) [{:name "border" :value "no"}
+                                                              {:name "color" :value "blue"}
+                                                              {:name "background" :value "none"}
+                                                              {:name "shadow" :value "yes"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 0 5) [{:name "color" :value "blue"}
+                                                              {:name "shadow" :value "yes"}
+                                                              {:name "background" :value "none"}
+                                                              {:name "border" :value "no"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 3 -1) [{:name "background" :value "none"}
+                                                               {:name "border" :value "no"}
+                                                               {:name "color" :value "blue"}
+                                                               {:name "shadow" :value "yes"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props 5 -1) [{:name "background" :value "none"}
+                                                               {:name "border" :value "no"}
+                                                               {:name "color" :value "blue"}
+                                                               {:name "shadow" :value "yes"}]))
+      (t/is (= (ctv/reorder-by-moving-to-position props -1 5) [{:name "color" :value "blue"}
+                                                               {:name "shadow" :value "yes"}
+                                                               {:name "background" :value "none"}
+                                                               {:name "border" :value "no"}])))))

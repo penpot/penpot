@@ -250,7 +250,7 @@
                              :icon i/remove}]]
 
           (some? fills)
-          [:& h/sortable-container {}
+          [:> h/sortable-container* {}
            (for [value fills]
              (let [mdata (meta value)
                    index (get mdata :index)
