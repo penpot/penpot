@@ -27,6 +27,7 @@
    [app.features.logical-deletion :as ldel]
    [app.loggers.audit :as-alias audit]
    [app.loggers.webhooks :as-alias webhooks]
+   [app.msgbus :as mbus]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.projects :as projects]
    [app.rpc.commands.teams :as teams]
@@ -80,8 +81,10 @@
           fpr.is_admin,
           fpr.can_edit
      from file_profile_rel as fpr
+    inner join file as f on (f.id = fpr.file_id)
     where fpr.file_id = ?
       and fpr.profile_id = ?
+      and f.deleted_at is null
    union all
    select tpr.is_owner,
           tpr.is_admin,
@@ -91,6 +94,7 @@
     inner join file as f on (p.id = f.project_id)
     where f.id = ?
       and tpr.profile_id = ?
+      and f.deleted_at is null
    union all
    select ppr.is_owner,
           ppr.is_admin,
@@ -98,7 +102,8 @@
      from project_profile_rel as ppr
     inner join file as f on (f.project_id = ppr.project_id)
     where f.id = ?
-      and ppr.profile_id = ?")
+      and ppr.profile_id = ?
+      and f.deleted_at is null")
 
 (defn get-file-permissions
   [conn profile-id file-id]
@@ -730,9 +735,9 @@
 
 (defn- get-file-info
   [{:keys [::db/conn] :as cfg} {:keys [id] :as params}]
-  (db/get* conn :file
-           {:id id}
-           {::sql/columns [:id]}))
+  (db/get conn :file
+          {:id id}
+          {::sql/columns [:id :deleted-at]}))
 
 (sv/defmethod ::get-file-info
   "Retrieve minimal file info by its ID."
@@ -944,7 +949,14 @@
   (let [team (teams/get-team conn
                              :profile-id profile-id
                              :file-id id)
-        file (mark-file-deleted conn team id)]
+        file (mark-file-deleted conn team id)
+        msgbus (::mbus/msgbus cfg)]
+
+    (mbus/pub! msgbus
+               :topic id
+               :message {:type :file-deleted
+                         :file-id id
+                         :profile-id profile-id})
 
     (rph/with-meta (rph/wrap)
       {::audit/props {:project-id (:project-id file)
