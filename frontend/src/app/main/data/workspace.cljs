@@ -187,22 +187,21 @@
     (update [_ state]
       (update state :files assoc (:id library) library))))
 
-;; This events marks that all the libraries have been resolved
-(def all-libraries-resolved
-  (ptk/reify ::all-libraries-resolved))
+
+
 
 (defn- fetch-libraries
   [file-id features]
   (ptk/reify ::fetch-libries
     ptk/WatchEvent
     (watch [_ _ _]
-      (->> (rp/cmd! :get-file-libraries {:file-id file-id})
-           (rx/mapcat
-            (fn [libraries]
-              (rx/concat
-               (rx/of (dwl/libraries-fetched file-id libraries))
-               (rx/merge
-                (rx/concat
+      (rx/concat
+       (->> (rp/cmd! :get-file-libraries {:file-id file-id})
+            (rx/mapcat
+             (fn [libraries]
+               (rx/concat
+                (rx/of (dwl/libraries-fetched file-id libraries))
+                (rx/merge
                  (->> (rx/from libraries)
                       (rx/merge-map
                        (fn [{:keys [id synced-at]}]
@@ -210,13 +209,15 @@
                               (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
                       (rx/mapcat resolve-file)
                       (rx/map library-resolved))
-                 (rx/of all-libraries-resolved))
-                (->> (rx/from libraries)
-                     (rx/map :id)
-                     (rx/mapcat (fn [file-id]
-                                  (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
-                     (rx/map dwl/library-thumbnails-fetched)))
-               (rx/of (check-libraries-synchronozation file-id libraries)))))))))
+                 (->> (rx/from libraries)
+                      (rx/map :id)
+                      (rx/mapcat (fn [file-id]
+                                   (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                      (rx/map dwl/library-thumbnails-fetched)))
+                (rx/of (check-libraries-synchronozation file-id libraries))))))
+
+       ;; This events marks that all the libraries have been resolved
+       (rx/of (ptk/data-event ::all-libraries-resolved))))))
 
 (defn- workspace-initialized
   [file-id]

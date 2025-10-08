@@ -8,6 +8,7 @@
   (:require
    ["ua-parser-js" :as ua]
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.json :as json]
    [app.common.logging :as l]
    [app.common.math :as math]
@@ -56,6 +57,9 @@
 
 ;; Min time between long task reports
 (def debounce-performance-event-time 1000)
+
+;; Def micro-benchmark iterations
+(def micro-benchmark-iterations 1e6)
 
 ;; --- CONTEXT
 
@@ -260,14 +264,16 @@
        (let [observer
              (js/PerformanceObserver.
               (fn [list]
-                (doseq [entry (.getEntries list)]
-                  (when (and (= "event" (.-entryType entry))
-                             (> (.-duration entry) min-browser-event-time))
-                    (rx/push!
-                     subs
-                     {::event :observer-event
-                      :duration (.-duration entry)
-                      :event-name (.-name entry)})))))]
+                (run!
+                 (fn [entry]
+                   (when (and (= "event" (.-entryType entry))
+                              (> (.-duration entry) min-browser-event-time))
+                     (rx/push!
+                      subs
+                      {::event :observer-event
+                       :duration (.-duration entry)
+                       :event-name (.-name entry)})))
+                 (.getEntries list))))]
          (.observe observer #js {:entryTypes #js ["event"]})
          (fn []
            (.disconnect observer)))))
@@ -282,77 +288,83 @@
        (let [observer
              (js/PerformanceObserver.
               (fn [list]
-                (doseq [entry (.getEntries list)]
-                  (when (and (= "longtask" (.-entryType entry))
-                             (> (.-duration entry) min-longtask-time))
-                    (rx/push! subs
-                              {::event :observer-longtask
-                               :duration (.-duration entry)})))))]
+                (run!
+                 (fn [entry]
+                   (when (and (= "longtask" (.-entryType entry))
+                              (> (.-duration entry) min-longtask-time))
+                     (rx/push! subs
+                               {::event :observer-longtask
+                                :duration (.-duration entry)})))
+                 (.getEntries list))))]
          (.observe observer #js {:entryTypes #js ["longtask"]})
          (fn []
            (.disconnect observer)))))
     (rx/empty)))
 
+(defn- save-performance-info
+  []
+  (ptk/reify ::save-performance-info
+    ptk/UpdateEvent
+    (update [_ state]
+      (letfn [(count-shapes [file]
+                (->> file :data :pages-index
+                     (reduce-kv
+                      (fn [sum _ page]
+                        (+ sum (count (:objects page))))
+                      0)))
+              (count-library-data [files {:keys [id]}]
+                (let [data (dm/get-in files [id :data])]
+                  {:components (count (:components data))
+                   :colors (count (:colors data))
+                   :typographies (count (:typographies data))}))]
+        (let [file-id (get state :current-file-id)
+              file (get-in state [:files file-id])
+              file-size (count-shapes file)
+
+              libraries
+              (-> (refs/select-libraries (:files state) (:id file))
+                  (d/update-vals (partial count-library-data (:files state))))
+
+              lib-sizes
+              (->> libraries
+                   (reduce-kv
+                    (fn [acc _ {:keys [components colors typographies]}]
+                      (-> acc
+                          (update :components + components)
+                          (update :colors + colors)
+                          (update :typographies + typographies)))
+                    {}))]
+          (update state :performance-info
+                  (fn [info]
+                    (-> info
+                        (assoc :file-size file-size)
+                        (assoc :library-sizes lib-sizes)
+                        (assoc :file-start-time (perf/now))))))))))
+
 (defn store-performace-info
   []
   (letfn [(micro-benchmark [state]
-            (let [start (js/performance.now)]
-              (doseq [i (range 0 1e6)]
-                (* (math/sin i) (math/sqrt i)))
-              (let [end (js/performance.now)]
-                (assoc-in state [:performance-info :bench-result] (- end start)))))
-
-          (count-shapes [file]
-            (if file
-              (->> file :data :pages-index vals
-                   (map (comp count :objects))
-                   (reduce +))
-              0))
-
-          (count-library-data [files {:keys [id]}]
-            (let [data (get-in files [id :data])]
-              {:components (count (:components data))
-               :colors (count (:colors data))
-               :typographies (count (:typographies data))}))
-
-          (save-file-data []
-            (ptk/reify ::store-performance-info-save-file-data
-              ptk/UpdateEvent
-              (update [_ state]
-                (let [file-id (get state :current-file-id)
-                      file (get-in state [:files file-id])
-                      file-size (count-shapes file)
-
-                      libraries
-                      (-> (refs/select-libraries (:files state) (:id file))
-                          (update-vals (partial count-library-data (:files state))))
-
-                      lib-sizes
-                      (->> libraries
-                           (vals)
-                           (reduce (fn [acc {:keys [components colors typographies]}]
-                                     (-> acc
-                                         (update :components + components)
-                                         (update :colors + colors)
-                                         (update :typographies + typographies)))))]
-                  (-> state
-                      (assoc-in [:performance-info :file-size] file-size)
-                      (assoc-in [:performance-info :library-sizes] lib-sizes)
-                      (assoc-in [:performance-info :file-start-time] (js/performance.now)))))))]
+            (let [start (perf/now)]
+              (loop [i micro-benchmark-iterations]
+                (when-not (zero? i)
+                  (* (math/sin i) (math/sqrt i))
+                  (recur (dec i))))
+              (let [end (perf/now)]
+                (update state :performance-info assoc :bench-result (- end start)))))]
 
     (ptk/reify ::store-performace-info
       ptk/UpdateEvent
       (update [_ state]
         (-> state
             micro-benchmark
-            (assoc-in [:performance-info :app-start-time] (js/performance.now))))
+            (assoc-in [:performance-info :app-start-time] (perf/now))))
 
       ptk/WatchEvent
       (watch [_ _ stream]
         (->> stream
-             (rx/filter #(= (ptk/type %) :app.main.data.workspace/all-libraries-resolved))
+             (rx/filter (ptk/type? :app.main.data.workspace/all-libraries-resolved))
              (rx/take 1)
-             (rx/map save-file-data))))))
+             (rx/map save-performance-info))))))
 
 (defn initialize
   []
