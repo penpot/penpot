@@ -117,29 +117,8 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))))
 
+
     (t/testing "query single file after delete"
-      (let [data {::th/type :get-file
-                  ::rpc/profile-id (:id prof)
-                  :id file-id
-                  :components-v2 true}
-            out (th/command! data)]
-
-
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
-        (let [result (:result out)]
-          (t/is (some? (:deleted-at result)))
-          (t/is (= file-id (:id result)))
-          (t/is (= "new name" (:name result)))
-          (t/is (= 1 (count (get-in result [:data :pages]))))
-          (t/is (nil? (:users result))))))
-
-    (th/db-update! :file
-                   {:deleted-at (ct/now)}
-                   {:id file-id})
-
-    (t/testing "query single file after delete and wait"
       (let [data {::th/type :get-file
                   ::rpc/profile-id (:id prof)
                   :id file-id
@@ -959,9 +938,11 @@
                 :file-id (:id file)}
           out  (th/command! data)]
       ;; (th/print-result! out)
-      (t/is (nil? (:error out)))
-      (let [result (:result out)]
-        (t/is (= 0 (count result)))))
+
+      (let [error (:error out)
+            error-data (ex-data error)]
+        (t/is (th/ex-info? error))
+        (t/is (= (:type error-data) :not-found))))
 
     ;; run permanent deletion (should be noop)
     (let [result (th/run-task! :objects-gc {})]

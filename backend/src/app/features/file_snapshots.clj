@@ -90,15 +90,16 @@
          FROM snapshots AS c
         WHERE c.id = ?
           AND CASE WHEN c.created_by = 'user'
-                   THEN (c.deleted_at IS NULL)
+                   THEN c.deleted_at IS NULL
                    WHEN c.created_by = 'system'
-                   THEN (c.deleted_at IS NULL OR c.deleted_at >= ?::timestamptz)
+                   THEN c.deleted_at IS NULL OR c.deleted_at >= ?::timestamptz
                END"))
 
 (defn get-minimal-snapshot
   [cfg snapshot-id]
   (let [now (ct/now)]
-    (-> (db/get-with-sql cfg [sql:get-snapshot-without-data snapshot-id now])
+    (-> (db/get-with-sql cfg [sql:get-snapshot-without-data snapshot-id now]
+                         {::db/remove-deleted false})
         (decode-snapshot))))
 
 (def ^:private sql:get-snapshot
@@ -115,7 +116,8 @@
   "Get snapshot with decoded data"
   [cfg file-id snapshot-id]
   (let [now (ct/now)]
-    (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now])
+    (->> (db/get-with-sql cfg [sql:get-snapshot file-id snapshot-id now]
+                          {::db/remove-deleted false})
          (decode-snapshot)
          (fdata/resolve-file-data cfg)
          (fdata/decode-file-data cfg))))

@@ -132,7 +132,6 @@
         ;; this will run pending task triggered by deleting user snapshot
         (th/run-pending-tasks!)
 
-        ;; this will
         (let [res (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
           ;; delete 2 snapshots and 2 file data entries
           (t/is (= 4 (:processed res))))))))
@@ -179,7 +178,7 @@
         (t/is (nil? (:error out)))
         (t/is (true? (:result out)))
 
-        (let [snapshot (th/db-get :file-change {:id (:id snapshot)})]
+        (let [snapshot (th/db-get :file-change {:id (:id snapshot)} {::db/remove-deleted false})]
           (t/is (= (:id profile-1) (:locked-by snapshot))))))
 
     (t/testing "delete locked snapshot"
