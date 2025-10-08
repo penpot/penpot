@@ -14,11 +14,6 @@ on:
         type: string
         required: false
         default: 'yes'
-      build_storybook:
-        description: 'BUILD_STORYBOOK. Valid values: yes, no'
-        type: string
-        required: false
-        default: 'yes'
   workflow_call:
     inputs:
       gh_ref:
@@ -28,11 +23,6 @@ on:
         default: 'develop'
       build_wasm:
         description: 'BUILD_WASM. Valid values: yes, no'
-        type: string
-        required: false
-        default: 'yes'
-      build_storybook:
-        description: 'BUILD_STORYBOOK. Valid values: yes, no'
         type: string
         required: false
         default: 'yes'
@@ -61,7 +51,7 @@ jobs:
       - name: Build bundle
         env:
           BUILD_WASM: ${{ inputs.build_wasm }}
-          BUILD_STORYBOOK: ${{ inputs.build_storybook }}
+          BUILD_STORYBOOK: yes
         run: ./manage.sh build-bundle
 
       - name: Prepare directories for zipping
