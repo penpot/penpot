@@ -32,6 +32,7 @@ use crate::wapi;
 
 use crate::math;
 use crate::math::bools;
+use indexmap::IndexSet;
 
 pub use fonts::*;
 pub use images::*;
@@ -1716,28 +1717,47 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles");
     }
 
+    /// Invalidates extended rectangles and updates tiles for a set of shapes
+    ///
+    /// This function takes a set of shape IDs and for each one:
+    /// 1. Invalidates the extrect cache
+    /// 2. Updates the tiles to ensure proper rendering
+    ///
+    /// This is useful when you have a pre-computed set of shape IDs that need to be refreshed,
+    /// regardless of their relationship to other shapes (e.g., ancestors, descendants, or any other collection).
+    pub fn invalidate_and_update_tiles(
+        &mut self,
+        shape_ids: &IndexSet<Uuid>,
+        tree: &mut ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) {
+        for shape_id in shape_ids {
+            if let Some(shape) = tree.get_mut(shape_id) {
+                shape.invalidate_extrect();
+            }
+            if let Some(shape) = tree.get(shape_id) {
+                if !shape.id.is_nil() {
+                    self.update_tile_for(shape, tree, modifiers);
+                }
+            }
+        }
+    }
+
     /// Processes all ancestors of a shape, invalidating their extended rectangles and updating their tiles
     ///
     /// When a shape changes, all its ancestors need to have their extended rectangles recalculated
     /// because they may contain the changed shape. This function:
-    /// 1. Invalidates the extrect cache for each ancestor
-    /// 2. Updates the tiles for each ancestor to ensure proper rendering
+    /// 1. Computes all ancestors of the shape
+    /// 2. Invalidates the extrect cache for each ancestor
+    /// 3. Updates the tiles for each ancestor to ensure proper rendering
     pub fn process_shape_ancestors(
         &mut self,
         shape: &Shape,
         tree: &mut ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
-        for ancestor in shape.all_ancestors(tree, false) {
-            if let Some(ancestor) = tree.get_mut(&ancestor) {
-                ancestor.invalidate_extrect();
-            }
-            if let Some(ancestor) = tree.get(&ancestor) {
-                if !ancestor.id.is_nil() {
-                    self.update_tile_for(ancestor, tree, modifiers);
-                }
-            }
-        }
+        let ancestors = shape.all_ancestors(tree, false);
+        self.invalidate_and_update_tiles(&ancestors, tree, modifiers);
     }
 
     /// Rebuilds tiles for shapes with modifiers and processes their ancestors
@@ -1751,18 +1771,21 @@ impl RenderState {
         tree: &mut ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
+        let mut ancestors = IndexSet::new();
         for (uuid, matrix) in modifiers {
             let mut shape = {
                 let Some(shape) = tree.get(uuid) else {
                     panic!("Invalid current shape")
                 };
-                shape.clone()
+                let shape: Cow<Shape> = Cow::Borrowed(shape);
+                shape
             };
 
-            shape.apply_transform(matrix);
-            self.update_tile_for(&shape, tree, modifiers);
-            self.process_shape_ancestors(&shape, tree, modifiers);
+            shape.to_mut().apply_transform(matrix);
+            ancestors.insert(*uuid);
+            ancestors.extend(shape.all_ancestors(tree, false));
         }
+        self.invalidate_and_update_tiles(&ancestors, tree, modifiers);
     }
 
     pub fn get_scale(&self) -> f32 {
