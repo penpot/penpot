@@ -157,3 +157,15 @@
   (let [p1 (now)]
     #(js/Math.floor (- (now) p1))))
 
+(defn measure-time-to-render [event]
+  (if (and (exists? js/globalThis)
+           (exists? (.-requestAnimationFrame js/globalThis))
+           (exists? (.-scheduler js/globalThis))
+           (exists? (.-postTask (.-scheduler js/globalThis))))
+    (let [start (timestamp)]
+      (js/requestAnimationFrame
+       #(js/scheduler.postTask
+         (fn []
+           (let [end (timestamp)]
+             (println (str "[" event "]" (- end start)))))
+         #js {"priority" "user-blocking"})))))
