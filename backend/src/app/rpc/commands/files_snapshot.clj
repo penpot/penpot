@@ -168,7 +168,8 @@
         snapshot (some->> (db/get* conn :file-change
                                    {:file-id file-id
                                     :id snapshot-id}
-                                   {::db/for-share true})
+                                   {::db/for-share true
+                                    ::db/remove-deleted false})
                           (feat.fdata/resolve-file-data cfg)
                           (decode-row))
 
@@ -285,7 +286,8 @@
   (db/get conn :file-change
           {:id id}
           {::sql/columns [:id :file-id :created-by :deleted-at :profile-id :locked-by]
-           ::db/for-update true}))
+           ::db/for-update true
+           ::db/remove-deleted false}))
 
 (sv/defmethod ::update-file-snapshot
   {::doc/added "1.20"

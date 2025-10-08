@@ -379,9 +379,7 @@
 
 (defn is-row-deleted?
   [{:keys [deleted-at]}]
-  (and (ct/inst? deleted-at)
-       (< (inst-ms deleted-at)
-          (inst-ms (ct/now)))))
+  (some? deleted-at))
 
 (defn get*
   "Retrieve a single row from database that matches a simple filters. Do

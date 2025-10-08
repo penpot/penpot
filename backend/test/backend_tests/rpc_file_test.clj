@@ -116,29 +116,8 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))))
 
+
     (t/testing "query single file after delete"
-      (let [data {::th/type :get-file
-                  ::rpc/profile-id (:id prof)
-                  :id file-id
-                  :components-v2 true}
-            out (th/command! data)]
-
-
-        ;; (th/print-result! out)
-        (t/is (nil? (:error out)))
-
-        (let [result (:result out)]
-          (t/is (some? (:deleted-at result)))
-          (t/is (= file-id (:id result)))
-          (t/is (= "new name" (:name result)))
-          (t/is (= 1 (count (get-in result [:data :pages]))))
-          (t/is (nil? (:users result))))))
-
-    (th/db-update! :file
-                   {:deleted-at (ct/now)}
-                   {:id file-id})
-
-    (t/testing "query single file after delete and wait"
       (let [data {::th/type :get-file
                   ::rpc/profile-id (:id prof)
                   :id file-id
@@ -933,7 +912,7 @@
           out    (th/command! params)]
       (t/is (nil? (:error out))))
 
-    ;; query the list of files after soft deletion
+    ;; query the list of files after deletion
     (let [data {::th/type :get-project-files
                 ::rpc/profile-id (:id profile1)
                 :project-id (:default-project-id profile1)}
@@ -942,24 +921,6 @@
       (t/is (nil? (:error out)))
       (let [result (:result out)]
         (t/is (= 0 (count result)))))
-
-    ;; run permanent deletion (should be noop)
-    (let [result (th/run-task! :objects-gc {})]
-      (t/is (= 0 (:processed result))))
-
-    ;; query the list of file libraries of a after hard deletion
-    (let [data {::th/type :get-file-libraries
-                ::rpc/profile-id (:id profile1)
-                :file-id (:id file)}
-          out  (th/command! data)]
-      ;; (th/print-result! out)
-      (t/is (nil? (:error out)))
-      (let [result (:result out)]
-        (t/is (= 0 (count result)))))
-
-    ;; run permanent deletion
-    (let [result (th/run-task! :objects-gc {:deletion-threshold (cf/get-deletion-delay)})]
-      (t/is (= 1 (:processed result))))
 
     ;; query the list of file libraries of a after hard deletion
     (let [data {::th/type :get-file-libraries

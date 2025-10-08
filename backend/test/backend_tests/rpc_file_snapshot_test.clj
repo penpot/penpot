@@ -174,7 +174,7 @@
         (t/is (nil? (:error out)))
         (t/is (nil? (:result out)))
 
-        (let [snapshot (th/db-get :file-change {:id (:id snapshot)})]
+        (let [snapshot (th/db-get :file-change {:id (:id snapshot)} {::db/remove-deleted false})]
           (t/is (= (:id profile-1) (:locked-by snapshot))))))
 
     (t/testing "delete locked snapshot"
