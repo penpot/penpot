@@ -7,12 +7,13 @@
 (ns app.plugins.tokens
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
-(defn locate-theme
+(defn locate-token-theme
   [file-id id]
   (let [file (u/locate-file file-id)
         tokens-lib (->> file :data :tokens-lib)]
@@ -37,6 +38,9 @@
     :$file-id {:enumerable false :get (constantly file-id)}
     :$set-id {:enumerable false :get (constantly set-id)}
     :$id {:enumerable false :get (constantly id)}
+
+    :id
+    {:get #(dm/str id)}
 
     :name
     {:this true
@@ -73,11 +77,20 @@
       )))
 
 (defn token-set-proxy
-  [plugin-id file-id set-id]
+  [plugin-id file-id id]
   (obj/reify {:name "TokenSetProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
-    :id {:this true :get (constantly set-id)}
+
+    :id
+    {:get #(dm/str id)}
+
+    :name
+    {:this true
+     :get
+     (fn [_]
+       (let [set (locate-token-set file-id id)]
+         (ctob/get-name set)))}
 
     :tokens
     {:this true
@@ -85,30 +98,32 @@
      (fn [_]
        (let [file (u/locate-file file-id)
              tokens-lib (->> file :data :tokens-lib)]
-         (->> (ctob/get-tokens tokens-lib set-id)
-              (map #(token-proxy plugin-id file-id set-id (:id %)))
+         (->> (ctob/get-tokens tokens-lib id)
+              (vals)
+              (map #(token-proxy plugin-id file-id id (:id %)))
               (apply array))))}))
 
-(defn theme-proxy
+(defn token-theme-proxy
   [plugin-id file-id id]
   (obj/reify {:name "TokenThemeProxy"}
     :$plugin {:enumerable false :get (constantly plugin-id)}
     :$file-id {:enumerable false :get (constantly file-id)}
 
-    :id {:this true :get (constantly id)}
+    :id
+    {:get #(dm/str id)}
 
     :group
     {:this true
      :get
      (fn [_]
-       (let [theme (locate-theme file-id id)]
+       (let [theme (locate-token-theme file-id id)]
          (:group theme)))}
 
     :name
     {:this true
      :get
      (fn [_]
-       (let [theme (locate-theme file-id id)]
+       (let [theme (locate-token-theme file-id id)]
          (:name theme)))}
 
     :active
@@ -151,7 +166,7 @@
              tokens-lib (->> file :data :tokens-lib)
              themes (->> (ctob/get-themes tokens-lib)
                          (remove #(= (:id %) uuid/zero)))]
-         (apply array (map #(theme-proxy plugin-id file-id (ctob/get-id %)) themes))))}
+         (apply array (map #(token-theme-proxy plugin-id file-id (ctob/get-id %)) themes))))}
 
     :sets
     {:this true
@@ -165,7 +180,7 @@
     :addTheme
     (fn [id]
       ;; TODO
-      (theme-proxy plugin-id file-id id))
+      (token-theme-proxy plugin-id file-id id))
 
     :removeTheme
     (fn [_theme]
@@ -180,4 +195,16 @@
     :removeSet
     (fn [_set]
       ;; TODO
-      )))
+      )
+
+    :getSetById
+    (fn [set-id]
+      (cond
+        (not (string? set-id))
+        (u/display-not-valid :getSetById set-id)
+
+        :else
+        (let [set-id (uuid/parse set-id)
+              set (locate-token-set file-id set-id)]
+          (when (some? set)
+            (token-set-proxy plugin-id file-id set-id)))))))
