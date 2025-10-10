@@ -14,16 +14,26 @@ fi
 #########################################
 
 update_flags() {
+  local config_file="/var/www/app/js/config.js"
+
   if [ -n "$PENPOT_FLAGS" ]; then
     sed -i \
       -e "s|^//var penpotFlags = .*;|var penpotFlags = \"$PENPOT_FLAGS\";|g" \
-      "$1"
+      "$config_file"
   fi
 }
 
-update_flags /var/www/app/js/config.js
+append_extra_config() {
+  local config_file="/var/www/app/js/config.js"
+  local config_file_extra="/var/www/app/js/config.extra.js"
 
+  if [ -f "$config_file_extra" ]; then
+    cat "$config_file_extra" >> "$config_file"
+  fi
+}
 
+update_flags
+append_extra_config
 
 #########################################
 ## Nginx Config
