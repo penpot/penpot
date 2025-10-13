@@ -1160,7 +1160,7 @@
        :shape-id (:shape-id stroke)
        :index (:index stroke)})))
 
-(defn- shadow->color-att
+(defn- shadow->color-attr
   "Given a stroke map enriched with :shape-id, :index, and optionally
      :has-token-applied / :token-name, returns a color attribute map.
   
@@ -1297,17 +1297,17 @@
            shape-id       (:id shape)
 
            fills* (map-indexed
-                   (fn [i f]
-                     (cond-> (assoc f :shape-id shape-id :index i)
-                       (and (zero? i) applied-fill)
+                   (fn [index fill]
+                     (cond-> (assoc fill :shape-id shape-id :index index)
+                       (and (zero? index) applied-fill)
                        (assoc :has-token-applied true
                               :token-name applied-fill)))
                    fills)
 
            strokes* (map-indexed
-                     (fn [i s]
-                       (cond-> (assoc s :shape-id shape-id :index i)
-                         (and (zero? i) applied-stroke)
+                     (fn [index stroke]
+                       (cond-> (assoc stroke :shape-id shape-id :index index)
+                         (and (zero? index) applied-stroke)
                          (assoc :has-token-applied true
                                 :token-name applied-stroke)))
                      strokes)
@@ -1316,11 +1316,11 @@
        (if (= :text (:type shape))
          (-> result
              (into (keep #(stroke->color-att % file-id libraries)) strokes*)
-             (into (map #(shadow->color-att % file-id libraries)) shadows*)
+             (into (map #(shadow->color-attr % file-id libraries)) shadows*)
              (into (extract-text-colors shape file-id libraries)))
          (-> result
              (into (keep #(fill->color-att % file-id libraries)) fills*)
              (into (keep #(stroke->color-att % file-id libraries)) strokes*)
-             (into (map #(shadow->color-att % file-id libraries)) shadows*)))))
+             (into (map #(shadow->color-attr % file-id libraries)) shadows*)))))
    []
    shapes))

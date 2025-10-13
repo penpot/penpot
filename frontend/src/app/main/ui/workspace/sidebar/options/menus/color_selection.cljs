@@ -261,4 +261,4 @@
                     (< 3 (count token-colors)))
            [:button {:class (stl/css :more-colors-btn)
                      :on-click #(reset! expand-token-color true)}
-            "More token colors"])]])]))
+            (tr "workspace.options.more-token-colors")])]])]))
