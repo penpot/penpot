@@ -588,7 +588,7 @@
 
         calculate-from-db
         (fn []
-          (let [file   (bfc/get-file cfg id :migrate? false)
+          (let [file   (bfc/get-file cfg id)
                 result (binding [pmap/*load-fn* (partial feat.fdata/load-pointer cfg id)]
                          (calculate-library-summary file))]
             (-> file
