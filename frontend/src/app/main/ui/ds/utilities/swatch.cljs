@@ -139,4 +139,4 @@
          [:span {:class (stl/css :swatch-solid-side)
                  :style {:background (uc/color->background (assoc background :opacity 1))}}]
          [:span {:class (stl/css :swatch-opacity-side)
-                 :style {:background (uc/color->background background)}}]])]]))
+                 :style {"--solid-color-overlay" (str (uc/color->background background))}}]])]]))
