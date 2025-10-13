@@ -715,7 +715,9 @@
                 (do
                   (on-error)
                   (rx/empty))
-                (rx/of (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true))))))))))
+                (rx/of
+                 (dwl/component-swap shape (:component-file shape) (:id nearest-comp) true)
+                 (ev/event {::ev/name "variant-switch" ::ev/origin "workspace:design-tab"}))))))))))
 
 (defn variants-switch
   "Switch each shape (that must be a variant copy head) for the closest one with the property value passed as parameter"
