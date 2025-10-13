@@ -13,22 +13,24 @@
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
+(defn locate-tokens-lib
+  [file-id]
+  (let [file (u/locate-file file-id)]
+    (->> file :data :tokens-lib)))
+
 (defn locate-token-theme
   [file-id id]
-  (let [file (u/locate-file file-id)
-        tokens-lib (->> file :data :tokens-lib)]
+  (let [tokens-lib (locate-tokens-lib file-id)]
     (ctob/get-theme tokens-lib id)))
 
 (defn locate-token-set
   [file-id set-id]
-  (let [file (u/locate-file file-id)
-        tokens-lib (->> file :data :tokens-lib)]
+  (let [tokens-lib (locate-tokens-lib file-id)]
     (ctob/get-set tokens-lib set-id)))
 
 (defn locate-token
   [file-id set-id token-id]
-  (let [file (u/locate-file file-id)
-        tokens-lib (->> file :data :tokens-lib)]
+  (let [tokens-lib (locate-tokens-lib file-id)]
     (ctob/get-token tokens-lib set-id token-id)))
 
 (defn token-proxy
@@ -127,7 +129,11 @@
          (:name theme)))}
 
     :active
-    {:this true :get (fn [_])}
+    {:this true
+     :get
+     (fn [_]
+       (let [tokens-lib (locate-tokens-lib file-id)]
+         (ctob/theme-active? tokens-lib id)))}
 
     :activeSets
     {:this true :get (fn [_])}
