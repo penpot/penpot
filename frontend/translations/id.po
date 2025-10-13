@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Linerly <linerly@proton.me>\n"
-"Language-Team: Indonesian "
-"<https://hosted.weblate.org/projects/penpot/frontend/id/>\n"
+"Language-Team: Indonesian <https://hosted.weblate.org/projects/penpot/"
+"frontend/id/>\n"
 "Language: id\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4833,10 +4833,6 @@ msgstr "Lokasi tata letak kisi"
 msgid "workspace.libraries.add"
 msgstr "Tambahkan"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s warna"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Belum ada gaya warna dalam pustaka Anda"
@@ -4871,10 +4867,6 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Simpan gaya warna"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s komponen"
-
 #: src/app/main/ui/workspace/libraries.cljs:404
 msgid "workspace.libraries.empty.add-some"
 msgstr "Atau tambahkan beberapa dari sini untuk mencoba:"
@@ -4890,10 +4882,6 @@ msgstr "beberapa templat di sini"
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "Pustaka berkas"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s grafis"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
@@ -4948,10 +4936,6 @@ msgstr "Beberapa tipografi"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Lepaskan tautan dari semua tipografi"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s tipografi"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
 msgid "workspace.libraries.unlink-library-btn"
