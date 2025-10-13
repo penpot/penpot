@@ -1,0 +1,162 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: penpot_db
+      POSTGRES_USER: penpot_user
+      POSTGRES_PASSWORD: P3np0t!DB@2024$F0urt33
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - penpot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U penpot_user -d penpot_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass "R3d!s@2024$F0urt33P3np0t"
+    volumes:
+      - redis_data:/data
+    networks:
+      - penpot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  penpot-backend:
+    image: penpotapp/backend:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database Configuration
+      PENPOT_DATABASE_URI: postgresql://penpot_user:P3np0t!DB@2024$F0urt33@postgres:5432/penpot_db
+      
+      # Redis Configuration
+      PENPOT_REDIS_URI: redis://default:R3d!s@2024$F0urt33P3np0t@redis:6379
+      
+      # Security & Server Configuration
+      PENPOT_SECRET_KEY: F0urt33M3d!@2024$P3np0tS3cr3tK3y#B4ck3nd!2024
+      PENPOT_PUBLIC_URI: https://penpot.fourteemedia.com
+      PENPOT_BACKEND_URI: https://penpot.fourteemedia.com/api
+      PENPOT_INTERNAL_BACKEND_URI: http://penpot-backend:6060
+      
+      # Features & Flags
+      PENPOT_FLAGS: enable-registration,enable-smtp,enable-login
+      PENPOT_DEMO: "false"
+      PENPOT_ALLOW_DEMO_USERS: "false"
+      
+      # SMTP Configuration (Update with your SMTP details)
+      PENPOT_SMTP_ENABLED: "true"
+      PENPOT_SMTP_DEFAULT_FROM: penpot@fourteemedia.com
+      PENPOT_SMTP_HOST: smtp.fourteemedia.com
+      PENPOT_SMTP_PORT: "587"
+      PENPOT_SMTP_USERNAME: penpot@fourteemedia.com
+      PENPOT_SMTP_PASSWORD: YOUR_SMTP_PASSWORD_HERE
+      PENPOT_SMTP_SSL: "false"
+      PENPOT_SMTP_TLS: "true"
+      
+      # Storage Configuration
+      PENPOT_STORAGE_BACKEND: "fs"
+      PENPOT_STORAGE_FS_DIR: "/opt/data/assets"
+      
+      # Server Configuration
+      PENPOT_SERVER_PORT: "6060"
+      PENPOT_SERVER_HOST: "0.0.0.0"
+      
+    volumes:
+      - assets_data:/opt/data/assets
+    networks:
+      - penpot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6060/api/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  penpot-frontend:
+    image: penpotapp/frontend:latest
+    restart: unless-stopped
+    depends_on:
+      penpot-backend:
+        condition: service_healthy
+    environment:
+      PENPOT_PUBLIC_URI: https://penpot.fourteemedia.com
+      PENPOT_BACKEND_URI: https://penpot.fourteemedia.com/api
+      PENPOT_EXPORTER_URI: https://penpot.fourteemedia.com
+      PENPOT_MAINTENANCE_MODE: "false"
+    networks:
+      - penpot-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.penpot-frontend.rule=Host(`penpot.fourteemedia.com`)"
+      - "traefik.http.routers.penpot-frontend.entrypoints=websecure"
+      - "traefik.http.routers.penpot-frontend.tls.certresolver=letsencrypt"
+
+  penpot-exporter:
+    image: penpotapp/exporter:latest
+    restart: unless-stopped
+    depends_on:
+      - penpot-backend
+    environment:
+      PENPOT_PUBLIC_URI: https://penpot.fourteemedia.com
+      PENPOT_BACKEND_URI: https://penpot.fourteemedia.com/api
+      PENPOT_EXPORTER_URI: https://penpot.fourteemedia.com
+    networks:
+      - penpot-network
+
+  # Traefik for Reverse Proxy and SSL
+  traefik:
+    image: traefik:v2.10
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@fourteemedia.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - traefik_data:/letsencrypt
+    networks:
+      - penpot-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`traefik.penpot.fourteemedia.com`)"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.middlewares=auth"
+      - "traefik.http.middlewares.auth.basicauth.users=admin:$$apr1$$9Cv/9M3f$$4V28k8q1H7Q1E1e2L3Z5s0"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  assets_data:
+    driver: local
+  traefik_data:
+    driver: local
+
+networks:
+  penpot-network:
+    driver: bridge
