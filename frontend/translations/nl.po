@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
+"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -5473,10 +5473,6 @@ msgstr "Meervoudige typografie"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Alle typografie ontkoppelen"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s typografie"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
 msgid "workspace.libraries.unlink-library-btn"
