@@ -172,9 +172,7 @@
    [:id {:optional true} :string]
    [:offset {:optional true} :int]
    [:delay {:optional true} :int]
-   ;; TODO: Review why html element crash schema
-   ;; https://tree.taiga.io/project/penpot/task/12039
-   ;; [:content [:or fn? :string [:fn mf/element?]]]
+   [:content [:or fn? :string]]
    [:placement {:optional true}
     [:maybe [:enum "top" "bottom" "left" "right" "top-right" "bottom-right" "bottom-left" "top-left"]]]])
 
