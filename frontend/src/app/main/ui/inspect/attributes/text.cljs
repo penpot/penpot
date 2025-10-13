@@ -13,28 +13,17 @@
    [app.common.types.fills :as types.fills]
    [app.common.types.text :as types.text]
    [app.main.fonts :as fonts]
-   [app.main.refs :as refs]
-   [app.main.store :as st]
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
+   [app.main.ui.inspect.common.typography :as ict]
    [app.util.i18n :refer [tr]]
    [cuerdas.core :as str]
-   [okulary.core :as l]
    [rumext.v2 :as mf]))
 
 (defn- has-text? [shape]
   (:content shape))
-
-(def ^:private file-typographies-ref
-  (l/derived (l/in [:viewer :file :data :typographies]) st/state))
-
-(defn- make-typographies-library-ref [file-id]
-  (let [get-library
-        (fn [state]
-          (get-in state [:viewer-libraries file-id :data :typographies]))]
-    #(l/derived get-library st/state)))
 
 (defn- copy-style-data
   [style & properties]
@@ -44,24 +33,10 @@
 
 (mf/defc typography-block
   [{:keys [text style]}]
-  (let [typography-library-ref
-        (mf/use-memo
-         (mf/deps (:typography-ref-file style))
-         (make-typographies-library-ref (:typography-ref-file style)))
-
-        typography-library (mf/deref typography-library-ref)
-
-        ;; FIXME: too many duplicate operations
-        file-typographies-viewer    (mf/deref file-typographies-ref)
-        file-typographies-workspace (mf/deref refs/workspace-file-typography)
-
-        file-library-workspace      (get (mf/deref refs/files) (:typography-ref-file style))
-        typography-external-lib (get-in file-library-workspace [:data :typographies (:typography-ref-id style)])
-
-        color-format*       (mf/use-state :hex)
+  (let [color-format*       (mf/use-state :hex)
         color-format        (deref color-format*)
 
-        typography (or (get (or typography-library file-typographies-viewer file-typographies-workspace) (:typography-ref-id style)) typography-external-lib)]
+        typography (ict/get-typography style)]
 
     [:div {:class (stl/css :attributes-content)}
      (when (:fills style)
