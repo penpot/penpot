@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: George Lemon <george@getvasco.com>\n"
+"Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
 "Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
 "ro/>\n"
 "Language: ro\n"
@@ -3908,10 +3908,6 @@ msgstr "Tipografii multiple"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Deconectează toate tipografiile"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s tipografii"
 
 #: src/app/main/ui/workspace/libraries.cljs:520
 msgid "workspace.libraries.update"
