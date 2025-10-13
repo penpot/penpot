@@ -1615,7 +1615,7 @@
 
 (defmethod migrate-data "0014-fix-tokens-lib-duplicate-ids"
   [data _]
-  (update data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
+  (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
 
 (def available-migrations
   (into (d/ordered-set)
