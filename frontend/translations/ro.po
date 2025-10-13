@@ -1,16 +1,16 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
-"Last-Translator: AlexTECPlayz <alextec70@outlook.com>\n"
-"Language-Team: Romanian "
-"<https://hosted.weblate.org/projects/penpot/frontend/ro/>\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"Last-Translator: George Lemon <george@getvasco.com>\n"
+"Language-Team: Romanian <https://hosted.weblate.org/projects/penpot/frontend/"
+"ro/>\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < "
-"20)) ? 1 : 2;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : "
+"(n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2;\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -3830,10 +3830,6 @@ msgstr "Editare grilă"
 msgid "workspace.libraries.add"
 msgstr "Adaugă"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s culori"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Nu există stiluri de culori în librăria dvs. încă"
@@ -3868,17 +3864,9 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Salvează stilul culorii"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s componente"
-
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "Bibliotecă de fișiere"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s obiecte grafice"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
