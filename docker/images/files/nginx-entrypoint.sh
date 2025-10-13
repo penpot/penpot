@@ -15,15 +15,13 @@ fi
 
 update_flags() {
   if [ -n "$PENPOT_FLAGS" ]; then
-    sed -i \
+    echo "$(sed \
       -e "s|^//var penpotFlags = .*;|var penpotFlags = \"$PENPOT_FLAGS\";|g" \
-      "$1"
+      "$1")" > "$1"
   fi
 }
 
 update_flags /var/www/app/js/config.js
-
-
 
 #########################################
 ## Nginx Config
