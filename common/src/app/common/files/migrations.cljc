@@ -75,7 +75,9 @@
         data
         (-> data
             (assoc :id id)
-            (dissoc :version :libs))]
+            (dissoc :version)
+            (dissoc :libs)
+            (ctf/check-file-data))]
 
     (-> file
         (assoc :data data)

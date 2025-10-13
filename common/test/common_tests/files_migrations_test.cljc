@@ -9,6 +9,7 @@
    [app.common.data :as d]
    [app.common.files.migrations :as cfm]
    [app.common.pprint :as pp]
+   [app.common.types.file :as ctf]
    [clojure.test :as t]))
 
 (defmethod cfm/migrate-data "test/1" [data _] (update data :sum inc))
@@ -17,7 +18,8 @@
 
 (t/deftest generic-migration-subsystem-1
   (let [migrations (into (d/ordered-set) ["test/1" "test/2" "test/3"])]
-    (with-redefs [cfm/available-migrations migrations]
+    (with-redefs [cfm/available-migrations migrations
+                  ctf/check-file-data identity]
       (let [file  {:data {:sum 1}
                    :id 1
                    :migrations (d/ordered-set "test/1")}
