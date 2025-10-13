@@ -11,6 +11,7 @@
 ### :sparkles: New features & Enhancements
 
 ### :bug: Bugs fixed
+- Fix text line-height values are wrong [Taiga #12252](https://tree.taiga.io/project/penpot/issue/12252)
 
 
 ## 2.11.0 (Unreleased)
