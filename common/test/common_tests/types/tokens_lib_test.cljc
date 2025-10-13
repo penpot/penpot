@@ -855,7 +855,9 @@
 
 (t/deftest transit-serialization
   (let [tokens-lib  (-> (ctob/make-tokens-lib)
-                        (ctob/add-set (ctob/make-token-set :name "test-token-set"))
+                        (ctob/add-set (ctob/make-token-set
+                                       :id (thi/new-id! :test-token-set)
+                                       :name "test-token-set"))
                         (ctob/add-token (thi/id :test-token-set)
                                         (ctob/make-token :name "test-token"
                                                          :type :boolean
