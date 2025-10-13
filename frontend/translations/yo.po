@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Yoruba "
-"<https://hosted.weblate.org/projects/penpot/frontend/yo/>\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"Language-Team: Yoruba <https://hosted.weblate.org/projects/penpot/frontend/"
+"yo/>\n"
 "Language: yo\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -3383,10 +3383,6 @@ msgstr "Ilànà àyípàdà"
 msgid "workspace.libraries.add"
 msgstr "Afikùn"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s awọn awọ"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Kòyi si oniruiru awọ ni ilé-ikàwé re"
@@ -3417,17 +3413,9 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Fi awọn oniru awọ pamọ"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s Ẹya ara ẹrọ"
-
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "Faili ilé ikàwé"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s ayaworan"
 
 #: src/app/main/ui/workspace/libraries.cljs:642, src/app/main/ui/workspace/libraries.cljs:660
 msgid "workspace.libraries.libraries"
@@ -3457,10 +3445,6 @@ msgstr "Óríṣí awọn íwè itẹ̀wé"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Tú gbógbó lińkí awọn íwè itẹ̀wé"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s awọn íwè itẹ̀wé"
 
 #: src/app/main/ui/workspace/libraries.cljs:520
 msgid "workspace.libraries.update"
