@@ -171,6 +171,7 @@
    :enable-render-wasm-dpr
    :enable-token-units
    :enable-token-typography-types
+   :enable-token-typography-composite
    :enable-feature-fdata-objects-map])
 
 (defn parse
