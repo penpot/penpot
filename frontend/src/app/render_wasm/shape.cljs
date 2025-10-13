@@ -53,6 +53,10 @@
   (-conj [coll entry]
     (impl-conj coll entry))
 
+  c/IEmptyableCollection
+  (-empty [_]
+    (ShapeProxy. nil nil nil))
+
   c/IEquiv
   (-equiv [coll other]
     (c/equiv-map coll other))
@@ -62,7 +66,6 @@
     (hash (into {} coll)))
 
   c/ISequential
-
   c/ISeqable
   (-seq [_]
     (cons (map-entry :id id)

@@ -20,10 +20,8 @@
    [app.common.path-names :as cpn]
    [app.common.transit :as t]
    [app.common.types.component :as ctc]
-   [app.common.types.fills :as types.fills]
    [app.common.types.shape :as cts]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.main.data.changes :as dch]
    [app.main.data.comments :as dcmt]
    [app.main.data.common :as dcm]
@@ -78,7 +76,6 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
-   [clojure.walk :as walk]
    [cuerdas.core :as str]
    [potok.v2.core :as ptk]))
 
@@ -131,25 +128,6 @@
                                         (rx/of [k v])))))))
        (rx/reduce conj {})))
 
-
-(defn process-fills
-  "A function responsible to analyze the file data or shape for references
-  and apply lookup-index on it."
-  [data]
-  (letfn [(process-map-form [form]
-            (let [fills (get form :fills)]
-              (if (vector? fills)
-                (assoc form :fills (types.fills/from-plain fills))
-                form)))
-
-          (process-form [form]
-            (if (map? form)
-              (process-map-form form)
-              form))]
-    (if (contains? cf/flags :frontend-binary-fills)
-      (walk/postwalk process-form data)
-      data)))
-
 (defn- resolve-file
   [file]
   (log/inf :hint "resolve file"
@@ -157,7 +135,6 @@
            :features (str/join " " (:features file)))
   (->> (fpmap/resolve-file file)
        (rx/map :data)
-       (rx/map process-fills)
        (rx/map
         (fn [data]
           (assoc file :data (d/removem (comp t/pointer? val) data))))))
@@ -186,9 +163,6 @@
     ptk/UpdateEvent
     (update [_ state]
       (update state :files assoc (:id library) library))))
-
-
-
 
 (defn- fetch-libraries
   [file-id features]

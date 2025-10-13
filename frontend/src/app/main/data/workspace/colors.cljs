@@ -16,7 +16,6 @@
    [app.common.types.shape :as shp]
    [app.common.types.shape.shadow :refer [check-shadow]]
    [app.common.types.text :as txt]
-   [app.config :as cfg]
    [app.main.broadcast :as mbc]
    [app.main.data.helpers :as dsh]
    [app.main.data.modal :as md]
@@ -899,7 +898,7 @@
     (update [_ state]
       (update state :colorpicker
               (fn [{:keys [stops editing-stop] :as state}]
-                (let [cap-stops? (or (features/active-feature? state "render-wasm/v1") (contains? cfg/flags :frontend-binary-fills))
+                (let [cap-stops?    (features/active-feature? state "render-wasm/v1")
                       can-add-stop? (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
                   (if can-add-stop?
                     (if (clr/uniform-spread? stops)
@@ -945,9 +944,9 @@
       (update state :colorpicker
               (fn [state]
                 (let [stops (:stops state)
+
                       cap-stops?
-                      (or (features/active-feature? state "render-wasm/v1")
-                          (contains? cfg/flags :frontend-binary-fills))
+                      (features/active-feature? state "render-wasm/v1")
 
                       can-add-stop?
                       (or (not cap-stops?) (< (count stops) types.fills/MAX-GRADIENT-STOPS))]
@@ -972,8 +971,7 @@
       (update state :colorpicker
               (fn [state]
                 (let [stop  (or (:editing-stop state) 0)
-                      cap-stops? (or (features/active-feature? state "render-wasm/v1")
-                                     (contains? cfg/flags :frontend-binary-fills))
+                      cap-stops? (features/active-feature? state "render-wasm/v1")
                       stops (mapv split-color-components
                                   (if cap-stops?
                                     (take types.fills/MAX-GRADIENT-STOPS stops)

@@ -71,7 +71,7 @@ test.describe("Shape attributes", () => {
     page,
   }) => {
     const workspace = new WorkspacePage(page);
-    await workspace.mockConfigFlags(["enable-frontend-binary-fills"]);
+    await workspace.mockConfigFlags(["enable-feature-render-wasm"]);
     await workspace.setupEmptyFile();
     await workspace.mockRPC(/get\-file\?/, "design/get-file-fills-limit.json");
 
