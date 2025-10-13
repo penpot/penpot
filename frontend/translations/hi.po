@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
-"Language-Team: Hindi "
-"<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
+"Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/hi/"
+">\n"
 "Language: hi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -5115,10 +5115,6 @@ msgstr "ग्रिड लेआउट का स्थान खोजें"
 msgid "workspace.libraries.add"
 msgstr "जोड़ना"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s रंग"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "आपकी लाइब्रेरी में अभी कोई रंग शैली नहीं है"
@@ -5153,10 +5149,6 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "रंग शैली सहेजें"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s घटक"
-
 #: src/app/main/ui/workspace/libraries.cljs:404
 msgid "workspace.libraries.empty.add-some"
 msgstr "या इनमें से कुछ को जोड़कर देखें:"
@@ -5172,10 +5164,6 @@ msgstr "यहाँ कुछ टेम्पलेट्स हैं"
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "फ़ाइल लाइब्रेरी"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s ग्राफ़िक्स"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
@@ -5230,10 +5218,6 @@ msgstr "एकाधिक टाइपोग्राफी"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "सभी टाइपोग्राफ़ी अनलिंक करें"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s टाइपोग्राफी"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
 msgid "workspace.libraries.unlink-library-btn"
