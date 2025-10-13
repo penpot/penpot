@@ -633,7 +633,7 @@
       (dissoc :team-id)
       (dissoc :migrations)))
 
-(defn file->file-data-params
+(defn- file->file-data-params
   [{:keys [id] :as file} & {:as opts}]
   (let [created-at  (or (:created-at file) (ct/now))
         modified-at (or (:modified-at file) created-at)]

@@ -172,16 +172,24 @@
     (= backend "legacy-db")
     (cond
       (= type "main")
-      (db/update! cfg :file
-                  {:data data}
-                  {:id file-id}
-                  {::db/return-keys false})
+      (do
+        (db/delete! cfg :file-data
+                    {:id id :file-id file-id :type "main"}
+                    {::db/return-keys false})
+        (db/update! cfg :file
+                    {:data data}
+                    {:id file-id}
+                    {::db/return-keys false}))
 
       (= type "snapshot")
-      (db/update! cfg :file-change
-                  {:data data}
-                  {:file-id file-id :id id}
-                  {::db/return-keys false})
+      (do
+        (db/delete! cfg :file-data
+                    {:id id :file-id file-id :type "snapshot"}
+                    {::db/return-keys false})
+        (db/update! cfg :file-change
+                    {:data data}
+                    {:file-id file-id :id id}
+                    {::db/return-keys false}))
 
       (= type "fragment")
       (upsert-in-database cfg
