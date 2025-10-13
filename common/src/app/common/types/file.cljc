@@ -114,10 +114,10 @@
 (sm/register! ::typographies schema:typographies)
 
 (def check-file
-  (sm/check-fn schema:file :hint "check error on validating file"))
+  (sm/check-fn schema:file :hint "invalid file"))
 
 (def check-file-data
-  (sm/check-fn schema:data))
+  (sm/check-fn schema:data :hint "invalid file data"))
 
 (def check-file-media
   (sm/check-fn schema:media))
