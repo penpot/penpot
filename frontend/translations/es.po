@@ -5467,7 +5467,9 @@ msgstr "Añadir"
 
 #: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
 msgid "workspace.libraries.colors"
-msgstr "%s colores"
+msgid_plural "workspace.libraries.colors" 
+msgstr[0] "1 color" 
+msgstr[1] "%s colores"
 
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
@@ -5505,7 +5507,9 @@ msgstr "Guardar estilo de color"
 
 #: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
 msgid "workspace.libraries.components"
-msgstr "%s componentes"
+msgid_plural "workspace.libraries.components" 
+msgstr[0] "1 componente" 
+msgstr[1] "%s componentes"
 
 #: src/app/main/ui/workspace/libraries.cljs:349
 msgid "workspace.libraries.connected-to"
@@ -5529,7 +5533,9 @@ msgstr "Biblioteca del archivo"
 
 #: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
 msgid "workspace.libraries.graphics"
-msgstr "%s gráficos"
+msgid_plural "workspace.libraries.graphics" 
+msgstr[0] "1 gráfico" 
+msgstr[1] "%s gráficos"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
@@ -5587,7 +5593,9 @@ msgstr "Desvincular todas las tipografías"
 
 #: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
 msgid "workspace.libraries.typography"
-msgstr "%s tipografías"
+msgid_plural "workspace.libraries.typography" 
+msgstr[0] "1 tipografía" 
+msgstr[1] "%s tipografías"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
 msgid "workspace.libraries.unlink-library-btn"

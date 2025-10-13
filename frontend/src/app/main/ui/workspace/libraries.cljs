@@ -37,7 +37,7 @@
    [app.main.ui.icons :as deprecated-icon]
    [app.util.color :as uc]
    [app.util.dom :as dom]
-   [app.util.i18n :as i18n :refer [tr]]
+   [app.util.i18n :refer [c tr]]
    [app.util.strings :refer [matches-search]]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -98,16 +98,16 @@
      (str/join " · "
                (cond-> []
                  (or all-zero? (pos? components-count))
-                 (conj (tr "workspace.libraries.components" components-count))
+                 (conj (tr "workspace.libraries.components" (c components-count)))
 
                  (or all-zero? (pos? graphics-count))
-                 (conj (tr "workspace.libraries.graphics" graphics-count))
+                 (conj (tr "workspace.libraries.graphics" (c graphics-count)))
 
                  (or all-zero? (pos? colors-count))
-                 (conj (tr "workspace.libraries.colors" colors-count))
+                 (conj (tr "workspace.libraries.colors" (c colors-count)))
 
                  (or all-zero? (pos? typography-count))
-                 (conj (tr "workspace.libraries.typography" typography-count))))
+                 (conj (tr "workspace.libraries.typography" (c typography-count)))))
      "\u00A0")))
 
 (mf/defc library-description*
@@ -122,19 +122,19 @@
     [:*
      (when (pos? components-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.components" components-count)])
+        (tr "workspace.libraries.components" (c components-count))])
 
      (when (pos? graphics-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.graphics" graphics-count)])
+        (tr "workspace.libraries.graphics" (c graphics-count))])
 
      (when (pos? colors-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.colors" colors-count)])
+        (tr "workspace.libraries.colors" (c colors-count))])
 
      (when (pos? typography-count)
        [:li {:class (stl/css :element-count)}
-        (tr "workspace.libraries.typography" typography-count)])]))
+        (tr "workspace.libraries.typography" (c typography-count))])]))
 
 (mf/defc sample-library-entry*
   {::mf/props :obj
