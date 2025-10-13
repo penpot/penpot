@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-08 18:07+0000\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -5268,10 +5268,6 @@ msgstr "איתור פריסת הרשת"
 msgid "workspace.libraries.add"
 msgstr "הוספה"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s צבעים"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "אין עדיין סגנונות צבע בספרייה שלך"
@@ -5306,10 +5302,6 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "שמירת סגנון צבע"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s רכיבים"
-
 #: src/app/main/ui/workspace/libraries.cljs:404
 msgid "workspace.libraries.empty.add-some"
 msgstr "או להוסיף כמה מאלה לניסיון:"
@@ -5325,10 +5317,6 @@ msgstr "כל מיני תבניות כאן"
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "ספריית קבצים"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s גרפיקה"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
@@ -5383,10 +5371,6 @@ msgstr "מגוון טיפוגרפיות"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "ניתוק כל הטיפוגרפיות"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s טיפוגרפיות"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
 msgid "workspace.libraries.unlink-library-btn"
