@@ -194,11 +194,7 @@ impl TextContent {
     }
 
     pub fn width(&self) -> f32 {
-        if self.grow_type() == GrowType::AutoWidth {
-            self.size.width
-        } else {
-            self.bounds.width()
-        }
+        self.size.width
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -207,10 +203,6 @@ impl TextContent {
 
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
         self.grow_type = grow_type;
-    }
-
-    pub fn visual_bounds(&self) -> (f32, f32) {
-        (self.size.width, self.size.height)
     }
 
     pub fn transform(&mut self, transform: &Matrix) {

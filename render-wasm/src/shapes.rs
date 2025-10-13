@@ -758,25 +758,39 @@ impl Shape {
             max_stroke = max_stroke.max(width);
         }
 
-        let mut rect = if let Some(path) = self.get_skia_path() {
-            path.compute_tight_bounds()
-                .with_outset((max_stroke, max_stroke))
-        } else {
-            let mut bounds_rect = self.bounds().to_rect();
-            let mut stroke_rect = bounds_rect;
-            stroke_rect.left -= max_stroke;
-            stroke_rect.right += max_stroke;
-            stroke_rect.top -= max_stroke;
-            stroke_rect.bottom += max_stroke;
+        let mut rect = skia::Rect::new_empty();
 
-            bounds_rect.join(stroke_rect);
-            bounds_rect
-        };
+        match &self.shape_type {
+            Type::Text(text_content) => {
+                let (width, height) = (text_content.size.width, text_content.size.height);
 
-        if let Type::Text(text_content) = &self.shape_type {
-            let (width, height) = text_content.visual_bounds();
-            rect.right = rect.left + width;
-            rect.bottom = rect.top + height;
+                let mut text_bounds =
+                    math::Rect::from_xywh(self.selrect.left, self.selrect.top, width, height);
+
+                if let Some(modifier) = modifiers.get(&self.id) {
+                    let bounds = Bounds::from_rect(&text_bounds);
+                    let transformed_bounds = bounds.transform(modifier);
+                    text_bounds = transformed_bounds.to_rect();
+                }
+
+                rect = text_bounds;
+            }
+            Type::Bool(_) | Type::Path(_) => {
+                if let Some(path) = self.get_skia_path() {
+                    rect = path.bounds().with_outset((max_stroke, max_stroke));
+                }
+            }
+            _ => {
+                let mut bounds_rect = self.bounds().to_rect();
+                let mut stroke_rect = bounds_rect;
+                stroke_rect.left -= max_stroke;
+                stroke_rect.right += max_stroke;
+                stroke_rect.top -= max_stroke;
+                stroke_rect.bottom += max_stroke;
+
+                bounds_rect.join(stroke_rect);
+                rect = bounds_rect;
+            }
         }
 
         for shadow in self.shadows.iter() {
@@ -1084,6 +1098,7 @@ impl Shape {
     }
 
     fn transform_selrect(&mut self, transform: &Matrix) {
+        self.invalidate_extrect();
         let mut center = self.selrect.center();
         center = transform.map_point(center);
 
@@ -1103,7 +1118,6 @@ impl Shape {
     }
 
     pub fn apply_transform(&mut self, transform: &Matrix) {
-        self.invalidate_extrect();
         self.transform_selrect(transform);
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {
