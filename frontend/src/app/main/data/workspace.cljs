@@ -187,9 +187,6 @@
     (update [_ state]
       (update state :files assoc (:id library) library))))
 
-
-
-
 (defn- fetch-libraries
   [file-id features]
   (ptk/reify ::fetch-libries
