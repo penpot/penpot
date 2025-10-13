@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
-"Last-Translator: TheScientistPT <joao.ed.reis.gomes@gmail.com>\n"
-"Language-Team: Portuguese (Portugal) "
-"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"Last-Translator: Dário <dariogomes@gmail.com>\n"
+"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
+"penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4654,10 +4654,6 @@ msgstr "Localizar layout em grelha"
 msgid "workspace.libraries.add"
 msgstr "Adicionar"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s cores"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Ainda não existem estilos de cor na tua biblioteca"
@@ -4692,17 +4688,9 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Guardar estilo de cor"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s componentes"
-
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "Biblioteca de ficheiros"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s gráficos"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
@@ -4752,10 +4740,6 @@ msgstr "Múltiplas tipografias"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Desassociar todas as tipografias"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s tipografias"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
 msgid "workspace.libraries.unlink-library-btn"
