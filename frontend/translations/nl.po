@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-08 18:07+0000\n"
-"Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"Last-Translator: Sebastiaan Pasma <sebastiaan@enkodo.nl>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
 "Language: nl\n"
@@ -5370,10 +5370,6 @@ msgstr "Raster-layout tonen"
 msgid "workspace.libraries.add"
 msgstr "Toevoegen"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s kleuren"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Er zijn nog geen kleurstijlen in je bibliotheek"
@@ -5408,10 +5404,6 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Kleurstijl opslaan"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s componenten"
-
 #: src/app/main/ui/workspace/libraries.cljs:404
 msgid "workspace.libraries.empty.add-some"
 msgstr "Of voeg er enkele toe om te proberen:"
@@ -5427,10 +5419,6 @@ msgstr "enkele sjablonen hier"
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "Bestandsbibliotheek"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s afbeeldingen"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
