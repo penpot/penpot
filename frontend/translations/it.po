@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-07 16:35+0000\n"
+"PO-Revision-Date: 2025-10-11 05:07+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian "
-"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
+"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
+"it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -8141,3 +8141,214 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Questo token non esiste o è stato eliminato."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Nessun token colore disponibile. Controlla i set o i temi attivi oppure "
+"aggiungi nuovi token."
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Stai per eliminare gli inviti a:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Stai per reinviare gli inviti a:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Elimina inviti"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Reinvia inviti"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Ordina per ruolo"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Ordina per stato"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Copia negli appunti"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Dimensione e posizione"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Attiva/disattiva pannello %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Set di token e temi"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Set attivi"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Temi attivi"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Proprietà delle varianti"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Valore risolto:"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "Informazioni su Penpot"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Sfocatura"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Colore"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1030
+msgid "labels.community-contributions"
+msgstr "Comunità e contributi"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "Riempimento"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1019
+msgid "labels.help-learning"
+msgstr "Aiuto e apprendimento"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "labels.learning-center"
+msgstr "Centro di apprendimento"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:878
+msgid "labels.penpot-changelog"
+msgstr "Registro delle modifiche di Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:804
+msgid "labels.penpot-hub"
+msgstr "Hub di Penpot"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
+msgid "labels.reference"
+msgstr "Riferimento"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Reinvia"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "Ombra"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Traccia"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
+msgid "labels.styles"
+msgstr "Stili"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Testo"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
+msgid "labels.typography"
+msgstr "Tipografia"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variante"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:872
+msgid "labels.version-notes"
+msgstr "Note della versione %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Visibilità"
+
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "Invito eliminato con successo"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "Crea componente / variante"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Token colore"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
+msgid "workspace.component.swap.loop-error"
+msgstr "I componenti non possono essere annidati dentro sé stessi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:463
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"Alcune copie non possono essere sostituite. I componenti non possono essere "
+"annidati dentro sé stessi."
+
+#: src/app/main/ui/workspace/libraries.cljs:349
+msgid "workspace.libraries.connected-to"
+msgstr "Connesso a"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"L'interlinea dipende dalla dimensione del carattere. Aggiungi una dimensione "
+"carattere per ottenere il valore risolto."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:551
+msgid "workspace.tokens.edit-token"
+msgstr "Modifica token %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
+msgid "workspace.tokens.individual-tokens"
+msgstr "Utilizza token individuali"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr ""
+"Valore non valido: deve fare riferimento a un token tipografico composito."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Aggiungi spaziatura tra lettere o {alias"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Inserisci interlinea — moltiplicatore, px, %, o {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
+msgid "workspace.tokens.reference-composite"
+msgstr "Inserisci un alias tipografico del token"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
+msgid "workspace.tokens.use-reference"
+msgstr "Utilizza un riferimento"
