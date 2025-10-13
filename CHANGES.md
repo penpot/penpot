@@ -2,7 +2,7 @@
 
 ## 2.11.0 (Unreleased)
 
-### :rocket: Epics and highlights
+### :boom: Breaking changes & Deprecations
 
 - Deprecated configuration variables with the prefix `PENPOT_ASSETS_*`, and will be
   removed in future versions:
@@ -28,6 +28,8 @@
   services which use netty internally (redis connection, S3 SDK client). This
   configuration is not very commonly used so don't expected real impact on any user.
 
+### :rocket: Epics and highlights
+
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
@@ -38,6 +40,7 @@
 - Invitations management improvements [Taiga #3479](https://tree.taiga.io/project/penpot/us/3479)
 - Alternative ways of creating variants - Button Viewport [Taiga #11931](https://tree.taiga.io/project/penpot/us/11931)
 - Reorder properties for a component [Taiga #10225](https://tree.taiga.io/project/penpot/us/10225)
+- File Data storage layout refactor [Github #7345](https://github.com/penpot/penpot/pull/7345)
 
 ### :bug: Bugs fixed
 
