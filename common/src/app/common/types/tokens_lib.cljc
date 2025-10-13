@@ -27,6 +27,10 @@
 
 ;; === Common
 
+(defprotocol IValidation
+  (valid? [_] "check if this data structure is valid, returns true or false")
+  (check [_] "check if this data structure is valid, raises exception or self"))
+
 (defprotocol INamedItem
   "Protocol for items that have an id, a name, a description and a modified date."
   (get-id [_] "Get the id of the item.")
@@ -536,12 +540,6 @@
    [:fn d/ordered-map?]
    [:fn not-repeated-ids]])
 
-(def ^:private check-token-sets
-  (sm/check-fn schema:token-sets :hint "expected valid token sets"))
-
-(def ^:private valid-token-sets?
-  (sm/validator schema:token-sets))
-
 ;; === TokenTheme
 
 (defprotocol ITokenTheme
@@ -770,20 +768,8 @@
              [:fn d/ordered-map?]]]
    [:fn d/ordered-map?]])
 
-(def ^:private check-token-themes
-  (sm/check-fn schema:token-themes :hint "expected valid token themes"))
-
-(def ^:private valid-token-themes?
-  (sm/validator schema:token-themes))
-
 (def ^:private schema:active-themes
   [:set :string])
-
-(def ^:private check-active-themes
-  (sm/check-fn schema:active-themes :hint "expected valid active themes"))
-
-(def ^:private valid-active-token-themes?
-  (sm/validator schema:active-themes))
 
 (defn walk-sets-tree-seq
   "Walk sets tree as a flat list.
@@ -900,6 +886,8 @@
 ;; === Tokens Lib
 
 (declare make-tokens-lib)
+(declare ^:private check-tokens-lib-map)
+(declare ^:private valid-tokens-lib-map?)
 
 (defprotocol ITokensLib
   "A library of tokens, sets and themes."
@@ -920,8 +908,7 @@ Will return a value that matches this schema:
 `:partial` Mixed active state of nested sets")
   (get-tokens-in-active-sets [_] "set of set names that are active in the the active themes")
   (get-all-tokens [_] "all tokens in the lib")
-  (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name")
-  (validate [_]))
+  (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name"))
 
 (declare parse-multi-set-dtcg-json)
 (declare export-dtcg-json)
@@ -1323,14 +1310,17 @@ Will return a value that matches this schema:
             (get-set set-id)
             (get-tokens-)))
 
-  (validate [_]
-    (and (valid-token-sets? sets)
-         (valid-token-themes? themes)
-         (valid-active-token-themes? active-themes))))
+  IValidation
+  (valid? [this]
+    (valid-tokens-lib-map? (datafy this)))
+
+  (check [this]
+    (check-tokens-lib-map (datafy this))
+    this))
 
 (defmethod pp/simple-dispatch TokensLib
   [^TokensLib obj]
-  (.write *out* "#penpot/token-lib ")
+  (.write *out* "#penpot/tokens-lib ")
   (pp/pprint-newline :miser)
   (pp/pprint (export-dtcg-json obj)))
 
@@ -1338,7 +1328,7 @@ Will return a value that matches this schema:
    (do
      (defmethod print-method TokensLib
        [^TokensLib obj ^java.io.Writer w]
-       (.write w "#penpot/token-lib ")
+       (.write w "#penpot/tokens-lib ")
        (print-method (export-dtcg-json obj) w))
 
      (defmethod print-dup TokensLib
@@ -1349,16 +1339,29 @@ Will return a value that matches this schema:
    (extend-type TokensLib
      cljs.core/IPrintWithWriter
      (-pr-writer [this writer opts]
-       (-write writer "#penpot/token-lib ")
+       (-write writer "#penpot/tokens-lib ")
        (-pr-writer (export-dtcg-json this) writer opts))
 
      cljs.core/IEncodeJS
      (-clj->js [this] (clj->js (datafy this)))))
 
+(def ^:private schema:tokens-lib-map
+  "Internal data structure schema"
+  [:map {:title "TokensLib"}
+   [:sets schema:token-sets]
+   [:themes schema:token-themes]
+   [:active-themes schema:active-themes]])
+
+(def ^:private valid-tokens-lib-map?
+  (sm/lazy-validator schema:tokens-lib-map))
+
+(def ^:private check-tokens-lib-map
+  (sm/check-fn schema:tokens-lib-map :hint "invalid tokens-lib internal data structure"))
+
 (defn valid-tokens-lib?
   [o]
   (and (instance? TokensLib o)
-       (validate o)))
+       (valid? o)))
 
 (defn- ensure-hidden-theme
   "A helper that is responsible to ensure that the hidden theme always
@@ -1379,15 +1382,14 @@ Will return a value that matches this schema:
 
 (defn make-tokens-lib
   "Make a new instance of TokensLib from a map and validates the input"
-  [& {:keys [sets themes active-themes]}]
-  (let [sets          (or sets (d/ordered-map))
-        themes        (-> (or themes (d/ordered-map))
-                          (ensure-hidden-theme))
-        active-themes (or active-themes #{hidden-theme-path})]
-    (TokensLib.
-     (check-token-sets sets)
-     (check-token-themes themes)
-     (check-active-themes active-themes))))
+  [& {:as params}]
+  (-> params
+      (update :sets #(or % (d/ordered-map)))
+      (update :themes #(-> (or % (d/ordered-map))
+                           (ensure-hidden-theme)))
+      (update :active-themes #(or % #{hidden-theme-path}))
+      (check-tokens-lib-map)
+      (map->tokens-lib)))
 
 (defn ensure-tokens-lib
   [tokens-lib]
@@ -1902,7 +1904,8 @@ Will return a value that matches this schema:
     (some-> tokens-lib
             (-> (datafy)
                 (update :sets d/update-vals migrate-set-node)
-                (map->tokens-lib)))))
+                (map->tokens-lib)
+                (check)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SERIALIZATION (FRESIAN)

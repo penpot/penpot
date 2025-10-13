@@ -4,7 +4,7 @@
  penpot/path-data app.common.types.path/from-string
  penpot/matrix app.common.geom.matrix/decode-matrix
  penpot/point app.common.geom.point/decode-point
- penpot/token-lib app.common.types.tokens-lib/parse-multi-set-dtcg-json
+ penpot/tokens-lib app.common.types.tokens-lib/parse-multi-set-dtcg-json
  penpot/token-set app.common.types.tokens-lib/make-token-set
  penpot/token-theme app.common.types.tokens-lib/make-token-theme
  penpot/token app.common.types.tokens-lib/make-token}
