@@ -1899,9 +1899,10 @@ Will return a value that matches this schema:
                 node))
             (d/update-vals node recurse)))]
 
-    (-> (datafy tokens-lib)
-        (update :sets d/update-vals migrate-set-node)
-        (map->tokens-lib))))
+    (some-> tokens-lib
+            (-> (datafy)
+                (update :sets d/update-vals migrate-set-node)
+                (map->tokens-lib)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SERIALIZATION (FRESIAN)
