@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Çağlar Yeşilyurt <grch@mm.st>\n"
+"PO-Revision-Date: 2025-10-14 17:07+0000\n"
+"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -2133,7 +2133,7 @@ msgstr "Sona erme tarihi"
 
 #: src/app/main/ui/settings/access_tokens.cljs:124
 msgid "modals.create-access-token.name.label"
-msgstr "İsim"
+msgstr "Ad"
 
 #: src/app/main/ui/settings/access_tokens.cljs:126
 msgid "modals.create-access-token.name.placeholder"
@@ -7837,3 +7837,533 @@ msgstr "Ön izleme:"
 #: src/app/main/ui/workspace/tokens/export/modal.cljs:116
 msgid "workspace.tokens.export.single-file"
 msgstr "Tek dosya"
+
+#: src/app/main/ui/settings/subscription.cljs:452
+msgid "subscription.settings.price-organization-month"
+msgstr "aylık organizasyon"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 renk"
+msgstr[1] "%s renk"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 bileşen"
+msgstr[1] "%s bileşen"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 grafik"
+msgstr[1] "%s grafik"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 tipografi"
+msgstr[1] "%s tipografi"
+
+#: src/app/main/data/workspace/tokens/application.cljs:292
+msgid "workspace.tokens.font-variant-not-found"
+msgstr ""
+"Yazı tipi kalınlığı/biçimi ayarlanırken hata oluştu. Bu yazı tipi biçimi "
+"geçerli yazı tipinde bulunmuyor"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Bir değer (300, Kalın, Normal İtalik...) veya bir {alias} girin"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
+msgid "workspace.tokens.gaps"
+msgstr "Boşluklar"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.generic-error"
+msgstr "Hata: "
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:104
+msgid "workspace.tokens.group-name"
+msgstr "Grup adı"
+
+#: src/app/main/ui/workspace/tokens/sets.cljs
+#, unused
+msgid "workspace.tokens.grouping-set-alert"
+msgstr "Token kümesi gruplama henüz desteklenmiyor."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:233
+msgid "workspace.tokens.import-button-prefix"
+msgstr "%s içe aktar"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:32, src/app/main/data/workspace/tokens/errors.cljs:37
+msgid "workspace.tokens.import-error"
+msgstr "İçe Aktarma Hatası:"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:273
+msgid "workspace.tokens.import-menu-folder-option"
+msgstr "Klasör"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:272
+msgid "workspace.tokens.import-menu-json-option"
+msgstr "Tek JSON dosyası"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:271
+msgid "workspace.tokens.import-menu-zip-option"
+msgstr "ZIP dosyası"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:241
+msgid "workspace.tokens.import-multiple-files"
+msgstr "Birden fazla dosyada, dosya adı / yolu küme adlarıdır."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:240
+msgid "workspace.tokens.import-single-file"
+msgstr ""
+"Tek bir JSON dosyasında, birinci düzey anahtarlar token kümesi adları "
+"olmalıdır."
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:237
+msgid "workspace.tokens.import-tokens"
+msgstr "Tokenleri içe aktar"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:414, src/app/main/ui/workspace/tokens/sidebar.cljs:415
+#, unused
+msgid "workspace.tokens.import-tooltip"
+msgstr ""
+"Bir JSON dosyasını içe aktarmak, geçerli tüm tokenlerinizi, kümelerinizi ve "
+"temalarınızı geçersiz kılacaktır"
+
+#: src/app/main/ui/workspace/tokens/import/modal.cljs:247
+msgid "workspace.tokens.import-warning"
+msgstr ""
+"Tokenleri içe aktarmak, geçerli tüm tokenlerinizi, kümelerinizi ve "
+"temalarınızı geçersiz kılacaktır."
+
+#: src/app/main/ui/workspace/tokens/management.cljs:141
+msgid "workspace.tokens.inactive-set"
+msgstr "Etkin değil"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:132
+msgid "workspace.tokens.inactive-set-description"
+msgstr ""
+"Bu küme etkin değil. Görünüm alanında değişiklikleri görmek için temayı "
+"değiştirin veya bu kümeyi etkinleştirin"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
+msgid "workspace.tokens.individual-tokens"
+msgstr "Bireysel tokenler kullan"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:49
+msgid "workspace.tokens.invalid-color"
+msgstr "Geçersiz renk değeri: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:89
+msgid "workspace.tokens.invalid-font-weight-token-value"
+msgstr ""
+"Geçersiz yazı tipi kalınlığı değeri: sayısal değerler (100-950) veya "
+"standart adlar (ince, hafif, normal, kalın vb.) kullanın, isteğe bağlı "
+"olarak ardından 'İtalik' ekleyin"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:23
+msgid "workspace.tokens.invalid-json"
+msgstr "İçe Aktarma Hatası: JSON'da geçersiz token verisi."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:27
+msgid "workspace.tokens.invalid-json-token-name"
+msgstr "İçe Aktarma Hatası: JSON'da geçersiz token adı."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:28
+msgid "workspace.tokens.invalid-json-token-name-detail"
+msgstr ""
+"\"%s\" geçerli bir token adı değil.\n"
+"Token adları yalnızca . karakterleriyle ayrılan harfler ve rakamlar içermeli "
+"ve $ işaretiyle başlamamalıdır."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:81
+msgid "workspace.tokens.invalid-text-case-token-value"
+msgstr ""
+"Geçersiz token değeri: yalnızca none, Uppercase, Lowercase veya Capitalize "
+"kabul edilir"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:85
+msgid "workspace.tokens.invalid-text-decoration-token-value"
+msgstr ""
+"Geçersiz token değeri: yalnızca none, underline ve strike-through kabul "
+"edilir"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "Geçersiz değer: bileşik tipografi tokenine referans vermelidir."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
+msgid "workspace.tokens.invalid-value"
+msgstr "Geçersiz token değeri: %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:191
+msgid "workspace.tokens.label.group"
+msgstr "Grup"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:193
+msgid "workspace.tokens.label.group-placeholder"
+msgstr "Grup ekle (örn. Mod)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:199
+msgid "workspace.tokens.label.theme"
+msgstr "Tema"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:200
+msgid "workspace.tokens.label.theme-placeholder"
+msgstr "Tema ekle (örn. Açık)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Harf aralığı veya {alias} ekle"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Satır yüksekliği girin — çarpan, px, % veya {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:220
+msgid "workspace.tokens.margins"
+msgstr "Kenar boşlukları"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:256
+msgid "workspace.tokens.max-size"
+msgstr "Azami boyut"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:250
+msgid "workspace.tokens.min-size"
+msgstr "Asgari boyut"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:57
+msgid "workspace.tokens.missing-references"
+msgstr "Eksik token referansları: "
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:123
+msgid "workspace.tokens.more-options"
+msgstr "Seçenekleri görmek için sağ tıklayın"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:149
+msgid "workspace.tokens.no-active-sets"
+msgstr "Etkin küme yok"
+
+#: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:91
+msgid "workspace.tokens.no-active-theme"
+msgstr "Etkin tema yok"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:72
+msgid "workspace.tokens.no-permisions-set"
+msgstr ""
+"Kümeleri etkinleştirmek / devre dışı bırakmak için düzenleyici olmanız "
+"gerekir"
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:53
+msgid "workspace.tokens.no-permission-themes"
+msgstr "Temaları kullanmak için düzenleyici olmanız gerekir"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:483
+msgid "workspace.tokens.no-sets-create"
+msgstr "Henüz tanımlanan küme yok. Önce bir tane oluşturun."
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:93, src/app/main/ui/workspace/tokens/sets/lists.cljs:99
+msgid "workspace.tokens.no-sets-yet"
+msgstr "Henüz küme yok."
+
+#: src/app/main/ui/workspace/tokens/themes.cljs:40
+msgid "workspace.tokens.no-themes"
+msgstr "Tema yok."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:49
+msgid "workspace.tokens.no-themes-currently"
+msgstr "Şu anda hiç temanız yok."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:19
+msgid "workspace.tokens.no-token-files-found"
+msgstr "Bu dosyada token, küme veya tema bulunamadı."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:148
+msgid "workspace.tokens.num-active-sets"
+msgstr "%s etkin küme"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:53
+msgid "workspace.tokens.number-too-large"
+msgstr "Geçersiz token değeri. Çözülen değer çok büyük: %s"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/warnings.cljs:15
+msgid "workspace.tokens.opacity-range"
+msgstr ""
+"Opaklık 0 ile %100 veya 0 ile 1 arasında olmalıdır (örneğin %50 veya 0.5)."
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
+msgid "workspace.tokens.original-value"
+msgstr "Orijinal değer: %s"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:204
+msgid "workspace.tokens.paddings"
+msgstr "Dolgular"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:280
+msgid "workspace.tokens.radius"
+msgstr "Yarıçap"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:128
+msgid "workspace.tokens.ref-not-valid"
+msgstr "Referans geçerli değil veya herhangi bir etkin kümede bulunmuyor"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
+msgid "workspace.tokens.reference-composite"
+msgstr "Bir token tipografi takma adı girin"
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs
+#, unused
+msgid "workspace.tokens.reference-error"
+msgstr "Referans Hataları: "
+
+#: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+msgid "workspace.tokens.resolved-value"
+msgstr "Çözülen değer: %s"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:234
+msgid "workspace.tokens.save-theme"
+msgstr "Temayı kaydet"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:204, src/app/main/ui/workspace/tokens/sets/lists.cljs:309
+msgid "workspace.tokens.select-set"
+msgstr "Küme seç."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:45
+msgid "workspace.tokens.self-reference"
+msgstr "Tokenin kendine referansı var"
+
+#: src/app/main/ui/workspace/tokens/sets/lists.cljs:60
+msgid "workspace.tokens.set-edit-placeholder"
+msgstr "Ad girin (gruplar için '/' kullanın)"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:342
+msgid "workspace.tokens.set-selection-theme"
+msgstr ""
+"Bu tema seçeneğinin parçası olarak hangi token kümelerinin kullanılacağını "
+"tanımlayın:"
+
+#: src/app/main/ui/workspace/tokens/token_pill.cljs:47
+#, unused
+msgid "workspace.tokens.set.not-active"
+msgstr "Token kümesi etkin değil"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:143
+msgid "workspace.tokens.sets-hint"
+msgstr "Temayı düzenleyin ve kümeleri yönetin"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:91
+msgid "workspace.tokens.setting-description"
+msgstr ""
+"Burada, 1rem değerini tanımlayan temel yazı tipi boyutunu "
+"yapılandırabilirsiniz:"
+
+#: src/app/main/ui/workspace/tokens/settings/menu.cljs:84
+msgid "workspace.tokens.settings"
+msgstr "Token ayarları"
+
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:244
+msgid "workspace.tokens.size"
+msgstr "Boyut"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:77, src/app/main/data/workspace/tokens/warnings.cljs:19
+msgid "workspace.tokens.stroke-width-range"
+msgstr "Çerçeve genişliği 0'dan büyük veya 0 olmalıdır."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1012, src/app/main/ui/workspace/tokens/management/create/form.cljs:1051
+msgid "workspace.tokens.text-case-value-enter"
+msgstr "Girin: none | uppercase | lowercase | capitalize veya {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
+msgid "workspace.tokens.text-decoration-value-enter"
+msgstr "Metin süslemesi girin: none | underline | strike-through"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
+msgid "workspace.tokens.theme-name"
+msgstr "%s teması"
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
+msgid "workspace.tokens.themes-description"
+msgstr ""
+"Burada temalarınızı yönetebilir, etkinleştirebilir/devre dışı bırakabilir ve "
+"etkin kümelerini yapılandırabilirsiniz."
+
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:45, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:94
+msgid "workspace.tokens.themes-list"
+msgstr "Tema listesi"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:608, src/app/main/ui/workspace/tokens/management/create/form.cljs:609
+msgid "workspace.tokens.token-description"
+msgstr "Açıklama"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:973
+msgid "workspace.tokens.token-font-family-select"
+msgstr "Yazi tipi ailesi seç"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1029
+msgid "workspace.tokens.token-font-family-value"
+msgstr "Yazı tipi ailesi"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:979, src/app/main/ui/workspace/tokens/management/create/form.cljs:1031
+msgid "workspace.tokens.token-font-family-value-enter"
+msgstr "Yazı tipi ailesi veya virgülle (,) ayrılan yazı tipi listesi"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:83, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:109, src/app/main/ui/workspace/tokens/management/create/form.cljs:557
+msgid "workspace.tokens.token-name"
+msgstr "Ad"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:69
+msgid "workspace.tokens.token-name-validation-error"
+msgstr ""
+" geçerli bir token adı değil.\n"
+"Token adları yalnızca . karakterleriyle ayrılan harfler ve rakamlar içermeli "
+"ve $ işaretiyle başlamamalıdır."
+
+#: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
+#, unused
+msgid "workspace.tokens.token-not-resolved"
+msgstr "Adı %s olan referans tokeni çözülemedi"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:585
+msgid "workspace.tokens.token-value"
+msgstr "Değer"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:584, src/app/main/ui/workspace/tokens/management/create/form.cljs:1035
+msgid "workspace.tokens.token-value-enter"
+msgstr "{alias} ile bir takma ad veya değer girin"
+
+#: src/app/main/ui/workspace/tokens/management.cljs:131
+msgid "workspace.tokens.tokens-section-title"
+msgstr "TOKENLER -  %s"
+
+#: src/app/main/ui/workspace/tokens/sidebar.cljs:121
+msgid "workspace.tokens.tools"
+msgstr "Araçlar"
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:47
+msgid "workspace.tokens.unknown-token-type-message"
+msgstr "İçe aktarma başarılı oldu. Bazı tokenler dahil edilmedi."
+
+#: src/app/main/data/workspace/tokens/import_export.cljs:49
+msgid "workspace.tokens.unknown-token-type-section"
+msgstr "'%s' türü desteklenmiyor (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
+msgid "workspace.tokens.use-reference"
+msgstr "Referans kullan"
+
+#: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
+msgid "workspace.tokens.value-not-valid"
+msgstr "Değer geçerli değil"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Geçersiz değer: % izin verilmiyor."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:65
+msgid "workspace.tokens.value-with-units"
+msgstr "Geçersiz değer: Birimlere izin verilmiyor."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:581
+msgid "workspace.tokens.warning-name-change"
+msgstr ""
+"Bu tokenin adını değiştirmek, eski adına yapılan tüm referansları bozacaktır."
+
+#: src/app/main/ui/workspace/top_toolbar.cljs:129
+msgid "workspace.toolbar.frame-first-time"
+msgstr ""
+"Çalışma yüzeyi oluşturun. Tıklayıp sürükleyerek boyutunu belirleyin. (%s)"
+
+#: src/app/main/ui/ds/product/milestone_group.cljs:73
+msgid "workspace.versions.autosaved.entry"
+msgstr "%s otomatik kaydedilen sürüm"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:259
+msgid "workspace.versions.autosaved.version"
+msgstr "%s otomatik kaydedildi"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:277
+msgid "workspace.versions.button.pin"
+msgstr "Sürümü sabitle"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:272
+msgid "workspace.versions.button.restore"
+msgstr "Sürümü geri yükle"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:394, src/app/main/ui/workspace/sidebar/versions.cljs:396
+msgid "workspace.versions.button.save"
+msgstr "Sürümü kaydet"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:403
+msgid "workspace.versions.empty"
+msgstr "Henüz sürüm yok"
+
+#: src/app/main/ui/ds/product/milestone_group.cljs:67
+msgid "workspace.versions.expand-snapshot"
+msgstr "Anlık görüntüleri genişlet"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:368
+msgid "workspace.versions.filter.all"
+msgstr "Tüm sürümler"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:382
+msgid "workspace.versions.filter.label"
+msgstr "Sürüm filtresi"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:369
+msgid "workspace.versions.filter.mine"
+msgstr "Sürümlerim"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:373
+msgid "workspace.versions.filter.user"
+msgstr "%s sürümleri"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:389
+msgid "workspace.versions.loading"
+msgstr "Yükleniyor..."
+
+#, unused
+msgid "workspace.versions.locked-by-other"
+msgstr "Bu sürüm %s tarafından kilitlendi ve değiştirilemiyor"
+
+#, unused
+msgid "workspace.versions.locked-by-you"
+msgstr "Bu sürüm sizin tarafınızdan kilitlendi"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:82
+msgid "workspace.versions.restore-warning"
+msgstr "Bu sürümü geri yüklemek istiyor musunuz?"
+
+#, unused
+msgid "workspace.versions.snapshot-menu"
+msgstr "Anlık görüntü menüsünü aç"
+
+#: src/app/main/ui/workspace/sidebar.cljs:237
+msgid "workspace.versions.tab.actions"
+msgstr "Eylemler"
+
+#: src/app/main/ui/workspace/sidebar.cljs:235
+msgid "workspace.versions.tab.history"
+msgstr "Geçmiş"
+
+#, unused
+msgid "workspace.versions.tooltip.locked-version"
+msgstr "Kilitli sürüm - Yalnızca oluşturan onu değiştirebilir"
+
+#: src/app/main/ui/ds/product/milestone.cljs:84, src/app/main/ui/ds/product/milestone_group.cljs:86
+msgid "workspace.versions.version-menu"
+msgstr "Sürüm menüsünü aç"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:59
+#, markdown
+msgid "workspace.versions.warning.subtext"
+msgstr ""
+"Bu sınırı artırmak isterseniz, bize [support@penpot.app](%s) adresinden yazın"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:429
+msgid "workspace.versions.warning.text"
+msgstr "Otomatik kaydedilen sürümler %s gün boyunca saklanacaktır."
