@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Allan Nordhøy <epost@anotheragency.no>\n"
-"Language-Team: Norwegian Bokmål "
-"<https://hosted.weblate.org/projects/penpot/frontend/nb_NO/>\n"
+"Language-Team: Norwegian Bokmål <https://hosted.weblate.org/projects/penpot/"
+"frontend/nb_NO/>\n"
 "Language: nb_NO\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/recovery.cljs:67
 msgid "auth.confirm-password"
@@ -606,10 +606,6 @@ msgstr "Vis regler"
 msgid "workspace.libraries.add"
 msgstr "Legg til"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s farger"
-
 #: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:48, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
 msgid "workspace.libraries.colors.file-library"
 msgstr "Filbibliotek"
@@ -621,10 +617,6 @@ msgstr "Nylige farger"
 #: src/app/main/ui/workspace/colorpicker.cljs:557
 msgid "workspace.libraries.colors.save-color"
 msgstr "Lagre fargestil"
-
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s komponenter"
 
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
