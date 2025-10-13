@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:23+0000\n"
-"Last-Translator: Oğuz Ersen <oguz@ersen.moe>\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"Last-Translator: Çağlar Yeşilyurt <grch@mm.st>\n"
 "Language-Team: Turkish <https://hosted.weblate.org/projects/penpot/frontend/"
 "tr/>\n"
 "Language: tr\n"
@@ -4280,10 +4280,6 @@ msgstr "Izgara düzenini bul"
 msgid "workspace.libraries.add"
 msgstr "Ekle"
 
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s renk"
-
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
 msgstr "Kütüphanenizde henüz renk stili yok"
@@ -4318,17 +4314,9 @@ msgstr "RGBA"
 msgid "workspace.libraries.colors.save-color"
 msgstr "Renk biçimini kaydet"
 
-#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
-msgid "workspace.libraries.components"
-msgstr "%s bileşen"
-
 #: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "Dosya kütüphanesi"
-
-#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
-msgid "workspace.libraries.graphics"
-msgstr "%s grafik"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
@@ -4378,10 +4366,6 @@ msgstr "Çoklu tipografiler"
 #: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Tüm tipografileri ayır"
-
-#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
-msgid "workspace.libraries.typography"
-msgstr "%s tipografi"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
 msgid "workspace.libraries.unlink-library-btn"
