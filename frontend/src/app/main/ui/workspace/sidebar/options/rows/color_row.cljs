@@ -104,10 +104,10 @@
                                has-errors
                                (tr "color-row.token-color-row.deleted-token")
                                :else
-                               (mf/html
-                                [:div
-                                 [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
-                                 [:span {:class (stl/css :token-name-tooltip)} color-token]]))]
+                               #(mf/html
+                                 [:div
+                                  [:span (dm/str (tr "workspace.tokens.token-name") ": ")]
+                                  [:span {:class (stl/css :token-name-tooltip)} color-token]]))]
 
     [:div {:class (stl/css :color-info)}
      [:div {:class (stl/css-case :token-color-wrapper true
