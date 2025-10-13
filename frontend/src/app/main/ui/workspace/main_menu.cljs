@@ -53,22 +53,46 @@
    ::mf/wrap [mf/memo]}
   [{:keys [layout on-close]}]
   (let [nav-to-helpc-center
-        (mf/use-fn #(dom/open-new-window "https://help.penpot.app"))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-help-center-click"
+                                            ::ev/origin "workspace-menu:in-app"}))
+           (dom/open-new-window "https://help.penpot.app")))
 
         nav-to-community
-        (mf/use-fn #(dom/open-new-window "https://community.penpot.app"))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-community-click"
+                                            ::ev/origin "workspace-menu:in-app"}))
+           (dom/open-new-window "https://community.penpot.app")))
 
         nav-to-youtube
-        (mf/use-fn #(dom/open-new-window "https://www.youtube.com/c/Penpot"))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-tutorials-click"
+                                            ::ev/origin "workspace-menu:in-app"}))
+           (dom/open-new-window "https://www.youtube.com/c/Penpot")))
 
         nav-to-templates
-        (mf/use-fn #(dom/open-new-window "https://penpot.app/libraries-templates"))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-libraries-click"
+                                            ::ev/origin "workspace"}))
+           (dom/open-new-window "https://penpot.app/libraries-templates")))
 
         nav-to-github
-        (mf/use-fn #(dom/open-new-window "https://github.com/penpot/penpot"))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-github-repository-click"
+                                            ::ev/origin "workspace-menu:in-app"}))
+           (dom/open-new-window "https://github.com/penpot/penpot")))
 
         nav-to-terms
-        (mf/use-fn #(dom/open-new-window "https://penpot.app/terms"))
+        (mf/use-fn
+         (fn []
+           (st/emit! (ptk/event ::ev/event {::ev/name "explore-terms-service-click"
+                                            ::ev/origin "workspace-menu:in-app"}))
+           (dom/open-new-window "https://penpot.app/terms")))
 
         nav-to-feedback
         (mf/use-fn #(st/emit! (dcm/go-to-feedback)))
@@ -92,6 +116,7 @@
          (fn [event]
            (let [version (:main cf/version)]
              (st/emit! (ptk/event ::ev/event {::ev/name "show-release-notes" :version version}))
+             (println version)
              (if (and (kbd/alt? event) (kbd/mod? event))
                (st/emit! (modal/show {:type :onboarding}))
                (st/emit! (modal/show {:type :release-notes :version version}))))))]

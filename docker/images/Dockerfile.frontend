@@ -6,14 +6,18 @@ USER root
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot; \
     mkdir -p /opt/data/assets; \
-    chown -R penpot:penpot /opt/data;
+    chown -R penpot:penpot /opt/data; \
+    mkdir -p /etc/nginx/overrides/http.d/; \
+    mkdir -p /etc/nginx/overrides/server.d/; \
+    mkdir -p /etc/nginx/overrides/location.d/;
 
-ADD ./bundle-frontend/ /var/www/app/
+ARG BUNDLE_PATH="./bundle-frontend/"
+ADD $BUNDLE_PATH /var/www/app/
 ADD ./files/config.js /var/www/app/js/config.js
-ADD ./files/nginx.conf /etc/nginx/nginx.conf.template
-ADD ./files/nginx-proxies.conf /etc/nginx/nginx-proxies.conf
-ADD ./files/resolvers.conf /etc/nginx/overrides.d/resolvers.conf.template
+ADD ./files/nginx.conf.template /tmp/nginx.conf.template
+ADD ./files/nginx-resolvers.conf.template /tmp/resolvers.conf.template
 ADD ./files/nginx-mime.types /etc/nginx/mime.types
+ADD ./files/nginx-external-locations.conf /etc/nginx/overrides/location.d/external-locations.conf
 ADD ./files/nginx-entrypoint.sh /entrypoint.sh
 
 RUN chown -R 1001:0 /var/cache/nginx; \

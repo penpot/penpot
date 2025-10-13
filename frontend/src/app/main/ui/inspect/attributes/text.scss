@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .attributes-block {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .title-spacing-text {
@@ -15,13 +15,13 @@
 }
 
 .attributes-content {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .text-row {
   @extend .attr-row;
   height: unset;
-  min-height: $s-32;
+  min-height: deprecated.$s-32;
   :global(.attr-value) {
     align-items: center;
   }
@@ -32,20 +32,20 @@
 }
 
 .attributes-content-row {
-  max-width: $s-240;
-  min-height: calc($s-2 + $s-32);
-  border-radius: $br-8;
-  border: $s-1 solid var(--menu-border-color-disabled);
-  margin-top: $s-4;
+  max-width: deprecated.$s-240;
+  min-height: calc(deprecated.$s-2 + deprecated.$s-32);
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-1 solid var(--menu-border-color-disabled);
+  margin-top: deprecated.$s-4;
   .content {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     width: 100%;
-    padding: $s-4 0;
+    padding: deprecated.$s-4 0;
     color: var(--color-foreground-secondary);
   }
 
   &:hover {
-    border: $s-1 solid var(--color-background-tertiary);
+    border: deprecated.$s-1 solid var(--color-background-tertiary);
     background-color: var(--menu-background-color);
     .content {
       color: var(--menu-foreground-color-hover);

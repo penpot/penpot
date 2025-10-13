@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .attributes-block {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .title-spacing-fill {
@@ -16,5 +16,5 @@
 
 .attributes-content {
   display: grid;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }

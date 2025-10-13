@@ -4,33 +4,33 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .search-box {
   display: flex;
-  gap: $s-2;
-  height: $s-32;
+  gap: deprecated.$s-2;
+  height: deprecated.$s-32;
   width: 100%;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--search-bar-background-color);
 }
 
 .icon {
-  margin-left: $s-8;
-  flex: 0 0 $s-16;
+  margin-left: deprecated.$s-8;
+  flex: 0 0 deprecated.$s-16;
   color: var(--color-foreground-primary);
 }
 
 .search-input-wrapper {
-  @include flexCenter;
-  height: $s-32;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
   width: 100%;
-  border: $s-1 solid var(--search-bar-input-border-color);
-  border-radius: $br-8;
+  border: deprecated.$s-1 solid var(--search-bar-input-border-color);
+  border-radius: deprecated.$br-8;
   background-color: var(--search-bar-input-background-color);
 
   &:hover {
-    border: $s-1 solid var(--input-border-color-hover);
+    border: deprecated.$s-1 solid var(--input-border-color-hover);
     background-color: var(--input-background-color-hover);
     .search-input {
       background-color: var(--input-background-color-hover);
@@ -40,7 +40,7 @@
   &:focus-within {
     background-color: var(--input-background-color-active);
     color: var(--input-foreground-color-active);
-    border: $s-1 solid var(--input-border-color-focus);
+    border: deprecated.$s-1 solid var(--input-border-color-focus);
     .search-input {
       background-color: var(--input-background-color-active);
     }
@@ -50,12 +50,12 @@
 .search-input {
   width: 100%;
   height: 100%;
-  margin: 0 $s-8 0 $s-4;
+  margin: 0 deprecated.$s-8 0 deprecated.$s-4;
   border: 0;
   background-color: var(--input-background-color);
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   color: var(--input-foreground-color);
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   &:focus {
     outline: none;
   }
@@ -63,12 +63,12 @@
 
 .clear-icon {
   @extend .button-tag;
-  flex: 0 0 $s-32;
+  flex: 0 0 deprecated.$s-32;
   height: 100%;
   color: var(--color-icon-default);
 }
 
 .search-box.has-children .search-input-wrapper {
-  border-radius: 0 $br-8 $br-8 0;
+  border-radius: 0 deprecated.$br-8 deprecated.$br-8 0;
   margin-left: 0;
 }

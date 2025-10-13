@@ -11,6 +11,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
+   [app.common.path-names :as cpn]
    [app.common.record :as crc]
    [app.common.schema :as sm]
    [app.common.spec :as us]
@@ -200,7 +201,7 @@
             :set
             (fn [self value]
               (let [id (obj/get self "$id")
-                    value  (when (string? value) (-> value str/trim cfh/clean-path))
+                    value  (when (string? value) (-> value str/trim cpn/clean-path))
                     valid? (and (some? value)
                                 (not (str/ends-with? value "/"))
                                 (not (str/blank? value)))]

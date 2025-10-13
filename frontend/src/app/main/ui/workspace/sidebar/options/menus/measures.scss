@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
   display: grid;
@@ -27,12 +27,12 @@
   position: relative;
   grid-column: span 5;
   display: flex;
-  height: $s-32;
-  padding: $s-8;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
 
   .collapsed-icon {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     cursor: pointer;
     svg {
       @extend .button-icon-small;
@@ -53,7 +53,7 @@
 }
 
 .select-name {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -63,14 +63,14 @@
 
 .custom-select-dropdown {
   @extend .dropdown-wrapper;
-  margin-top: $s-2;
+  margin-top: deprecated.$s-2;
   max-height: 70vh;
-  width: $s-252;
+  width: deprecated.$s-252;
   .dropdown-element {
     @extend .dropdown-element-base;
     .name-wrapper {
       display: flex;
-      gap: $s-8;
+      gap: deprecated.$s-8;
       flex-grow: 1;
       .preset-name {
         color: var(--menu-foreground-color-rest);
@@ -81,7 +81,7 @@
     }
 
     .check-icon {
-      @include flexCenter;
+      @include deprecated.flexCenter;
       svg {
         @extend .button-icon-small;
         stroke: var(--icon-foreground);
@@ -131,9 +131,9 @@
 .y-position,
 .rotation {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   .icon-text {
-    padding-top: $s-1;
+    padding-top: deprecated.$s-1;
   }
   &.disabled {
     @extend .disabled-input;
@@ -146,9 +146,9 @@
 
 .lock-size-btn {
   @extend .button-tertiary;
-  border-radius: $br-8;
-  height: $s-32;
-  width: $s-28;
+  border-radius: deprecated.$br-8;
+  height: deprecated.$s-32;
+  width: deprecated.$s-28;
   &.selected {
     @extend .button-icon-selected;
   }
@@ -163,7 +163,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .clip-content,
@@ -177,7 +177,7 @@
   @extend .button-tertiary;
   height: var(--sp-xxxl);
   width: var(--sp-xxxl);
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
 }
 
 .selected {
@@ -186,4 +186,8 @@
 
 .checkbox-button {
   @extend .button-icon;
+}
+
+.numeric-input-measures {
+  --dropdown-width: 247px;
 }

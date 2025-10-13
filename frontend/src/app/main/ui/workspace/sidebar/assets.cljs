@@ -137,21 +137,30 @@
         on-menu-close
         (mf/use-fn #(swap! filters* assoc :open-menu false))
 
+        ;; Memoize options to prevent infinite re-render loops when dev-tools are open.
+        ;;
+        ;; Problem: When dev-tools are open, they constantly monitor the application state,
+        ;; triggering frequent updates to okulary refs. This causes the parent component to
+        ;; re-render constantly, recreating the options array on every render.
+        ;;
+        ;; The context-menu* component has a mf/with-effect that depends on [options].
+        ;; When options are recreated (even with identical content), the effect runs,
+        ;; updating the internal state, which triggers another re-render, creating
+        ;; an infinite loop: render -> new options -> effect -> state update -> render...
         options
-        [{:name    (tr "workspace.assets.box-filter-all")
-          :id      "all"
-          :handler on-section-filter-change}
-         {:name    (tr "workspace.assets.components")
-          :id      "components"
-          :handler on-section-filter-change}
-
-         {:name    (tr "workspace.assets.colors")
-          :id      "colors"
-          :handler on-section-filter-change}
-
-         {:name    (tr "workspace.assets.typography")
-          :id      "typographies"
-          :handler on-section-filter-change}]]
+        (mf/with-memo [on-section-filter-change]
+          [{:name    (tr "workspace.assets.box-filter-all")
+            :id      "all"
+            :handler on-section-filter-change}
+           {:name    (tr "workspace.assets.components")
+            :id      "components"
+            :handler on-section-filter-change}
+           {:name    (tr "workspace.assets.colors")
+            :id      "colors"
+            :handler on-section-filter-change}
+           {:name    (tr "workspace.assets.typography")
+            :id      "typographies"
+            :handler on-section-filter-change}])]
 
     [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
@@ -178,18 +187,19 @@
           :class (stl/css-case :section-button true
                                :opened menu-open?)}
          deprecated-icon/filter-icon]]
-       (when menu-open?
-         [:> context-menu*
-          {:on-close on-menu-close
-           :selectable true
-           :selected section
-           :show true
-           :fixed true
-           :min-width true
-           :width size
-           :top 158
-           :left 18
-           :options options}])
+
+       [:> context-menu*
+        {:on-close on-menu-close
+         :selectable true
+         :selected section
+         :show menu-open?
+         :fixed true
+         :min-width true
+         :width size
+         :top 158
+         :left 18
+         :options options}]
+
        [:> icon-button* {:variant "ghost"
                          :aria-label (tr "workspace.assets.sort")
                          :on-click toggle-ordering

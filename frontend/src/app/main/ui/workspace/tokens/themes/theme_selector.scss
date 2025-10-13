@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .custom-select {
   --custom-select-border-color: var(--menu-background-color);
@@ -15,13 +15,13 @@
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
   margin: 0;
-  padding: $s-8;
-  border-radius: $br-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--custom-select-bg-color);
-  border: $s-1 solid var(--custom-select-border-color);
+  border: deprecated.$s-1 solid var(--custom-select-border-color);
   color: var(--custom-select-text-color);
   cursor: pointer;
   &:hover {
@@ -41,9 +41,9 @@
 }
 
 .group {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   display: block;
-  padding: $s-8;
+  padding: deprecated.$s-8;
   color: var(--color-foreground-secondary);
 }
 
@@ -57,14 +57,14 @@
 }
 
 .dropdown-button {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   color: var(--color-foreground-secondary);
 }
 
 .current-icon {
-  @include flexCenter;
-  width: $s-24;
-  padding-right: $s-4;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-24;
+  padding-right: deprecated.$s-4;
 }
 
 .custom-select-dropdown {
@@ -73,17 +73,18 @@
 
 .separator {
   margin: 0;
-  height: $s-2;
-  border-block-start: $s-1 solid color-mix(in hsl, var(--color-foreground-secondary) 20%, transparent);
+  height: deprecated.$s-2;
+  border-block-start: deprecated.$s-1 solid
+    color-mix(in hsl, var(--color-foreground-secondary) 20%, transparent);
 }
 
 .custom-select-dropdown[data-direction="up"] {
-  bottom: $s-32;
+  bottom: deprecated.$s-32;
   top: auto;
 }
 
 .sub-item {
-  padding-left: $s-16;
+  padding-left: deprecated.$s-16;
 }
 
 .checked-element-button {
@@ -105,7 +106,7 @@
 }
 
 .check-icon {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   color: var(--icon-foreground-primary);
   visibility: hidden;
 }
@@ -120,11 +121,11 @@
 }
 
 .current-label {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
 }
 
 .dropdown-portal {
-  --menu-max-height: #{$s-400};
+  --menu-max-height: #{deprecated.$s-400};
   @extend .new-scrollbar;
 
   position: absolute;

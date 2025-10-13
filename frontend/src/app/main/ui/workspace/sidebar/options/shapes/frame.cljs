@@ -12,7 +12,7 @@
    [app.main.refs :as refs]
    [app.main.ui.workspace.sidebar.options.menus.blur :refer [blur-menu]]
    [app.main.ui.workspace.sidebar.options.menus.color-selection :refer [color-selection-menu*]]
-   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu variant-menu*]]
+   [app.main.ui.workspace.sidebar.options.menus.component :refer [component-menu* component-variant-main*]]
    [app.main.ui.workspace.sidebar.options.menus.constraints :refer [constraint-attrs constraints-menu]]
    [app.main.ui.workspace.sidebar.options.menus.exports :refer [exports-menu* exports-attrs]]
    [app.main.ui.workspace.sidebar.options.menus.fill :as fill]
@@ -32,6 +32,9 @@
         shape-type (dm/get-prop shape :type)
         ids        (mf/with-memo [shape-id] [shape-id])
         shapes     (mf/with-memo [shape] [shape])
+
+        applied-tokens
+        (get shape :applied-tokens)
 
         stroke-values
         (select-keys shape stroke-attrs)
@@ -99,14 +102,15 @@
                       :type shape-type
                       :values layer-values}]
      [:> measures-menu* {:ids ids
+                         :applied-tokens applied-tokens
                          :values measure-values
                          :type shape-type
                          :shapes shapes}]
 
-     [:& component-menu {:shapes shapes}]
+     [:> component-menu* {:shapes shapes}]
 
      (when is-variant?
-       [:> variant-menu* {:shapes shapes}])
+       [:> component-variant-main* {:shapes shapes}])
 
      [:& layout-container-menu
       {:type shape-type
@@ -139,11 +143,15 @@
      [:> fill/fill-menu*
       {:ids ids
        :type shape-type
-       :values shape}]
+       :values shape
+       :shapes shapes
+       :applied-tokens applied-tokens}]
 
      [:& stroke-menu {:ids ids
                       :type shape-type
-                      :values stroke-values}]
+                      :values stroke-values
+                      :shapes shapes
+                      :applied-tokens applied-tokens}]
      [:> color-selection-menu* {:type shape-type
                                 :shapes shapes-with-children
                                 :file-id file-id

@@ -4,22 +4,22 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .interactions-content {
   display: flex;
   flex-direction: column;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   padding-left: var(--sp-m);
 }
 
 .interaction-options {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .help-content {
-  padding: $s-32 0;
-  width: $s-200;
+  padding: deprecated.$s-32 0;
+  width: deprecated.$s-200;
   margin: 0 auto;
 }
 
@@ -27,37 +27,37 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: $s-40;
-  gap: $s-12;
+  margin-bottom: deprecated.$s-40;
+  gap: deprecated.$s-12;
 }
 
 .interactions-help-icon {
-  @include flexCenter;
-  width: $s-48;
-  height: $s-48;
-  border-radius: $br-circle;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-48;
+  height: deprecated.$s-48;
+  border-radius: deprecated.$br-circle;
   background-color: var(--pill-background-color);
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
-    height: $s-32;
-    width: $s-32;
+    height: deprecated.$s-32;
+    width: deprecated.$s-32;
   }
 }
 
 .after {
-  @include bodySmallTypography;
-  margin-top: $s-1;
+  @include deprecated.bodySmallTypography;
+  margin-top: deprecated.$s-1;
 }
 
 .interactions-help {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   text-align: center;
   color: var(--title-foreground-color);
 }
 
 .element-set {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .interactions-info {
@@ -71,27 +71,27 @@
 
 .action-summary {
   color: var(--color-foreground-secondary);
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
 }
 
 .groups {
-  @include flexColumn($s-12);
+  @include deprecated.flexColumn(deprecated.$s-12);
 }
 
 .element-set-options-group-open {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .extended-options {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .property-list {
   list-style: none;
   margin: 0;
   display: grid;
-  row-gap: $s-16;
-  margin-block: calc(#{$s-16} - #{$s-4});
+  row-gap: deprecated.$s-16;
+  margin-block: calc(#{deprecated.$s-16} - #{deprecated.$s-4});
 }
 
 .property-row {
@@ -101,10 +101,10 @@
     height: 100%;
   }
   .interaction-name {
-    @include twoLineTextEllipsis;
-    @include bodySmallTypography;
-    padding-left: $s-4;
-    width: $s-92;
+    @include deprecated.twoLineTextEllipsis;
+    @include deprecated.bodySmallTypography;
+    padding-left: deprecated.$s-4;
+    width: deprecated.$s-92;
     margin: auto 0;
     grid-area: name;
     color: var(--title-foreground-color);
@@ -114,18 +114,18 @@
     align-items: center;
     grid-area: content;
     .easing-select {
-      width: $s-156;
-      padding: 0 $s-8;
+      width: deprecated.$s-156;
+      padding: 0 deprecated.$s-8;
       .dropdown-upwards {
-        bottom: $s-36;
-        width: $s-156;
+        bottom: deprecated.$s-36;
+        width: deprecated.$s-156;
         top: unset;
       }
     }
   }
   .input-element-wrapper {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     grid-area: content;
   }
   .buttons-wrapper {
@@ -142,7 +142,7 @@
   }
   .inputs-wrapper {
     grid-area: content;
-    @include flexRow;
+    @include deprecated.flexRow;
     .radio-btn {
       @extend .input-checkbox;
     }
@@ -158,9 +158,9 @@
     "bottomleft bottom bottomright";
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  width: $s-84;
-  height: $s-84;
-  border-radius: $br-8;
+  width: deprecated.$s-84;
+  height: deprecated.$s-84;
+  border-radius: deprecated.$br-8;
   background-color: var(--color-background-tertiary);
   .center-btn {
     grid-area: center;
@@ -187,8 +187,8 @@
 
 .direction-btn {
   @extend .button-tertiary;
-  height: $s-28;
-  width: $s-28;
+  height: deprecated.$s-28;
+  width: deprecated.$s-28;
 
   &.active {
     @extend .button-icon-selected;
@@ -206,14 +206,14 @@
 
 .interactions-summary {
   @extend .asset-element;
-  height: $s-44;
+  height: deprecated.$s-44;
   padding: 0;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 
   .remove-btn {
     @extend .button-tertiary;
-    height: $s-32;
-    width: $s-28;
+    height: deprecated.$s-32;
+    width: deprecated.$s-28;
     svg {
       @extend .button-icon-small;
     }
@@ -224,7 +224,7 @@
   @extend .button-tertiary;
   --button-tertiary-border-width: var(--expand-button-icon-border-width);
   height: 100%;
-  width: $s-28;
+  width: deprecated.$s-28;
   border-end-end-radius: 0;
   border-start-end-radius: 0;
   padding: 0;
@@ -239,7 +239,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    border-inline-end: $s-1 solid var(--panel-background-color);
+    border-inline-end: deprecated.$s-1 solid var(--panel-background-color);
   }
   &.extended {
     @extend .button-icon-selected;
@@ -250,46 +250,46 @@
 .corner-icon {
   fill: none;
   stroke: currentColor;
-  width: $s-12;
-  height: $s-12;
+  width: deprecated.$s-12;
+  height: deprecated.$s-12;
 }
 
 .flow-element {
-  @include flexRow;
+  @include deprecated.flexRow;
 }
 
 .flow-info {
   display: flex;
   align-items: center;
-  gap: $s-2;
-  border-radius: $s-8;
+  gap: deprecated.$s-2;
+  border-radius: deprecated.$s-8;
   background-color: var(--input-details-color);
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
   flex-grow: 1;
 }
 
 .flow-name-wrapper {
-  @include bodySmallTypography;
-  @include focusInput;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.focusInput;
   display: flex;
   align-items: center;
-  gap: $s-4;
+  gap: deprecated.$s-4;
   flex-grow: 1;
-  height: $s-32;
+  height: deprecated.$s-32;
   width: 100%;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   padding: 0;
   margin-right: 0;
   background-color: var(--input-background-color);
-  border: $s-1 solid var(--input-border-color);
+  border: deprecated.$s-1 solid var(--input-border-color);
   color: var(--input-foreground-color);
   .start-flow-btn {
-    @include buttonStyle;
-    height: $s-32;
-    width: $s-28;
-    padding: 0 $s-2 0 $s-8;
-    border-radius: $br-8 0 0 $br-8;
+    @include deprecated.buttonStyle;
+    height: deprecated.$s-32;
+    width: deprecated.$s-28;
+    padding: 0 deprecated.$s-2 0 deprecated.$s-8;
+    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
     background-color: transparent;
     svg {
       @extend .button-icon;
@@ -302,28 +302,28 @@
 
   .flow-input {
     @extend .input-base;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     background-color: transparent;
-    height: $s-28;
+    height: deprecated.$s-28;
   }
 
   .flow-input-wrapper {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     display: flex;
     align-items: center;
-    height: $s-28;
+    height: deprecated.$s-28;
     padding: 0;
     width: 100%;
     margin: 0;
     flex-grow: 1;
     background-color: transparent;
     color: var(--input-foreground-color);
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
   }
 
   &:hover {
     background-color: var(--input-background-color-hover);
-    border: $s-1 solid var(--input-border-color-hover);
+    border: deprecated.$s-1 solid var(--input-border-color-hover);
     &:active {
       background-color: var(--input-background-color-hover);
       .flow-input-wrapper {
@@ -335,14 +335,14 @@
   &:focus,
   &:focus-within {
     background-color: var(--input-background-color-focus);
-    border: $s-1 solid var(--input-border-color-focus);
+    border: deprecated.$s-1 solid var(--input-border-color-focus);
     &:hover {
-      border: $s-1 solid var(--input-border-color-focus);
+      border: deprecated.$s-1 solid var(--input-border-color-focus);
     }
   }
 
   &.editing {
     background-color: var(--input-background-color-active);
-    border: $s-1 solid var(--input-border-color-active);
+    border: deprecated.$s-1 solid var(--input-border-color-active);
   }
 }

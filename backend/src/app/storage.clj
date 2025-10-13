@@ -27,7 +27,9 @@
 
 (defn get-legacy-backend
   []
-  (let [name (cf/get :assets-storage-backend)]
+  (when-let [name (cf/get :assets-storage-backend)]
+    (l/wrn :hint "using deprecated configuration, please read 2.11 release notes"
+           :href "https://github.com/penpot/penpot/releases/tag/2.11.0")
     (case name
       :assets-fs :fs
       :assets-s3 :s3
@@ -113,13 +115,10 @@
 
 (defn- create-database-object
   [{:keys [::backend ::db/connectable]} {:keys [::content ::expired-at ::touched-at ::touch] :as params}]
-  (let [id     (or (:id params) (uuid/random))
+  (let [id     (or (::id params) (uuid/random))
         mdata  (cond-> (get-metadata params)
                  (satisfies? impl/IContentHash content)
-                 (assoc :hash (impl/get-hash content))
-
-                 :always
-                 (dissoc :id))
+                 (assoc :hash (impl/get-hash content)))
 
         touched-at (if touch
                      (or touched-at (ct/now))

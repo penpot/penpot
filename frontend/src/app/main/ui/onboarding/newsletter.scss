@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -15,49 +15,49 @@
   position: relative;
   display: grid;
   grid-template-columns: auto auto;
-  gap: $s-32;
-  padding-inline: $s-100;
-  padding-block-start: $s-100;
-  padding-block-end: $s-72;
+  gap: deprecated.$s-32;
+  padding-inline: deprecated.$s-100;
+  padding-block-start: deprecated.$s-100;
+  padding-block-end: deprecated.$s-72;
   margin: 0;
-  width: $s-960;
-  height: $s-632;
-  max-width: $s-960;
-  max-height: $s-632;
+  width: deprecated.$s-960;
+  height: deprecated.$s-632;
+  max-width: deprecated.$s-960;
+  max-height: deprecated.$s-632;
 }
 
 .modal-left {
-  width: $s-172;
-  margin-block-end: $s-64;
+  width: deprecated.$s-172;
+  margin-block-end: deprecated.$s-64;
   img {
-    width: $s-172;
-    border-radius: $br-8 0 0 $br-8;
+    width: deprecated.$s-172;
+    border-radius: deprecated.$br-8 0 0 deprecated.$br-8;
   }
 }
 
 .modal-right {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: $s-40 auto auto auto auto $s-32;
-  gap: $s-24;
+  grid-template-rows: deprecated.$s-40 auto auto auto auto deprecated.$s-32;
+  gap: deprecated.$s-24;
   position: relative;
 }
 
 .modal-title {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
 .modal-text {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-text-foreground-color);
   margin: 0;
 }
 
 .newsletter-options {
   display: grid;
-  gap: $s-16;
-  margin-inline-start: $s-16;
+  gap: deprecated.$s-16;
+  margin-inline-start: deprecated.$s-16;
 }
 
 .input-wrapper {
@@ -65,7 +65,7 @@
 }
 
 .modal-link {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-link-foreground-color);
   margin: 0;
 }

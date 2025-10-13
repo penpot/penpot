@@ -4,27 +4,27 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .radio-btn-wrapper {
-  @include flexCenter;
-  border-radius: $br-8;
-  height: $s-32;
+  @include deprecated.flexCenter;
+  border-radius: deprecated.$br-8;
+  height: deprecated.$s-32;
   background-color: var(--input-background-color);
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .radio-icon {
   --radio-icon-border-color: var(--radio-btn-border-color);
 
-  @include buttonStyle;
-  @include flexCenter;
-  @include focusRadio;
-  height: $s-32;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+  @include deprecated.focusRadio;
+  height: deprecated.$s-32;
   flex-grow: 1;
-  border-radius: $s-8;
+  border-radius: deprecated.$s-8;
   box-sizing: border-box;
-  border: $br-2 solid var(--radio-icon-border-color);
+  border: deprecated.$br-2 solid var(--radio-icon-border-color);
 
   input {
     display: none;
@@ -34,7 +34,7 @@
     stroke: var(--radio-btn-foreground-color);
   }
   .title-name {
-    @include uppercaseTitleTipography;
+    @include deprecated.uppercaseTitleTipography;
     color: var(--radio-btn-foreground-color);
   }
   &:hover {
@@ -59,7 +59,7 @@
 .disabled {
   cursor: default;
   background-color: transparent;
-  border: $s-2 solid transparent;
+  border: deprecated.$s-2 solid transparent;
   svg {
     stroke: var(--button-foreground-color-disabled);
   }
@@ -68,7 +68,7 @@
   }
   &:hover {
     background-color: transparent;
-    border: $s-2 solid transparent;
+    border: deprecated.$s-2 solid transparent;
     svg {
       stroke: var(--button-foreground-color-disabled);
     }

@@ -30,6 +30,9 @@
         ids    (mf/with-memo [id] [id])
         shapes (mf/with-memo [shape] [shape])
 
+        applied-tokens
+        (get shape :applied-tokens)
+
         measure-values
         (select-keys shape measure-attrs)
 
@@ -86,6 +89,7 @@
      [:> measures-menu* {:ids ids
                          :type type
                          :values measure-values
+                         :applied-tokens applied-tokens
                          :shapes shapes}]
 
      [:& layout-container-menu
@@ -116,11 +120,15 @@
      [:> fill/fill-menu*
       {:ids ids
        :type type
-       :values shape}]
+       :shapes shapes
+       :values shape
+       :applied-tokens applied-tokens}]
 
      [:& stroke-menu {:ids ids
                       :type type
-                      :values stroke-values}]
+                      :shapes shapes
+                      :values stroke-values
+                      :applied-tokens applied-tokens}]
 
      [:> shadow-menu* {:ids ids :values (get shape :shadow)}]
 

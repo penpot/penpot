@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .badge-notification {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   --badge-notification-bg-color: var(--alert-background-color-default);
   --badge-notification-fg-color: var(--alert-text-foreground-color-default);
   --badge-notification-border-color: var(--alert-border-color-default);
@@ -15,22 +15,22 @@
   display: grid;
   place-items: center;
   grid-template-columns: 1fr;
-  min-height: $s-32;
+  min-height: deprecated.$s-32;
   height: fit-content;
-  min-width: $s-80;
+  min-width: deprecated.$s-80;
   width: fit-content;
   padding: 0;
   margin: 0;
-  border: $s-1 solid var(--badge-notification-border-color);
-  border-radius: $br-8;
+  border: deprecated.$s-1 solid var(--badge-notification-border-color);
+  border-radius: deprecated.$br-8;
   background-color: var(--badge-notification-bg-color);
   color: var(--badge-notification-fg-color);
 }
 
 .small {
-  @include bodySmallTypography;
-  min-height: $s-20;
-  border-radius: $br-6;
+  @include deprecated.bodySmallTypography;
+  min-height: deprecated.$s-20;
+  border-radius: deprecated.$br-6;
 }
 
 .warning {

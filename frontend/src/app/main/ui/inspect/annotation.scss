@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .attributes-block {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 }
 
 .title-spacing-annotation {
@@ -15,10 +15,10 @@
 }
 
 .annotation-content {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--entry-foreground-color);
 }
 
 .copy-btn-title {
-  max-width: $s-28;
+  max-width: deprecated.$s-28;
 }

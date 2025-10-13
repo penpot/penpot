@@ -12,6 +12,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.logic.libraries :as cll]
+   [app.common.path-names :as cpn]
    [app.common.test-helpers.files :as thf]
    [app.common.test-helpers.ids-map :as thi]
    [app.common.test-helpers.shapes :as ths]
@@ -36,7 +37,7 @@
 
           updated-root (first updated-shapes) ; Can't use new-root because it has a new id
 
-          [path name] (cfh/parse-path-name (:name updated-root))]
+          [path name] (cpn/split-group-name (:name updated-root))]
       (thi/set-id! label (:component-id updated-root))
 
       (ctf/update-file-data
@@ -71,6 +72,10 @@
 (defn get-component-by-id
   [file id]
   (ctkl/get-component (:data file) id))
+
+(defn get-components
+  [file]
+  (ctkl/components (:data file)))
 
 (defn- set-children-labels!
   [file shape-label children-labels]

@@ -853,6 +853,11 @@
 ;;    ::oapi/type "string"
 ;;    ::oapi/format "number"}})
 
+#?(:clj
+   (register!
+    {:type ::atom
+     :pred #(instance? clojure.lang.Atom %)}))
+
 (register!
  {:type ::fn
   :pred fn?})
@@ -914,6 +919,8 @@
    :gen/gen (sg/uri)
    :decode/string decode-uri
    :decode/json decode-uri
+   :encode/json str
+   :encode/string str
    ::oapi/type "string"
    ::oapi/format "uri"}})
 

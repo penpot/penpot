@@ -11,6 +11,7 @@
    [app.util.timers :as tm]
    [beicon.v2.core :as rx]
    [beicon.v2.operators :as rxo]
+   [cuerdas.core :as str]
    [okulary.core :as l]
    [potok.v2.core :as ptk]))
 
@@ -28,6 +29,28 @@
 (def on-event identity)
 
 (def ^:dynamic *debug-events* false)
+(def ^:dynamic *debug-events-time* false)
+
+(def current-measure (atom nil))
+
+(defn measure-time-to-render [event]
+  (if @current-measure
+    (swap! current-measure conj event)
+
+    (let [start (js/performance.now)]
+      (reset! current-measure [event])
+
+      (tm/raf
+       #(js/scheduler.postTask
+         (fn []
+           (let [time (- (js/performance.now) start)]
+             ;; Only print sets that last over 1second
+             (when (> time 1000)
+               (println
+                (str time "|" (str/join "," @current-measure)))))
+           (reset! current-measure nil))
+
+         #js {"priority" "user-blocking"})))))
 
 ;; Only created in development build
 (when *assert*
@@ -38,6 +61,8 @@
       :app.main.data.workspace.selection/change-hover-state})
 
   (set! on-event (fn [e]
+                   (when (and *debug-events-time* (ptk/event? e))
+                     (measure-time-to-render (ptk/type e)))
                    (when (and *debug-events*
                               (ptk/event? e)
                               (not (debug-exclude-events (ptk/type e))))

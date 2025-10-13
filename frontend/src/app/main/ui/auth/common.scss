@@ -4,18 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .auth-form-wrapper {
   width: 100%;
   padding-block-end: 0;
   display: grid;
-  gap: $s-12;
+  gap: deprecated.$s-12;
   form {
     display: flex;
     flex-direction: column;
-    gap: $s-12;
-    margin-top: $s-12;
+    gap: deprecated.$s-12;
+    margin-top: deprecated.$s-12;
   }
 }
 
@@ -23,7 +23,7 @@
   width: 100%;
   padding-block-end: 0;
   display: grid;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .separator {
@@ -32,57 +32,57 @@
 }
 
 .auth-title {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--title-foreground-color-hover);
 }
 
 .auth-subtitle {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   color: var(--title-foreground-color);
 }
 
 .auth-tagline {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   margin: 0;
   color: var(--title-foreground-color);
 }
 
 .form-field {
   --input-width: 100%;
-  --input-height: #{$s-40};
+  --input-height: #{deprecated.$s-40};
   --input-min-width: 100%;
 }
 
 .buttons-stack {
   display: grid;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .login-button,
 .login-ldap-button {
   @extend .button-primary;
-  @include uppercaseTitleTipography;
-  height: $s-40;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-40;
   width: 100%;
 }
 
 .go-back {
   display: flex;
   flex-direction: column;
-  gap: $s-12;
+  gap: deprecated.$s-12;
   padding: 0;
   border-block-start: none;
 }
 
 .go-back-link {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
-  height: $s-40;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-40;
 }
 
 .links {
   display: grid;
-  gap: $s-24;
+  gap: deprecated.$s-24;
 }
 
 .register,
@@ -91,7 +91,7 @@
 .demo-account {
   display: flex;
   justify-content: center;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   padding: 0;
 }
 
@@ -99,7 +99,7 @@
 .account-text,
 .recovery-text,
 .demo-account-text {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   text-align: right;
   color: var(--title-foreground-color);
 }
@@ -109,7 +109,7 @@
 .recovery-link,
 .forgot-pass-link,
 .demo-account-link {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   text-align: left;
   background-color: transparent;
   border: none;
@@ -130,22 +130,22 @@
 .register-btn,
 .recover-btn {
   @extend .button-primary;
-  @include uppercaseTitleTipography;
-  height: $s-40;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-40;
   width: 100%;
 }
 
 .login-btn {
-  @include smallTitleTipography;
+  @include deprecated.smallTitleTipography;
   display: flex;
   align-items: center;
-  gap: $s-6;
+  gap: deprecated.$s-6;
   width: 100%;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--button-secondary-background-color-rest);
   color: var(--button-foreground-color-focus);
   span {
-    padding-block-start: $s-2;
+    padding-block-start: deprecated.$s-2;
   }
 
   &:hover {
@@ -156,5 +156,5 @@
 
 .auth-buttons {
   display: flex;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }

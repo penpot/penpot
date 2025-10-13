@@ -4,6 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "./spacing.scss" as *;
+
 @mixin menuShadow {
   box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
 }

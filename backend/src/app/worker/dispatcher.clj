@@ -7,7 +7,6 @@
 (ns app.worker.dispatcher
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
@@ -18,7 +17,9 @@
    [app.worker :as-alias wrk]
    [cuerdas.core :as str]
    [integrant.core :as ig]
-   [promesa.exec :as px]))
+   [promesa.exec :as px])
+  (:import
+   java.lang.AutoCloseable))
 
 (set! *warn-on-reflection* true)
 
@@ -27,7 +28,7 @@
    [::wrk/tenant ::sm/text]
    ::mtx/metrics
    ::db/pool
-   ::rds/redis])
+   ::rds/client])
 
 (defmethod ig/expand-key ::wrk/dispatcher
   [k v]
@@ -49,59 +50,74 @@
     limit ?
       for update skip locked")
 
-(defmethod ig/init-key ::wrk/dispatcher
-  [_ {:keys [::db/pool ::rds/redis ::wrk/tenant ::batch-size ::timeout] :as cfg}]
-  (letfn [(get-tasks [conn]
-            (let [prefix (str tenant ":%")]
-              (seq (db/exec! conn [sql:select-next-tasks prefix batch-size]))))
+(def ^:private sql:mark-task-scheduled
+  "UPDATE task SET status = 'scheduled'
+    WHERE id = ANY(?)")
 
-          (push-tasks! [conn rconn [queue tasks]]
+(defmethod ig/init-key ::wrk/dispatcher
+  [_ {:keys [::db/pool ::wrk/tenant ::batch-size ::timeout] :as cfg}]
+  (letfn [(get-tasks [{:keys [::db/conn]}]
+            (let [prefix (str tenant ":%")]
+              (not-empty (db/exec! conn [sql:select-next-tasks prefix batch-size]))))
+
+          (mark-as-scheduled [{:keys [::db/conn]} ids]
+            (let [sql [sql:mark-task-scheduled
+                       (db/create-array conn "uuid" ids)]]
+              (db/exec-one! conn sql)))
+
+          (push-tasks [{:keys [::rds/conn] :as cfg} [queue tasks]]
             (let [ids (mapv :id tasks)
                   key (str/ffmt "taskq:%" queue)
-                  res (rds/rpush rconn key (mapv t/encode ids))
-                  sql [(str "update task set status = 'scheduled'"
-                            " where id = ANY(?)")
-                       (db/create-array conn "uuid" ids)]]
+                  res (rds/rpush conn key (mapv t/encode-str ids))]
 
-              (db/exec-one! conn sql)
+              (mark-as-scheduled cfg ids)
               (l/trc :hist "enqueue tasks on redis"
                      :queue queue
                      :tasks (count ids)
                      :queued res)))
 
-          (run-batch! [rconn]
-            (try
-              (db/tx-run! cfg (fn [{:keys [::db/conn]}]
-                                (if-let [tasks (get-tasks conn)]
-                                  (->> (group-by :queue tasks)
-                                       (run! (partial push-tasks! conn rconn)))
-                                  ;; FIXME: this sleep should be outside the transaction
-                                  (px/sleep (::wait-duration cfg)))))
-              (catch InterruptedException cause
-                (throw cause))
-              (catch Exception cause
-                (cond
-                  (rds/exception? cause)
-                  (do
-                    (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
-                    (px/sleep timeout))
+          (run-batch' [cfg]
+            (if-let [tasks (get-tasks cfg)]
+              (->> (group-by :queue tasks)
+                   (run! (partial push-tasks cfg)))
+              ::wait))
 
-                  (db/sql-exception? cause)
-                  (do
-                    (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
-                    (px/sleep timeout))
+          (run-batch []
+            (let [rconn (rds/connect cfg)]
+              (try
+                (-> cfg
+                    (assoc ::rds/conn rconn)
+                    (db/tx-run! run-batch'))
 
-                  :else
-                  (do
-                    (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
-                    (px/sleep timeout))))))
+                (catch InterruptedException cause
+                  (throw cause))
+                (catch Exception cause
+                  (cond
+                    (rds/exception? cause)
+                    (do
+                      (l/wrn :hint "redis exception (will retry in an instant)" :cause cause)
+                      (px/sleep timeout))
+
+                    (db/sql-exception? cause)
+                    (do
+                      (l/wrn :hint "database exception (will retry in an instant)" :cause cause)
+                      (px/sleep timeout))
+
+                    :else
+                    (do
+                      (l/err :hint "unhandled exception (will retry in an instant)" :cause cause)
+                      (px/sleep timeout))))
+
+                (finally
+                  (.close ^AutoCloseable rconn)))))
 
           (dispatcher []
             (l/inf :hint "started")
             (try
-              (dm/with-open [rconn (rds/connect redis)]
-                (loop []
-                  (run-batch! rconn)
+              (loop []
+                (let [result (run-batch)]
+                  (when (= result ::wait)
+                    (px/sleep (::wait-duration cfg)))
                   (recur)))
               (catch InterruptedException _
                 (l/trc :hint "interrupted"))
@@ -112,7 +128,7 @@
 
     (if (db/read-only? pool)
       (l/wrn :hint "not started (db is read-only)")
-      (px/fn->thread dispatcher :name "penpot/worker/dispatcher" :virtual false))))
+      (px/fn->thread dispatcher :name "penpot/worker-dispatcher"))))
 
 (defmethod ig/halt-key! ::wrk/dispatcher
   [_ thread]

@@ -11,7 +11,9 @@
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
    [app.common.time :as ct]
+   [app.config :as cf]
    [app.db :as db]
+   [app.http.access-token :refer [get-token]]
    [app.main :as-alias main]
    [app.rpc.commands.profile :as cmd.profile]
    [app.setup :as-alias setup]
@@ -29,6 +31,20 @@
 (defmethod ig/assert-key ::routes
   [_ params]
   (assert (db/pool? (::db/pool params)) "expect valid database pool"))
+
+(def ^:private auth
+  {:name ::auth
+   :compile
+   (fn [_ _]
+     (fn [handler shared-key]
+       (if shared-key
+         (fn [request]
+           (let [token (get-token request)]
+             (if (= token shared-key)
+               (handler request)
+               {::yres/status 403})))
+         (fn [_ _]
+           {::yres/status 403}))))})
 
 (def ^:private default-system
   {:name ::default-system
@@ -49,7 +65,8 @@
 
 (defmethod ig/init-key ::routes
   [_ cfg]
-  ["" {:middleware [[default-system cfg]
+  ["" {:middleware [[auth (cf/get :management-api-shared-key)]
+                    [default-system cfg]
                     [transaction]]}
    ["/authenticate"
     {:handler authenticate
@@ -79,8 +96,7 @@
 (defn- authenticate
   [cfg request]
   (let [token  (-> request :params :token)
-        props  (get cfg ::setup/props)
-        result (tokens/verify props {:token token :iss "authentication"})]
+        result (tokens/verify cfg {:token token :iss "authentication"})]
     {::yres/status 200
      ::yres/body result}))
 

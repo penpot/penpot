@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_sizes.scss" as *;
-@use "../_borders.scss" as *;
-@use "../typography.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/typography.scss" as *;
 
 .tabs {
   --tabs-bg-color: var(--color-background-secondary);

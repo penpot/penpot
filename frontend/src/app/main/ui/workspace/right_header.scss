@@ -4,23 +4,23 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .workspace-header-right {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-width: $s-256;
-  padding: $s-8;
-  gap: $s-8;
+  min-width: deprecated.$s-256;
+  padding: deprecated.$s-8;
+  gap: deprecated.$s-8;
   background-color: var(--panel-background-color);
 }
 
 .users-section {
   position: relative;
-  min-width: $s-32;
-  max-width: $s-72;
-  padding: $s-4 $s-6;
+  min-width: deprecated.$s-32;
+  max-width: deprecated.$s-72;
+  padding: deprecated.$s-4 deprecated.$s-6;
 }
 
 .separator {
@@ -28,19 +28,19 @@
 }
 
 .zoom-widget {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: $s-28;
-  max-width: $s-48;
-  width: $s-48;
-  border-radius: $br-8;
+  height: deprecated.$s-28;
+  max-width: deprecated.$s-48;
+  width: deprecated.$s-48;
+  border-radius: deprecated.$br-8;
 
   .label {
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     height: 100%;
-    padding: $s-8 0;
+    padding: deprecated.$s-8 0;
     color: var(--button-tertiary-foreground-color-rest);
   }
 
@@ -59,15 +59,15 @@
 
 .dropdown {
   @extend .menu-dropdown;
-  right: $s-2;
-  top: calc($s-2 + $s-48);
-  width: $s-272;
+  right: deprecated.$s-2;
+  top: calc(deprecated.$s-2 + deprecated.$s-48);
+  width: deprecated.$s-272;
 }
 
 .basic-zoom-bar {
   display: flex;
   justify-content: space-between;
-  padding: $s-6;
+  padding: deprecated.$s-6;
   cursor: auto;
 }
 
@@ -76,19 +76,19 @@
 }
 
 .zoom-text {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
-  min-width: $s-48;
+  min-width: deprecated.$s-48;
   padding: 0;
-  margin: 0 $s-2;
+  margin: 0 deprecated.$s-2;
   color: var(--modal-title-foreground-color);
 }
 
 .reset-btn {
   @extend .button-tertiary;
   color: var(--button-tertiary-foreground-color-hover);
-  height: $s-28;
-  border-radius: $br-8;
+  height: deprecated.$s-28;
+  border-radius: deprecated.$br-8;
 }
 
 .zoom-option {
@@ -115,17 +115,17 @@
 
 .comments-btn {
   @extend .button-tertiary;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   margin: 0;
-  height: $s-28;
-  width: $s-28;
+  height: deprecated.$s-28;
+  width: deprecated.$s-28;
   border: none;
 
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
-    height: $s-16;
-    width: $s-16;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
   }
 
   &:hover {
@@ -144,17 +144,17 @@
 
 .history-button {
   @extend .button-tertiary;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   margin: 0;
-  height: $s-28;
-  width: $s-28;
+  height: deprecated.$s-28;
+  width: deprecated.$s-28;
   border: none;
 
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
-    height: $s-16;
-    width: $s-16;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
   }
 
   &:hover {
@@ -172,17 +172,17 @@
 }
 
 .persistence-status-widget {
-  @include flexCenter;
-  width: $s-28;
-  height: $s-28;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-28;
+  height: deprecated.$s-28;
 }
 
 .status-icon {
-  @include flexCenter;
-  width: $s-24;
-  height: $s-24;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-24;
+  height: deprecated.$s-24;
   margin: 0;
-  border-radius: $br-circle;
+  border-radius: deprecated.$br-circle;
 
   svg {
     @extend .button-icon;
@@ -214,16 +214,16 @@
 .share-btn,
 .viewer-btn {
   @extend .button-tertiary;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   margin: 0;
-  width: $s-28;
-  height: $s-28;
+  width: deprecated.$s-28;
+  height: deprecated.$s-28;
   border: none;
 
   svg {
     @extend .button-icon;
-    height: $s-16;
-    width: $s-16;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
     stroke: var(--icon-foreground);
   }
 

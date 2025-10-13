@@ -113,12 +113,12 @@ RUN set -eux; \
     ARCH="$(dpkg --print-architecture)"; \
     case "${ARCH}" in \
        aarch64|arm64) \
-         ESUM='6f8725d186d05c627176db9c46c732a6ef3ba41d9e9b3775c4727fc8ac642bb2'; \
-         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24.0.2%2B12/OpenJDK24U-jdk_aarch64_linux_hotspot_24.0.2_12.tar.gz'; \
+         ESUM='b60eb9d54c97ba4159547834a98cc5d016281dd2b3e60e7475cba4911324bcb4'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.28.85-ca-jdk25.0.0-linux_aarch64.tar.gz'; \
          ;; \
        amd64|x86_64) \
-         ESUM='aea1cc55e51cf651c85f2f00ad021603fe269c4bb6493fa97a321ad770c9b096'; \
-         BINARY_URL='https://github.com/adoptium/temurin24-binaries/releases/download/jdk-24.0.2%2B12/OpenJDK24U-jdk_x64_linux_hotspot_24.0.2_12.tar.gz'; \
+         ESUM='164d901e5a240b8c18516f5ab55bc11fc9689ab6e829045aea8467356dcdb340'; \
+         BINARY_URL='https://cdn.azul.com/zulu/bin/zulu25.28.85-ca-jdk25.0.0-linux_x64.tar.gz'; \
          ;; \
        *) \
          echo "Unsupported arch: ${ARCH}"; \
@@ -183,8 +183,8 @@ RUN set -eux; \
 
 FROM base AS setup-utils
 
-ENV CLJKONDO_VERSION=2025.01.16 \
-    BABASHKA_VERSION=1.12.207 \
+ENV CLJKONDO_VERSION=2025.07.28 \
+    BABASHKA_VERSION=1.12.208 \
     CLJFMT_VERSION=0.13.1
 
 RUN set -ex; \

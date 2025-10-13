@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -13,21 +13,21 @@
 .modal-dialog {
   @extend .modal-container-base;
 
-  max-width: $s-888;
+  max-width: deprecated.$s-888;
   width: 100%;
   max-height: unset;
 }
 
 .modal-title {
   color: var(--modal-title-foreground-color);
-  margin-bottom: $s-32;
+  margin-bottom: deprecated.$s-32;
 }
 
 .modal-content {
   display: flex;
   color: var(--color-foreground-secondary);
-  padding-block-end: $s-32;
-  gap: $s-32;
+  padding-block-end: deprecated.$s-32;
+  gap: deprecated.$s-32;
 }
 
 .modal-close-btn {
@@ -35,14 +35,14 @@
 }
 
 .rule-list {
-  margin: $s-32 0;
+  margin: deprecated.$s-32 0;
 }
 
 .rule-item {
   display: flex;
-  gap: $s-16;
+  gap: deprecated.$s-16;
   align-items: center;
-  margin-bottom: $s-16;
+  margin-bottom: deprecated.$s-16;
 
   &:last-child {
     margin-bottom: 0;
@@ -51,7 +51,7 @@
 
 .rule-item-highlight {
   color: var(--color-foreground-primary);
-  margin-inline-end: $s-4;
+  margin-inline-end: deprecated.$s-4;
 }
 
 .rule-item-icon {
@@ -59,8 +59,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: $s-32;
-  height: $s-32;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
   background: var(--color-background-quaternary);
   color: var(--color-foreground-secondary);
   border-radius: 90px;
@@ -87,6 +87,6 @@
   flex: 0 1 50%;
 
   img {
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
   }
 }

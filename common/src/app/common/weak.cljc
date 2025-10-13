@@ -22,7 +22,7 @@
 
 #?(:cljs
    (defn weak-map
-     "Create a WeakMap like instance what uses clojure equality
+     "Create a WeakMap-like instance what uses clojure equality
   semantics."
      []
      (new wm/WeakEqMap #js {:hash hash :equals =})))

@@ -4,13 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 // PROGRESS WIDGET
 .export-progress-widget {
-  @include flexCenter;
-  width: $s-28;
-  height: $s-28;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-28;
+  height: deprecated.$s-28;
 }
 
 // PROGRESS MODAL
@@ -20,19 +20,19 @@
   --export-modal-icon-color: var(--alert-icon-foreground-color-default);
   --export-modal-border-color: var(--alert-border-color-default);
   position: absolute;
-  right: $s-16;
-  top: $s-48;
+  right: deprecated.$s-16;
+  top: deprecated.$s-48;
   display: grid;
-  grid-template-columns: $s-24 1fr $s-24;
+  grid-template-columns: deprecated.$s-24 1fr deprecated.$s-24;
   grid-template-areas:
     "icon text close"
     "bar bar bar";
-  gap: $s-4 $s-8;
-  padding-block-start: $s-8;
+  gap: deprecated.$s-4 deprecated.$s-8;
+  padding-block-start: deprecated.$s-8;
   background-color: var(--export-modal-bg-color);
-  border: $s-1 solid var(--export-modal-border-color);
-  border-radius: $br-8;
-  z-index: $z-index-modal;
+  border: deprecated.$s-1 solid var(--export-modal-border-color);
+  border-radius: deprecated.$br-8;
+  z-index: deprecated.$z-index-modal;
   overflow: hidden;
 }
 
@@ -42,23 +42,23 @@
   --export-modal-icon-color: var(--alert-icon-foreground-color-error);
   --export-modal-border-color: var(--alert-border-color-error);
   grid-template-areas: "icon text close";
-  gap: $s-8;
-  padding-block: $s-8;
+  gap: deprecated.$s-8;
+  padding-block: deprecated.$s-8;
 }
 
 .icon {
   @extend .button-icon;
   grid-area: icon;
   align-self: center;
-  margin-inline-start: $s-8;
+  margin-inline-start: deprecated.$s-8;
   stroke: var(--export-modal-icon-color);
 }
 
 .export-progress-title {
-  @include bodyMediumTypography;
+  @include deprecated.bodyMediumTypography;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   grid-area: text;
   align-self: center;
   padding: 0;
@@ -67,16 +67,16 @@
 }
 
 .progress {
-  @include bodyMediumTypography;
-  padding-left: $s-8;
+  @include deprecated.bodyMediumTypography;
+  padding-left: deprecated.$s-8;
   margin: 0;
   align-self: center;
   color: var(--modal-text-foreground-color);
 }
 
 .retry-btn {
-  @include buttonStyle;
-  @include bodySmallTypography;
+  @include deprecated.buttonStyle;
+  @include deprecated.bodySmallTypography;
   display: inline;
   text-align: left;
   color: var(--modal-link-foreground-color);
@@ -85,9 +85,9 @@
 }
 
 .progress-close-button {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   padding: 0;
-  margin-inline-end: $s-8;
+  margin-inline-end: deprecated.$s-8;
 }
 
 .close-icon {
@@ -110,15 +110,15 @@
 
 .modal-container {
   @extend .modal-container-base;
-  max-height: calc(10 * $s-80);
+  max-height: calc(10 * deprecated.$s-80);
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include headlineMediumTypography;
+  @include deprecated.headlineMediumTypography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -128,32 +128,32 @@
 
 .modal-content,
 .no-selection {
-  @include bodySmallTypography;
-  margin-bottom: $s-24;
+  @include deprecated.bodySmallTypography;
+  margin-bottom: deprecated.$s-24;
   .modal-link {
-    @include bodyLargeTypography;
+    @include deprecated.bodyLargeTypography;
     text-decoration: none;
     cursor: pointer;
     color: var(--modal-link-foreground-color);
   }
   .selection-header {
-    @include flexRow;
-    height: $s-32;
-    margin-bottom: $s-4;
+    @include deprecated.flexRow;
+    height: deprecated.$s-32;
+    margin-bottom: deprecated.$s-4;
     .selection-btn {
-      @include buttonStyle;
+      @include deprecated.buttonStyle;
       @extend .input-checkbox;
-      @include flexCenter;
-      height: $s-24;
-      width: $s-24;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-24;
+      width: deprecated.$s-24;
       padding: 0;
-      margin-left: $s-16;
+      margin-left: deprecated.$s-16;
       span {
         @extend .checkbox-icon;
       }
     }
     .selection-title {
-      @include bodyLargeTypography;
+      @include deprecated.bodyLargeTypography;
       color: var(--modal-text-foreground-color);
     }
   }
@@ -177,67 +177,67 @@
     }
   }
   .selection-list {
-    @include flexColumn;
-    max-height: $s-400;
+    @include deprecated.flexColumn;
+    max-height: deprecated.$s-400;
     overflow-y: auto;
-    padding-bottom: $s-12;
+    padding-bottom: deprecated.$s-12;
     .selection-row {
-      @include flexRow;
+      @include deprecated.flexRow;
       background-color: var(--entry-background-color);
-      min-height: $s-40;
-      border-radius: $br-8;
+      min-height: deprecated.$s-40;
+      border-radius: deprecated.$br-8;
       .selection-btn {
-        @include buttonStyle;
+        @include deprecated.buttonStyle;
         display: grid;
         grid-template-columns: min-content auto 1fr auto auto;
         align-items: center;
         width: 100%;
         height: 10%;
-        gap: $s-8;
-        padding: 0 $s-16;
+        gap: deprecated.$s-8;
+        padding: 0 deprecated.$s-16;
         .checkbox-wrapper {
           @extend .input-checkbox;
-          @include flexCenter;
-          height: $s-24;
-          width: $s-24;
+          @include deprecated.flexCenter;
+          height: deprecated.$s-24;
+          width: deprecated.$s-24;
           padding: 0;
           .checkobox-tick {
             @extend .checkbox-icon;
           }
         }
         .selection-name {
-          @include bodyLargeTypography;
-          @include textEllipsis;
+          @include deprecated.bodyLargeTypography;
+          @include deprecated.textEllipsis;
           flex-grow: 1;
           color: var(--modal-text-foreground-color);
           text-align: start;
         }
         .selection-scale {
-          @include bodyLargeTypography;
-          @include textEllipsis;
-          min-width: $s-108;
-          padding: $s-12;
+          @include deprecated.bodyLargeTypography;
+          @include deprecated.textEllipsis;
+          min-width: deprecated.$s-108;
+          padding: deprecated.$s-12;
           color: var(--modal-text-foreground-color);
         }
         .selection-extension {
-          @include bodyLargeTypography;
-          @include textEllipsis;
-          min-width: $s-72;
-          padding: $s-12;
+          @include deprecated.bodyLargeTypography;
+          @include deprecated.textEllipsis;
+          min-width: deprecated.$s-72;
+          padding: deprecated.$s-12;
           color: var(--modal-text-foreground-color);
         }
       }
       .image-wrapper {
-        @include flexCenter;
-        min-height: $s-32;
-        min-width: $s-32;
+        @include deprecated.flexCenter;
+        min-height: deprecated.$s-32;
+        min-width: deprecated.$s-32;
         background-color: var(--app-white);
-        border-radius: $br-6;
+        border-radius: deprecated.$br-6;
         margin: auto 0;
         img,
         svg {
           object-fit: contain;
-          max-height: $s-40;
+          max-height: deprecated.$s-40;
         }
       }
     }
@@ -260,7 +260,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include bodyLargeTypography;
+  @include deprecated.bodyLargeTypography;
   color: var(--modal-text-foreground-color);
 }
 
@@ -271,27 +271,27 @@
   label {
     align-items: flex-start;
     .modal-subtitle {
-      @include bodyLargeTypography;
+      @include deprecated.bodyLargeTypography;
       color: var(--modal-title-foreground-color);
     }
   }
   span {
-    margin-top: $s-8;
+    margin-top: deprecated.$s-8;
   }
 }
 
 .option-content {
-  @include flexColumn;
-  @include bodyLargeTypography;
+  @include deprecated.flexColumn;
+  @include deprecated.bodyLargeTypography;
 }
 
 .file-entry {
   .file-name {
-    @include flexRow;
+    @include deprecated.flexRow;
     .file-icon {
-      @include flexCenter;
-      height: $s-16;
-      width: $s-16;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-16;
+      width: deprecated.$s-16;
 
       svg {
         @extend .button-icon-small;
@@ -299,8 +299,8 @@
       }
     }
     .file-name-label {
-      @include bodyLargeTypography;
-      @include textEllipsis;
+      @include deprecated.bodyLargeTypography;
+      @include deprecated.textEllipsis;
     }
   }
   &.loading {

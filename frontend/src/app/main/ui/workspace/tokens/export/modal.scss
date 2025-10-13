@@ -4,10 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../ds/typography.scss" as t;
-@use "../../../ds/_sizes.scss" as *;
-@use "../../../ds/_borders.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 
 .export-modal-wrapper {
   display: flex;
@@ -51,7 +50,7 @@
   width: 100%;
   cursor: default;
   color: var(--color-foreground-secondary);
-  border: $br-2 solid transparent;
+  border: $b-2 solid transparent;
 }
 
 .file-icon {
@@ -61,7 +60,11 @@
 }
 
 .file-name {
-  @include textEllipsis;
+  display: block;
+  max-width: 99%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   @include t.use-typography("body-medium");
   flex-grow: 1;
   overflow: hidden;

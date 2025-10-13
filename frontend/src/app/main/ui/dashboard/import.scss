@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -17,11 +17,11 @@
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -30,14 +30,14 @@
 }
 
 .modal-content {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   display: grid;
   grid-template-columns: 1fr;
-  gap: $s-16;
-  margin-bottom: $s-24;
+  gap: deprecated.$s-16;
+  margin-bottom: deprecated.$s-24;
   min-height: 40px;
 }
 
@@ -58,7 +58,7 @@
 .modal-scd-msg,
 .modal-subtitle,
 .modal-msg {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--modal-text-foreground-color);
   line-height: 1.5;
 }
@@ -66,11 +66,11 @@
 .file-entry {
   display: flex;
   .file-name {
-    @include flexRow;
+    @include deprecated.flexRow;
     .file-icon {
-      @include flexCenter;
-      height: $s-24;
-      width: $s-16;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-24;
+      width: deprecated.$s-16;
       svg {
         @extend .button-icon;
         stroke: var(--icon-foreground);
@@ -81,19 +81,19 @@
     }
     .file-name-edit {
       @extend .input-element;
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
       flex-grow: 1;
     }
     .file-name-label {
-      @include bodySmallTypography;
+      @include deprecated.bodySmallTypography;
       display: flex;
       align-items: center;
-      gap: $s-12;
+      gap: deprecated.$s-12;
       flex-grow: 1;
       .icon {
-        @include flexCenter;
-        height: $s-16;
-        width: $s-16;
+        @include deprecated.flexCenter;
+        height: deprecated.$s-16;
+        width: deprecated.$s-16;
         svg {
           @extend .button-icon-small;
           stroke: var(--icon-foreground);
@@ -101,11 +101,11 @@
       }
     }
     .edit-entry-buttons {
-      @include flexRow;
+      @include deprecated.flexRow;
       button {
         @extend .button-tertiary;
-        width: $s-28;
-        height: $s-32;
+        width: deprecated.$s-28;
+        height: deprecated.$s-32;
         svg {
           @extend .button-icon;
           stroke: var(--icon-foreground);
@@ -117,19 +117,19 @@
   .progress-message {
     display: flex;
     align-items: center;
-    height: $s-32;
+    height: deprecated.$s-32;
     color: var(--modal-text-foreground-color);
   }
 
   .linked-library {
     display: flex;
     align-items: center;
-    gap: $s-12;
+    gap: deprecated.$s-12;
     color: var(--modal-text-foreground-color);
     .linked-library-tag {
-      @include flexCenter;
-      height: $s-24;
-      width: $s-24;
+      @include deprecated.flexCenter;
+      height: deprecated.$s-24;
+      width: deprecated.$s-24;
       svg {
         @extend .button-icon;
         stroke: var(--icon-foreground);

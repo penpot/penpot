@@ -142,7 +142,7 @@ msgstr "Luo uusi käyttäjä"
 msgid "auth.sidebar-tagline"
 msgstr "Avoimen lähdekoodin ratkaisu suunnitteluun ja prototyyppien valmistukseen."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:927, src/app/main/ui/workspace/main_menu.cljs:156
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:884, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Käyttöehdot"
 
@@ -150,7 +150,7 @@ msgstr "Käyttöehdot"
 msgid "auth.verification-email-sent"
 msgstr "Lähetimme vahvistussähköpostin osoitteeseen"
 
-#: src/app/main/ui/workspace/libraries.cljs:308
+#: src/app/main/ui/workspace/libraries.cljs:333
 msgid "common.publish"
 msgstr "Julkaise"
 
@@ -222,7 +222,7 @@ msgstr "Jaa prototyypit"
 msgid "common.share-link.view-all"
 msgstr "Valitse kaikki"
 
-#: src/app/main/ui/workspace/libraries.cljs:304
+#: src/app/main/ui/workspace/libraries.cljs:329
 msgid "common.unpublish"
 msgstr "Peruuta julkaisu"
 

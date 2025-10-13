@@ -14,47 +14,47 @@
    [cuerdas.core :as str]))
 
 (def css-formatters
-  {:left                  :position
-   :top                   :position
-   :width                 :size
-   :height                :size
-   :min-width             :size
-   :min-height            :size
-   :max-width             :size
-   :max-height            :size
-   :background            :color
-   :border                :border
-   :border-radius         :string-or-size-array
-   :border-width          :border-width
-   :border-style          :border-style
-   :box-shadow            :shadows
-   :filter                :blur
-   :gap                   :size-array
-   :row-gap               :size-array
-   :column-gap            :size-array
-   :padding               :size-array
-   :margin                :size-array
-   :grid-template-rows    :tracks
-   :grid-template-columns :tracks})
+  {:left                      :position
+   :top                       :position
+   :width                     :size
+   :height                    :size
+   :max-height                :size
+   :max-block-size            :size
+   :min-height                :size
+   :min-block-size            :size
+   :max-width                 :size
+   :max-inline-size           :size
+   :min-width                 :size
+   :min-inline-size           :size
+   :background                :color
+   :border                    :border
+   :border-radius             :string-or-size-array
+   :border-start-start-radius :string-or-size-array
+   :border-start-end-radius   :string-or-size-array
+   :border-end-start-radius   :string-or-size-array
+   :border-end-end-radius     :string-or-size-array
+   :border-width              :border-width
+   :border-style              :border-style
+   :border-color              :border-color
+   :box-shadow                :shadows
+   :filter                    :blur
+   :gap                       :size-array
+   :row-gap                   :size-array
+   :column-gap                :size-array
+   :padding                   :size-array
+   :padding-inline-start      :size-array
+   :padding-inline-end        :size-array
+   :padding-block-start       :size-array
+   :padding-block-end         :size-array
+   :margin                    :size-array
+   :margin-block-start        :size-array
+   :margin-block-end          :size-array
+   :margin-inline-start       :size-array
+   :margin-inline-end         :size-array
+   :grid-template-rows        :tracks
+   :grid-template-columns     :tracks})
 
-(defmulti format-value
-  (fn [property _value _options] (css-formatters property)))
-
-(defmethod format-value :position
-  [_ value _options]
-  (cond
-    (number? value) (fmt/format-pixels value)
-    :else value))
-
-(defmethod format-value :size
-  [_ value _options]
-  (cond
-    (= value :fill) "100%"
-    (= value :auto) "auto"
-    (number? value) (fmt/format-pixels value)
-    :else value))
-
-(defn format-color
+(defn format-color-value
   "Format a color value to a CSS compatible string based on the given format."
   [value options]
   (let [format (get options :format :hex)]
@@ -76,34 +76,59 @@
       :else
       (uc/color->format->background value format))))
 
-(defmethod format-value :color
-  [_ value options]
-  (let [format (get options :format :hex)]
-    (format-color value (assoc options :format format))))
+(defn format-shadow->css
+  [{:keys [style offset-x offset-y blur spread color]} options]
+  (let [css-color (format-color-value color options)]
+    (dm/str
+     (if (= style :inner-shadow) "inset " "")
+     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
 
-(defmethod format-value :color-array
-  [_ value options]
+(defn- format-position
+  [value]
+  (cond
+    (number? value) (fmt/format-pixels value)
+    :else value))
+
+(defn- format-size
+  [value]
+  (cond
+    (= value :fill) "100%"
+    (= value :auto) "auto"
+    (number? value) (fmt/format-pixels value)
+    :else value))
+
+(defn- format-color
+  [value options]
+  (let [format (get options :format :hex)]
+    (format-color-value value (assoc options :format format))))
+
+(defn- format-color-array
+  [value options]
   (->> value
-       (map #(format-color % options))
+       (map #(format-color-value % options))
        (str/join ", ")))
 
-(defmethod format-value :border
-  [_ {:keys [color style width]} options]
+(defn- format-border
+  [{:keys [color style width]} options]
   (dm/fmt "% % %"
           (fmt/format-pixels width)
           (d/name style)
-          (format-color color options)))
+          (format-color-value color options)))
 
-(defmethod format-value :border-style
-  [_ value _options]
+(defn- format-border-style
+  [value]
   (d/name (:style value)))
 
-(defmethod format-value :border-width
-  [_ value _options]
+(defn- format-border-width
+  [value]
   (fmt/format-pixels (:width value)))
 
-(defmethod format-value :size-array
-  [_ value _options]
+(defn- format-border-color
+  [value options]
+  (format-color (:color value) options))
+
+(defn- format-size-array
+  [value]
   (cond
     (and (coll? value) (d/not-empty? value))
     (->> value
@@ -113,8 +138,8 @@
     (some? value)
     value))
 
-(defmethod format-value :string-or-size-array
-  [_ value _]
+(defn format-string-or-size-array
+  [value]
   (cond
     (string? value)
     value
@@ -127,12 +152,12 @@
     (some? value)
     value))
 
-(defmethod format-value :keyword
-  [_ value _options]
+(defn- format-keyword
+  [value]
   (d/name value))
 
-(defmethod format-value :tracks
-  [_ value _options]
+(defn- format-tracks
+  [value]
   (->> value
        (map (fn [{:keys [type value]}]
               (case type
@@ -142,29 +167,39 @@
                 (fmt/format-pixels value))))
        (str/join " ")))
 
-(defn format-shadow
-  [{:keys [style offset-x offset-y blur spread color]} options]
-  (let [css-color (format-color color options)]
-    (dm/str
-     (if (= style :inner-shadow) "inset " "")
-     (str/fmt "%spx %spx %spx %spx %s" offset-x offset-y blur spread css-color))))
-
-(defmethod format-value :shadows
-  [_ value options]
+(defn- format-shadow
+  [value options]
   (->> value
-       (map #(format-shadow % options))
+       (map #(format-shadow->css % options))
        (str/join ", ")))
 
-(defmethod format-value :blur
-  [_ value _options]
+(defn- format-blur
+  [value]
   (dm/fmt "blur(%)" (fmt/format-pixels value)))
 
-(defmethod format-value :matrix
-  [_ value _options]
+(defn-  format-matrix
+  [value]
   (fmt/format-matrix value))
 
-(defmethod format-value :default
-  [_ value _options]
-  (if (keyword? value)
-    (d/name value)
-    value))
+
+(defn format-value
+  "Get the appropriate value formatter function for a given CSS property."
+  [property value options]
+  (let [property (get css-formatters property)]
+    (case property
+      :position (format-position value)
+      :size (format-size value)
+      :color (format-color value options)
+      :color-array (format-color-array value options)
+      :border (format-border value options)
+      :border-style (format-border-style value)
+      :border-width (format-border-width value)
+      :border-color (format-border-color value options)
+      :size-array (format-size-array value)
+      :string-or-size-array (format-string-or-size-array value)
+      :keyword (format-keyword value)
+      :tracks (format-tracks value)
+      :shadow (format-shadow value options)
+      :blur (format-blur value)
+      :matrix (format-matrix value)
+      (if (keyword? value) (d/name value) value))))

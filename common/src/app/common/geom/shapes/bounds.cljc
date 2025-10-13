@@ -88,8 +88,11 @@
   ([shape]
    (get-shape-filter-bounds shape false))
   ([shape ignore-shadow-margin?]
-   (if (and (cfh/svg-raw-shape? shape)
-            (not= :svg (dm/get-in shape [:content :tag])))
+   (if (or (and (cfh/svg-raw-shape? shape)
+                (not= :svg (dm/get-in shape [:content :tag])))
+           ;; If no shadows or blur, we return the selrect as is
+           (and (empty? (-> shape :shadow))
+                (zero? (-> shape :blur :value (or 0)))))
      (dm/get-prop shape :selrect)
      (let [filters    (shape->filters shape)
            blur-value (or (-> shape :blur :value) 0)

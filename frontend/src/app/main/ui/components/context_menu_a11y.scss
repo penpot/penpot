@@ -4,18 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .context-menu {
   position: relative;
   visibility: hidden;
-  opacity: $op-0;
-  z-index: $z-index-4;
+  opacity: deprecated.$op-0;
+  z-index: deprecated.$z-index-4;
 
   &.is-open {
     position: relative;
     display: block;
-    opacity: $op-10;
+    opacity: deprecated.$op-10;
     visibility: visible;
   }
 
@@ -24,39 +24,39 @@
   }
 
   .context-menu-items {
-    @include menuShadow;
+    @include deprecated.menuShadow;
     position: absolute;
-    top: $s-12;
-    left: calc(-1 * $s-6);
-    max-height: $s-480;
-    min-width: $s-96;
-    margin: $s-0;
-    padding: $s-4;
-    border-radius: $br-8;
-    border: $s-2 solid var(--panel-border-color);
+    top: deprecated.$s-12;
+    left: calc(-1 * deprecated.$s-6);
+    max-height: deprecated.$s-480;
+    min-width: deprecated.$s-96;
+    margin: deprecated.$s-0;
+    padding: deprecated.$s-4;
+    border-radius: deprecated.$br-8;
+    border: deprecated.$s-2 solid var(--panel-border-color);
     background-color: var(--menu-background-color);
     overflow: auto;
 
     & .separator {
-      border-top: solid $s-1 var(--color-background-quaternary);
+      border-top: solid deprecated.$s-1 var(--color-background-quaternary);
     }
 
     &.min-width {
-      min-width: $s-192;
+      min-width: deprecated.$s-192;
     }
 
     .context-menu-item {
       display: flex;
 
       .context-menu-action {
-        @include bodySmallTypography;
+        @include deprecated.bodySmallTypography;
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        height: $s-28;
+        height: deprecated.$s-28;
         width: 100%;
-        padding: $s-6;
-        border-radius: $br-8;
+        padding: deprecated.$s-6;
+        border-radius: deprecated.$br-8;
         white-space: nowrap;
         color: var(--menu-foreground-color);
 
@@ -78,7 +78,7 @@
         &.submenu-back {
           display: flex;
           align-items: center;
-          font-weight: $fw700;
+          font-weight: deprecated.$fw700;
           background: none;
           border: none;
           cursor: pointer;
@@ -141,7 +141,7 @@
 
         .selected-icon {
           @extend .button-tag;
-          border-radius: $br-8;
+          border-radius: deprecated.$br-8;
           height: 100%;
 
           svg {
@@ -153,12 +153,12 @@
     }
 
     .is-selected .context-menu-action {
-      padding-left: $s-28;
+      padding-left: deprecated.$s-28;
       background-image: url(/images/icons/tick.svg);
       background-repeat: no-repeat;
       background-position: 5% 48%;
-      background-size: $s-12;
-      font-weight: $fw700;
+      background-size: deprecated.$s-12;
+      font-weight: deprecated.$fw700;
     }
   }
 

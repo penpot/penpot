@@ -30,16 +30,13 @@
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.worker :as wrk]
-   [cuerdas.core :as str]
-   [promesa.exec :as px]))
+   [cuerdas.core :as str]))
 
 (declare check-profile-existence!)
 (declare decode-row)
-(declare derive-password)
 (declare filter-props)
 (declare get-profile)
 (declare strip-private-attrs)
-(declare verify-password)
 
 (def schema:props-notifications
   [:map {:title "props-notifications"}
@@ -192,7 +189,7 @@
   [{:keys [::db/conn] :as cfg} {:keys [profile-id old-password] :as params}]
   (let [profile (db/get-by-id conn :profile profile-id ::sql/for-update true)]
     (when (and (not= (:password profile) "!")
-               (not (:valid (verify-password cfg old-password (:password profile)))))
+               (not (:valid (auth/verify-password old-password (:password profile)))))
       (ex/raise :type :validation
                 :code :old-password-not-match))
     profile))
@@ -201,7 +198,7 @@
   [{:keys [::db/conn] :as cfg} {:keys [id password] :as profile}]
   (when-not (db/read-only? conn)
     (db/update! conn :profile
-                {:password (derive-password cfg password)}
+                {:password (auth/derive-password password)}
                 {:id id})
     nil))
 
@@ -303,12 +300,11 @@
      :content-type (:mtype thumb)}))
 
 (defn upload-photo
-  [{:keys [::sto/storage ::wrk/executor] :as cfg} {:keys [file] :as params}]
+  [{:keys [::sto/storage] :as cfg} {:keys [file] :as params}]
   (let [params (-> cfg
                    (assoc ::climit/id [[:process-image/by-profile (:profile-id params)]
                                        [:process-image/global]])
                    (assoc ::climit/label "upload-photo")
-                   (assoc ::climit/executor executor)
                    (climit/invoke! generate-thumbnail! file))]
     (sto/put-object! storage params)))
 
@@ -349,12 +345,12 @@
 
 (defn- request-email-change!
   [{:keys [::db/conn] :as cfg} {:keys [profile email] :as params}]
-  (let [token   (tokens/generate (::setup/props cfg)
+  (let [token   (tokens/generate cfg
                                  {:iss :change-email
                                   :exp (ct/in-future "15m")
                                   :profile-id (:id profile)
                                   :email email})
-        ptoken  (tokens/generate (::setup/props cfg)
+        ptoken  (tokens/generate cfg
                                  {:iss :profile-identity
                                   :profile-id (:id profile)
                                   :exp (ct/in-future {:days 30})})]
@@ -547,15 +543,6 @@
   "Removes all namespace qualified props from `props` attr."
   [props]
   (into {} (filter (fn [[k _]] (simple-ident? k))) props))
-
-(defn derive-password
-  [{:keys [::wrk/executor]} password]
-  (when password
-    (px/invoke! executor (partial auth/derive-password password))))
-
-(defn verify-password
-  [{:keys [::wrk/executor]} password password-data]
-  (px/invoke! executor (partial auth/verify-password password password-data)))
 
 (defn decode-row
   [{:keys [props] :as row}]

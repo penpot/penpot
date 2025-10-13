@@ -6,8 +6,8 @@
 
 (ns app.main.data.workspace.tokens.import-export
   (:require
-   [app.common.files.helpers :as cfh]
    [app.common.json :as json]
+   [app.common.path-names :as cpn]
    [app.common.types.token :as ctt]
    [app.common.types.tokens-lib :as ctob]
    [app.config :as cf]
@@ -99,7 +99,7 @@
 
 (defn- drop-parent-directory
   [path]
-  (->> (cfh/split-path path)
+  (->> (cpn/split-path path)
        (rest)
        (str/join "/")))
 

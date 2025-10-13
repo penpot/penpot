@@ -1,0 +1,26 @@
+{
+  "fonts": {
+    "string-font-family": {
+      "$value": "Arial, Helvetica, sans-serif",
+      "$type": "fontFamilies",
+      "$description": "A font family defined as a string"
+    },
+    "array-font-family": {
+      "$value": ["Inter", "system-ui", "sans-serif"],
+      "$type": "fontFamilies",
+      "$description": "A font family defined as an array"
+    },
+    "single-font-family": {
+      "$value": "Georgia",
+      "$type": "fontFamilies"
+    },
+    "complex-font-family": {
+      "$value": "Times New Roman, serif",
+      "$type": "fontFamilies"
+    },
+    "font-with-spaces": {
+      "$value": "Source Sans Pro, Arial, sans-serif",
+      "$type": "fontFamilies"
+    }
+  }
+}

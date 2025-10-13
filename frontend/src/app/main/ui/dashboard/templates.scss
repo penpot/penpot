@@ -4,32 +4,35 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
 
 .dashboard-templates-section {
   background-color: var(--color-background-tertiary);
-  bottom: 0;
-  border-bottom-left-radius: $br-8;
-  border-bottom-right-radius: $br-8;
-  border-top-right-radius: $br-8;
+  inset-block-end: 0;
+  border-end-start-radius: $br-8;
+  border-end-end-radius: $br-8;
+  border-start-end-radius: $br-8;
   display: flex;
   flex-direction: column;
-  height: $s-244;
+  height: px2rem(244);
   justify-content: flex-end;
-  margin-left: $s-6;
-  margin-right: $s-6;
-  margin-bottom: $s-6;
+  margin-inline-start: px2rem(6);
+  margin-inline-end: px2rem(6);
+  margin-block-end: px2rem(6);
   position: absolute;
   transition: bottom 300ms;
-  width: calc(100% - $s-12);
+  width: calc(100% - $sz-12);
   pointer-events: none;
   &.collapsed {
-    bottom: calc(-1 * $s-228);
+    inset-block-end: calc(-1 * px2rem(228));
     background-color: transparent;
     transition: bottom 300ms;
     .title-btn {
-      border-bottom-right-radius: $br-8;
-      border-bottom-left-radius: $br-8;
+      border-end-end-radius: $br-8;
+      border-end-start-radius: $br-8;
     }
     .content,
     .content-description {
@@ -40,56 +43,54 @@
 
 .title {
   pointer-events: all;
-  width: $s-420;
-  top: calc(-1 * $s-40);
+  width: px2rem(420);
+  inset-block-start: calc(-1 * $sz-40);
   text-align: right;
-  height: $s-56;
+  height: px2rem(56);
   position: absolute;
 }
 
 .title-btn {
   border: none;
   cursor: pointer;
-  height: $s-56;
+  height: px2rem(56);
   display: inline-flex;
   align-items: center;
-  border-top-left-radius: $br-8;
-  border-top-right-radius: $br-8;
+  border-start-start-radius: $br-8;
+  border-start-end-radius: $br-8;
   position: relative;
-  z-index: $z-index-1;
+  z-index: var(--z-index-auto);
   background-color: var(--color-background-tertiary);
   width: 100%;
 }
 
 .title-text {
+  @include t.use-typography("body-large");
   display: inline-block;
   vertical-align: middle;
-  line-height: 1.2;
-  font-size: $fs-16;
-  margin-left: $s-12;
-  margin-right: $s-8;
+  margin-inline-start: var(--sp-m);
+  margin-inline-end: var(--sp-s);
   color: var(--color-foreground-primary);
-  font-weight: $fw400;
 }
 
 .title-icon-container {
   display: inline-block;
   vertical-align: middle;
-  margin-left: auto;
-  margin-right: $s-8;
+  margin-inline-start: auto;
+  margin-inline-end: var(--sp-s);
   color: var(--color-foreground-primary);
 }
 
 .title-icon {
   display: inline-block;
   vertical-align: middle;
-  margin-left: auto;
-  margin-right: $s-8;
+  margin-inline-start: auto;
+  margin-inline-end: var(--sp-s);
   transform: rotate(90deg);
 }
 
 .title-icon-text {
-  margin-right: $s-8;
+  margin-inline-end: var(--sp-s);
 }
 
 .title-icon-collapsed {
@@ -97,27 +98,34 @@
 }
 
 .arrow-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--color-foreground-secondary);
 }
 
 .move-button {
   position: absolute;
-  top: $s-96;
-  border: $s-2 solid var(--color-foreground-secondary);
+  inset-block-start: px2rem(96);
+  border: $b-2 solid var(--color-foreground-secondary);
   border-radius: 50%;
   text-align: center;
-  width: $s-36;
-  height: $s-36;
+  width: $sz-36;
+  height: $sz-36;
   cursor: pointer;
-  background-color: var(--button-secondary-background-color-rest);
+  background-color: var(--color-background-tertiary);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: all;
 
   &:hover {
-    border: $s-2 solid var(--color-background-tertiary);
+    border: $b-2 solid var(--color-background-tertiary);
     background-color: var(--color-accent-primary);
     .arrow-icon {
       stroke: var(--color-background-tertiary);
@@ -126,31 +134,31 @@
 }
 
 .move-left {
-  left: 0;
-  margin-left: $s-44;
+  inset-inline-start: 0;
+  margin-inline-start: px2rem(44);
   transform: rotate(180deg);
 }
 
 .move-right {
-  right: 0;
-  margin-right: $s-44;
+  inset-inline-end: 0;
+  margin-inline-end: px2rem(44);
 }
 
 .content-description {
-  font-size: $fs-14;
+  @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
-  margin-bottom: -8px;
-  margin-top: $s-16;
-  margin-left: $s-16;
+  margin-block-end: calc(-1 * var(--sp-s));
+  margin-block-start: var(--sp-l);
+  margin-inline-start: var(--sp-l);
   visibility: visible;
 }
 
 .content {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax($s-276, $s-276));
+  grid-template-columns: repeat(auto-fill, minmax(px2rem(276), px2rem(276)));
   grid-auto-flow: column;
   pointer-events: all;
-  height: $s-228;
+  height: px2rem(228);
   overflow: scroll hidden;
   scroll-behavior: smooth;
   scroll-snap-type: x mandatory;
@@ -159,8 +167,8 @@
 }
 
 .card-container {
-  width: $s-276;
-  margin-top: $s-20;
+  width: px2rem(276);
+  margin-block-start: var(--sp-xl);
   text-align: center;
   vertical-align: top;
   background-color: transparent;
@@ -170,15 +178,16 @@
 }
 
 .template-card {
+  @include t.use-typography("body-large");
   display: inline-block;
-  width: $s-256;
-  font-size: $fs-16;
+  width: px2rem(256);
   cursor: pointer;
   color: var(--color-foreground-primary);
-  padding: 0 $s-4 $s-8 $s-4;
+  padding: 0 var(--sp-xs) var(--sp-s) var(--sp-xs);
   border-radius: $br-8;
-  border: $s-2 solid transparent;
+  border: $b-2 solid transparent;
   &:hover {
+    text-decoration: none;
     border-color: var(--color-accent-primary);
     .download-icon {
       stroke: var(--color-accent-primary);
@@ -191,9 +200,9 @@
 
 .img-container {
   width: 100%;
-  height: $s-136;
-  margin-bottom: $s-8;
-  border-radius: $br-5;
+  height: px2rem(136);
+  margin-block-end: var(--sp-s);
+  border-radius: px2rem(5);
   display: flex;
   justify-content: center;
   flex-direction: column;
@@ -204,16 +213,15 @@
 }
 
 .card-name {
-  padding: 0 $s-6;
+  padding: 0 px2rem(6);
   display: flex;
   justify-content: space-between;
-  height: $s-24;
+  height: $sz-24;
   align-items: center;
 }
 
 .card-text {
-  font-weight: $fw400;
-  font-size: $fs-16;
+  @include t.use-typography("body-large");
   white-space: nowrap;
   overflow: hidden;
   width: 90%;
@@ -222,24 +230,30 @@
 }
 
 .download-icon {
-  @extend .button-icon;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: $sz-16;
+  width: $sz-16;
+  color: transparent;
+  fill: none;
+  stroke-width: $b-1;
   stroke: var(--icon-foreground);
 }
 
 .template-link {
-  border: $s-2 solid transparent;
-  margin: $s-32;
-  padding: $s-32 0;
+  border: $b-2 solid transparent;
+  margin: var(--sp-xxxl);
+  padding: var(--sp-xxxl) 0;
 }
 
 .template-link-title {
-  font-size: $fs-14;
+  @include t.use-typography("body-medium");
   color: var(--color-foreground-primary);
-  font-weight: $fw400;
 }
 
 .template-link-text {
-  font-size: $fs-12;
-  margin-top: $s-8;
+  @include t.use-typography("body-small");
+  margin-block-start: var(--sp-s);
   color: var(--color-foreground-secondary);
 }

@@ -9,6 +9,7 @@
    [frontend-tests.logic.copying-and-duplicating-test]
    [frontend-tests.logic.frame-guides-test]
    [frontend-tests.logic.groups-test]
+   [frontend-tests.logic.pasting-in-containers-test]
    [frontend-tests.plugins.context-shapes-test]
    [frontend-tests.tokens.import-export-test]
    [frontend-tests.tokens.logic.token-actions-test]
@@ -37,6 +38,7 @@
    'frontend-tests.logic.copying-and-duplicating-test
    'frontend-tests.logic.frame-guides-test
    'frontend-tests.logic.groups-test
+   'frontend-tests.logic.pasting-in-containers-test
    'frontend-tests.plugins.context-shapes-test
    'frontend-tests.tokens.import-export-test
    'frontend-tests.tokens.logic.token-actions-test

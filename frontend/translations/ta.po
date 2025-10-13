@@ -144,7 +144,7 @@ msgstr "ஒரு கணக்கை உருவாக்கவும்"
 msgid "auth.sidebar-tagline"
 msgstr "வடிவமைப்பு மற்றும் முன்மாதிரிக்கான திறந்த மூல தீர்வு."
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:927, src/app/main/ui/workspace/main_menu.cljs:156
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:884, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "சேவை விதிமுறைகள்"
 
@@ -152,7 +152,7 @@ msgstr "சேவை விதிமுறைகள்"
 msgid "auth.verification-email-sent"
 msgstr "சரிபார்ப்பு மின்னஞ்சலை அனுப்பியுள்ளோம் இந்த முகவரிக்கு"
 
-#: src/app/main/ui/workspace/libraries.cljs:308
+#: src/app/main/ui/workspace/libraries.cljs:333
 msgid "common.publish"
 msgstr "வெளியிடுங்கள்"
 

@@ -4,15 +4,15 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-name {
   --element-name-color: var(--context-hover-color, var(--layer-row-foreground-color));
   --element-name-comp-color: var(--context-hover-color, var(--layer-row-component-foreground-color));
-  --element-name-opacity: var(--context-hover-opacity, $op-7);
+  --element-name-opacity: var(--context-hover-opacity, deprecated.$op-7);
 
-  @include textEllipsis;
-  @include bodySmallTypography;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodySmallTypography;
 
   color: var(--element-name-color);
 
@@ -42,21 +42,21 @@
   --element-name-input-border-color: var(--input-border-color-focus);
   --element-name-input-color: var(--layer-row-foreground-color);
 
-  @include textEllipsis;
-  @include bodySmallTypography;
-  @include removeInputStyle;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.removeInputStyle;
 
   flex-grow: 1;
-  height: $s-28;
+  height: deprecated.$s-28;
   max-inline-size: calc(var(--parent-size) - (var(--depth) * var(--layer-indentation-size)));
   margin: 0;
-  padding-inline-start: $s-6;
-  border-radius: $br-8;
-  border: $s-1 solid var(--element-name-input-border-color);
+  padding-inline-start: deprecated.$s-6;
+  border-radius: deprecated.$br-8;
+  border: deprecated.$s-1 solid var(--element-name-input-border-color);
   color: var(--element-name-input-color);
 
   &.selected {
-    min-inline-size: $s-100;
+    min-inline-size: deprecated.$s-100;
   }
 }
 

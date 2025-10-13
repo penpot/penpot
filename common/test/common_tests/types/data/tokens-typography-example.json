@@ -1,0 +1,53 @@
+{
+  "test": {
+    "typo": {
+      "$value": {
+        "fontWeight": "100",
+        "fontSize": "16px",
+        "letterSpacing": "0.1em"
+      },
+      "$type": "typography"
+    },
+    "typo2": {
+      "$value": "{typo}",
+      "$type": "typography"
+    },
+    "font-weight": {
+      "$value": "200",
+      "$type": "fontWeights"
+    },
+    "typo-to-single": {
+      "$value": "{font-weight}",
+      "$type": "typography"
+    },
+    "test-empty": {
+      "$value": {},
+      "$type": "typography"
+    },
+    "font-size": {
+      "$value": "18px",
+      "$type": "fontSizes"
+    },
+    "typo-complex": {
+      "$value": {
+        "fontWeight": "bold",
+        "fontSize": "24px",
+        "letterSpacing": "0.05em",
+        "lineHeights": "100%",
+        "fontFamilies": ["Arial", "sans-serif"],
+        "textCase": "uppercase"
+      },
+      "$type": "typography",
+      "$description": "A complex typography token"
+    },
+    "typo-with-string-font-family": {
+      "$value": {
+        "fontWeight": "600",
+        "fontSize": "20px",
+        "fontFamilies": "Roboto, Helvetica, sans-serif"
+      },
+      "$type": "typography",
+      "$description": "Typography token with string font family"
+    }
+  }
+}

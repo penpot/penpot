@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .slider-selector {
   --gradient-direction: 90deg;
@@ -16,10 +16,10 @@
   }
   position: relative;
   align-self: center;
-  height: $s-24;
+  height: deprecated.$s-24;
   inline-size: 100%;
-  border: $s-2 solid var(--colorpicker-details-color);
-  border-radius: $br-6;
+  border: deprecated.$s-2 solid var(--colorpicker-details-color);
+  border-radius: deprecated.$br-6;
   background: linear-gradient(
     var(--gradient-direction),
     rgba(var(--color), 0) 0%,
@@ -28,8 +28,8 @@
   cursor: pointer;
 
   &.vertical {
-    width: $s-24;
-    height: $s-200;
+    width: deprecated.$s-24;
+    height: deprecated.$s-200;
   }
 
   &.hue {
@@ -60,7 +60,7 @@
     &::after {
       content: "";
       position: absolute;
-      border-radius: $br-6;
+      border-radius: deprecated.$br-6;
       width: 100%;
       height: 100%;
       background: linear-gradient(
@@ -78,24 +78,24 @@
   .handler {
     position: absolute;
     left: 50%;
-    width: calc($s-8 + $s-2);
-    height: calc($s-24 + $s-1);
-    border-radius: $br-4;
-    z-index: $z-index-1;
+    width: calc(deprecated.$s-8 + deprecated.$s-2);
+    height: calc(deprecated.$s-24 + deprecated.$s-1);
+    border-radius: deprecated.$br-4;
+    z-index: deprecated.$z-index-1;
     transform: translate(-4px, -3px);
     background-color: var(--colorpicker-handlers-color);
   }
 
   &.vertical .handler {
-    height: calc($s-8 + $s-2);
-    width: calc($s-24 + $s-1);
+    height: calc(deprecated.$s-8 + deprecated.$s-2);
+    width: calc(deprecated.$s-24 + deprecated.$s-1);
     transform: translate(-12px, 5px);
   }
 }
 
 .opacity-wrapper {
   background-color: var(--colorpicker-background-color);
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
 }
 
 .slider-selector.hue {

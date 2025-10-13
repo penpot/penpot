@@ -1,15 +1,15 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Anonymous <noreply@weblate.org>\n"
-"Language-Team: Greek "
-"<https://hosted.weblate.org/projects/penpot/frontend/el/>\n"
+"Language-Team: Greek <https://hosted.weblate.org/projects/penpot/frontend/el/"
+">\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -140,7 +140,7 @@ msgstr "Η λύση ανοιχτού κώδικα για σχεδιασμό κα
 msgid "auth.verification-email-sent"
 msgstr "Εχουμε στείλει ενα mail επαλήθευσης "
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:620
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:648
 msgid "dashboard.add-shared"
 msgstr "Προσθήκη ως Κοινόχρηστη βιβλιοθήκη"
 
@@ -148,19 +148,19 @@ msgstr "Προσθήκη ως Κοινόχρηστη βιβλιοθήκη"
 msgid "dashboard.change-email"
 msgstr "Αλλαγή email"
 
-#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:524, src/app/main/data/workspace/pages.cljs:178
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(Αντίγραφο)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:328
+#: src/app/main/ui/dashboard/sidebar.cljs:329
 msgid "dashboard.create-new-team"
 msgstr "Δημιουργία νέας ομάδας"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:548
+#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
 msgid "dashboard.default-team-name"
 msgstr "Το Penpot σας"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:476
+#: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.delete-team"
 msgstr "Διαγραφή ομάδας"
 
@@ -168,11 +168,11 @@ msgstr "Διαγραφή ομάδας"
 msgid "dashboard.duplicate"
 msgstr "Αντιγραφή"
 
-#: src/app/main/ui/dashboard/team.cljs:120, src/app/main/ui/dashboard/team.cljs:766
+#: src/app/main/ui/dashboard/team.cljs:122, src/app/main/ui/dashboard/team.cljs:744
 msgid "dashboard.invite-profile"
 msgstr "Πρόσκληση στην ομάδα"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:458, src/app/main/ui/dashboard/sidebar.cljs:465, src/app/main/ui/dashboard/sidebar.cljs:470, src/app/main/ui/dashboard/team.cljs:349
+#: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "Αφήστε την ομάδα"
 
@@ -204,7 +204,7 @@ msgstr "+ Νέο έργο"
 msgid "dashboard.no-matches-for"
 msgstr "Δεν βρέθηκαν αντιστοιχίσεις για το “%s“"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:762
+#: src/app/main/ui/dashboard/sidebar.cljs:763
 msgid "dashboard.no-projects-placeholder"
 msgstr "Τα καρφιτσωμένα έργα θα εμφανιστούν εδώ"
 
@@ -220,7 +220,7 @@ msgstr "Η διεύθυνση email σας έχει επαληθευτεί"
 msgid "dashboard.notifications.password-saved"
 msgstr "Ο κωδικός πρόσβασης αποθηκεύτηκε!"
 
-#: src/app/main/ui/dashboard/team.cljs:1162
+#: src/app/main/ui/dashboard/team.cljs:1340
 msgid "dashboard.num-of-members"
 msgstr "% s μέλη"
 
@@ -232,7 +232,7 @@ msgstr "Άνοιγμα αρχείου σε νέα καρτέλα"
 msgid "dashboard.password-change"
 msgstr "Αλλαξε κωδικό"
 
-#: src/app/main/ui/dashboard/pin_button.cljs:24, src/app/main/ui/dashboard/project_menu.cljs:96
+#: src/app/main/ui/dashboard/pin_button.cljs:23, src/app/main/ui/dashboard/project_menu.cljs:96
 msgid "dashboard.pin-unpin"
 msgstr "Καρφίτσωμα / ξεκαρφίτσωμα"
 
@@ -249,7 +249,7 @@ msgstr "Θέλετε να καταργήσετε τον λογαριασμό σ�
 msgid "dashboard.remove-shared"
 msgstr "Διαγραφή ως Κοινόχρηστη βιβλιοθήκη"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:257, src/app/main/ui/dashboard/sidebar.cljs:258
+#: src/app/main/ui/dashboard/sidebar.cljs:258, src/app/main/ui/dashboard/sidebar.cljs:259
 msgid "dashboard.search-placeholder"
 msgstr "Αναζήτηση…"
 
@@ -285,7 +285,7 @@ msgstr "Το έργο σας έχει αναπαραχθεί με επιτυχί
 msgid "dashboard.success-duplicate-project"
 msgstr "Το έργο σας έχει αναπαραχθεί με επιτυχία"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:164
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "Το έργο σας μετακινήθηκε με επιτυχία"
 
@@ -293,15 +293,15 @@ msgstr "Το έργο σας μετακινήθηκε με επιτυχία"
 msgid "dashboard.success-move-project"
 msgstr "Το έργο σας μετακινήθηκε με επιτυχία"
 
-#: src/app/main/ui/dashboard/team.cljs:1145
+#: src/app/main/ui/dashboard/team.cljs:1323
 msgid "dashboard.team-info"
 msgstr "Πληροφορίες ομάδας"
 
-#: src/app/main/ui/dashboard/team.cljs:1151
+#: src/app/main/ui/dashboard/team.cljs:1329
 msgid "dashboard.team-members"
 msgstr "Μέλη ομάδας"
 
-#: src/app/main/ui/dashboard/team.cljs:1166
+#: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
 msgstr "Ομαδικά έργα"
 
@@ -333,15 +333,15 @@ msgstr "Email"
 msgid "dashboard.your-name"
 msgstr "Το όνομα σου"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:347, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:301, src/app/main/ui/dashboard/team.cljs:535, src/app/main/ui/dashboard/team.cljs:805, src/app/main/ui/dashboard/team.cljs:1073, src/app/main/ui/dashboard/team.cljs:1120
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:347, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Το Penpot σας"
 
-#: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:332, src/app/main/ui/workspace/plugins.cljs:386
+#: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:333, src/app/main/ui/workspace/plugins.cljs:387
 msgid "ds.confirm-cancel"
 msgstr "ακύρωση"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
 msgid "ds.confirm-ok"
 msgstr "Ok"
 
@@ -361,11 +361,11 @@ msgstr "Το email έχει ήδη χρησιμοποιηθεί"
 msgid "errors.email-already-validated"
 msgstr "Αυτό το email έχει ήδη επικυρωθεί."
 
-#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:629, src/app/main/ui/settings/change_email.cljs:37
+#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:627, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
 msgstr "Το email «%s» έχει πολλές μόνιμες αναφορές αναπήδησης."
 
-#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:197, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
+#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "Έχει συμβεί κάτι λάθος."
 
@@ -395,7 +395,7 @@ msgstr ""
 msgid "errors.media-type-not-allowed"
 msgstr "Φαίνεται ότι δεν είναι έγκυρη εικόνα."
 
-#: src/app/main/ui/dashboard/team.cljs:624
+#: src/app/main/ui/dashboard/team.cljs:622
 msgid "errors.member-is-muted"
 msgstr ""
 "Το προφίλ που προσκαλείτε σταματά τα μηνύματα ηλεκτρονικού ταχυδρομείου "
@@ -458,19 +458,19 @@ msgstr "Παρουσιάστηκε σφάλμα"
 msgid "inspect.attributes.blur"
 msgstr "Θολούρα"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:124
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:125
 msgid "inspect.attributes.blur.value"
 msgstr "αξία"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:110, src/app/main/ui/inspect/right_sidebar.cljs:97
+#: src/app/main/ui/inspect/attributes/common.cljs:91, src/app/main/ui/inspect/right_sidebar.cljs:97
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:112, src/app/main/ui/inspect/right_sidebar.cljs:101
+#: src/app/main/ui/inspect/attributes/common.cljs:93, src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:99
+#: src/app/main/ui/inspect/attributes/common.cljs:92, src/app/main/ui/inspect/right_sidebar.cljs:99
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
@@ -478,7 +478,7 @@ msgstr "RGBA"
 msgid "inspect.attributes.fill"
 msgstr "Γέμισμα"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:97
+#: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:127
 msgid "inspect.attributes.image.download"
 msgstr "Λήψη εικόνας πηγής"
 
@@ -568,59 +568,61 @@ msgstr "Στερεός"
 msgid "inspect.attributes.stroke.width"
 msgstr "Πλάτος"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:78, src/app/main/ui/inspect/attributes/text.cljs:191
+#: src/app/main/ui/inspect/attributes/text.cljs:78, src/app/main/ui/inspect/attributes/text.cljs:184
 msgid "inspect.attributes.typography"
 msgstr "Τυπογραφία"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
 msgid "inspect.attributes.typography.font-family"
 msgstr "Οικογένεια γραμματοσειρών"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
 msgid "inspect.attributes.typography.font-size"
 msgstr "Μέγεθος γραμματοσειράς"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:95, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:338
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:338
 msgid "inspect.attributes.typography.font-style"
 msgstr "Στυλ γραμματοσειράς"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:131, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:388
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:388
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Διάστημα γραμμάτων"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:122, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
 msgid "inspect.attributes.typography.line-height"
 msgstr "Ύψος γραμμής"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:140
+#, unused
 msgid "inspect.attributes.typography.text-decoration"
 msgstr "Διακόσμηση κειμένου"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:142
+#: src/app/main/ui/inspect/attributes/text.cljs:136
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Κανένα"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:144
+#: src/app/main/ui/inspect/attributes/text.cljs:138
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "υπογράμμιση"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:153
+#, unused
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Μετασχηματισμός κειμένου"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
+#: src/app/main/ui/inspect/attributes/text.cljs:150, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Πρώτα κεφαλαία"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:155, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:433
+#: src/app/main/ui/inspect/attributes/text.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:433
 msgid "inspect.attributes.typography.text-transform.lowercase"
 msgstr "Πεζά γράμματα"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:156
+#: src/app/main/ui/inspect/attributes/text.cljs:149
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "Κανένα"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
+#: src/app/main/ui/inspect/attributes/text.cljs:151, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Κεφαλαία γράμματα"
 
@@ -676,11 +678,11 @@ msgstr "Πληροφορίες"
 msgid "labels.accept"
 msgstr "Αποδέχομαι"
 
-#: src/app/main/ui/dashboard/team.cljs:132, src/app/main/ui/dashboard/team.cljs:318, src/app/main/ui/dashboard/team.cljs:563, src/app/main/ui/dashboard/team.cljs:593, src/app/main/ui/onboarding/team_choice.cljs:58
+#: src/app/main/ui/dashboard/team.cljs:134, src/app/main/ui/dashboard/team.cljs:320, src/app/main/ui/dashboard/team.cljs:565, src/app/main/ui/dashboard/team.cljs:595, src/app/main/ui/onboarding/team_choice.cljs:58
 msgid "labels.admin"
 msgstr "Διαχειριστής"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:90, src/app/main/ui/workspace/tokens/management/context_menu.cljs:124, src/app/main/ui/workspace/tokens/management/token_pill.cljs:141
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:89, src/app/main/ui/workspace/tokens/management/context_menu.cljs:123, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
 msgid "labels.all"
 msgstr "Ολα"
 
@@ -694,11 +696,11 @@ msgstr ""
 msgid "labels.bad-gateway.main-message"
 msgstr "Bad Gateway"
 
-#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:944, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:158, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/management/create/form.cljs:613, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
+#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/form.cljs:632, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
 msgid "labels.cancel"
 msgstr "ακύρωση"
 
-#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:126
+#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:127
 msgid "labels.comments"
 msgstr "Σχόλια"
 
@@ -714,7 +716,7 @@ msgstr "Δημιουργήστε μια νέα ομάδα"
 msgid "labels.dashboard"
 msgstr "πίνακας"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:980, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:221, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/form.cljs:607, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:64, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:362
+#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:224, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/form.cljs:626, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:361
 msgid "labels.delete"
 msgstr "Διαγραφή"
 
@@ -726,15 +728,15 @@ msgstr "Διαγραφή σχολίου"
 msgid "labels.delete-comment-thread"
 msgstr "Διαγραφή νήματος"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:178, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:724
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:178, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:725
 msgid "labels.drafts"
 msgstr "Πρόχειρα"
 
-#: src/app/main/ui/comments.cljs:1005, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:978, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:217, src/app/main/ui/workspace/tokens/themes.cljs:51
+#: src/app/main/ui/comments.cljs:1005, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:1156, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:220, src/app/main/ui/workspace/tokens/themes.cljs:51
 msgid "labels.edit"
 msgstr "Edit"
 
-#: src/app/main/ui/dashboard/team.cljs:130, src/app/main/ui/dashboard/team.cljs:315, src/app/main/ui/dashboard/team.cljs:564, src/app/main/ui/dashboard/team.cljs:597, src/app/main/ui/onboarding/team_choice.cljs:57
+#: src/app/main/ui/dashboard/team.cljs:132, src/app/main/ui/dashboard/team.cljs:317, src/app/main/ui/dashboard/team.cljs:566, src/app/main/ui/dashboard/team.cljs:599, src/app/main/ui/onboarding/team_choice.cljs:57
 msgid "labels.editor"
 msgstr "Editor"
 
@@ -746,7 +748,7 @@ msgstr "Τα σχόλια απενεργοποιήθηκαν"
 msgid "labels.feedback-sent"
 msgstr "Εστάλη γνώμη"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:935, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:177
+#: src/app/main/ui/dashboard/sidebar.cljs:809, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:205
 msgid "labels.give-feedback"
 msgstr "Δώστε μας τη γνώμη σας"
 
@@ -754,7 +756,7 @@ msgstr "Δώστε μας τη γνώμη σας"
 msgid "labels.go-back"
 msgstr "Πίσω"
 
-#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:73
+#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:74
 msgid "labels.hide-resolved-comments"
 msgstr "Απόκρυψη επιλυμένων σχολίων"
 
@@ -772,11 +774,11 @@ msgstr "Εσωτερικό σφάλμα"
 msgid "labels.language"
 msgstr "Γλώσσα"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:941
+#: src/app/main/ui/dashboard/sidebar.cljs:1053
 msgid "labels.logout"
 msgstr "Αποσύνδεση"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:431, src/app/main/ui/dashboard/team.cljs:98, src/app/main/ui/dashboard/team.cljs:106
+#: src/app/main/ui/dashboard/sidebar.cljs:432, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108
 msgid "labels.members"
 msgstr "Μέλη"
 
@@ -784,7 +786,7 @@ msgstr "Μέλη"
 msgid "labels.new-password"
 msgstr "Νέος κωδικός πρόσβασης"
 
-#: src/app/main/ui/dashboard/comments.cljs:121, src/app/main/ui/workspace/comments.cljs:164
+#: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:165
 msgid "labels.no-comments-available"
 msgstr "Δεν έχετε εκκρεμείς ειδοποιήσεις σχολίων"
 
@@ -799,13 +801,13 @@ msgstr ""
 msgid "labels.not-found.main-message"
 msgstr "Ωχ"
 
-#: src/app/main/ui/dashboard/projects.cljs:238, src/app/main/ui/dashboard/team.cljs:1176
+#: src/app/main/ui/dashboard/projects.cljs:238, src/app/main/ui/dashboard/team.cljs:1354
 msgid "labels.num-of-files"
 msgid_plural "labels.num-of-files"
 msgstr[0] "1 αρχείο"
 msgstr[1] "%s αρχεία"
 
-#: src/app/main/ui/dashboard/team.cljs:1171
+#: src/app/main/ui/dashboard/team.cljs:1349
 msgid "labels.num-of-projects"
 msgid_plural "labels.num-of-projects"
 msgstr[0] "1 έργο"
@@ -820,7 +822,7 @@ msgstr "Παλιός κωδικός"
 msgid "labels.only-yours"
 msgstr "Μόνο το δικό σου"
 
-#: src/app/main/ui/dashboard/team.cljs:322, src/app/main/ui/dashboard/team.cljs:562, src/app/main/ui/dashboard/team.cljs:1157
+#: src/app/main/ui/dashboard/team.cljs:324, src/app/main/ui/dashboard/team.cljs:564, src/app/main/ui/dashboard/team.cljs:1335
 msgid "labels.owner"
 msgstr "Ιδιοκτήτης"
 
@@ -832,7 +834,7 @@ msgstr "Κωδικός πρόσβασης"
 msgid "labels.profile"
 msgstr "Προφίλ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:717
+#: src/app/main/ui/dashboard/sidebar.cljs:718
 msgid "labels.projects"
 msgstr "Εργα"
 
@@ -841,7 +843,7 @@ msgstr "Εργα"
 msgid "labels.remove"
 msgstr "Διαγραφή"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:452, src/app/main/ui/workspace/sidebar/assets/groups.cljs:166, src/app/main/ui/workspace/sidebar/versions.cljs:191, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:61
+#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:453, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:191, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Μετονομασία"
 
@@ -853,11 +855,11 @@ msgstr "Μετονομασία ομάδας "
 msgid "labels.retry"
 msgstr "Ξαναδοκιμάσετε"
 
-#: src/app/main/ui/dashboard/team.cljs:511, src/app/main/ui/dashboard/team.cljs:785
+#: src/app/main/ui/dashboard/team.cljs:513, src/app/main/ui/dashboard/team.cljs:945
 msgid "labels.role"
 msgstr "Ρόλος"
 
-#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:203, src/app/main/ui/workspace/tokens/management/create/form.cljs:618, src/app/main/ui/workspace/tokens/settings/menu.cljs:108
+#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:206, src/app/main/ui/workspace/tokens/management/create/form.cljs:637, src/app/main/ui/workspace/tokens/settings/menu.cljs:108
 msgid "labels.save"
 msgstr "Αποθηκεύση"
 
@@ -877,7 +879,7 @@ msgstr "Είμαστε σε προγραμματισμένη συντήρηση 
 msgid "labels.service-unavailable.main-message"
 msgstr "Η υπηρεσία δεν είναι διαθέσιμη"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:445, src/app/main/ui/dashboard/team.cljs:99, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
+#: src/app/main/ui/dashboard/sidebar.cljs:446, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:115, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
 msgid "labels.settings"
 msgstr "Σύνθεση"
 
@@ -885,15 +887,15 @@ msgstr "Σύνθεση"
 msgid "labels.share-prototype"
 msgstr "Μοιραστείτε το link"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:744
+#: src/app/main/ui/dashboard/sidebar.cljs:745
 msgid "labels.shared-libraries"
 msgstr "Κοινόχρηστες βιβλιοθήκες"
 
-#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:55, src/app/main/ui/workspace/comments.cljs:137
+#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:56, src/app/main/ui/workspace/comments.cljs:138
 msgid "labels.show-all-comments"
 msgstr "Εμφάνιση όλων των σχολίων"
 
-#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:61, src/app/main/ui/workspace/comments.cljs:138
+#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:62, src/app/main/ui/workspace/comments.cljs:139
 msgid "labels.show-your-comments"
 msgstr "Εμφάνιση μόνο των δικών σας σχολίων"
 
@@ -905,7 +907,7 @@ msgstr "Ενημέρωση"
 msgid "labels.update-team"
 msgstr "Ενημερώστε τον εξοπλισμό"
 
-#: src/app/main/ui/dashboard/team.cljs:129, src/app/main/ui/dashboard/team.cljs:312, src/app/main/ui/dashboard/team.cljs:565, src/app/main/ui/dashboard/team.cljs:601, src/app/main/ui/onboarding/team_choice.cljs:56
+#: src/app/main/ui/dashboard/team.cljs:131, src/app/main/ui/dashboard/team.cljs:314, src/app/main/ui/dashboard/team.cljs:567, src/app/main/ui/dashboard/team.cljs:603, src/app/main/ui/onboarding/team_choice.cljs:56
 msgid "labels.viewer"
 msgstr "Θεατής"
 
@@ -998,11 +1000,11 @@ msgstr "Είστε σίγουροι ότι θέλετε να διαγράψετ�
 msgid "modals.delete-file-confirm.title"
 msgstr "Διαγραφή αρχείου"
 
-#: src/app/main/ui/workspace/context_menu.cljs:670, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+#: src/app/main/ui/workspace/context_menu.cljs:673, src/app/main/ui/workspace/sidebar/sitemap.cljs:72
 msgid "modals.delete-page.body"
 msgstr "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη σελίδα;"
 
-#: src/app/main/ui/workspace/context_menu.cljs:669, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
+#: src/app/main/ui/workspace/context_menu.cljs:672, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
 msgid "modals.delete-page.title"
 msgstr "Διαγραφή σελίδας"
 
@@ -1018,33 +1020,33 @@ msgstr "Είστε σίγουροι ότι θέλετε να διαγράψετ�
 msgid "modals.delete-project-confirm.title"
 msgstr "Διαγραφή έργου"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:424
+#: src/app/main/ui/dashboard/sidebar.cljs:425
 msgid "modals.delete-team-confirm.accept"
 msgstr "Διαγραφή ομάδας"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:423
+#: src/app/main/ui/dashboard/sidebar.cljs:424
 msgid "modals.delete-team-confirm.message"
 msgstr ""
 "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την ομάδα; Όλα τα έργα και τα "
 "αρχεία που σχετίζονται με την ομάδα θα διαγραφούν οριστικά."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:422
+#: src/app/main/ui/dashboard/sidebar.cljs:423
 msgid "modals.delete-team-confirm.title"
 msgstr "Διαγραφή ομάδας"
 
-#: src/app/main/ui/dashboard/team.cljs:459
+#: src/app/main/ui/dashboard/team.cljs:461
 msgid "modals.delete-team-member-confirm.accept"
 msgstr "Διαγραφή μέλους"
 
-#: src/app/main/ui/dashboard/team.cljs:458
+#: src/app/main/ui/dashboard/team.cljs:460
 msgid "modals.delete-team-member-confirm.message"
 msgstr "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το μέλος από την ομάδα;"
 
-#: src/app/main/ui/dashboard/team.cljs:457
+#: src/app/main/ui/dashboard/team.cljs:459
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Διαγραφή μέλους της ομάδας"
 
-#: src/app/main/ui/dashboard/team.cljs:247
+#: src/app/main/ui/dashboard/team.cljs:249
 msgid "modals.invite-member-confirm.accept"
 msgstr "Αποστολή πρόσκλησης"
 
@@ -1064,27 +1066,27 @@ msgstr "Επιλέξτε ένα μέλος για προώθηση"
 msgid "modals.leave-and-reassign.title"
 msgstr "Επιλέξτε ένα μέλος για προώθηση"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:391, src/app/main/ui/dashboard/sidebar.cljs:413, src/app/main/ui/dashboard/team.cljs:426, src/app/main/ui/dashboard/team.cljs:448
+#: src/app/main/ui/dashboard/sidebar.cljs:392, src/app/main/ui/dashboard/sidebar.cljs:414, src/app/main/ui/dashboard/team.cljs:428, src/app/main/ui/dashboard/team.cljs:450
 msgid "modals.leave-confirm.accept"
 msgstr "Αφήστε την ομάδα"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:390, src/app/main/ui/dashboard/team.cljs:447
+#: src/app/main/ui/dashboard/sidebar.cljs:391, src/app/main/ui/dashboard/team.cljs:449
 msgid "modals.leave-confirm.message"
 msgstr "Είστε σίγουροι ότι θέλετε να αφήσετε αυτή την ομάδα;"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:389, src/app/main/ui/dashboard/sidebar.cljs:410, src/app/main/ui/dashboard/team.cljs:423, src/app/main/ui/dashboard/team.cljs:446
+#: src/app/main/ui/dashboard/sidebar.cljs:390, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
 msgid "modals.leave-confirm.title"
 msgstr "Αφήστε την ομάδα"
 
-#: src/app/main/ui/dashboard/team.cljs:378
+#: src/app/main/ui/dashboard/team.cljs:380
 msgid "modals.promote-owner-confirm.accept"
 msgstr "Προώθηση"
 
-#: src/app/main/ui/dashboard/team.cljs:376
+#: src/app/main/ui/dashboard/team.cljs:378
 msgid "modals.promote-owner-confirm.message"
 msgstr "Είστε σίγουροι ότι θέλετε να προωθήσετε αυτό το χρήστη στον ιδιοκτήτη;"
 
-#: src/app/main/ui/dashboard/team.cljs:375
+#: src/app/main/ui/dashboard/team.cljs:377
 msgid "modals.promote-owner-confirm.title"
 msgstr "Προώθηση σε κάτοχο"
 
@@ -1105,25 +1107,25 @@ msgstr ""
 msgid "modals.remove-shared-confirm.message"
 msgstr "Καταργήστε το “%s” ως Κοινόχρηστη βιβλιοθήκη"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:424
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
 msgid "modals.update-remote-component.accept"
 msgstr "Ενημέρωση στοιχείου"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:422
 msgid "modals.update-remote-component.cancel"
 msgstr "Ακύρωση"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:422
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:421
 msgid "modals.update-remote-component.hint"
 msgstr ""
 "Πρόκειται να ενημερώσετε ένα στοιχείο σε μια κοινόχρηστη βιβλιοθήκη. Αυτό "
 "μπορεί να επηρεάσει άλλα αρχεία που το χρησιμοποιούν."
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:421
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:420
 msgid "modals.update-remote-component.message"
 msgstr "Ενημερώστε ένα στοιχείο σε μια κοινόχρηστη βιβλιοθήκη"
 
-#: src/app/main/ui/dashboard/team.cljs:168, src/app/main/ui/dashboard/team.cljs:645
+#: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "Η πρόσκληση εστάλη με επιτυχία"
 
@@ -1145,7 +1147,7 @@ msgstr "Το email επαλήθευσης εστάλη στο %s. Ελέγξτε
 msgid "profile.recovery.go-to-login"
 msgstr "Μεταβείτε στη σύνδεση"
 
-#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:90, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:376, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:967, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1181, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:197, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:206, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:360, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:404, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:415, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:434, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:445, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:462, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:345, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:191, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:259, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:173
+#: src/app/main/ui/inspect/exports.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:107, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:377, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:454, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:987, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1216, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:137, src/app/main/ui/workspace/sidebar/options/menus/constraints.cljs:148, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:223, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:246, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:346, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:361, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:53, src/app/main/ui/workspace/sidebar/options/menus/layout_item.cljs:54, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:112, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:513, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:524, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:567, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:578, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:607, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:351, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:200, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:331, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:382, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:400, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:414, src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:214
 msgid "settings.multiple"
 msgstr "Μικτός "
 
@@ -1181,35 +1183,35 @@ msgstr "Εμφάνιση αλληλεπιδράσεων με click"
 msgid "viewer.header.sitemap"
 msgstr "Sitemap"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:59
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:56
 msgid "workspace.align.hcenter"
 msgstr "Στοίχιση στο κέντρο (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:75
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:72
 msgid "workspace.align.hdistribute"
 msgstr "Κατανομή οριζόντιου χώρου (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:51
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:48
 msgid "workspace.align.hleft"
 msgstr "Ευθυγράμμιση προς τα αριστερά (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:67
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:64
 msgid "workspace.align.hright"
 msgstr "Ευθυγράμμιση προς τα δεξιά (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:100
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:97
 msgid "workspace.align.vbottom"
 msgstr "Στοίχιση κάτω (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:92
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:89
 msgid "workspace.align.vcenter"
 msgstr "Ευθυγραμμίστε το κάθετο κέντρο (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:105
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:102
 msgid "workspace.align.vdistribute"
 msgstr "Κατανομή κατακόρυφων αποστάσεων (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:84
+#: src/app/main/ui/workspace/sidebar/options/menus/align.cljs:81
 msgid "workspace.align.vtop"
 msgstr "Ευθυγραμμίστε την κορυφή (%s)"
 
@@ -1218,27 +1220,27 @@ msgstr "Ευθυγραμμίστε την κορυφή (%s)"
 msgid "workspace.assets.assets"
 msgstr "Περιουσιακά στοιχεία"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:141
+#: src/app/main/ui/workspace/sidebar/assets.cljs:152
 msgid "workspace.assets.box-filter-all"
 msgstr "Όλα τα περιουσιακά στοιχεία"
 
-#: src/app/main/ui/dashboard/grid.cljs:148, src/app/main/ui/dashboard/grid.cljs:180, src/app/main/ui/workspace/sidebar/assets/colors.cljs:485, src/app/main/ui/workspace/sidebar/assets.cljs:148
+#: src/app/main/ui/dashboard/grid.cljs:148, src/app/main/ui/dashboard/grid.cljs:180, src/app/main/ui/workspace/sidebar/assets/colors.cljs:489, src/app/main/ui/workspace/sidebar/assets.cljs:158
 msgid "workspace.assets.colors"
 msgstr "Χρώματα"
 
-#: src/app/main/ui/dashboard/grid.cljs:144, src/app/main/ui/dashboard/grid.cljs:159, src/app/main/ui/workspace/sidebar/assets/components.cljs:560, src/app/main/ui/workspace/sidebar/assets.cljs:144
+#: src/app/main/ui/dashboard/grid.cljs:144, src/app/main/ui/dashboard/grid.cljs:159, src/app/main/ui/workspace/sidebar/assets/components.cljs:560, src/app/main/ui/workspace/sidebar/assets.cljs:155
 msgid "workspace.assets.components"
 msgstr "Συστατικά"
 
-#: src/app/main/ui/workspace/context_menu.cljs:679, src/app/main/ui/workspace/sidebar/assets/colors.cljs:249, src/app/main/ui/workspace/sidebar/assets/components.cljs:625, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
+#: src/app/main/ui/workspace/context_menu.cljs:682, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:641, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:443
 msgid "workspace.assets.delete"
 msgstr "Διαγραφή"
 
-#: src/app/main/ui/workspace/context_menu.cljs:684
+#: src/app/main/ui/workspace/context_menu.cljs:687
 msgid "workspace.assets.duplicate"
 msgstr "Αντιγραφή"
 
-#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:245, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:438
+#: src/app/main/ui/workspace/sidebar/assets/colors.cljs:247, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:439
 msgid "workspace.assets.edit"
 msgstr "Επεξεργασία"
 
@@ -1251,15 +1253,15 @@ msgstr "Γραφικά"
 msgid "workspace.assets.not-found"
 msgstr "Δεν βρέθηκαν στοιχεία"
 
-#: src/app/main/ui/workspace/context_menu.cljs:682, src/app/main/ui/workspace/sidebar/assets/colors.cljs:241, src/app/main/ui/workspace/sidebar/assets/components.cljs:616, src/app/main/ui/workspace/sidebar/assets/groups.cljs:66, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:433
+#: src/app/main/ui/workspace/context_menu.cljs:685, src/app/main/ui/workspace/sidebar/assets/colors.cljs:243, src/app/main/ui/workspace/sidebar/assets/components.cljs:616, src/app/main/ui/workspace/sidebar/assets/groups.cljs:67, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:434
 msgid "workspace.assets.rename"
 msgstr "Μετονομασία"
 
-#: src/app/main/ui/workspace/sidebar/assets.cljs:174
+#: src/app/main/ui/workspace/sidebar/assets.cljs:183
 msgid "workspace.assets.search"
 msgstr "Αναζήτηση στοιχείων"
 
-#: src/app/main/ui/dashboard/grid.cljs:152, src/app/main/ui/dashboard/grid.cljs:207, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:396, src/app/main/ui/workspace/sidebar/assets.cljs:152
+#: src/app/main/ui/dashboard/grid.cljs:152, src/app/main/ui/dashboard/grid.cljs:207, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:397, src/app/main/ui/workspace/sidebar/assets.cljs:161
 msgid "workspace.assets.typography"
 msgstr "Τυπογραφίες"
 
@@ -1284,7 +1286,7 @@ msgstr "Διάστημα γραμμάτων"
 msgid "workspace.assets.typography.line-height"
 msgstr "Υψος γραμμής"
 
-#: src/app/main/ui/dashboard/grid.cljs:217, src/app/main/ui/workspace/libraries.cljs:546, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:480, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:506, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:613, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:633
+#: src/app/main/ui/dashboard/grid.cljs:217, src/app/main/ui/workspace/libraries.cljs:579, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:480, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:506, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:613, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:633
 msgid "workspace.assets.typography.sample"
 msgstr "Ag"
 
@@ -1300,31 +1302,31 @@ msgstr "Γραμμική κλίση"
 msgid "workspace.gradients.radial"
 msgstr "Ακτινική κλίση"
 
-#: src/app/main/ui/workspace/main_menu.cljs:246
+#: src/app/main/ui/workspace/main_menu.cljs:274
 msgid "workspace.header.menu.disable-dynamic-alignment"
 msgstr "Απενεργοποίηση δυναμικής ευθυγράμμισης"
 
-#: src/app/main/ui/workspace/main_menu.cljs:247
+#: src/app/main/ui/workspace/main_menu.cljs:275
 msgid "workspace.header.menu.enable-dynamic-alignment"
 msgstr "Ενεργοποίηση δυναμικής ευθυγράμμισης"
 
-#: src/app/main/ui/workspace/main_menu.cljs:365
+#: src/app/main/ui/workspace/main_menu.cljs:393
 msgid "workspace.header.menu.hide-palette"
 msgstr "Απόκρυψη παλέτας χρωμάτων"
 
-#: src/app/main/ui/workspace/main_menu.cljs:332
+#: src/app/main/ui/workspace/main_menu.cljs:360
 msgid "workspace.header.menu.hide-rules"
 msgstr "Απόκρυψη κανόνες"
 
-#: src/app/main/ui/workspace/main_menu.cljs:449
+#: src/app/main/ui/workspace/main_menu.cljs:477
 msgid "workspace.header.menu.select-all"
 msgstr "Επιλογή όλων"
 
-#: src/app/main/ui/workspace/main_menu.cljs:366
+#: src/app/main/ui/workspace/main_menu.cljs:394
 msgid "workspace.header.menu.show-palette"
 msgstr "Εμφάνιση παλέτας χρωμάτων"
 
-#: src/app/main/ui/workspace/main_menu.cljs:333
+#: src/app/main/ui/workspace/main_menu.cljs:361
 msgid "workspace.header.menu.show-rules"
 msgstr "Εμφάνιση κανόνες"
 
@@ -1345,7 +1347,7 @@ msgstr "Aποθήκευση "
 msgid "workspace.header.unsaved"
 msgstr "Μη αποθηκευμένες αλλαγές"
 
-#: src/app/main/ui/workspace/right_header.cljs:244
+#: src/app/main/ui/workspace/right_header.cljs:245
 msgid "workspace.header.viewer"
 msgstr "Λειτουργία προβολής (%s)"
 
@@ -1353,10 +1355,6 @@ msgstr "Λειτουργία προβολής (%s)"
 #, unused
 msgid "workspace.libraries.add"
 msgstr "Προσθήκη"
-
-#: src/app/main/ui/workspace/libraries.cljs:106, src/app/main/ui/workspace/libraries.cljs:132
-msgid "workspace.libraries.colors"
-msgstr "%s χρώματα"
 
 #: src/app/main/ui/workspace/color_palette_ctx_menu.cljs:88, src/app/main/ui/workspace/colorpicker/libraries.cljs:48, src/app/main/ui/workspace/text_palette_ctx_menu.cljs:49
 msgid "workspace.libraries.colors.file-library"
@@ -1366,27 +1364,19 @@ msgstr "Βιβλιοθήκη αρχείων"
 msgid "workspace.libraries.colors.recent-colors"
 msgstr "Πρόσφατα χρώματα"
 
-#: src/app/main/ui/workspace/colorpicker.cljs:516
+#: src/app/main/ui/workspace/colorpicker.cljs:557
 msgid "workspace.libraries.colors.save-color"
 msgstr "Αποθηκεύστε το στυλ χρώματος"
 
-#: src/app/main/ui/workspace/libraries.cljs:100, src/app/main/ui/workspace/libraries.cljs:124
-msgid "workspace.libraries.components"
-msgstr "%s στοιχεία"
-
-#: src/app/main/ui/workspace/libraries.cljs:297
+#: src/app/main/ui/workspace/libraries.cljs:322
 msgid "workspace.libraries.file-library"
 msgstr "Βιβλιοθήκη αρχείων"
 
-#: src/app/main/ui/workspace/libraries.cljs:103, src/app/main/ui/workspace/libraries.cljs:128
-msgid "workspace.libraries.graphics"
-msgstr "%s γραφικά"
-
-#: src/app/main/ui/workspace/libraries.cljs:291
+#: src/app/main/ui/workspace/libraries.cljs:316
 msgid "workspace.libraries.in-this-file"
 msgstr "ΒΙΒΛΙΟΘΗΚΕΣ ΣΕ ΑΥΤΟ ΤΟ ΑΡΧΕΙΟ"
 
-#: src/app/main/ui/workspace/libraries.cljs:609, src/app/main/ui/workspace/libraries.cljs:627
+#: src/app/main/ui/workspace/libraries.cljs:642, src/app/main/ui/workspace/libraries.cljs:660
 msgid "workspace.libraries.libraries"
 msgstr "ΒΙΒΛΙΟΘΗΚΕΣ"
 
@@ -1395,51 +1385,47 @@ msgstr "ΒΙΒΛΙΟΘΗΚΕΣ"
 msgid "workspace.libraries.library"
 msgstr "ΒΙΒΛΙΟΘΗΚΗ"
 
-#: src/app/main/ui/workspace/libraries.cljs:465
+#: src/app/main/ui/workspace/libraries.cljs:498
 msgid "workspace.libraries.no-libraries-need-sync"
 msgstr "Δεν υπάρχουν κοινόχρηστες βιβλιοθήκες που χρειάζονται ενημέρωση"
 
-#: src/app/main/ui/workspace/libraries.cljs:378
+#: src/app/main/ui/workspace/libraries.cljs:411
 msgid "workspace.libraries.no-matches-for"
 msgstr "Δεν βρίσκεται «%s»"
 
-#: src/app/main/ui/workspace/libraries.cljs:334
+#: src/app/main/ui/workspace/libraries.cljs:367
 msgid "workspace.libraries.search-shared-libraries"
 msgstr "Αναζήτηση σε κοινόχρηστες βιβλιοθήκες"
 
-#: src/app/main/ui/workspace/libraries.cljs:330
+#: src/app/main/ui/workspace/libraries.cljs:363
 msgid "workspace.libraries.shared-libraries"
 msgstr "Κοινόχρηστες βιβλιοθήκες"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:325
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:326
 msgid "workspace.libraries.text.multiple-typography"
 msgstr "Πολλαπλές τυπογραφίες"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:328
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:329
 msgid "workspace.libraries.text.multiple-typography-tooltip"
 msgstr "Αποσύνδεση όλων των τυπογραφιών"
 
-#: src/app/main/ui/workspace/libraries.cljs:109, src/app/main/ui/workspace/libraries.cljs:136
-msgid "workspace.libraries.typography"
-msgstr "%s τυπογραφίες"
-
-#: src/app/main/ui/workspace/libraries.cljs:487
+#: src/app/main/ui/workspace/libraries.cljs:520
 msgid "workspace.libraries.update"
 msgstr "Ενημέρωση"
 
-#: src/app/main/ui/workspace/libraries.cljs:611
+#: src/app/main/ui/workspace/libraries.cljs:644
 msgid "workspace.libraries.updates"
 msgstr "ΕΝΗΜΕΡΩΣΕΙΣ"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:110
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:93, src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:111
 msgid "workspace.options.blur-options.title"
 msgstr "Θολούρα"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:92
 msgid "workspace.options.blur-options.title.group"
 msgstr "Θολούρα της ομάδας"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:90
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:91
 msgid "workspace.options.blur-options.title.multiple"
 msgstr "Θόλωμα επιλογής"
 
@@ -1447,11 +1433,11 @@ msgstr "Θόλωμα επιλογής"
 msgid "workspace.options.canvas-background"
 msgstr "Χρώμα του φόντου"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:917, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:923, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1149
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:937, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:943, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1183
 msgid "workspace.options.component"
 msgstr "Συστατικό"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:157
+#: src/app/main/ui/workspace/sidebar/options.cljs:181
 msgid "workspace.options.design"
 msgstr "Σχέδιο"
 
@@ -1459,27 +1445,27 @@ msgstr "Σχέδιο"
 msgid "workspace.options.export"
 msgstr "Εξαγωγή"
 
-#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:249
+#: src/app/main/ui/inspect/exports.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:275
 msgid "workspace.options.export-object"
 msgstr "Εξαγωγή σχήματος"
 
-#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:229
+#: src/app/main/ui/inspect/exports.cljs:179, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:255
 msgid "workspace.options.export.suffix"
 msgstr "Κατάληξη"
 
-#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/exports/assets.cljs:241, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:248
+#: src/app/main/ui/exports/assets.cljs:170, src/app/main/ui/exports/assets.cljs:241, src/app/main/ui/inspect/exports.cljs:195, src/app/main/ui/workspace/sidebar/options/menus/exports.cljs:274
 msgid "workspace.options.exporting-object"
 msgstr "Εξαγωγή ..."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:111, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:221
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:121, src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:261
 msgid "workspace.options.fill"
 msgstr "Γέμισμα"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:31
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:32
 msgid "workspace.options.grid.auto"
 msgstr "Αυτόματο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:160
 msgid "workspace.options.grid.column"
 msgstr "Στήλες"
 
@@ -1488,15 +1474,15 @@ msgstr "Στήλες"
 msgid "workspace.options.grid.params.columns"
 msgstr "Στήλες"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:263
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:266
 msgid "workspace.options.grid.params.gutter"
 msgstr "απόσταση"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:250
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:253
 msgid "workspace.options.grid.params.height"
 msgstr "Υψος"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:274
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:277
 msgid "workspace.options.grid.params.margin"
 msgstr "Περιθώριο"
 
@@ -1505,7 +1491,7 @@ msgstr "Περιθώριο"
 msgid "workspace.options.grid.params.rows"
 msgstr "Σειρές"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:220, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:294
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:222, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:297
 msgid "workspace.options.grid.params.set-default"
 msgstr "Ορίσετε ως προεπιλογή"
 
@@ -1519,115 +1505,115 @@ msgstr "Μέγεθος"
 msgid "workspace.options.grid.params.type"
 msgstr "Τύπος"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:237
 msgid "workspace.options.grid.params.type.bottom"
 msgstr "Κάτω"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:233
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:235
 msgid "workspace.options.grid.params.type.center"
 msgstr "Κέντρο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:232
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:234
 msgid "workspace.options.grid.params.type.left"
 msgstr "Αριστερά"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:236
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:238
 msgid "workspace.options.grid.params.type.right"
 msgstr "Δεξιά"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:229
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
 msgid "workspace.options.grid.params.type.stretch"
 msgstr "Τέντωμα"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:231
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:233
 msgid "workspace.options.grid.params.type.top"
 msgstr "Πάνω"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:215, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:292
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:217, src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:295
 msgid "workspace.options.grid.params.use-default"
 msgstr "χρήση προεπιλεγμένης"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:251
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:254
 msgid "workspace.options.grid.params.width"
 msgstr "Πλάτος"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:160
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:161
 msgid "workspace.options.grid.row"
 msgstr "Σειρές"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:158
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:159
 msgid "workspace.options.grid.square"
 msgstr "τετράγωνο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:110
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:120
 msgid "workspace.options.group-fill"
 msgstr "Συμπλήρωση ομάδας"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:43
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:45
 msgid "workspace.options.group-stroke"
 msgstr "Ομαδικό εγκεφαλικό"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:169
 msgid "workspace.options.layer-options.blend-mode.color"
 msgstr "Χρώμα"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:147
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:158
 msgid "workspace.options.layer-options.blend-mode.color-burn"
 msgstr "Έγκαυμα χρώματος"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:150
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:161
 msgid "workspace.options.layer-options.blend-mode.color-dodge"
 msgstr "Χρώμα πιο μαλακό "
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:145
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
 msgid "workspace.options.layer-options.blend-mode.darken"
 msgstr "Σκούρο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:154
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:165
 msgid "workspace.options.layer-options.blend-mode.difference"
 msgstr "Διαφορά"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:166
 msgid "workspace.options.layer-options.blend-mode.exclusion"
 msgstr "Αποκλεισμός"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:153
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:164
 msgid "workspace.options.layer-options.blend-mode.hard-light"
 msgstr "Δυνατο φως"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:156
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:167
 msgid "workspace.options.layer-options.blend-mode.hue"
 msgstr "Απόχρωση"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:148
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
 msgid "workspace.options.layer-options.blend-mode.lighten"
 msgstr "Φωτίζω"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:170
 msgid "workspace.options.layer-options.blend-mode.luminosity"
 msgstr "Φωτεινότητα"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:146
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
 msgid "workspace.options.layer-options.blend-mode.multiply"
 msgstr "Πολλαπλασιάζω"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:144
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:155
 msgid "workspace.options.layer-options.blend-mode.normal"
 msgstr "Κανονικός"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:162
 msgid "workspace.options.layer-options.blend-mode.overlay"
 msgstr "Επικάλυμμα"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:157
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:168
 msgid "workspace.options.layer-options.blend-mode.saturation"
 msgstr "Κορεσμός"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:149
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:160
 msgid "workspace.options.layer-options.blend-mode.screen"
 msgstr "Κόσκινο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:163
 msgid "workspace.options.layer-options.blend-mode.soft-light"
 msgstr "Απαλό φως"
 
@@ -1651,33 +1637,33 @@ msgstr "Επιλεγμένα επίπεδα"
 msgid "workspace.options.position"
 msgstr "Θέση"
 
-#: src/app/main/ui/workspace/sidebar/options.cljs:159
+#: src/app/main/ui/workspace/sidebar/options.cljs:183
 msgid "workspace.options.prototype"
 msgstr "Πρωτότυπο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:81
+#: src/app/main/ui/workspace/sidebar/options/menus/border_radius.cljs:98
 msgid "workspace.options.radius"
 msgstr "Ακτίνα κύκλου"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:455
+#: src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:595, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:600
 msgid "workspace.options.rotation"
 msgstr "Περιστροφή"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:749
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:750
 msgid "workspace.options.select-a-shape"
 msgstr ""
 "Επιλέξτε ένα σχήμα, ένα artboard ή μια ομάδα για να σύρετε μια σύνδεση με "
 "άλλο artboard."
 
-#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:109
+#: src/app/main/ui/workspace/sidebar/options/menus/fill.cljs:119
 msgid "workspace.options.selection-fill"
 msgstr "Συμπλήρωση επιλογής"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:42
+#: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:44
 msgid "workspace.options.selection-stroke"
 msgstr "Επιλογή διαδρομής"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:198, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:200
+#: src/app/main/ui/inspect/attributes/shadow.cljs:47, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:203, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:205
 msgid "workspace.options.shadow-options.blur"
 msgstr "Θολούρα"
 
@@ -1689,91 +1675,92 @@ msgstr "Σκίαση"
 msgid "workspace.options.shadow-options.inner-shadow"
 msgstr "Εσωτερική σκιά"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:188
+#: src/app/main/ui/inspect/attributes/shadow.cljs:45, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:193
 msgid "workspace.options.shadow-options.offsetx"
 msgstr "Χ"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:220
+#: src/app/main/ui/inspect/attributes/shadow.cljs:46, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:225
 msgid "workspace.options.shadow-options.offsety"
 msgstr "Υ"
 
-#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:209, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:211
+#: src/app/main/ui/inspect/attributes/shadow.cljs:48, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:214, src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:216
 msgid "workspace.options.shadow-options.spread"
 msgstr "Διάχυση"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:330
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:336
 msgid "workspace.options.shadow-options.title"
 msgstr "Σκιά"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:329
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:335
 msgid "workspace.options.shadow-options.title.group"
 msgstr "Ομαδική σκιά"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:328
+#: src/app/main/ui/workspace/sidebar/options/menus/shadow.cljs:334
 msgid "workspace.options.shadow-options.title.multiple"
 msgstr "Επιλογή σκιών"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:164
+#: src/app/main/ui/workspace/sidebar/options/menus/frame_grid.cljs:165
 msgid "workspace.options.size"
 msgstr "Μέγεθος"
 
-#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:70, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:352
+#: src/app/main/ui/workspace/sidebar/options/drawing/frame.cljs:70, src/app/main/ui/workspace/sidebar/options/menus/measures.cljs:434
 msgid "workspace.options.size-presets"
 msgstr "Προεπιλογές μεγέθους"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:44
+#, unused
 msgid "workspace.options.stroke"
 msgstr "Ακρη"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:89
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:97
 msgid "workspace.options.stroke.center"
 msgstr "Κέντρο"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:107
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:138
 msgid "workspace.options.stroke.dashed"
 msgstr "Dashed"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:106
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:137
 msgid "workspace.options.stroke.dotted"
 msgstr "Διάστικτο"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:90
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:98
 msgid "workspace.options.stroke.inner"
 msgstr "Μέσα"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:108
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:139
 msgid "workspace.options.stroke.mixed"
 msgstr "Μικτός"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:91
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:99
 msgid "workspace.options.stroke.outer"
 msgstr "Εξω"
 
-#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:105
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:136
 msgid "workspace.options.stroke.solid"
 msgstr "Στερεός"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:122
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:123
 msgid "workspace.options.text-options.align-bottom"
 msgstr "Στοίχιση κάτω"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:118
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:119
 msgid "workspace.options.text-options.align-middle"
 msgstr "Στοίχιση στο κέντρο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:114
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:115
 msgid "workspace.options.text-options.align-top"
 msgstr "Ευθυγραμμίστε την κορυφή"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:159
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:160
 msgid "workspace.options.text-options.grow-auto-height"
 msgstr "Αυτόματο ύψος"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:155
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:156
 msgid "workspace.options.text-options.grow-auto-width"
 msgstr "Αυτόματο πλάτος"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:152
 msgid "workspace.options.text-options.grow-fixed"
 msgstr "Σταθερός"
 
@@ -1795,35 +1782,35 @@ msgstr "Πεζά"
 msgid "workspace.options.text-options.none"
 msgstr "Κανένας"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:186
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:187
 msgid "workspace.options.text-options.strikethrough"
 msgstr "Διαγράμμιση (%s)"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:58
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:59
 msgid "workspace.options.text-options.text-align-center"
 msgstr "Ευθυγράμμιση κέντρο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:66
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:67
 msgid "workspace.options.text-options.text-align-justify"
 msgstr "Δικαιολόγηση"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:54
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:55
 msgid "workspace.options.text-options.text-align-left"
 msgstr "Στοίχιση αριστερά"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:62
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:63
 msgid "workspace.options.text-options.text-align-right"
 msgstr "Για ευθυγράμμιση προς τα δεξιά"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:200
 msgid "workspace.options.text-options.title"
 msgstr "Κείμενο"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:198
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:199
 msgid "workspace.options.text-options.title-group"
 msgstr "Κείμενο ομάδας"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:197
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:198
 msgid "workspace.options.text-options.title-selection"
 msgstr "Κείμενο επιλογής"
 
@@ -1832,7 +1819,7 @@ msgstr "Κείμενο επιλογής"
 msgid "workspace.options.text-options.titlecase"
 msgstr "Τίτλος υπόθεση"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:181
+#: src/app/main/ui/workspace/sidebar/options/menus/text.cljs:182
 msgid "workspace.options.text-options.underline"
 msgstr "υπογράμμιση (%s)"
 
@@ -1841,7 +1828,7 @@ msgstr "υπογράμμιση (%s)"
 msgid "workspace.options.text-options.uppercase"
 msgstr "κεφαλαία"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:753
+#: src/app/main/ui/workspace/sidebar/options/menus/interactions.cljs:754
 msgid "workspace.options.use-play-button"
 msgstr ""
 "Χρησιμοποιήστε το κουμπί αναπαραγωγής στην κεφαλίδα για να εκτελέσετε την "
@@ -1859,7 +1846,7 @@ msgstr "Αποστολή προς τα πίσω"
 msgid "workspace.shape.menu.copy"
 msgstr "αντίγραφο"
 
-#: src/app/main/ui/workspace/context_menu.cljs:588
+#: src/app/main/ui/workspace/context_menu.cljs:590
 msgid "workspace.shape.menu.create-component"
 msgstr "Δημιουργία στοιχείου"
 
@@ -1867,11 +1854,11 @@ msgstr "Δημιουργία στοιχείου"
 msgid "workspace.shape.menu.cut"
 msgstr "Αποκοπή"
 
-#: src/app/main/ui/workspace/context_menu.cljs:625, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:779, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1057
+#: src/app/main/ui/workspace/context_menu.cljs:627, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:780, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1058
 msgid "workspace.shape.menu.delete"
 msgstr "Διαγραφή"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:486
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:495
 msgid "workspace.shape.menu.detach-instance"
 msgstr "Αποσύνδεση παρουσίας"
 
@@ -1903,11 +1890,11 @@ msgstr "Φέρτε μπροστά"
 msgid "workspace.shape.menu.group"
 msgstr "Ομάδα"
 
-#: src/app/main/ui/workspace/context_menu.cljs:475, src/app/main/ui/workspace/sidebar/layer_item.cljs:159
+#: src/app/main/ui/workspace/context_menu.cljs:475, src/app/main/ui/workspace/sidebar/layer_item.cljs:155
 msgid "workspace.shape.menu.hide"
 msgstr "Κρύβω"
 
-#: src/app/main/ui/workspace/context_menu.cljs:483, src/app/main/ui/workspace/sidebar/layer_item.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:209
+#: src/app/main/ui/workspace/context_menu.cljs:483, src/app/main/ui/workspace/sidebar/layer_item.cljs:163, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:220
 msgid "workspace.shape.menu.lock"
 msgstr "Κλείδωμα"
 
@@ -1915,15 +1902,15 @@ msgstr "Κλείδωμα"
 msgid "workspace.shape.menu.mask"
 msgstr "Μάσκα"
 
-#: src/app/main/ui/workspace/context_menu.cljs:208, src/app/main/ui/workspace/context_menu.cljs:698
+#: src/app/main/ui/workspace/context_menu.cljs:208, src/app/main/ui/workspace/context_menu.cljs:701
 msgid "workspace.shape.menu.paste"
 msgstr "Επικόλληση"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:490
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:499
 msgid "workspace.shape.menu.reset-overrides"
 msgstr "Επαναφορά παρακάμψεων"
 
-#: src/app/main/ui/workspace/context_menu.cljs:472, src/app/main/ui/workspace/sidebar/layer_item.cljs:158
+#: src/app/main/ui/workspace/context_menu.cljs:472, src/app/main/ui/workspace/sidebar/layer_item.cljs:154
 msgid "workspace.shape.menu.show"
 msgstr "προβολή"
 
@@ -1931,7 +1918,7 @@ msgstr "προβολή"
 msgid "workspace.shape.menu.ungroup"
 msgstr "Κατάργηση ομάδας"
 
-#: src/app/main/ui/workspace/context_menu.cljs:480, src/app/main/ui/workspace/sidebar/layer_item.cljs:166, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:215
+#: src/app/main/ui/workspace/context_menu.cljs:480, src/app/main/ui/workspace/sidebar/layer_item.cljs:162, src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:226
 msgid "workspace.shape.menu.unlock"
 msgstr "Ξεκλείδωμα"
 
@@ -1939,11 +1926,11 @@ msgstr "Ξεκλείδωμα"
 msgid "workspace.shape.menu.unmask"
 msgstr "Ανακάλυψη"
 
-#: src/app/main/ui/workspace/right_header.cljs:230, src/app/main/ui/workspace/right_header.cljs:231
+#: src/app/main/ui/workspace/right_header.cljs:231, src/app/main/ui/workspace/right_header.cljs:232
 msgid "workspace.sidebar.history"
 msgstr "Ιστορικό"
 
-#: src/app/main/ui/workspace/sidebar/layers.cljs:510, src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:143
+#: src/app/main/ui/workspace/sidebar/layers.cljs:510, src/app/main/ui/workspace/sidebar.cljs:134, src/app/main/ui/workspace/sidebar.cljs:137, src/app/main/ui/workspace/sidebar.cljs:144
 msgid "workspace.sidebar.layers"
 msgstr "στρώσεις"
 
@@ -1951,7 +1938,7 @@ msgstr "στρώσεις"
 msgid "workspace.sidebar.options.svg-attrs.title"
 msgstr "Εισαγόμενα χαρακτηριστικά SVG"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:238
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:239
 msgid "workspace.sidebar.sitemap"
 msgstr "Σελίδες"
 
@@ -1959,7 +1946,7 @@ msgstr "Σελίδες"
 msgid "workspace.sitemap"
 msgstr "Χάρτης ιστοτόπου"
 
-#: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:145
+#: src/app/main/ui/workspace/sidebar.cljs:139, src/app/main/ui/workspace/sidebar.cljs:146
 msgid "workspace.toolbar.assets"
 msgstr "Στοιχεία"
 
@@ -1967,7 +1954,7 @@ msgstr "Στοιχεία"
 msgid "workspace.toolbar.color-palette"
 msgstr "Παλέτα χρωμάτων (%s)"
 
-#: src/app/main/ui/workspace/right_header.cljs:216, src/app/main/ui/workspace/right_header.cljs:217
+#: src/app/main/ui/workspace/right_header.cljs:217, src/app/main/ui/workspace/right_header.cljs:218
 msgid "workspace.toolbar.comments"
 msgstr "Σχόλια (%s)"
 
@@ -2148,15 +2135,15 @@ msgstr "Λειτουργία άνω του %s"
 msgid "workspace.undo.title"
 msgstr "Ιστορία"
 
-#: src/app/main/data/workspace/libraries.cljs:1223, src/app/main/ui/workspace/sidebar/versions.cljs:84
+#: src/app/main/data/workspace/libraries.cljs:1228, src/app/main/ui/workspace/sidebar/versions.cljs:84
 msgid "workspace.updates.dismiss"
 msgstr "Παράβλεψη"
 
-#: src/app/main/data/workspace/libraries.cljs:1219
+#: src/app/main/data/workspace/libraries.cljs:1224
 msgid "workspace.updates.there-are-updates"
 msgstr "Υπάρχουν ενημερώσεις σε κοινόχρηστες βιβλιοθήκες"
 
-#: src/app/main/data/workspace/libraries.cljs:1225
+#: src/app/main/data/workspace/libraries.cljs:1230
 msgid "workspace.updates.update"
 msgstr "Ενημέρωση"
 

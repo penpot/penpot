@@ -4,15 +4,15 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .value-saturation-selector {
   background-color: rgba(var(--hue-rgb));
   position: relative;
-  height: $s-140;
+  height: deprecated.$s-140;
   width: 100%;
-  margin-top: $s-12;
-  margin-bottom: $s-12;
+  margin-top: deprecated.$s-12;
+  margin-bottom: deprecated.$s-12;
   cursor: pointer;
 
   &::before {
@@ -34,15 +34,15 @@
 
 .handler {
   @extend .colorpicker-handler;
-  height: $s-16;
-  width: $s-16;
-  border: $s-2 solid var(--colorpicker-handlers-color);
+  height: deprecated.$s-16;
+  width: deprecated.$s-16;
+  border: deprecated.$s-2 solid var(--colorpicker-handlers-color);
 }
 
 .shade-selector {
   display: flex;
-  gap: $s-4;
-  height: $s-52;
+  gap: deprecated.$s-4;
+  height: deprecated.$s-52;
   cursor: pointer;
 }
 

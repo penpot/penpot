@@ -4,13 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .menu {
   @extend .menu-dropdown;
-  top: $s-48;
-  left: calc(var(--width, $s-256) - $s-16);
-  width: $s-192;
+  top: deprecated.$s-48;
+  left: calc(var(--width, deprecated.$s-256) - deprecated.$s-16);
+  width: deprecated.$s-192;
   margin: 0;
 }
 
@@ -19,7 +19,7 @@
   cursor: pointer;
 
   .open-arrow {
-    @include flexCenter;
+    @include deprecated.flexCenter;
 
     svg {
       @extend .button-icon;
@@ -43,12 +43,12 @@
 }
 
 .separator {
-  border-top: $s-1 solid var(--color-background-quaternary);
-  height: $s-4;
-  left: calc(-1 * $s-4);
-  margin-top: $s-8;
+  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
+  height: deprecated.$s-4;
+  left: calc(-1 * deprecated.$s-4);
+  margin-top: deprecated.$s-8;
   position: relative;
-  width: calc(100% + $s-8);
+  width: calc(100% + deprecated.$s-8);
 }
 
 .shortcut {
@@ -61,9 +61,9 @@
 
 .sub-menu {
   @extend .menu-dropdown;
-  left: calc(var(--width, $s-256) + $s-180);
-  width: $s-192;
-  min-width: calc($s-272 - $s-2);
+  left: calc(var(--width, deprecated.$s-256) + deprecated.$s-180);
+  width: deprecated.$s-192;
+  min-width: calc(deprecated.$s-272 - deprecated.$s-2);
   width: 110%;
 
   .submenu-item {
@@ -89,34 +89,34 @@
   }
 
   &.file {
-    top: $s-48;
+    top: deprecated.$s-48;
   }
 
   &.edit {
-    top: $s-76;
+    top: deprecated.$s-76;
   }
 
   &.view {
-    top: $s-116;
+    top: deprecated.$s-116;
   }
 
   &.preferences {
-    top: $s-148;
+    top: deprecated.$s-148;
   }
 
   &.plugins {
-    top: $s-180;
-    max-height: calc(100vh - $s-180);
+    top: deprecated.$s-180;
+    max-height: calc(100vh - deprecated.$s-180);
     overflow-x: hidden;
     overflow-y: auto;
   }
 
   &.help-info {
-    top: $s-232;
+    top: deprecated.$s-232;
   }
 
   &.help-info-old {
-    top: $s-192;
+    top: deprecated.$s-192;
   }
 }
 

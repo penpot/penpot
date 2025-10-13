@@ -4,13 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .gradient-panel {
-  margin-top: $s-12;
+  margin-top: deprecated.$s-12;
   display: grid;
-  gap: $s-4;
-  grid-template-rows: $s-56 $s-32 1fr;
+  gap: deprecated.$s-4;
+  grid-template-rows: deprecated.$s-56 deprecated.$s-32 1fr;
 }
 
 .gradient-preview {
@@ -24,18 +24,18 @@
 
 .gradient-background {
   width: 100%;
-  height: $s-20;
-  border-radius: $br-4;
+  height: deprecated.$s-20;
+  border-radius: deprecated.$br-4;
   position: relative;
   cursor: pointer;
 }
 
 .gradient-preview-stop-wrapper {
   position: absolute;
-  width: calc(100% - $s-24 - $s-4);
+  width: calc(100% - deprecated.$s-24 - deprecated.$s-4);
   height: 100%;
-  left: $s-2;
-  top: calc(-1 * $s-4);
+  left: deprecated.$s-2;
+  top: calc(-1 * deprecated.$s-4);
   pointer-events: none;
 }
 
@@ -43,31 +43,31 @@
   background-color: var(--color-foreground-primary);
   background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAADFJREFUOE9jZGBgEAFifOANPknGUQMYhkkYEEgG+NMJKAwIAbwJbdQABnBCIgRoG4gAIF8IsXB/Rs4AAAAASUVORK5CYII=");
   background-position: left center;
-  background-size: $s-8;
-  border-radius: $br-6;
-  border: $s-2 solid var(--color-foreground-primary);
-  box-shadow: 0px 0px $s-4 0px var(--menu-shadow-color);
-  height: calc($s-24 - $s-2);
+  background-size: deprecated.$s-8;
+  border-radius: deprecated.$br-6;
+  border: deprecated.$s-2 solid var(--color-foreground-primary);
+  box-shadow: 0px 0px deprecated.$s-4 0px var(--menu-shadow-color);
+  height: calc(deprecated.$s-24 - deprecated.$s-2);
   left: var(--position);
   overflow: hidden;
   pointer-events: initial;
   position: absolute;
-  width: calc($s-24 - $s-2);
+  width: calc(deprecated.$s-24 - deprecated.$s-2);
 
   &.is-selected,
   &:hover {
-    outline: $s-2 solid var(--color-accent-primary);
+    outline: deprecated.$s-2 solid var(--color-accent-primary);
   }
 }
 .gradient-preview-stop-decoration {
   background: var(--color-foreground-primary);
   border-radius: 100%;
-  bottom: $s-32;
-  box-shadow: 0px 0px $s-4 0px var(--menu-shadow-color);
-  height: $s-4;
-  left: calc(var(--position) + $s-8);
+  bottom: deprecated.$s-32;
+  box-shadow: 0px 0px deprecated.$s-4 0px var(--menu-shadow-color);
+  height: deprecated.$s-4;
+  left: calc(var(--position) + deprecated.$s-8);
   position: absolute;
-  width: $s-4;
+  width: deprecated.$s-4;
 }
 
 .gradient-preview-stop-color {
@@ -97,7 +97,7 @@
 }
 
 .gradient-options-select {
-  width: $s-140;
+  width: deprecated.$s-140;
 }
 
 .rotate-icon {
@@ -107,8 +107,8 @@
 .gradient-stops-list {
   display: flex;
   flex-direction: column;
-  gap: $s-4;
-  max-height: $s-180;
+  gap: deprecated.$s-4;
+  max-height: deprecated.$s-180;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 0 var(--sp-s) var(--sp-m);
@@ -116,10 +116,10 @@
 
 .gradient-stops-entry {
   display: flex;
-  gap: $s-4;
-  padding: $s-2;
-  border-radius: $br-12;
-  border: $s-1 solid transparent;
+  gap: deprecated.$s-4;
+  padding: deprecated.$s-2;
+  border-radius: deprecated.$br-12;
+  border: deprecated.$s-1 solid transparent;
 
   position: relative;
 
@@ -142,13 +142,13 @@
 
 .offset-input-wrapper {
   @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-92;
+  @include deprecated.bodySmallTypography;
+  width: deprecated.$s-92;
 }
 
 .gradient-separator {
   border-color: var(--color-background-quaternary);
-  border-width: $s-3;
+  border-width: deprecated.$s-3;
   margin-left: calc(var(--sp-m) / 2);
   position: relative;
   width: calc(100% - var(--sp-m));
@@ -157,10 +157,10 @@
 .gradient-preview-stop-preview {
   background: var(--color-foreground-primary);
   border-radius: 50%;
-  height: $s-4;
-  left: calc(var(--preview-position, 0%) - $s-2);
+  height: deprecated.$s-4;
+  left: calc(var(--preview-position, 0%) - deprecated.$s-2);
   pointer-events: none;
   position: absolute;
-  top: calc(50% - $s-2);
-  width: $s-4;
+  top: calc(50% - deprecated.$s-2);
+  width: deprecated.$s-4;
 }

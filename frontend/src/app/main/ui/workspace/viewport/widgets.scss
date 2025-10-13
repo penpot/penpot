@@ -4,72 +4,49 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/colors.scss" as *;
+@use "ds/typography.scss" as t;
 
-.flow-element {
-  display: flex;
-  align-items: center;
+.frame-flow-badge-wrapper {
+  --frame-flow-badge-background-color: var(--color-background-tertiary);
+  --frame-flow-badge-background-color-hover: var(--color-background-quaternary);
+  --frame-flow-badge-foreground-color: var(--color-foreground-secondary);
+  --frame-flow-badge-foreground-color-hover: var(--color-accent-primary);
 
-  .element-label {
-  }
-
-  .flow-name {
-    cursor: pointer;
-  }
-
-  & input.element-name {
-    background: transparent;
-  }
-}
-
-.flow-badge {
   cursor: pointer;
   display: flex;
-  .content {
-    @include bodySmallTypography;
-    display: flex;
-    align-items: center;
-    height: $s-24;
-    border-radius: $br-6;
-    background-color: var(--flow-tag-background-color);
-    svg {
-      @extend .button-icon;
-      height: $s-24;
-      width: $s-12;
-      stroke: var(--icon-foreground);
-      margin: 0 $s-8;
-    }
+}
 
-    span {
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: $s-8;
-      color: var(--flow-tag-foreground-color);
-    }
-  }
+.frame-flow-badge-content {
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-xs);
+  border-radius: $br-6;
+  padding-inline-start: var(--sp-xs);
+  padding-inline-end: var(--sp-s);
+  height: var(--sp-xxl);
+  background-color: var(--frame-flow-badge-background-color);
+  color: var(--frame-flow-badge-foreground-color);
 
-  &.selected .content,
-  &:hover .content {
-    background-color: var(--flow-tag-background-color-hover);
-    svg {
-      stroke: var(--flow-tag-foreground-color-hover);
-    }
-
-    span {
-      color: var(--flow-tag-foreground-color-hover);
-    }
+  &:hover,
+  &.selected {
+    --frame-flow-badge-foreground-color: var(--frame-flow-badge-foreground-color-hover);
+    --frame-flow-badge-background-color: var(--frame-flow-badge-background-color-hover);
   }
 }
 
-.workspace-frame-label-wrapper {
+.frame-title-wrapper {
+  --frame-title-input-border-color-focus: var(--color-accent-primary);
+
   pointer-events: none;
 }
 
-.workspace-frame-label {
-  font-size: $fs-12;
-  color: black;
+.frame-title-label {
+  @include t.use-typography("body-small");
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -77,16 +54,30 @@
   pointer-events: all;
 }
 
-.element-name-input {
-  @include removeInputStyle;
-  @include bodySmallTypography;
-  @include removeInputStyle;
+.frame-title-input {
+  @include t.use-typography("body-small");
   flex-grow: 1;
-  height: 20px;
-  margin: 0;
-  padding-left: $s-6;
-  border: $s-1 solid var(--input-border-color-focus);
-  color: var(--layer-row-foreground-color);
   width: 100%;
   max-width: initial;
+  background: none;
+  outline: none;
+  height: var(--sp-xl);
+  padding-inline-start: var(--sp-s);
+  border: $b-1 solid var(--frame-title-input-border-color-focus);
+}
+
+.button-add-wrapper {
+  --button-add-background-color: var(--color-accent-action);
+  --button-add-background-color-hover: var(--color-accent-action-hover);
+  --button-add-icon-color: var(--color-static-white);
+
+  cursor: pointer;
+  fill: var(--button-add-background-color);
+  &:hover {
+    --button-add-background-color: var(--button-add-background-color-hover);
+  }
+}
+
+.button-add-icon {
+  stroke: var(--button-add-icon-color);
 }

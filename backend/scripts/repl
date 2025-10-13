@@ -1,112 +1,13 @@
 #!/usr/bin/env bash
 
-export PENPOT_SECRET_KEY=super-secret-devenv-key
-export PENPOT_HOST=devenv
-export PENPOT_FLAGS="\
-       $PENPOT_FLAGS \
-       enable-login-with-ldap \
-       enable-login-with-password
-       enable-login-with-oidc \
-       enable-login-with-google \
-       enable-login-with-github \
-       enable-login-with-gitlab \
-       enable-backend-worker \
-       enable-backend-asserts \
-       disable-feature-fdata-pointer-map \
-       enable-feature-fdata-objects-map \
-       enable-audit-log \
-       enable-transit-readable-response \
-       enable-demo-users \
-       disable-secure-session-cookies \
-       enable-smtp \
-       enable-prepl-server \
-       enable-urepl-server \
-       enable-rpc-climit \
-       enable-rpc-rlimit \
-       enable-quotes \
-       enable-soft-rpc-rlimit \
-       enable-auto-file-snapshot \
-       enable-webhooks \
-       enable-access-tokens \
-       disable-tiered-file-data-storage \
-       enable-file-validation \
-       enable-file-schema-validation \
-       enable-subscriptions \
-       disable-subscriptions-old";
-
-# Default deletion delay for devenv
-export PENPOT_DELETION_DELAY="24h"
-
-# Setup default upload media file size to 100MiB
-export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
-
-# Setup default multipart upload size to 300MiB
-export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
-
-# export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot"
-# export PENPOT_DATABASE_USERNAME="penpot"
-# export PENPOT_DATABASE_PASSWORD="penpot"
-# export PENPOT_DATABASE_READONLY=true
-
-# export PENPOT_DATABASE_URI="postgresql://172.17.0.1:5432/penpot_pre"
-# export PENPOT_DATABASE_USERNAME="penpot_pre"
-# export PENPOT_DATABASE_PASSWORD="penpot_pre"
-
-# export PENPOT_LOGGERS_LOKI_URI="http://172.17.0.1:3100/loki/api/v1/push"
-# export PENPOT_AUDIT_LOG_ARCHIVE_URI="http://localhost:6070/api/audit"
+SCRIPT_DIR=$(dirname $0);
+source $SCRIPT_DIR/_env;
 
 # Initialize MINIO config
-mc alias set penpot-s3/ http://minio:9000 minioadmin minioadmin -q
-mc admin user add penpot-s3 penpot-devenv penpot-devenv -q
-mc admin user info penpot-s3 penpot-devenv |grep -F -q "readwrite"
-if [ "$?" = "1" ]; then
-    mc admin policy attach penpot-s3 readwrite --user=penpot-devenv -q
-fi
-mc mb penpot-s3/penpot -p -q
+setup_minio;
 
-export AWS_ACCESS_KEY_ID=penpot-devenv
-export AWS_SECRET_ACCESS_KEY=penpot-devenv
-
-export PENPOT_OBJECTS_STORAGE_BACKEND=s3
-export PENPOT_OBJECTS_STORAGE_S3_ENDPOINT=http://minio:9000
-export PENPOT_OBJECTS_STORAGE_S3_BUCKET=penpot
-export PENPOT_OBJECTS_STORAGE_FS_DIRECTORY="assets"
-
-export JAVA_OPTS="\
-       -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager \
-       -Djdk.attach.allowAttachSelf \
-       -Dlog4j2.configurationFile=log4j2-devenv-repl.xml \
-       -Djdk.tracePinnedThreads=full \
-       -Dim4java.useV7=true \
-       -XX:+EnableDynamicAgentLoading \
-       -XX:-OmitStackTraceInFastThrow  \
-       -XX:+UnlockDiagnosticVMOptions \
-       -XX:+DebugNonSafepoints \
-       --sun-misc-unsafe-memory-access=allow \
-       --enable-preview \
-       --enable-native-access=ALL-UNNAMED";
-
+export JAVA_OPTS="$JAVA_OPTS -Dlog4j2.configurationFile=log4j2-devenv-repl.xml"
 export OPTIONS="-A:jmx-remote -A:dev"
-
-# Setup HEAP
-# export OPTIONS="$OPTIONS -J-Xms50m -J-Xmx1024m"
-# export OPTIONS="$OPTIONS -J-Xms1100m -J-Xmx1100m -J-XX:+AlwaysPreTouch"
-
-# Increase virtual thread pool size
-# export OPTIONS="$OPTIONS -J-Djdk.virtualThreadScheduler.parallelism=16"
-
-# Disable C2 Compiler
-# export OPTIONS="$OPTIONS -J-XX:TieredStopAtLevel=1"
-
-# Disable all compilers
-# export OPTIONS="$OPTIONS -J-Xint"
-
-# Setup GC
-# export OPTIONS="$OPTIONS -J-XX:+UseG1GC"
-
-# Setup GC
-# export OPTIONS="$OPTIONS -J-XX:+UseZGC"
-
 export OPTIONS_EVAL="nil"
 # export OPTIONS_EVAL="(set! *warn-on-reflection* true)"
 

@@ -4,28 +4,28 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 // TODO: Legacy sass variables. We should remove them in favor of DS tokens.
 $bp-max-1366: "(max-width: 1366px)";
 
-$thumbnail-default-width: $s-252; // Default width
-$thumbnail-default-height: $s-168; // Default width
+$thumbnail-default-width: deprecated.$s-252; // Default width
+$thumbnail-default-height: deprecated.$s-168; // Default width
 
 .dashboard-grid {
-  font-size: $fs-14;
+  font-size: deprecated.$fs-14;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 0 $s-16;
+  padding: 0 deprecated.$s-16;
 }
 
 .grid-row {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: calc($s-12 + var(--th-width, #{$thumbnail-default-width}));
+  grid-auto-columns: calc(deprecated.$s-12 + var(--th-width, #{$thumbnail-default-width}));
   width: 100%;
-  gap: $s-24;
+  gap: deprecated.$s-24;
 }
 
 .grid-item {
@@ -33,23 +33,23 @@ $thumbnail-default-height: $s-168; // Default width
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  margin: $s-12 0;
+  margin: deprecated.$s-12 0;
   position: relative;
   text-align: center;
 
   a,
   button {
     width: 100%;
-    font-weight: $fw400;
+    font-weight: deprecated.$fw400;
   }
   button {
     background-color: transparent;
     border: none;
-    padding: 0 $s-6;
+    padding: 0 deprecated.$s-6;
   }
 
   .grid-item-th {
-    border-radius: $br-8;
+    border-radius: deprecated.$br-8;
     text-align: initial;
     width: var(--th-width, #{$thumbnail-default-width});
     height: var(--th-height, #{$thumbnail-default-height});
@@ -62,22 +62,22 @@ $thumbnail-default-height: $s-168; // Default width
   }
 
   &.dragged {
-    border-radius: $br-4;
-    outline: $br-4 solid var(--color-accent-primary);
+    border-radius: deprecated.$br-4;
+    outline: deprecated.$br-4 solid var(--color-accent-primary);
     text-align: initial;
-    width: calc(var(--th-width) + $s-12);
+    width: calc(var(--th-width) + deprecated.$s-12);
     height: var(--th-height, #{$thumbnail-default-height});
   }
 
   &.overlay {
-    border-radius: $br-4;
-    border: $s-2 solid var(--color-accent-tertiary);
+    border-radius: deprecated.$br-4;
+    border: deprecated.$s-2 solid var(--color-accent-tertiary);
     height: 100%;
     opacity: 0;
     pointer-events: none;
     position: absolute;
     width: 100%;
-    z-index: $z-index-1;
+    z-index: deprecated.$z-index-1;
   }
 
   &:hover .overlay {
@@ -94,28 +94,28 @@ $thumbnail-default-height: $s-168; // Default width
 
   .item-info {
     display: grid;
-    padding: $s-8;
+    padding: deprecated.$s-8;
     text-align: left;
     width: 100%;
-    font-size: $fs-12;
+    font-size: deprecated.$fs-12;
 
     h3 {
-      border: $s-1 solid transparent;
+      border: deprecated.$s-1 solid transparent;
       color: var(--color-foreground-primary);
-      font-size: $fs-16;
-      font-weight: $fw400;
-      height: $s-28;
+      font-size: deprecated.$fs-16;
+      font-weight: deprecated.$fw400;
+      height: deprecated.$s-28;
       line-height: 1.92;
-      max-width: $s-260;
+      max-width: deprecated.$s-260;
       overflow: hidden;
-      padding-right: $s-8;
+      padding-right: deprecated.$s-8;
       padding: 0;
       text-overflow: ellipsis;
       white-space: nowrap;
       width: 100%;
 
       @media #{$bp-max-1366} {
-        max-width: $s-232;
+        max-width: deprecated.$s-232;
       }
     }
 
@@ -125,12 +125,12 @@ $thumbnail-default-height: $s-168; // Default width
       text-overflow: ellipsis;
       width: 100%;
       white-space: nowrap;
-      max-width: $s-260;
+      max-width: deprecated.$s-260;
       &::first-letter {
         text-transform: capitalize;
       }
       @media #{$bp-max-1366} {
-        max-width: $s-232;
+        max-width: deprecated.$s-232;
       }
     }
   }
@@ -138,12 +138,12 @@ $thumbnail-default-height: $s-168; // Default width
   .item-badge {
     background-color: var(--color-accent-primary);
     border: none;
-    border-radius: $br-6;
+    border-radius: deprecated.$br-6;
     position: absolute;
-    top: $s-12;
-    right: $s-12;
-    height: $s-32;
-    width: $s-32;
+    top: deprecated.$s-12;
+    right: deprecated.$s-12;
+    height: deprecated.$s-32;
+    width: deprecated.$s-32;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -151,38 +151,38 @@ $thumbnail-default-height: $s-168; // Default width
     svg {
       stroke: var(--color-background-secondary);
       fill: none;
-      height: $s-16;
-      width: $s-16;
+      height: deprecated.$s-16;
+      width: deprecated.$s-16;
     }
   }
 
   &.add-file {
-    border: $s-1 dashed var(--color-foreground-secondary);
+    border: deprecated.$s-1 dashed var(--color-foreground-secondary);
     justify-content: center;
     box-shadow: none;
 
     span {
       color: var(--color-background-primary);
-      font-size: $fs-14;
+      font-size: deprecated.$fs-14;
     }
 
     &:hover {
       background-color: var(--color-foreground-primary);
-      border: $s-2 solid var(--color-accent-tertiary);
+      border: deprecated.$s-2 solid var(--color-accent-tertiary);
     }
   }
 }
 
 .drag-counter {
   position: absolute;
-  top: $s-4;
-  left: $s-4;
-  width: $s-32;
-  height: $s-32;
+  top: deprecated.$s-4;
+  left: deprecated.$s-4;
+  width: deprecated.$s-32;
+  height: deprecated.$s-32;
   background-color: var(--color-accent-tertiary);
-  border-radius: $br-circle;
+  border-radius: deprecated.$br-circle;
   color: var(--color-background-secondary);
-  font-size: $fs-16;
+  font-size: deprecated.$fs-16;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -191,8 +191,8 @@ $thumbnail-default-height: $s-168; // Default width
 // PROJECTS, ELEMENTS & ICONS GRID
 .project-th {
   background-color: transparent;
-  border-radius: $br-8;
-  padding-top: $s-6;
+  border-radius: deprecated.$br-8;
+  padding-top: deprecated.$s-6;
 
   &:hover,
   &:focus,
@@ -208,7 +208,7 @@ $thumbnail-default-height: $s-168; // Default width
 
   .selected {
     .grid-item-th {
-      outline: $s-4 solid var(--color-accent-tertiary);
+      outline: deprecated.$s-4 solid var(--color-accent-tertiary);
     }
   }
 }
@@ -219,8 +219,8 @@ $thumbnail-default-height: $s-168; // Default width
   height: 100%;
   justify-content: center;
   opacity: 0;
-  right: $s-6;
-  width: $s-32;
+  right: deprecated.$s-6;
+  width: deprecated.$s-32;
 
   span {
     color: var(--color-background-secondary);
@@ -230,7 +230,7 @@ $thumbnail-default-height: $s-168; // Default width
 .project-th-icon {
   align-items: center;
   display: flex;
-  margin-right: $s-8;
+  margin-right: deprecated.$s-8;
   margin-top: 0;
 }
 
@@ -238,10 +238,10 @@ $thumbnail-default-height: $s-168; // Default width
   align-items: flex-end;
   display: flex;
   flex-direction: column;
-  height: $s-32;
+  height: deprecated.$s-32;
   justify-content: center;
   margin-right: 0;
-  margin-top: $s-20;
+  margin-top: deprecated.$s-20;
   width: 100%;
   --menu-icon-color: var(--button-tertiary-foreground-color-rest);
 
@@ -255,8 +255,8 @@ $thumbnail-default-height: $s-168; // Default width
   stroke: var(--menu-icon-color);
   fill: none;
   margin-right: 0;
-  height: $s-16;
-  width: $s-16;
+  height: deprecated.$s-16;
+  width: deprecated.$s-16;
 }
 
 .project-th-actions.force-display {
@@ -264,7 +264,7 @@ $thumbnail-default-height: $s-168; // Default width
 }
 
 .grid-item-th {
-  border-radius: $br-4;
+  border-radius: deprecated.$br-4;
   cursor: pointer;
   height: 100%;
   overflow: hidden;
@@ -282,11 +282,11 @@ $thumbnail-default-height: $s-168; // Default width
 
 // LIBRARY VIEW
 .library {
-  height: $s-580;
+  height: deprecated.$s-580;
 }
 
 .grid-item.project-th.library {
-  height: $s-612;
+  height: deprecated.$s-612;
 }
 
 .grid-item-th.library {
@@ -294,21 +294,21 @@ $thumbnail-default-height: $s-168; // Default width
   flex-direction: column;
   height: 90%;
   justify-content: flex-start;
-  max-height: $s-580;
-  padding: $s-32;
+  max-height: deprecated.$s-580;
+  padding: deprecated.$s-32;
 
   .asset-section {
-    font-size: $fs-12;
+    font-size: deprecated.$fs-12;
     color: var(--color-foreground-secondary);
 
     &:not(:first-child) {
-      margin-top: $s-16;
+      margin-top: deprecated.$s-16;
     }
   }
 
   .asset-title {
     display: flex;
-    font-size: $fs-12;
+    font-size: deprecated.$fs-12;
     text-transform: uppercase;
 
     .num-assets {
@@ -318,18 +318,18 @@ $thumbnail-default-height: $s-168; // Default width
 
   .asset-list-item {
     align-items: center;
-    border-radius: $br-4;
-    border: $s-1 solid transparent;
+    border-radius: deprecated.$br-4;
+    border: deprecated.$s-1 solid transparent;
     color: var(--color-foreground-primary);
     display: flex;
-    font-size: $fs-12;
-    margin-top: $s-4;
-    padding: $s-2;
+    font-size: deprecated.$fs-12;
+    margin-top: deprecated.$s-4;
+    padding: deprecated.$s-2;
     position: relative;
 
     .name-block {
       color: var(--color-foreground-secondary);
-      width: calc(100% - $s-24 - $s-8);
+      width: calc(100% - deprecated.$s-24 - deprecated.$s-8);
     }
 
     .item-name {
@@ -341,11 +341,11 @@ $thumbnail-default-height: $s-168; // Default width
 
     svg {
       background-color: var(--color-canvas);
-      border-radius: $br-4;
-      border: $s-2 solid transparent;
-      height: $s-24;
-      margin-right: $s-8;
-      width: $s-24;
+      border-radius: deprecated.$br-4;
+      border: deprecated.$s-2 solid transparent;
+      height: deprecated.$s-24;
+      margin-right: deprecated.$s-8;
+      width: deprecated.$s-24;
     }
 
     .color-name {
@@ -354,14 +354,14 @@ $thumbnail-default-height: $s-168; // Default width
 
     .color-value {
       color: var(--color-foreground-secondary);
-      margin-left: $s-4;
+      margin-left: deprecated.$s-4;
       text-transform: uppercase;
     }
 
     .typography-sample {
-      height: $s-20;
-      margin-right: $s-4;
-      width: $s-20;
+      height: deprecated.$s-20;
+      margin-right: deprecated.$s-4;
+      width: deprecated.$s-20;
     }
   }
 }
@@ -369,7 +369,7 @@ $thumbnail-default-height: $s-168; // Default width
 .color-item {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .grid-loader {

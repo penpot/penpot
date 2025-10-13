@@ -4,11 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../ds/typography.scss" as t;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .version-toolbox {
-  padding: $s-8;
+  padding: deprecated.$s-8;
   height: 100%;
   display: grid;
   overflow: hidden;
@@ -20,15 +20,15 @@
   color: var(--color-foreground-secondary);
   display: flex;
   flex-direction: column;
-  font-size: $fs-12;
-  gap: $s-8;
-  padding: $s-16;
+  font-size: deprecated.$fs-12;
+  gap: deprecated.$s-8;
+  padding: deprecated.$s-16;
 }
 
 .versions-entry-empty-icon {
   background: var(--color-background-tertiary);
   border-radius: 50%;
-  padding: $s-8;
+  padding: deprecated.$s-8;
   display: flex;
 }
 
@@ -36,8 +36,8 @@
   font-weight: 600;
   text-transform: uppercase;
   color: var(--color-foreground-secondary);
-  font-size: $fs-12;
-  padding: $s-16 0 $s-16 $s-16;
+  font-size: deprecated.$fs-12;
+  padding: deprecated.$s-16 0 deprecated.$s-16 deprecated.$s-16;
   justify-content: space-between;
   width: 100%;
   display: flex;
@@ -53,7 +53,7 @@
 .versions-entries {
   display: flex;
   flex-direction: column;
-  gap: $s-6;
+  gap: deprecated.$s-6;
   overflow: auto;
   margin: 0;
 }
@@ -75,8 +75,8 @@
 
 .version-entry {
   display: flex;
-  padding: $s-4 $s-4 $s-4 $s-16;
-  gap: $s-8;
+  padding: deprecated.$s-4 deprecated.$s-4 deprecated.$s-4 deprecated.$s-16;
+  gap: deprecated.$s-8;
   border-radius: 8px;
   align-items: center;
 
@@ -88,7 +88,7 @@
 .version-entry.is-autosave {
   flex-direction: column;
   align-items: start;
-  padding-left: $s-48;
+  padding-left: deprecated.$s-48;
   gap: 0;
 }
 
@@ -98,8 +98,8 @@
 
 .version-entry-avatar {
   border-radius: 50%;
-  width: $s-24;
-  height: $s-24;
+  width: deprecated.$s-24;
+  height: deprecated.$s-24;
 }
 
 .version-entry-data {
@@ -115,7 +115,7 @@
 }
 
 .version-entry-name-edit {
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   color: var(--color-foreground-primary);
   background: none;
   margin: 0;
@@ -135,15 +135,15 @@
   cursor: pointer;
   visibility: hidden;
   padding: 0;
-  height: $s-40;
-  width: $s-32;
+  height: deprecated.$s-40;
+  width: deprecated.$s-32;
 }
 
 .version-options-dropdown {
   @extend .dropdown-wrapper;
   position: absolute;
   width: fit-content;
-  max-width: $s-200;
+  max-width: deprecated.$s-200;
   right: 0;
   left: unset;
   top: var(--offset);
@@ -155,7 +155,7 @@
 .version-entry-snapshots {
   display: flex;
   align-items: center;
-  gap: $s-6;
+  gap: deprecated.$s-6;
   color: var(--color-foreground-secondary);
   background: none;
   border: 0;
@@ -184,7 +184,7 @@
 
 .version-snapshot-list {
   display: none;
-  margin-top: $s-8;
+  margin-top: deprecated.$s-8;
   flex-direction: column;
   width: 100%;
 
@@ -205,7 +205,7 @@
 }
 
 .version-snapshot-entry {
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   color: var(--color-foreground-secondary);
   background: none;
   border: none;

@@ -4,8 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_utils.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
   margin: 0;
@@ -13,20 +16,32 @@
 
 .title-spacing-shadow {
   margin: 0;
-  padding-left: $s-2;
+  padding-inline-start: var(--sp-xxs);
 }
 
 .element-set-content {
-  margin-top: $s-4;
-  @include flexColumn;
+  margin-block-start: var(--sp-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 }
 
 .multiple-shadows {
-  @include flexRow;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
 }
 
 .label {
-  @extend .mixed-bar;
+  @include t.use-typography("body-small");
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  border-radius: $br-8;
+  block-size: $sz-32;
+  padding: var(--sp-s);
+  background-color: var(--color-background-tertiary);
+  color: var(--color-foreground-primary);
 }
 
 .actions {
@@ -36,10 +51,10 @@
 }
 
 .shadow-element {
-  @include flexColumn;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
   position: relative;
-
-  --reorder-left-position: calc(-1 * var(--sp-m) - var(--sp-xxs));
 
   &:hover {
     --reorder-icon-visibility: visible;
@@ -64,45 +79,38 @@
   grid-column: span 6;
   display: flex;
   align-items: center;
-  gap: $s-1;
+  gap: px2rem(1);
+}
 
-  .more-options {
-    @extend .button-secondary;
-    height: $s-32;
-    width: $s-28;
-    border-radius: $br-8 0 0 $br-8;
-    svg {
-      @extend .button-icon;
-    }
-    &.selected {
-      background-color: var(--button-radio-background-color-active);
-      svg {
-        stroke: var(--button-radio-foreground-color-active);
-      }
-    }
-  }
+.type-select {
+  padding: 0;
+  border-radius: 0 $br-8 $br-8 0;
+  flex-grow: 1;
+}
+
+.shadow-type-select {
+  flex-grow: 1;
+  border-radius: 0 $br-8 $br-8 0;
+}
+
+// TODO: Remove these nested classes by using DS component
+.hidden {
   .type-select {
-    padding: 0;
-    border-radius: 0 $br-8 $br-8 0;
-    flex-grow: 1;
-    .shadow-type-select {
-      flex-grow: 1;
-      border-radius: 0 $br-8 $br-8 0;
-    }
+    cursor: default;
+    pointer-events: none;
+    box-sizing: border-box;
+    color: var(--color-foreground-secondary);
+    stroke: var(--color-foreground-secondary);
+    background-color: transparent;
   }
-
-  &.hidden {
-    .more-options {
-      @include hiddenElement;
-      border: $s-1 solid var(--input-border-color-disabled);
-    }
-    .type-select {
-      @include hiddenElement;
-      .shadow-type-select {
-        @include hiddenElement;
-        border: $s-1 solid var(--input-border-color-disabled);
-      }
-    }
+  .shadow-type-select {
+    cursor: default;
+    pointer-events: none;
+    box-sizing: border-box;
+    color: var(--color-foreground-secondary);
+    stroke: var(--color-foreground-secondary);
+    background-color: transparent;
+    border: $b-1 solid var(--color-background-quaternary);
   }
 }
 
@@ -123,12 +131,13 @@
 .blur-input,
 .spread-input,
 .offset-y-input {
+  // TODO remove this input by changing the input to DS component
   @extend .input-element;
-  @include bodySmallTypography;
-}
-
-.input-label {
-  width: $sz-48;
+  @include t.use-typography("body-small");
+  .input-label {
+    padding-inline-start: var(--sp-s);
+    inline-size: px2rem(60);
+  }
 }
 
 .offset-x-input {
@@ -149,4 +158,17 @@
 
 .shadow-color {
   grid-column: span 6;
+}
+
+.more-options {
+  border-radius: $br-8 0 0 $br-8;
+}
+
+.selected {
+  --button-bg-color: var(--color-background-quaternary);
+  --button-fg-color: var(--color-accent-primary);
+}
+
+.disabled {
+  border: $b-1 solid var(--color-background-quaternary);
 }

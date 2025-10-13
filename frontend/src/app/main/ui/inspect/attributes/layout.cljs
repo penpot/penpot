@@ -29,7 +29,10 @@
    :row-gap
    :column-gap
    :gap
-   :padding])
+   :padding-inline-start
+   :padding-inline-end
+   :padding-block-start
+   :padding-block-end])
 
 (mf/defc layout-block
   [{:keys [objects shape]}]

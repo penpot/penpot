@@ -26,6 +26,27 @@
        (mu/keys)
        (into #{})))
 
+(defn find-token-value-references
+  "Returns set of token references found in `token-value`.
+
+  Used for checking if a token has a reference in the value.
+  Token references are strings delimited by curly braces.
+  E.g.: {foo.bar.baz} -> foo.bar.baz"
+  [token-value]
+  (if (string? token-value)
+    (some->> (re-seq #"\{([^}]*)\}" token-value)
+             (map second)
+             (into #{}))
+    #{}))
+
+(defn token-value-self-reference?
+  "Check if the token is self referencing with its `token-name` in `token-value`.
+  Simple 1 level check, doesn't account for circular self refernces across multiple tokens."
+  [token-name token-value]
+  (let [token-references (find-token-value-references token-value)
+        self-reference? (get token-references token-name)]
+    self-reference?))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SCHEMA
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -52,7 +73,24 @@
    :typography      "typography"})
 
 (def dtcg-token-type->token-type
-  (set/map-invert token-type->dtcg-token-type))
+  (-> (set/map-invert token-type->dtcg-token-type)
+      ;; Allow these properties to be imported with singular key names for backwards compability
+      (assoc "fontWeight" :font-weight
+             "fontSize" :font-size
+             "fontFamily" :font-family)))
+
+(def composite-token-type->dtcg-token-type
+  "Custom set of conversion keys for composite typography token with `:line-height` available.
+  (Penpot doesn't support `:line-height` token)"
+  (assoc token-type->dtcg-token-type
+         :line-height "lineHeights"))
+
+(def composite-dtcg-token-type->token-type
+  "Custom set of conversion keys for composite typography token with `:line-height` available.
+  (Penpot doesn't support `:line-height` token)"
+  (assoc dtcg-token-type->token-type
+         "lineHeights" :line-height
+         "lineHeight"  :line-height))
 
 (def token-types
   (into #{} (keys token-type->dtcg-token-type)))
@@ -217,7 +255,8 @@
                                 text-case-keys
                                 text-decoration-keys
                                 font-weight-keys
-                                typography-token-keys))
+                                typography-token-keys
+                                #{:line-height}))
 
 ;; TODO: Created to extract the font-size feature from the typography feature flag.
 ;; Delete this once the typography feature flag is removed.
@@ -289,6 +328,7 @@
      (font-size-keys shape-attr)       #{shape-attr :typography}
      (letter-spacing-keys shape-attr)  #{shape-attr :typography}
      (font-family-keys shape-attr)     #{shape-attr :typography}
+     (= :line-height shape-attr)       #{:line-height :typography}
      (= :text-transform shape-attr)    #{:text-case :typography}
      (text-decoration-keys shape-attr) #{shape-attr :typography}
      (font-weight-keys shape-attr)     #{shape-attr :typography}
@@ -468,3 +508,32 @@
     (when (font-weight-values weight)
       (cond-> {:weight weight}
         italic? (assoc :style "italic")))))
+
+(defn typography-composite-token-reference?
+  "Predicate if a typography composite token is a reference value - a string pointing to another reference token."
+  [token-value]
+  (string? token-value))
+
+(def tokens-by-input
+  "A map from input name to applicable token for that input."
+  {:width #{:sizing :dimensions}
+   :height #{:sizing :dimensions}
+   :max-width #{:sizing :dimensions}
+   :max-height #{:sizing :dimensions}
+   :x #{:spacing :dimensions}
+   :y #{:spacing :dimensions}
+   :rotation #{:number :rotation}
+   :border-radius #{:border-radius :dimensions}
+   :row-gap #{:spacing :dimensions}
+   :column-gap #{:spacing :dimensions}
+   :horizontal-padding #{:spacing :dimensions}
+   :vertical-padding #{:spacing :dimensions}
+   :sided-paddings #{:spacing :dimensions}
+   :horizontal-margin #{:spacing :dimensions}
+   :vertical-margin #{:spacing :dimensions}
+   :sided-margins #{:spacing :dimensions}
+   :line-height #{:line-height :number}
+   :font-size #{:font-size}
+   :letter-spacing #{:letter-spacing}
+   :fill #{:color}
+   :stroke-color #{:color}})

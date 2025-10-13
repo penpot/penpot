@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .text-palette {
   height: 100%;
@@ -12,13 +12,13 @@
 }
 .left-arrow,
 .right-arrow {
-  @include buttonStyle;
-  @include flexCenter;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
   position: relative;
   height: 100%;
-  width: $s-24;
+  width: deprecated.$s-24;
   padding: 0;
-  z-index: $z-index-2;
+  z-index: deprecated.$z-index-2;
   svg {
     @extend .button-icon;
   }
@@ -26,10 +26,10 @@
     content: "";
     position: absolute;
     bottom: 0;
-    left: calc(-1 * $s-80);
+    left: calc(-1 * deprecated.$s-80);
     height: 100%;
-    width: $s-80;
-    z-index: $z-index-1;
+    width: deprecated.$s-80;
+    z-index: deprecated.$z-index-1;
     background-image: linear-gradient(
       to left,
       var(--palette-button-shadow-initial) 0%,
@@ -53,7 +53,7 @@
 }
 .left-arrow {
   &::after {
-    left: $s-24;
+    left: deprecated.$s-24;
     background-image: linear-gradient(
       to right,
       var(--palette-button-shadow-initial) 0%,
@@ -76,48 +76,48 @@
 
 .text-palette-inside {
   display: flex;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .typography-item {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
   height: 100%;
-  width: $s-136;
-  padding: $s-8;
-  border-radius: $br-8;
+  width: deprecated.$s-136;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--palette-text-background-color);
   &:first-child {
-    margin-left: $s-8;
+    margin-left: deprecated.$s-8;
   }
 
   .typography-name {
-    @include textEllipsis;
-    height: $s-16;
-    width: $s-120;
+    @include deprecated.textEllipsis;
+    height: deprecated.$s-16;
+    width: deprecated.$s-120;
     color: var(--palette-text-color-selected);
   }
 
   .typography-font {
-    @include textEllipsis;
-    height: $s-16;
-    width: $s-120;
+    @include deprecated.textEllipsis;
+    height: deprecated.$s-16;
+    width: deprecated.$s-120;
     color: var(--palette-text-color);
   }
 
   .typography-data {
-    @include textEllipsis;
-    height: $s-16;
-    width: $s-120;
+    @include deprecated.textEllipsis;
+    height: deprecated.$s-16;
+    width: deprecated.$s-120;
     color: var(--palette-text-color);
   }
 
   &.mid-item {
     .typography-name {
-      height: $s-16;
+      height: deprecated.$s-16;
     }
     .typography-data {
       display: none;
@@ -135,6 +135,6 @@
 }
 
 .text-palette-empty {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--palette-text-color);
 }

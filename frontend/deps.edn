@@ -42,11 +42,11 @@
   :dev
   {:extra-paths ["dev"]
    :extra-deps
-   {thheller/shadow-cljs {:mvn/version "3.1.7"}
+   {thheller/shadow-cljs {:mvn/version "3.2.0"}
     com.bhauman/rebel-readline {:mvn/version "RELEASE"}
     org.clojure/tools.namespace {:mvn/version "RELEASE"}
     criterium/criterium {:mvn/version "RELEASE"}
-    cider/cider-nrepl {:mvn/version "0.56.0"}}}
+    cider/cider-nrepl {:mvn/version "0.57.0"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]

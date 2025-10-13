@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../_borders.scss" as *;
-@use "../../_sizes.scss" as *;
-@use "../../typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 
 .option {
   --options-fg-color: var(--color-foreground-primary);

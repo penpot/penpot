@@ -53,6 +53,10 @@
   (-conj [coll entry]
     (impl-conj coll entry))
 
+  c/IEmptyableCollection
+  (-empty [_]
+    (ShapeProxy. nil nil nil))
+
   c/IEquiv
   (-equiv [coll other]
     (c/equiv-map coll other))
@@ -62,7 +66,6 @@
     (hash (into {} coll)))
 
   c/ISequential
-
   c/ISeqable
   (-seq [_]
     (cons (map-entry :id id)
@@ -146,11 +149,17 @@
       :constraints-h (api/set-constraints-h v)
       :constraints-v (api/set-constraints-v v)
 
-      (:r1 :r2 :r3 :r4)
-      (api/set-shape-corners [(dm/get-prop shape :r1)
-                              (dm/get-prop shape :r2)
-                              (dm/get-prop shape :r3)
-                              (dm/get-prop shape :r4)])
+      :r1
+      (api/set-shape-corners [v (dm/get-prop shape :r2) (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+
+      :r2
+      (api/set-shape-corners [(dm/get-prop shape :r1) v (dm/get-prop shape :r3) (dm/get-prop shape :r4)])
+
+      :r3
+      (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) v (dm/get-prop shape :r4)])
+
+      :r4
+      (api/set-shape-corners [(dm/get-prop shape :r1) (dm/get-prop shape :r2) (dm/get-prop shape :r3) v])
 
       :svg-attrs
       (when (= (:type shape) :path)

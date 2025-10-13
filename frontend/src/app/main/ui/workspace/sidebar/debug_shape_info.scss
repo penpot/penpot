@@ -4,29 +4,29 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .shape-info {
   display: flex;
   flex-direction: column;
   background-color: var(--panel-background-color);
   color: var(--color-foreground-primary);
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   user-select: text;
 }
 
 .shape-info-title {
-  @include flexCenter;
-  @include uppercaseTitleTipography;
+  @include deprecated.flexCenter;
+  @include deprecated.uppercaseTitleTipography;
   position: relative;
-  height: $s-32;
-  min-height: $s-32;
-  margin: $s-8 $s-8 0 $s-8;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  min-height: deprecated.$s-32;
+  margin: deprecated.$s-8 deprecated.$s-8 0 deprecated.$s-8;
+  border-radius: deprecated.$br-8;
   background-color: var(--panel-title-background-color);
 
   span {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     flex-grow: 1;
     color: var(--title-foreground-color-hover);
   }
@@ -35,11 +35,11 @@
 .close-button {
   @extend .button-tertiary;
   position: absolute;
-  right: $s-2;
-  top: $s-2;
-  height: $s-28;
-  width: $s-28;
-  border-radius: $br-6;
+  right: deprecated.$s-2;
+  top: deprecated.$s-2;
+  height: deprecated.$s-28;
+  width: deprecated.$s-28;
+  border-radius: deprecated.$br-6;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);
@@ -47,19 +47,19 @@
 }
 
 .attrs-container {
-  padding: $s-16 $s-8;
+  padding: deprecated.$s-16 deprecated.$s-8;
   overflow: hidden;
 }
 
 .shape-title {
-  font-size: $fs-14;
-  padding-bottom: $s-4;
+  font-size: deprecated.$fs-14;
+  padding-bottom: deprecated.$s-4;
   background: var(--color-background-quaternary);
   color: var(--color-foreground-primary);
-  padding: $s-8;
-  border-radius: $s-8;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$s-8;
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 .shape-name {
   flex: 1;
@@ -68,7 +68,7 @@
 .attrs-container-attr {
   display: grid;
   grid-template-columns: 25% auto;
-  padding: $s-4 0;
+  padding: deprecated.$s-4 0;
 
   &.vertical-layout {
     grid-template-columns: auto;
@@ -90,12 +90,12 @@
 .shape-list {
   display: flex;
   flex-direction: column;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .point-list {
   display: flex;
-  gap: $s-8;
+  gap: deprecated.$s-8;
 }
 
 .cell-container {

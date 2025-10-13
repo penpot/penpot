@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .grid-track-marker {
   .marker-shape {
@@ -12,7 +12,7 @@
   }
   .marker-text {
     fill: var(--app-white);
-    font-size: calc($s-12 / var(--zoom));
+    font-size: calc(deprecated.$s-12 / var(--zoom));
     font-family: worksans;
   }
 }
@@ -37,12 +37,12 @@
   border: 0;
   color: var(--grid-editor-marker-text);
   font-family: worksans;
-  font-size: calc($fs-12 / var(--zoom));
+  font-size: calc(deprecated.$fs-12 / var(--zoom));
   font-weight: 400;
   margin: 0;
-  max-width: calc($s-60 / var(--zoom));
+  max-width: calc(deprecated.$s-60 / var(--zoom));
   padding: 0;
-  padding: calc($s-4 / var(--zoom));
+  padding: calc(deprecated.$s-4 / var(--zoom));
   text-align: center;
 
   &:focus {
@@ -57,16 +57,16 @@
   margin: 0;
   padding: 0;
   position: absolute;
-  top: calc($s-6 / var(--zoom));
-  right: calc($s-20 / var(--zoom));
-  width: calc($s-20 / var(--zoom));
-  height: calc($s-20 / var(--zoom));
+  top: calc(deprecated.$s-6 / var(--zoom));
+  right: calc(deprecated.$s-20 / var(--zoom));
+  width: calc(deprecated.$s-20 / var(--zoom));
+  height: calc(deprecated.$s-20 / var(--zoom));
 
   svg {
     position: absolute;
     top: 0;
     left: 0;
-    width: calc($s-16 / var(--zoom));
+    width: calc(deprecated.$s-16 / var(--zoom));
     height: auto;
     stroke: var(--grid-editor-marker-color);
   }
@@ -84,7 +84,7 @@
   .grid-plus-shape {
     fill: var(--grid-editor-plus-btn-background);
     stroke: var(--grid-editor-plus-btn-background);
-    stroke-width: calc($s-1 / var(--zoom));
+    stroke-width: calc(deprecated.$s-1 / var(--zoom));
   }
 
   .grid-plus-icon {
@@ -112,44 +112,44 @@
 .grid-actions {
   pointer-events: none;
   position: absolute;
-  top: $s-44;
+  top: deprecated.$s-44;
   left: 50%;
-  z-index: $z-index-20;
+  z-index: deprecated.$z-index-20;
 }
 
 .grid-actions-container {
-  @include flexRow;
+  @include deprecated.flexRow;
   background: var(--panel-background-color);
-  border-radius: $br-12;
-  box-shadow: 0px 0px $s-12 0px var(--menu-shadow-color);
-  gap: $s-8;
-  height: $s-48;
+  border-radius: deprecated.$br-12;
+  box-shadow: 0px 0px deprecated.$s-12 0px var(--menu-shadow-color);
+  gap: deprecated.$s-8;
+  height: deprecated.$s-48;
   margin-left: -50%;
-  padding: $s-8;
+  padding: deprecated.$s-8;
   cursor: initial;
   pointer-events: initial;
-  width: $s-512;
+  width: deprecated.$s-512;
 }
 
 .grid-actions-title {
   flex: 1;
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   color: var(--color-foreground-secondary);
-  padding-left: $s-8;
+  padding-left: deprecated.$s-8;
 }
 
 .locate-btn {
   @extend .button-secondary;
   text-transform: uppercase;
-  padding: $s-8 $s-20;
-  font-size: $fs-11;
+  padding: deprecated.$s-8 deprecated.$s-20;
+  font-size: deprecated.$fs-11;
 }
 
 .done-btn {
   @extend .button-primary;
   text-transform: uppercase;
-  padding: $s-8 $s-20;
-  font-size: $fs-11;
+  padding: deprecated.$s-8 deprecated.$s-20;
+  font-size: deprecated.$fs-11;
 }
 
 .close-btn {

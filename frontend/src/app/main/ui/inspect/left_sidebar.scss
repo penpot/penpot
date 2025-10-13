@@ -4,19 +4,19 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .settings-bar-left {
   background-color: var(--panel-background-color);
   height: 100%;
-  width: $s-256;
+  width: deprecated.$s-256;
 }
 
 .settings-bar-inside {
   display: grid;
   grid-template-columns: 100%;
   grid-template-rows: 100%;
-  height: calc(100% - $s-2);
+  height: calc(100% - deprecated.$s-2);
   overflow-y: auto;
-  padding-top: $s-8;
+  padding-top: deprecated.$s-8;
 }

@@ -8,6 +8,7 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.types.tokens-lib :as ctob]
    [app.main.data.modal :as modal]
    [app.main.refs :as refs]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
@@ -68,7 +69,7 @@
 
 (mf/defc token-update-create-modal
   {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-name] :as _args}]
+  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position (= token-type :color))
         modal-size-large* (mf/use-state (= token-type :typography))
         modal-size-large? (deref modal-size-large*)
@@ -88,9 +89,10 @@
                        :icon i/close
                        :variant "action"
                        :aria-label (tr "labels.close")}]
-     [:> form-wrapper* {:token token
+     [:> form-wrapper* {:is-create (not (ctob/token? token))
+                        :token token
                         :action action
-                        :selected-token-set-name selected-token-set-name
+                        :selected-token-set-id selected-token-set-id
                         :token-type token-type
                         :on-display-colorpicker update-modal-size}]]))
 

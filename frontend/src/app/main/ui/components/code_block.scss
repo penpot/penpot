@@ -4,15 +4,15 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../ds/typography.scss" as t;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
 
 .code-display {
   @include t.use-typography("code-font");
   user-select: text;
   border-radius: $br-8;
-  margin-top: $s-8;
-  padding: $s-12;
+  margin-top: var(--sp-s);
+  padding: var(--sp-m);
   background-color: var(--menu-background-color);
   color: var(--input-foreground-color-active);
   overflow: auto;

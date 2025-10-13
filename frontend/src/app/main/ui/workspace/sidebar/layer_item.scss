@@ -4,32 +4,34 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .layer-row {
-  --layer-indentation-size: calc(#{$s-4} * 6);
+  --layer-indentation-size: calc(#{deprecated.$s-4} * 6);
   display: flex;
   flex-direction: row;
   align-items: center;
   width: 100%;
   background-color: var(--layer-row-background-color);
-  border: $s-2 solid transparent;
+  border: deprecated.$s-2 solid transparent;
 
   &.highlight,
   &:hover {
     --context-hover-color: var(--layer-row-foreground-color-hover);
-    --context-hover-opacity: $op-10;
+    --context-hover-opacity: deprecated.$op-10;
     background-color: var(--layer-row-background-color-hover);
     color: var(--layer-row-foreground-color-hover);
-    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-hover);
+    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
+      var(--layer-row-background-color-hover);
     &.hidden {
-      opacity: $op-10;
+      opacity: deprecated.$op-10;
     }
   }
 
   &.selected {
     background-color: var(--layer-row-background-color-selected);
-    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-selected);
+    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
+      var(--layer-row-background-color-selected);
   }
 
   &.selected.highlight,
@@ -39,23 +41,25 @@
 
   .parent-selected & {
     background-color: var(--layer-child-row-background-color);
-    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-child-row-background-color);
+    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
+      var(--layer-child-row-background-color);
   }
 
   .parent-selected &.highlight,
   .parent-selected &:hover {
     background-color: var(--layer-row-background-color-hover);
-    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-hover);
+    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
+      var(--layer-row-background-color-hover);
   }
 
   &.dnd-over-bot {
-    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+    border-bottom: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
   &.dnd-over-top {
-    border-top: $s-2 solid var(--layer-row-foreground-color-hover);
+    border-top: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
   &.dnd-over {
-    border: $s-2 solid var(--layer-row-foreground-color-hover);
+    border: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
 }
 
@@ -63,7 +67,8 @@
   .layer-row.highlight &,
   .layer-row:hover & {
     background-color: var(--layer-row-background-color-selected);
-    box-shadow: $s-16 $s-0 $s-0 $s-0 var(--layer-row-background-color-selected);
+    box-shadow: deprecated.$s-16 deprecated.$s-0 deprecated.$s-0 deprecated.$s-0
+      var(--layer-row-background-color-selected);
   }
   .layer-row.type-comp & {
     color: var(--layer-row-component-foreground-color);
@@ -78,13 +83,13 @@
   align-items: center;
   display: grid;
   grid-template-columns: auto 1fr auto;
-  column-gap: $s-4;
-  height: $s-32;
+  column-gap: deprecated.$s-4;
+  height: deprecated.$s-32;
   width: calc(100% - (var(--depth) * var(--layer-indentation-size)));
   cursor: pointer;
 
   &.filtered {
-    width: calc(100% - $s-12);
+    width: calc(100% - deprecated.$s-12);
   }
 }
 
@@ -109,14 +114,14 @@
 }
 
 .icon-shape {
-  @include flexCenter;
-  @include buttonStyle;
+  @include deprecated.flexCenter;
+  @include deprecated.buttonStyle;
   position: relative;
   justify-self: flex-end;
-  width: $s-16;
+  width: deprecated.$s-16;
   height: 100%;
-  width: $s-24;
-  padding-inline-start: $s-4;
+  width: deprecated.$s-24;
+  padding-inline-start: deprecated.$s-4;
   color: var(--icon-foreground);
   .layer-row.selected & {
     color: var(--layer-row-foreground-color-selected);
@@ -128,11 +133,11 @@
     transform: rotate(-90deg);
   }
   .layer-row.hidden & {
-    opacity: $op-7;
+    opacity: deprecated.$op-7;
   }
   .layer-row.highlight &,
   .layer-row:hover & {
-    opacity: $op-10;
+    opacity: deprecated.$op-10;
     svg {
       stroke: var(--layer-row-foreground-color-hover);
     }
@@ -142,20 +147,20 @@
 .absolute {
   position: absolute;
   background-color: var(--layer-row-foreground-color);
-  opacity: $op-4;
-  width: $s-12;
-  height: $s-12;
-  border-radius: $br-2;
+  opacity: deprecated.$op-4;
+  width: deprecated.$s-12;
+  height: deprecated.$s-12;
+  border-radius: deprecated.$br-2;
 
   .layer-row.hidden & {
-    opacity: $op-1;
+    opacity: deprecated.$op-1;
   }
   .layer-row.type-comp & {
     background-color: var(--layer-row-component-foreground-color);
   }
   .layer-row.highlight &,
   .layer-row:hover & {
-    opacity: $op-4;
+    opacity: deprecated.$op-4;
     background-color: var(--layer-row-foreground-color-hover);
   }
   .layer-row.selected & {
@@ -164,20 +169,20 @@
 }
 
 .toggle-content {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: center;
   height: 100%;
-  width: $s-24;
-  padding-inline-start: $s-8;
+  width: deprecated.$s-24;
+  padding-inline-start: deprecated.$s-8;
 
   svg {
     @extend .button-icon-small;
     stroke: var(--icon-foreground);
 
     .layer-row.hidden & {
-      opacity: $op-7;
+      opacity: deprecated.$op-7;
     }
     .layer-row.selected & {
       stroke: var(--layer-row-foreground-color-selected);
@@ -187,7 +192,7 @@
     }
     .layer-row.highlight &,
     .layer-row:hover & {
-      opacity: $op-10;
+      opacity: deprecated.$op-10;
       stroke: var(--layer-row-foreground-color-hover);
     }
   }
@@ -202,10 +207,10 @@
 
 .toggle-element,
 .block-element {
-  @include buttonStyle;
-  @include flexCenter;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
   height: 100%;
-  width: $s-24;
+  width: deprecated.$s-24;
   margin: 0;
   display: none;
 
@@ -214,7 +219,7 @@
     stroke: var(--icon-foreground);
 
     .layer-row.hidden & {
-      opacity: $op-7;
+      opacity: deprecated.$op-7;
     }
     .type-comp & {
       stroke: var(--layer-row-component-foreground-color);
@@ -223,22 +228,22 @@
 
   .element-actions.selected & {
     display: flex;
-    opacity: $op-0;
+    opacity: deprecated.$op-0;
 
     &.selected {
-      opacity: $op-10;
+      opacity: deprecated.$op-10;
     }
   }
 
   .layer-row:hover .element-actions.selected & {
-    opacity: $op-10;
+    opacity: deprecated.$op-10;
   }
 
   .layer-row.highlight &,
   .layer-row:hover & {
     display: flex;
     svg {
-      opacity: $op-10;
+      opacity: deprecated.$op-10;
       stroke: var(--layer-row-foreground-color-hover);
     }
   }
@@ -252,15 +257,15 @@
 
 :global(.sticky) {
   position: sticky;
-  top: $s-0;
-  z-index: $z-index-4;
+  top: deprecated.$s-0;
+  z-index: deprecated.$z-index-4;
 }
 
 .tab-indentation {
   display: block;
-  height: $s-16;
+  height: deprecated.$s-16;
   min-width: calc(var(--depth) * var(--layer-indentation-size));
 }
 .filtered {
-  min-width: $s-12;
+  min-width: deprecated.$s-12;
 }

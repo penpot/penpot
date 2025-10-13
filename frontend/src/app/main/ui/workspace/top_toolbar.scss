@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .main-toolbar {
   cursor: initial;
@@ -14,36 +14,36 @@
   display: flex;
   align-items: center;
   flex-direction: column;
-  height: $s-56;
-  padding: $s-8 $s-16;
-  border-radius: $s-8;
-  border: $s-2 solid var(--panel-border-color);
-  z-index: $z-index-3;
+  height: deprecated.$s-56;
+  padding: deprecated.$s-8 deprecated.$s-16;
+  border-radius: deprecated.$s-8;
+  border: deprecated.$s-2 solid var(--panel-border-color);
+  z-index: deprecated.$z-index-3;
   background-color: var(--color-background-primary);
   transition:
     top 0.3s,
     height 0.3s,
     opacity 0.3s;
 
-  --toolbar-position-y: #{$s-28};
+  --toolbar-position-y: #{deprecated.$s-28};
   --toolbar-offset-y: 0px;
   top: calc(var(--toolbar-position-y) + var(--toolbar-offset-y));
 }
 
 .main-toolbar-no-rulers {
   --toolbar-position-y: 0px;
-  --toolbar-offset-y: #{$s-8};
+  --toolbar-offset-y: #{deprecated.$s-8};
 }
 
 .main-toolbar-hidden {
-  --toolbar-offset-y: -#{$s-4};
-  height: $s-16;
-  z-index: $z-index-1;
-  border-radius: 0 0 $s-8 $s-8;
+  --toolbar-offset-y: -#{deprecated.$s-4};
+  height: deprecated.$s-16;
+  z-index: deprecated.$z-index-1;
+  border-radius: 0 0 deprecated.$s-8 deprecated.$s-8;
   border-block-start: 0;
 
   .main-toolbar-options {
-    opacity: $op-0;
+    opacity: deprecated.$op-0;
     visibility: hidden;
   }
 }
@@ -53,7 +53,7 @@
   display: flex;
   align-items: center;
   margin: 0;
-  opacity: $op-10;
+  opacity: deprecated.$op-10;
   transition: opacity 0.3s ease;
 
   li {
@@ -63,11 +63,11 @@
 
 .main-toolbar-options-button {
   @extend .button-tertiary;
-  height: $s-36;
-  width: $s-36;
+  height: deprecated.$s-36;
+  width: deprecated.$s-36;
   flex-shrink: 0;
-  border-radius: $s-8;
-  margin: 0 $s-2;
+  border-radius: deprecated.$s-8;
+  margin: 0 deprecated.$s-2;
 
   svg {
     @extend .button-icon;
@@ -80,20 +80,20 @@
 }
 
 .toolbar-handler {
-  @include flexCenter;
-  @include buttonStyle;
+  @include deprecated.flexCenter;
+  @include deprecated.buttonStyle;
   position: absolute;
   left: 0;
   bottom: 0;
-  height: $s-12;
+  height: deprecated.$s-12;
   width: 100%;
 
   .toolbar-handler-btn {
-    height: $s-4;
+    height: deprecated.$s-4;
     width: 100%;
-    max-width: $s-64;
+    max-width: deprecated.$s-64;
     padding: 0;
-    border-radius: $s-4;
+    border-radius: deprecated.$s-4;
     background-color: var(--palette-handler-background-color);
   }
 }

@@ -4,31 +4,31 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
 
 .dashboard-container {
   flex: 1 0 0;
-  margin-right: $s-16;
+  margin-right: deprecated.$s-16;
   overflow-y: auto;
   width: 100%;
-  border-top: $s-1 solid var(--color-background-quaternary);
+  border-top: deprecated.$s-1 solid var(--color-background-quaternary);
 
   &.dashboard-projects {
     user-select: none;
   }
   &.dashboard-shared {
-    width: calc(100vw - $s-320);
-    margin-right: $s-52;
+    width: calc(100vw - deprecated.$s-320);
+    margin-right: deprecated.$s-52;
   }
 
   &.search {
-    margin-top: $s-12;
+    margin-top: deprecated.$s-12;
   }
 }
 
 .new-file {
-  margin-inline-end: $s-8;
+  margin-inline-end: deprecated.$s-8;
 }
 
 .menu-icon {
@@ -37,5 +37,5 @@
 }
 
 .placeholder-placement {
-  margin: $s-16 $s-32;
+  margin: deprecated.$s-16 deprecated.$s-32;
 }

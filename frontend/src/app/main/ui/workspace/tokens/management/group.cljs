@@ -81,15 +81,15 @@
          (fn [event]
            (dom/stop-propagation event)
            (st/emit! (dwtl/set-token-type-section-open type true)
-                     ;; FIXME: use dom/get-client-position
-                     (modal/show (:key modal)
-                                 {:x (.-clientX ^js event)
-                                  :y (.-clientY ^js event)
-                                  :position :right
-                                  :fields (:fields modal)
-                                  :title title
-                                  :action "create"
-                                  :token-type type}))))
+                     (let [pos (dom/get-client-position event)]
+                       (modal/show (:key modal)
+                                   {:x (:x pos)
+                                    :y (:y pos)
+                                    :position :right
+                                    :fields (:fields modal)
+                                    :title title
+                                    :action "create"
+                                    :token-type type})))))
 
         on-token-pill-click
         (mf/use-fn
@@ -101,19 +101,20 @@
                                            :shapes selected-shapes})))))]
 
     [:div {:on-click on-toggle-open-click :class (stl/css :token-section-wrapper)}
-     [:& cmm/asset-section {:icon (token-section-icon type)
-                            :title title
-                            :section :tokens
-                            :assets-count (count tokens)
-                            :open? is-open}
-      [:& cmm/asset-section-block {:role :title-button}
+     [:> cmm/asset-section* {:icon (token-section-icon type)
+                             :title title
+                             :section :tokens
+                             :assets-count (count tokens)
+                             :is-open is-open}
+      [:> cmm/asset-section-block* {:role :title-button}
        (when can-edit?
          [:> icon-button* {:on-click on-popover-open-click
                            :variant "ghost"
                            :icon i/add
+                           :id (str "add-token-button-" title)
                            :aria-label (tr "workspace.tokens.add-token" title)}])]
       (when is-open
-        [:& cmm/asset-section-block {:role :content}
+        [:> cmm/asset-section-block* {:role :content}
          [:div {:class (stl/css :token-pills-wrapper)}
           (for [token tokens]
             [:> token-pill*

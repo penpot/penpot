@@ -1,9 +1,9 @@
 {:paths ["src" "vendor" "resources" "test"]
  :deps
  {penpot/common       {:local/root "../common"}
-  org.clojure/clojure {:mvn/version "1.12.0"}
+  org.clojure/clojure {:mvn/version "1.12.2"}
   binaryage/devtools  {:mvn/version "RELEASE"}
-  metosin/reitit-core {:mvn/version "0.7.2"}
+  metosin/reitit-core {:mvn/version "0.9.1"}
   }
  :aliases
  {:outdated
@@ -14,7 +14,7 @@
 
   :dev
   {:extra-deps
-   {thheller/shadow-cljs {:mvn/version "3.1.5"}}}
+   {thheller/shadow-cljs {:mvn/version "3.2.1"}}}
 
   :shadow-cljs
   {:main-opts ["-m" "shadow.cljs.devtools.cli"]

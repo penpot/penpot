@@ -1,1 +1,1 @@
-Invitation to join {{team}}
+{{invited-by|abbreviate:25}} has invited you to join the team “{{ team|abbreviate:25 }}”

@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .stroke-data {
-  @include flexColumn;
+  @include deprecated.flexColumn;
 
   position: relative;
 
@@ -34,7 +34,7 @@
 
   .stroke-width-input-element {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     grid-column: span 2;
   }
 
@@ -55,9 +55,9 @@
 
 .stroke-cap-dropdown,
 .stroke-cap-dropdown-start {
-  min-width: $s-124;
+  min-width: deprecated.$s-124;
   width: fit-content;
-  max-width: $s-252;
+  max-width: deprecated.$s-252;
   right: 0;
   left: unset;
 }

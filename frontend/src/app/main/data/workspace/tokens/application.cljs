@@ -38,6 +38,7 @@
    [potok.v2.core :as ptk]))
 
 (declare token-properties)
+(declare update-layout-item-margin)
 
 ;; Events to update the value of attributes with applied tokens ---------------------------------------------------------
 
@@ -115,7 +116,7 @@
       (f shape-ids {:color hex :opacity opacity} 0 {:ignore-touched true
                                                     :page-id page-id}))))
 
-(defn- value->color
+(defn value->color
   "Transform a token color value into penpot color data structure"
   [color]
   (when-let [tc (tinycolor/valid-color color)]
@@ -433,7 +434,8 @@
         :font-weight update-font-weight
         :letter-spacing update-letter-spacing
         :text-case update-text-case
-        :text-decoration update-text-decoration}
+        :text-decoration update-text-decoration
+        :line-height update-line-height}
        value
        [shape-ids attributes page-id])))))
 
@@ -498,7 +500,7 @@
                        (rx/of
                         (st/emit! (ev/event {::ev/name "apply-tokens"
                                              :type type
-                                             :applyed-to attributes
+                                             :applied-to attributes
                                              :applied-to-variant any-variant?}))
                         (dwu/start-undo-transaction undo-id)
                         (dwsh/update-shapes shape-ids (fn [shape]
@@ -520,7 +522,7 @@
   Splits out `shape-ids` into seperate default actions:
   - Layouts take the `default` update function
   - Shapes inside layout will only take margin"
-  [{:keys [token shapes]}]
+  [{:keys [token shapes attr]}]
   (ptk/reify ::apply-spacing-token
     ptk/WatchEvent
     (watch [_ state _]
@@ -533,7 +535,7 @@
             (group-by #(if (ctsl/any-layout-immediate-child? objects %) :frame-children :other) shapes)]
 
         (rx/of
-         (apply-token {:attributes attributes
+         (apply-token {:attributes (or attr attributes)
                        :token token
                        :shape-ids (map :id other)
                        :on-update-shape on-update-shape})
@@ -558,7 +560,7 @@
             (update shape :applied-tokens remove-token))))))))
 
 (defn toggle-token
-  [{:keys [token shapes]}]
+  [{:keys [token shapes attrs]}]
   (ptk/reify ::on-toggle-token
     ptk/WatchEvent
     (watch [_ _ _]
@@ -566,24 +568,53 @@
             (get token-properties (:type token))
 
             unapply-tokens?
-            (cft/shapes-token-applied? token shapes (or all-attributes attributes))
-
+            (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))
             shape-ids (map :id shapes)]
         (if unapply-tokens?
           (rx/of
-           (unapply-token {:attributes (or all-attributes attributes)
+           (unapply-token {:attributes (or attrs all-attributes attributes)
                            :token token
                            :shape-ids shape-ids}))
           (rx/of
            (case (:type token)
              :spacing
              (apply-spacing-token {:token token
+                                   :attr attrs
                                    :shapes shapes})
-             (apply-token {:attributes attributes
+             (apply-token {:attributes (or attrs attributes)
                            :token token
                            :shape-ids shape-ids
                            :on-update-shape on-update-shape}))))))))
 
+
+(defn apply-token-on-selected
+  [color-operations token]
+  (ptk/reify ::apply-token-on-selected
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
+        (rx/concat
+         (rx/of (dwu/start-undo-transaction undo-id))
+         (->> (rx/from color-operations)
+              (rx/map
+               (fn [cop]
+                 (let [shape-ids [(:shape-id cop)]]
+                   (case (:prop cop)
+                     :fill    (apply-token {:attributes #{:fill}
+                                            :token token
+                                            :shape-ids shape-ids
+                                            :on-update-shape update-fill})
+                     :stroke  (apply-token {:attributes #{:stroke-color}
+                                            :token token
+                                            :shape-ids shape-ids
+                                            :on-update-shape update-stroke-color})
+                     ;; Text
+                     :content (apply-token {:attributes #{:fill}
+                                            :token token
+                                            :shape-ids shape-ids
+                                            :on-update-shape update-fill})
+                     :shadow  (rx/empty))))))
+         (rx/of (dwu/commit-undo-transaction undo-id)))))))
 ;; Map token types to different properties used along the cokde ---------------------------------------------
 
 ;; FIXME: the values should be lazy evaluated, probably a function,

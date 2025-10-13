@@ -4,18 +4,18 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
   margin: 0;
 }
 
 .title-spacing-layout-element {
-  margin: 0 0 $s-4 0;
+  margin: 0 0 deprecated.$s-4 0;
 }
 
 .title-spacing-empty {
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
 }
 
 .flex-element-menu {
@@ -38,7 +38,7 @@
 
 .z-index-wrapper {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   grid-column: 6 / span 3;
 }
 
@@ -72,7 +72,7 @@
 .margin-mode {
   @extend .button-tertiary;
   grid-column: 3;
-  height: $s-32;
+  height: deprecated.$s-32;
   svg {
     @extend .button-icon;
   }
@@ -88,7 +88,7 @@
   .vertical-margin,
   .horizontal-margin {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
   }
   .vertical-margin {
     grid-column: 1;
@@ -109,7 +109,7 @@
 .left-margin,
 .right-margin {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
 }
 
 .top-margin {
@@ -151,11 +151,11 @@
 .layout-item-max-w,
 .layout-item-max-h {
   @extend .input-element;
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   .icon-text {
     justify-content: flex-start;
-    width: $s-80;
-    padding-top: $s-2;
+    width: deprecated.$s-80;
+    padding-top: deprecated.$s-2;
   }
 }
 

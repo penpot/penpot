@@ -23,10 +23,10 @@
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.context :as ctx]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section]]
+   [app.main.ui.workspace.sidebar.assets.colors :refer [colors-section*]]
    [app.main.ui.workspace.sidebar.assets.common :as cmm]
-   [app.main.ui.workspace.sidebar.assets.components :refer [components-section]]
-   [app.main.ui.workspace.sidebar.assets.typographies :refer [typographies-section]]
+   [app.main.ui.workspace.sidebar.assets.components :refer [components-section*]]
+   [app.main.ui.workspace.sidebar.assets.typographies :refer [typographies-section*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [app.util.keyboard :as kbd]
@@ -249,16 +249,16 @@
        [:span {:class (stl/css :loading)} (tr "labels.loading")]
        [:*
         (when ^boolean show-components?
-          [:& components-section
+          [:> components-section*
            {:file-id file-id
             :is-local is-local
             :components components
-            :listing-thumbs? listing-thumbs?
-            :open? (or ^boolean force-open-components?
-                       ^boolean (get open-status :components false))
-            :force-open? force-open-components?
+            :is-listing-thumbs listing-thumbs?
+            :is-open (or ^boolean force-open-components?
+                         ^boolean (get open-status :components false))
+            :is-force-open force-open-components?
             :open-status-ref open-status-ref
-            :reverse-sort? reverse-sort?
+            :is-reverse-sort reverse-sort?
             :selected selected
             :on-asset-click on-component-click
             :on-assets-delete on-assets-delete
@@ -267,31 +267,31 @@
             :count-variants count-variants}])
 
         (when ^boolean show-colors?
-          [:& colors-section
+          [:> colors-section*
            {:file-id file-id
-            :local? is-local
+            :is-local is-local
             :colors colors
-            :open? (or ^boolean force-open-colors?
-                       ^boolean (get open-status :colors false))
-            :force-open? force-open-colors?
+            :is-open (or ^boolean force-open-colors?
+                         ^boolean (get open-status :colors false))
+            :is-force-open force-open-colors?
             :open-status-ref open-status-ref
-            :reverse-sort? reverse-sort?
+            :is-reverse-sort reverse-sort?
             :selected selected
             :on-asset-click on-colors-click
             :on-assets-delete on-assets-delete
             :on-clear-selection on-clear-selection}])
 
         (when ^boolean show-typography?
-          [:& typographies-section
+          [:> typographies-section*
            {:file file
             :file-id (:id file)
-            :local? is-local
+            :is-local is-local
             :typographies typographies
-            :open? (or ^boolean force-open-typographies?
-                       ^boolean (get open-status :typographies false))
-            :force-open? force-open-typographies?
+            :is-open (or ^boolean force-open-typographies?
+                         ^boolean (get open-status :typographies false))
+            :is-force-open force-open-typographies?
             :open-status-ref open-status-ref
-            :reverse-sort? reverse-sort?
+            :is-reverse-sort reverse-sort?
             :selected selected
             :on-asset-click on-typography-click
             :on-assets-delete on-assets-delete
@@ -363,13 +363,16 @@
          (fn []
            (st/emit! (dw/unselect-all-assets file-id))))
 
+        variants-counter
+        (mf/with-memo [library]
+          (-> (group-by :variant-id (ctkl/components-seq library))
+              (update-vals count)))
+
         count-variants
         (mf/use-fn
-         (mf/deps library)
+         (mf/deps variants-counter)
          (fn [variant-id]
-           (->> (ctkl/components-seq library)
-                (filterv #(= variant-id (:variant-id %)))
-                count)))]
+           (get variants-counter variant-id)))]
 
     [:div {:class (stl/css :tool-window)
            :on-context-menu dom/prevent-default

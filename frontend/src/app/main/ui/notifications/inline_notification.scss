@@ -4,19 +4,19 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .new-inline {
   position: absolute;
-  top: $s-72;
+  top: deprecated.$s-72;
   margin: auto;
   left: 0;
   right: 0;
-  min-height: $s-48;
-  min-width: $s-640;
+  min-height: deprecated.$s-48;
+  min-width: deprecated.$s-640;
   width: fit-content;
-  max-width: $s-960;
-  z-index: $z-index-modal;
+  max-width: deprecated.$s-960;
+  z-index: deprecated.$z-index-modal;
 }
 
 .link {

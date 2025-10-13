@@ -4,10 +4,12 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as t;
+@use "ds/_sizes.scss" as *;
+@use "ds/_borders.scss" as *;
 
 .form-wrapper {
-  width: $s-384;
+  width: $sz-384;
   position: relative;
 }
 
@@ -15,8 +17,8 @@
   display: grid;
   grid-template-columns: auto auto;
   justify-content: end;
-  gap: $s-12;
-  padding-block-start: $s-8;
+  gap: var(--sp-m);
+  padding-block-start: var(--sp-s);
 }
 
 .with-delete {
@@ -30,28 +32,50 @@
 .token-rows {
   display: flex;
   flex-direction: column;
-  gap: $s-16;
+  gap: var(--sp-l);
 }
 
 .input-row {
   display: flex;
   flex-direction: column;
-  gap: $s-4;
+  gap: var(--sp-xs);
 }
 
 .nested-input-row {
   display: flex;
   flex-direction: column;
-  gap: $s-12;
+  gap: var(--sp-m);
+}
+
+.typography-inputs-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-m);
+}
+
+.typography-inputs {
+  border-inline-start: $b-1 solid var(--color-accent-primary-muted);
+  padding-inline-start: var(--sp-m);
+}
+
+.title-bar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+.title {
+  @include t.use-typography("body-small");
+  color: var(--color-foreground-primary);
+  display: flex;
+  align-items: center;
 }
 
 .warning-name-change-notification-wrapper {
-  margin-block-start: $s-16;
+  margin-block-start: var(--sp-l);
 }
 
 .error {
-  padding: $s-4 $s-6;
-  margin-bottom: 0;
+  padding: var(--sp-xs) $sz-6;
+  margin-block-end: 0;
   color: var(--status-color-error-500);
 }
 
@@ -77,5 +101,5 @@
   inset: 0;
   // This padding from the modal should be shared as a variable
   // Need to set this or the font-select will cause scroll
-  bottom: $s-32;
+  bottom: var(--sp-xxxl);
 }

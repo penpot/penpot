@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 @use "./common.scss";
 
 .submit-btn {
-  margin-top: $s-16;
+  margin-top: deprecated.$s-16;
 }

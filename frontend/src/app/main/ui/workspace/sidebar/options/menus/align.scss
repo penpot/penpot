@@ -4,13 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .align-options {
   display: grid;
   grid-template-columns: repeat(8, var(--sp-xxxl));
   column-gap: var(--sp-xs);
-  height: $s-32;
+  height: deprecated.$s-32;
 }
 .align-group-horizontal,
 .align-group-vertical {
@@ -30,10 +30,10 @@
 
 .align-button {
   @extend .button-tertiary;
-  height: $s-32;
-  width: $s-32;
+  height: deprecated.$s-32;
+  width: deprecated.$s-32;
   padding: 0;
-  border-radius: $br-8;
+  border-radius: deprecated.$br-8;
   svg {
     @extend .button-icon;
     stroke: var(--icon-foreground);

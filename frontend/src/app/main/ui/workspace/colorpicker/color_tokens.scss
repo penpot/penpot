@@ -1,0 +1,143 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+
+.color-token-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.color-token-item {
+  --color-token-background: var(--color-background-primary);
+  background-color: var(--color-token-background);
+  color: var(--color-foreground-primary);
+  text-align: left;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--sp-xs);
+  inline-size: 100%;
+  border-radius: $br-8;
+  padding: var(--sp-xs);
+  block-size: $sz-28;
+  border: none;
+  cursor: pointer;
+  &:hover {
+    --color-token-background: var(--color-background-tertiary);
+  }
+}
+
+.color-token-empty-state {
+  @include t.use-typography("body-small");
+  padding: var(--sp-s) var(--sp-xxl);
+  text-align: center;
+  color: var(--color-foreground-secondary);
+}
+
+.color-token-selected {
+  background-color: var(--color-background-tertiary);
+}
+
+.color-token-selected-grid {
+  border: $b-1 solid var(--color-accent-primary);
+  border-radius: $br-4;
+  inline-size: fit-content;
+}
+
+.token-selected-icon {
+  color: var(--color-accent-primary);
+}
+
+.token-name {
+  @include t.use-typography("body-small");
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.color-tokens-section {
+  max-block-size: $sz-430;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-s);
+}
+
+.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--sp-xxl), 1fr));
+  justify-items: start;
+  gap: var(--sp-s);
+}
+
+.list-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
+}
+
+.search-input {
+  padding: $sz-1;
+}
+
+.color-tokens-inputs {
+  overflow: auto;
+}
+
+// Title bar
+.set-title-bar {
+  --title-color: var(--color-foreground-secondary);
+  --arrow-color: var(--color-foreground-secondary);
+  @include t.use-typography("title-small");
+  text-transform: none;
+  display: flex;
+  overflow: hidden;
+  min-block-size: var(--sp-xxxl);
+  padding-block-start: var(--sp-xs);
+}
+
+.set-title-btn {
+  border: none;
+  background: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-xs);
+  flex-grow: 1;
+  padding: 0;
+  overflow: hidden;
+
+  &:hover {
+    --arrow-color: var(--color-foreground-primary);
+    --title-color: var(--color-foreground-primary);
+  }
+}
+
+.set-title-icon {
+  color: var(--arrow-color);
+  block-size: $sz-28;
+  padding-block-start: var(--sp-xxs);
+}
+
+.set-title {
+  color: var(--title-color);
+  text-align: left;
+  padding-block-end: var(--sp-xs);
+}
+
+.set-title-actions {
+  display: flex;
+}
+
+.set-title-action-hidden {
+  display: none;
+}
+
+.token-name {
+  color: var(--color-foreground-primary);
+}

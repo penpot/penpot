@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/_sizes.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .presets {
   display: grid;
@@ -19,12 +19,12 @@
   position: relative;
   grid-column: span 6;
   display: flex;
-  height: $s-32;
-  padding: $s-8;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8;
+  border-radius: deprecated.$br-8;
 
   .collapsed-icon {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     cursor: pointer;
     svg {
       @extend .button-icon-small;
@@ -45,7 +45,7 @@
 }
 
 .select-name {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -55,14 +55,14 @@
 
 .custom-select-dropdown {
   @extend .dropdown-wrapper;
-  margin-top: $s-2;
+  margin-top: deprecated.$s-2;
   max-height: 70vh;
-  width: $s-252;
+  width: deprecated.$s-252;
   .dropdown-element {
     @extend .dropdown-element-base;
     .name-wrapper {
       display: flex;
-      gap: $s-8;
+      gap: deprecated.$s-8;
       flex-grow: 1;
       .preset-name {
         color: var(--menu-foreground-color-rest);
@@ -73,7 +73,7 @@
     }
 
     .check-icon {
-      @include flexCenter;
+      @include deprecated.flexCenter;
       svg {
         @extend .button-icon-small;
         stroke: var(--icon-foreground);

@@ -28,16 +28,14 @@
    [app.setup :as-alias setup]
    [app.setup.templates :as tmpl]
    [app.storage.tmp :as tmp]
-   [app.util.services :as sv]
-   [app.worker :as-alias wrk]
-   [promesa.exec :as px]))
+   [app.util.services :as sv]))
 
 ;; --- COMMAND: Duplicate File
 
 (defn duplicate-file
   [{:keys [::db/conn ::bfc/timestamp] :as cfg} {:keys [profile-id file-id name reset-shared-flag] :as params}]
   (let [;; We don't touch the original file on duplication
-        file       (bfc/get-file cfg file-id)
+        file       (bfc/get-file cfg file-id :realize? true)
         project-id (:project-id file)
         file       (-> file
                        (update :id bfc/lookup-index)
@@ -313,15 +311,14 @@
 
     ;; Update the modification date of the all affected projects
     ;; ensuring that the destination project is the most recent one.
-    (doseq [project-id (into (list project-id) source)]
-
-      ;; NOTE: as this is executed on virtual thread, sleeping does
-      ;; not causes major issues, and allows an easy way to set a
-      ;; trully different modification date to each file.
-      (px/sleep 10)
-      (db/update! conn :project
-                  {:modified-at (ct/now)}
-                  {:id project-id}))
+    (loop [project-ids (into (list project-id) source)
+           modified-at (ct/now)]
+      (when-let [project-id (first project-ids)]
+        (db/update! conn :project
+                    {:modified-at modified-at}
+                    {:id project-id})
+        (recur (rest project-ids)
+               (ct/plus modified-at 10))))
 
     nil))
 
@@ -396,12 +393,7 @@
 ;; --- COMMAND: Clone Template
 
 (defn clone-template
-  [{:keys [::db/pool ::wrk/executor] :as cfg} {:keys [project-id profile-id] :as params} template]
-
-  ;; NOTE: the importation process performs some operations
-  ;; that are not very friendly with virtual threads, and for
-  ;; avoid unexpected blocking of other concurrent operations
-  ;; we dispatch that operation to a dedicated executor.
+  [{:keys [::db/pool] :as cfg} {:keys [project-id profile-id] :as params} template]
   (let [template (tmp/tempfile-from template
                                     :prefix "penpot.template."
                                     :suffix ""
@@ -419,8 +411,8 @@
                      (assoc ::bfc/features (cfeat/get-team-enabled-features cf/flags team)))
 
         result   (if (= format :binfile-v3)
-                   (px/invoke! executor (partial bf.v3/import-files! cfg))
-                   (px/invoke! executor (partial bf.v1/import-files! cfg)))]
+                   (bf.v3/import-files! cfg)
+                   (bf.v1/import-files! cfg))]
 
     (db/tx-run! cfg
                 (fn [{:keys [::db/conn] :as cfg}]

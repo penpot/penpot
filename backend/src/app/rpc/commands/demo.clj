@@ -7,6 +7,7 @@
 (ns app.rpc.commands.demo
   "A demo specific mutations."
   (:require
+   [app.auth :refer [derive-password]]
    [app.common.exceptions :as ex]
    [app.common.time :as ct]
    [app.config :as cf]
@@ -14,7 +15,6 @@
    [app.loggers.audit :as audit]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.auth :as auth]
-   [app.rpc.commands.profile :as profile]
    [app.rpc.doc :as-alias doc]
    [app.util.services :as sv]
    [buddy.core.codecs :as bc]
@@ -46,7 +46,7 @@
                   :fullname fullname
                   :is-active true
                   :deleted-at (ct/in-future (cf/get-deletion-delay))
-                  :password (profile/derive-password cfg password)
+                  :password (derive-password password)
                   :props {}}
         profile  (db/tx-run! cfg (fn [{:keys [::db/conn]}]
                                    (->> (auth/create-profile! conn params)

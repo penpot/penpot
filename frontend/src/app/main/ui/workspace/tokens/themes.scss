@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../ds/typography.scss" as *;
-@use "../../ds/_sizes" as *;
-@use "../../ds/spacing.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/_sizes" as *;
+@use "ds/spacing.scss" as *;
 
 .themes-wrapper {
   padding: var(--sp-m) 0 0 var(--sp-m);

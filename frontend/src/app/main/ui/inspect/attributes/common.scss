@@ -4,67 +4,67 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .attributes-image-as-color-row {
-  max-width: $s-240;
+  max-width: deprecated.$s-240;
 }
 
 .attributes-color-row {
   display: grid;
-  grid-template-columns: $s-16 $s-72 $s-144;
-  gap: $s-4;
+  grid-template-columns: deprecated.$s-16 deprecated.$s-72 deprecated.$s-144;
+  gap: deprecated.$s-4;
 }
 
 .bullet-wrapper {
-  @include flexCenter;
-  height: $s-32;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-32;
 }
 
 .format-wrapper {
-  width: $s-72;
-  height: $s-32;
+  width: deprecated.$s-72;
+  height: deprecated.$s-32;
 }
 
 .image-format {
-  @include uppercaseTitleTipography;
-  height: $s-32;
-  padding: $s-8 0;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-8 0;
   color: var(--menu-foreground-color-rest);
 }
 
 .select-format-wrapper {
   width: 100%;
-  padding: $s-8 $s-2;
+  padding: deprecated.$s-8 deprecated.$s-2;
   background-color: transparent;
   border-color: transparent;
   color: var(--menu-foreground-color-rest);
 }
 
 .format-info {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   display: flex;
   align-items: center;
   width: 100%;
   height: 100%;
-  padding-left: $s-2;
-  font-size: $fs-12;
+  padding-left: deprecated.$s-2;
+  font-size: deprecated.$fs-12;
   color: var(--menu-foreground-color-rest);
 }
 
 .color-row-copy-btn {
-  max-width: $s-144;
+  max-width: deprecated.$s-144;
 }
 
 .color-info {
   display: flex;
   align-items: flex-start;
-  gap: $s-4;
+  gap: deprecated.$s-4;
   flex-grow: 1;
-  max-width: $s-144;
+  max-width: deprecated.$s-144;
   button {
     visibility: hidden;
-    min-width: $s-28;
+    min-width: deprecated.$s-28;
   }
   &:hover button {
     visibility: visible;
@@ -72,32 +72,32 @@
 }
 
 .one-line {
-  max-height: $s-32;
+  max-height: deprecated.$s-32;
 }
 
 .two-line {
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .color-name-wrapper {
-  @include bodySmallTypography;
-  @include flexColumn;
-  padding: $s-8 $s-4 $s-8 $s-8;
-  height: $s-32;
-  max-width: $s-80;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.flexColumn;
+  padding: deprecated.$s-8 deprecated.$s-4 deprecated.$s-8 deprecated.$s-8;
+  height: deprecated.$s-32;
+  max-width: deprecated.$s-80;
 }
 
 .opacity-info {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--menu-foreground-color);
-  padding: $s-8 0;
+  padding: deprecated.$s-8 0;
 }
 
 .first-row {
   display: grid;
-  grid-template-columns: 1fr $s-28;
+  grid-template-columns: 1fr deprecated.$s-28;
   height: fit-content;
   width: 100%;
   padding: 0;
@@ -107,14 +107,14 @@
 .name-opacity {
   height: fit-content;
   width: 100%;
-  line-height: $s-16;
+  line-height: deprecated.$s-16;
   display: grid;
   grid-template-columns: 1fr auto;
 }
 
 .color-value-wrapper {
-  @include textEllipsis;
-  @include inspectValue;
+  @include deprecated.textEllipsis;
+  @include deprecated.inspectValue;
   text-transform: uppercase;
   &.gradient-name {
     text-transform: none;
@@ -122,14 +122,14 @@
 }
 
 .opacity-info {
-  @include inspectValue;
+  @include deprecated.inspectValue;
   text-transform: uppercase;
   width: 100%;
 }
 
 .second-row {
-  min-height: $s-16;
-  padding-right: $s-8;
+  min-height: deprecated.$s-16;
+  padding-right: deprecated.$s-8;
   width: 100%;
   text-align: left;
   margin: 0;
@@ -137,7 +137,7 @@
 }
 
 .color-name-library {
-  @include inspectValue;
+  @include deprecated.inspectValue;
   color: var(--menu-foreground-color-rest);
   word-break: break-word;
 }
@@ -148,22 +148,22 @@
 
 .download-button {
   @extend .button-secondary;
-  @include uppercaseTitleTipography;
-  height: $s-32;
+  @include deprecated.uppercaseTitleTipography;
+  height: deprecated.$s-32;
   width: 100%;
-  margin-top: $s-4;
+  margin-top: deprecated.$s-4;
 }
 
 .image-wrapper {
   background-color: var(--menu-background-color);
   position: relative;
-  @include flexCenter;
-  width: $s-240;
-  height: $s-160;
-  max-height: $s-160;
-  max-width: $s-248;
-  margin: $s-8 0;
-  border-radius: $br-8;
+  @include deprecated.flexCenter;
+  width: deprecated.$s-240;
+  height: deprecated.$s-160;
+  max-height: deprecated.$s-160;
+  max-width: deprecated.$s-248;
+  margin: deprecated.$s-8 0;
+  border-radius: deprecated.$br-8;
 
   img {
     height: 100%;

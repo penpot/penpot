@@ -10,6 +10,7 @@
    [app.common.data :as d]
    [app.main.data.workspace.colors :as dwc]
    [app.main.data.workspace.selection :as dws]
+   [app.main.data.workspace.tokens.application :as dwta]
    [app.main.store :as st]
    [app.main.ui.components.title-bar :refer [title-bar*]]
    [app.main.ui.hooks :as h]
@@ -34,6 +35,18 @@
 (def xf:map-shape-id
   (map :shape-id))
 
+(defn- generate-color-operations
+  [groups old-color prev-colors]
+  (let [old-color   (-> old-color
+                        (dissoc :name :path)
+                        (d/without-nils))
+        prev-color  (d/seek (partial get groups) prev-colors)
+        color-operations-old    (get groups old-color)
+        color-operations-prev   (get groups prev-colors)
+        color-operations        (or color-operations-prev color-operations-old)
+        old-color   (or prev-color old-color)]
+    [color-operations old-color]))
+
 (mf/defc color-selection-menu*
   {::mf/wrap [#(mf/memo' % (mf/check-props ["shapes"]))]}
   [{:keys [shapes file-id libraries]}]
@@ -57,22 +70,13 @@
         on-change
         (mf/use-fn
          (fn [new-color old-color from-picker?]
-           (let [old-color   (-> old-color
-                                 (dissoc :name :path)
-                                 (d/without-nils))
-
-                 ;; When dragging on the color picker sometimes all
+           (let [;; When dragging on the color picker sometimes all
                  ;; the shapes hasn't updated the color to the prev
                  ;; value so we need this extra calculation
                  groups      (mf/ref-val groups-ref)
                  prev-colors (mf/ref-val prev-colors-ref)
 
-                 prev-color  (d/seek (partial get groups) prev-colors)
-
-                 cops-old    (get groups old-color)
-                 cops-prev   (get groups prev-colors)
-                 cops        (or cops-prev cops-old)
-                 old-color   (or prev-color old-color)]
+                 [color-operations old-color] (generate-color-operations groups old-color prev-colors)]
 
              (when from-picker?
                (let [color (-> new-color
@@ -81,7 +85,7 @@
                  (mf/set-ref-val! prev-colors-ref
                                   (conj prev-colors color))))
 
-             (st/emit! (dwc/change-color-in-selected cops new-color old-color)))))
+             (st/emit! (dwc/change-color-in-selected color-operations new-color old-color)))))
 
         on-open
         (mf/use-fn #(mf/set-ref-val! prev-colors-ref []))
@@ -93,17 +97,32 @@
         (mf/use-fn
          (fn [color]
            (let [groups (mf/ref-val groups-ref)
-                 cops   (get groups color)
+                 color-operations   (get groups color)
                  color' (dissoc color :id :file-id)]
-             (st/emit! (dwc/change-color-in-selected cops color' color)))))
+             (st/emit! (dwc/change-color-in-selected color-operations color' color)))))
 
         select-only
         (mf/use-fn
          (fn [color]
            (let [groups (mf/ref-val groups-ref)
-                 cops   (get groups color)
-                 ids    (into (d/ordered-set) xf:map-shape-id cops)]
-             (st/emit! (dws/select-shapes ids)))))]
+                 color-operations   (get groups color)
+                 ids    (into (d/ordered-set) xf:map-shape-id color-operations)]
+             (st/emit! (dws/select-shapes ids)))))
+
+        on-token-change
+        (mf/use-fn
+         (fn [_ token old-color]
+           (let [groups      (mf/ref-val groups-ref)
+                 prev-colors (mf/ref-val prev-colors-ref)
+                 resolved-value (:resolved-value token)
+                 new-color (dwta/value->color resolved-value)
+                 color (-> new-color
+                           (dissoc :name :path)
+                           (d/without-nils))
+                 [color-operations _] (generate-color-operations groups old-color prev-colors)]
+             (mf/set-ref-val! prev-colors-ref
+                              (conj prev-colors color))
+             (st/emit! (dwta/apply-token-on-selected color-operations token)))))]
 
     [:div {:class (stl/css :element-set)}
      [:div {:class (stl/css :element-title)}
@@ -132,7 +151,9 @@
                :on-detach on-detach
                :select-only select-only
                :on-change #(on-change %1 color %2)
+               :on-token-change #(on-token-change %1 %2 color)
                :on-open on-open
+               :origin :color-selection
                :on-close on-close}]))
          (when (and (false? @expand-lib-color) (< 3 (count library-colors)))
            [:button  {:class (stl/css :more-colors-btn)
@@ -147,6 +168,8 @@
              :index index
              :select-only select-only
              :on-change #(on-change %1 color %2)
+             :origin :color-selection
+             :on-token-change #(on-token-change %1 %2 color)
              :on-open on-open
              :on-close on-close}])
 

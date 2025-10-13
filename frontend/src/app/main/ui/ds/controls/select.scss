@@ -4,9 +4,9 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../_borders.scss" as *;
-@use "../_sizes.scss" as *;
-@use "../typography.scss" as *;
+@use "ds/_borders.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
 
 .select-wrapper {
   --select-icon-color: var(--color-icon-default);
@@ -18,6 +18,7 @@
 
   &:hover {
     --select-background-color: var(--color-background-quaternary);
+    --select-icon-color: var(--color-foreground-primary);
   }
 
   @include use-typography("body-small");
@@ -43,8 +44,8 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: var(--sp-xs);
-  height: $sz-32;
-  width: 100%;
+  block-size: $sz-32;
+  inline-size: 100%;
   padding: var(--sp-s);
   border: none;
   border-radius: $br-8;
@@ -53,6 +54,19 @@
   background: var(--select-background-color);
   color: var(--select-text-color);
   appearance: none;
+}
+
+.variant-ghost {
+  --select-background-color: transparent;
+  inline-size: fit-content;
+
+  & .arrow {
+    margin-inline-start: var(--sp-xs);
+  }
+
+  &:is(:focus-visible, :disabled) {
+    --select-background-color: transparent;
+  }
 }
 
 .arrow {

@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-08-11 07:21+0000\n"
-"Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
+"PO-Revision-Date: 2025-10-07 16:35+0000\n"
+"Last-Translator: Anonymous <noreply@weblate.org>\n"
 "Language-Team: Igbo "
 "<https://hosted.weblate.org/projects/penpot/frontend/ig/>\n"
 "Language: ig\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Weblate 5.13-dev\n"
+"X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:277
 #, unused
@@ -132,7 +132,7 @@ msgstr "Mepee ebe ntinye ihe"
 msgid "auth.sidebar-tagline"
 msgstr "Nsina ghere oghe iji mee nse na atụtụ"
 
-#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:927, src/app/main/ui/workspace/main_menu.cljs:156
+#: src/app/main/ui/auth/register.cljs:253, src/app/main/ui/dashboard/sidebar.cljs:884, src/app/main/ui/workspace/main_menu.cljs:184
 msgid "auth.terms-of-service"
 msgstr "Ọnọdụ ọrụ"
 
@@ -151,7 +151,7 @@ msgstr "Anyị ezigaala ozi nnyocha na"
 msgid "branding-illustrations-marketing-pieces"
 msgstr "...onyinye aha, nkọwa gasị, ngwa ire ahịa dịrị gabazịa."
 
-#: src/app/main/ui/workspace/libraries.cljs:308
+#: src/app/main/ui/workspace/libraries.cljs:333
 msgid "common.publish"
 msgstr "bipụta"
 
@@ -207,7 +207,7 @@ msgstr "Sọọsọ ndị otu"
 msgid "common.share-link.title"
 msgstr "Kee atụ gasị"
 
-#: src/app/main/ui/workspace/libraries.cljs:304
+#: src/app/main/ui/workspace/libraries.cljs:329
 msgid "common.unpublish"
 msgstr "Ebiputaghị"
 
@@ -314,7 +314,7 @@ msgstr "Ọdịmara ga-emebi na%s"
 msgid "dashboard.access-tokens.token-will-not-expire"
 msgstr "Ọdịmara enweghị ụbọchị mmebi"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:620
+#: src/app/main/ui/dashboard/file_menu.cljs:304, src/app/main/ui/workspace/main_menu.cljs:648
 msgid "dashboard.add-shared"
 msgstr "Tinye dị ka ọ a nkwekọrịta"
 
@@ -322,27 +322,27 @@ msgstr "Tinye dị ka ọ a nkwekọrịta"
 msgid "dashboard.change-email"
 msgstr "Gbanwee ozi - n"
 
-#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:524, src/app/main/data/workspace/pages.cljs:178
+#: src/app/main/data/dashboard.cljs:296, src/app/main/data/dashboard.cljs:530, src/app/main/data/workspace/pages.cljs:192
 msgid "dashboard.copy-suffix"
 msgstr "(sere)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:328
+#: src/app/main/ui/dashboard/sidebar.cljs:329
 msgid "dashboard.create-new-team"
 msgstr "Mebe otu ọhụrụ"
 
-#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:548
+#: src/app/main/ui/components/context_menu_a11y.cljs:288, src/app/main/ui/dashboard/sidebar.cljs:549
 msgid "dashboard.default-team-name"
 msgstr "Ite mkpịsị gị"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:476
+#: src/app/main/ui/dashboard/sidebar.cljs:477
 msgid "dashboard.delete-team"
 msgstr "kacha otu"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:661, src/app/main/ui/workspace/main_menu.cljs:670
+#: src/app/main/ui/dashboard/file_menu.cljs:311, src/app/main/ui/dashboard/file_menu.cljs:316, src/app/main/ui/workspace/main_menu.cljs:689, src/app/main/ui/workspace/main_menu.cljs:698
 msgid "dashboard.download-binary-file"
 msgstr "Butuo ederede ite mkpịsị (.penpot)"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:679
+#: src/app/main/ui/dashboard/file_menu.cljs:321, src/app/main/ui/workspace/main_menu.cljs:707
 msgid "dashboard.download-standard-file"
 msgstr "Butuo ederede tozuru etozu (.svg + .json)"
 
@@ -358,7 +358,7 @@ msgstr "Mee o yiri  %s ederede"
 msgid "dashboard.export-binary-multi"
 msgstr "Butuo %s ederede ite mkpịsị (.penpot)"
 
-#: src/app/main/ui/workspace/main_menu.cljs:687
+#: src/app/main/ui/workspace/main_menu.cljs:715
 msgid "dashboard.export-frames"
 msgstr "Bupu bọọdụ dị ka  PDF"
 
@@ -488,11 +488,11 @@ msgstr "Ibugo njatụle n'ebe nkesa (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Ibugo ederede : %s"
 
-#: src/app/main/ui/dashboard/team.cljs:120, src/app/main/ui/dashboard/team.cljs:766
+#: src/app/main/ui/dashboard/team.cljs:122, src/app/main/ui/dashboard/team.cljs:744
 msgid "dashboard.invite-profile"
 msgstr "Kpọta mmadụ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:458, src/app/main/ui/dashboard/sidebar.cljs:465, src/app/main/ui/dashboard/sidebar.cljs:470, src/app/main/ui/dashboard/team.cljs:349
+#: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "Hapụ otu"
 
@@ -504,7 +504,7 @@ msgstr "Ọba ederede gasị & ndebiri"
 msgid "dashboard.libraries-and-templates.explore"
 msgstr "Nyocha ọtụtụ n'ime ha ma mara etu ị ga-esi tinye ọnụ"
 
-#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:151
+#: src/app/main/ui/dashboard/import.cljs:365, src/app/main/ui/workspace/libraries.cljs:152
 msgid "dashboard.libraries-and-templates.import-error"
 msgstr "E nwere nsogbu ibu aba ndebiri . E bubataghị ndebiri."
 
@@ -536,7 +536,7 @@ msgstr "Gaa n'otu ọzọ"
 msgid "dashboard.new-file"
 msgstr "+ Ederede ọhụrụ"
 
-#: src/app/main/data/dashboard.cljs:495, src/app/main/data/dashboard.cljs:607
+#: src/app/main/data/dashboard.cljs:501, src/app/main/data/dashboard.cljs:613
 msgid "dashboard.new-file-prefix"
 msgstr "Ederede ọhụrụ"
 
@@ -544,7 +544,7 @@ msgstr "Ederede ọhụrụ"
 msgid "dashboard.new-project"
 msgstr "+ Nchọcha ọhụrụ"
 
-#: src/app/main/data/dashboard.cljs:255, src/app/main/data/dashboard.cljs:610
+#: src/app/main/data/dashboard.cljs:255, src/app/main/data/dashboard.cljs:616
 msgid "dashboard.new-project-prefix"
 msgstr "Arụmarụ ọhụrụ"
 
@@ -552,7 +552,7 @@ msgstr "Arụmarụ ọhụrụ"
 msgid "dashboard.no-matches-for"
 msgstr "Ọ nweghị ihe ndabara e nwetara maka “%s“"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:762
+#: src/app/main/ui/dashboard/sidebar.cljs:763
 msgid "dashboard.no-projects-placeholder"
 msgstr "Arụmarụ a kụdoro ga-apụta ebe a"
 
@@ -568,7 +568,7 @@ msgstr "E nyochala adreesị ozi - n gị nke ọma"
 msgid "dashboard.notifications.password-saved"
 msgstr "E dọkwara akara mpịbanye nke ọma !"
 
-#: src/app/main/ui/dashboard/team.cljs:1162
+#: src/app/main/ui/dashboard/team.cljs:1340
 msgid "dashboard.num-of-members"
 msgstr "%s Ndị otu"
 
@@ -584,7 +584,7 @@ msgstr "Nhọrọ gasị"
 msgid "dashboard.password-change"
 msgstr "Gbanwee akara mpịbanye"
 
-#: src/app/main/ui/dashboard/pin_button.cljs:24, src/app/main/ui/dashboard/project_menu.cljs:96
+#: src/app/main/ui/dashboard/pin_button.cljs:23, src/app/main/ui/dashboard/project_menu.cljs:96
 msgid "dashboard.pin-unpin"
 msgstr "Nọmba /Wepụ nọmba"
 
@@ -605,7 +605,7 @@ msgstr "Wepụ dị ka ọba ederede nkekọrịta"
 msgid "dashboard.save-settings"
 msgstr "Dokwa ntọala"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:257, src/app/main/ui/dashboard/sidebar.cljs:258
+#: src/app/main/ui/dashboard/sidebar.cljs:258, src/app/main/ui/dashboard/sidebar.cljs:259
 msgid "dashboard.search-placeholder"
 msgstr "Chọọ…"
 
@@ -621,7 +621,7 @@ msgstr "Họrọ asụsụ UI"
 msgid "dashboard.success-duplicate-project"
 msgstr "E megharịala  arụmarụ gị nke ọma\""
 
-#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:164
+#: src/app/main/ui/dashboard/file_menu.cljs:132, src/app/main/ui/dashboard/grid.cljs:614, src/app/main/ui/dashboard/sidebar.cljs:165
 msgid "dashboard.success-move-file"
 msgstr "E wepula  ederede gị nke ọma\""
 
@@ -629,15 +629,15 @@ msgstr "E wepula  ederede gị nke ọma\""
 msgid "dashboard.success-move-project"
 msgstr "E bupula  arụmarụ  gị nke ọma"
 
-#: src/app/main/ui/dashboard/team.cljs:1145
+#: src/app/main/ui/dashboard/team.cljs:1323
 msgid "dashboard.team-info"
 msgstr "Ozi otu"
 
-#: src/app/main/ui/dashboard/team.cljs:1151
+#: src/app/main/ui/dashboard/team.cljs:1329
 msgid "dashboard.team-members"
 msgstr "Ndị otu"
 
-#: src/app/main/ui/dashboard/team.cljs:1166
+#: src/app/main/ui/dashboard/team.cljs:1344
 msgid "dashboard.team-projects"
 msgstr "Arụmarụ otu"
 
@@ -653,7 +653,7 @@ msgstr "Chọọ risọltụ gasị"
 msgid "dashboard.type-something"
 msgstr "Pinye ịchọ risọltụ"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:612
+#: src/app/main/ui/dashboard/file_menu.cljs:301, src/app/main/ui/workspace/main_menu.cljs:640
 msgid "dashboard.unpublish-shared"
 msgstr "Ọba ederede ebiputaghị"
 
@@ -661,38 +661,38 @@ msgstr "Ọba ederede ebiputaghị"
 msgid "dashboard.update-settings"
 msgstr "Hazie ntọala"
 
-#: src/app/main/ui/dashboard/team.cljs:937
+#: src/app/main/ui/dashboard/team.cljs:1115
 msgid "dashboard.webhooks.active"
 msgstr "Dị gara gara"
 
-#: src/app/main/ui/dashboard/team.cljs:938
+#: src/app/main/ui/dashboard/team.cljs:1116
 msgid "dashboard.webhooks.active.explain"
 msgstr "Mgbe a kpọlitere nkọ a, ọ ga-Ezipụta nkọwa emume n'uju"
 
-#: src/app/main/ui/dashboard/team.cljs:928
+#: src/app/main/ui/dashboard/team.cljs:1106
 msgid "dashboard.webhooks.content-type"
 msgstr "Ụdị ndịna"
 
-#: src/app/main/ui/dashboard/team.cljs:961
+#: src/app/main/ui/dashboard/team.cljs:1139
 msgid "dashboard.webhooks.create"
 msgstr "Mepe nko - ududọ"
 
-#: src/app/main/ui/dashboard/team.cljs:853
+#: src/app/main/ui/dashboard/team.cljs:1031
 msgid "dashboard.webhooks.create.success"
 msgstr "E mepere nko-ududọ nke ọma ."
 
-#: src/app/main/ui/dashboard/team.cljs:958
+#: src/app/main/ui/dashboard/team.cljs:1136
 msgid "dashboard.webhooks.description"
 msgstr ""
 "Nko-ududọ bụ ụzọ dị mfe ga-ekwe ka ebe ududọ na apps ndị ọzọ nweta ozi Mgbe "
 "ụfọdụ emume na eme n'ite mkpịsị . Anyị ga e ziga OZI arịrịọ nwe URLs ọ bụla "
 "ị nwetara"
 
-#: src/app/main/ui/dashboard/team.cljs:1087
+#: src/app/main/ui/dashboard/team.cljs:1265
 msgid "dashboard.webhooks.empty.add-one"
 msgstr "Pịa mpị \"Tinye nko-ududọ \" ịtinye otu ."
 
-#: src/app/main/ui/dashboard/team.cljs:1086
+#: src/app/main/ui/dashboard/team.cljs:1264
 msgid "dashboard.webhooks.empty.no-webhooks"
 msgstr "E nweghị Nko-ududọ e ebere ruo ugbu a ."
 
@@ -708,7 +708,7 @@ msgstr "Ebe Ntinye ihe gị"
 msgid "dashboard.your-email"
 msgstr "Ozi-n"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:347, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:301, src/app/main/ui/dashboard/team.cljs:535, src/app/main/ui/dashboard/team.cljs:805, src/app/main/ui/dashboard/team.cljs:1073, src/app/main/ui/dashboard/team.cljs:1120
+#: src/app/main/ui/dashboard/file_menu.cljs:40, src/app/main/ui/dashboard/fonts.cljs:42, src/app/main/ui/dashboard/libraries.cljs:55, src/app/main/ui/dashboard/projects.cljs:347, src/app/main/ui/dashboard/search.cljs:48, src/app/main/ui/dashboard/sidebar.cljs:302, src/app/main/ui/dashboard/team.cljs:537, src/app/main/ui/dashboard/team.cljs:983, src/app/main/ui/dashboard/team.cljs:1251, src/app/main/ui/dashboard/team.cljs:1298
 msgid "dashboard.your-penpot"
 msgstr "Ite mkpịsị. gị"
 
@@ -720,11 +720,11 @@ msgstr "Okay"
 msgid "ds.alert-title"
 msgstr "Gee ntị"
 
-#: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:332, src/app/main/ui/workspace/plugins.cljs:386
+#: src/app/main/ui/comments.cljs:673, src/app/main/ui/confirm.cljs:37, src/app/main/ui/settings/subscription.cljs:191, src/app/main/ui/settings/subscription.cljs:203, src/app/main/ui/workspace/plugins.cljs:333, src/app/main/ui/workspace/plugins.cljs:387
 msgid "ds.confirm-cancel"
 msgstr "Kagbuo"
 
-#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:153, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
+#: src/app/main/ui/confirm.cljs:38, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:156, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:101
 msgid "ds.confirm-ok"
 msgstr "Okay"
 
@@ -764,11 +764,11 @@ msgstr "Aha ozi-n adabala."
 msgid "errors.email-as-password"
 msgstr "Ị nweghị ike iji aha ozi-n gị dị ka akara mpịbanye"
 
-#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:629, src/app/main/ui/settings/change_email.cljs:37
+#: src/app/main/ui/auth/recovery_request.cljs:57, src/app/main/ui/auth/register.cljs:98, src/app/main/ui/auth/register.cljs:101, src/app/main/ui/dashboard/team.cljs:627, src/app/main/ui/settings/change_email.cljs:37
 msgid "errors.email-has-permanent-bounces"
 msgstr "Ozi-n «%s» nwere ọtụtụ ozi nkọwa mbịaghachigide."
 
-#: src/app/main/ui/dashboard/team.cljs:194, src/app/main/ui/onboarding/team_choice.cljs:110
+#: src/app/main/ui/dashboard/team.cljs:196, src/app/main/ui/dashboard/team.cljs:858, src/app/main/ui/onboarding/team_choice.cljs:110
 msgid "errors.email-spam-or-permanent-bounces"
 msgstr "E nwela ozi nkọwa na ozi-n«%s» dị ka ozi abaghị uru ma ọ bụ  mbịaghachigide."
 
@@ -782,7 +782,7 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Akwadoghị agwara '%s' ."
 
-#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:197, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
+#: src/app/main/data/auth.cljs:322, src/app/main/ui/auth/login.cljs:81, src/app/main/ui/auth/login.cljs:122, src/app/main/ui/auth/register.cljs:110, src/app/main/ui/auth/register.cljs:304, src/app/main/ui/auth/verify_token.cljs:94, src/app/main/ui/dashboard/team.cljs:199, src/app/main/ui/dashboard/team.cljs:861, src/app/main/ui/onboarding/team_choice.cljs:113, src/app/main/ui/settings/access_tokens.cljs:79, src/app/main/ui/settings/feedback.cljs:49
 msgid "errors.generic"
 msgstr "Ihe ezighị ezi emela ."
 
@@ -815,7 +815,7 @@ msgstr "This invite might be canceled or may be expired."
 msgid "errors.ldap-disabled"
 msgstr "LDAP mbinye aka agaghị ."
 
-#: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:189, src/app/main/ui/onboarding/team_choice.cljs:105
+#: src/app/main/errors.cljs:289, src/app/main/ui/dashboard/team.cljs:191, src/app/main/ui/onboarding/team_choice.cljs:105
 msgid "errors.max-quota-reached"
 msgstr "I ruola '%s' ole a chọrọ . Chọọ enyemaka nkwado ."
 
@@ -827,7 +827,7 @@ msgstr "Onyinyo a ebuka ibu maka itinye ."
 msgid "errors.media-type-mismatch"
 msgstr "Dị ka ihe dị na onyinyo adabaghị na mgbatị ederede."
 
-#: src/app/main/ui/dashboard/team.cljs:624
+#: src/app/main/ui/dashboard/team.cljs:622
 msgid "errors.member-is-muted"
 msgstr ""
 "Nchịkọta gị  nwere ozi-n mechiri emechi (akụkọ ozi-n adịghị mma ma ọ bụ "
@@ -837,7 +837,7 @@ msgstr ""
 msgid "errors.profile-blocked"
 msgstr "A gbachiri nchịkọta agbachi"
 
-#: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:180, src/app/main/ui/dashboard/team.cljs:620, src/app/main/ui/onboarding/team_choice.cljs:97, src/app/main/ui/settings/change_email.cljs:33
+#: src/app/main/ui/auth/recovery_request.cljs:53, src/app/main/ui/dashboard/team.cljs:182, src/app/main/ui/dashboard/team.cljs:618, src/app/main/ui/dashboard/team.cljs:844, src/app/main/ui/onboarding/team_choice.cljs:97, src/app/main/ui/settings/change_email.cljs:33
 msgid "errors.profile-is-muted"
 msgstr ""
 "Nchịkọta gị lnwere ozi-n mechiri emechi(akụkọ ozi-n adịghị mma ma ọ bụ "
@@ -847,15 +847,15 @@ msgstr ""
 msgid "errors.registration-disabled"
 msgstr "Ndebanye merụrụ emerụ ugbu a."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:354, src/app/main/ui/dashboard/team.cljs:391
+#: src/app/main/ui/dashboard/sidebar.cljs:355, src/app/main/ui/dashboard/team.cljs:393
 msgid "errors.team-leave.insufficient-members"
 msgstr "Ndị otu ezughị okè ịhapụ otu, ọ nyere ike na ị chọrọ  ihichapụ ya ."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:357, src/app/main/ui/dashboard/team.cljs:394
+#: src/app/main/ui/dashboard/sidebar.cljs:358, src/app/main/ui/dashboard/team.cljs:396
 msgid "errors.team-leave.member-does-not-exists"
 msgstr "Onye otu ị na-achọ inye adịghị ."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:360, src/app/main/ui/dashboard/team.cljs:397
+#: src/app/main/ui/dashboard/sidebar.cljs:361, src/app/main/ui/dashboard/team.cljs:399
 msgid "errors.team-leave.owner-cant-leave"
 msgstr "O wee enweghị ike ịhapụ otu, ị ga-enyegharịrị ọrụ onwee."
 
@@ -867,19 +867,19 @@ msgstr "Ndejo atughị anya ya pụtara ."
 msgid "errors.unexpected-token"
 msgstr "Ọdịmara amaghị ama"
 
-#: src/app/main/ui/dashboard/team.cljs:873
+#: src/app/main/ui/dashboard/team.cljs:1051
 msgid "errors.webhooks.connection"
 msgstr "Mmejọ, e nwetaghị URL"
 
-#: src/app/main/ui/dashboard/team.cljs:867
+#: src/app/main/ui/dashboard/team.cljs:1045
 msgid "errors.webhooks.invalid-uri"
 msgstr "URL enweghị nkwado ."
 
-#: src/app/main/ui/dashboard/team.cljs:869, src/app/main/ui/dashboard/team.cljs:1029
+#: src/app/main/ui/dashboard/team.cljs:1047, src/app/main/ui/dashboard/team.cljs:1207
 msgid "errors.webhooks.ssl-validation"
 msgstr "Mmejọ na nkwado SSL ."
 
-#: src/app/main/ui/dashboard/team.cljs:871
+#: src/app/main/ui/dashboard/team.cljs:1049
 msgid "errors.webhooks.timeout"
 msgstr "Oge ezuola"
 
@@ -939,19 +939,19 @@ msgstr "Mmehie apụtala"
 msgid "inspect.attributes.blur"
 msgstr "Inyogo"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:124
+#: src/app/main/ui/workspace/sidebar/options/menus/blur.cljs:125
 msgid "inspect.attributes.blur.value"
 msgstr "Uru"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:110, src/app/main/ui/inspect/right_sidebar.cljs:97
+#: src/app/main/ui/inspect/attributes/common.cljs:91, src/app/main/ui/inspect/right_sidebar.cljs:97
 msgid "inspect.attributes.color.hex"
 msgstr "HEX"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:112, src/app/main/ui/inspect/right_sidebar.cljs:101
+#: src/app/main/ui/inspect/attributes/common.cljs:93, src/app/main/ui/inspect/right_sidebar.cljs:101
 msgid "inspect.attributes.color.hsla"
 msgstr "HSLA"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:111, src/app/main/ui/inspect/right_sidebar.cljs:99
+#: src/app/main/ui/inspect/attributes/common.cljs:92, src/app/main/ui/inspect/right_sidebar.cljs:99
 msgid "inspect.attributes.color.rgba"
 msgstr "RGBA"
 
@@ -959,7 +959,7 @@ msgstr "RGBA"
 msgid "inspect.attributes.fill"
 msgstr "Wunye"
 
-#: src/app/main/ui/inspect/attributes/common.cljs:97
+#: src/app/main/ui/inspect/attributes/common.cljs:78, src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:127
 msgid "inspect.attributes.image.download"
 msgstr "Butuo onyinyo nsina"
 
@@ -1048,55 +1048,57 @@ msgstr "Akpụrụka"
 msgid "inspect.attributes.stroke.width"
 msgstr "Uhie"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:78, src/app/main/ui/inspect/attributes/text.cljs:191
+#: src/app/main/ui/inspect/attributes/text.cljs:78, src/app/main/ui/inspect/attributes/text.cljs:184
 msgid "inspect.attributes.typography"
 msgstr "Akara nkụpụta"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:86, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:303
 msgid "inspect.attributes.typography.font-family"
 msgstr "Ezinụlọ mkpụrụ edide"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:104, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:321, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:327
 msgid "inspect.attributes.typography.font-size"
 msgstr "Nhazi mkpụrụ edide"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:131, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:388
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:388
 msgid "inspect.attributes.typography.letter-spacing"
 msgstr "Ndesa mkpụrụ edemede"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:122, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
+#: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:371
 msgid "inspect.attributes.typography.line-height"
 msgstr "Ogo akara"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:140
+#, unused
 msgid "inspect.attributes.typography.text-decoration"
 msgstr "Nkwazi ederede"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:142
+#: src/app/main/ui/inspect/attributes/text.cljs:136
 msgid "inspect.attributes.typography.text-decoration.none"
 msgstr "Ncha ncha"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:144
+#: src/app/main/ui/inspect/attributes/text.cljs:138
 msgid "inspect.attributes.typography.text-decoration.underline"
 msgstr "N'okpuru"
 
 #: src/app/main/ui/inspect/attributes/text.cljs:153
+#, unused
 msgid "inspect.attributes.typography.text-transform"
 msgstr "Mgbanwe ederede"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:157, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
+#: src/app/main/ui/inspect/attributes/text.cljs:150, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:429
 msgid "inspect.attributes.typography.text-transform.capitalize"
 msgstr "Mkpụrụ edemede isiokwu"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:156
+#: src/app/main/ui/inspect/attributes/text.cljs:149
 msgid "inspect.attributes.typography.text-transform.none"
 msgstr "None"
 
-#: src/app/main/ui/inspect/attributes/text.cljs:158, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
+#: src/app/main/ui/inspect/attributes/text.cljs:151, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:423
 msgid "inspect.attributes.typography.text-transform.uppercase"
 msgstr "Mkpụrụ edemede nnukwu"
 
-#: src/app/main/ui/inspect/right_sidebar.cljs:230
+#: src/app/main/ui/inspect/right_sidebar.cljs:232
 msgid "inspect.empty.help"
 msgstr ""
 "Ị chọọ ị ma ihe ndị ọzọ maka nnyocha esereese, gaa n'ebe enyemaka ite "
@@ -1158,7 +1160,7 @@ msgstr "Ederede"
 msgid "inspect.tabs.info"
 msgstr "Ozi"
 
-#: src/app/main/ui/workspace/main_menu.cljs:164
+#: src/app/main/ui/workspace/main_menu.cljs:192
 msgid "label.shortcuts"
 msgstr "Ụzọ mkpirisi"
 
@@ -1170,7 +1172,7 @@ msgstr "Nabata"
 msgid "labels.access-tokens"
 msgstr "Nweta ọdịmara gasị"
 
-#: src/app/main/ui/dashboard/team.cljs:1045
+#: src/app/main/ui/dashboard/team.cljs:1223
 msgid "labels.active"
 msgstr "Gara gara"
 
@@ -1178,7 +1180,7 @@ msgstr "Gara gara"
 msgid "labels.add-custom-font"
 msgstr "Tinye mkpụrụ edide a haziri ahazi"
 
-#: src/app/main/ui/dashboard/team.cljs:132, src/app/main/ui/dashboard/team.cljs:318, src/app/main/ui/dashboard/team.cljs:563, src/app/main/ui/dashboard/team.cljs:593, src/app/main/ui/onboarding/team_choice.cljs:58
+#: src/app/main/ui/dashboard/team.cljs:134, src/app/main/ui/dashboard/team.cljs:320, src/app/main/ui/dashboard/team.cljs:565, src/app/main/ui/dashboard/team.cljs:595, src/app/main/ui/onboarding/team_choice.cljs:58
 msgid "labels.admin"
 msgstr "Ọchịkwa"
 
@@ -1186,7 +1188,7 @@ msgstr "Ọchịkwa"
 msgid "labels.adobe-xd"
 msgstr "Ngwa nrụkọrịta ọrụ Adobe"
 
-#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:90, src/app/main/ui/workspace/tokens/management/context_menu.cljs:124, src/app/main/ui/workspace/tokens/management/token_pill.cljs:141
+#: src/app/main/ui/workspace/tokens/management/context_menu.cljs:89, src/app/main/ui/workspace/tokens/management/context_menu.cljs:123, src/app/main/ui/workspace/tokens/management/token_pill.cljs:116
 msgid "labels.all"
 msgstr "Ha niile"
 
@@ -1203,7 +1205,7 @@ msgstr "Azụ"
 msgid "labels.bad-gateway.main-message"
 msgstr "Ajọ ụzọ mbanye"
 
-#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:944, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:158, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:268, src/app/main/ui/workspace/tokens/management/create/form.cljs:613, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
+#: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/form.cljs:632, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
 msgid "labels.cancel"
 msgstr "Kagbuo"
 
@@ -1211,15 +1213,15 @@ msgstr "Kagbuo"
 msgid "labels.canva"
 msgstr "Kanva"
 
-#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:102, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:246, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:128, src/app/main/ui/workspace/libraries.cljs:623, src/app/main/ui/workspace/sidebar/debug.cljs:40, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar.cljs:243, src/app/main/ui/workspace/tokens/export.cljs:24, src/app/main/ui/workspace/tokens/import.cljs:18, src/app/main/ui/workspace/tokens/management/create/modals.cljs:90, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:58, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:161, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:442
+#: src/app/main/data/common.cljs:96, src/app/main/ui/dashboard/comments.cljs:103, src/app/main/ui/dashboard/projects.cljs:99, src/app/main/ui/exports/files.cljs:209, src/app/main/ui/settings/access_tokens.cljs:170, src/app/main/ui/settings/subscription.cljs:246, src/app/main/ui/viewer/login.cljs:71, src/app/main/ui/viewer/share_link.cljs:176, src/app/main/ui/workspace/comments.cljs:129, src/app/main/ui/workspace/libraries.cljs:656, src/app/main/ui/workspace/sidebar/debug.cljs:41, src/app/main/ui/workspace/sidebar/layers.cljs:302, src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:43, src/app/main/ui/workspace/sidebar/shortcuts.cljs:496, src/app/main/ui/workspace/sidebar.cljs:244, src/app/main/ui/workspace/tokens/export.cljs:25, src/app/main/ui/workspace/tokens/import.cljs:19, src/app/main/ui/workspace/tokens/management/create/modals.cljs:91, src/app/main/ui/workspace/tokens/settings/menu.cljs:78, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:58, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:161, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:441
 msgid "labels.close"
 msgstr "Megbuo"
 
-#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:126
+#: src/app/main/ui/viewer/comments.cljs:71, src/app/main/ui/workspace/comments.cljs:127
 msgid "labels.comments"
 msgstr "Okwu gasị"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:899, src/app/main/ui/workspace/main_menu.cljs:116
+#: src/app/main/ui/dashboard/sidebar.cljs:840, src/app/main/ui/workspace/main_menu.cljs:144
 msgid "labels.community"
 msgstr "Ogbe"
 
@@ -1227,7 +1229,7 @@ msgstr "Ogbe"
 msgid "labels.confirm-password"
 msgstr "Nabata akara mpịbanye"
 
-#: src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:210
+#: src/app/main/ui/dashboard/import.cljs:521, src/app/main/ui/dashboard/team.cljs:787, src/app/main/ui/exports/files.cljs:196, src/app/main/ui/onboarding/newsletter.cljs:106, src/app/main/ui/settings/subscription.cljs:195, src/app/main/ui/settings/subscription.cljs:210
 msgid "labels.continue"
 msgstr "Ga n'ihu"
 
@@ -1239,11 +1241,11 @@ msgstr "Gaa n'ihu"
 msgid "labels.continue-with-penpot"
 msgstr "I Nwere Ike ịganihu"
 
-#: src/app/main/ui/dashboard/team.cljs:692
+#: src/app/main/ui/dashboard/team.cljs:650
 msgid "labels.copy-invitation-link"
 msgstr "Dọrọ njikọ"
 
-#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:166, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:202
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:205
 msgid "labels.create"
 msgstr "Meputa"
 
@@ -1255,7 +1257,7 @@ msgstr "Mepee otu ọhụrụ"
 msgid "labels.custom-fonts"
 msgstr "mkpụrụ edide a haziri"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:980, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:221, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/form.cljs:607, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:64, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:362
+#: src/app/main/ui/dashboard/file_menu.cljs:329, src/app/main/ui/dashboard/fonts.cljs:267, src/app/main/ui/dashboard/fonts.cljs:343, src/app/main/ui/dashboard/fonts.cljs:357, src/app/main/ui/dashboard/project_menu.cljs:115, src/app/main/ui/dashboard/team.cljs:1158, src/app/main/ui/settings/access_tokens.cljs:196, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:224, src/app/main/ui/workspace/sidebar/versions.cljs:215, src/app/main/ui/workspace/tokens/management/create/form.cljs:626, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:66, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:361
 msgid "labels.delete"
 msgstr "Hichaa"
 
@@ -1267,7 +1269,7 @@ msgstr "Hichaa okwu"
 msgid "labels.delete-comment-thread"
 msgstr "Hichapụ eri"
 
-#: src/app/main/ui/dashboard/team.cljs:698
+#: src/app/main/ui/dashboard/team.cljs:941
 msgid "labels.delete-invitation"
 msgstr "Hichapụ oku"
 
@@ -1279,11 +1281,11 @@ msgstr "Hichapụ ederede %s"
 msgid "labels.developer"
 msgstr "Onye nrụpụta"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:178, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:724
+#: src/app/main/ui/dashboard/file_menu.cljs:30, src/app/main/ui/dashboard/files.cljs:79, src/app/main/ui/dashboard/files.cljs:178, src/app/main/ui/dashboard/projects.cljs:227, src/app/main/ui/dashboard/projects.cljs:231, src/app/main/ui/dashboard/sidebar.cljs:725
 msgid "labels.drafts"
 msgstr "Ndesita"
 
-#: src/app/main/ui/comments.cljs:1005, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:978, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:217, src/app/main/ui/workspace/tokens/themes.cljs:51
+#: src/app/main/ui/comments.cljs:1005, src/app/main/ui/dashboard/fonts.cljs:264, src/app/main/ui/dashboard/team.cljs:1156, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:220, src/app/main/ui/workspace/tokens/themes.cljs:51
 msgid "labels.edit"
 msgstr "Dezie"
 
@@ -1291,11 +1293,11 @@ msgstr "Dezie"
 msgid "labels.edit-file"
 msgstr "Dezie ederede"
 
-#: src/app/main/ui/dashboard/team.cljs:130, src/app/main/ui/dashboard/team.cljs:315, src/app/main/ui/dashboard/team.cljs:564, src/app/main/ui/dashboard/team.cljs:597, src/app/main/ui/onboarding/team_choice.cljs:57
+#: src/app/main/ui/dashboard/team.cljs:132, src/app/main/ui/dashboard/team.cljs:317, src/app/main/ui/dashboard/team.cljs:566, src/app/main/ui/dashboard/team.cljs:599, src/app/main/ui/onboarding/team_choice.cljs:57
 msgid "labels.editor"
 msgstr "Odezi"
 
-#: src/app/main/ui/dashboard/team.cljs:714
+#: src/app/main/ui/dashboard/team.cljs:668
 msgid "labels.expired-invitation"
 msgstr "Mebiri"
 
@@ -1323,7 +1325,7 @@ msgstr "Ndị na-enye mkpụrụ edide"
 msgid "labels.font-variants"
 msgstr "Ụdịdị gasị"
 
-#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:737
+#: src/app/main/ui/dashboard/fonts.cljs:61, src/app/main/ui/dashboard/sidebar.cljs:738
 msgid "labels.fonts"
 msgstr "Mkpụrụ edide gasị"
 
@@ -1337,11 +1339,11 @@ msgstr "Onye malitere /VP"
 msgid "labels.freelancer"
 msgstr "Onye nwere onwe ya"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:922, src/app/main/ui/workspace/main_menu.cljs:148
+#: src/app/main/ui/dashboard/sidebar.cljs:834, src/app/main/ui/workspace/main_menu.cljs:176
 msgid "labels.github-repo"
 msgstr "Ọ a Github"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:935, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:177
+#: src/app/main/ui/dashboard/sidebar.cljs:809, src/app/main/ui/settings/sidebar.cljs:136, src/app/main/ui/workspace/main_menu.cljs:205
 msgid "labels.give-feedback"
 msgstr "Nye nzaghachi"
 
@@ -1349,15 +1351,15 @@ msgstr "Nye nzaghachi"
 msgid "labels.go-back"
 msgstr "Gaa azụ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:894, src/app/main/ui/workspace/main_menu.cljs:108, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1084, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1109, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1295
+#: src/app/main/ui/dashboard/sidebar.cljs:792, src/app/main/ui/workspace/main_menu.cljs:136, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1085, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1110, src/app/main/ui/workspace/sidebar/options/menus/layout_container.cljs:1296
 msgid "labels.help-center"
 msgstr "Ebe enyemaka"
 
-#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:73
+#: src/app/main/ui/viewer/comments.cljs:104, src/app/main/ui/workspace/comments.cljs:74
 msgid "labels.hide-resolved-comments"
 msgstr "Zoo nkwupụta e kpebiri"
 
-#: src/app/main/ui/dashboard/team.cljs:1046
+#: src/app/main/ui/dashboard/team.cljs:1224
 msgid "labels.inactive"
 msgstr "Arụghị ọrụ"
 
@@ -1377,7 +1379,7 @@ msgstr "Nrụjọ ndịnime"
 msgid "labels.invision"
 msgstr "Mmakpo"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:435, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108, src/app/main/ui/dashboard/team.cljs:784
+#: src/app/main/ui/dashboard/sidebar.cljs:436, src/app/main/ui/dashboard/team.cljs:102, src/app/main/ui/dashboard/team.cljs:110, src/app/main/ui/dashboard/team.cljs:944
 msgid "labels.invitations"
 msgstr "Akwụkwọ ịkpọ ọkụ gasị"
 
@@ -1385,7 +1387,7 @@ msgstr "Akwụkwọ ịkpọ ọkụ gasị"
 msgid "labels.language"
 msgstr "Asụsụ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:917, src/app/main/ui/workspace/main_menu.cljs:140
+#: src/app/main/ui/workspace/main_menu.cljs:168
 msgid "labels.libraries-and-templates"
 msgstr "Ọba ederede  na  Ndebiri gasị"
 
@@ -1393,7 +1395,7 @@ msgstr "Ọba ederede  na  Ndebiri gasị"
 msgid "labels.log-or-sign"
 msgstr "Banye ma ọ bụ debanye"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:941
+#: src/app/main/ui/dashboard/sidebar.cljs:1053
 msgid "labels.logout"
 msgstr "Pụọ"
 
@@ -1401,11 +1403,11 @@ msgstr "Pụọ"
 msgid "labels.marketing"
 msgstr "Ịzụ ahịa"
 
-#: src/app/main/ui/dashboard/team.cljs:510
+#: src/app/main/ui/dashboard/team.cljs:512
 msgid "labels.member"
 msgstr "Onye otu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:431, src/app/main/ui/dashboard/team.cljs:98, src/app/main/ui/dashboard/team.cljs:106
+#: src/app/main/ui/dashboard/sidebar.cljs:432, src/app/main/ui/dashboard/team.cljs:100, src/app/main/ui/dashboard/team.cljs:108
 msgid "labels.members"
 msgstr "Ndị otu"
 
@@ -1413,15 +1415,15 @@ msgstr "Ndị otu"
 msgid "labels.new-password"
 msgstr "Akara mpịbanye ọhụrụ"
 
-#: src/app/main/ui/dashboard/templates.cljs:293, src/app/main/ui/onboarding/questions.cljs:54, src/app/main/ui/viewer.cljs:112
+#: src/app/main/ui/dashboard/templates.cljs:301, src/app/main/ui/onboarding/questions.cljs:54, src/app/main/ui/viewer.cljs:112
 msgid "labels.next"
 msgstr "Ọzọ"
 
-#: src/app/main/ui/dashboard/comments.cljs:121, src/app/main/ui/workspace/comments.cljs:164
+#: src/app/main/ui/dashboard/comments.cljs:122, src/app/main/ui/workspace/comments.cljs:165
 msgid "labels.no-comments-available"
 msgstr "E jidere unu niile! Ngosi nkwupụta ọhụrụ ga-apụta ebe a ."
 
-#: src/app/main/ui/dashboard/team.cljs:759
+#: src/app/main/ui/dashboard/team.cljs:737
 msgid "labels.no-invitations"
 msgstr "E nweghị ọkụ na-echere"
 
@@ -1451,7 +1453,7 @@ msgstr "ma ọ bụ"
 msgid "labels.other"
 msgstr "Ọzọ (zipụta)"
 
-#: src/app/main/ui/dashboard/team.cljs:322, src/app/main/ui/dashboard/team.cljs:562, src/app/main/ui/dashboard/team.cljs:1157
+#: src/app/main/ui/dashboard/team.cljs:324, src/app/main/ui/dashboard/team.cljs:564, src/app/main/ui/dashboard/team.cljs:1335
 msgid "labels.owner"
 msgstr "Onye nwe"
 
@@ -1459,7 +1461,7 @@ msgstr "Onye nwe"
 msgid "labels.password"
 msgstr "Akara mpịbanye"
 
-#: src/app/main/ui/dashboard/team.cljs:715
+#: src/app/main/ui/dashboard/team.cljs:669
 msgid "labels.pending-invitation"
 msgstr "Na-echere"
 
@@ -1471,11 +1473,11 @@ msgstr "Onye njikwa ngwaahịa ma ọ bụ arụmarụ"
 msgid "labels.profile"
 msgstr "Nchịkọta"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:717
+#: src/app/main/ui/dashboard/sidebar.cljs:718
 msgid "labels.projects"
 msgstr "Ọrụ gasị"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:909, src/app/main/ui/settings/sidebar.cljs:129, src/app/main/ui/workspace/main_menu.cljs:132
+#: src/app/main/ui/settings/sidebar.cljs:129, src/app/main/ui/workspace/main_menu.cljs:160
 msgid "labels.release-notes"
 msgstr "Wepụta ndetu"
 
@@ -1489,11 +1491,11 @@ msgstr "Bugharịa ederede"
 msgid "labels.remove"
 msgstr "Wepu"
 
-#: src/app/main/ui/dashboard/team.cljs:353
+#: src/app/main/ui/dashboard/team.cljs:355
 msgid "labels.remove-member"
 msgstr "Wepụ onye otu"
 
-#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:452, src/app/main/ui/workspace/sidebar/assets/groups.cljs:166, src/app/main/ui/workspace/sidebar/versions.cljs:191, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:61
+#: src/app/main/ui/dashboard/file_menu.cljs:281, src/app/main/ui/dashboard/project_menu.cljs:88, src/app/main/ui/dashboard/sidebar.cljs:453, src/app/main/ui/workspace/sidebar/assets/groups.cljs:167, src/app/main/ui/workspace/sidebar/versions.cljs:191, src/app/main/ui/workspace/tokens/sets/context_menu.cljs:63
 msgid "labels.rename"
 msgstr "Nyegharịa aha"
 
@@ -1505,11 +1507,11 @@ msgstr "Nyegharịa otu"
 msgid "labels.retry"
 msgstr "Nwagharịa"
 
-#: src/app/main/ui/dashboard/team.cljs:511, src/app/main/ui/dashboard/team.cljs:785
+#: src/app/main/ui/dashboard/team.cljs:513, src/app/main/ui/dashboard/team.cljs:945
 msgid "labels.role"
 msgstr "Ọrụ"
 
-#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:203, src/app/main/ui/workspace/tokens/management/create/form.cljs:618, src/app/main/ui/workspace/tokens/settings/menu.cljs:108
+#: src/app/main/ui/dashboard/fonts.cljs:393, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:206, src/app/main/ui/workspace/tokens/management/create/form.cljs:637, src/app/main/ui/workspace/tokens/settings/menu.cljs:108
 msgid "labels.save"
 msgstr "Dokwa"
 
@@ -1529,15 +1531,15 @@ msgstr "Ziga"
 msgid "labels.sending"
 msgstr "Na-eziga…"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:445, src/app/main/ui/dashboard/team.cljs:99, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
+#: src/app/main/ui/dashboard/sidebar.cljs:446, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:115, src/app/main/ui/settings/options.cljs:87, src/app/main/ui/settings/sidebar.cljs:109
 msgid "labels.settings"
 msgstr "Ntọala"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:744
+#: src/app/main/ui/dashboard/sidebar.cljs:745
 msgid "labels.shared-libraries"
 msgstr "Ọba ederede"
 
-#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:55, src/app/main/ui/workspace/comments.cljs:137
+#: src/app/main/ui/viewer/comments.cljs:83, src/app/main/ui/workspace/comments.cljs:56, src/app/main/ui/workspace/comments.cljs:138
 msgid "labels.show-all-comments"
 msgstr "Gosi nkwupụta niile"
 
@@ -1545,7 +1547,7 @@ msgstr "Gosi nkwupụta niile"
 msgid "labels.show-comments-list"
 msgstr "Gosi ndepụta nkwupụta gasị"
 
-#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:61, src/app/main/ui/workspace/comments.cljs:138
+#: src/app/main/ui/viewer/comments.cljs:92, src/app/main/ui/workspace/comments.cljs:62, src/app/main/ui/workspace/comments.cljs:139
 msgid "labels.show-your-comments"
 msgstr "Gosi nanị nkwupụta gị gasị"
 
@@ -1557,7 +1559,7 @@ msgstr "Eserese"
 msgid "labels.start"
 msgstr "Bido"
 
-#: src/app/main/ui/dashboard/team.cljs:786
+#: src/app/main/ui/dashboard/team.cljs:954
 msgid "labels.status"
 msgstr "Ọnọdụ"
 
@@ -1565,7 +1567,7 @@ msgstr "Ọnọdụ"
 msgid "labels.student-teacher"
 msgstr "Nwata akwụkwọ ma ọ bụ onye nkụzi"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:904, src/app/main/ui/workspace/main_menu.cljs:124
+#: src/app/main/ui/workspace/main_menu.cljs:152
 msgid "labels.tutorials"
 msgstr "Nkuzi"
 
@@ -1593,15 +1595,15 @@ msgstr "Bugo ederede gasị ahaziri"
 msgid "labels.uploading"
 msgstr "Na-ebugo…"
 
-#: src/app/main/ui/workspace/sidebar/sitemap.cljs:245
+#: src/app/main/ui/workspace/sidebar/sitemap.cljs:246
 msgid "labels.view-only"
 msgstr "Sọọsọ nkiri"
 
-#: src/app/main/ui/dashboard/team.cljs:129, src/app/main/ui/dashboard/team.cljs:312, src/app/main/ui/dashboard/team.cljs:565, src/app/main/ui/dashboard/team.cljs:601, src/app/main/ui/onboarding/team_choice.cljs:56
+#: src/app/main/ui/dashboard/team.cljs:131, src/app/main/ui/dashboard/team.cljs:314, src/app/main/ui/dashboard/team.cljs:567, src/app/main/ui/dashboard/team.cljs:603, src/app/main/ui/onboarding/team_choice.cljs:56
 msgid "labels.viewer"
 msgstr "Ndị nkiri"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:440, src/app/main/ui/dashboard/team.cljs:101, src/app/main/ui/dashboard/team.cljs:111, src/app/main/ui/dashboard/team.cljs:956
+#: src/app/main/ui/dashboard/sidebar.cljs:441, src/app/main/ui/dashboard/team.cljs:103, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/dashboard/team.cljs:1134
 msgid "labels.webhooks"
 msgstr "Nko-ududọ"
 
@@ -1609,11 +1611,11 @@ msgstr "Nko-ududọ"
 msgid "labels.write-new-comment"
 msgstr "Dee nkwupụta ọhụrụ"
 
-#: src/app/main/ui/dashboard/team.cljs:266
+#: src/app/main/ui/dashboard/team.cljs:268
 msgid "labels.you"
 msgstr "(gị)"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:886
+#: src/app/main/ui/dashboard/sidebar.cljs:1006
 msgid "labels.your-account"
 msgstr "Akara mbata gị"
 
@@ -1666,19 +1668,19 @@ msgstr "Create token"
 msgid "modals.create-access-token.title"
 msgstr "Mepụta ọdịmara nweta"
 
-#: src/app/main/ui/dashboard/team.cljs:949
+#: src/app/main/ui/dashboard/team.cljs:1127
 msgid "modals.create-webhook.submit-label"
 msgstr "Mebe nko - ududo"
 
-#: src/app/main/ui/dashboard/team.cljs:914
+#: src/app/main/ui/dashboard/team.cljs:1092
 msgid "modals.create-webhook.title"
 msgstr "Mebe nko-ududo"
 
-#: src/app/main/ui/dashboard/team.cljs:925
+#: src/app/main/ui/dashboard/team.cljs:1103
 msgid "modals.create-webhook.url.label"
 msgstr "Isi ozi URL"
 
-#: src/app/main/ui/dashboard/team.cljs:926
+#: src/app/main/ui/dashboard/team.cljs:1104
 msgid "modals.create-webhook.url.placeholder"
 msgstr "https://ọmụmaaụ.com/ozi anabara"
 
@@ -1720,11 +1722,11 @@ msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ mkparịtaụka a?"
 msgid "modals.delete-comment-thread.title"
 msgstr "Hichaa mkparịtaụka"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:152
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:155
 msgid "modals.delete-component-annotation.message"
 msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ nkọwa ?"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:151
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:154
 msgid "modals.delete-component-annotation.title"
 msgstr "Hichapụ nkọwa"
 
@@ -1748,11 +1750,11 @@ msgstr "Na-ehichapụ ederede %s"
 msgid "modals.delete-font.title"
 msgstr "Na-ehichapụ mkpụrụ edide"
 
-#: src/app/main/ui/workspace/context_menu.cljs:670, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
+#: src/app/main/ui/workspace/context_menu.cljs:673, src/app/main/ui/workspace/sidebar/sitemap.cljs:72
 msgid "modals.delete-page.body"
 msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ ihu akwụkwọ a?"
 
-#: src/app/main/ui/workspace/context_menu.cljs:669, src/app/main/ui/workspace/sidebar/sitemap.cljs:70
+#: src/app/main/ui/workspace/context_menu.cljs:672, src/app/main/ui/workspace/sidebar/sitemap.cljs:71
 msgid "modals.delete-page.title"
 msgstr "Hichapụ ihu akwụkwọ"
 
@@ -1768,75 +1770,75 @@ msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ arụmarụ ?"
 msgid "modals.delete-project-confirm.title"
 msgstr "Hichapụ arụmarụ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:424
+#: src/app/main/ui/dashboard/sidebar.cljs:425
 msgid "modals.delete-team-confirm.accept"
 msgstr "Hichapụ otu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:423
+#: src/app/main/ui/dashboard/sidebar.cljs:424
 msgid "modals.delete-team-confirm.message"
 msgstr ""
 "Ọ kara gị obi na ị chọrọ ị hichapụ otu? ARỤMARỤ na ederede nille gasị "
 "gbasara otú ga-ehichapụ kpam kpam"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:422
+#: src/app/main/ui/dashboard/sidebar.cljs:423
 msgid "modals.delete-team-confirm.title"
 msgstr "Na-ehichapụ otu"
 
-#: src/app/main/ui/dashboard/team.cljs:459
+#: src/app/main/ui/dashboard/team.cljs:461
 msgid "modals.delete-team-member-confirm.accept"
 msgstr "Hichapụ onye otu"
 
-#: src/app/main/ui/dashboard/team.cljs:458
+#: src/app/main/ui/dashboard/team.cljs:460
 msgid "modals.delete-team-member-confirm.message"
 msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ onye otu n'otu a?"
 
-#: src/app/main/ui/dashboard/team.cljs:457
+#: src/app/main/ui/dashboard/team.cljs:459
 msgid "modals.delete-team-member-confirm.title"
 msgstr "Hichapụ onye otu"
 
-#: src/app/main/ui/dashboard/team.cljs:1019
+#: src/app/main/ui/dashboard/team.cljs:1197
 msgid "modals.delete-webhook.accept"
 msgstr "Hichapụ nko-ududọ"
 
-#: src/app/main/ui/dashboard/team.cljs:1018
+#: src/app/main/ui/dashboard/team.cljs:1196
 msgid "modals.delete-webhook.message"
 msgstr "Ọ kara gị obi na ị chọrọ ị hichapụ nko-ududọ ?"
 
-#: src/app/main/ui/dashboard/team.cljs:1017
+#: src/app/main/ui/dashboard/team.cljs:1195
 msgid "modals.delete-webhook.title"
 msgstr "Na-ehichapụ nko-ududo"
 
-#: src/app/main/ui/dashboard/team.cljs:948
+#: src/app/main/ui/dashboard/team.cljs:1126
 msgid "modals.edit-webhook.submit-label"
 msgstr "Dezie nko-ududo"
 
-#: src/app/main/ui/dashboard/team.cljs:913
+#: src/app/main/ui/dashboard/team.cljs:1091
 msgid "modals.edit-webhook.title"
 msgstr "Dezie nko-ududo"
 
-#: src/app/main/ui/dashboard/team.cljs:247
+#: src/app/main/ui/dashboard/team.cljs:249
 msgid "modals.invite-member-confirm.accept"
 msgstr "Ziga akwụkwọ ozi mkpọta"
 
-#: src/app/main/ui/dashboard/team.cljs:243, src/app/main/ui/onboarding/team_choice.cljs:203
+#: src/app/main/ui/dashboard/team.cljs:245, src/app/main/ui/onboarding/team_choice.cljs:203
 msgid "modals.invite-member.emails"
 msgstr "Ozi-n gasị,  Rịkọm e kewara"
 
-#: src/app/main/ui/dashboard/team.cljs:227
+#: src/app/main/ui/dashboard/team.cljs:229
 msgid "modals.invite-member.repeated-invitation"
 msgstr "Ụfọdụ ozi n sitere na ndị  ugbu a A gaghị e ịga akwụkwọ ozi mkpọta ha"
 
-#: src/app/main/ui/dashboard/team.cljs:216
+#: src/app/main/ui/dashboard/team.cljs:218
 msgid "modals.invite-team-member.title"
 msgstr "kpọta ndị otu n'otu a"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:412, src/app/main/ui/dashboard/team.cljs:425
+#: src/app/main/ui/dashboard/sidebar.cljs:413, src/app/main/ui/dashboard/team.cljs:427
 msgid "modals.leave-and-close-confirm.hint"
 msgstr ""
 "Etu ị bụ sọọ otu onye otu , a ga e hichapụ otu a ya n'ọrụ na ederede ya "
 "gasịits projects and files."
 
-#: src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:424
+#: src/app/main/ui/dashboard/sidebar.cljs:412, src/app/main/ui/dashboard/team.cljs:426
 msgid "modals.leave-and-close-confirm.message"
 msgstr "Ọ kara gị obi na ị chọrọ ịhapụ otu %s ?"
 
@@ -1864,47 +1866,47 @@ msgstr "Họrọ onye otu maka ịkwalite"
 msgid "modals.leave-and-reassign.title"
 msgstr "Tupu ị hapụ"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:391, src/app/main/ui/dashboard/sidebar.cljs:413, src/app/main/ui/dashboard/team.cljs:426, src/app/main/ui/dashboard/team.cljs:448
+#: src/app/main/ui/dashboard/sidebar.cljs:392, src/app/main/ui/dashboard/sidebar.cljs:414, src/app/main/ui/dashboard/team.cljs:428, src/app/main/ui/dashboard/team.cljs:450
 msgid "modals.leave-confirm.accept"
 msgstr "Hapụ otu"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:390, src/app/main/ui/dashboard/team.cljs:447
+#: src/app/main/ui/dashboard/sidebar.cljs:391, src/app/main/ui/dashboard/team.cljs:449
 msgid "modals.leave-confirm.message"
 msgstr "Ọ kara gị obi na ịchọrọ ịhapụ  otu ?"
 
-#: src/app/main/ui/dashboard/sidebar.cljs:389, src/app/main/ui/dashboard/sidebar.cljs:410, src/app/main/ui/dashboard/team.cljs:423, src/app/main/ui/dashboard/team.cljs:446
+#: src/app/main/ui/dashboard/sidebar.cljs:390, src/app/main/ui/dashboard/sidebar.cljs:411, src/app/main/ui/dashboard/team.cljs:425, src/app/main/ui/dashboard/team.cljs:448
 msgid "modals.leave-confirm.title"
 msgstr "Nhapụ otu"
 
-#: src/app/main/ui/workspace/main_menu.cljs:274, src/app/main/ui/workspace/nudge.cljs:46
+#: src/app/main/ui/workspace/main_menu.cljs:302, src/app/main/ui/workspace/nudge.cljs:46
 msgid "modals.nudge-title"
 msgstr "ọnụ ọgụgụ nkpatụ"
 
-#: src/app/main/ui/dashboard/team.cljs:377
+#: src/app/main/ui/dashboard/team.cljs:379
 msgid "modals.promote-owner-confirm.hint"
 msgstr ""
 "Ọ bụrụ na Inyefe onwunwe , ị ga-agbanwe ọrụ gị ka ọchikwa,  ụfọdụ ikikere "
 "n'isi ndị otu na-efu "
 
-#: src/app/main/ui/dashboard/team.cljs:376
+#: src/app/main/ui/dashboard/team.cljs:378
 msgid "modals.promote-owner-confirm.message"
 msgstr ""
 "G  bụ onye nwe otu a ugbu a, Ọ doro gị anya na ị chọrọ ime%s Onye ọhụrụ nwe "
 "otu a?"
 
-#: src/app/main/ui/dashboard/team.cljs:375
+#: src/app/main/ui/dashboard/team.cljs:377
 msgid "modals.promote-owner-confirm.title"
 msgstr "Onye nwe otu ọhụrụ"
 
-#: src/app/main/ui/workspace/libraries.cljs:270
+#: src/app/main/ui/workspace/libraries.cljs:295
 msgid "modals.publish-empty-library.accept"
 msgstr "Biputa"
 
-#: src/app/main/ui/workspace/libraries.cljs:269
+#: src/app/main/ui/workspace/libraries.cljs:294
 msgid "modals.publish-empty-library.message"
 msgstr "Your library is empty. Are you sure you want to publish it?"
 
-#: src/app/main/ui/workspace/libraries.cljs:268
+#: src/app/main/ui/workspace/libraries.cljs:293
 msgid "modals.publish-empty-library.title"
 msgstr "Biputa ọba ederede efu"
 
@@ -1941,11 +1943,11 @@ msgstr ""
 msgid "modals.update-remote-component-in-bulk.message"
 msgstr "Update components in a shared library"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:424
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
 msgid "modals.update-remote-component.accept"
 msgstr "Hazigharịa"
 
-#: src/app/main/ui/workspace/sidebar/assets/common.cljs:423
+#: src/app/main/ui/workspace/sidebar/assets/common.cljs:422
 msgid "modals.update-remote-component.cancel"
 msgstr "Kagbuo"
 
@@ -2060,7 +2062,7 @@ msgstr ""
 "Cheta ka itinye onye ọ bụla Ndị nzụlite, ndị nrụpụta, ndị njikwa... dị iche "
 "iche adds up :)"
 
-#: src/app/main/ui/dashboard/team.cljs:232, src/app/main/ui/onboarding/team_choice.cljs:194
+#: src/app/main/ui/dashboard/team.cljs:234, src/app/main/ui/onboarding/team_choice.cljs:194
 msgid "onboarding.choice.team-up.roles"
 msgstr "kpọta tinye ọrụ :"
 
@@ -2151,19 +2153,15 @@ msgstr "Bido osise"
 msgid "profile.recovery.go-to-login"
 msgstr "Gaa na mbanye"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:89
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:91
 msgid "shortcuts.bring-backward"
 msgstr "Wega ebe azụ"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:109
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:111
 msgid "shortcuts.duplicate"
 msgstr "Mkpị"
 
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:128
-msgid "shortcuts.letter-spacing-inc"
-msgstr "Leta mmụba oghere"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:164
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:162
 msgid "shortcuts.paste"
 msgstr "Nyado"
 
@@ -2172,7 +2170,7 @@ msgstr "Nyado"
 msgid "viewer.breaking-change.message"
 msgstr "Ndo"
 
-#: src/app/main/ui/workspace/context_menu.cljs:679, src/app/main/ui/workspace/sidebar/assets/colors.cljs:249, src/app/main/ui/workspace/sidebar/assets/components.cljs:625, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:442
+#: src/app/main/ui/workspace/context_menu.cljs:682, src/app/main/ui/workspace/sidebar/assets/colors.cljs:251, src/app/main/ui/workspace/sidebar/assets/components.cljs:641, src/app/main/ui/workspace/sidebar/assets/typographies.cljs:443
 msgid "workspace.assets.delete"
 msgstr "Kachapụ"
 
@@ -2184,7 +2182,7 @@ msgstr "Umezi nlekwasa anya"
 msgid "workspace.focus.focus-on"
 msgstr "Gbanye nlekwasa anya"
 
-#: src/app/main/ui/workspace/context_menu.cljs:592
+#: src/app/main/ui/workspace/context_menu.cljs:594
 msgid "workspace.shape.menu.create-multiple-components"
 msgstr "Mee ọtụtụ akọrọngwa ga"
 
@@ -2192,6 +2190,6 @@ msgstr "Mee ọtụtụ akọrọngwa ga"
 msgid "workspace.toolbar.color-palette"
 msgstr "Agba[ Palette (Na narị)"
 
-#: src/app/main/data/workspace/libraries.cljs:1219
+#: src/app/main/data/workspace/libraries.cljs:1224
 msgid "workspace.updates.there-are-updates"
 msgstr "E nwegasịrị nhazizigharị nime ọba ederede ga e kere eke"

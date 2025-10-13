@@ -62,7 +62,8 @@
 (def default
   {:database-uri "postgresql://postgres/penpot_test"
    :redis-uri "redis://redis/1"
-   :auto-file-snapshot-every 1})
+   :auto-file-snapshot-every 1
+   :file-data-backend "db"})
 
 (def config
   (cf/read-config :prefix "penpot-test"
@@ -74,9 +75,6 @@
    :enable-smtp
    :enable-quotes
    :enable-rpc-climit
-   :enable-feature-fdata-pointer-map
-   :enable-feature-fdata-objets-map
-   :enable-feature-components-v2
    :enable-auto-file-snapshot
    :disable-file-validation])
 
@@ -99,7 +97,7 @@
                       :thumbnail-uri "test"
                       :path (-> "backend_tests/test_files/template.penpot" io/resource fs/path)}]
           system (-> (merge main/system-config main/worker-config)
-                     (assoc-in [:app.redis/redis :app.redis/uri] (:redis-uri config))
+                     (assoc-in [:app.redis/client :app.redis/uri] (:redis-uri config))
                      (assoc-in [::db/pool ::db/uri] (:database-uri config))
                      (assoc-in [::db/pool ::db/username] (:database-username config))
                      (assoc-in [::db/pool ::db/password] (:database-password config))
@@ -113,7 +111,6 @@
                              :app.auth.oidc.providers/generic
                              :app.setup/templates
                              :app.auth.oidc/routes
-                             :app.worker/monitor
                              :app.http.oauth/handler
                              :app.notifications/handler
                              :app.loggers.mattermost/reporter

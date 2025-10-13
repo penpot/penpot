@@ -12,6 +12,7 @@
    [app.common.time :as ct]
    [app.common.types.shape-tree :as ctst]
    [app.common.uuid :as uuid]
+   [app.main.data.event :as ev]
    [app.main.data.helpers :as dsh]
    [app.main.worker :as mw]
    [beicon.v2.core :as rx]
@@ -173,6 +174,8 @@
          tags #{}}
     :as params}]
   (ptk/reify ::commit-changes
+    ev/PerformanceEvent
+
     ptk/WatchEvent
     (watch [_ state _]
       (let [file-id     (or file-id (:current-file-id state))

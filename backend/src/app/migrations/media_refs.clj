@@ -10,8 +10,8 @@
    [app.common.exceptions :as ex]
    [app.common.logging :as l]
    [app.common.pprint]
-   [app.srepl.fixes.media-refs :refer [process-file]]
    [app.srepl.main :as srepl]
+   [app.srepl.procs.media-refs]
    [clojure.edn :as edn]))
 
 (def ^:private required-services
@@ -20,7 +20,10 @@
    :app.storage/storage
    :app.metrics/metrics
    :app.db/pool
-   :app.worker/executor])
+   :app.worker/netty-io-executor])
+
+(def default-options
+  {:rollback? false})
 
 (defn -main
   [& [options]]
@@ -28,22 +31,20 @@
     (let [config-var (requiring-resolve 'app.main/system-config)
           start-var  (requiring-resolve 'app.main/start-custom)
           stop-var   (requiring-resolve 'app.main/stop)
-          config     (select-keys @config-var required-services)]
+
+          config     (select-keys @config-var required-services)
+          options    (if (string? options)
+                       (ex/ignoring (edn/read-string options))
+                       {})
+          options    (-> (merge default-options options)
+                         (assoc :proc-fn #'app.srepl.procs.media-refs/fix-media-refs))]
 
       (start-var config)
-
-      (let [options (if (string? options)
-                      (ex/ignoring (edn/read-string options))
-                      {})]
-
-        (l/inf :hint "executing media-refs migration" :options options)
-        (srepl/process-files! process-file options))
-
+      (l/inf :hint "executing media-refs migration" :options options)
+      (srepl/process! options)
       (stop-var)
       (System/exit 0))
     (catch Throwable cause
       (ex/print-throwable cause)
       (flush)
       (System/exit -1))))
-
-

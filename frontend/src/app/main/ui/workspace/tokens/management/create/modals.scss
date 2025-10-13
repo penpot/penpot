@@ -4,11 +4,11 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .token-modal-wrapper {
   @extend .modal-container-base;
-  @include menuShadow;
+  @include deprecated.menuShadow;
   position: absolute;
   width: auto;
   min-width: auto;
@@ -16,12 +16,12 @@
   overflow-y: auto;
   overflow-x: hidden;
   &.token-modal-large {
-    min-block-size: 38rem;
+    max-block-size: 95vh;
   }
 }
 
 .close-btn {
   position: absolute;
-  top: $s-6;
-  right: $s-6;
+  top: deprecated.$s-6;
+  right: deprecated.$s-6;
 }

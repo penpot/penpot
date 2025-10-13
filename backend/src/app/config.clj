@@ -52,6 +52,8 @@
 
    :redis-uri "redis://redis/0"
 
+   :file-data-backend "legacy-db"
+
    :objects-storage-backend "fs"
    :objects-storage-fs-directory "assets"
 
@@ -96,7 +98,9 @@
     [:http-server-max-body-size {:optional true} ::sm/int]
     [:http-server-max-multipart-body-size {:optional true} ::sm/int]
     [:http-server-io-threads {:optional true} ::sm/int]
-    [:http-server-worker-threads {:optional true} ::sm/int]
+    [:http-server-max-worker-threads {:optional true} ::sm/int]
+
+    [:management-api-shared-key {:optional true} :string]
 
     [:telemetry-uri {:optional true} :string]
     [:telemetry-with-taiga {:optional true} ::sm/boolean] ;; DELETE
@@ -105,7 +109,8 @@
     [:auto-file-snapshot-timeout {:optional true} ::ct/duration]
 
     [:media-max-file-size {:optional true} ::sm/int]
-    [:deletion-delay {:optional true} ::ct/duration] ;; REVIEW
+    [:deletion-delay {:optional true} ::ct/duration]
+    [:file-clean-delay {:optional true} ::ct/duration]
     [:telemetry-enabled {:optional true} ::sm/boolean]
     [:default-blob-version {:optional true} ::sm/int]
     [:allow-demo-users {:optional true} ::sm/boolean]
@@ -146,7 +151,6 @@
     [:quotes-team-access-requests-per-team {:optional true} ::sm/int]
     [:quotes-team-access-requests-per-requester {:optional true} ::sm/int]
 
-    [:auth-data-cookie-domain {:optional true} :string]
     [:auth-token-cookie-name {:optional true} :string]
     [:auth-token-cookie-max-age {:optional true} ::ct/duration]
 
@@ -210,24 +214,27 @@
     [:prepl-host {:optional true} :string]
     [:prepl-port {:optional true} ::sm/int]
 
+    [:file-data-backend {:optional true} [:enum "db" "legacy-db" "storage"]]
+
     [:media-directory {:optional true} :string] ;; REVIEW
     [:media-uri {:optional true} :string]
     [:assets-path {:optional true} :string]
 
-    ;; Legacy, will be removed in 2.5
+    [:netty-io-threads {:optional true} ::sm/int]
+    [:executor-threads {:optional true} ::sm/int]
+
+    ;; DEPRECATED
     [:assets-storage-backend {:optional true} :keyword]
     [:storage-assets-fs-directory {:optional true} :string]
     [:storage-assets-s3-bucket {:optional true} :string]
     [:storage-assets-s3-region {:optional true} :keyword]
     [:storage-assets-s3-endpoint {:optional true} ::sm/uri]
-    [:storage-assets-s3-io-threads {:optional true} ::sm/int]
 
     [:objects-storage-backend {:optional true} :keyword]
     [:objects-storage-fs-directory {:optional true} :string]
     [:objects-storage-s3-bucket {:optional true} :string]
     [:objects-storage-s3-region {:optional true} :keyword]
-    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]
-    [:objects-storage-s3-io-threads {:optional true} ::sm/int]]))
+    [:objects-storage-s3-endpoint {:optional true} ::sm/uri]]))
 
 (defn- parse-flags
   [config]
@@ -299,6 +306,11 @@
   []
   (or (c/get config :deletion-delay)
       (ct/duration {:days 7})))
+
+(defn get-file-clean-delay
+  []
+  (or (c/get config :file-clean-delay)
+      (ct/duration {:days 2})))
 
 (defn get
   "A configuration getter. Helps code be more testable."

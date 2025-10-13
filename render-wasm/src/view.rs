@@ -1,5 +1,7 @@
 use skia_safe::Rect;
 
+use crate::math::{Matrix, Point};
+
 #[derive(Debug, Copy, Clone)]
 pub(crate) struct Viewbox {
     pub pan_x: f32,
@@ -53,7 +55,18 @@ impl Viewbox {
             .set_wh(self.width / self.zoom, self.height / self.zoom);
     }
 
+    pub fn pan(&self) -> Point {
+        Point::new(self.pan_x, self.pan_y)
+    }
+
     pub fn zoom(&self) -> f32 {
         self.zoom
+    }
+
+    pub fn get_matrix(&self) -> Matrix {
+        let mut matrix = Matrix::new_identity();
+        matrix.post_translate(self.pan());
+        matrix.post_scale((self.zoom, self.zoom), None);
+        matrix
     }
 }

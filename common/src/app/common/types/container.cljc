@@ -7,7 +7,6 @@
 (ns app.common.types.container
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
    [app.common.geom.shapes :as gsh]
@@ -77,11 +76,8 @@
 
 (defn get-shape
   [container shape-id]
-
-  (assert (check-container container))
   (assert (uuid? shape-id)
           "expected valid uuid for `shape-id`")
-
   (-> container
       (get :objects)
       (get shape-id)))
@@ -494,29 +490,40 @@
            all-main?
            (every? ctk/main-instance? top-children)
 
+           ascendants (cfh/get-parents-with-self objects parent-id)
+           any-main-ascendant (some ctk/main-instance? ascendants)
+           any-variant-container-ascendant (some ctk/is-variant-container? ascendants)
+
+           get-variant-id (fn [shape]
+                            (when (:component-id shape)
+                              (->  (get-component-from-shape shape libraries)
+                                   :variant-id)))
+
+           descendants (mapcat #(cfh/get-children-with-self objects %) children-ids)
+           any-variant-container-descendant (some ctk/is-variant-container? descendants)
+           descendants-variant-ids-set (->> descendants
+                                            (map get-variant-id)
+                                            set)
            any-main-descendant
            (some
             (fn [shape]
               (some ctk/main-instance? (cfh/get-children-with-self objects (:id shape))))
-            children)
+            children)]
 
-           ;; Are all the top-children a main-instance of a cutted component?
-           all-comp-cut?
-           (when all-main?
-             (->> top-children
-                  (map #(ctkl/get-component (dm/get-in libraries [(:component-file %) :data])
-                                            (:component-id %)
-                                            true))
-                  (every? :deleted)))]
        (if (or no-changes?
                (and (not (invalid-structure-for-component? objects parent children pasting? libraries))
-                    ;; If we are moving into a main component, no descendant can be main
-                    (or (nil? any-main-descendant) (not (ctk/main-instance? parent)))
-                    ;; If we are moving into a variant-container, all the items should be main
-                    ;; so if we are pasting, only allow main instances that are cut-and-pasted
-                    (or (not (ctk/is-variant-container? parent))
-                        (and (not pasting?) all-main?)
-                        all-comp-cut?)))
+                    ;; If we are moving (not pasting) into a main component, no descendant can be main
+                    (or pasting? (nil? any-main-descendant) (not (ctk/main-instance? parent)))
+                    ;; Don't allow variant-container inside variant container nor main
+                    (or (not any-variant-container-descendant)
+                        (and (not any-variant-container-ascendant) (not any-main-ascendant)))
+                    ;; If the parent is a variant-container, all the items should be main
+                    (or (not (ctk/is-variant-container? parent)) all-main?)
+                    ;; If we are pasting, the parent can't be a "brother" of any of the pasted items,
+                    ;; so not have the same variant-id of any descendant
+                    (or (not pasting?)
+                        (not (ctk/is-variant? parent))
+                        (not (contains? descendants-variant-ids-set (:variant-id parent))))))
          [parent-id (get-frame parent-id)]
          (recur (:parent-id parent) objects children pasting? libraries))))))
 

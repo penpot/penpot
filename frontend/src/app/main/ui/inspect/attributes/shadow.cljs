@@ -13,7 +13,7 @@
    [app.main.ui.components.title-bar :refer [inspect-title-bar*]]
    [app.main.ui.inspect.attributes.common :refer [color-row]]
    [app.util.code-gen.style-css :as css]
-   [app.util.code-gen.style-css-formats :refer [format-color]]
+   [app.util.code-gen.style-css-formats :refer [format-color-value]]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
@@ -26,7 +26,7 @@
 (defn- copy-color-data
   "Converts a fill object to CSS color string in the specified format."
   [color format]
-  (format-color color {:format format}))
+  (format-color-value color {:format format}))
 
 (mf/defc shadow-block [{:keys [shadow]}]
   (let [color-format (mf/use-state :hex)

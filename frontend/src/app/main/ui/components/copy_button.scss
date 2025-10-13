@@ -4,21 +4,21 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .copy-button {
-  @include buttonStyle;
+  @include deprecated.buttonStyle;
   width: 100%;
-  height: $s-32;
-  border: $s-1 solid transparent;
-  border-radius: $br-8;
+  height: deprecated.$s-32;
+  border: deprecated.$s-1 solid transparent;
+  border-radius: deprecated.$br-8;
   background-color: transparent;
   box-sizing: border-box;
   .icon-btn {
-    @include flexCenter;
-    height: $s-32;
-    min-width: $s-28;
-    width: $s-28;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-32;
+    min-width: deprecated.$s-28;
+    width: deprecated.$s-28;
     svg {
       @extend .button-icon-small;
       stroke: var(--icon-foreground);
@@ -28,7 +28,7 @@
   &:hover {
     background-color: var(--color-background-tertiary);
     color: var(--color-foreground-primary);
-    border: $s-1 solid var(--color-background-tertiary);
+    border: deprecated.$s-1 solid var(--color-background-tertiary);
     .icon-btn {
       svg {
         stroke: var(--button-tertiary-foreground-color-active);
@@ -38,7 +38,7 @@
   &:focus,
   &:focus-visible {
     outline: none;
-    border: $s-1 solid var(--button-tertiary-border-color-focus);
+    border: deprecated.$s-1 solid var(--button-tertiary-border-color-focus);
     background-color: transparent;
     color: var(--button-tertiary-foreground-color-focus);
     .icon-btn svg {
@@ -48,19 +48,19 @@
 }
 
 .copy-wrapper {
-  @include buttonStyle;
-  @include copyWrapperBase;
+  @include deprecated.buttonStyle;
+  @include deprecated.copyWrapperBase;
   width: 100%;
   height: fit-content;
   text-align: left;
-  border: $s-1 solid transparent;
+  border: deprecated.$s-1 solid transparent;
   .icon-btn {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     position: absolute;
     top: 0;
     right: 0;
-    height: $s-32;
-    width: $s-28;
+    height: deprecated.$s-32;
+    width: deprecated.$s-28;
     svg {
       @extend .button-icon-small;
       stroke: var(--button-tertiary-foreground-color-focus);
@@ -70,7 +70,7 @@
   &:hover {
     background-color: var(--button-tertiary-background-color-focus);
     color: var(--button-tertiary-foreground-color-focus);
-    border: $s-1 solid var(--button-tertiary-background-color-focus);
+    border: deprecated.$s-1 solid var(--button-tertiary-background-color-focus);
     .icon-btn svg {
       display: flex;
     }
@@ -79,7 +79,7 @@
   &:focus,
   &:focus-visible {
     outline: none;
-    border: $s-1 solid var(--button-tertiary-border-color-focus);
+    border: deprecated.$s-1 solid var(--button-tertiary-border-color-focus);
     background-color: transparent;
     color: var(--button-tertiary-foreground-color-focus);
   }

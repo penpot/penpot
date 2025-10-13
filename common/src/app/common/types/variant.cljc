@@ -7,8 +7,8 @@
 (ns app.common.types.variant
   (:require
    [app.common.data :as d]
-   [app.common.files.helpers :as cfh]
    [app.common.math :as math]
+   [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [cuerdas.core :as str]))
 
@@ -50,7 +50,6 @@
 (def property-max-length 60)
 (def value-prefix "Value ")
 
-
 (defn properties-to-name
   "Transform the properties into a name, with the values separated by comma"
   [properties]
@@ -58,7 +57,6 @@
        (map :value)
        (remove str/empty?)
        (str/join ", ")))
-
 
 (defn next-property-number
   "Returns the next property number, to avoid duplicates on the property names"
@@ -92,14 +90,13 @@
   ([path properties]
    (path-to-properties path properties 0))
   ([path properties min-props]
-   (let [cpath          (cfh/split-path path)
+   (let [cpath          (cpn/split-path path)
          total-props    (max (count cpath) min-props)
          assigned       (mapv #(assoc % :value (nth cpath %2 "")) properties (range))
          ;; Add empty strings to the end of cpath to reach the minimum number of properties
          cpath          (take total-props (concat cpath (repeat "")))
          remaining      (drop (count properties) cpath)]
      (add-new-props assigned remaining))))
-
 
 (defn properties-map->formula
   "Transforms a map of properties to a formula of properties omitting the empty ones"
@@ -110,7 +107,6 @@
                  (str name "=" value))))
        (str/join ", ")))
 
-
 (defn properties-formula->map
   "Transforms a formula of properties to a map of properties"
   [s]
@@ -120,7 +116,6 @@
        (mapv (fn [[k v]]
                {:name (str/trim k)
                 :value (str/trim v)}))))
-
 
 (defn valid-properties-formula?
   "Checks if a formula is valid"
@@ -138,20 +133,17 @@
   (let [upd-names (set (map :name upd-props))]
     (filterv #(not (contains? upd-names (:name %))) prev-props)))
 
-
 (defn find-properties-to-update
   "Compares two property maps to find which properties should be updated"
   [prev-props upd-props]
   (filterv #(some (fn [prop] (and (= (:name %) (:name prop))
                                   (not= (:value %) (:value prop)))) prev-props) upd-props))
 
-
 (defn find-properties-to-add
   "Compares two property maps to find which properties should be added"
   [prev-props upd-props]
   (let [prev-names (set (map :name prev-props))]
     (filterv #(not (contains? prev-names (:name %))) upd-props)))
-
 
 (defn- split-base-name-and-number
   "Extract the number in parentheses from an item, if present, and return both the base name and the number"
@@ -191,7 +183,6 @@
                  (conj acc {:name (update-number-in-repeated-item (mapv :name acc) (:name prop))
                             :value (:value prop)}))
                [])))
-
 
 (defn find-index-for-property-name
   "Finds the index of a name in a property map"
@@ -318,4 +309,28 @@
   "Transforms a variant-name (its properties values) into a standard name:
    the real name of the shape joined by the properties values separated by '/'"
   [variant]
-  (cfh/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
+  (cpn/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
+
+(defn reorder-by-moving-to-position
+  "Reorder a vector by moving one of their items from some position to some space between positions.
+   It clamps the position numbers to a valid range."
+  [props from-pos to-space-between-pos]
+  (let [max-space-pos  (count props)
+        max-prop-pos   (dec max-space-pos)
+
+        from-pos             (max 0 (min max-prop-pos from-pos))
+        to-space-between-pos (max 0 (min max-space-pos to-space-between-pos))]
+
+    (if (= from-pos to-space-between-pos)
+      props
+      (let [elem         (nth props from-pos)
+            without-elem (-> []
+                             (into (subvec props 0 from-pos))
+                             (into (subvec props (inc from-pos))))
+            insert-pos   (if (< from-pos to-space-between-pos)
+                           (dec to-space-between-pos)
+                           to-space-between-pos)]
+        (-> []
+            (into (subvec without-elem 0 insert-pos))
+            (into [elem])
+            (into (subvec without-elem insert-pos)))))))

@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "common/refactor/common-refactor.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .exception-layout {
   width: 100%;
@@ -15,13 +15,13 @@
 .deco-before,
 .deco-after {
   position: absolute;
-  left: calc(50% - $s-40);
+  left: calc(50% - deprecated.$s-40);
 
   svg {
     position: absolute;
     fill: var(--color-foreground-secondary);
     height: 1537px;
-    width: $s-80;
+    width: deprecated.$s-80;
   }
 }
 
@@ -46,7 +46,7 @@
 .deco-after2 {
   display: flex;
   justify-content: center;
-  gap: $s-8;
+  gap: deprecated.$s-8;
   width: 100%;
   height: 34vh;
   position: absolute;
@@ -57,7 +57,7 @@
   svg {
     fill: var(--color-foreground-secondary);
     height: 1537px;
-    width: $s-80;
+    width: deprecated.$s-80;
   }
 
   span {
@@ -66,7 +66,7 @@
     justify-content: flex-end;
     height: 100%;
     width: 25%;
-    padding-bottom: $s-28;
+    padding-bottom: deprecated.$s-28;
 
     &:first-child {
       text-align: right;
@@ -76,7 +76,7 @@
 
 .exception-header {
   color: var(--color-foreground-secondary);
-  padding: $s-24 $s-32;
+  padding: deprecated.$s-24 deprecated.$s-32;
   position: fixed;
   background: none;
   border: none;
@@ -87,8 +87,8 @@
 
 .penpot-logo {
   fill: var(--color-foreground-primary);
-  width: $s-48;
-  height: $s-48;
+  width: deprecated.$s-48;
+  height: deprecated.$s-48;
 }
 
 .back-arrow {
@@ -99,18 +99,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: $s-8;
-  margin-left: $s-12;
-  font-size: $fs-14;
+  gap: deprecated.$s-8;
+  margin-left: deprecated.$s-12;
+  font-size: deprecated.$fs-14;
 }
 
 .login-header {
   @extend .button-primary;
-  padding: $s-8 $s-16;
-  font-size: $fs-11;
+  padding: deprecated.$s-8 deprecated.$s-16;
+  font-size: deprecated.$fs-11;
   position: fixed;
   right: 0;
-  margin: $s-40 $s-32;
+  margin: deprecated.$s-40 deprecated.$s-32;
 }
 
 .exception-content {
@@ -123,22 +123,22 @@
     align-items: center;
     display: flex;
     flex-direction: column;
-    gap: $s-16;
+    gap: deprecated.$s-16;
     height: 34vh;
     justify-content: center;
     margin-top: 33vh;
     text-align: center;
-    width: $s-640;
+    width: deprecated.$s-640;
   }
 }
 
 .main-message {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--color-foreground-primary);
 }
 
 .desc-message {
-  @include bigTitleTipography;
+  @include deprecated.bigTitleTipography;
   color: var(--color-foreground-secondary);
 }
 
@@ -148,8 +148,8 @@
   button {
     @extend .button-primary;
     text-transform: uppercase;
-    padding: $s-8 $s-16;
-    font-size: $fs-11;
+    padding: deprecated.$s-8 deprecated.$s-16;
+    font-size: deprecated.$fs-11;
   }
 }
 
@@ -169,12 +169,12 @@
 
   .workspace-left,
   .workspace-right {
-    padding: $s-12;
-    width: $s-276;
+    padding: deprecated.$s-12;
+    width: deprecated.$s-276;
     height: 100%;
     background-color: var(--color-background-primary);
     display: flex;
-    gap: $s-4;
+    gap: deprecated.$s-4;
 
     svg {
       width: 2rem;
@@ -183,12 +183,12 @@
     }
 
     .project-name {
-      @include uppercaseTitleTipography;
+      @include deprecated.uppercaseTitleTipography;
       color: var(--title-foreground-color);
     }
 
     .file-name {
-      @include smallTitleTipography;
+      @include deprecated.smallTitleTipography;
       text-transform: none;
       color: var(--title-foreground-color-hover);
     }
@@ -200,7 +200,7 @@
   height: 100%;
 
   .dashboard-sidebar {
-    width: $s-300;
+    width: deprecated.$s-300;
     height: 100%;
   }
 }
@@ -226,11 +226,11 @@
   .dialog-login {
     width: 556px;
     background-color: var(--color-background-primary);
-    border-radius: $s-8;
+    border-radius: deprecated.$s-8;
     display: flex;
     flex-direction: column;
     align-content: stretch;
-    padding: $s-36;
+    padding: deprecated.$s-36;
     color: var(--modal-text-foreground-color);
 
     .modal-close {
@@ -243,8 +243,8 @@
 
         svg {
           cursor: pointer;
-          width: $s-24;
-          height: $s-24;
+          width: deprecated.$s-24;
+          height: deprecated.$s-24;
           fill: var(--modal-text-foreground-color);
           stroke: var(--modal-text-foreground-color);
         }
@@ -252,59 +252,59 @@
     }
 
     .dialog-title {
-      font-size: $fs-20;
+      font-size: deprecated.$fs-20;
     }
 
     .sign-info {
       display: flex;
       justify-content: flex-end;
-      margin-top: $s-32;
+      margin-top: deprecated.$s-32;
 
       button {
         @extend .button-primary;
         text-transform: uppercase;
-        padding: $s-8 $s-16;
-        font-size: $fs-11;
+        padding: deprecated.$s-8 deprecated.$s-16;
+        font-size: deprecated.$fs-11;
       }
 
       .cancel-button {
         @extend .button-secondary;
         text-transform: uppercase;
-        padding: $s-8 $s-16;
-        font-size: $fs-11;
-        margin-right: $s-16;
+        padding: deprecated.$s-8 deprecated.$s-16;
+        font-size: deprecated.$fs-11;
+        margin-right: deprecated.$s-16;
       }
     }
   }
 
   .dialog {
-    gap: $s-12;
+    gap: deprecated.$s-12;
   }
 
   .login {
     gap: 0;
-    padding: 0 $s-36 $s-72 $s-36;
+    padding: 0 deprecated.$s-36 deprecated.$s-72 deprecated.$s-36;
 
     .logo {
-      margin-bottom: $s-40;
+      margin-bottom: deprecated.$s-40;
 
       svg {
         fill: var(--color-foreground-primary);
-        width: $s-120;
-        height: $s-40;
+        width: deprecated.$s-120;
+        height: deprecated.$s-40;
       }
     }
 
     .logo-title {
-      font-size: $fs-20;
+      font-size: deprecated.$fs-20;
       color: var(--title-foreground-color-hover);
-      margin-bottom: $s-4;
+      margin-bottom: deprecated.$s-4;
     }
 
     .logo-subtitle {
-      font-size: $fs-14;
+      font-size: deprecated.$fs-14;
       color: var(--title-foreground-color-hover);
-      margin-bottom: $s-24;
+      margin-bottom: deprecated.$s-24;
     }
 
     .change-section {
@@ -317,16 +317,16 @@
     }
 
     hr {
-      margin: $s-20 0;
-      border-top: solid $s-1 var(--modal-separator-backogrund-color);
+      margin: deprecated.$s-20 0;
+      border-top: solid deprecated.$s-1 var(--modal-separator-backogrund-color);
     }
 
     .separator {
-      margin: $s-20 0;
+      margin: deprecated.$s-20 0;
     }
 
     form div {
-      margin-bottom: $s-8;
+      margin-bottom: deprecated.$s-8;
     }
   }
 }

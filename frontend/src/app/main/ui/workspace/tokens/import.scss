@@ -4,10 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../ds/typography.scss" as t;
-@use "../../ds/_borders.scss" as *;
-@use "../../ds/_sizes.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;

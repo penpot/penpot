@@ -4,13 +4,15 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../spacing.scss" as *;
-@use "../borders.scss" as *;
-@use "../sizes.scss" as *;
-@use "../typography.scss" as t;
+@use "ds/_borders.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_sizes.scss" as *;
+@use "ds/typography.scss" as t;
 
 .input-wrapper {
+  --input-padding-size: var(--sp-xs);
   --opacity-button: 0;
+  @include t.use-typography("code-font");
   display: flex;
   flex-direction: column;
   gap: var(--sp-xs);

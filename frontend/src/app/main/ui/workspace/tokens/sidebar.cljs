@@ -35,16 +35,11 @@
 (mf/defc token-sets-list*
   {::mf/private true}
   [{:keys [tokens-lib]}]
-  (let [;; FIXME: This is an inneficient operation just for being
-        ;; ability to check if there are some sets and lookup the
-        ;; first one when no set is selected, should be REFACTORED; is
-        ;; inneficient because instead of return the sets as-is (tree)
-        ;; it firstly makes it a plain seq from tree.
-        token-sets
-        (some-> tokens-lib (ctob/get-sets))
+  (let [token-sets
+        (some-> tokens-lib (ctob/get-set-tree))
 
-        selected-token-set-name
-        (mf/deref refs/selected-token-set-name)
+        selected-token-set-id
+        (mf/deref refs/selected-token-set-id)
 
         {:keys [token-set-edition-id
                 token-set-new-path]}
@@ -56,12 +51,12 @@
       (when-not token-set-new-path
         [:> tsetslist/inline-add-button*])
 
-      [:> h/sortable-container {}
+      [:> h/sortable-container* {}
        [:> tsets/sets-list*
         {:tokens-lib tokens-lib
          :new-path token-set-new-path
          :edition-id token-set-edition-id
-         :selected selected-token-set-name}]])))
+         :selected selected-token-set-id}]])))
 
 (mf/defc token-management-section*
   {::mf/private true}

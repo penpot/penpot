@@ -4,32 +4,32 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set {
   margin: 0;
 }
 
 .title-spacing-svg-attrs {
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
   margin: 0;
 }
 
 .element-set-content {
-  @include flexColumn;
-  margin: $s-4 0 0 0;
+  @include deprecated.flexColumn;
+  margin: deprecated.$s-4 0 0 0;
 }
 
 .attr-content {
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .attr-name {
-  @include bodySmallTypography;
-  @include twoLineTextEllipsis;
-  width: $s-88;
-  margin: auto $s-4;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.twoLineTextEllipsis;
+  width: deprecated.$s-88;
+  margin: auto deprecated.$s-4;
   margin-right: 0;
   display: inline-block;
   color: var(--title-foreground-color);
@@ -37,19 +37,19 @@
 
 .attr-input {
   @extend .input-element;
-  @include bodySmallTypography;
-  width: $s-124;
+  @include deprecated.bodySmallTypography;
+  width: deprecated.$s-124;
 }
 
 .attr-actions {
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }
 
 .attr-action-btn {
   @extend .button-tertiary;
-  width: $s-28;
-  height: $s-32;
+  width: deprecated.$s-28;
+  height: deprecated.$s-32;
   svg {
     @extend .button-icon;
   }
@@ -57,18 +57,18 @@
 
 .attr-nested-content {
   display: grid;
-  row-gap: $s-4;
+  row-gap: deprecated.$s-4;
 }
 
 .attr-title {
-  @include bodySmallTypography;
-  font-size: $fs-10;
+  @include deprecated.bodySmallTypography;
+  font-size: deprecated.$fs-10;
   text-transform: uppercase;
-  margin-inline-start: $s-4;
+  margin-inline-start: deprecated.$s-4;
   color: var(--color-foreground-primary);
 }
 
 .attr-row {
   display: flex;
-  gap: $s-4;
+  gap: deprecated.$s-4;
 }

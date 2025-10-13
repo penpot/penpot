@@ -4,32 +4,32 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .shortcuts {
   display: grid;
   grid-template-rows: auto auto 1fr;
   // TODO: Fix this once we start implementing the DS.
   //       We should not be doign these hardcoded calc's.
-  height: calc(100vh - #{$s-60});
+  height: calc(100vh - #{deprecated.$s-60});
 }
 
 .search-field {
-  margin: $s-16 $s-12 $s-4 $s-12;
+  margin: deprecated.$s-16 deprecated.$s-12 deprecated.$s-4 deprecated.$s-12;
 }
 
 .shortcuts-header {
-  @include flexCenter;
-  @include uppercaseTitleTipography;
+  @include deprecated.flexCenter;
+  @include deprecated.uppercaseTitleTipography;
   position: relative;
-  height: $s-32;
-  padding: $s-2 $s-2 $s-2 0;
-  margin: $s-4 $s-4 0 $s-4;
-  border-radius: $br-6;
+  height: deprecated.$s-32;
+  padding: deprecated.$s-2 deprecated.$s-2 deprecated.$s-2 0;
+  margin: deprecated.$s-4 deprecated.$s-4 0 deprecated.$s-4;
+  border-radius: deprecated.$br-6;
   background-color: var(--panel-title-background-color);
 
   .shortcuts-title {
-    @include flexCenter;
+    @include deprecated.flexCenter;
     flex-grow: 1;
     color: var(--title-foreground-color-hover);
   }
@@ -46,32 +46,32 @@
 }
 
 .not-found {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   color: var(--empty-message-foreground-color);
-  margin: $s-12;
+  margin: deprecated.$s-12;
 }
 
 .shortcuts-list {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: $s-12;
+  padding: deprecated.$s-12;
   overflow-y: auto;
-  font-size: $fs-12;
+  font-size: deprecated.$fs-12;
   color: var(--title-foreground-color);
 
   .section-title,
   .subsection-title {
-    @include uppercaseTitleTipography;
+    @include deprecated.uppercaseTitleTipography;
     display: flex;
     align-items: center;
     margin: 0;
-    padding: $s-8 0;
+    padding: deprecated.$s-8 0;
     cursor: pointer;
 
     .subsection-name,
     .section-name {
-      padding-left: $s-4;
+      padding-left: deprecated.$s-4;
     }
 
     &:hover {
@@ -81,46 +81,46 @@
 
   .subsection-title {
     text-transform: none;
-    padding-left: $s-12;
+    padding-left: deprecated.$s-12;
   }
   .subsection-menu {
-    margin-bottom: $s-4;
+    margin-bottom: deprecated.$s-4;
   }
   .sub-menu {
-    margin-bottom: $s-4;
+    margin-bottom: deprecated.$s-4;
 
     .shortcuts-name {
       display: flex;
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      min-height: $s-32;
-      padding: $s-6;
-      margin-bottom: $s-4;
-      border-radius: $br-8;
+      min-height: deprecated.$s-32;
+      padding: deprecated.$s-6;
+      margin-bottom: deprecated.$s-4;
+      border-radius: deprecated.$br-8;
       background-color: var(--pill-background-color);
 
       .command-name {
-        @include bodySmallTypography;
-        margin-left: $s-2;
+        @include deprecated.bodySmallTypography;
+        margin-left: deprecated.$s-2;
         color: var(--pill-foreground-color);
       }
       .keys {
-        @include flexCenter;
-        gap: $s-2;
+        @include deprecated.flexCenter;
+        gap: deprecated.$s-2;
         color: var(--pill-foreground-color);
 
         .key {
-          @include bodySmallTypography;
-          @include flexCenter;
+          @include deprecated.bodySmallTypography;
+          @include deprecated.flexCenter;
           text-transform: capitalize;
-          height: $s-20;
-          padding: $s-2 $s-6;
-          border-radius: $s-6;
+          height: deprecated.$s-20;
+          padding: deprecated.$s-2 deprecated.$s-6;
+          border-radius: deprecated.$s-6;
           background-color: var(--menu-shortcut-background-color);
         }
         .space {
-          margin: 0 $s-2;
+          margin: 0 deprecated.$s-2;
         }
       }
     }

@@ -4,7 +4,7 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .modal-overlay {
   @extend .modal-overlay-base;
@@ -12,15 +12,15 @@
 
 .modal-container {
   @extend .modal-container-base;
-  width: $s-368;
+  width: deprecated.$s-368;
 }
 
 .modal-header {
-  margin-bottom: $s-24;
+  margin-bottom: deprecated.$s-24;
 }
 
 .modal-title {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   color: var(--modal-title-foreground-color);
 }
 
@@ -29,10 +29,10 @@
 }
 
 .modal-content {
-  @include flexColumn;
-  @include bodySmallTypography;
-  gap: $s-24;
-  max-height: $s-400;
+  @include deprecated.flexColumn;
+  @include deprecated.bodySmallTypography;
+  gap: deprecated.$s-24;
+  max-height: deprecated.$s-400;
   overflow: hidden auto;
 
   form {
@@ -56,19 +56,19 @@
 .link-entry {
   display: flex;
   flex-direction: column;
-  gap: $s-12;
+  gap: deprecated.$s-12;
 
   span {
     text-align: center;
-    font-size: $fs-14;
+    font-size: deprecated.$fs-14;
     color: var(--modal-text-foreground-color);
-    margin-top: $s-12;
+    margin-top: deprecated.$s-12;
   }
 
   a {
     @extend .button-secondary;
-    height: $s-40;
+    height: deprecated.$s-40;
     text-transform: uppercase;
-    font-size: $fs-11;
+    font-size: deprecated.$fs-11;
   }
 }

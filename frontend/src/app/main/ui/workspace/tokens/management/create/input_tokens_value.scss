@@ -4,11 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../../../ds/typography.scss" as *;
-@use "../../../../ds/_borders.scss" as *;
-@use "../../../../ds/_sizes.scss" as *;
+@use "ds/typography.scss" as *;
+@use "ds/_sizes.scss" as *;
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .wrapper {
   --label-color: var(--color-foreground-primary);
@@ -28,6 +27,10 @@
 
 .label {
   @include use-typography("body-small");
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   color: var(--label-color);
+}
+
+.resolved-value {
+  white-space: pre;
 }

@@ -4,8 +4,8 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "../../ds/typography.scss" as *;
-@import "refactor/common-refactor.scss";
+@use "ds/typography.scss" as *;
+@use "refactor/common-refactor.scss" as deprecated;
 
 .sets-list {
   width: 100%;
@@ -14,8 +14,8 @@
 }
 
 .empty-sets-wrapper {
-  padding: $s-12;
-  padding-inline-start: $s-24;
+  padding: deprecated.$s-12;
+  padding-inline-start: deprecated.$s-24;
   color: var(--color-foreground-secondary);
 }
 
@@ -29,57 +29,57 @@
 }
 
 .set-item-container {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: $s-32;
+  min-height: deprecated.$s-32;
   cursor: pointer;
   color: var(--layer-row-foreground-color);
-  padding-left: calc($s-24 * var(--tree-depth, 0) + $s-8);
-  border: $s-2 solid transparent;
-  gap: $s-2;
+  padding-left: calc(deprecated.$s-24 * var(--tree-depth, 0) + deprecated.$s-8);
+  border: deprecated.$s-2 solid transparent;
+  gap: deprecated.$s-2;
 
   &.dnd-over-bot {
-    border-bottom: $s-2 solid var(--layer-row-foreground-color-hover);
+    border-bottom: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
   &.dnd-over-top {
-    border-top: $s-2 solid var(--layer-row-foreground-color-hover);
+    border-top: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
   &.dnd-over {
-    border: $s-2 solid var(--layer-row-foreground-color-hover);
+    border: deprecated.$s-2 solid var(--layer-row-foreground-color-hover);
   }
 }
 
 .set-item-group {
   cursor: unset;
-  padding-left: calc($s-24 * var(--tree-depth, 0));
+  padding-left: calc(deprecated.$s-24 * var(--tree-depth, 0));
   gap: 0;
 }
 
 .set-item-group-collapse-button {
   cursor: pointer;
   width: auto;
-  height: $s-28;
+  height: deprecated.$s-28;
 }
 
 .set-name {
-  @include textEllipsis;
+  @include deprecated.textEllipsis;
   flex-grow: 1;
-  padding-left: $s-2;
+  padding-left: deprecated.$s-2;
 }
 
 .icon {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  width: $s-20;
-  height: $s-20;
-  padding-right: $s-4;
+  width: deprecated.$s-20;
+  height: deprecated.$s-20;
+  padding-right: deprecated.$s-4;
 }
 
 .root-icon {
-  margin-left: $s-8;
+  margin-left: deprecated.$s-8;
 }
 
 .checkbox-style {
@@ -87,12 +87,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: $s-16;
-  height: $s-16;
-  margin-inline: $s-6;
+  width: deprecated.$s-16;
+  height: deprecated.$s-16;
+  margin-inline: deprecated.$s-6;
   background-color: var(--input-checkbox-background-color-rest);
-  border: $s-1 solid var(--input-checkbox-border-color-rest);
-  border-radius: $s-4;
+  border: deprecated.$s-1 solid var(--input-checkbox-border-color-rest);
+  border-radius: deprecated.$s-4;
   padding: 0;
 }
 
@@ -102,7 +102,7 @@
 }
 
 .checkbox-disabled {
-  border: $s-1 solid var(--color-background-quaternary);
+  border: deprecated.$s-1 solid var(--color-background-quaternary);
   background-color: var(--color-background-tertiary);
 }
 
@@ -126,7 +126,7 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  padding: $s-12;
+  padding: deprecated.$s-12;
   color: var(--color-foreground-secondary);
 }
 .selected-set {
@@ -136,27 +136,27 @@
 }
 
 .collapsabled-icon {
-  @include buttonStyle;
-  @include flexCenter;
-  height: $s-24;
-  border-radius: $br-8;
+  @include deprecated.buttonStyle;
+  @include deprecated.flexCenter;
+  height: deprecated.$s-24;
+  border-radius: deprecated.$br-8;
   &:hover {
     color: var(--title-foreground-color-hover);
   }
 }
 
 .editing-node {
-  @include textEllipsis;
-  @include bodySmallTypography;
-  @include removeInputStyle;
+  @include deprecated.textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.removeInputStyle;
 
-  border: $s-1 solid var(--input-border-color-focus);
-  border-radius: $br-8;
+  border: deprecated.$s-1 solid var(--input-border-color-focus);
+  border-radius: deprecated.$br-8;
   color: var(--layer-row-foreground-color-focus);
   flex-grow: 1;
-  height: $s-28;
+  height: deprecated.$s-28;
   margin: 0;
-  padding-left: $s-6;
+  padding-left: deprecated.$s-6;
 
   &::placeholder {
     color: var(--layer-row-foreground-color-placeholder);

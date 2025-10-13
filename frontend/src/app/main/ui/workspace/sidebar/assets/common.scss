@@ -4,10 +4,10 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .title-name {
-  @include uppercaseTitleTipography;
+  @include deprecated.uppercaseTitleTipography;
   display: flex;
   align-items: center;
   flex-grow: 1;
@@ -15,7 +15,7 @@
 }
 
 .title-tokens {
-  @include bodySmallTypography;
+  @include deprecated.bodySmallTypography;
   text-transform: capitalize;
 }
 
@@ -24,12 +24,12 @@
 }
 
 .section-icon {
-  @include flexCenter;
-  padding-right: $s-2;
+  @include deprecated.flexCenter;
+  padding-right: deprecated.$s-2;
   svg {
-    @include flexCenter;
-    height: $s-16;
-    width: $s-16;
+    @include deprecated.flexCenter;
+    height: deprecated.$s-16;
+    width: deprecated.$s-16;
     fill: none;
     stroke: currentColor;
   }
@@ -38,37 +38,37 @@
 .section-name {
   display: flex;
   align-items: center;
-  margin: 0 $s-2;
+  margin: 0 deprecated.$s-2;
 }
 
 .num-assets {
-  @include flexCenter;
+  @include deprecated.flexCenter;
   height: 100%;
-  padding-left: $s-8;
+  padding-left: deprecated.$s-8;
 }
 
 .title-spacing {
-  padding-block-start: $s-4;
+  padding-block-start: deprecated.$s-4;
 }
 
 .asset-section.opened {
-  margin-bottom: $s-12;
+  margin-bottom: deprecated.$s-12;
 }
 
 .drag-counter {
-  @include bodySmallTypography;
-  @include textEllipsis;
+  @include deprecated.bodySmallTypography;
+  @include deprecated.textEllipsis;
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: calc($s-24 - $s-2);
+  height: calc(deprecated.$s-24 - deprecated.$s-2);
   background-color: var(--assets-item-name-background-color);
   color: var(--assets-item-name-foreground-color);
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin: $s-4;
-  padding-inline: $s-4;
+  margin: deprecated.$s-4;
+  padding-inline: deprecated.$s-4;
   z-index: 2;
 }

@@ -11,7 +11,6 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
-   [app.common.uri :as u]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
@@ -72,7 +71,7 @@
   (sm/validator schema:params))
 
 (defn- prepare-session-params
-  [key params]
+  [params key]
   (assert (string? key) "expected key to be a string")
   (assert (not (str/blank? key)) "expected key to be not empty")
   (assert (valid-params? params) "expected valid params")
@@ -90,7 +89,9 @@
       (db/exec-one! pool (sql/select :http-session {:id token})))
 
     (write! [_ key params]
-      (let [params (prepare-session-params key params)]
+      (let [params (-> params
+                       (assoc :created-at (ct/now))
+                       (prepare-session-params key))]
         (db/insert! pool :http-session params)
         params))
 
@@ -113,7 +114,9 @@
         (get @cache token))
 
       (write! [_ key params]
-        (let [params (prepare-session-params key params)]
+        (let [params (-> params
+                         (assoc :created-at (ct/now))
+                         (prepare-session-params key))]
           (swap! cache assoc key params)
           params))
 
@@ -144,27 +147,23 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (declare ^:private assign-auth-token-cookie)
-(declare ^:private assign-auth-data-cookie)
 (declare ^:private clear-auth-token-cookie)
-(declare ^:private clear-auth-data-cookie)
 (declare ^:private gen-token)
 
 (defn create-fn
-  [{:keys [::manager ::setup/props]} profile-id]
+  [{:keys [::manager] :as cfg} profile-id]
   (assert (manager? manager) "expected valid session manager")
   (assert (uuid? profile-id) "expected valid uuid for profile-id")
 
   (fn [request response]
     (let [uagent  (yreq/get-header request "user-agent")
           params  {:profile-id profile-id
-                   :user-agent uagent
-                   :created-at (ct/now)}
-          token   (gen-token props params)
+                   :user-agent uagent}
+          token   (gen-token cfg params)
           session (write! manager token params)]
-      (l/trace :hint "create" :profile-id (str profile-id))
+      (l/trc :hint "create" :profile-id (str profile-id))
       (-> response
-          (assign-auth-token-cookie session)
-          (assign-auth-data-cookie session)))))
+          (assign-auth-token-cookie session)))))
 
 (defn delete-fn
   [{:keys [::manager]}]
@@ -172,23 +171,22 @@
   (fn [request response]
     (let [cname   (cf/get :auth-token-cookie-name default-auth-token-cookie-name)
           cookie  (yreq/get-cookie request cname)]
-      (l/trace :hint "delete" :profile-id (:profile-id request))
+      (l/trc :hint "delete" :profile-id (:profile-id request))
       (some->> (:value cookie) (delete! manager))
       (-> response
           (assoc :status 204)
           (assoc :body nil)
-          (clear-auth-token-cookie)
-          (clear-auth-data-cookie)))))
+          (clear-auth-token-cookie)))))
 
 (defn- gen-token
-  [props {:keys [profile-id created-at]}]
-  (tokens/generate props {:iss "authentication"
-                          :iat created-at
-                          :uid profile-id}))
+  [cfg {:keys [profile-id created-at]}]
+  (tokens/generate cfg {:iss "authentication"
+                        :iat created-at
+                        :uid profile-id}))
 (defn- decode-token
-  [props token]
+  [cfg token]
   (when token
-    (tokens/verify props {:token token :iss "authentication"})))
+    (tokens/verify cfg {:token token :iss "authentication"})))
 
 (defn- get-token
   [request]
@@ -208,18 +206,18 @@
          (neg? (compare default-renewal-max-age elapsed)))))
 
 (defn- wrap-soft-auth
-  [handler {:keys [::manager ::setup/props]}]
+  [handler {:keys [::manager] :as cfg}]
   (assert (manager? manager) "expected valid session manager")
   (letfn [(handle-request [request]
             (try
               (let [token  (get-token request)
-                    claims (decode-token props token)]
+                    claims (decode-token cfg token)]
                 (cond-> request
                   (map? claims)
                   (-> (assoc ::token-claims claims)
                       (assoc ::token token))))
               (catch Throwable cause
-                (l/trace :hint "exception on decoding malformed token" :cause cause)
+                (l/trc :hint "exception on decoding malformed token" :cause cause)
                 request)))]
 
     (fn [request]
@@ -239,8 +237,7 @@
       (if (renew-session? session)
         (let [session (update! manager session)]
           (-> response
-              (assign-auth-token-cookie session)
-              (assign-auth-data-cookie session)))
+              (assign-auth-token-cookie session)))
         response))))
 
 (def soft-auth
@@ -256,7 +253,7 @@
 (defn- assign-auth-token-cookie
   [response {token :id updated-at :updated-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
-        created-at (or updated-at (ct/now))
+        created-at updated-at
         renewal    (ct/plus created-at default-renewal-max-age)
         expires    (ct/plus created-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
@@ -273,52 +270,14 @@
                     :secure secure?}]
     (update response :cookies assoc name cookie)))
 
-(defn- assign-auth-data-cookie
-  [response {profile-id :profile-id updated-at :updated-at}]
-  (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
-        domain     (cf/get :auth-data-cookie-domain)
-        cname      default-auth-data-cookie-name
-
-        created-at (or updated-at (ct/now))
-        renewal    (ct/plus created-at default-renewal-max-age)
-        expires    (ct/plus created-at max-age)
-
-        comment    (str "Renewal at: " (ct/format-inst renewal :rfc1123))
-        secure?    (contains? cf/flags :secure-session-cookies)
-        strict?    (contains? cf/flags :strict-session-cookies)
-        cors?      (contains? cf/flags :cors)
-
-        cookie     {:domain domain
-                    :expires expires
-                    :path "/"
-                    :comment comment
-                    :value (u/map->query-string {:profile-id profile-id})
-                    :same-site (if cors? :none (if strict? :strict :lax))
-                    :secure secure?}]
-
-    (cond-> response
-      (string? domain)
-      (update :cookies assoc cname cookie))))
-
 (defn- clear-auth-token-cookie
   [response]
   (let [cname (cf/get :auth-token-cookie-name default-auth-token-cookie-name)]
     (update response :cookies assoc cname {:path "/" :value "" :max-age 0})))
 
-(defn- clear-auth-data-cookie
-  [response]
-  (let [cname  default-auth-data-cookie-name
-        domain (cf/get :auth-data-cookie-domain)]
-    (cond-> response
-      (string? domain)
-      (update :cookies assoc cname {:domain domain :path "/" :value "" :max-age 0}))))
-
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK: SESSION GC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; FIXME: MOVE
 
 (defmethod ig/assert-key ::tasks/gc
   [_ params]
@@ -332,22 +291,23 @@
 
 (def ^:private
   sql:delete-expired
-  "delete from http_session
-    where updated_at < now() - ?::interval
+  "DELETE FROM http_session
+    WHERE updated_at < ?::timestamptz
        or (updated_at is null and
-           created_at < now() - ?::interval)")
+           created_at < ?::timestamptz)")
 
 (defn- collect-expired-tasks
   [{:keys [::db/conn ::tasks/max-age]}]
-  (let [interval (db/interval max-age)
-        result   (db/exec-one! conn [sql:delete-expired interval interval])
-        result   (:next.jdbc/update-count result)]
-    (l/debug :task "gc"
-             :hint "clean http sessions"
-             :deleted result)
+  (let [threshold (ct/minus (ct/now) max-age)
+        result    (-> (db/exec-one! conn [sql:delete-expired threshold threshold])
+                      (db/get-update-count))]
+    (l/dbg :task "gc"
+           :hint "clean http sessions"
+           :deleted result)
     result))
 
 (defmethod ig/init-key ::tasks/gc
   [_ {:keys [::tasks/max-age] :as cfg}]
-  (l/debug :hint "initializing session gc task" :max-age max-age)
-  (fn [_] (db/tx-run! cfg collect-expired-tasks)))
+  (l/dbg :hint "initializing session gc task" :max-age max-age)
+  (fn [_]
+    (db/tx-run! cfg collect-expired-tasks)))

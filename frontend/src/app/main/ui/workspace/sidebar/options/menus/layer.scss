@@ -4,21 +4,21 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@import "refactor/common-refactor.scss";
+@use "refactor/common-refactor.scss" as deprecated;
 
 .element-set-content {
   display: grid;
   grid-template-columns: repeat(8, var(--sp-xxxl));
   gap: var(--sp-xs);
-  height: $s-32;
-  margin-bottom: $s-8;
+  height: deprecated.$s-32;
+  margin-bottom: deprecated.$s-8;
   .select {
     grid-column: span 4;
     padding: 0;
   }
   .input {
     @extend .input-element;
-    @include bodySmallTypography;
+    @include deprecated.bodySmallTypography;
     grid-column: span 2;
   }
   .actions {
@@ -29,12 +29,12 @@
 
   &.hidden {
     .hidden-select {
-      @include hiddenElement;
-      border: $s-1 solid var(--input-border-color-disabled);
+      @include deprecated.hiddenElement;
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
     }
     .input {
-      @include hiddenElement;
-      border: $s-1 solid var(--input-border-color-disabled);
+      @include deprecated.hiddenElement;
+      border: deprecated.$s-1 solid var(--input-border-color-disabled);
       .icon {
         stroke: var(--input-foreground-color-disabled);
       }

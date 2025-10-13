@@ -44,7 +44,7 @@
   [_ cfg]
   (fs/create-dir default-tmp-dir)
   (px/fn->thread (partial io-loop cfg)
-                 {:name "penpot/storage/tmp-cleaner" :virtual true}))
+                 {:name "penpot/storage/tmp-cleaner"}))
 
 (defmethod ig/halt-key! ::cleaner
   [_ thread]
