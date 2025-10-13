@@ -241,7 +241,7 @@
 
 (t/deftest make-invalid-tokens-lib
   (let [params {:sets {} :themes {}}]
-    (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"expected valid token sets"
+    (t/is (thrown-with-msg? #?(:cljs js/Error :clj Exception) #"invalid tokens-lib internal data structure"
                             (ctob/make-tokens-lib params)))))
 
 (t/deftest add-token-set-to-token-lib
