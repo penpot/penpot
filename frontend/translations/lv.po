@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:23+0000\n"
-"Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
+"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"Last-Translator: \"Ņikita K.\" <nikita.kozlovs@gmail.com>\n"
 "Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
 "lv/>\n"
 "Language: lv\n"
@@ -5255,10 +5255,6 @@ msgstr "Norādīt režģa izkārtojumu"
 #, unused
 msgid "workspace.libraries.add"
 msgstr "Pievienot"
-
-#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
-msgid "workspace.libraries.colors"
-msgstr "%s krāsas"
 
 #: src/app/main/ui/workspace/color_palette.cljs:147
 msgid "workspace.libraries.colors.empty-palette"
