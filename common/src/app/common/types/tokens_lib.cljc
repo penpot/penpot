@@ -1320,7 +1320,7 @@ Will return a value that matches this schema:
 
 (defmethod pp/simple-dispatch TokensLib
   [^TokensLib obj]
-  (.write *out* "#penpot/token-lib ")
+  (.write *out* "#penpot/tokens-lib ")
   (pp/pprint-newline :miser)
   (pp/pprint (export-dtcg-json obj)))
 
@@ -1328,7 +1328,7 @@ Will return a value that matches this schema:
    (do
      (defmethod print-method TokensLib
        [^TokensLib obj ^java.io.Writer w]
-       (.write w "#penpot/token-lib ")
+       (.write w "#penpot/tokens-lib ")
        (print-method (export-dtcg-json obj) w))
 
      (defmethod print-dup TokensLib
@@ -1339,7 +1339,7 @@ Will return a value that matches this schema:
    (extend-type TokensLib
      cljs.core/IPrintWithWriter
      (-pr-writer [this writer opts]
-       (-write writer "#penpot/token-lib ")
+       (-write writer "#penpot/tokens-lib ")
        (-pr-writer (export-dtcg-json this) writer opts))
 
      cljs.core/IEncodeJS
