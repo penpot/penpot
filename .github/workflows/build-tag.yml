@@ -1,4 +1,4 @@
-name: TAG - Build and Upload Penpot Bundle
+name: _TAG
 
 on:
   push:
@@ -6,10 +6,25 @@ on:
       - '*'
 
 jobs:
-  build-tag-bundle:
+  build-bundle:
     uses: ./.github/workflows/build-bundle.yml
     secrets: inherit
     with:
       gh_ref: ${{ github.ref_name }}
       build_wasm: "no"
       build_storybook: "yes"
+
+  build-docker:
+    needs: build-bundle
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ github.ref_name }}
+
+  publish-final-tag:
+    if: ${{ !contains(github.ref_name, '-RC') && !contains(github.ref_name, '-alpha') && !contains(github.ref_name, '-beta')  && contains(github.ref_name, '.') }}
+    needs: build-docker
+    uses: ./.github/workflows/release.yml
+    secrets: inherit
+    with:
+      gh_ref: ${{ github.ref_name }}
