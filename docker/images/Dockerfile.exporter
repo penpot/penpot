@@ -90,7 +90,7 @@ RUN set -eux; \
     chown -R penpot:penpot /opt/penpot;
 
 ARG BUNDLE_PATH="./bundle-exporter/"
-ADD --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
+COPY --chown=penpot:penpot $BUNDLE_PATH /opt/penpot/exporter/
 
 WORKDIR /opt/penpot/exporter
 USER penpot:penpot
