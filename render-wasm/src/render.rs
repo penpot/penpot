@@ -422,15 +422,6 @@ impl RenderState {
             rect,
             self.background_color,
         );
-
-        if self.options.is_debug_visible() {
-            debug::render_workspace_current_tile(
-                self,
-                "".to_string(),
-                self.current_tile.unwrap(),
-                rect,
-            );
-        }
     }
 
     pub fn apply_drawing_to_render_canvas(&mut self, shape: Option<&Shape>) {
@@ -814,6 +805,12 @@ impl RenderState {
                 // bools::debug_render_bool_paths(self, shape, shapes, modifiers, structure);
             }
         };
+
+        if self.options.is_debug_visible() {
+            let shape_selrect_bounds = self.get_shape_selrect_bounds(&shape);
+            let shape_extrect_bounds = self.get_shape_extrect_bounds(&shape, shapes, modifiers);
+            debug::render_debug_shape(self, shape_selrect_bounds, shape_extrect_bounds);
+        }
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
@@ -871,6 +868,10 @@ impl RenderState {
             canvas.draw_image(snapshot, (0, 0), Some(&skia::Paint::default()));
             canvas.restore();
 
+            if self.options.is_debug_visible() {
+                debug::render(self);
+            }
+
             ui::render(self, shapes, modifiers, structure);
             debug::render_wasm_label(self);
 
@@ -913,7 +914,8 @@ impl RenderState {
             );
         }
 
-        debug::render_debug_tiles_for_viewbox(self);
+        // FIXME - review debug
+        // debug::render_debug_tiles_for_viewbox(self);
 
         performance::begin_measure!("tile_cache");
         self.pending_tiles.update(&self.tile_viewbox);
@@ -1103,6 +1105,33 @@ impl RenderState {
         )
     }
 
+    pub fn get_rect_bounds(&mut self, rect: skia::Rect) -> Rect {
+        let scale = self.get_scale();
+        let offset_x = self.viewbox.area.left * scale;
+        let offset_y = self.viewbox.area.top * scale;
+        Rect::from_xywh(
+            (rect.left * scale) - offset_x,
+            (rect.top * scale) - offset_y,
+            rect.width() * scale,
+            rect.height() * scale,
+        )
+    }
+
+    pub fn get_shape_selrect_bounds(&mut self, shape: &Shape) -> Rect {
+        let rect = shape.selrect();
+        self.get_rect_bounds(rect)
+    }
+
+    pub fn get_shape_extrect_bounds(
+        &mut self,
+        shape: &Shape,
+        tree: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> Rect {
+        let rect = shape.extrect(tree, modifiers);
+        self.get_rect_bounds(rect)
+    }
+
     pub fn get_aligned_tile_bounds(&mut self, tile: tiles::Tile) -> Rect {
         let scale = self.get_scale();
         let start_tile_x =
@@ -1264,16 +1293,6 @@ impl RenderState {
                         tree,
                         modifiers,
                     );
-
-                if self.options.is_debug_visible() {
-                    debug::render_debug_shape(
-                        self,
-                        &transformed_element,
-                        is_visible,
-                        tree,
-                        modifiers,
-                    );
-                }
 
                 if !is_visible {
                     continue;
@@ -1545,6 +1564,15 @@ impl RenderState {
                     let tile_rect = self.get_current_tile_bounds();
                     if !is_empty {
                         self.apply_render_to_final_canvas(tile_rect);
+
+                        if self.options.is_debug_visible() {
+                            debug::render_workspace_current_tile(
+                                self,
+                                "".to_string(),
+                                current_tile,
+                                tile_rect,
+                            );
+                        }
                     } else {
                         self.surfaces.apply_mut(SurfaceId::Target as u32, |s| {
                             let mut paint = skia::Paint::default();
