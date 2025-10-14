@@ -420,7 +420,7 @@
   :min 0
   :max 1
   :compile
-  (fn [{:keys [kind max min] :as props} children _]
+  (fn [{:keys [kind max min ordered] :as props} children _]
     (let [kind  (or (last children) kind)
 
           pred
@@ -456,18 +456,23 @@
             (fn [value]
               (every? pred value)))
 
+          empty-set
+          (if ordered
+            (d/ordered-set)
+            #{})
+
           decode
           (fn [v]
             (cond
               (string? v)
               (let [v  (str/split v #"[\s,]+")]
-                (into #{} xf:filter-word-strings v))
+                (into empty-set xf:filter-word-strings v))
 
               (set? v)
               v
 
               (coll? v)
-              (into #{} v)
+              (into empty-set v)
 
               :else
               v))
