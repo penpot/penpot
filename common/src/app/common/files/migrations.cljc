@@ -1436,74 +1436,6 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
-(def ^:private valid-stroke?
-  (sm/lazy-validator cts/schema:stroke))
-
-(defmethod migrate-data "0007-clear-invalid-strokes-and-fills-v2"
-  [data _]
-  (letfn [(clear-color-image [image]
-            (select-keys image types.color/image-attrs))
-
-          (clear-color-gradient [gradient]
-            (select-keys gradient types.color/gradient-attrs))
-
-          (clear-stroke [stroke]
-            (-> stroke
-                (select-keys cts/stroke-attrs)
-                (d/update-when :stroke-color-gradient clear-color-gradient)
-                (d/update-when :stroke-image clear-color-image)
-                (d/update-when :stroke-style #(if (#{:svg :none} %) :solid %))))
-
-          (fix-strokes [strokes]
-            (->> (map clear-stroke strokes)
-                 (filterv valid-stroke?)))
-
-          ;; Fixes shapes with nested :fills in the :fills attribute
-          ;; introduced in a migration `0006-fix-old-texts-fills` when
-          ;; types.text/transform-nodes with identity pred was broken
-          (remove-nested-fills [[fill :as fills]]
-            (if (and (= 1 (count fills))
-                     (contains? fill :fills))
-              (:fills fill)
-              fills))
-
-          (clear-fill [fill]
-            (-> fill
-                (select-keys types.fills/fill-attrs)
-                (d/update-when :fill-image clear-color-image)
-                (d/update-when :fill-color-gradient clear-color-gradient)))
-
-          (fix-fills [fills]
-            (->> fills
-                 (remove-nested-fills)
-                 (map clear-fill)
-                 (filterv valid-fill?)))
-
-          (fix-object [object]
-            (-> object
-                (d/update-when :strokes fix-strokes)
-                (d/update-when :fills fix-fills)))
-
-          (fix-text-content [content]
-            (->> content
-                 (types.text/transform-nodes types.text/is-content-node? fix-object)
-                 (types.text/transform-nodes types.text/is-paragraph-set-node? #(dissoc % :fills))))
-
-          (update-shape [object]
-            (-> object
-                (fix-object)
-                ;; The text shape also can has strokes and fils on the
-                ;; text fragments so we need to fix them there
-                (cond-> (cfh/text-shape? object)
-                  (update :content fix-text-content))))
-
-          (update-container [container]
-            (d/update-when container :objects d/update-vals update-shape))]
-
-    (-> data
-        (update :pages-index d/update-vals update-container)
-        (d/update-when :components d/update-vals update-container))))
-
 (defmethod migrate-data "0008-fix-library-colors-v4"
   [data _]
   (letfn [(clear-color-opacity [color]
@@ -1619,6 +1551,76 @@
   [data _]
   (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
 
+(def ^:private valid-stroke?
+  (sm/lazy-validator cts/schema:stroke))
+
+(defmethod migrate-data "0015-clear-invalid-strokes-and-fills"
+  [data _]
+  (letfn [(clear-color-image [image]
+            (select-keys image types.color/image-attrs))
+
+          (clear-color-gradient [gradient]
+            (select-keys gradient types.color/gradient-attrs))
+
+          (clear-stroke [stroke]
+            (-> stroke
+                (select-keys cts/stroke-attrs)
+                (d/update-when :stroke-color-gradient clear-color-gradient)
+                (d/update-when :stroke-image clear-color-image)
+                (d/update-when :stroke-style #(if (#{:svg :none} %) :solid %))))
+
+          (fix-strokes [strokes]
+            (->> (map clear-stroke strokes)
+                 (filterv valid-stroke?)))
+
+          ;; Fixes shapes with nested :fills in the :fills attribute
+          ;; introduced in a migration `0006-fix-old-texts-fills` when
+          ;; types.text/transform-nodes with identity pred was broken
+          (remove-nested-fills [[fill :as fills]]
+            (if (and (= 1 (count fills))
+                     (contains? fill :fills))
+              (:fills fill)
+              fills))
+
+          (clear-fill [fill]
+            (-> fill
+                (select-keys types.fills/fill-attrs)
+                (d/update-when :fill-image clear-color-image)
+                (d/update-when :fill-color-gradient clear-color-gradient)))
+
+          (fix-fills [fills]
+            (->> fills
+                 (remove-nested-fills)
+                 (map clear-fill)
+                 (filterv valid-fill?)))
+
+          (fix-object [object]
+            (-> object
+                (d/update-when :strokes fix-strokes)
+                (d/update-when :fills fix-fills)))
+
+          (fix-text-content [content]
+            (->> content
+                 (types.text/transform-nodes types.text/is-content-node? fix-object)
+                 (types.text/transform-nodes types.text/is-paragraph-set-node? #(dissoc % :fills))))
+
+          (update-shape [object]
+            (-> object
+                (fix-object)
+                (d/update-when :position-data #(mapv fix-object %))
+
+                ;; The text shape can also have strokes and fills on
+                ;; the text fragments, so we need to fix them there.
+                (cond-> (cfh/text-shape? object)
+                  (update :content fix-text-content))))
+
+          (update-container [container]
+            (d/update-when container :objects d/update-vals update-shape))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1681,7 +1683,6 @@
          "0004-clean-shadow-color"
          "0005-deprecate-image-type"
          "0006-fix-old-texts-fills"
-         "0007-clear-invalid-strokes-and-fills-v2"
          "0008-fix-library-colors-v4"
          "0009-clean-library-colors"
          "0009-add-partial-text-touched-flags"
@@ -1689,4 +1690,5 @@
          "0011-fix-invalid-text-touched-flags"
          "0012-fix-position-data"
          "0013-fix-component-path"
-         "0014-fix-tokens-lib-duplicate-ids"]))
+         "0014-fix-tokens-lib-duplicate-ids"
+         "0015-clear-invalid-strokes-and-fills"]))
