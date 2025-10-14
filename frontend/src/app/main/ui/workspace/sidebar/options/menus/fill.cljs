@@ -211,13 +211,13 @@
           (dom/set-attribute! checkbox "indeterminate" true)
           (dom/remove-attribute! checkbox "indeterminate"))))
 
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css :element-title)}
+    [:div {:class (stl/css :fill-section)}
+     [:div {:class (stl/css :fill-title)}
       [:> title-bar* {:collapsable  has-fills?
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        label
-                      :class        (stl/css-case :title-spacing-fill (not has-fills?))}
+                      :class        (stl/css-case :fill-title-bar (not has-fills?))}
 
        (when (not (= :multiple fills))
          [:> icon-button* {:variant "ghost"
@@ -228,11 +228,11 @@
                            :icon i/add}])]]
 
      (when open?
-       [:div {:class (stl/css :element-content)}
+       [:div {:class (stl/css :fill-content)}
         (cond
           (= :multiple fills)
-          [:div {:class (stl/css :element-set-options-group)}
-           [:div {:class (stl/css :group-label)}
+          [:div {:class (stl/css :fill-multiple)}
+           [:div {:class (stl/css :fill-multiple-label)}
             (tr "settings.multiple")]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.fill.remove-fill")
@@ -265,7 +265,7 @@
         (when (or (= type :frame)
                   (and (= type :multiple)
                        (some? hide-on-export)))
-          [:div {:class (stl/css :checkbox)}
+          [:div {:class (stl/css :fill-checkbox)}
            [:label {:for "show-fill-on-export"
                     :class (stl/css-case :global/checked (not hide-on-export))}
             [:span {:class (stl/css-case :check-mark true

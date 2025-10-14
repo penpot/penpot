@@ -176,13 +176,13 @@
                                           :token token
                                           :shape-ids ids}))))]
 
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css :element-title)}
+    [:div {:class (stl/css :stroke-section)}
+     [:div {:class (stl/css :stroke-title)}
       [:> title-bar* {:collapsable  has-strokes?
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        label
-                      :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
+                      :class        (stl/css-case :stroke-title-bar (not has-strokes?))}
        (when (not (= :multiple strokes))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.stroke.add-stroke")
@@ -190,12 +190,12 @@
                            :icon i/add
                            :data-testid "add-stroke"}])]]
      (when open?
-       [:div {:class (stl/css-case :element-content true
-                                   :empty-content (not has-strokes?))}
+       [:div {:class (stl/css-case :stroke-content true
+                                   :stroke-content-empty (not has-strokes?))}
         (cond
           (= :multiple strokes)
-          [:div {:class (stl/css :element-set-options-group)}
-           [:div {:class (stl/css :group-label)}
+          [:div {:class (stl/css :stroke-multiple)}
+           [:div {:class (stl/css :stroke-multiple-label)}
             (tr "settings.multiple")]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.stroke.remove-stroke")
