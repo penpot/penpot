@@ -27,13 +27,14 @@
    [:on-click {:optional true} fn?]
    [:on-token-key-down fn?]
    [:on-blur {:optional true} fn?]
+   [:on-focus {:optional true} fn?]
    [:detach-token fn?]])
 
 (mf/defc token-field*
   {::mf/schema schema:token-field}
   [{:keys [id label value slot-start disabled
            on-click on-token-key-down on-blur detach-token
-           token-wrapper-ref token-detach-btn-ref]}]
+           token-wrapper-ref token-detach-btn-ref on-focus]}]
   (let [set-active? (some? id)
         content     (if set-active?
                       label
@@ -60,6 +61,7 @@
            :on-key-down on-token-key-down
            :ref token-wrapper-ref
            :on-blur on-blur
+           :on-focus on-focus
            :tab-index (if disabled -1 0)}
 
      (when (some? slot-start) slot-start)

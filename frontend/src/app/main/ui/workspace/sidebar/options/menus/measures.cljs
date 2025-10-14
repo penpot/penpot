@@ -301,7 +301,7 @@
 
         on-size-change
         (mf/use-fn
-         (mf/deps ids)
+         (mf/deps ids shapes)
          (fn [value attr]
            (if (or (string? value) (int? value))
              (do

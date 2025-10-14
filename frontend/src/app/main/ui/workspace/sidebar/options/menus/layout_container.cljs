@@ -11,19 +11,24 @@
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.shape.layout :as ctl]
+   [app.common.types.token :as tk]
    [app.config :as cf]
    [app.main.data.event :as-alias ev]
    [app.main.data.workspace :as udw]
    [app.main.data.workspace.grid-layout.editor :as dwge]
    [app.main.data.workspace.shape-layout :as dwsl]
+   [app.main.data.workspace.tokens.application :as dwta]
+   [app.main.features :as features]
    [app.main.refs :as refs]
    [app.main.store :as st]
    [app.main.ui.components.dropdown :refer [dropdown]]
-   [app.main.ui.components.numeric-input :refer [numeric-input*]]
+   [app.main.ui.components.numeric-input :as deprecated-input]
    [app.main.ui.components.radio-buttons :refer [radio-button radio-buttons]]
    [app.main.ui.components.select :refer [select]]
    [app.main.ui.components.title-bar :refer [title-bar*]]
+   [app.main.ui.context :as muc]
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
+   [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.formats :as fmt]
    [app.main.ui.hooks :as h]
@@ -41,6 +46,44 @@
     :row-reverse    deprecated-icon/row-reverse
     :column         deprecated-icon/column
     :column-reverse deprecated-icon/column-reverse))
+
+
+(mf/defc numeric-input-wrapper*
+  {::mf/private true}
+  [{:keys [values name applied-tokens align on-detach] :rest props}]
+  (let [tokens (mf/use-ctx muc/active-tokens-by-type)
+        input-type (cond
+                     (some #{:p2 :p4} [name])
+                     :horizontal-padding
+
+                     (some #{:p1 :p3} [name])
+                     :vertical-padding
+                     :else
+                     name)
+        
+        tokens (mf/with-memo [tokens input-type]
+                 (delay
+                   (-> (deref tokens)
+                       (select-keys (get tk/tokens-by-input input-type))
+                       (not-empty))))
+        on-detach-attr
+        (mf/use-fn
+         (mf/deps on-detach name)
+         #(on-detach % name))
+
+        props  (mf/spread-props props
+                                {:placeholder (if (or (= :multiple (:applied-tokens values))
+                                                      (= :multiple (get values name))
+                                                      (nil? (get values name)))
+                                                (tr "settings.multiple")
+                                                "--")
+                                 :class (stl/css :numeric-input-measures)
+                                 :applied-token (get applied-tokens name)
+                                 :tokens tokens
+                                 :align align
+                                 :on-detach on-detach-attr
+                                 :value (get values name)})]
+    [:> numeric-input* props]))
 
 ;; FLEX COMPONENTS
 
@@ -296,10 +339,12 @@
   [_event]
   (select-padding false false false false))
 
-(mf/defc simple-padding-selection
-  {::mf/props :obj}
-  [{:keys [value on-change]}]
-  (let [p1 (:p1 value)
+(mf/defc simple-padding-selection*
+  [{:keys [value on-change shapes applied-tokens ids]}]
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
+
+        p1 (:p1 value)
         p2 (:p2 value)
         p3 (:p3 value)
         p4 (:p4 value)
@@ -314,150 +359,298 @@
              p2
              nil)
 
+        applied-to-p1 (:p1 applied-tokens)
+        applied-to-p2 (:p1 applied-tokens)
+        applied-to-p3 (:p3 applied-tokens)
+        applied-to-p4 (:p4 applied-tokens)
+
+        applied-to-p1 (if (= applied-to-p1 applied-to-p3)
+                        applied-to-p1
+                        nil)
+
+        applied-to-p2 (if (= applied-to-p2 applied-to-p4)
+                        applied-to-p2
+                        nil)
         on-change'
         (mf/use-fn
-         (mf/deps on-change)
-         (fn [value event]
-           (let [attr (-> (dom/get-current-target event)
-                          (dom/get-data "attr")
-                          (keyword))]
-             (on-change :simple attr value event))))
+         (mf/deps on-change shapes)
+         (fn [value attr event]
+           (if (or (string? value) (int? value))
+             (on-change :simple attr value event)
+             (do
+               (let [resolved-value (:resolved-value (first value))]
+                 (st/emit! (dwta/toggle-token {:token (first value)
+                                               :attrs #{attr}
+                                               :shapes shapes}))
+                 (on-change :simple attr resolved-value event))))))
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token attr]
+           (st/emit! (dwta/unapply-token {:token (first token)
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
 
         on-focus
         (mf/use-fn
-         (fn [event]
-           (let [attr (-> (dom/get-current-target event)
-                          (dom/get-data "attr")
-                          (keyword))]
+         (mf/deps select-padding)
+         (fn [attr event]
+           (case attr
+             :p1 (select-padding true false true false)
+             :p2 (select-padding false true false true))
 
-             (case attr
-               :p1 (select-padding true false true false)
-               :p2 (select-padding false true false true))
+           (dom/select-target event)))
 
-             (dom/select-target event))))]
+        on-focus-p1
+        (mf/use-fn (mf/deps on-focus) #(on-focus :p1))
+
+        on-focus-p2
+        (mf/use-fn (mf/deps on-focus) #(on-focus :p2))
+
+        on-p1-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :p1))
+
+        on-p2-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :p2))]
 
     [:div {:class (stl/css :paddings-simple)}
-     [:div {:class (stl/css :padding-simple)
-            :title (tr "workspace.layout_grid.editor.padding.vertical")}
-      [:span {:class (stl/css :icon)}
-       deprecated-icon/padding-top-bottom]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input)
-        :placeholder (tr "settings.multiple")
-        :aria-label (tr "workspace.layout_grid.editor.padding.vertical")
-        :data-attr "p1"
-        :on-change on-change'
-        :on-focus on-focus
-        :nillable true
-        :min 0
-        :value p1}]]
-     [:div {:class (stl/css :padding-simple)
-            :title (tr "workspace.layout_grid.editor.padding.horizontal")}
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-p1-change
+         :on-detach on-detach-token
+         :on-blur on-padding-blur
+         :on-focus on-focus-p1
+         :icon i/padding-top-bottom
+         :min 0
+         :name :p1
+         :property (tr "workspace.layout_grid.editor.padding.vertical")
+         :nillable true
+         :applied-tokens {:p1 applied-to-p1}
+         :values {:p1 p1}}]
 
-      [:span {:class (stl/css :icon)}
-       deprecated-icon/padding-left-right]
-      [:> numeric-input*
-       {:className (stl/css :numeric-input)
-        :placeholder (tr "settings.multiple")
-        :aria-label (tr "workspace.layout_grid.editor.padding.horizontal")
-        :data-attr "p2"
-        :on-change on-change'
-        :on-focus on-focus
-        :on-blur on-padding-blur
-        :min 0
-        :nillable true
-        :value p2}]]]))
+       [:div {:class (stl/css :padding-simple)
+              :title (tr "workspace.layout_grid.editor.padding.vertical")}
+        [:span {:class (stl/css :icon)}
+         deprecated-icon/padding-top-bottom]
+        [:> deprecated-input/numeric-input*
+         {:class (stl/css :numeric-input)
+          :placeholder (tr "settings.multiple")
+          :aria-label (tr "workspace.layout_grid.editor.padding.vertical")
+          :on-change on-p1-change
+          :on-focus on-focus-p1
+          :on-blur on-padding-blur
+          :nillable true
+          :min 0
+          :value p1}]])
 
-(mf/defc multiple-padding-selection
-  {::mf/props :obj}
-  [{:keys [value on-change]}]
-  (let [p1 (:p1 value)
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-p2-change
+         :on-detach on-detach-token
+         :on-blur on-padding-blur
+         :on-focus on-focus-p2
+         :icon i/padding-left-right
+         :min 0
+         :name :p2
+         :property (tr "workspace.layout_grid.editor.padding.horizontal")
+         :nillable true
+         :applied-tokens {:p2 applied-to-p2}
+         :values {:p2 p2}}]
+
+       [:div {:class (stl/css :padding-simple)
+              :title (tr "workspace.layout_grid.editor.padding.horizontal")}
+        [:span {:class (stl/css :icon)}
+         deprecated-icon/padding-left-right]
+        [:> deprecated-input/numeric-input*
+         {:className (stl/css :numeric-input)
+          :placeholder (tr "settings.multiple")
+          :aria-label (tr "workspace.layout_grid.editor.padding.horizontal")
+          :on-change on-p2-change
+          :on-focus on-focus-p2
+          :on-blur on-padding-blur
+          :min 0
+          :nillable true
+          :value p2}]])]))
+
+(mf/defc multiple-padding-selection*
+  [{:keys [value on-change shapes applied-tokens ids]}]
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
+
+        p1 (:p1 value)
         p2 (:p2 value)
         p3 (:p3 value)
         p4 (:p4 value)
 
         on-change'
         (mf/use-fn
-         (mf/deps on-change)
-         (fn [value event]
-           (let [attr (-> (dom/get-current-target event)
-                          (dom/get-data "attr")
-                          (keyword))]
-             (on-change :multiple attr value event))))
+         (mf/deps on-change shapes)
+         (fn [value attr event]
+           (if (or (string? value) (int? value))
+             (on-change :multiple attr value event)
+             (do
+               (let [resolved-value (:resolved-value (first value))]
+                 (st/emit! (dwta/toggle-token {:token (first value)
+                                               :attrs #{attr}
+                                               :shapes shapes}))
+                 (on-change :multiple attr resolved-value event))))))
 
         on-focus
         (mf/use-fn
-         (fn [event]
-           (let [attr (-> (dom/get-current-target event)
-                          (dom/get-data "attr")
-                          (keyword))]
+         (mf/deps select-padding)
+         (fn [attr event]
+           (select-padding attr)
 
-             (select-padding attr)
-             (dom/select-target event))))]
+           (dom/select-target event)))
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token attr]
+           (st/emit! (dwta/unapply-token {:token (first token)
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
+
+
+        on-p1-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :p1))
+
+        on-p2-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :p2))
+
+        on-p3-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :p3))
+
+        on-p4-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :p4))
+
+        on-focus-p1
+        (mf/use-fn (mf/deps on-focus) #(on-focus :p1))
+
+        on-focus-p2
+        (mf/use-fn (mf/deps on-focus) #(on-focus :p2))
+
+        on-focus-p3
+        (mf/use-fn (mf/deps on-focus) #(on-focus :p3))
+
+        on-focus-p4
+        (mf/use-fn (mf/deps on-focus) #(on-focus :p4))]
 
     [:div {:class (stl/css :paddings-multiple)}
-     [:div {:class (stl/css :padding-multiple)
-            :title (tr "workspace.layout_grid.editor.padding.top")}
-      [:span {:class (stl/css :icon)}
-       deprecated-icon/padding-top]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input)
-        :placeholder "--"
-        :aria-label (tr "workspace.layout_grid.editor.padding.top")
-        :data-attr "p1"
-        :on-change on-change'
-        :on-focus on-focus
-        :on-blur on-padding-blur
-        :min 0
-        :value p1}]]
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-p1-change
+         :on-detach on-detach-token
+         :on-blur on-padding-blur
+         :on-focus on-focus-p1
+         :icon i/padding-top
+         :min 0
+         :name :p1
+         :property (tr "workspace.layout_grid.editor.padding.top")
+         :applied-tokens applied-tokens
+         :values value}]
 
-     [:div {:class (stl/css :padding-multiple)
-            :title (tr "workspace.layout_grid.editor.padding.right")}
-      [:span {:class (stl/css :icon)}
-       deprecated-icon/padding-right]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input)
-        :placeholder "--"
-        :aria-label (tr "workspace.layout_grid.editor.padding.right")
-        :data-attr "p2"
-        :on-change on-change'
-        :on-focus on-focus
-        :on-blur on-padding-blur
-        :min 0
-        :value p2}]]
+       [:div {:class (stl/css :padding-multiple)
+              :title (tr "workspace.layout_grid.editor.padding.top")}
+        [:span {:class (stl/css :icon)}
+         deprecated-icon/padding-top]
+        [:> deprecated-input/numeric-input*
+         {:class (stl/css :numeric-input)
+          :placeholder "--"
+          :aria-label (tr "workspace.layout_grid.editor.padding.top")
+          :data-attr "p1"
+          :on-change on-change'
+          :on-focus on-focus
+          :on-blur on-padding-blur
+          :min 0
+          :value p1}]])
 
-     [:div {:class (stl/css :padding-multiple)
-            :title (tr "workspace.layout_grid.editor.padding.bottom")}
-      [:span {:class (stl/css :icon)}
-       deprecated-icon/padding-bottom]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input)
-        :placeholder "--"
-        :aria-label (tr "workspace.layout_grid.editor.padding.bottom")
-        :data-attr "p3"
-        :on-change on-change'
-        :on-focus on-focus
-        :on-blur on-padding-blur
-        :min 0
-        :value p3}]]
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-p2-change
+         :on-detach on-detach-token
+         :on-blur on-padding-blur
+         :on-focus on-focus-p2
+         :icon i/padding-right
+         :min 0
+         :name :p2
+         :property (tr "workspace.layout_grid.editor.padding.right")
+         :applied-tokens applied-tokens
+         :values value}]
 
-     [:div {:class (stl/css :padding-multiple)
-            :title (tr "workspace.layout_grid.editor.padding.left")}
-      [:span {:class (stl/css :icon)}
-       deprecated-icon/padding-left]
-      [:> numeric-input*
-       {:class (stl/css :numeric-input)
-        :placeholder "--"
-        :aria-label (tr "workspace.layout_grid.editor.padding.left")
-        :data-attr "p4"
-        :on-change on-change'
-        :on-focus on-focus
-        :on-blur on-padding-blur
-        :min 0
-        :value p4}]]]))
+       [:div {:class (stl/css :padding-multiple)
+              :title (tr "workspace.layout_grid.editor.padding.right")}
+        [:span {:class (stl/css :icon)}
+         deprecated-icon/padding-right]
+        [:> deprecated-input/numeric-input*
+         {:class (stl/css :numeric-input)
+          :placeholder "--"
+          :aria-label (tr "workspace.layout_grid.editor.padding.right")
+          :data-attr "p2"
+          :on-change on-change'
+          :on-focus on-focus
+          :on-blur on-padding-blur
+          :min 0
+          :value p2}]])
 
-(mf/defc padding-section
-  {::mf/props :obj}
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-p3-change
+         :on-detach on-detach-token
+         :on-blur on-padding-blur
+         :on-focus on-focus-p3
+         :icon i/padding-bottom
+         :min 0
+         :name :p3
+         :property (tr "workspace.layout_grid.editor.padding.bottom")
+         :applied-tokens applied-tokens
+         :values value}]
+
+       [:div {:class (stl/css :padding-multiple)
+              :title (tr "workspace.layout_grid.editor.padding.bottom")}
+        [:span {:class (stl/css :icon)}
+         deprecated-icon/padding-bottom]
+        [:> deprecated-input/numeric-input*
+         {:class (stl/css :numeric-input)
+          :placeholder "--"
+          :aria-label (tr "workspace.layout_grid.editor.padding.bottom")
+          :data-attr "p3"
+          :on-change on-change'
+          :on-focus on-focus
+          :on-blur on-padding-blur
+          :min 0
+          :value p3}]])
+
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-p4-change
+         :on-detach on-detach-token
+         :on-blur on-padding-blur
+         :on-focus on-focus-p4
+         :icon i/padding-left
+         :min 0
+         :name :p4
+         :property (tr "workspace.layout_grid.editor.padding.left")
+         :applied-tokens applied-tokens
+         :values value}]
+
+       [:div {:class (stl/css :padding-multiple)
+              :title (tr "workspace.layout_grid.editor.padding.left")}
+        [:span {:class (stl/css :icon)}
+         deprecated-icon/padding-left]
+        [:> deprecated-input/numeric-input*
+         {:class (stl/css :numeric-input)
+          :placeholder "--"
+          :aria-label (tr "workspace.layout_grid.editor.padding.left")
+          :data-attr "p4"
+          :on-change on-change'
+          :on-focus on-focus
+          :on-blur on-padding-blur
+          :min 0
+          :value p4}]])]))
+
+(mf/defc padding-section*
   [{:keys [type on-type-change on-change] :as props}]
   (let [on-type-change'
         (mf/use-fn
@@ -479,10 +672,10 @@
      [:div {:class (stl/css :padding-inputs)}
       (cond
         (= type :simple)
-        [:> simple-padding-selection props]
+        [:> simple-padding-selection* props]
 
         (= type :multiple)
-        [:> multiple-padding-selection props])]
+        [:> multiple-padding-selection* props])]
 
      [:button {:class (stl/css-case
                        :padding-toggle true
@@ -549,7 +742,7 @@
                     :disabled row-gap-disabled?)
             :title "Row gap"}
       [:span {:class (stl/css :icon)} deprecated-icon/gap-vertical]
-      [:> numeric-input*
+      [:> deprecated-input/numeric-input*
        {:class (stl/css :numeric-input true)
         :no-validate true
         :placeholder "--"
@@ -568,7 +761,7 @@
                     :disabled col-gap-disabled?)
             :title "Column gap"}
       [:span {:class (stl/css :icon)} deprecated-icon/gap-horizontal]
-      [:> numeric-input*
+      [:> deprecated-input/numeric-input*
        {:class (stl/css :numeric-input true)
         :no-validate true
         :placeholder "--"
@@ -760,7 +953,7 @@
        (if is-column deprecated-icon/flex-vertical deprecated-icon/flex-horizontal)]
 
       [:div {:class (stl/css :track-info-value)}
-       [:> numeric-input* {:no-validate true
+       [:> deprecated-input/numeric-input* {:no-validate true
                            :value (:value column)
                            :on-change #(set-column-value type index %)
                            :placeholder "--"
@@ -838,9 +1031,8 @@
   (st/emit! (dom/open-new-window cf/grid-help-uri)))
 
 (mf/defc layout-container-menu
-  {::mf/memo #{:ids :values :multiple}
-   ::mf/props :obj}
-  [{:keys [ids values multiple]}]
+  {::mf/memo #{:ids :values :multiple :shapes :applied-tokens}}
+  [{:keys [ids values multiple shapes applied-tokens]}]
   (let [;; Display
         layout-type    (:layout values)
         has-layout?    (some? layout-type)
@@ -1095,11 +1287,13 @@
                             :wrap-type wrap-type
                             :on-change on-gap-change
                             :value (:layout-gap values)}]
-
-           [:& padding-section {:value (:layout-padding values)
-                                :type (:layout-padding-type values)
-                                :on-type-change on-padding-type-change
-                                :on-change on-padding-change}]]]
+           [:> padding-section* {:value (:layout-padding values)
+                                 :type (:layout-padding-type values)
+                                 :on-type-change on-padding-type-change
+                                 :shapes shapes
+                                 :ids ids
+                                 :applied-tokens applied-tokens
+                                 :on-change on-padding-change}]]]
 
          :grid
          [:div {:class (stl/css :grid-layout-menu)}
@@ -1136,8 +1330,10 @@
            [:& gap-section {:on-change on-gap-change
                             :value (:layout-gap values)}]]
           [:div {:class (stl/css :padding-row)}
-           [:& padding-section {:value (:layout-padding values)
+           [:> padding-section* {:value (:layout-padding values)
                                 :type (:layout-padding-type values)
+                                :shapes shapes
+                                :applied-tokens applied-tokens
                                 :on-type-change on-padding-type-change
                                 :on-change on-padding-change}]]]
 
@@ -1333,7 +1529,7 @@
                        :value (:layout-gap values)}]]
 
      [:div {:class (stl/css :padding-row :padding-section)}
-      [:& padding-section {:value (:layout-padding values)
+      [:> padding-section* {:value (:layout-padding values)
                            :type (:layout-padding-type values)
                            :on-type-change on-padding-type-change
                            :on-change on-padding-change}]]

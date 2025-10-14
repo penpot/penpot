@@ -115,6 +115,8 @@
      [:& layout-container-menu
       {:type shape-type
        :ids ids
+       :shapes shapes
+       :applied-tokens applied-tokens
        :values layout-container-values
        :multiple false}]
 
