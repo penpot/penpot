@@ -531,6 +531,18 @@
         (assoc :max-jobs 1)
         (process!))))
 
+
+(defn mark-file-as-trimmed
+  [id]
+  (let [id (h/parse-uuid id)]
+    (db/tx-run! main/system (fn [cfg]
+                              (-> (db/update! cfg :file
+                                              {:has-media-trimmed true}
+                                              {:id id}
+                                              {::db/return-keys false})
+                                  (db/get-update-count)
+                                  (pos?))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
