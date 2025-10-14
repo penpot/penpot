@@ -742,14 +742,15 @@ impl Shape {
         shapes_pool: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
     ) -> math::Rect {
+        let shape = self.transformed(modifiers.get(&self.id));
         let mut max_stroke: f32 = 0.;
-        let is_open = if let Type::Path(p) = &self.shape_type {
+        let is_open = if let Type::Path(p) = &shape.shape_type {
             p.is_open()
         } else {
             false
         };
 
-        for stroke in self.strokes.iter() {
+        for stroke in shape.strokes.iter() {
             let width = match stroke.render_kind(is_open) {
                 StrokeKind::Inner => 0.,
                 StrokeKind::Center => stroke.width / 2.,
@@ -758,11 +759,11 @@ impl Shape {
             max_stroke = max_stroke.max(width);
         }
 
-        let mut rect = if let Some(path) = self.get_skia_path() {
+        let mut rect = if let Some(path) = shape.get_skia_path() {
             path.compute_tight_bounds()
                 .with_outset((max_stroke, max_stroke))
         } else {
-            let mut bounds_rect = self.bounds().to_rect();
+            let mut bounds_rect = shape.bounds().to_rect();
             let mut stroke_rect = bounds_rect;
             stroke_rect.left -= max_stroke;
             stroke_rect.right += max_stroke;
@@ -773,13 +774,13 @@ impl Shape {
             bounds_rect
         };
 
-        if let Type::Text(text_content) = &self.shape_type {
+        if let Type::Text(text_content) = &shape.shape_type {
             let (width, height) = text_content.visual_bounds();
             rect.right = rect.left + width;
             rect.bottom = rect.top + height;
         }
 
-        for shadow in self.shadows.iter() {
+        for shadow in shape.shadows.iter() {
             if !shadow.hidden() {
                 let (x, y) = shadow.offset;
                 let mut shadow_rect = rect;
@@ -797,7 +798,7 @@ impl Shape {
             }
         }
 
-        if let Some(blur) = self.blur {
+        if let Some(blur) = shape.blur {
             if !blur.hidden {
                 rect.left -= blur.value;
                 rect.top -= blur.value;
@@ -808,14 +809,14 @@ impl Shape {
 
         // For groups and frames without clipping, extend the bounding rectangle to include all nested shapes
         // This ensures that these containers properly encompass their content
-        let include_children = match &self.shape_type {
+        let include_children = match &shape.shape_type {
             Type::Group(_) => true,
-            Type::Frame(_) => !self.clip_content,
+            Type::Frame(_) => !shape.clip_content,
             _ => false,
         };
 
         if include_children {
-            for child_id in self.children_ids(false) {
+            for child_id in shape.children_ids(false) {
                 if let Some(child_shape) = shapes_pool.get(&child_id) {
                     // Create a copy of the child shape to apply any transformations
                     let mut transformed_element: Cow<Shape> = Cow::Borrowed(child_shape);
@@ -1116,11 +1117,11 @@ impl Shape {
     }
 
     pub fn transformed(&self, transform: Option<&Matrix>) -> Self {
-        let mut shape = self.clone();
+        let mut shape: Cow<Shape> = Cow::Borrowed(self);
         if let Some(transform) = transform {
-            shape.apply_transform(transform);
+            shape.to_mut().apply_transform(transform);
         }
-        shape
+        shape.into_owned()
     }
 
     pub fn is_absolute(&self) -> bool {
