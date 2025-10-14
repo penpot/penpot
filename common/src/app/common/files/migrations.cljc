@@ -1621,6 +1621,38 @@
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
 
+(defmethod migrate-data "0016-clear-pages-and-shapes"
+  [data _]
+  (letfn [(fix-invalid-shape [objects id shape]
+            ;; This function ensures that we don't have completly
+            ;; invalid shapes; i3f non-shape instance if found, we
+            ;; suppose it is a map and proceed to sanitize to a valid
+            ;; shape preserving all properties as possible; if the
+            ;; result shape is still invalid, we replace the shape
+            ;; with a dummy rectangle;
+            ;;
+            ;; This apprach is less destructive and does not need any
+            ;; parents manipulation
+            (if (cts/shape? shape)
+              objects
+              (let [shape (-> shape
+                              (assoc :id id)
+                              (update :type #(d/nilv % :rect))
+                              (cts/setup-shape))]
+                (if (cts/valid-shape? shape)
+                  (assoc objects id shape)
+                  (assoc objects id (cts/setup-shape {:type :rect}))))))
+
+          (update-container [container]
+            (-> container
+                (d/update-when :name #(d/nilv % ""))
+                (d/update-when :objects (fn [objects]
+                                          (reduce-kv fix-invalid-shape objects objects)))))]
+
+    (-> data
+        (update :pages-index d/update-vals update-container)
+        (d/update-when :components d/update-vals update-container))))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1691,4 +1723,5 @@
          "0012-fix-position-data"
          "0013-fix-component-path"
          "0014-fix-tokens-lib-duplicate-ids"
-         "0015-clear-invalid-strokes-and-fills"]))
+         "0015-clear-invalid-strokes-and-fills"
+         "0016-clear-pages-and-shapes"]))
