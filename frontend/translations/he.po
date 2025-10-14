@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"PO-Revision-Date: 2025-10-14 17:07+0000\n"
 "Last-Translator: Yaron Shahrabani <sh.yaron@gmail.com>\n"
 "Language-Team: Hebrew <https://hosted.weblate.org/projects/penpot/frontend/"
 "he/>\n"
@@ -8153,3 +8153,27 @@ msgid "subscription.dashboard.unlimited-members-extra-editors-cta-text"
 msgstr ""
 "רק עורכים חדשים על פני הצוותים שבבעלותך מחושבים בחיובים העתידיים. 175$ בחודש "
 "בלי תוספות עדיין חלים על ‎25+‎ עורכים."
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "רכיב"
+msgstr[1] "שני רכיבים"
+msgstr[2] "%s רכיבים"
+msgstr[3] "%s רכיבים"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "פריט גרפיקה"
+msgstr[1] "שני פריטי גרפיקה"
+msgstr[2] "%s פריטי גרפיקה"
+msgstr[3] "%s פריטי גרפיקה"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "צבע"
+msgstr[1] "שני צבעים"
+msgstr[2] "%s צבעים"
+msgstr[3] "%s צבעים"
