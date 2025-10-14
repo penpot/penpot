@@ -61,8 +61,7 @@
        ::yres/body data}
 
       (binding [l/*context* (request->context request)]
-        (l/err :hint "restriction error"
-               :cause err)
+        (l/wrn :hint "restriction error" :cause err)
         {::yres/status 400
          ::yres/body data}))))
 
