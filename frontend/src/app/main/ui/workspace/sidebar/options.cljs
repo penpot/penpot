@@ -143,6 +143,7 @@
        edit-grid?
        [:& layout-container/grid-layout-edition
         {:ids [edition]
+         :shapes shapes
          :values (get objects edition)}]
 
        (some? sp-panel)

@@ -566,7 +566,7 @@
                (dom/stop-propagation event)
                (reset! token-applied* nil)
                (reset! selected-id* nil)
-               (reset! focused-id* nil) 
+               (reset! focused-id* nil)
                (when on-detach
                  (on-detach token))
                (ts/schedule-on-idle

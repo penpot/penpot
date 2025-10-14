@@ -60,7 +60,7 @@
                      :vertical-padding
                      :else
                      name)
-        
+
         tokens (mf/with-memo [tokens input-type]
                  (delay
                    (-> (deref tokens)
@@ -501,7 +501,6 @@
          (mf/deps select-padding)
          (fn [attr event]
            (select-padding attr)
-
            (dom/select-target event)))
 
         on-detach-token
@@ -511,7 +510,6 @@
            (st/emit! (dwta/unapply-token {:token (first token)
                                           :attributes #{attr}
                                           :shape-ids ids}))))
-
 
         on-p1-change
         (mf/use-fn (mf/deps on-change') #(on-change' % :p1))
@@ -560,8 +558,8 @@
           :placeholder "--"
           :aria-label (tr "workspace.layout_grid.editor.padding.top")
           :data-attr "p1"
-          :on-change on-change'
-          :on-focus on-focus
+          :on-change on-p1-change
+          :on-focus on-focus-p1
           :on-blur on-padding-blur
           :min 0
           :value p1}]])
@@ -588,8 +586,8 @@
           :placeholder "--"
           :aria-label (tr "workspace.layout_grid.editor.padding.right")
           :data-attr "p2"
-          :on-change on-change'
-          :on-focus on-focus
+          :on-change on-p2-change
+          :on-focus on-focus-p2
           :on-blur on-padding-blur
           :min 0
           :value p2}]])
@@ -616,8 +614,8 @@
           :placeholder "--"
           :aria-label (tr "workspace.layout_grid.editor.padding.bottom")
           :data-attr "p3"
-          :on-change on-change'
-          :on-focus on-focus
+          :on-change on-p3-change
+          :on-focus on-focus-p3
           :on-blur on-padding-blur
           :min 0
           :value p3}]])
@@ -644,8 +642,8 @@
           :placeholder "--"
           :aria-label (tr "workspace.layout_grid.editor.padding.left")
           :data-attr "p4"
-          :on-change on-change'
-          :on-focus on-focus
+          :on-change on-p4-change
+          :on-focus on-focus-p4
           :on-blur on-padding-blur
           :min 0
           :value p4}]])]))
@@ -695,23 +693,20 @@
   (st/emit! (udw/set-gap-selected value)))
 
 (defn- on-gap-focus
-  [event]
-  (let [type (-> (dom/get-current-target event)
-                 (dom/get-data "type")
-                 (keyword))]
-    (select-gap! type)
-    (dom/select-target event)))
+  [type]
+  (select-gap! type))
 
 (defn- on-gap-blur
   [_event]
   (select-gap! nil))
 
-(mf/defc gap-section
-  {::mf/props :obj}
-  [{:keys [is-column wrap-type on-change value]
-    :or {wrap-type :none}
+(mf/defc gap-section*
+  [{:keys [is-column wrap-type on-change value applied-tokens shapes ids]
     :as props}]
-  (let [nowrap? (= :nowrap wrap-type)
+  (let [token-numeric-inputs
+        (features/use-feature "tokens/numeric-input")
+
+        nowrap? (= :nowrap wrap-type)
 
         row-gap-disabled?
         (and ^boolean nowrap?
@@ -723,12 +718,38 @@
 
         on-change'
         (mf/use-fn
-         (mf/deps on-change)
-         (fn [value event]
-           (let [target    (dom/get-current-target event)
-                 wrap-type (dom/get-data target "wrap-type")
-                 type      (keyword (dom/get-data target "type"))]
-             (on-change (= "nowrap" wrap-type) type value event))))]
+         (mf/deps on-change wrap-type)
+         (fn [value attr event]
+
+           (if (or (string? value) (int? value))
+             (on-change (= "nowrap" wrap-type) attr value event)
+             (do
+               (let [resolved-value (:resolved-value (first value))]
+                 (st/emit! (dwta/toggle-token {:token (first value)
+                                               :attrs #{attr}
+                                               :shapes shapes}))
+                 (on-change (= "nowrap" wrap-type) attr resolved-value event))))))
+
+        on-detach-token
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [token attr]
+           (prn ids)
+           (st/emit! (dwta/unapply-token {:token (first token)
+                                          :attributes #{attr}
+                                          :shape-ids ids}))))
+
+        on-row-gap-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :row-gap))
+
+        on-column-gap-change
+        (mf/use-fn (mf/deps on-change') #(on-change' % :column-gap))
+
+        on-focus-row-gap
+        (mf/use-fn (mf/deps on-gap-focus) #(on-gap-focus :row-gap))
+
+        on-focus-column-gap
+        (mf/use-fn (mf/deps on-gap-focus) #(on-gap-focus :column-gap))]
 
     (mf/with-effect []
       ;; on destroy component
@@ -737,43 +758,73 @@
 
     [:div {:class (stl/css :gap-group)}
 
-     [:div {:class (stl/css-case
-                    :row-gap true
-                    :disabled row-gap-disabled?)
-            :title "Row gap"}
-      [:span {:class (stl/css :icon)} deprecated-icon/gap-vertical]
-      [:> deprecated-input/numeric-input*
-       {:class (stl/css :numeric-input true)
-        :no-validate true
-        :placeholder "--"
-        :data-type "row-gap"
-        :data-wrap-type (d/name wrap-type)
-        :on-focus on-gap-focus
-        :on-change on-change'
-        :on-blur on-gap-blur
-        :nillable true
-        :min 0
-        :value (:row-gap value)
-        :disabled row-gap-disabled?}]]
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-row-gap-change
+         :on-detach on-detach-token
+         :on-focus on-focus-row-gap
+         :on-blur on-gap-blur
+         :icon i/gap-vertical
+         :nillable true
+         :min 0
+         :name :row-gap
+         :applied-tokens applied-tokens
+         :property "Row gap"
+         :values {:row-gap (:row-gap value)}
+         :disabled row-gap-disabled?}]
 
-     [:div {:class (stl/css-case
-                    :column-gap true
-                    :disabled col-gap-disabled?)
-            :title "Column gap"}
-      [:span {:class (stl/css :icon)} deprecated-icon/gap-horizontal]
-      [:> deprecated-input/numeric-input*
-       {:class (stl/css :numeric-input true)
-        :no-validate true
-        :placeholder "--"
-        :data-type "column-gap"
-        :data-wrap-type (d/name wrap-type)
-        :on-focus on-gap-focus
-        :on-change on-change'
-        :on-blur on-gap-blur
-        :nillable true
-        :min 0
-        :value (:column-gap value)
-        :disabled col-gap-disabled?}]]]))
+       [:div {:class (stl/css-case
+                      :row-gap true
+                      :disabled row-gap-disabled?)
+              :title "Row gap"}
+        [:span {:class (stl/css :icon)} deprecated-icon/gap-vertical]
+        [:> deprecated-input/numeric-input*
+         {:class (stl/css :numeric-input true)
+          :no-validate true
+          :placeholder "--"
+          :data-type "row-gap"
+          :data-wrap-type (d/name wrap-type)
+          :on-focus on-focus-row-gap
+          :on-change on-change'
+          :on-blur on-gap-blur
+          :nillable true
+          :min 0
+          :value (:row-gap value)
+          :disabled row-gap-disabled?}]])
+
+     (if token-numeric-inputs
+       [:> numeric-input-wrapper*
+        {:on-change on-column-gap-change
+         :on-detach on-detach-token
+         :on-focus on-focus-column-gap
+         :on-blur on-gap-blur
+         :icon i/gap-horizontal
+         :nillable true
+         :min 0
+         :name :column-gap
+         :applied-tokens applied-tokens
+         :property "Column gap"
+         :values {:column-gap (:column-gap value)}
+         :disabled col-gap-disabled?}]
+
+       [:div {:class (stl/css-case
+                      :column-gap true
+                      :disabled col-gap-disabled?)
+              :title "Column gap"}
+        [:span {:class (stl/css :icon)} deprecated-icon/gap-horizontal]
+        [:> deprecated-input/numeric-input*
+         {:class (stl/css :numeric-input true)
+          :no-validate true
+          :placeholder "--"
+          :data-type "column-gap"
+          :data-wrap-type (d/name wrap-type)
+          :on-focus on-focus-column-gap
+          :on-change on-change'
+          :on-blur on-gap-blur
+          :nillable true
+          :min 0
+          :value (:column-gap value)
+          :disabled col-gap-disabled?}]])]))
 
 ;; GRID COMPONENTS
 
@@ -954,11 +1005,11 @@
 
       [:div {:class (stl/css :track-info-value)}
        [:> deprecated-input/numeric-input* {:no-validate true
-                           :value (:value column)
-                           :on-change #(set-column-value type index %)
-                           :placeholder "--"
-                           :min 0
-                           :disabled (= :auto (:type column))}]]
+                                            :value (:value column)
+                                            :on-change #(set-column-value type index %)
+                                            :placeholder "--"
+                                            :min 0
+                                            :disabled (= :auto (:type column))}]]
 
       [:div {:class (stl/css :track-info-unit)}
        [:& select {:class (stl/css :track-info-unit-selector)
@@ -1112,14 +1163,16 @@
 
         ;; Gap
         on-gap-change
-        (fn [multiple? type val]
-          (let [val (mth/finite val 0)]
-            (cond
-              ^boolean multiple?
-              (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
+        (mf/use-fn
+         (mf/deps ids)
+         (fn [multiple? type val]
+           (let [val (mth/finite val 0)]
+             (cond
+               ^boolean multiple?
+               (st/emit! (dwsl/update-layout ids {:layout-gap {:row-gap val :column-gap val}}))
 
-              (some? type)
-              (st/emit! (dwsl/update-layout ids {:layout-gap {type val}})))))
+               (some? type)
+               (st/emit! (dwsl/update-layout ids {:layout-gap {type val}}))))))
 
         ;; Padding
         on-padding-type-change
@@ -1283,10 +1336,13 @@
                                     :value align-content
                                     :on-change on-align-content-change}]])
           [:div {:class (stl/css :forth-row)}
-           [:& gap-section {:is-column is-column
-                            :wrap-type wrap-type
-                            :on-change on-gap-change
-                            :value (:layout-gap values)}]
+           [:> gap-section* {:is-column is-column
+                             :wrap-type wrap-type
+                             :on-change on-gap-change
+                             :shapes shapes
+                             :ids ids
+                             :applied-tokens applied-tokens
+                             :value (:layout-gap values)}]
            [:> padding-section* {:value (:layout-padding values)
                                  :type (:layout-padding-type values)
                                  :on-type-change on-padding-type-change
@@ -1327,22 +1383,24 @@
                                  :on-change on-row-justify-change}]]
 
           [:div {:class (stl/css :gap-row)}
-           [:& gap-section {:on-change on-gap-change
-                            :value (:layout-gap values)}]]
+           [:> gap-section* {:on-change on-gap-change
+                             :shapes shapes
+                             :ids ids
+                             :applied-tokens applied-tokens
+                             :value (:layout-gap values)}]]
           [:div {:class (stl/css :padding-row)}
            [:> padding-section* {:value (:layout-padding values)
-                                :type (:layout-padding-type values)
-                                :shapes shapes
-                                :applied-tokens applied-tokens
-                                :on-type-change on-padding-type-change
-                                :on-change on-padding-change}]]]
+                                 :type (:layout-padding-type values)
+                                 :shapes shapes
+                                 :applied-tokens applied-tokens
+                                 :on-type-change on-padding-type-change
+                                 :on-change on-padding-change}]]]
 
          nil))]))
 
 (mf/defc grid-layout-edition
-  {::mf/memo #{:ids :values}
-   ::mf/props :obj}
-  [{:keys [ids values]}]
+  {::mf/memo #{:ids :values :shapes :applied-tokens}}
+  [{:keys [ids values shapes applied-tokens]}]
   (let [;; Gap
         saved-grid-dir (:layout-grid-dir values)
 
@@ -1525,14 +1583,17 @@
                         :icon i/locate}]]
 
      [:div {:class (stl/css :gap-row)}
-      [:& gap-section {:on-change on-gap-change
-                       :value (:layout-gap values)}]]
+      [:> gap-section* {:on-change on-gap-change
+                        :shapes shapes
+                        :ids ids
+                        :applied-tokens applied-tokens
+                        :value (:layout-gap values)}]]
 
      [:div {:class (stl/css :padding-row :padding-section)}
       [:> padding-section* {:value (:layout-padding values)
-                           :type (:layout-padding-type values)
-                           :on-type-change on-padding-type-change
-                           :on-change on-padding-change}]]
+                            :type (:layout-padding-type values)
+                            :on-type-change on-padding-type-change
+                            :on-change on-padding-change}]]
 
      [:div {:class (stl/css :grid-tracks-row)}
       [:& grid-columns-row {:is-column true
