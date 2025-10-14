@@ -62,7 +62,8 @@
   [{:keys [shapes _ resolved-tokens color-space]}]
   [:div {:class (stl/css :text-panel)}
    (for [shape shapes]
-     (let [style-text-blocks (get-style-text shape)]
+     (let [style-text-blocks (get-style-text shape)
+           composite-typography-token (get-resolved-token :typography shape resolved-tokens)]
 
        [:div {:key (:id shape) :class "text-shape"}
         (for [[style text] style-text-blocks]
@@ -76,8 +77,20 @@
                                           :shape shape
                                           :resolved-tokens resolved-tokens
                                           :color-space color-space}]))
-           (when (:typography-ref-id style)
+
+           ;; Typography style
+           (when (and (not composite-typography-token)
+                      (:typography-ref-id style))
              [:> typography-name-block* {:style style}])
+
+           ;; Composite Typography token
+           (when (and (not (:typography-ref-id style))
+                      composite-typography-token)
+             [:> properties-row* {:term "Typography"
+                                  :detail (:name composite-typography-token)
+                                  :token composite-typography-token
+                                  :property (:name composite-typography-token)
+                                  :copiable true}])
 
            (when (:font-id style)
              (let [name (get (fonts/get-font-data (:font-id style)) :name)

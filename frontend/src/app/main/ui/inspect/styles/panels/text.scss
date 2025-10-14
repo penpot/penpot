@@ -9,9 +9,12 @@
 .text-content-wrapper {
   --border-color: var(--color-background-quaternary);
   --border-radius: ${$br-8};
-  --text-color: var(--color-foreground-secondary);
 
   border: $b-1 solid var(--border-color);
   border-radius: var(--border-radius);
-  color: var(--text-color);
+}
+
+.text-content {
+  --detail-color: var(--color-foreground-secondary);
+  color: var(--detail-color);
 }
