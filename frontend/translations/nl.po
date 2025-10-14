@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
+"PO-Revision-Date: 2025-10-14 17:08+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
 "Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
 ">\n"
@@ -8310,3 +8310,27 @@ msgstr "Voer een alias voor tokentypografie in"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
 msgid "workspace.tokens.use-reference"
 msgstr "Referentie gebruiken"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 kleur"
+msgstr[1] "%s kleuren"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 component"
+msgstr[1] "%s componenten"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 afbeelding"
+msgstr[1] "%s afbeeldingen"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 typografie"
+msgstr[1] "%s typografiën"
