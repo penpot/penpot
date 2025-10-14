@@ -1253,11 +1253,7 @@ impl RenderState {
             }
 
             if !node_render_state.is_root() {
-                let mut transformed_element: Cow<Shape> = Cow::Borrowed(element);
-
-                if let Some(modifier) = modifiers.get(&node_id) {
-                    transformed_element.to_mut().apply_transform(modifier);
-                }
+                let transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
                 let is_visible = transformed_element
                     .extrect(tree, modifiers)
