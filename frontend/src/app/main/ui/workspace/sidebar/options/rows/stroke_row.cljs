@@ -20,8 +20,7 @@
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
-(mf/defc stroke-row
-  {::mf/wrap-props false}
+(mf/defc stroke-row*
   [{:keys [index
            stroke
            title
@@ -47,19 +46,22 @@
            objects]}]
 
   (let [on-drop
-        (fn [_ data]
-          (on-reorder (:index data)))
+        (mf/use-fn
+         (mf/deps on-reorder index)
+         (fn [relative-pos data]
+           (let [from-pos             (:index data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc index) index)]
+             (on-reorder from-pos to-space-between-pos))))
 
-        [dprops dref] (if (some? on-reorder)
-                        (h/use-sortable
-                         :data-type "penpot/stroke-row"
-                         :on-drop on-drop
-                         :disabled @disable-drag
-                         :detect-center? false
-                         :data {:id (str "stroke-row-" index)
-                                :index index
-                                :name (str "Border row" index)})
-                        [nil nil])
+        [dprops dref]
+        (if (some? on-reorder)
+          (h/use-sortable
+           :data-type "penpot/stroke-row"
+           :on-drop on-drop
+           :disabled @disable-drag
+           :detect-center? false
+           :data {:index index})
+          [nil nil])
 
         stroke-color-token (:stroke-color applied-tokens)
 

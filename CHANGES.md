@@ -59,6 +59,7 @@
 - Fix scroll on the inspect tab [Taiga #12293](https://tree.taiga.io/project/penpot/issue/12293)
 - Fix lock proportion tooltip [Taiga #12326](https://tree.taiga.io/project/penpot/issue/12326)
 - Fix internal Error when selecting a set by name in the token theme editor [Taiga #12310](https://tree.taiga.io/project/penpot/issue/12310)
+- Fix drag & drop functionality is swapping instead or reordering [Taiga #12254](https://tree.taiga.io/project/penpot/issue/12254)
 
 
 ## 2.10.1

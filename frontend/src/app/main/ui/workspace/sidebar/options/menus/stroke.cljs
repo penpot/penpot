@@ -18,7 +18,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row]]
+   [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -89,10 +89,9 @@
         handle-reorder
         (mf/use-fn
          (mf/deps ids)
-         (fn [new-index]
-           (fn [index]
-             (st/emit! (udw/trigger-bounding-box-cloaking ids))
-             (st/emit! (dc/reorder-strokes ids index new-index)))))
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
+           (st/emit! (dc/reorder-strokes ids from-pos to-space-between-pos))))
 
         on-stroke-style-change
         (mf/use-fn
@@ -205,29 +204,29 @@
           (seq strokes)
           [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
-             [:& stroke-row {:key (dm/str "stroke-" index)
-                             :stroke value
-                             :title (tr "workspace.options.stroke-color")
-                             :index index
-                             :shapes shapes
-                             :objects objects
-                             :show-caps show-caps
-                             :on-color-change on-color-change
-                             :on-color-detach on-color-detach
-                             :on-stroke-width-change on-stroke-width-change
-                             :on-stroke-style-change on-stroke-style-change
-                             :on-stroke-alignment-change on-stroke-alignment-change
-                             :open-caps-select open-caps-select
-                             :close-caps-select close-caps-select
-                             :on-stroke-cap-start-change on-stroke-cap-start-change
-                             :on-stroke-cap-end-change on-stroke-cap-end-change
-                             :on-stroke-cap-switch on-stroke-cap-switch
-                             :applied-tokens applied-tokens
-                             :on-detach-token on-detach-token
-                             :on-remove on-remove
-                             :on-reorder (handle-reorder index)
-                             :disable-drag disable-drag
-                             :on-focus on-focus
-                             :select-on-focus (not @disable-drag)
-                             :on-blur on-blur
-                             :disable-stroke-style disable-stroke-style}])])])]))
+             [:> stroke-row* {:key (dm/str "stroke-" index)
+                              :stroke value
+                              :title (tr "workspace.options.stroke-color")
+                              :index index
+                              :shapes shapes
+                              :objects objects
+                              :show-caps show-caps
+                              :on-color-change on-color-change
+                              :on-color-detach on-color-detach
+                              :on-stroke-width-change on-stroke-width-change
+                              :on-stroke-style-change on-stroke-style-change
+                              :on-stroke-alignment-change on-stroke-alignment-change
+                              :open-caps-select open-caps-select
+                              :close-caps-select close-caps-select
+                              :on-stroke-cap-start-change on-stroke-cap-start-change
+                              :on-stroke-cap-end-change on-stroke-cap-end-change
+                              :on-stroke-cap-switch on-stroke-cap-switch
+                              :applied-tokens applied-tokens
+                              :on-detach-token on-detach-token
+                              :on-remove on-remove
+                              :on-reorder handle-reorder
+                              :disable-drag disable-drag
+                              :on-focus on-focus
+                              :select-on-focus (not @disable-drag)
+                              :on-blur on-blur
+                              :disable-stroke-style disable-stroke-style}])])])]))

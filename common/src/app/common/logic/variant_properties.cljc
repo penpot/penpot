@@ -88,7 +88,7 @@
         related-components (cfv/find-variant-components data objects variant-id)]
     (reduce (fn [changes component]
               (let [props   (:variant-properties component)
-                    props   (ctv/reorder-by-moving-to-position props from-pos to-space-between-pos)
+                    props   (d/reorder props from-pos to-space-between-pos)
                     main-id (:main-instance-id component)
                     name    (ctv/properties-to-name props)]
                 (-> changes

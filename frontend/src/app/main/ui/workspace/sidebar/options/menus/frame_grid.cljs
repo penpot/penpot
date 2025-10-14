@@ -19,7 +19,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.icons :as deprecated-icon]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
+   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [okulary.core :as l]
@@ -190,9 +190,9 @@
                          :icon i/remove}]]]
 
      (when (:display grid)
-       [:& advanced-options {:class (stl/css :grid-advanced-options)
-                             :visible? open?
-                             :on-close toggle-advanced-options}
+       [:> advanced-options* {:class (stl/css :grid-advanced-options)
+                              :is-visible open?
+                              :on-close toggle-advanced-options}
         ;; square
         (when (= :square type)
           [:div {:class (stl/css :square-row)}

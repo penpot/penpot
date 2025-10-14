@@ -24,7 +24,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options]]
+   [app.main.ui.workspace.sidebar.options.common :refer [advanced-options*]]
    [app.main.ui.workspace.sidebar.options.rows.color-row :refer [color-row*]]
    [app.util.i18n :as i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -65,17 +65,17 @@
         on-drop
         (mf/use-fn
          (mf/deps on-reorder index)
-         (fn [_ data]
-           (on-reorder index (:index data))))
+         (fn [relative-pos data]
+           (let [from-pos             (:index data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc index) index)]
+             (on-reorder from-pos to-space-between-pos))))
 
         [dprops dref]
         (h/use-sortable
          :data-type "penpot/shadow-entry"
          :on-drop on-drop
          :detect-center? false
-         :data {:id (dm/str "shadow-" index)
-                :index index
-                :name (dm/str "Border row" index)})
+         :data {:index index})
 
         on-remove
         (mf/use-fn (mf/deps index) #(on-remove index))
@@ -184,9 +184,9 @@
                           :on-click on-remove
                           :icon i/remove}]]]
       (when is-open
-        [:& advanced-options {:class (stl/css :shadow-advanced-options)
-                              :visible? is-open
-                              :on-close on-toggle-open}
+        [:> advanced-options* {:class (stl/css :shadow-advanced-options)
+                               :is-visible is-open
+                               :on-close on-toggle-open}
 
          [:div {:class (stl/css :first-row)}
           [:div {:class (stl/css :offset-x-input)
@@ -279,10 +279,10 @@
 
         handle-reorder
         (mf/use-fn
-         (fn [new-index index]
+         (fn [from-pos to-space-between-pos]
            (let [ids (mf/ref-val ids-ref)]
              (st/emit! (dw/trigger-bounding-box-cloaking ids))
-             (st/emit! (dc/reorder-shadows ids index new-index)))))
+             (st/emit! (dc/reorder-shadows ids from-pos to-space-between-pos)))))
 
         on-add-shadow
         (mf/use-fn

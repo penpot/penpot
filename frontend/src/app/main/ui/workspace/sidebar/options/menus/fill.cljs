@@ -131,8 +131,8 @@
         on-reorder
         (mf/use-fn
          (mf/deps ids)
-         (fn [new-index index]
-           (st/emit! (dc/reorder-fills ids index new-index))))
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (dc/reorder-fills ids from-pos to-space-between-pos))))
 
         on-remove
         (mf/use-fn

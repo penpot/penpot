@@ -69,9 +69,9 @@
 (mf/defc color-token-row*
   {::mf/private true}
   [{:keys [active-tokens color-token color on-swatch-click-token detach-token open-modal-from-token]}]
-  (let [;; `active-tokens` may be provided as a `delay` (lazy computation). 
-        ;; In that case we must deref it (`@active-tokens`) to force evaluation 
-        ;; and obtain the actual value. If it’s already realized (not a delay), 
+  (let [;; `active-tokens` may be provided as a `delay` (lazy computation).
+        ;; In that case we must deref it (`@active-tokens`) to force evaluation
+        ;; and obtain the actual value. If it’s already realized (not a delay),
         ;; we just use it directly.
         active-tokens (if (delay? active-tokens)
                         @active-tokens
@@ -313,8 +313,10 @@
         on-drop
         (mf/use-fn
          (mf/deps on-reorder index)
-         (fn [_ data]
-           (on-reorder index (:index data))))
+         (fn [relative-pos data]
+           (let [from-pos             (:index data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc index) index)]
+             (on-reorder from-pos to-space-between-pos))))
 
         [dprops dref]
         (if (some? on-reorder)
@@ -323,9 +325,7 @@
            :on-drop on-drop
            :disabled disable-drag
            :detect-center? false
-           :data {:id (str "color-row-" index)
-                  :index index
-                  :name (str "Color row" index)})
+           :data {:index index})
           [nil nil])
 
         row-class
