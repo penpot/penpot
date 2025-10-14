@@ -56,11 +56,12 @@
 - Fix component number has no singular translation string [Taiga #12106](https://tree.taiga.io/project/penpot/issue/12106)
 
 
-## 2.10.1 (Unreleased)
+## 2.10.1
 
 ### :sparkles: New features & Enhancements
 
 - Improve workpace file loading [Github 7366](https://github.com/penpot/penpot/pull/7366)
+
 
 ### :bug: Bugs fixed
 
