@@ -127,7 +127,6 @@
 
         stroke-style (or (:stroke-style stroke) :solid)
 
-
         stroke-style-options
         (mf/with-memo [stroke-style]
           (d/concat-vec

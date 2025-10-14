@@ -34,7 +34,6 @@
                       (pcb/with-library-data (:data file))
                       (clt/generate-toggle-token-set (tht/get-tokens-lib file) "foo/bar"))
 
-          _ (prn "changes" changes)
           redo (thf/apply-changes file changes)
           redo-lib (tht/get-tokens-lib redo)
           undo (thf/apply-undo-changes redo changes)

@@ -133,7 +133,6 @@
                   :style {:background-image (str/ffmt "url(%)" uri)}}])
         has-errors
         [:span {:class (stl/css :swatch-error)}]
-
         :else
         [:span {:class (stl/css :swatch-opacity)}
          [:span {:class (stl/css :swatch-solid-side)

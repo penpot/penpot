@@ -6457,7 +6457,11 @@ msgstr "Arriba"
 msgid "workspace.options.more-colors"
 msgstr "Más colores"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-token-colors"
+msgstr "Más tokens de color"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Más colores de la biblioteca"
 

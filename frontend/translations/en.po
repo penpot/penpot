@@ -6514,7 +6514,11 @@ msgstr "Top"
 msgid "workspace.options.more-colors"
 msgstr "More colors"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-token-colors"
+msgstr "More color tokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "More library colors"
 
