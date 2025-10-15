@@ -273,76 +273,82 @@
 
       ptk/WatchEvent
       (watch [_ state stream]
-        (let [initial-position @ms/mouse-position
+        (if (:blocked shape)
+          (rx/empty)
+          (let [initial-position @ms/mouse-position
 
-              stopper (mse/drag-stopper stream)
-              layout  (:workspace-layout state)
-              page-id (:current-page-id state)
-              focus   (:workspace-focus-selected state)
-              zoom    (dm/get-in state [:workspace-local :zoom] 1)
-              objects (dsh/lookup-page-objects state page-id)
-              shapes  (map (d/getf objects) ids)
+                stopper (mse/drag-stopper stream)
+                layout  (:workspace-layout state)
+                page-id (:current-page-id state)
+                focus   (:workspace-focus-selected state)
+                zoom    (dm/get-in state [:workspace-local :zoom] 1)
+                objects (dsh/lookup-page-objects state page-id)
+                shape-ids (filterv (comp not :blocked (d/getf objects)) ids)]
 
-              resize-events-stream
-              (->> ms/mouse-position
-                   (rx/filter some?)
-                   (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
-                   (rx/map normalize-proportion-lock)
-                   (rx/switch-map
-                    (fn [[point _ _ :as current]]
-                      (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
-                           (rx/map #(conj current %)))))
-                   (rx/map #(resize shape initial-position layout %))
-                   (rx/share))
+            (if (empty? shape-ids)
+              (rx/empty)
+              (let [shapes (map (d/getf objects) shape-ids)
 
-              modifiers-stream
-              (if (features/active-feature? state "render-wasm/v1")
-                (rx/merge
-                 (->> resize-events-stream
-                      (rx/mapcat
-                       (fn [modifiers]
-                         (let [modif-tree (dwm/create-modif-tree ids modifiers)]
-                           (rx/of
-                            (dwm/set-wasm-modifiers
-                             modif-tree
-                             :ignore-constraints (contains? layout :scale-text))))))
-                      (rx/take-until stopper))
+                    resize-events-stream
+                    (->> ms/mouse-position
+                         (rx/filter some?)
+                         (rx/with-latest-from ms/mouse-position-shift ms/mouse-position-alt)
+                         (rx/map normalize-proportion-lock)
+                         (rx/switch-map
+                          (fn [[point _ _ :as current]]
+                            (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
+                                 (rx/map #(conj current %)))))
+                         (rx/map #(resize shape initial-position layout %))
+                         (rx/share))
+
+                    modifiers-stream
+                    (if (features/active-feature? state "render-wasm/v1")
+                      (rx/merge
+                       (->> resize-events-stream
+                            (rx/mapcat
+                             (fn [modifiers]
+                               (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
+                                 (rx/of
+                                  (dwm/set-wasm-modifiers
+                                   modif-tree
+                                   :ignore-constraints (contains? layout :scale-text))))))
+                            (rx/take-until stopper))
 
                  ;; The last event we need to use the old method so the elements are correctly positioned until
                  ;; all the logic is implemented in wasm
-                 (->> resize-events-stream
-                      (rx/take-until stopper)
-                      (rx/last)
-                      (rx/map
-                       #(dwm/apply-wasm-modifiers
-                         (dwm/create-modif-tree ids %)
-                         :ignore-constraints (contains? layout :scale-text)))))
+                       (->> resize-events-stream
+                            (rx/take-until stopper)
+                            (rx/last)
+                            (rx/map
+                             #(dwm/apply-wasm-modifiers
+                               (dwm/create-modif-tree shape-ids %)
+                               :ignore-constraints (contains? layout :scale-text)))))
 
-                (->> resize-events-stream
-                     (rx/mapcat
-                      (fn [modifiers]
-                        (let [modif-tree (dwm/create-modif-tree ids modifiers)]
-                          (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text))))))
-                     (rx/take-until stopper)))]
+                      (->> resize-events-stream
+                           (rx/mapcat
+                            (fn [modifiers]
+                              (let [modif-tree (dwm/create-modif-tree shape-ids modifiers)]
+                                (rx/of (dwm/set-modifiers modif-tree (contains? layout :scale-text))))))
+                           (rx/take-until stopper)))]
 
-          (rx/concat
+                (rx/concat
            ;; This initial stream waits for some pixels to be move before making the resize
            ;; if you make a click in the border will not make a resize
-           (->> ms/mouse-position
-                (rx/map #(gpt/to-vec initial-position %))
-                (rx/map #(gpt/length %))
-                (rx/filter #(> % (/ 10 zoom)))
-                (rx/take 1)
-                (rx/take-until stopper)
-                (rx/mapcat (fn [] modifiers-stream)))
+                 (->> ms/mouse-position
+                      (rx/map #(gpt/to-vec initial-position %))
+                      (rx/map #(gpt/length %))
+                      (rx/filter #(> % (/ 10 zoom)))
+                      (rx/take 1)
+                      (rx/take-until stopper)
+                      (rx/mapcat (fn [] modifiers-stream)))
 
-           (if (features/active-feature? state "render-wasm/v1")
-             (rx/of
-              (finish-transform))
+                 (if (features/active-feature? state "render-wasm/v1")
+                   (rx/of
+                    (finish-transform))
 
-             (rx/of
-              (dwm/apply-modifiers)
-              (finish-transform)))))))))
+                   (rx/of
+                    (dwm/apply-modifiers)
+                    (finish-transform))))))))))))
 
 (defn trigger-bounding-box-cloaking
   "Trigger the bounding box cloaking (with default timer of 1sec)
