@@ -67,13 +67,15 @@
 - Fix restoring a variant in another file makes it overlap the existing variant [Taiga #12049](https://tree.taiga.io/project/penpot/issue/12049)
 - Fix auto-width changes to fixed when switching variants [Taiga #12172](https://tree.taiga.io/project/penpot/issue/12172)
 - Fix component number has no singular translation string [Taiga #12106](https://tree.taiga.io/project/penpot/issue/12106)
+- Fix adding/removing identical text fills [Taiga #12287](https://tree.taiga.io/project/penpot/issue/12287)
 
 
-## 2.10.1 (Unreleased)
+## 2.10.1
 
 ### :sparkles: New features & Enhancements
 
 - Improve workpace file loading [Github 7366](https://github.com/penpot/penpot/pull/7366)
+
 
 ### :bug: Bugs fixed
 

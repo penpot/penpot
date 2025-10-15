@@ -38,7 +38,7 @@
    [:max-retries :int]
    [:retry-num :int]
    [:priority :int]
-   [:status [:enum "scheduled" "completed" "new" "retry" "failed"]]
+   [:status [:enum "scheduled" "running" "completed" "new" "retry" "failed"]]
    [:label {:optional true} :string]
    [:props :map]])
 
@@ -69,7 +69,7 @@
            (decode-task-row))))
 
 (defn- run-task
-  [{:keys [::wrk/registry ::id ::queue] :as cfg} task]
+  [{:keys [::db/pool ::wrk/registry ::id ::queue] :as cfg} task]
   (try
     (l/dbg :hint "start"
            :name (:name task)
@@ -77,6 +77,13 @@
            :queue queue
            :runner-id id
            :retry (:retry-num task))
+
+    ;; Mark task as running
+    (db/update! pool :task
+                {:status "running"
+                 :modified-at (ct/now)}
+                {:id (:id task)}
+                {::db/return-keys false})
 
     (let [tpoint  (ct/tpoint)
           task-fn (wrk/get-task registry (:name task))
@@ -121,7 +128,7 @@
               {:status "retry" :error cause})))))))
 
 (defn- run-task!
-  [{:keys [::id ::timeout] :as cfg} task-id]
+  [{:keys [::id ::timeout] :as cfg} task-id scheduled-at]
   (loop [task (get-task cfg task-id)]
     (cond
       (ex/exception? task)
@@ -129,20 +136,26 @@
               (db/serialization-error? task))
         (do
           (l/wrn :hint "connection error on retrieving task from database (retrying in some instants)"
-                 :id id
+                 :runner-id id
                  :cause task)
           (px/sleep timeout)
           (recur (get-task cfg task-id)))
         (do
           (l/err :hint "unhandled exception on retrieving task from database (retrying in some instants)"
-                 :id id
+                 :runner-id id
                  :cause task)
           (px/sleep timeout)
           (recur (get-task cfg task-id))))
 
+      (not= (inst-ms scheduled-at)
+            (inst-ms (:scheduled-at task)))
+      (l/wrn :hint "skiping task, rescheduled"
+             :task-id task-id
+             :runner-id id)
+
       (nil? task)
       (l/wrn :hint "no task found on the database"
-             :id id
+             :runner-id id
              :task-id task-id)
 
       :else
@@ -185,17 +198,19 @@
               (db/update! pool :task
                           {:completed-at now
                            :modified-at now
+                           :error nil
                            :status "completed"}
                           {:id (:id task)})
               nil))
 
           (decode-payload [payload]
             (try
-              (let [task-id (t/decode-str payload)]
-                (if (uuid? task-id)
-                  task-id
-                  (l/err :hint "received unexpected payload (uuid expected)"
-                         :payload task-id)))
+              (let [[task-id scheduled-at :as payload] (t/decode-str payload)]
+                (if (and (uuid? task-id)
+                         (ct/inst? scheduled-at))
+                  payload
+                  (l/err :hint "received unexpected payload"
+                         :payload payload)))
               (catch Throwable cause
                 (l/err :hint "unable to decode payload"
                        :payload payload
@@ -211,8 +226,8 @@
                (throw (IllegalArgumentException.
                        (str "invalid status received: " status))))))
 
-          (run-task-loop [task-id]
-            (loop [result (run-task! cfg task-id)]
+          (run-task-loop [[task-id scheduled-at]]
+            (loop [result (run-task! cfg task-id scheduled-at)]
               (when-let [cause (process-result result)]
                 (if (or (db/connection-error? cause)
                         (db/serialization-error? cause))
@@ -226,7 +241,7 @@
                            :cause cause))))))]
 
     (try
-      (let [key         (str/ffmt "taskq:%" queue)
+      (let [key         (str/ffmt "penpot.worker.queue:%" queue)
             [_ payload] (rds/blpop conn [key] timeout)]
         (some-> payload
                 decode-payload

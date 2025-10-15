@@ -443,13 +443,18 @@
    [:team-id ::sm/uuid]])
 
 (def sql:team-invitations
-  "select email_to as email, role, (valid_until < now()) as expired
-   from team_invitation where team_id = ? order by valid_until desc, created_at desc")
+  "SELECT email_to AS email,
+          role,
+          (valid_until < ?::timestamptz) AS expired
+     FROM team_invitation
+    WHERE team_id = ?
+    ORDER BY valid_until DESC, created_at DESC")
 
 (defn get-team-invitations
   [conn team-id]
-  (->> (db/exec! conn [sql:team-invitations team-id])
-       (mapv #(update % :role keyword))))
+  (let [now (ct/now)]
+    (->> (db/exec! conn [sql:team-invitations now team-id])
+         (mapv #(update % :role keyword)))))
 
 (sv/defmethod ::get-team-invitations
   {::doc/added "1.17"

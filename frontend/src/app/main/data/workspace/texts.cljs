@@ -490,11 +490,7 @@
       ;; We don't have the fills attribute. It's an old text without color
       ;; so need to be black
       (and (nil? (:fills node)) (empty? color-attrs))
-      (assoc :fills (txt/get-default-text-fills))
-
-      ;; Remove duplicates from the fills
-      :always
-      (update :fills types.fills/update distinct))))
+      (assoc :fills (txt/get-default-text-fills)))))
 
 (defn migrate-content
   [content]
