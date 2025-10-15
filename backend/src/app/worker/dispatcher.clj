@@ -42,45 +42,99 @@
   (assert (sm/check schema:dispatcher cfg)))
 
 (def ^:private sql:select-next-tasks
-  "select id, queue from task as t
-    where t.scheduled_at <= now()
-      and (t.status = 'new' or t.status = 'retry')
-      and queue ~~* ?::text
-    order by t.priority desc, t.scheduled_at
-    limit ?
-      for update skip locked")
+  "SELECT id, queue, scheduled_at from task AS t
+    WHERE t.scheduled_at <= ?::timestamptz
+      AND (t.status = 'new' OR t.status = 'retry')
+      AND queue ~~* ?::text
+    ORDER BY t.priority DESC, t.scheduled_at
+    LIMIT ?
+      FOR UPDATE
+     SKIP LOCKED")
 
 (def ^:private sql:mark-task-scheduled
   "UPDATE task SET status = 'scheduled'
     WHERE id = ANY(?)")
 
+(def ^:private sql:reschedule-lost
+  "UPDATE task
+      SET status='new', scheduled_at=?::timestamptz
+     FROM (SELECT t.id
+             FROM task AS t
+            WHERE status = 'scheduled'
+              AND (?::timestamptz - t.scheduled_at) > '5 min'::interval) AS subquery
+    WHERE task.id=subquery.id
+RETURNING task.id, task.queue")
+
+(def ^:private sql:clean-orphan
+  "UPDATE task
+      SET status='failed', modified_at=?::timestamptz,
+          error='orphan with running status'
+     FROM (SELECT t.id
+             FROM task AS t
+            WHERE status = 'running'
+              AND (?::timestamptz - t.modified_at) > '24 hour'::interval) AS subquery
+    WHERE task.id=subquery.id
+RETURNING task.id, task.queue")
+
 (defmethod ig/init-key ::wrk/dispatcher
   [_ {:keys [::db/pool ::wrk/tenant ::batch-size ::timeout] :as cfg}]
-  (letfn [(get-tasks [{:keys [::db/conn]}]
-            (let [prefix (str tenant ":%")]
-              (not-empty (db/exec! conn [sql:select-next-tasks prefix batch-size]))))
+  (letfn [(reschedule-lost-tasks [{:keys [::db/conn ::timestamp]}]
+            (doseq [{:keys [id queue]} (db/exec! conn [sql:reschedule-lost timestamp timestamp]
+                                                 {:return-keys true})]
+              (l/wrn :hint "reschedule"
+                     :id (str id)
+                     :queue queue)))
 
-          (mark-as-scheduled [{:keys [::db/conn]} ids]
-            (let [sql [sql:mark-task-scheduled
+          (clean-orphan [{:keys [::db/conn ::timestamp]}]
+            (doseq [{:keys [id queue]} (db/exec! conn [sql:clean-orphan timestamp timestamp]
+                                                 {:return-keys true})]
+              (l/wrn :hint "mark as orphan failed"
+                     :id (str id)
+                     :queue queue)))
+
+          (get-tasks [{:keys [::db/conn ::timestamp] :as cfg}]
+            (let [prefix (str tenant ":%")
+                  result (db/exec! conn [sql:select-next-tasks timestamp prefix batch-size])]
+              (not-empty result)))
+
+          (mark-as-scheduled [{:keys [::db/conn]} items]
+            (let [ids (map :id items)
+                  sql [sql:mark-task-scheduled
                        (db/create-array conn "uuid" ids)]]
               (db/exec-one! conn sql)))
 
           (push-tasks [{:keys [::rds/conn] :as cfg} [queue tasks]]
-            (let [ids (mapv :id tasks)
-                  key (str/ffmt "taskq:%" queue)
-                  res (rds/rpush conn key (mapv t/encode-str ids))]
+            (let [items (mapv (juxt :id :scheduled-at) tasks)
+                  key   (str/ffmt "penpot.worker.queue:%" queue)]
 
-              (mark-as-scheduled cfg ids)
-              (l/trc :hist "enqueue tasks on redis"
-                     :queue queue
-                     :tasks (count ids)
-                     :queued res)))
+              (rds/rpush conn key (mapv t/encode-str items))
+              (mark-as-scheduled cfg tasks)
+
+              (doseq [{:keys [id queue]} tasks]
+                (l/trc :hist "schedule"
+                       :id (str id)
+                       :queue queue))))
 
           (run-batch' [cfg]
-            (if-let [tasks (get-tasks cfg)]
-              (->> (group-by :queue tasks)
-                   (run! (partial push-tasks cfg)))
-              ::wait))
+            (let [cfg (assoc cfg ::timestamp (ct/now))]
+              ;; Reschedule lost in transit tasks (can happen when
+              ;; redis server is restarted just after task is pushed)
+              (reschedule-lost-tasks cfg)
+
+              ;; Mark as failed all tasks that are still marked as
+              ;; running but it's been more than 24 hours since its
+              ;; last modification
+              (clean-orphan cfg)
+
+              ;; Then, schedule the next tasks in queue
+              (if-let [tasks (get-tasks cfg)]
+                (->> (group-by :queue tasks)
+                     (run! (partial push-tasks cfg)))
+
+                ;; If no tasks found on this batch run, we signal the
+                ;; run-loop to wait for some time before start running
+                ;; the next batch interation
+                ::wait)))
 
           (run-batch []
             (let [rconn (rds/connect cfg)]
