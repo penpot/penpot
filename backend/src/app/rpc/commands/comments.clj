@@ -234,36 +234,39 @@
                  (files/check-comment-permissions! conn profile-id file-id share-id)
                  (get-comment-threads conn profile-id file-id))))
 
-(def ^:private sql:comment-threads
-  "SELECT DISTINCT ON (ct.id)
-          ct.*,
-          pf.fullname AS owner_fullname,
-          pf.email AS owner_email,
-          pf.photo_id AS owner_photo_id,
-          p.team_id AS team_id,
-          f.name AS file_name,
-          f.project_id AS project_id,
-          first_value(c.content) OVER w AS content,
-          (SELECT count(1)
-             FROM comment AS c
-            WHERE c.thread_id = ct.id) AS count_comments,
-          (SELECT count(1)
-             FROM comment AS c
-            WHERE c.thread_id = ct.id
-              AND c.created_at >= coalesce(cts.modified_at, ct.created_at)) AS count_unread_comments
-     FROM comment_thread AS ct
-    INNER JOIN comment AS c ON (c.thread_id = ct.id)
-    INNER JOIN file AS f ON (f.id = ct.file_id)
-    INNER JOIN project AS p ON (p.id = f.project_id)
-     LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
-     LEFT JOIN profile AS pf ON (ct.owner_id = pf.id)
-    WHERE f.deleted_at IS NULL
-      AND p.deleted_at IS NULL
-   WINDOW w AS (PARTITION BY c.thread_id ORDER BY c.created_at ASC)")
+(defn- get-comment-threads-sql
+  [where]
+  (str/ffmt
+   "SELECT DISTINCT ON (ct.id)
+           ct.*,
+           pf.fullname AS owner_fullname,
+           pf.email AS owner_email,
+           pf.photo_id AS owner_photo_id,
+           p.team_id AS team_id,
+           f.name AS file_name,
+           f.project_id AS project_id,
+           first_value(c.content) OVER w AS content,
+           (SELECT count(1)
+              FROM comment AS c
+             WHERE c.thread_id = ct.id) AS count_comments,
+           (SELECT count(1)
+              FROM comment AS c
+             WHERE c.thread_id = ct.id
+               AND c.created_at >= coalesce(cts.modified_at, ct.created_at)) AS count_unread_comments
+      FROM comment_thread AS ct
+     INNER JOIN comment AS c ON (c.thread_id = ct.id)
+     INNER JOIN file AS f ON (f.id = ct.file_id)
+     INNER JOIN project AS p ON (p.id = f.project_id)
+      LEFT JOIN comment_thread_status AS cts ON (cts.thread_id = ct.id AND cts.profile_id = ?)
+      LEFT JOIN profile AS pf ON (ct.owner_id = pf.id)
+     WHERE f.deleted_at IS NULL
+       AND p.deleted_at IS NULL
+       %1
+    WINDOW w AS (PARTITION BY c.thread_id ORDER BY c.created_at ASC)"
+   where))
 
 (def ^:private sql:comment-threads-by-file-id
-  (str "WITH threads AS (" sql:comment-threads ")"
-       "SELECT * FROM threads WHERE file_id = ?"))
+  (get-comment-threads-sql "AND ct.file_id = ?"))
 
 (defn- get-comment-threads
   [conn profile-id file-id]
@@ -273,34 +276,28 @@
 ;; --- COMMAND: Get Unread Comment Threads
 
 (def ^:private sql:unread-all-comment-threads-by-team
-  (str "WITH threads AS (" sql:comment-threads ")"
-       "SELECT * FROM threads WHERE count_unread_comments > 0 AND team_id = ?"))
+  (str "WITH threads AS ("
+       (get-comment-threads-sql "AND p.team_id = ?")
+       ")"
+       "SELECT t.* FROM threads AS t
+         WHERE t.count_unread_comments > 0"))
 
-;; The partial configuration will retrieve only comments created by the user and
-;; threads that have a mention to the user.
 (def ^:private sql:unread-partial-comment-threads-by-team
-  (str "WITH threads AS (" sql:comment-threads ")"
-       "SELECT * FROM threads
-         WHERE count_unread_comments > 0
-           AND team_id = ?
-           AND (owner_id = ? OR ? = ANY(mentions))"))
+  (str "WITH threads AS ("
+       (get-comment-threads-sql "AND p.team_id = ? AND (ct.owner_id = ? OR ? = ANY(ct.mentions))")
+       ")"
+       "SELECT t.* FROM threads AS t
+         WHERE t.count_unread_comments > 0"))
 
 (defn- get-unread-comment-threads
   [cfg profile-id team-id]
   (let [profile (-> (db/get cfg :profile {:id profile-id})
                     (profile/decode-row))
-        notify  (or (-> profile :props :notifications :dashboard-comments) :all)]
-
-    (case notify
-      :all
-      (->> (db/exec! cfg [sql:unread-all-comment-threads-by-team profile-id team-id])
-           (into [] xf-decode-row))
-
-      :partial
-      (->> (db/exec! cfg [sql:unread-partial-comment-threads-by-team profile-id team-id profile-id profile-id])
-           (into [] xf-decode-row))
-
-      [])))
+        notify  (or (-> profile :props :notifications :dashboard-comments) :all)
+        result  (case notify
+                  :all     (db/exec! cfg [sql:unread-all-comment-threads-by-team profile-id team-id])
+                  :partial (db/exec! cfg [sql:unread-partial-comment-threads-by-team profile-id team-id profile-id profile-id]))]
+    (into [] xf-decode-row result)))
 
 (def ^:private
   schema:get-unread-comment-threads
@@ -323,16 +320,17 @@
    [:id ::sm/uuid]
    [:share-id {:optional true} [:maybe ::sm/uuid]]])
 
+(def ^:private sql:get-comment-thread
+  (get-comment-threads-sql "AND ct.file_id = ? AND ct.id = ?"))
+
 (sv/defmethod ::get-comment-thread
   {::doc/added "1.15"
    ::sm/params schema:get-comment-thread}
   [cfg {:keys [::rpc/profile-id file-id id share-id] :as params}]
   (db/run! cfg (fn [{:keys [::db/conn]}]
                  (files/check-comment-permissions! conn profile-id file-id share-id)
-                 (let [sql (str "WITH threads AS (" sql:comment-threads ")"
-                                "SELECT * FROM threads WHERE id = ? AND file_id = ?")]
-                   (-> (db/exec-one! conn [sql profile-id id file-id])
-                       (decode-row))))))
+                 (some-> (db/exec-one! conn [sql:get-comment-thread profile-id file-id id])
+                         (decode-row)))))
 
 ;; --- COMMAND: Retrieve Comments
 

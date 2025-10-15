@@ -41,6 +41,7 @@
 - Alternative ways of creating variants - Button Viewport [Taiga #11931](https://tree.taiga.io/project/penpot/us/11931)
 - Reorder properties for a component [Taiga #10225](https://tree.taiga.io/project/penpot/us/10225)
 - File Data storage layout refactor [Github #7345](https://github.com/penpot/penpot/pull/7345)
+- Make several queries optimization on comment threads [Github #7506](https://github.com/penpot/penpot/pull/7506)
 
 ### :bug: Bugs fixed
 
