@@ -106,7 +106,7 @@
    [:version :int]
    [:features ::cfeat/features]
    [:migrations {:optional true}
-    [::sm/set :string]]])
+    [::sm/set {:ordered true} :string]]])
 
 (sm/register! ::data schema:data)
 (sm/register! ::file schema:file)

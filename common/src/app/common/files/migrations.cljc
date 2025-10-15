@@ -1547,14 +1547,10 @@
           (update component :path #(d/nilv % "")))]
     (d/update-when data :components d/update-vals update-component)))
 
-(defmethod migrate-data "0014-fix-tokens-lib-duplicate-ids"
-  [data _]
-  (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
-
 (def ^:private valid-stroke?
   (sm/lazy-validator cts/schema:stroke))
 
-(defmethod migrate-data "0015-clear-invalid-strokes-and-fills"
+(defmethod migrate-data "0013-clear-invalid-strokes-and-fills"
   [data _]
   (letfn [(clear-color-image [image]
             (select-keys image types.color/image-attrs))
@@ -1620,6 +1616,10 @@
     (-> data
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
+
+(defmethod migrate-data "0014-fix-tokens-lib-duplicate-ids"
+  [data _]
+  (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
 
 (def available-migrations
   (into (d/ordered-set)
@@ -1690,5 +1690,5 @@
          "0011-fix-invalid-text-touched-flags"
          "0012-fix-position-data"
          "0013-fix-component-path"
-         "0014-fix-tokens-lib-duplicate-ids"
-         "0015-clear-invalid-strokes-and-fills"]))
+         "0013-clear-invalid-strokes-and-fills"
+         "0014-fix-tokens-lib-duplicate-ids"]))
