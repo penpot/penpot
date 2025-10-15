@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Alejandro Alonso <alejandro.alonso@kaleidos.net>\n"
-"Language-Team: Hausa <https://hosted.weblate.org/projects/penpot/frontend/ha/"
-">\n"
+"Language-Team: Hausa "
+"<https://hosted.weblate.org/projects/penpot/frontend/ha/>\n"
 "Language: ha\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -3388,6 +3388,9 @@ msgstr "tsarin haruffa"
 msgid "workspace.assets.typography.font-size"
 msgstr "girma"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "tsarin salo"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "tafi zuwa salon dakin karatu don a tace"
@@ -4388,7 +4391,7 @@ msgstr "sama"
 msgid "workspace.options.more-colors"
 msgstr "kaloli masu yawa"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Ma'ajiyar kaloli masu yawa"
 

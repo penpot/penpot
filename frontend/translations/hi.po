@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: VKing9 <vaibhavrathod2282@gmail.com>\n"
-"Language-Team: Hindi <https://hosted.weblate.org/projects/penpot/frontend/hi/"
-">\n"
+"Language-Team: Hindi "
+"<https://hosted.weblate.org/projects/penpot/frontend/hi/>\n"
 "Language: hi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4754,6 +4754,9 @@ msgstr "फ़ॉन्ट"
 msgid "workspace.assets.typography.font-size"
 msgstr "आकार"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "फ़ॉन्ट शैली"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "संपादन के लिए स्टाइल लाइब्रेरी फ़ाइल पर जाएँ"
@@ -6033,7 +6036,7 @@ msgstr "शीर्ष"
 msgid "workspace.options.more-colors"
 msgstr "और अधिक रंग"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "और लाइब्रेरी रंग"
 

@@ -2282,6 +2282,9 @@ msgstr "فونت"
 msgid "workspace.assets.typography.font-size"
 msgstr "اندازه"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "استایل فونت"
+
 #: src/app/main/ui/dashboard/grid.cljs:217, src/app/main/ui/workspace/libraries.cljs:579, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:480, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:506, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:613, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:633
 msgid "workspace.assets.typography.sample"
 msgstr "مثال"

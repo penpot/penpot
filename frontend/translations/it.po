@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Nicola Bortoletto <nicola.bortoletto@live.com>\n"
-"Language-Team: Italian <https://hosted.weblate.org/projects/penpot/frontend/"
-"it/>\n"
+"Language-Team: Italian "
+"<https://hosted.weblate.org/projects/penpot/frontend/it/>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -200,6 +200,16 @@ msgstr "Email di lavoro"
 #, unused
 msgid "branding-illustrations-marketing-pieces"
 msgstr "…branding, illustrazione, materiali di marketing, etc."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Questo token non esiste o è stato eliminato."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Nessun token colore disponibile. Controlla i set o i temi attivi oppure "
+"aggiungi nuovi token."
 
 #: src/app/main/ui/comments.cljs:530
 msgid "comments.mentions.not-found"
@@ -750,6 +760,22 @@ msgstr "Caricamento dei dati sul server (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Caricamento file: %s"
 
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Stai per eliminare gli inviti a:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Stai per reinviare gli inviti a:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Elimina inviti"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Reinvia inviti"
+
 #: src/app/main/ui/dashboard/team.cljs:122, src/app/main/ui/dashboard/team.cljs:744
 msgid "dashboard.invite-profile"
 msgstr "Invita nel team"
@@ -863,6 +889,14 @@ msgstr "Apri file in una nuova scheda"
 #: src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
 msgid "dashboard.options"
 msgstr "Opzioni"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Ordina per ruolo"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Ordina per stato"
 
 #: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
 msgid "dashboard.password-change"
@@ -1880,6 +1914,38 @@ msgstr "Calcolato"
 msgid "inspect.tabs.info"
 msgstr "Informazione"
 
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Copia negli appunti"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Dimensione e posizione"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Attiva/disattiva pannello %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Set di token e temi"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Set attivi"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Temi attivi"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Proprietà delle varianti"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Valore risolto:"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"
 msgstr "Informazioni livello"
@@ -1891,6 +1957,10 @@ msgstr "Contassegna tutto come letto"
 #: src/app/main/ui/workspace/main_menu.cljs:192
 msgid "label.shortcuts"
 msgstr "Scorciatoie"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "Informazioni su Penpot"
 
 #: src/app/main/data/common.cljs:90, src/app/main/ui/dashboard/import.cljs:530
 msgid "labels.accept"
@@ -1947,6 +2017,10 @@ msgstr ""
 msgid "labels.bad-gateway.main-message"
 msgstr "Gateway non corretto"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Sfocatura"
+
 #: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/form.cljs:632, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
 msgid "labels.cancel"
 msgstr "Annulla"
@@ -1963,6 +2037,10 @@ msgstr "Chiudi"
 msgid "labels.collapse"
 msgstr "Comprimi"
 
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Colore"
+
 #: src/app/main/ui/comments.cljs:913
 msgid "labels.comment"
 msgstr "Commenta"
@@ -1978,6 +2056,10 @@ msgstr "Commenti"
 #: src/app/main/ui/dashboard/sidebar.cljs:840, src/app/main/ui/workspace/main_menu.cljs:144
 msgid "labels.community"
 msgstr "Community"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1030
+msgid "labels.community-contributions"
+msgstr "Comunità e contributi"
 
 #: src/app/main/ui/settings/password.cljs:91
 msgid "labels.confirm-password"
@@ -2117,6 +2199,10 @@ msgstr "Feedback inviato"
 msgid "labels.figma"
 msgstr "Figma"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "Riempimento"
+
 #: src/app/main/ui/dashboard/fonts.cljs:430
 msgid "labels.font-family"
 msgstr "Famiglia di caratteri"
@@ -2163,6 +2249,10 @@ msgstr "Graphic design"
 msgid "labels.help-center"
 msgstr "Supporto"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:1019
+msgid "labels.help-learning"
+msgstr "Aiuto e apprendimento"
+
 #: src/app/main/ui/dashboard/templates.cljs:91
 msgid "labels.hide"
 msgstr "Nascondi"
@@ -2204,6 +2294,14 @@ msgstr "Inviti"
 #: src/app/main/ui/settings/options.cljs:53
 msgid "labels.language"
 msgstr "Lingua"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Layout"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "labels.learning-center"
+msgstr "Centro di apprendimento"
 
 #: src/app/main/ui/workspace/main_menu.cljs:168
 msgid "labels.libraries-and-templates"
@@ -2341,6 +2439,14 @@ msgstr "Password"
 msgid "labels.pending-invitation"
 msgstr "In attesa"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:878
+msgid "labels.penpot-changelog"
+msgstr "Registro delle modifiche di Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:804
+msgid "labels.penpot-hub"
+msgstr "Hub di Penpot"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:751
 msgid "labels.pinned-projects"
 msgstr "Progetti in evidenza"
@@ -2368,6 +2474,10 @@ msgstr "Profilo"
 #: src/app/main/ui/dashboard/sidebar.cljs:718
 msgid "labels.projects"
 msgstr "Progetti"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
+msgid "labels.reference"
+msgstr "Riferimento"
 
 #: src/app/main/data/common.cljs:83
 msgid "labels.refresh"
@@ -2418,6 +2528,10 @@ msgstr "nuova risposta"
 #: src/app/main/ui/comments.cljs:722
 msgid "labels.reply.thread"
 msgstr "Rispondi"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Reinvia"
 
 #: src/app/main/ui/dashboard/team.cljs:938
 msgid "labels.resend-invitation"
@@ -2475,6 +2589,10 @@ msgstr "Set"
 msgid "labels.settings"
 msgstr "Configurazione"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "Ombra"
+
 #: src/app/main/ui/viewer/header.cljs:204
 msgid "labels.share"
 msgstr "Condividi"
@@ -2523,9 +2641,21 @@ msgstr "Inizia"
 msgid "labels.status"
 msgstr "Stato"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Traccia"
+
 #: src/app/main/ui/onboarding/questions.cljs:87
 msgid "labels.student-teacher"
 msgstr "Studente o docente"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
+msgid "labels.styles"
+msgstr "Stili"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
 
 #: src/app/main/ui/onboarding/questions.cljs:256
 #, unused
@@ -2537,6 +2667,10 @@ msgstr "Capo del team"
 msgid "labels.team-member"
 msgstr "Membro del team"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Testo"
+
 #: src/app/main/ui/workspace/tokens/themes.cljs:36
 msgid "labels.themes"
 msgstr "Temi"
@@ -2544,6 +2678,10 @@ msgstr "Temi"
 #: src/app/main/ui/workspace/main_menu.cljs:152
 msgid "labels.tutorials"
 msgstr "Tutorial"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
+msgid "labels.typography"
+msgstr "Tipografia"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101
 msgid "labels.unknown-error"
@@ -2577,6 +2715,14 @@ msgstr "Carica caratteri personalizzati"
 msgid "labels.uploading"
 msgstr "Caricamento…"
 
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variante"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:872
+msgid "labels.version-notes"
+msgstr "Note della versione %s"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:246
 msgid "labels.view-only"
 msgstr "Solo visualizzazione"
@@ -2584,6 +2730,10 @@ msgstr "Solo visualizzazione"
 #: src/app/main/ui/dashboard/team.cljs:131, src/app/main/ui/dashboard/team.cljs:314, src/app/main/ui/dashboard/team.cljs:567, src/app/main/ui/dashboard/team.cljs:603, src/app/main/ui/onboarding/team_choice.cljs:56
 msgid "labels.viewer"
 msgstr "Visualizzatore"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Visibilità"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:441, src/app/main/ui/dashboard/team.cljs:103, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/dashboard/team.cljs:1134
 msgid "labels.webhooks"
@@ -3314,6 +3464,10 @@ msgstr ""
 msgid "notifications.by-code.upgrade-version"
 msgstr "Una nuova versione è disponibile, si prega di ricaricare la pagina"
 
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "Invito eliminato con successo"
+
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "Invito inviato con successo"
@@ -3880,6 +4034,10 @@ msgstr "Copia link negli appunti"
 #, unused
 msgid "shortcuts.copy-props"
 msgstr "Copia proprietà"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "Crea componente / variante"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:98
 msgid "shortcuts.create-new-project"
@@ -4992,6 +5150,9 @@ msgstr "Carattere"
 msgid "workspace.assets.typography.font-size"
 msgstr "Dimensione"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Stile del carattere"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Vai alla libreria dello stile del file per modificare"
@@ -5019,6 +5180,20 @@ msgstr "Trasforma testo"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:70
 msgid "workspace.assets.ungroup"
 msgstr "Separa"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Token colore"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
+msgid "workspace.component.swap.loop-error"
+msgstr "I componenti non possono essere annidati dentro sé stessi."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:463
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"Alcune copie non possono essere sostituite. I componenti non possono essere "
+"annidati dentro sé stessi."
 
 #: src/app/main/ui/workspace/context_menu.cljs:794
 msgid "workspace.context-menu.grid-cells.area"
@@ -5386,6 +5561,10 @@ msgstr "RGBA"
 #: src/app/main/ui/workspace/colorpicker.cljs:557
 msgid "workspace.libraries.colors.save-color"
 msgstr "Salva stile di colore"
+
+#: src/app/main/ui/workspace/libraries.cljs:349
+msgid "workspace.libraries.connected-to"
+msgstr "Connesso a"
 
 #: src/app/main/ui/workspace/libraries.cljs:404
 msgid "workspace.libraries.empty.add-some"
@@ -6356,7 +6535,7 @@ msgstr "In alto"
 msgid "workspace.options.more-colors"
 msgstr "Più colori"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Più librerie colori"
 
@@ -7305,6 +7484,12 @@ msgstr "Scegli cartella"
 msgid "workspace.tokens.color"
 msgstr "Colore"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"L'interlinea dipende dalla dimensione del carattere. Aggiungi una "
+"dimensione carattere per ottenere il valore risolto."
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:53
 msgid "workspace.tokens.create-new-theme"
 msgstr "Crea ora il tuo prima tema."
@@ -7344,6 +7529,10 @@ msgstr "Modifica tema"
 #: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:74
 msgid "workspace.tokens.edit-themes"
 msgstr "Modifica temi"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:551
+msgid "workspace.tokens.edit-token"
+msgstr "Modifica token %s"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
@@ -7466,6 +7655,10 @@ msgstr ""
 "Questo set non è attivo. Cambia tema o attiva questo set per vedere "
 "modifiche nell'anteprima"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
+msgid "workspace.tokens.individual-tokens"
+msgstr "Utilizza token individuali"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:49
 msgid "workspace.tokens.invalid-color"
 msgstr "Valore colore invalido: %s"
@@ -7504,6 +7697,10 @@ msgstr ""
 "Valore del token non valido: sono accettati solo none, underline e "
 "strike-through"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "Valore non valido: deve fare riferimento a un token tipografico composito."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Valore token non valido: %s"
@@ -7523,6 +7720,14 @@ msgstr "Tema"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:200
 msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Aggiungi un tema (es. Chiaro)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Aggiungi spaziatura tra lettere o {alias"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Inserisci interlinea — moltiplicatore, px, %, o {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:220
 msgid "workspace.tokens.margins"
@@ -7610,6 +7815,10 @@ msgstr "Raggio"
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:128
 msgid "workspace.tokens.ref-not-valid"
 msgstr "Il riferimento non è valido o non è presente in nessun set attivo"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
+msgid "workspace.tokens.reference-composite"
+msgstr "Inserisci un alias tipografico del token"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
@@ -7748,6 +7957,10 @@ msgstr ""
 #: src/app/main/data/workspace/tokens/import_export.cljs:49
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "Il tipo '%s' non è supportato (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
+msgid "workspace.tokens.use-reference"
+msgstr "Utilizza un riferimento"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.value-not-valid"
@@ -8125,214 +8338,3 @@ msgstr "Clicca per chiudere il tracciato"
 
 #~ msgid "onboarding.slide.1.desc1"
 #~ msgstr "Crea interazioni complete per imitare al meglio il prodotto finale."
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
-msgid "color-row.token-color-row.deleted-token"
-msgstr "Questo token non esiste o è stato eliminato."
-
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
-msgid "color-token.empty-state"
-msgstr ""
-"Nessun token colore disponibile. Controlla i set o i temi attivi oppure "
-"aggiungi nuovi token."
-
-#: src/app/main/ui/dashboard/team.cljs:765
-msgid "dashboard.invitation-modal.delete"
-msgstr "Stai per eliminare gli inviti a:"
-
-#: src/app/main/ui/dashboard/team.cljs:766
-msgid "dashboard.invitation-modal.resend"
-msgstr "Stai per reinviare gli inviti a:"
-
-#: src/app/main/ui/dashboard/team.cljs:756
-msgid "dashboard.invitation-modal.title.delete-invitations"
-msgstr "Elimina inviti"
-
-#: src/app/main/ui/dashboard/team.cljs:757
-msgid "dashboard.invitation-modal.title.resend-invitations"
-msgstr "Reinvia inviti"
-
-#: src/app/main/ui/dashboard/team.cljs:949
-msgid "dashboard.order-invitations-by-role"
-msgstr "Ordina per ruolo"
-
-#: src/app/main/ui/dashboard/team.cljs:958
-msgid "dashboard.order-invitations-by-status"
-msgstr "Ordina per stato"
-
-#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
-msgid "inspect.tabs.styles.panel.copy-to-clipboard"
-msgstr "Copia negli appunti"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:22
-msgid "inspect.tabs.styles.panel.geometry"
-msgstr "Dimensione e posizione"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
-msgid "inspect.tabs.styles.panel.toggle-style"
-msgstr "Attiva/disattiva pannello %s"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:21
-msgid "inspect.tabs.styles.panel.token"
-msgstr "Set di token e temi"
-
-#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
-msgid "inspect.tabs.styles.panel.tokens.active-sets"
-msgstr "Set attivi"
-
-#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
-msgid "inspect.tabs.styles.panel.tokens.active-themes"
-msgstr "Temi attivi"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:20
-msgid "inspect.tabs.styles.panel.variant"
-msgstr "Proprietà delle varianti"
-
-#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
-msgid "inspect.tabs.styles.token.resolved-value"
-msgstr "Valore risolto:"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:1043
-msgid "labels.about-penpot"
-msgstr "Informazioni su Penpot"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:26
-msgid "labels.blur"
-msgstr "Sfocatura"
-
-#: src/app/main/ui/workspace/colorpicker.cljs:427
-msgid "labels.color"
-msgstr "Colore"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:1030
-msgid "labels.community-contributions"
-msgstr "Comunità e contributi"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:23
-msgid "labels.fill"
-msgstr "Riempimento"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:1019
-msgid "labels.help-learning"
-msgstr "Aiuto e apprendimento"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:28
-msgid "labels.layout"
-msgstr "Layout"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "labels.learning-center"
-msgstr "Centro di apprendimento"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:878
-msgid "labels.penpot-changelog"
-msgstr "Registro delle modifiche di Penpot"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:804
-msgid "labels.penpot-hub"
-msgstr "Hub di Penpot"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
-msgid "labels.reference"
-msgstr "Riferimento"
-
-#: src/app/main/ui/dashboard/team.cljs:788
-msgid "labels.resend"
-msgstr "Reinvia"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:27
-msgid "labels.shadow"
-msgstr "Ombra"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
-msgid "labels.stroke"
-msgstr "Traccia"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
-msgid "labels.styles"
-msgstr "Stili"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:33
-msgid "labels.svg"
-msgstr "SVG"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:25
-msgid "labels.text"
-msgstr "Testo"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
-msgid "labels.typography"
-msgstr "Tipografia"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "labels.variant"
-msgstr "Variante"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:872
-msgid "labels.version-notes"
-msgstr "Note della versione %s"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:32
-msgid "labels.visibility"
-msgstr "Visibilità"
-
-#: src/app/main/ui/dashboard/team.cljs:825
-msgid "notifications.invitation-deleted"
-msgstr "Invito eliminato con successo"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
-msgid "shortcuts.create-component-variant"
-msgstr "Crea componente / variante"
-
-#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
-msgid "workspace.colorpicker.color-tokens"
-msgstr "Token colore"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
-msgid "workspace.component.swap.loop-error"
-msgstr "I componenti non possono essere annidati dentro sé stessi."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:463
-msgid "workspace.component.switch.loop-error-multi"
-msgstr ""
-"Alcune copie non possono essere sostituite. I componenti non possono essere "
-"annidati dentro sé stessi."
-
-#: src/app/main/ui/workspace/libraries.cljs:349
-msgid "workspace.libraries.connected-to"
-msgstr "Connesso a"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.composite-line-height-needs-font-size"
-msgstr ""
-"L'interlinea dipende dalla dimensione del carattere. Aggiungi una dimensione "
-"carattere per ottenere il valore risolto."
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:551
-msgid "workspace.tokens.edit-token"
-msgstr "Modifica token %s"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
-msgid "workspace.tokens.individual-tokens"
-msgstr "Utilizza token individuali"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-token-value-typography"
-msgstr ""
-"Valore non valido: deve fare riferimento a un token tipografico composito."
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
-msgid "workspace.tokens.letter-spacing-value-enter-composite"
-msgstr "Aggiungi spaziatura tra lettere o {alias"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
-msgid "workspace.tokens.line-height-value-enter"
-msgstr "Inserisci interlinea — moltiplicatore, px, %, o {alias}"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
-msgid "workspace.tokens.reference-composite"
-msgstr "Inserisci un alias tipografico del token"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
-msgid "workspace.tokens.use-reference"
-msgstr "Utilizza un riferimento"

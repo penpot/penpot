@@ -5095,6 +5095,9 @@ msgstr "Fuente"
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamaño"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Estilo de fuente"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Ir al archivo de la biblioteca del estilo para editar"
@@ -5467,8 +5470,8 @@ msgstr "Añadir"
 
 #: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
 msgid "workspace.libraries.colors"
-msgid_plural "workspace.libraries.colors" 
-msgstr[0] "1 color" 
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 color"
 msgstr[1] "%s colores"
 
 #: src/app/main/ui/workspace/color_palette.cljs:147
@@ -5507,8 +5510,8 @@ msgstr "Guardar estilo de color"
 
 #: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
 msgid "workspace.libraries.components"
-msgid_plural "workspace.libraries.components" 
-msgstr[0] "1 componente" 
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 componente"
 msgstr[1] "%s componentes"
 
 #: src/app/main/ui/workspace/libraries.cljs:349
@@ -5533,8 +5536,8 @@ msgstr "Biblioteca del archivo"
 
 #: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
 msgid "workspace.libraries.graphics"
-msgid_plural "workspace.libraries.graphics" 
-msgstr[0] "1 gráfico" 
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 gráfico"
 msgstr[1] "%s gráficos"
 
 #: src/app/main/ui/workspace/libraries.cljs:316
@@ -5593,8 +5596,8 @@ msgstr "Desvincular todas las tipografías"
 
 #: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
 msgid "workspace.libraries.typography"
-msgid_plural "workspace.libraries.typography" 
-msgstr[0] "1 tipografía" 
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 tipografía"
 msgstr[1] "%s tipografías"
 
 #: src/app/main/ui/workspace/libraries.cljs:354
@@ -6457,13 +6460,13 @@ msgstr "Arriba"
 msgid "workspace.options.more-colors"
 msgstr "Más colores"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
-msgid "workspace.options.more-token-colors"
-msgstr "Más tokens de color"
-
 #: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Más colores de la biblioteca"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs
+msgid "workspace.options.more-token-colors"
+msgstr "Más tokens de color"
 
 #: src/app/main/ui/workspace/sidebar/options/menus/layer.cljs:192
 msgid "workspace.options.opacity"

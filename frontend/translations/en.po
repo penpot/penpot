@@ -5111,6 +5111,9 @@ msgstr "Font"
 msgid "workspace.assets.typography.font-size"
 msgstr "Size"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Font Style"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Go to style library file to edit"

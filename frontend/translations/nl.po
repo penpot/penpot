@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Stephan Paternotte <stephan@paternottes.net>\n"
-"Language-Team: Dutch <https://hosted.weblate.org/projects/penpot/frontend/nl/"
-">\n"
+"Language-Team: Dutch "
+"<https://hosted.weblate.org/projects/penpot/frontend/nl/>\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -198,6 +198,16 @@ msgstr "Werk e-mail"
 #, unused
 msgid "branding-illustrations-marketing-pieces"
 msgstr "…branding, illustraties, marketingstukken, etc."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Dit token bestaat niet of is verwijderd."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Geen beschikbare kleurentokens. Controleer actieve sets/thema's of voeg "
+"nieuwe tokens toe."
 
 #: src/app/main/ui/comments.cljs:530
 msgid "comments.mentions.not-found"
@@ -747,6 +757,22 @@ msgstr "Gegevens uploaden naar server (%s/%s)"
 msgid "dashboard.import.progress.upload-media"
 msgstr "Bestand aan het uploaden: %s"
 
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Je gaat de uitnodigingen verwijderen op:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Je gaat de uitnodigingen opnieuw versturen:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Uitnodigingen verwijderen"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Uitnodigingen opnieuw versturen"
+
 #: src/app/main/ui/dashboard/team.cljs:122, src/app/main/ui/dashboard/team.cljs:744
 msgid "dashboard.invite-profile"
 msgstr "Nodig mensen uit"
@@ -862,6 +888,14 @@ msgstr "Bestand openen in een nieuw tabblad"
 #: src/app/main/ui/dashboard/files.cljs:119, src/app/main/ui/dashboard/grid.cljs:425, src/app/main/ui/dashboard/projects.cljs:261, src/app/main/ui/dashboard/projects.cljs:262
 msgid "dashboard.options"
 msgstr "Opties"
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Sortering op rol"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Sortering op status"
 
 #: src/app/main/ui/settings/password.cljs:94, src/app/main/ui/settings/password.cljs:107
 msgid "dashboard.password-change"
@@ -1885,6 +1919,38 @@ msgstr "Berekend"
 msgid "inspect.tabs.info"
 msgstr "Informatie"
 
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Kopiëren naar klembord"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Grootte & positie"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Paneel &s wisselen"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Tokens & thema's"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Actieve verzamelingen"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Actieve thema's"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Variant eigenschappen"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Opgeloste waarde:"
+
 #: src/app/main/ui/inspect/right_sidebar.cljs:165
 msgid "inspect.tabs.switcher.label"
 msgstr "Laaginfo"
@@ -1896,6 +1962,10 @@ msgstr "Alles als gelezen markeren"
 #: src/app/main/ui/workspace/main_menu.cljs:192
 msgid "label.shortcuts"
 msgstr "Sneltoetsen"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "Over Penpot"
 
 #: src/app/main/data/common.cljs:90, src/app/main/ui/dashboard/import.cljs:530
 msgid "labels.accept"
@@ -1952,6 +2022,10 @@ msgstr ""
 msgid "labels.bad-gateway.main-message"
 msgstr "Bad Gateway"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Vervagen"
+
 #: src/app/main/data/common.cljs:129, src/app/main/ui/dashboard/change_owner.cljs:64, src/app/main/ui/dashboard/import.cljs:515, src/app/main/ui/dashboard/team.cljs:780, src/app/main/ui/dashboard/team.cljs:1122, src/app/main/ui/delete_shared.cljs:36, src/app/main/ui/exports/assets.cljs:162, src/app/main/ui/exports/files.cljs:191, src/app/main/ui/settings/access_tokens.cljs:175, src/app/main/ui/viewer/share_link.cljs:205, src/app/main/ui/workspace/sidebar/assets/groups.cljs:159, src/app/main/ui/workspace/tokens/export/modal.cljs:44, src/app/main/ui/workspace/tokens/import/modal.cljs:269, src/app/main/ui/workspace/tokens/management/create/form.cljs:632, src/app/main/ui/workspace/tokens/settings/menu.cljs:104, src/app/main/ui/workspace/tokens/themes/create_modal.cljs:228
 msgid "labels.cancel"
 msgstr "Annuleren"
@@ -1968,6 +2042,10 @@ msgstr "Sluiten"
 msgid "labels.collapse"
 msgstr "Samenvouwen"
 
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Kleur"
+
 #: src/app/main/ui/comments.cljs:913
 msgid "labels.comment"
 msgstr "Commentaar"
@@ -1983,6 +2061,10 @@ msgstr "Commentaar"
 #: src/app/main/ui/dashboard/sidebar.cljs:840, src/app/main/ui/workspace/main_menu.cljs:144
 msgid "labels.community"
 msgstr "Gemeenschap"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1030
+msgid "labels.community-contributions"
+msgstr "Gemeenschap & bijdragen"
 
 #: src/app/main/ui/settings/password.cljs:91
 msgid "labels.confirm-password"
@@ -2122,6 +2204,10 @@ msgstr "Feedback verstuurd"
 msgid "labels.figma"
 msgstr "Figma"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "Vullen"
+
 #: src/app/main/ui/dashboard/fonts.cljs:430
 msgid "labels.font-family"
 msgstr "Lettertype-familie"
@@ -2168,6 +2254,10 @@ msgstr "Grafisch ontwerp"
 msgid "labels.help-center"
 msgstr "Helpcentrum"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:1019
+msgid "labels.help-learning"
+msgstr "Hulp & studie"
+
 #: src/app/main/ui/dashboard/templates.cljs:91
 msgid "labels.hide"
 msgstr "Verbergen"
@@ -2209,6 +2299,14 @@ msgstr "Uitnodigingen"
 #: src/app/main/ui/settings/options.cljs:53
 msgid "labels.language"
 msgstr "Taal"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Opmaak"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:798
+msgid "labels.learning-center"
+msgstr "Studiecentrum"
 
 #: src/app/main/ui/workspace/main_menu.cljs:168
 msgid "labels.libraries-and-templates"
@@ -2346,6 +2444,14 @@ msgstr "Wachtwoord"
 msgid "labels.pending-invitation"
 msgstr "In behandeling"
 
+#: src/app/main/ui/dashboard/sidebar.cljs:878
+msgid "labels.penpot-changelog"
+msgstr "Penpot wijzigingen"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:804
+msgid "labels.penpot-hub"
+msgstr "Penpot-hub"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:751
 msgid "labels.pinned-projects"
 msgstr "Vastgemaakte projecten"
@@ -2373,6 +2479,10 @@ msgstr "Profiel"
 #: src/app/main/ui/dashboard/sidebar.cljs:718
 msgid "labels.projects"
 msgstr "Projecten"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
+msgid "labels.reference"
+msgstr "Referentie"
 
 #: src/app/main/data/common.cljs:83
 msgid "labels.refresh"
@@ -2423,6 +2533,10 @@ msgstr "nieuwe reactie"
 #: src/app/main/ui/comments.cljs:722
 msgid "labels.reply.thread"
 msgstr "Reageren"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Opnieuw versturen"
 
 #: src/app/main/ui/dashboard/team.cljs:938
 msgid "labels.resend-invitation"
@@ -2480,6 +2594,10 @@ msgstr "Verzamelingen"
 msgid "labels.settings"
 msgstr "Instellingen"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "Schaduw"
+
 #: src/app/main/ui/viewer/header.cljs:204
 msgid "labels.share"
 msgstr "Delen"
@@ -2528,9 +2646,21 @@ msgstr "Starten"
 msgid "labels.status"
 msgstr "Status"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Streek"
+
 #: src/app/main/ui/onboarding/questions.cljs:87
 msgid "labels.student-teacher"
 msgstr "Student of docent"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
+msgid "labels.styles"
+msgstr "Stijlen"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
 
 #: src/app/main/ui/onboarding/questions.cljs:256
 #, unused
@@ -2542,6 +2672,10 @@ msgstr "Teamleider"
 msgid "labels.team-member"
 msgstr "Teamlid"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Tekst"
+
 #: src/app/main/ui/workspace/tokens/themes.cljs:36
 msgid "labels.themes"
 msgstr "Thema's"
@@ -2549,6 +2683,10 @@ msgstr "Thema's"
 #: src/app/main/ui/workspace/main_menu.cljs:152
 msgid "labels.tutorials"
 msgstr "Introductie"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
+msgid "labels.typography"
+msgstr "Typografie"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:101
 msgid "labels.unknown-error"
@@ -2582,6 +2720,14 @@ msgstr "Eigen lettertypen uploaden"
 msgid "labels.uploading"
 msgstr "Uploaden…"
 
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variant"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:872
+msgid "labels.version-notes"
+msgstr "Versie %s opmerkingen"
+
 #: src/app/main/ui/workspace/sidebar/sitemap.cljs:246
 msgid "labels.view-only"
 msgstr "ALLEEN BEKIJKEN"
@@ -2589,6 +2735,10 @@ msgstr "ALLEEN BEKIJKEN"
 #: src/app/main/ui/dashboard/team.cljs:131, src/app/main/ui/dashboard/team.cljs:314, src/app/main/ui/dashboard/team.cljs:567, src/app/main/ui/dashboard/team.cljs:603, src/app/main/ui/onboarding/team_choice.cljs:56
 msgid "labels.viewer"
 msgstr "Kijker"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Zichtbaarheid"
 
 #: src/app/main/ui/dashboard/sidebar.cljs:441, src/app/main/ui/dashboard/team.cljs:103, src/app/main/ui/dashboard/team.cljs:113, src/app/main/ui/dashboard/team.cljs:1134
 msgid "labels.webhooks"
@@ -3335,6 +3485,10 @@ msgstr ""
 msgid "notifications.by-code.upgrade-version"
 msgstr "Er is een nieuwe versie beschikbaar, vernieuw de pagina"
 
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "Uitnodiging met succes verwijderd"
+
 #: src/app/main/ui/dashboard/team.cljs:170, src/app/main/ui/dashboard/team.cljs:867
 msgid "notifications.invitation-email-sent"
 msgstr "Uitnodiging succesvol verstuurd"
@@ -3902,6 +4056,10 @@ msgstr "Link naar klembord kopiëren"
 #, unused
 msgid "shortcuts.copy-props"
 msgstr "Eigenschappen kopiëren"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "Component/variant aanmaken"
 
 #: src/app/main/ui/workspace/sidebar/shortcuts.cljs:98
 msgid "shortcuts.create-new-project"
@@ -4634,6 +4792,7 @@ msgid "subscription.settings.sucess.dialog.title"
 msgstr "Je bent %s!"
 
 #: src/app/main/ui/settings/subscription.cljs:413
+#, fuzzy
 msgid "subscription.settings.support-us-since"
 msgstr "Je hebt ons gesteund met dit abonnement sinds: %s"
 
@@ -5009,6 +5168,9 @@ msgstr "Lettertype"
 msgid "workspace.assets.typography.font-size"
 msgstr "Grootte"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Lettertype-stijl"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Ga naar het stijl-bibliotheekbestand om te bewerken"
@@ -5036,6 +5198,20 @@ msgstr "Tekst transformeren"
 #: src/app/main/ui/workspace/sidebar/assets/groups.cljs:70
 msgid "workspace.assets.ungroup"
 msgstr "Groep opheffen"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Kleurtokens"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
+msgid "workspace.component.swap.loop-error"
+msgstr "Componenten kunnen niet in zichzelf worden genest."
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:463
+msgid "workspace.component.switch.loop-error-multi"
+msgstr ""
+"Sommige exemplaren konden niet worden verwisseld. Componenten kunnen niet "
+"in zichzelf worden genest."
 
 #: src/app/main/ui/workspace/context_menu.cljs:794
 msgid "workspace.context-menu.grid-cells.area"
@@ -5403,6 +5579,10 @@ msgstr "RGBA"
 #: src/app/main/ui/workspace/colorpicker.cljs:557
 msgid "workspace.libraries.colors.save-color"
 msgstr "Kleurstijl opslaan"
+
+#: src/app/main/ui/workspace/libraries.cljs:349
+msgid "workspace.libraries.connected-to"
+msgstr "Verbonden met"
 
 #: src/app/main/ui/workspace/libraries.cljs:404
 msgid "workspace.libraries.empty.add-some"
@@ -6369,7 +6549,7 @@ msgstr "Bovenkant"
 msgid "workspace.options.more-colors"
 msgstr "Meer kleuren"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Meer bibliotheekkleuren"
 
@@ -7314,6 +7494,12 @@ msgstr "Map kiezen"
 msgid "workspace.tokens.color"
 msgstr "Kleur"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"Regelafstand is afhankelijk van de lettergrootte. Voeg een lettergrootte "
+"toe om de opgeloste waarde te verkrijgen."
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:53
 msgid "workspace.tokens.create-new-theme"
 msgstr "Maak nu je eerste thema aan."
@@ -7353,6 +7539,10 @@ msgstr "Thema bewerken"
 #: src/app/main/ui/workspace/tokens/themes/theme_selector.cljs:74
 msgid "workspace.tokens.edit-themes"
 msgstr "Thema's bewerken"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:551
+msgid "workspace.tokens.edit-token"
+msgstr "%s token bewerken"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:41
 msgid "workspace.tokens.empty-input"
@@ -7395,6 +7585,10 @@ msgid "workspace.tokens.font-variant-not-found"
 msgstr ""
 "Fout bij instellen van lettertype gewicht/stijl. Deze lettertypestijl "
 "bestaat niet in het huidige lettertype"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
+msgid "workspace.tokens.font-weight-value-enter"
+msgstr "Voer een waarde in (300, vet, normaal cursief...) of een {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
 msgid "workspace.tokens.gaps"
@@ -7471,6 +7665,10 @@ msgstr ""
 "Deze verzameling is niet ingeschakeld. Verander het thema of activeer deze "
 "verzameling om wijzigingen in de viewport te zien"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
+msgid "workspace.tokens.individual-tokens"
+msgstr "Individuele tokens gebruiken"
+
 #: src/app/main/data/workspace/tokens/errors.cljs:49
 msgid "workspace.tokens.invalid-color"
 msgstr "Ongeldige kleurwaarde: %s"
@@ -7509,6 +7707,10 @@ msgstr ""
 "Ongeldige tokenwaarde: alleen none, underline en strike-through zijn "
 "toegestaan"
 
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr "Ongeldige waarde: moet verwijzen naar een samengesteld typografietoken."
+
 #: src/app/main/data/workspace/tokens/errors.cljs:61, src/app/main/data/workspace/tokens/errors.cljs:73, src/app/main/data/workspace/tokens/errors.cljs:77
 msgid "workspace.tokens.invalid-value"
 msgstr "Ongeldige tokenwaarde: %s"
@@ -7528,6 +7730,14 @@ msgstr "Thema"
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:200
 msgid "workspace.tokens.label.theme-placeholder"
 msgstr "Een thema toevoegen (bijv. Licht)"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
+msgid "workspace.tokens.letter-spacing-value-enter-composite"
+msgstr "Letterafstand of {alias} toevoegen"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Voer de regelafstand in — vermenigvuldigingsfactor, px, % of {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:220
 msgid "workspace.tokens.margins"
@@ -7598,6 +7808,7 @@ msgid "workspace.tokens.opacity-range"
 msgstr "De dekking moet tussen 0 en 100% of 0 en 1 zijn (bijv. 50% of 0,5)."
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:120
+#, fuzzy
 msgid "workspace.tokens.original-value"
 msgstr "Oorspronkelijke waarde: %s"
 
@@ -7613,12 +7824,17 @@ msgstr "Radius"
 msgid "workspace.tokens.ref-not-valid"
 msgstr "Referentie is niet geldig of zit niet in een actieve verzameling"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
+msgid "workspace.tokens.reference-composite"
+msgstr "Voer een alias voor tokentypografie in"
+
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
 msgid "workspace.tokens.reference-error"
 msgstr "Referentie fouten: "
 
 #: src/app/main/data/workspace/tokens/warnings.cljs:15, src/app/main/data/workspace/tokens/warnings.cljs:19, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:56, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:84, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:100, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:41, src/app/main/ui/workspace/tokens/management/create/input_tokens_value.cljs:46, src/app/main/ui/workspace/tokens/management/token_pill.cljs:121
+#, fuzzy
 msgid "workspace.tokens.resolved-value"
 msgstr "Opgeloste waarde: %s"
 
@@ -7694,6 +7910,7 @@ msgid "workspace.tokens.themes-list"
 msgstr "Lijst met thema's"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:608, src/app/main/ui/workspace/tokens/management/create/form.cljs:609
+#, fuzzy
 msgid "workspace.tokens.token-description"
 msgstr "Beschrijving"
 
@@ -7748,6 +7965,10 @@ msgstr "Importeren was succesvol. Sommige tokens zijn niet inbegrepen."
 #: src/app/main/data/workspace/tokens/import_export.cljs:49
 msgid "workspace.tokens.unknown-token-type-section"
 msgstr "Typ '%s' wordt niet ondersteund (%s)\n"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
+msgid "workspace.tokens.use-reference"
+msgstr "Referentie gebruiken"
 
 #: src/app/main/ui/workspace/tokens/management/token_pill.cljs:131
 msgid "workspace.tokens.value-not-valid"
@@ -8096,217 +8317,3 @@ msgstr "Automatisch opgeslagen versies worden %s dagen bewaard."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Klik om het pad te sluiten"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
-msgid "color-row.token-color-row.deleted-token"
-msgstr "Dit token bestaat niet of is verwijderd."
-
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
-msgid "color-token.empty-state"
-msgstr ""
-"Geen beschikbare kleurentokens. Controleer actieve sets/thema's of voeg "
-"nieuwe tokens toe."
-
-#: src/app/main/ui/dashboard/team.cljs:765
-msgid "dashboard.invitation-modal.delete"
-msgstr "Je gaat de uitnodigingen verwijderen op:"
-
-#: src/app/main/ui/dashboard/team.cljs:766
-msgid "dashboard.invitation-modal.resend"
-msgstr "Je gaat de uitnodigingen opnieuw versturen:"
-
-#: src/app/main/ui/dashboard/team.cljs:756
-msgid "dashboard.invitation-modal.title.delete-invitations"
-msgstr "Uitnodigingen verwijderen"
-
-#: src/app/main/ui/dashboard/team.cljs:757
-msgid "dashboard.invitation-modal.title.resend-invitations"
-msgstr "Uitnodigingen opnieuw versturen"
-
-#: src/app/main/ui/dashboard/team.cljs:949
-msgid "dashboard.order-invitations-by-role"
-msgstr "Sortering op rol"
-
-#: src/app/main/ui/dashboard/team.cljs:958
-msgid "dashboard.order-invitations-by-status"
-msgstr "Sortering op status"
-
-#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
-msgid "inspect.tabs.styles.panel.copy-to-clipboard"
-msgstr "Kopiëren naar klembord"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:22
-msgid "inspect.tabs.styles.panel.geometry"
-msgstr "Grootte & positie"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
-msgid "inspect.tabs.styles.panel.toggle-style"
-msgstr "Paneel &s wisselen"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:21
-msgid "inspect.tabs.styles.panel.token"
-msgstr "Tokens & thema's"
-
-#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
-msgid "inspect.tabs.styles.panel.tokens.active-sets"
-msgstr "Actieve verzamelingen"
-
-#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
-msgid "inspect.tabs.styles.panel.tokens.active-themes"
-msgstr "Actieve thema's"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:20
-msgid "inspect.tabs.styles.panel.variant"
-msgstr "Variant eigenschappen"
-
-#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
-msgid "inspect.tabs.styles.token.resolved-value"
-msgstr "Opgeloste waarde:"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:1043
-msgid "labels.about-penpot"
-msgstr "Over Penpot"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:26
-msgid "labels.blur"
-msgstr "Vervagen"
-
-#: src/app/main/ui/workspace/colorpicker.cljs:427
-msgid "labels.color"
-msgstr "Kleur"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:1030
-msgid "labels.community-contributions"
-msgstr "Gemeenschap & bijdragen"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:23
-msgid "labels.fill"
-msgstr "Vullen"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:1019
-msgid "labels.help-learning"
-msgstr "Hulp & studie"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:28
-msgid "labels.layout"
-msgstr "Opmaak"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:798
-msgid "labels.learning-center"
-msgstr "Studiecentrum"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:878
-msgid "labels.penpot-changelog"
-msgstr "Penpot wijzigingen"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:804
-msgid "labels.penpot-hub"
-msgstr "Penpot-hub"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
-msgid "labels.reference"
-msgstr "Referentie"
-
-#: src/app/main/ui/dashboard/team.cljs:788
-msgid "labels.resend"
-msgstr "Opnieuw versturen"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:27
-msgid "labels.shadow"
-msgstr "Schaduw"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
-msgid "labels.stroke"
-msgstr "Streek"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
-msgid "labels.styles"
-msgstr "Stijlen"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:33
-msgid "labels.svg"
-msgstr "SVG"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:25
-msgid "labels.text"
-msgstr "Tekst"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
-msgid "labels.typography"
-msgstr "Typografie"
-
-#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
-msgid "labels.variant"
-msgstr "Variant"
-
-#: src/app/main/ui/dashboard/sidebar.cljs:872
-msgid "labels.version-notes"
-msgstr "Versie %s opmerkingen"
-
-#: src/app/main/ui/inspect/styles/style_box.cljs:32
-msgid "labels.visibility"
-msgstr "Zichtbaarheid"
-
-#: src/app/main/ui/dashboard/team.cljs:825
-msgid "notifications.invitation-deleted"
-msgstr "Uitnodiging met succes verwijderd"
-
-#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
-msgid "shortcuts.create-component-variant"
-msgstr "Component/variant aanmaken"
-
-#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
-msgid "workspace.colorpicker.color-tokens"
-msgstr "Kleurtokens"
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
-msgid "workspace.component.swap.loop-error"
-msgstr "Componenten kunnen niet in zichzelf worden genest."
-
-#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:463
-msgid "workspace.component.switch.loop-error-multi"
-msgstr ""
-"Sommige exemplaren konden niet worden verwisseld. Componenten kunnen niet in "
-"zichzelf worden genest."
-
-#: src/app/main/ui/workspace/libraries.cljs:349
-msgid "workspace.libraries.connected-to"
-msgstr "Verbonden met"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:97
-msgid "workspace.tokens.composite-line-height-needs-font-size"
-msgstr ""
-"Regelafstand is afhankelijk van de lettergrootte. Voeg een lettergrootte toe "
-"om de opgeloste waarde te verkrijgen."
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:551
-msgid "workspace.tokens.edit-token"
-msgstr "%s token bewerken"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
-msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Voer een waarde in (300, vet, normaal cursief...) of een {alias}"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
-msgid "workspace.tokens.individual-tokens"
-msgstr "Individuele tokens gebruiken"
-
-#: src/app/main/data/workspace/tokens/errors.cljs:93
-msgid "workspace.tokens.invalid-token-value-typography"
-msgstr "Ongeldige waarde: moet verwijzen naar een samengesteld typografietoken."
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
-msgid "workspace.tokens.letter-spacing-value-enter-composite"
-msgstr "Letterafstand of {alias} toevoegen"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
-msgid "workspace.tokens.line-height-value-enter"
-msgstr "Voer de regelafstand in — vermenigvuldigingsfactor, px, % of {alias}"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
-msgid "workspace.tokens.reference-composite"
-msgstr "Voer een alias voor tokentypografie in"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
-msgid "workspace.tokens.use-reference"
-msgstr "Referentie gebruiken"
