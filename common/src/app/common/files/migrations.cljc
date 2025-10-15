@@ -234,7 +234,7 @@
               shape))
 
           (update-container [container]
-            (update container :objects d/update-vals fix-line-paths))]
+            (d/update-when container :objects d/update-vals fix-line-paths))]
 
     (-> data
         (update :pages-index d/update-vals update-container)
@@ -288,7 +288,9 @@
               (let [[deleted objects] (clean-objects objects)]
                 (if (and (pos? deleted) (< n 1000))
                   (recur (inc n) objects)
-                  (assoc container :objects objects)))))]
+                  (-> container
+                      (assoc :objects objects)
+                      (d/without-nils))))))]
 
     (-> data
         (update :pages-index d/update-vals clean-container)
@@ -386,21 +388,20 @@
                 (dissoc :fill-color :fill-opacity))))
 
           (update-container [container]
-            (if (contains? container :objects)
-              (loop [objects (:objects container)
-                     shapes  (->> (vals objects)
-                                  (filter cfh/image-shape?))]
-                (if-let [shape (first shapes)]
-                  (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
-                    (if (identical? shape shape')
-                      (recur objects (rest shapes))
-                      (recur (-> objects
-                                 (assoc id shape')
-                                 (d/update-when frame-id dissoc :thumbnail))
-                             (rest shapes))))
-                  (assoc container :objects objects)))
-              container))]
-
+            (loop [objects (:objects container)
+                   shapes  (->> (vals objects)
+                                (filter cfh/image-shape?))]
+              (if-let [shape (first shapes)]
+                (let [{:keys [id frame-id] :as shape'} (process-shape shape)]
+                  (if (identical? shape shape')
+                    (recur objects (rest shapes))
+                    (recur (-> objects
+                               (assoc id shape')
+                               (d/update-when frame-id dissoc :thumbnail))
+                           (rest shapes))))
+                (-> container
+                    (assoc :objects objects)
+                    (d/without-nils)))))]
     (-> data
         (update :pages-index d/update-vals update-container)
         (d/update-when :components d/update-vals update-container))))
@@ -1621,6 +1622,14 @@
   [data _]
   (d/update-when data :tokens-lib types.tokens-lib/fix-duplicate-token-set-ids))
 
+(defmethod migrate-data "0014-clear-components-nil-objects"
+  [data _]
+  ;; Because of a bug in migrations, several files have migrations
+  ;; applied in an incorrect order and because of other bug on old
+  ;; migrations, some files have components with `:objects` with `nil`
+  ;; as value; this migration fixes it.
+  (d/update-when data :components d/update-vals d/without-nils))
+
 (def available-migrations
   (into (d/ordered-set)
         ["legacy-2"
@@ -1691,4 +1700,5 @@
          "0012-fix-position-data"
          "0013-fix-component-path"
          "0013-clear-invalid-strokes-and-fills"
-         "0014-fix-tokens-lib-duplicate-ids"]))
+         "0014-fix-tokens-lib-duplicate-ids"
+         "0014-clear-components-nil-objects"]))
