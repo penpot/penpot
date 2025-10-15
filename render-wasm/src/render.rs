@@ -808,9 +808,9 @@ impl RenderState {
 
         if self.options.is_debug_visible() {
             let shape_selrect_bounds = self.get_shape_selrect_bounds(&shape);
-            let shape_extrect_bounds = self.get_shape_extrect_bounds(&shape, shapes, modifiers);
-            debug::render_debug_shape(self, shape_selrect_bounds, shape_extrect_bounds);
+            debug::render_debug_shape(self, Some(shape_selrect_bounds), None);
         }
+
         if apply_to_current_surface {
             self.apply_drawing_to_render_canvas(Some(&shape));
         }
@@ -1293,6 +1293,12 @@ impl RenderState {
                         tree,
                         modifiers,
                     );
+
+                if self.options.is_debug_visible() {
+                    let shape_extrect_bounds =
+                        self.get_shape_extrect_bounds(&transformed_element, tree, modifiers);
+                    debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
+                }
 
                 if !is_visible {
                     continue;

@@ -147,8 +147,8 @@ pub fn render_workspace_current_tile(
 
 pub fn render_debug_shape(
     render_state: &mut RenderState,
-    shape_selrect: skia::Rect,
-    shape_extrect: skia::Rect,
+    shape_selrect: Option<skia::Rect>,
+    shape_extrect: Option<skia::Rect>,
 ) {
     let canvas = render_state.surfaces.canvas(SurfaceId::Debug);
 
@@ -157,11 +157,13 @@ pub fn render_debug_shape(
     paint.set_color(skia::Color::RED);
     paint.set_stroke_width(1.);
 
-    canvas.draw_rect(shape_selrect, &paint);
+    if let Some(rect) = shape_selrect {
+        canvas.draw_rect(rect, &paint);
+    }
 
-    if shape_extrect != shape_selrect {
+    if let Some(rect) = shape_extrect {
         paint.set_color(skia::Color::BLUE);
-        canvas.draw_rect(shape_extrect, &paint);
+        canvas.draw_rect(rect, &paint);
     }
 }
 
