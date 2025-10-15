@@ -12,6 +12,7 @@
 
 ### :bug: Bugs fixed
 
+- Fix pan cursor not disabling viewport guides [Github #6985](https://github.com/penpot/penpot/issues/6985)
 
 ## 2.11.0 (Unreleased)
 

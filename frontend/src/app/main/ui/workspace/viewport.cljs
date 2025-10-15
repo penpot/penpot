@@ -259,7 +259,7 @@
         show-rulers?             (and (contains? layout :rulers) (not hide-ui?))
 
 
-        disabled-guides?         (or drawing-tool transform path-drawing? path-editing?)
+        disabled-guides?         (or drawing-tool transform path-drawing? path-editing? @space? @mod?)
 
         single-select?           (= (count selected-shapes) 1)
 
