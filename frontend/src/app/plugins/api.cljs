@@ -8,6 +8,7 @@
   "RPC for plugins runtime."
   (:require
    [app.common.data :as d]
+   [app.common.data.macros :as dm]
    [app.common.files.changes-builder :as cb]
    [app.common.files.helpers :as cfh]
    [app.common.geom.point :as gpt]
@@ -409,9 +410,27 @@
           (u/display-not-valid :generateMarkup-type type)
 
           :else
-          (let [objects (u/locate-objects)
-                shapes (into [] (map u/proxy->shape) shapes)]
-            (cg/generate-formatted-markup-code objects type shapes)))))
+          (let [resolved-code
+                (->> shapes
+                     (into
+                      #{}
+                      (map (fn [s]
+                             (-> (u/proxy->shape s)
+                                 (assoc :page-id (obj/get s "$page"))
+                                 (assoc :file-id (obj/get s "$file"))))))
+                     (group-by :page-id)
+
+                     (reduce-kv
+                      (fn [acc _ shapes]
+                        (let [shape (first shapes)
+                              objects (u/locate-objects (:file-id shape) (:page-id shape))
+                              resolved-shapes
+                              (->> (cfh/clean-loops objects shapes)
+                                   (mapcat #(cfh/get-children-with-self objects (:id %))))]
+                          (conj acc (cg/generate-formatted-markup-code objects type resolved-shapes))))
+                      []))]
+
+            (->> resolved-code (str/join "\n"))))))
 
     :generateStyle
     (fn [shapes options]
@@ -432,18 +451,35 @@
           (u/display-not-valid :generateStyle-includeChildren children?)
 
           :else
-          (let [objects (u/locate-objects)
-                shapes
-                (->> (into #{} (map u/proxy->shape) shapes)
-                     (cfh/clean-loops objects))
+          (let [resolved-styles
+                (->> shapes
+                     (into
+                      #{}
+                      (map (fn [s]
+                             (-> (u/proxy->shape s)
+                                 (assoc :page-id (obj/get s "$page"))
+                                 (assoc :file-id (obj/get s "$file"))))))
+                     (group-by :page-id)
 
-                shapes-with-children
-                (if children?
-                  (->> shapes
-                       (mapcat #(cfh/get-children-with-self objects (:id %))))
-                  shapes)]
-            (cg/generate-style-code
-             objects type shapes shapes-with-children {:with-prelude? prelude?})))))
+                     (reduce-kv
+                      (fn [acc _ shapes]
+                        (let [shape (first shapes)
+                              objects (u/locate-objects (:file-id shape) (:page-id shape))
+
+                              resolved-shapes
+                              (cond->> (cfh/clean-loops objects shapes)
+                                children?
+                                (mapcat #(cfh/get-children-with-self objects (:id %))))]
+
+                          (conj
+                           acc
+                           (cg/generate-style-code
+                            objects type shapes resolved-shapes {:with-prelude? prelude?}))))
+                      []))]
+            (dm/str
+             (if prelude? (cg/prelude type) "")
+             (->> resolved-styles
+                  (str/join "\n\n")))))))
 
     :generateFontFaces
     (fn [shapes]

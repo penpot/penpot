@@ -32,3 +32,8 @@
          (case type
            "css" css/generate-style)]
      (generate-style objects root-shapes all-shapes options))))
+
+(defn prelude
+  [type]
+  (case type
+    "css" css/prelude))
