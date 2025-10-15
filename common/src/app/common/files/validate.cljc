@@ -83,7 +83,7 @@
    [:file-id ::sm/uuid]
    [:page-id {:optional true} [:maybe ::sm/uuid]]])
 
-(def check-error!
+(def check-error
   (sm/check-fn schema:error))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -99,21 +99,17 @@
 
 (defn- report-error
   [code hint shape file page & {:as args}]
-  (let [error {:code code
-               :hint hint
-               :shape shape
-               :file-id (:id file)
-               :page-id (:id page)
-               :shape-id (:id shape)
-               :args args}]
+  (let [error (d/without-nils
+               {:code code
+                :hint hint
+                :shape shape
+                :file-id (:id file)
+                :page-id (:id page)
+                :shape-id (:id shape)
+                :args args})]
 
-    (dm/assert!
-     "expected a valid `*errors*` dynamic binding"
-     (some? *errors*))
-
-    (dm/assert!
-     "expected valid error"
-     (check-error! error))
+    (assert (some? *errors*) "expected a valid `*errors*` dynamic binding")
+    (assert (check-error error))
 
     (vswap! *errors* conj error)))
 
