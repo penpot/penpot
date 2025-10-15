@@ -1,14 +1,21 @@
-name: DEVELOP - Build and Upload Penpot Bundle
+name: _DEVELOP
 
 on:
   schedule:
     - cron: '16 5-20 * * 1-5'
 
 jobs:
-  build-develop-bundle:
+  build-bundle:
     uses: ./.github/workflows/build-bundle.yml
     secrets: inherit
     with:
       gh_ref: "develop"
       build_wasm: "yes"
       build_storybook: "yes"
+
+  build-docker:
+    needs: build-bundle
+    uses: ./.github/workflows/build-docker.yml
+    secrets: inherit
+    with:
+      gh_ref: "develop"

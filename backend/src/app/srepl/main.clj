@@ -16,7 +16,7 @@
    [app.common.features :as cfeat]
    [app.common.files.validate :as cfv]
    [app.common.logging :as l]
-   [app.common.pprint :as p]
+   [app.common.pprint :as pp]
    [app.common.schema :as sm]
    [app.common.spec :as us]
    [app.common.time :as ct]
@@ -58,7 +58,7 @@
 (defn print-tasks
   []
   (let [tasks (:app.worker/registry main/system)]
-    (p/pprint (keys tasks) :level 200)))
+    (pp/pprint (keys tasks) :level 200)))
 
 (defn run-task!
   ([tname]
@@ -130,18 +130,18 @@
 (defn reset-password!
   "Reset a password to a specific one for a concrete user or all users
   if email is `:all` keyword."
-  [& {:keys [email password] :or {password "123123"} :as params}]
-  (when-not email
-    (throw (IllegalArgumentException. "email is mandatory")))
+  [& {:keys [email password]}]
+  (assert (string? email) "expected email")
+  (assert (string? password) "expected password")
 
   (some-> main/system
           (db/tx-run!
            (fn [{:keys [::db/conn] :as system}]
-             (let [password (derive-password password)]
-               (if (= email :all)
-                 (db/exec! conn ["update profile set password=?" password])
-                 (let [email (str/lower email)]
-                   (db/exec! conn ["update profile set password=? where email=?" password email]))))))))
+             (let [password (derive-password password)
+                   email    (str/lower email)]
+               (-> (db/exec-one! conn ["update profile set password=? where email=?" password email])
+                   (db/get-update-count)
+                   (pos?)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; FEATURES
@@ -548,6 +548,17 @@
                  :rollback rollback?
                  :elapsed elapsed))))))
 
+
+(defn mark-file-as-trimmed
+  [id]
+  (let [id (h/parse-uuid id)]
+    (db/tx-run! main/system (fn [cfg]
+                              (-> (db/update! cfg :file
+                                              {:has-media-trimmed true}
+                                              {:id id}
+                                              {::db/return-keys false})
+                                  (db/get-update-count)
+                                  (pos?))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DELETE/RESTORE OBJECTS (WITH CASCADE, SOFT)

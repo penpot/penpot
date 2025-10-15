@@ -423,38 +423,41 @@
   (fn [{:keys [kind max min ordered] :as props} children _]
     (let [kind  (or (last children) kind)
 
-          pred
+          child-pred
           (cond
             (fn? kind)  kind
             (nil? kind) any?
             :else       (validator kind))
 
+          type-pred
+          (if ordered
+            d/ordered-set?
+            set?)
+
           pred
           (cond
             (and max min)
             (fn [value]
-              (let [size (count value)]
-                (and (set? value)
-                     (<= min size max)
-                     (every? pred value))))
+              (and (type-pred value)
+                   (every? child-pred value)
+                   (<= min (count value) max)))
 
             min
             (fn [value]
-              (let [size (count value)]
-                (and (set? value)
-                     (<= min size)
-                     (every? pred value))))
+              (and (type-pred value)
+                   (every? child-pred value)
+                   (<= min (count value))))
 
             max
             (fn [value]
-              (let [size (count value)]
-                (and (set? value)
-                     (<= size max)
-                     (every? pred value))))
+              (and (type-pred value)
+                   (every? child-pred value)
+                   (<= (count value) max)))
 
             :else
             (fn [value]
-              (every? pred value)))
+              (and (type-pred value)
+                   (every? child-pred value))))
 
           empty-set
           (if ordered

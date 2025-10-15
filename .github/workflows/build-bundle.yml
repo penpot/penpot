@@ -1,11 +1,11 @@
-name: Build and Upload Penpot Bundle
+name: Bundles Builder
 
 on:
   # Create bundle from manual action
   workflow_dispatch:
     inputs:
       gh_ref:
-        description: 'Name of the branch'
+        description: 'Name of the branch or ref'
         type: string
         required: true
         default: 'develop'
@@ -22,7 +22,7 @@ on:
   workflow_call:
     inputs:
       gh_ref:
-        description: 'Name of the branch'
+        description: 'Name of the branch or ref'
         type: string
         required: true
         default: 'develop'
@@ -56,10 +56,9 @@ jobs:
       - name: Extract some useful variables
         id: vars
         run: |
-          echo "commit_hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "gh_ref=${{ inputs.gh_ref || github.ref_name }}" >> $GITHUB_OUTPUT
 
-      - name: Run manage.sh build-bundle from host
+      - name: Build bundle
         env:
           BUILD_WASM: ${{ inputs.build_wasm }}
           BUILD_STORYBOOK: ${{ inputs.build_storybook }}
@@ -76,13 +75,6 @@ jobs:
           zip -r zips/penpot.zip penpot
 
       - name: Upload Penpot bundle to S3
-        if: github.ref_type == 'branch'
-        run: |
-          aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}-latest.zip
-          aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.commit_hash }}.zip
-
-      - name: Upload Penpot bundle to S3
-        if: github.ref_type == 'tag'
         run: |
           aws s3 cp zips/penpot.zip s3://${{ secrets.S3_BUCKET }}/penpot-${{ steps.vars.outputs.gh_ref }}.zip
 
