@@ -171,7 +171,7 @@
    :layout-container  layout-container-flex-attrs
    :layout-item       layout-item-attrs})
 
-(def shadow-keys [:style :color :offset-x :offset-y :blur :spread])
+(def shadow-keys [:style :color :offset-x :offset-y :blur :spread :hidden])
 
 (defn shadow-eq
   "Function to check if two shadows are equivalent to the multiple selection (ignores their ids)"

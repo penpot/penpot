@@ -53,39 +53,46 @@
         on-remove
         (mf/use-fn (mf/deps index) #(on-remove index))
 
+        trigger-bounding-box-cloaking
+        (mf/use-fn
+         (mf/deps shadow-id)
+         (fn []
+           (when shadow-id
+             (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id])))))
+
         on-update-offset-x
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index trigger-bounding-box-cloaking)
          (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (trigger-bounding-box-cloaking)
            (on-update index :offset-x value)))
 
         on-update-offset-y
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index trigger-bounding-box-cloaking)
          (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (trigger-bounding-box-cloaking)
            (on-update index :offset-y value)))
 
         on-update-spread
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index trigger-bounding-box-cloaking)
          (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (trigger-bounding-box-cloaking)
            (on-update index :spread value)))
 
         on-update-blur
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index trigger-bounding-box-cloaking)
          (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (trigger-bounding-box-cloaking)
            (on-update index :blur value)))
 
         on-update-color
         (mf/use-fn
-         (mf/deps index on-update)
+         (mf/deps index on-update trigger-bounding-box-cloaking)
          (fn [color]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (trigger-bounding-box-cloaking)
            (on-update index :color color)))
 
         on-detach-color
@@ -93,16 +100,16 @@
 
         on-style-change
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index trigger-bounding-box-cloaking)
          (fn [value]
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (trigger-bounding-box-cloaking)
            (on-update index :style (keyword value))))
 
         on-toggle-visibility
         (mf/use-fn
-         (mf/deps index)
+         (mf/deps index trigger-bounding-box-cloaking)
          (fn []
-           (st/emit! (dw/trigger-bounding-box-cloaking [shadow-id]))
+           (trigger-bounding-box-cloaking)
            (on-toggle-visibility index)))
 
         on-toggle-open
