@@ -52,7 +52,7 @@
                         :content #(mf/html
                                    [:div {:class (stl/css :tooltip-token)}
                                     [:div {:class (stl/css :tooltip-token-title)} (tr "inspect.tabs.styles.token.resolved-value")]
-                                    [:div {:class (stl/css :tooltip-token-value)} (:resolved-value token)]])}
+                                    [:div {:class (stl/css :tooltip-token-value)} (if (= :typography (:type token)) (:name token) (:resolved-value token))]])}
            [:> property-detail-copiable* {:token token
                                           :copied copied
                                           :on-click copy-attr} detail]]
