@@ -299,8 +299,12 @@
   @include textEllipsis;
   color: var(--token-color-wrapper-foreground-color);
   block-size: $sz-32;
-  display: flex;
-  align-items: center;
+  line-height: $sz-32;
+}
+
+.token-tooltip {
+  min-width: 0;
+  inline-size: inherit;
 }
 
 .token-name-tooltip {
