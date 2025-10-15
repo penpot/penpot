@@ -93,6 +93,8 @@
         image          (:image background)
         format         (if id? "rounded" "square")
         element-id     (mf/use-id)
+        has-opacity?  (and (some? (:color background))
+                           (< (:opacity background) 1))
         on-click
         (mf/use-fn
          (mf/deps background on-click)
@@ -124,18 +126,20 @@
      [:> element-type props
       (cond
         (some? gradient-type)
-        [:span {:class (stl/css :swatch-gradient)
-                :style {:background-image (str (uc/gradient->css gradient-data) ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
+        [:div {:class (stl/css :swatch-gradient)
+               :style {:background-image (str (uc/gradient->css gradient-data) ", repeating-conic-gradient(lightgray 0% 25%, white 0% 50%)")}}]
 
         (some? image)
         (let [uri (cfg/resolve-file-media image)]
-          [:span {:class (stl/css :swatch-image)
-                  :style {:background-image (str/ffmt "url(%)" uri)}}])
+          [:div {:class (stl/css :swatch-image)
+                 :style {:background-image (str/ffmt "url(%)" uri)}}])
         has-errors
-        [:span {:class (stl/css :swatch-error)}]
+        [:div {:class (stl/css :swatch-error)}]
         :else
-        [:span {:class (stl/css :swatch-opacity)}
-         [:span {:class (stl/css :swatch-solid-side)
-                 :style {:background (uc/color->background (assoc background :opacity 1))}}]
-         [:span {:class (stl/css :swatch-opacity-side)
-                 :style {"--solid-color-overlay" (str (uc/color->background background))}}]])]]))
+        [:div {:class (stl/css :swatch-opacity)}
+         [:div {:class (stl/css :swatch-solid-side)
+                :style {:background (uc/color->background (assoc background :opacity 1))}}]
+         [:div {:class (stl/css-case :swatch-opacity-side true
+                                     :swatch-opacity-side-transparency has-opacity?
+                                     :swatch-opacity-side-solid-color (not has-opacity?))
+                :style {"--solid-color-overlay" (str (uc/color->background background))}}]])]]))

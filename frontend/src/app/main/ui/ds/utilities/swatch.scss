@@ -105,10 +105,11 @@
 }
 
 .swatch-opacity {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto;
 }
 
-.swatch-opacity-side {
+.swatch-opacity-side-transparency {
   background-image:
   /* solid‑colour overlay */
   /* checkerboard pattern */
@@ -117,6 +118,12 @@
   background-size: cover, var(--checkerboard-size);
   background-position: center, center;
   background-repeat: no-repeat, repeat;
+  clip-path: inset(0 0 0 0 round 0 #{$br-4} #{$br-4} 0);
+}
+
+.swatch-opacity-side-solid-color {
+  background: var(--solid-color-overlay);
+  background-size: cover;
 }
 
 .swatch-solid-side,
