@@ -360,7 +360,7 @@
              nil)
 
         applied-to-p1 (:p1 applied-tokens)
-        applied-to-p2 (:p1 applied-tokens)
+        applied-to-p2 (:p2 applied-tokens)
         applied-to-p3 (:p3 applied-tokens)
         applied-to-p4 (:p4 applied-tokens)
 
