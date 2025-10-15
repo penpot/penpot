@@ -58,9 +58,9 @@ export JAVA_OPTS="\
        -Dlog4j2.configurationFile=log4j2-devenv.xml \
        -Djdk.tracePinnedThreads=full \
        -Dim4java.useV7=true \
+       -XX:+UnlockExperimentalVMOptions \
        -XX:+UseShenandoahGC \
        -XX:+UseCompactObjectHeaders \
-       -XX:+UnlockExperimentalVMOptions \
        -XX:ShenandoahGCMode=generational \
        -XX:-OmitStackTraceInFastThrow  \
        --sun-misc-unsafe-memory-access=allow \
