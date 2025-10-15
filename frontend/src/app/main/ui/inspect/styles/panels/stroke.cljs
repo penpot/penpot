@@ -47,7 +47,7 @@
 
 ;; Current token implementation on fills only supports one token per shape and has to be the first fill
 ;; This must be improved in the future
-(defn- has-token?
+(defn- has-color-token?
   "Returns true if the resolved token matches the color and is the first fill (idx = 0)."
   [resolved-token stroke-type idx]
   (and (= (:resolved-value resolved-token) (:color stroke-type))
@@ -66,17 +66,17 @@
                 property-name (cmm/get-css-rule-humanized property)
                 property-value (css/get-css-property objects stroke property)
                 resolved-token (get-resolved-token property shape resolved-tokens)
-                has-token (has-token? resolved-token stroke-type idx)]
+                has-color-token (has-color-token? resolved-token stroke-type idx)]
             (if (= property :border-color)
               [:> color-properties-row* {:key (str idx property)
                                          :term property-name
                                          :color stroke-type
-                                         :token (when has-token resolved-token)
+                                         :token (when has-color-token resolved-token)
                                          :format color-space
                                          :copiable true}]
               [:> properties-row* {:key  (str idx property)
                                    :term (d/name property-name)
                                    :detail (dm/str value)
-                                   :token (when has-token resolved-token)
+                                   :token resolved-token
                                    :property property-value
                                    :copiable true}]))))])])
