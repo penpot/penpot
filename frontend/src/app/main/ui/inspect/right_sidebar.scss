@@ -146,9 +146,12 @@
 .viewer-tab-switcher {
   --tabs-nav-padding-inline-start: 0;
   --tabs-nav-padding-inline-end: var(--sp-m);
-  --max-inspect-tab-height: calc(100vh - 12rem);
 
+  /* same height as .element-options in workspace/sidebar/options.scss */
+  /* which is one of the parents of this component */
+  --max-inspect-tab-height: var(--sidebar-element-options-height);
   max-block-size: var(--max-inspect-tab-height);
+
   overflow: auto;
 }
 
