@@ -296,8 +296,9 @@
         (->> wasm.api/module
              (p/fmap (fn [ready?]
                        (when ready?
-                         (reset! canvas-init? true)
-                         (wasm.api/assign-canvas canvas)))))
+                         (let [init? (wasm.api/init-canvas-context canvas)]
+                           (reset! canvas-init? init?)
+                           (when-not init? (js/alert "WebGL not supported")))))))
         (fn []
           (wasm.api/clear-canvas))))
 

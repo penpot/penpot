@@ -954,7 +954,7 @@
     (h/call wasm/internal-module "_init_shapes_pool" total-shapes)
     (set-objects base-objects)))
 
-(def ^:private canvas-options
+(def ^:private context-options
   #js {:antialias false
        :depth true
        :stencil true
@@ -971,23 +971,30 @@
     (dbg/enabled? :wasm-viewbox)
     (bit-or 2r00000000000000000000000000000001)))
 
-(defn assign-canvas
+(defn set-canvas-size
+  [canvas]
+  (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
+  (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
+
+(defn init-canvas-context
   [canvas]
   (let [gl      (unchecked-get wasm/internal-module "GL")
         flags   (debug-flags)
-        context (.getContext ^js canvas "webgl2" canvas-options)
-        ;; Register the context with emscripten
-        handle  (.registerContext ^js gl context #js {"majorVersion" 2})]
-    (.makeContextCurrent ^js gl handle)
+        context-id (if (dbg/enabled? :wasm-gl-context-init-error) "fail" "webgl2")
+        context (.getContext ^js canvas context-id context-options)
+        context-init? (not (nil? context))]
+    (when-not (nil? context)
+      (let [handle (.registerContext ^js gl context #js {"majorVersion" 2})]
+        (.makeContextCurrent ^js gl handle)
 
-    ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
-    (.getExtension context "WEBGL_debug_renderer_info")
+        ;; Force the WEBGL_debug_renderer_info extension as emscripten does not enable it
+        (.getExtension context "WEBGL_debug_renderer_info")
 
-    ;; Initialize Wasm Render Engine
-    (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
-    (h/call wasm/internal-module "_set_render_options" flags dpr))
-  (set! (.-width canvas) (* dpr (.-clientWidth ^js canvas)))
-  (set! (.-height canvas) (* dpr (.-clientHeight ^js canvas))))
+        ;; Initialize Wasm Render Engine
+        (h/call wasm/internal-module "_init" (/ (.-width ^js canvas) dpr) (/ (.-height ^js canvas) dpr))
+        (h/call wasm/internal-module "_set_render_options" flags dpr)))
+    (set-canvas-size canvas)
+    context-init?))
 
 (defn clear-canvas
   []
