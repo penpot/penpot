@@ -7527,10 +7527,6 @@ msgstr "גודל"
 msgid "workspace.tokens.stroke-width-range"
 msgstr "עובי הקו חייב להיות גדול או שווה ל־0."
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
-msgid "workspace.tokens.text-decoration-value-enter"
-msgstr "נא למלא עיצוב טקסט: none | underline | strike-through"
-
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"
 msgstr "ערכת עיצוב %s"
@@ -8110,10 +8106,6 @@ msgstr "להשתמש בהפניה"
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
 msgid "workspace.tokens.reference-composite"
 msgstr "נא למלא כינוי לטיפוגרפיית אסימון"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
-msgid "workspace.tokens.letter-spacing-value-enter-composite"
-msgstr "הוספת ריווח תווים או {alias}"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:93
 msgid "workspace.tokens.invalid-token-value-typography"

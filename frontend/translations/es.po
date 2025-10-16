@@ -7484,7 +7484,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
 msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Introduce un valor (300, Bold, Regular Italic...) o un {alias}"
+msgstr "Font weight (300, Bold, Regular Italic...) o un {alias}"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
@@ -7595,11 +7595,11 @@ msgstr "Añade un Tema (p. ej. Claro)"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
 msgid "workspace.tokens.letter-spacing-value-enter-composite"
-msgstr "Introduce letter spacing o {alias}"
+msgstr "Letter spacing o {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
 msgid "workspace.tokens.line-height-value-enter"
-msgstr "Introduce line height — multiplicador, px o % — o {alias}"
+msgstr "Line height (multiplicador, px o %) o {alias}"
 
 #: src/app/main/data/workspace/tokens/errors.cljs:57
 msgid "workspace.tokens.missing-references"
@@ -7713,11 +7713,11 @@ msgstr "Stroke width debe ser mayor o igual a 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1012, src/app/main/ui/workspace/tokens/management/create/form.cljs:1051
 msgid "workspace.tokens.text-case-value-enter"
-msgstr "Introduce: none | uppercase | lowercase | capitalize o {alias}"
+msgstr "none | uppercase | lowercase | capitalize o {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
 msgid "workspace.tokens.text-decoration-value-enter"
-msgstr "Introduce text decoration: none | underline | strike-through"
+msgstr "none | underline | strike-through o {alias}"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"

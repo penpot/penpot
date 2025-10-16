@@ -7673,11 +7673,7 @@ msgstr "De dikte van de streek moet groter zijn dan of gelijk zijn aan 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1012, src/app/main/ui/workspace/tokens/management/create/form.cljs:1051
 msgid "workspace.tokens.text-case-value-enter"
-msgstr "Voer in: none | uppercase | lowercase | capitalize of {alias}"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
-msgid "workspace.tokens.text-decoration-value-enter"
-msgstr "Voer tekstdecoratie in: none | underline | strike-through"
+msgstr "none | uppercase | lowercase | capitalize of {alias}"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"
@@ -8283,10 +8279,6 @@ msgstr ""
 msgid "workspace.tokens.edit-token"
 msgstr "%s token bewerken"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
-msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Voer een waarde in (300, vet, normaal cursief...) of een {alias}"
-
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
 msgid "workspace.tokens.individual-tokens"
 msgstr "Individuele tokens gebruiken"
@@ -8294,14 +8286,6 @@ msgstr "Individuele tokens gebruiken"
 #: src/app/main/data/workspace/tokens/errors.cljs:93
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr "Ongeldige waarde: moet verwijzen naar een samengesteld typografietoken."
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
-msgid "workspace.tokens.letter-spacing-value-enter-composite"
-msgstr "Letterafstand of {alias} toevoegen"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
-msgid "workspace.tokens.line-height-value-enter"
-msgstr "Voer de regelafstand in — vermenigvuldigingsfactor, px, % of {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
 msgid "workspace.tokens.reference-composite"

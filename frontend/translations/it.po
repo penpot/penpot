@@ -7387,10 +7387,6 @@ msgstr ""
 "Errore nell’impostazione del peso/stile del font. Questo stile non esiste "
 "nel font corrente"
 
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
-msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Inserisci: 400, Bold, 700 Italico, o {alias}"
-
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
 msgid "workspace.tokens.gaps"
 msgstr "Spaziature"
@@ -7670,11 +7666,7 @@ msgstr "La larghezza della traccia deve essere maggiore o uguale a 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1012, src/app/main/ui/workspace/tokens/management/create/form.cljs:1051
 msgid "workspace.tokens.text-case-value-enter"
-msgstr "Inserisci: none | uppercase | lowercase | capitalize or {alias}"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
-msgid "workspace.tokens.text-decoration-value-enter"
-msgstr "Inserisci decorazione del testo: none | underline | strike-through"
+msgstr "none | uppercase | lowercase | capitalize or {alias}"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"
@@ -8320,14 +8312,6 @@ msgstr "Utilizza token individuali"
 msgid "workspace.tokens.invalid-token-value-typography"
 msgstr ""
 "Valore non valido: deve fare riferimento a un token tipografico composito."
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
-msgid "workspace.tokens.letter-spacing-value-enter-composite"
-msgstr "Aggiungi spaziatura tra lettere o {alias"
-
-#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
-msgid "workspace.tokens.line-height-value-enter"
-msgstr "Inserisci interlinea — moltiplicatore, px, %, o {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:744
 msgid "workspace.tokens.reference-composite"
