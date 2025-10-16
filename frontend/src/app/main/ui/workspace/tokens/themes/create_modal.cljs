@@ -319,7 +319,8 @@
         (mf/use-fn
          (mf/deps on-toggle-token-set)
          (fn [set-id]
-           (on-toggle-token-set set-id)))]
+           (let [set (ctob/get-set lib set-id)]
+             (on-toggle-token-set (ctob/get-name set)))))]
 
     [:div {:class (stl/css :themes-modal-wrapper)}
      [:> heading* {:level 2 :typography "headline-medium" :class (stl/css :themes-modal-title)}
