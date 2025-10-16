@@ -7,7 +7,7 @@ use crate::shapes::{
     self, GrowType, TextAlign, TextDecoration, TextDirection, TextTransform, Type,
 };
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
-use crate::{with_current_shape, with_current_shape_mut, with_state_mut, STATE};
+use crate::{with_current_shape_mut, with_state_mut, with_state_mut_current_shape, STATE};
 
 const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
@@ -370,7 +370,7 @@ pub extern "C" fn update_shape_text_layout_for_all() {
 
 #[no_mangle]
 pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
-    with_current_shape!(state, |shape: &Shape| {
+    with_state_mut_current_shape!(state, |shape: &Shape| {
         if let Type::Text(text_content) = &shape.shape_type {
             let mut matrix = Matrix::new_identity();
             let shape_matrix = shape.get_concatenated_matrix(&state.shapes);
@@ -384,11 +384,11 @@ pub extern "C" fn get_caret_position_at(x: f32, y: f32) -> i32 {
                 if let Some(position_with_affinity) =
                     text_content.get_caret_position_at(&mapped_point)
                 {
-                    return position_with_affinity.position;
+                    return position_with_affinity.position_with_affinity.position;
                 }
             }
         } else {
-            panic!("Trying to update grow type in a shape that it's not a text shape");
+            panic!("Trying to get caret position of a shape that it's not a text shape");
         }
     });
     -1

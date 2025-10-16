@@ -945,7 +945,17 @@ impl RenderState {
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
-            self.render_shape_tree_partial(tree, modifiers, structure, scale_content, timestamp)?;
+            if tree.len() != 0 {
+                self.render_shape_tree_partial(
+                    tree,
+                    modifiers,
+                    structure,
+                    scale_content,
+                    timestamp,
+                )?;
+            } else {
+                println!("Empty tree");
+            }
             self.flush_and_submit();
 
             if self.render_in_progress {

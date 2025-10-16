@@ -1130,8 +1130,7 @@ impl Shape {
             if let Some(path) = shape_type.path_mut() {
                 path.transform(transform);
             }
-        }
-        if let Type::Text(text) = &mut self.shape_type {
+        } else if let Type::Text(text) = &mut self.shape_type {
             text.transform(transform);
         }
     }

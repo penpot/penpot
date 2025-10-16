@@ -432,6 +432,7 @@
        (when show-text-editor?
          (if (features/active-feature? @st/state "text-editor/v2")
            [:& editor-v2/text-editor {:shape editing-shape
+                                      :canvas-ref canvas-ref
                                       :ref text-editor-ref}]
            [:& editor-v1/text-editor-svg {:shape editing-shape
                                           :ref text-editor-ref}]))

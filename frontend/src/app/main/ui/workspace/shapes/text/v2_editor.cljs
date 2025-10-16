@@ -61,12 +61,12 @@
 
 (defn- initialize-event-handlers
   "Internal editor events handler initializer/destructor"
-  [shape-id content selection-ref editor-ref container-ref text-color]
+  [shape-id content editor-ref canvas-ref container-ref text-color]
   (let [editor-node
         (mf/ref-val editor-ref)
 
-        selection-node
-        (mf/ref-val selection-ref)
+        canvas-node
+        (mf/ref-val canvas-ref)
 
         ;; Gets the default font from the workspace refs.
         default-font
@@ -81,11 +81,10 @@
           default-font))
 
         options
-        #js {:styleDefaults style-defaults
-             :selectionImposterElement selection-node}
+        #js {:styleDefaults style-defaults}
 
         instance
-        (dwt/create-editor editor-node options)
+        (dwt/create-editor editor-node canvas-node options)
 
         update-name? (nil? content)
 
@@ -180,7 +179,7 @@
   "Text editor (HTML)"
   {::mf/wrap [mf/memo]
    ::mf/props :obj}
-  [{:keys [shape]}]
+  [{:keys [shape canvas-ref]}]
   (let [content          (:content shape)
         shape-id         (dm/get-prop shape :id)
         fill-color       (get-color-from-content content)
@@ -190,7 +189,6 @@
         editor-ref       (mf/use-ref nil)
         ;; This reference is to the container
         container-ref    (mf/use-ref nil)
-        selection-ref    (mf/use-ref nil)
 
         page             (mf/deref refs/workspace-page)
         objects          (get page :objects)
@@ -213,8 +211,8 @@
     (mf/with-effect [shape-id]
       (initialize-event-handlers shape-id
                                  content
-                                 selection-ref
                                  editor-ref
+                                 canvas-ref
                                  container-ref
                                  text-color))
 
@@ -239,9 +237,6 @@
       ;; on-blur and on-focus) but I keep this for future references.
       ;; :opacity (when @blurred 0)}}
       }
-     [:div
-      {:class (stl/css :text-editor-selection-imposter)
-       :ref selection-ref}]
      [:div
       {:class (dm/str
                "mousetrap "
@@ -279,7 +274,7 @@
   {::mf/wrap [mf/memo]
    ::mf/props :obj
    ::mf/forward-ref true}
-  [{:keys [shape modifiers] :as props} _]
+  [{:keys [shape modifiers canvas-ref] :as props} _]
   (let [shape-id  (dm/get-prop shape :id)
         modifiers (dm/get-in modifiers [shape-id :modifiers])
 
@@ -310,10 +305,10 @@
 
         [x y width height]
         (if (features/active-feature? @st/state "render-wasm/v1")
-          (let [{:keys [max-width height]} (wasm.api/get-text-dimensions shape-id)
+          (let [{:keys [width height]} (wasm.api/get-text-dimensions shape-id)
                 {:keys [x y]} (:selrect shape)]
 
-            [x y max-width height])
+            [x y width height])
 
           (let [bounds (gst/shape->rect shape)
                 x      (mth/min (dm/get-prop bounds :x)
@@ -358,4 +353,5 @@
      [:foreignObject {:x x :y y :width width :height height}
       [:div {:style style}
        [:& text-editor-html {:shape shape
+                             :canvas-ref canvas-ref
                              :key (dm/str shape-id)}]]]]))
