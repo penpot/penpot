@@ -381,6 +381,7 @@
                            (and flip-y (not flip-x)))]
 
     (when (and (not ^boolean read-only?)
+               (not (:blocked shape))
                (not (or (= transform-type :move)
                         (= transform-type :rotate))))
 

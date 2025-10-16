@@ -100,9 +100,9 @@
 
         on-pointer-down
         (mf/use-fn
-         (mf/deps (:id frame) on-frame-select workspace-read-only?)
+         (mf/deps (:id frame) on-frame-select workspace-read-only? blocked?)
          (fn [event]
-           (when (dom/left-mouse? event)
+           (when (and (dom/left-mouse? event) (not blocked?))
              (dom/prevent-default event)
              (dom/stop-propagation event)
              (on-frame-select event (:id frame)))))

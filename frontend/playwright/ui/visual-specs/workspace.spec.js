@@ -28,13 +28,29 @@ const setupFileWithAssets = async (workspace) => {
   return { fileId, pageId };
 };
 
-test("Shows the workspace correctly for a blank file", async ({ page }) => {
-  const workspace = new WorkspacePage(page);
-  await workspace.setupEmptyFile();
+test.describe("Viewport", () => {
+  test("Shows the workspace correctly for a blank file", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile();
 
-  await workspace.goToWorkspace();
+    await workspace.goToWorkspace();
 
-  await expect(workspace.page).toHaveScreenshot();
+    await expect(workspace.page).toHaveScreenshot();
+  });
+
+  test("User creates a rectangle and locks it", async ({ page }) => {
+    const workspace = new WorkspacePage(page);
+    await workspace.setupEmptyFile(page);
+    await workspace.goToWorkspace();
+
+    await workspace.rectShapeButton.click();
+    await workspace.clickWithDragViewportAt(128, 128, 200, 100);
+    await workspace.clickLeafLayer("Rectangle");
+
+    await page.keyboard.press("Shift+Control+L");
+
+    await expect(workspace.page).toHaveScreenshot();
+  });
 });
 
 test.describe("Design tab", () => {
