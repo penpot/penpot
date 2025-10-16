@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Denys Kisil <ossenjoyer@proton.me>\n"
-"Language-Team: Ukrainian <https://hosted.weblate.org/projects/penpot/"
-"frontend/ukr_UA/>\n"
+"Language-Team: Ukrainian "
+"<https://hosted.weblate.org/projects/penpot/frontend/ukr_UA/>\n"
 "Language: ukr_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4852,6 +4852,9 @@ msgstr "Шрифт"
 msgid "workspace.assets.typography.font-size"
 msgstr "Розмір"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Стиль шрифта"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Перейти до файлу бібліотеки стилів для редагування"
@@ -6166,7 +6169,7 @@ msgstr "Згори"
 msgid "workspace.options.more-colors"
 msgstr "Більше кольорів"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Більше кольорів бібліотеки"
 

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Dário <dariogomes@gmail.com>\n"
-"Language-Team: Portuguese (Portugal) <https://hosted.weblate.org/projects/"
-"penpot/frontend/pt_PT/>\n"
+"Language-Team: Portuguese (Portugal) "
+"<https://hosted.weblate.org/projects/penpot/frontend/pt_PT/>\n"
 "Language: pt_PT\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4326,6 +4326,9 @@ msgstr "Fonte"
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamanho"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Estilo da Fonte"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Ir para ficheiro da biblioteca de estilos para editar"
@@ -5499,7 +5502,7 @@ msgstr "Topo"
 msgid "workspace.options.more-colors"
 msgstr "Mais cores"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Mais bibliotecas de cor"
 

@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Marius <hi@mariusscheel.de>\n"
-"Language-Team: German <https://hosted.weblate.org/projects/penpot/frontend/"
-"de/>\n"
+"Language-Team: German "
+"<https://hosted.weblate.org/projects/penpot/frontend/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -4779,6 +4779,9 @@ msgstr "Schriftart"
 msgid "workspace.assets.typography.font-size"
 msgstr "Größe"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Schriftschnitt"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Wechseln Sie zur Stilbibliotheksdatei, um sie zu bearbeiten"
@@ -6060,7 +6063,7 @@ msgstr "Oben"
 msgid "workspace.options.more-colors"
 msgstr "Weitere Farben"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Weitere Bibliotheksfarben"
 

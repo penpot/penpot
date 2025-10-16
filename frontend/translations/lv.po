@@ -2,15 +2,14 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Edgars Andersons <Edgars+Weblate@gaitenis.id.lv>\n"
-"Language-Team: Latvian <https://hosted.weblate.org/projects/penpot/frontend/"
-"lv/>\n"
+"Language-Team: Latvian "
+"<https://hosted.weblate.org/projects/penpot/frontend/lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural="
-"(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : "
-"((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 "
+"<= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.14-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
@@ -203,6 +202,16 @@ msgstr "Darba e-pasta adrese"
 #, unused
 msgid "branding-illustrations-marketing-pieces"
 msgstr "... zīmolrades, ilustrācijām, mārketinga materiāliem utt."
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Šī tekstvienība nepastāv vai ir izdzēsta."
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Nav pieejama neviena krāsu tekstvienība. Jāpārbauda izmantotās "
+"kopas/izskati vai jāpievieno jaunas tekstvienības."
 
 #: src/app/main/ui/comments.cljs:530
 msgid "comments.mentions.not-found"
@@ -746,6 +755,22 @@ msgstr "Augšupielādē datus serverī (%s/%s)"
 #: src/app/main/ui/dashboard/import.cljs:122
 msgid "dashboard.import.progress.upload-media"
 msgstr "Augšupielādē datni: %s"
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Tu grasies izdzēst uzaicinājumus:"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Tu grasies atkārtoti nosūtīt uzaicinājumus:"
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Izdzēst uzaicinājumus"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Atkārtoti nosūtīt uzaicinājumus"
 
 #: src/app/main/ui/dashboard/team.cljs:122, src/app/main/ui/dashboard/team.cljs:744
 msgid "dashboard.invite-profile"
@@ -4895,6 +4920,9 @@ msgstr "Fonti"
 msgid "workspace.assets.typography.font-size"
 msgstr "Izmērs"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Fonta stils"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Doties uz stilu bibliotēkas datni, lai labotu"
@@ -6243,7 +6271,7 @@ msgstr "Augša"
 msgid "workspace.options.more-colors"
 msgstr "Vairāk krāsu"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Vairāk bibliotēkas krāsu"
 
@@ -7864,29 +7892,3 @@ msgstr "Automātiski saglabātas versijas tiks paturētas %s dienas."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Jānoklikšķina, lai aizvērtu ceļu"
-
-#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
-msgid "color-row.token-color-row.deleted-token"
-msgstr "Šī tekstvienība nepastāv vai ir izdzēsta."
-
-#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
-msgid "color-token.empty-state"
-msgstr ""
-"Nav pieejama neviena krāsu tekstvienība. Jāpārbauda izmantotās kopas/izskati "
-"vai jāpievieno jaunas tekstvienības."
-
-#: src/app/main/ui/dashboard/team.cljs:765
-msgid "dashboard.invitation-modal.delete"
-msgstr "Tu grasies izdzēst uzaicinājumus:"
-
-#: src/app/main/ui/dashboard/team.cljs:766
-msgid "dashboard.invitation-modal.resend"
-msgstr "Tu grasies atkārtoti nosūtīt uzaicinājumus:"
-
-#: src/app/main/ui/dashboard/team.cljs:756
-msgid "dashboard.invitation-modal.title.delete-invitations"
-msgstr "Izdzēst uzaicinājumus"
-
-#: src/app/main/ui/dashboard/team.cljs:757
-msgid "dashboard.invitation-modal.title.resend-invitations"
-msgstr "Atkārtoti nosūtīt uzaicinājumus"

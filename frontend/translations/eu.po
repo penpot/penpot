@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-10-13 09:26+0000\n"
 "Last-Translator: Mikel Larreategi <mlarreategi@codesyntax.com>\n"
-"Language-Team: Basque <https://hosted.weblate.org/projects/penpot/frontend/"
-"eu/>\n"
+"Language-Team: Basque "
+"<https://hosted.weblate.org/projects/penpot/frontend/eu/>\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -3130,6 +3130,9 @@ msgstr "Letra-tipoak"
 msgid "workspace.assets.typography.font-size"
 msgstr "Tamaina"
 
+msgid "workspace.assets.typography.font-style"
+msgstr "Letra-tipoaren estiloa"
+
 #: src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:540
 msgid "workspace.assets.typography.go-to-edit"
 msgstr "Joan estilo liburutegiaren fitxategira editatzeko"
@@ -4082,7 +4085,7 @@ msgstr "Goian"
 msgid "workspace.options.more-colors"
 msgstr "Kolore gehiago"
 
-#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:161
+#: src/app/main/ui/workspace/sidebar/options/menus/color_selection.cljs:140
 msgid "workspace.options.more-lib-colors"
 msgstr "Liburutegiko kolore gehiago"
 
