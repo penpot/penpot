@@ -96,6 +96,8 @@
       {:type type
        :ids ids
        :values layout-container-values
+       :applied-tokens applied-tokens
+       :shapes shapes
        :multiple false}]
 
      (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)

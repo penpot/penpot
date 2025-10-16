@@ -408,7 +408,7 @@
         [exports-ids exports-values]
         (get-attrs shapes objects :exports)
 
-        [layout-container-ids layout-container-values]
+        [layout-container-ids layout-container-values layout-contianer-tokens]
         (get-attrs shapes objects :layout-container)
 
         [layout-item-ids layout-item-values {}]
@@ -461,6 +461,8 @@
       {:type type
        :ids layout-container-ids
        :values layout-container-values
+       :applied-tokens layout-contianer-tokens
+       :shapes shapes
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
