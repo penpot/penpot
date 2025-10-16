@@ -311,14 +311,18 @@
 (defn set-shape-path-attrs
   [attrs]
   (let [style (:style attrs)
+        ;; Filter to only supported attributes
+        allowed-keys #{:fill :fillRule :strokeLinecap :strokeLinejoin}
         attrs (-> attrs
                   (dissoc :style)
-                  (merge style))
+                  (merge style)
+                  (select-keys allowed-keys))
         str   (sr/serialize-path-attrs attrs)
-        size  (count str)
-        offset   (mem/alloc size)]
-    (h/call wasm/internal-module "stringToUTF8" str offset size)
-    (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))
+        size  (count str)]
+    (when (pos? size)
+      (let [offset (mem/alloc size)]
+        (h/call wasm/internal-module "stringToUTF8" str offset size)
+        (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))))
 
 (defn set-shape-path-content
   "Upload path content in chunks to WASM."
