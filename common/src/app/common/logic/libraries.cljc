@@ -1642,7 +1642,8 @@
           (pcb/apply-changes-local)))))
 
 (defn- generate-update-tokens
-  [changes container dest-shape origin-shape touched omit-touched?]
+  [changes container dest-shape origin-shape touched omit-touched? valid-attrs]
+  ;; valid-attrs is a set of attrs to consider on the update. If it is nil, it will consider all the attrs
   (let [attrs (->> (seq (keys ctk/sync-attrs))
                    ;; We don't update the flex-child attrs
                    (remove #(= :layout-grid-cells %)))
@@ -1650,8 +1651,8 @@
         applied-tokens (reduce (fn [applied-tokens attr]
                                  (let [attr-group (get ctk/sync-attrs attr)
                                        token-attrs (cto/shape-attr->token-attrs attr)]
-                                   (if (not (and (touched attr-group)
-                                                 omit-touched?))
+                                   (if  (and (or (not omit-touched?) (not (touched attr-group)))
+                                             (or (empty? valid-attrs) (contains? valid-attrs attr)))
                                      (into applied-tokens token-attrs)
                                      applied-tokens)))
                                #{}
@@ -1808,7 +1809,7 @@
             :always
             (check-detached-main dest-shape origin-shape)
             :always
-            (generate-update-tokens container dest-shape origin-shape touched omit-touched?))
+            (generate-update-tokens container dest-shape origin-shape touched omit-touched? nil))
 
           (let [attr-group        (get ctk/sync-attrs attr)
                 ;; position-data is a special case because can be affected by
@@ -2082,12 +2083,14 @@
           (recur (next attrs)
                  roperations'
                  uoperations'))
-        (cond-> changes
-          (> (count roperations) 1)
-          (add-update-attr-changes current-shape container roperations uoperations)
 
-          :always
-          (generate-update-tokens container current-shape previous-shape touched false))))))
+        (let [updated-attrs (into #{} (comp (filter #(= :set (:type %)))
+                                            (map :attr))
+                                  roperations)]
+          (cond-> changes
+            (> (count roperations) 1)
+            (-> (add-update-attr-changes current-shape container roperations uoperations)
+                (generate-update-tokens container current-shape previous-shape touched false updated-attrs))))))))
 
 (defn- propagate-attrs
   "Helper that puts the origin attributes (attrs) into dest but only if

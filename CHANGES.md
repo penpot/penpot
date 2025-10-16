@@ -60,7 +60,7 @@
 - Fix lock proportion tooltip [Taiga #12326](https://tree.taiga.io/project/penpot/issue/12326)
 - Fix internal Error when selecting a set by name in the token theme editor [Taiga #12310](https://tree.taiga.io/project/penpot/issue/12310)
 - Fix drag & drop functionality is swapping instead or reordering [Taiga #12254](https://tree.taiga.io/project/penpot/issue/12254)
-
+- Fix variants not syncronizing tokens on switch [Taiga #12290](https://tree.taiga.io/project/penpot/issue/12290)
 
 ## 2.10.1
 
@@ -68,11 +68,9 @@
 
 - Improve workpace file loading [Github 7366](https://github.com/penpot/penpot/pull/7366)
 
-
 ### :bug: Bugs fixed
 
 - Fix regression with text shapes creation with Plugins API [Taiga #12244](https://tree.taiga.io/project/penpot/issue/12244)
-
 
 ## 2.10.0
 
@@ -89,7 +87,7 @@
 - Add efficiency enhancements to right sidebar [Github #7182](https://github.com/penpot/penpot/pull/7182)
 - Add defaults for artboard drawing [Taiga #494](https://tree.taiga.io/project/penpot/us/494?milestone=465047)
 - Continuous display of distances between elements when moving a layer with the keyboard [Taiga #1780](https://tree.taiga.io/project/penpot/us/1780)
-- New Number token - unitless values  [Taiga #10936](https://tree.taiga.io/project/penpot/us/10936)
+- New Number token - unitless values [Taiga #10936](https://tree.taiga.io/project/penpot/us/10936)
 - New font-family token [Taiga #10937](https://tree.taiga.io/project/penpot/us/10937)
 - New text case token [Taiga #10942](https://tree.taiga.io/project/penpot/us/10942)
 - New text-decoration token [Taiga #10941](https://tree.taiga.io/project/penpot/us/10941)
@@ -169,7 +167,6 @@
 - Improve the application of tokens with object specific tokens [Taiga #10209](https://tree.taiga.io/project/penpot/us/10209)
 - Add info to apply-token event [Taiga #11710](https://tree.taiga.io/project/penpot/task/11710)
 - Fix double click on set name input [Taiga #11747](https://tree.taiga.io/project/penpot/issue/11747)
-
 
 ### :bug: Bugs fixed
 
