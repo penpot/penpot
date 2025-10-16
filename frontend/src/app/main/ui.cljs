@@ -369,7 +369,7 @@
      [:& (mf/provider ctx/current-profile) {:value profile}
       (if edata
         [:> static/exception-page* {:data edata :route route}]
-        [:> error-boundary* {:fallback static/internal-error*}
+        [:> error-boundary* {:fallback static/exception-page*}
          [:> notifications/current-notification*]
          (when route
            [:> page* {:route route :profile profile}])])]]))
