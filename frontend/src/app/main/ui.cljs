@@ -40,16 +40,16 @@
 (def verify-token-page
   (mf/lazy-component app.main.ui.auth.verify-token/verify-token))
 
-(def viewer-page
+(def viewer-page*
   (mf/lazy-component app.main.ui.viewer/viewer*))
 
-(def dashboard-page
+(def dashboard-page*
   (mf/lazy-component app.main.ui.dashboard/dashboard*))
 
 (def settings-page
   (mf/lazy-component app.main.ui.settings/settings))
 
-(def workspace-page
+(def workspace-page*
   (mf/lazy-component app.main.ui.workspace/workspace*))
 
 (mf/defc workspace-legacy-redirect*
@@ -239,13 +239,13 @@
             [:& release-notes-modal {:version (:main cf/version)}])
 
           [:> team-container* {:team-id team-id}
-           [:> dashboard-page {:profile profile
-                               :section section
-                               :team-id team-id
-                               :search-term search-term
-                               :plugin-url plugin-url
-                               :project-id project-id
-                               :template template}]]])
+           [:> dashboard-page* {:profile profile
+                                :section section
+                                :team-id team-id
+                                :search-term search-term
+                                :plugin-url plugin-url
+                                :project-id project-id
+                                :template template}]]])
 
        :workspace
        (let [params     (get params :query)
@@ -266,11 +266,11 @@
               [:& release-notes-modal {:version (:main cf/version)}]))
 
           [:> team-container* {:team-id team-id}
-           [:> workspace-page {:team-id team-id
-                               :file-id file-id
-                               :page-id page-id
-                               :layout-name layout
-                               :key file-id}]]])
+           [:> workspace-page* {:team-id team-id
+                                :file-id file-id
+                                :page-id page-id
+                                :layout-name layout
+                                :key file-id}]]])
 
        :viewer
        (let [params   (get params :query)
@@ -287,7 +287,7 @@
              share    (:share params)]
 
          [:? {}
-          [:> viewer-page
+          [:> viewer-page*
            {:page-id page-id
             :file-id file-id
             :frame-id frame-id
