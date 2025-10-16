@@ -391,7 +391,7 @@
         ;; and the variant-container in which it will be restored still exists
         (fn [shape]
           (let [component (find-component shape true)
-                main      (ctk/get-component-root component)
+                main      (ctk/get-deleted-component-root component)
                 objects   (dm/get-in libraries [(:component-file shape)
                                                 :data
                                                 :pages-index

@@ -276,7 +276,7 @@
     (-> file-data
         (get-component-page component)
         (ctn/get-shape (:main-instance-id component)))
-    (ctk/get-component-root component)))
+    (ctk/get-deleted-component-root component)))
 
 (defn get-component-shape
   "Retrieve one shape in the component by id. If with-context? is true, add the
@@ -355,7 +355,7 @@
 
 (defn find-remote-shape
   "Recursively go back by the :shape-ref of the shape until find the correct shape of the original component"
-  [container libraries shape]
+  [container libraries shape & {:keys [with-context?] :or {with-context? false}}]
   (let [top-instance        (ctn/get-component-shape (:objects container) shape)
         component-file      (get-in libraries [(:component-file top-instance) :data])
         component           (ctkl/get-component component-file (:component-id top-instance) true)
@@ -375,8 +375,12 @@
     (if (nil? remote-shape)
       nil
       (if (nil? (:shape-ref remote-shape))
-        remote-shape
-        (find-remote-shape component-container libraries remote-shape)))))
+        (cond-> remote-shape
+          (and remote-shape with-context?)
+          (with-meta {:file {:id (:id file-data)
+                             :data file-data}
+                      :container component-container}))
+        (find-remote-shape component-container libraries remote-shape :with-context? with-context?)))))
 
 (defn direct-copy?
   "Check if the shape is in a direct copy of the component (i.e. the shape-ref points to shapes inside
@@ -901,7 +905,7 @@
     (println))
 
   (when (seq (:objects component))
-    (let [root (ctk/get-component-root component)]
+    (let [root (ctk/get-deleted-component-root component)]
       (dump-shape (:id root)
                   1
                   (:objects component)
