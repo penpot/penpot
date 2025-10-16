@@ -287,15 +287,7 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
     });
 }
 
-#[no_mangle]
-pub extern "C" fn set_children() {
-    let bytes = mem::bytes_or_empty();
-
-    let entries: IndexSet<Uuid> = bytes
-        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
-        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
-        .collect();
-
+fn set_children_set(entries: IndexSet<Uuid>) {
     let mut deleted = IndexSet::new();
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
@@ -308,6 +300,132 @@ pub extern "C" fn set_children() {
             state.delete_shape(id);
         }
     });
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_0() {
+    let entries = IndexSet::from_iter(vec![]);
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_1(a1: u32, b1: u32, c1: u32, d1: u32) {
+    let entries = IndexSet::from_iter(vec![uuid_from_u32_quartet(a1, b1, c1, d1)]);
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_2(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+) {
+    let entries = IndexSet::from_iter(vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+    ]);
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_3(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+    a3: u32,
+    b3: u32,
+    c3: u32,
+    d3: u32,
+) {
+    let entries = IndexSet::from_iter(vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+        uuid_from_u32_quartet(a3, b3, c3, d3),
+    ]);
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_4(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+    a3: u32,
+    b3: u32,
+    c3: u32,
+    d3: u32,
+    a4: u32,
+    b4: u32,
+    c4: u32,
+    d4: u32,
+) {
+    let entries = IndexSet::from_iter(vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+        uuid_from_u32_quartet(a3, b3, c3, d3),
+        uuid_from_u32_quartet(a4, b4, c4, d4),
+    ]);
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children_5(
+    a1: u32,
+    b1: u32,
+    c1: u32,
+    d1: u32,
+    a2: u32,
+    b2: u32,
+    c2: u32,
+    d2: u32,
+    a3: u32,
+    b3: u32,
+    c3: u32,
+    d3: u32,
+    a4: u32,
+    b4: u32,
+    c4: u32,
+    d4: u32,
+    a5: u32,
+    b5: u32,
+    c5: u32,
+    d5: u32,
+) {
+    let entries = IndexSet::from_iter(vec![
+        uuid_from_u32_quartet(a1, b1, c1, d1),
+        uuid_from_u32_quartet(a2, b2, c2, d2),
+        uuid_from_u32_quartet(a3, b3, c3, d3),
+        uuid_from_u32_quartet(a4, b4, c4, d4),
+        uuid_from_u32_quartet(a5, b5, c5, d5),
+    ]);
+    set_children_set(entries);
+}
+
+#[no_mangle]
+pub extern "C" fn set_children() {
+    let bytes = mem::bytes_or_empty();
+
+    let entries: IndexSet<Uuid> = bytes
+        .chunks(size_of::<<Uuid as SerializableResult>::BytesType>())
+        .map(|data| Uuid::from_bytes(data.try_into().unwrap()))
+        .collect();
+
+    set_children_set(entries);
 
     if !bytes.is_empty() {
         mem::free_bytes();
