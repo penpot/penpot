@@ -783,7 +783,7 @@
 .attr-row {
   display: grid;
   grid-template-areas: "name content";
-  grid-template-columns: $s-92 1fr;
+  grid-template-columns: 1fr 3fr;
   gap: $s-4;
   height: $s-32;
   :global(.attr-label) {

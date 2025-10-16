@@ -29,7 +29,7 @@
     (str/join " " $)
     (str/capital $)))
 
-(mf/defc color-row [{:keys [color format copy-data on-change-format]}]
+(mf/defc color-row [{:keys [color format copy-data property on-change-format]}]
   (let [colors-library     (isc/use-colors-library color)
         file-colors-ref (mf/deref isc/file-colors-ref)
         file-colors-wokspace (mf/deref refs/workspace-file-colors)
@@ -82,18 +82,20 @@
               :style #js {"--bullet-size" "16px"}}
         [:& cb/color-bullet {:color color
                              :mini true}]]
-
-       [:div {:class (stl/css :format-wrapper)}
-        (when-not (and on-change-format (or (:gradient color) image))
-          [:& select
-           {:default-value format
-            :class (stl/css :select-format-wrapper)
-            :options [{:value :hex :label (tr "inspect.attributes.color.hex")}
-                      {:value :rgba :label (tr "inspect.attributes.color.rgba")}
-                      {:value :hsla :label (tr "inspect.attributes.color.hsla")}]
-            :on-change on-change-format}])
-        (when (:gradient color)
-          [:div {:class (stl/css :format-info)} "rgba"])]
+      ;;  REMOVE this conditional when :inspect-styles flag is removed
+       (if (contains? cf/flags :inspect-styles)
+         [:div {:class (stl/css :global/attr-label)} property]
+         [:div {:class (stl/css :format-wrapper)}
+          (when-not (and on-change-format (or (:gradient color) image))
+            [:& select
+             {:default-value format
+              :class (stl/css :select-format-wrapper)
+              :options [{:value :hex :label (tr "inspect.attributes.color.hex")}
+                        {:value :rgba :label (tr "inspect.attributes.color.rgba")}
+                        {:value :hsla :label (tr "inspect.attributes.color.hsla")}]
+              :on-change on-change-format}])
+          (when (:gradient color)
+            [:div {:class (stl/css :format-info)} "rgba"])])
 
        [:> copy-button* {:data copy-data
                          :aria-label (tr "labels.copy-color")

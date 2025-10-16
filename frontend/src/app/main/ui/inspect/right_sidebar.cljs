@@ -185,7 +185,8 @@
                                :libraries libraries
                                :file-id file-id}]
               :computed
-              [:& attributes {:page-id page-id
+              [:& attributes {:color-space color-space
+                              :page-id page-id
                               :objects objects
                               :file-id file-id
                               :frame frame
