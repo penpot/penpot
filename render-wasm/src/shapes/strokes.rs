@@ -50,6 +50,20 @@ impl Stroke {
         }
     }
 
+    pub fn bounds_width(&self, is_open: bool) -> f32 {
+        match self.render_kind(is_open) {
+            StrokeKind::Inner => 0.,
+            StrokeKind::Center => self.width / 2.,
+            StrokeKind::Outer => self.width,
+        }
+    }
+
+    pub fn max_bounds_width<'a>(strokes: impl Iterator<Item = &'a Stroke>, is_open: bool) -> f32 {
+        strokes
+            .map(|stroke| stroke.bounds_width(is_open))
+            .fold(0.0, f32::max)
+    }
+
     pub fn new_center_stroke(
         width: f32,
         style: StrokeStyle,
