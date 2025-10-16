@@ -88,6 +88,7 @@ fn propagate_children(
     result
 }
 
+// FIXME: PERFORMANCE
 fn calculate_group_bounds(
     shape: &Shape,
     shapes: &ShapesPool,

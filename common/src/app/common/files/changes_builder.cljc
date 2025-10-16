@@ -638,6 +638,7 @@
                                   (reduce add-undo-change-shape $ ids)))
          (apply-changes-local)))))
 
+;; FIXME: PERFORMANCE
 (defn resize-parents
   [changes ids]
   (assert-page-id! changes)

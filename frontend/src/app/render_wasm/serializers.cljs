@@ -7,6 +7,7 @@
  (ns app.render-wasm.serializers
    (:require
     [app.common.data :as d]
+    [app.common.data.macros :as dm]
     [app.common.uuid :as uuid]
     [app.render-wasm.wasm :as wasm]
     [cuerdas.core :as str]))
@@ -76,12 +77,13 @@
 
 (defn serialize-path-attrs
   [svg-attrs]
-  (reduce
-   (fn [acc [key value]]
-     (str/concat
+  (reduce-kv
+   (fn [acc key value]
+     (dm/str
       acc
       (str/kebab key) "\0"
-      value "\0")) "" svg-attrs))
+      value "\0")) ""
+   svg-attrs))
 
 (defn translate-blend-mode
   [blend-mode]

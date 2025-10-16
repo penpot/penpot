@@ -68,7 +68,7 @@
    [app.main.repo :as rp]
    [app.main.router :as rt]
    [app.render-wasm :as wasm]
-   [app.render-wasm.api :as api]
+   [app.render-wasm.api :as wasm.api]
    [app.util.dom :as dom]
    [app.util.globals :as ug]
    [app.util.http :as http]
@@ -265,7 +265,7 @@
     ptk/EffectEvent
     (effect [_ state _]
       (let [objects (dsh/lookup-page-objects state)]
-        (api/process-object (get objects id))))))
+        (wasm.api/process-object (get objects id))))))
 
 (defn initialize-workspace
   [team-id file-id]
