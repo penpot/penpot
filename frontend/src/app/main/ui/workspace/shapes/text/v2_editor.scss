@@ -37,7 +37,6 @@
   [data-itype="inline"] {
     line-break: auto;
     line-height: inherit;
-    overflow-wrap: initial;
     caret-color: var(--text-editor-caret-color);
   }
 
@@ -45,15 +44,6 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-  }
-}
-
-// Grow type
-.grow-type-fixed,
-.grow-type-auto-height {
-  [data-itype="inline"],
-  [data-itype="paragraph"] {
-    white-space: break-spaces;
   }
 }
 
