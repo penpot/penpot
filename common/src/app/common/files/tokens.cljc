@@ -44,7 +44,7 @@
   (let [attr? (set attributes)]
     (->> (remove (fn [[k v]]
                    (and (attr? k)
-                        (= v (token-identifier token))))
+                        (= v (or (token-identifier token) token))))
                  applied-tokens)
          (into {}))))
 
