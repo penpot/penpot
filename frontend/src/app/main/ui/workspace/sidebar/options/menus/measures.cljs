@@ -528,6 +528,7 @@
                                                  :value (:height values)}]]])
 
         [:> icon-button* {:variant "ghost"
+                          :tooltip-placement "top-left"
                           :icon (if proportion-lock "lock" "unlock")
                           :class (stl/css-case :selected (true? proportion-lock))
                           :disabled (= proportion-lock :multiple)

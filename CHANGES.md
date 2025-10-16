@@ -57,6 +57,7 @@
 - Fix component number has no singular translation string [Taiga #12106](https://tree.taiga.io/project/penpot/issue/12106)
 - Fix adding/removing identical text fills [Taiga #12287](https://tree.taiga.io/project/penpot/issue/12287)
 - Fix scroll on the inspect tab [Taiga #12293](https://tree.taiga.io/project/penpot/issue/12293)
+- Fix lock proportion tooltip [Taiga #12326](https://tree.taiga.io/project/penpot/issue/12326)
 
 
 ## 2.10.1
