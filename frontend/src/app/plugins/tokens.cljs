@@ -10,6 +10,8 @@
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
    [app.common.uuid :as uuid]
+   [app.main.data.workspace.tokens.library-edit :as dwtl]
+   [app.main.store :as st]
    [app.plugins.utils :as u]
    [app.util.object :as obj]))
 
@@ -94,6 +96,19 @@
        (let [set (locate-token-set file-id id)]
          (ctob/get-name set)))}
 
+    :active
+    {:this true
+     :get
+     (fn [_]
+       (let [tokens-lib (locate-tokens-lib file-id)
+             set        (locate-token-set file-id id)]
+         (ctob/token-set-active? tokens-lib (ctob/get-name set))))}
+
+    :toggleActive
+    (fn [_]
+      (let [set (locate-token-set file-id id)]
+        (st/emit! (dwtl/toggle-token-set (ctob/get-name set)))))
+
     :tokens
     {:this true
      :get
@@ -134,6 +149,10 @@
      (fn [_]
        (let [tokens-lib (locate-tokens-lib file-id)]
          (ctob/theme-active? tokens-lib id)))}
+
+    :toggleActive
+    (fn [_]
+      (st/emit! (dwtl/toggle-token-theme-active? id)))
 
     :activeSets
     {:this true :get (fn [_])}
@@ -202,6 +221,18 @@
     (fn [_set]
       ;; TODO
       )
+
+    :getThemeById
+    (fn [theme-id]
+      (cond
+        (not (string? theme-id))
+        (u/display-not-valid :getThemeById theme-id)
+
+        :else
+        (let [theme-id (uuid/parse theme-id)
+              theme (locate-token-theme file-id theme-id)]
+          (when (some? theme)
+            (token-theme-proxy plugin-id file-id theme-id)))))
 
     :getSetById
     (fn [set-id]
