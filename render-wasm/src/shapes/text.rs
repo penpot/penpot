@@ -1,5 +1,5 @@
 use crate::{
-    math::{Matrix, Rect},
+    math::{Bounds, Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
 };
 
@@ -16,7 +16,7 @@ use std::collections::HashSet;
 
 use super::FontFamily;
 use crate::math::Point;
-use crate::shapes::{self, merge_fills};
+use crate::shapes::{self, merge_fills, Shape};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
@@ -194,11 +194,7 @@ impl TextContent {
     }
 
     pub fn width(&self) -> f32 {
-        if self.grow_type() == GrowType::AutoWidth {
-            self.size.width
-        } else {
-            self.bounds.width()
-        }
+        self.size.width
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -209,8 +205,34 @@ impl TextContent {
         self.grow_type = grow_type;
     }
 
-    pub fn visual_bounds(&self) -> (f32, f32) {
-        (self.size.width, self.size.height)
+    pub fn get_bounds(&self, shape: &Shape) -> Bounds {
+        let (x, y, transform, center) = (
+            shape.selrect.x(),
+            shape.selrect.y(),
+            &shape.transform,
+            &shape.center(),
+        );
+        let (width, height) = (self.size.width, self.size.height);
+        let text_rect = Rect::from_xywh(x, y, width, height);
+
+        let mut bounds = Bounds::new(
+            Point::new(text_rect.x(), text_rect.y()),
+            Point::new(text_rect.x() + text_rect.width(), text_rect.y()),
+            Point::new(
+                text_rect.x() + text_rect.width(),
+                text_rect.y() + text_rect.height(),
+            ),
+            Point::new(text_rect.x(), text_rect.y() + text_rect.height()),
+        );
+
+        if !transform.is_identity() {
+            let mut matrix = *transform;
+            matrix.post_translate(*center);
+            matrix.pre_translate(-*center);
+            bounds.transform_mut(&matrix);
+        }
+
+        bounds
     }
 
     pub fn transform(&mut self, transform: &Matrix) {
@@ -315,14 +337,13 @@ impl TextContent {
         let width = self.width();
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
-            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, f32::INFINITY);
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
         let height = paragraphs
             .iter()
             .flatten()
             .fold(0.0, |auto_height, paragraph| {
                 auto_height + paragraph.height()
             });
-
         let size = TextContentSize::new_with_size(width.ceil(), height.ceil());
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
@@ -349,6 +370,7 @@ impl TextContent {
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
         self.size.set_size(selrect.width(), selrect.height());
+
         match self.grow_type() {
             GrowType::AutoHeight => {
                 let result = self.text_layout_auto_height();

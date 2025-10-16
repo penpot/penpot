@@ -737,50 +737,20 @@ impl Shape {
         rect
     }
 
-    pub fn calculate_extrect(
-        &self,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> math::Rect {
-        let shape = self.transformed(modifiers.get(&self.id));
-        let mut max_stroke: f32 = 0.;
-        let is_open = if let Type::Path(p) = &shape.shape_type {
-            p.is_open()
-        } else {
-            false
-        };
+    fn apply_stroke_bounds(&self, rect: math::Rect, stroke_width: f32) -> math::Rect {
+        let mut expanded_rect = rect;
+        expanded_rect.left -= stroke_width;
+        expanded_rect.right += stroke_width;
+        expanded_rect.top -= stroke_width;
+        expanded_rect.bottom += stroke_width;
 
-        for stroke in shape.strokes.iter() {
-            let width = match stroke.render_kind(is_open) {
-                StrokeKind::Inner => 0.,
-                StrokeKind::Center => stroke.width / 2.,
-                StrokeKind::Outer => stroke.width,
-            };
-            max_stroke = max_stroke.max(width);
-        }
+        let mut result = rect;
+        result.join(expanded_rect);
+        result
+    }
 
-        let mut rect = if let Some(path) = shape.get_skia_path() {
-            path.compute_tight_bounds()
-                .with_outset((max_stroke, max_stroke))
-        } else {
-            let mut bounds_rect = shape.bounds().to_rect();
-            let mut stroke_rect = bounds_rect;
-            stroke_rect.left -= max_stroke;
-            stroke_rect.right += max_stroke;
-            stroke_rect.top -= max_stroke;
-            stroke_rect.bottom += max_stroke;
-
-            bounds_rect.join(stroke_rect);
-            bounds_rect
-        };
-
-        if let Type::Text(text_content) = &shape.shape_type {
-            let (width, height) = text_content.visual_bounds();
-            rect.right = rect.left + width;
-            rect.bottom = rect.top + height;
-        }
-
-        for shadow in shape.shadows.iter() {
+    fn apply_shadow_bounds(&self, mut rect: math::Rect) -> math::Rect {
+        for shadow in self.shadows_visible() {
             if !shadow.hidden() {
                 let (x, y) = shadow.offset;
                 let mut shadow_rect = rect;
@@ -797,8 +767,12 @@ impl Shape {
                 rect.join(shadow_rect);
             }
         }
+        rect
+    }
 
-        if let Some(blur) = shape.blur {
+    fn apply_blur_bounds(&self, mut rect: math::Rect) -> math::Rect {
+        let blur = self.blur.as_ref();
+        if let Some(blur) = blur {
             if !blur.hidden {
                 rect.left -= blur.value;
                 rect.top -= blur.value;
@@ -806,17 +780,23 @@ impl Shape {
                 rect.bottom += blur.value;
             }
         }
+        rect
+    }
 
-        // For groups and frames without clipping, extend the bounding rectangle to include all nested shapes
-        // This ensures that these containers properly encompass their content
-        let include_children = match &shape.shape_type {
+    fn apply_children_bounds(
+        &self,
+        mut rect: math::Rect,
+        shapes_pool: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> math::Rect {
+        let include_children = match self.shape_type {
             Type::Group(_) => true,
-            Type::Frame(_) => !shape.clip_content,
+            Type::Frame(_) => !self.clip_content,
             _ => false,
         };
 
         if include_children {
-            for child_id in shape.children_ids(false) {
+            for child_id in self.children_ids(false) {
                 if let Some(child_shape) = shapes_pool.get(&child_id) {
                     // Create a copy of the child shape to apply any transformations
                     let mut transformed_element: Cow<Shape> = Cow::Borrowed(child_shape);
@@ -830,6 +810,38 @@ impl Shape {
                 }
             }
         }
+
+        rect
+    }
+
+    pub fn calculate_extrect(
+        &self,
+        shapes_pool: &ShapesPool,
+        modifiers: &HashMap<Uuid, Matrix>,
+    ) -> math::Rect {
+        let shape = self.transformed(modifiers.get(&self.id));
+        let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
+
+        let mut rect = match &shape.shape_type {
+            Type::Path(_) | Type::Bool(_) => {
+                if let Some(path) = shape.get_skia_path() {
+                    return path
+                        .compute_tight_bounds()
+                        .with_outset((max_stroke, max_stroke));
+                }
+                shape.bounds().to_rect()
+            }
+            Type::Text(text_content) => {
+                let text_bounds = text_content.get_bounds(&shape);
+                text_bounds.to_rect()
+            }
+            _ => shape.bounds().to_rect(),
+        };
+
+        rect = self.apply_stroke_bounds(rect, max_stroke);
+        rect = self.apply_shadow_bounds(rect);
+        rect = self.apply_blur_bounds(rect);
+        rect = self.apply_children_bounds(rect, shapes_pool, modifiers);
 
         rect
     }
@@ -996,6 +1008,10 @@ impl Shape {
         )
     }
 
+    pub fn is_open(&self) -> bool {
+        matches!(&self.shape_type, Type::Path(p) if p.is_open())
+    }
+
     pub fn add_shadow(&mut self, shadow: Shadow) {
         self.invalidate_extrect();
         self.shadows.push(shadow);
@@ -1034,6 +1050,10 @@ impl Shape {
             .iter()
             .rev()
             .filter(|shadow| shadow.style() == ShadowStyle::Inner && !shadow.hidden())
+    }
+
+    pub fn shadows_visible(&self) -> impl DoubleEndedIterator<Item = &Shadow> {
+        self.shadows.iter().rev().filter(|shadow| !shadow.hidden())
     }
 
     pub fn to_path_transform(&self) -> Option<Matrix> {
