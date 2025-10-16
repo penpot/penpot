@@ -165,7 +165,6 @@
          :ids [(:id shape)]
          :values layout-container-values
          :applied-tokens applied-tokens
-         :shapes shapes
          :multiple false}]
 
        (when (and (= (count ids) 1) is-layout-child? is-grid-parent?)
@@ -191,13 +190,11 @@
         {:ids ids
          :type type
          :values fill-values
-         :shapes shapes
          :applied-tokens applied-tokens}]
 
        [:& stroke-menu {:ids ids
                         :type type
                         :values stroke-values
-                        :shapes shapes
                         :applied-tokens applied-tokens}]
 
        [:> shadow-menu* {:ids ids :values (get shape :shadow)}]

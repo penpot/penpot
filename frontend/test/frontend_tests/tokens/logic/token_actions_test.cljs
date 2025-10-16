@@ -722,7 +722,7 @@
             store (ths/setup-store file)
             rect-1 (cths/get-shape file :rect-1)
             rect-2 (cths/get-shape file :rect-2)
-            events [(dwta/toggle-token {:shapes [rect-1 rect-2]
+            events [(dwta/toggle-token {:shape-ids [(:id rect-1) (:id rect-2)]
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}
                                                            :on-update-shape dwta/update-shape-radius-all}
                                         :token (toht/get-token file "borderRadius.md")})]]
@@ -753,7 +753,7 @@
             rect-without-token (cths/get-shape file :rect-2)
             rect-with-other-token (cths/get-shape file :rect-3)
 
-            events [(dwta/toggle-token {:shapes [rect-with-token rect-without-token rect-with-other-token]
+            events [(dwta/toggle-token {:shape-ids [(:id rect-with-token) (:id rect-without-token) (:id rect-with-other-token)]
                                         :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async
@@ -786,7 +786,7 @@
             rect-without-token (cths/get-shape file :rect-2)
             rect-with-other-token-2 (cths/get-shape file :rect-3)
 
-            events [(dwta/toggle-token {:shapes [rect-with-other-token-1 rect-without-token rect-with-other-token-2]
+            events [(dwta/toggle-token {:shape-ids [(:id rect-with-other-token-1) (:id rect-without-token) (:id rect-with-other-token-2)]
                                         :token (toht/get-token file "borderRadius.sm")
                                         :token-type-props {:attributes #{:r1 :r2 :r3 :r4}}})]]
         (tohs/run-store-async
@@ -822,7 +822,7 @@
             rect-in-layout (cths/get-shape file :rect-in-layout)
             rect-regular (cths/get-shape file :rect-regular)
             events [(dwta/toggle-token {:token (toht/get-token file "spacing.md")
-                                        :shapes [frame-layout rect-in-layout rect-regular]})]]
+                                        :shape-ids [(:id frame-layout) (:id rect-in-layout) (:id rect-regular)]})]]
         (tohs/run-store-async
          store done events
          (fn [new-state]

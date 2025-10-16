@@ -313,7 +313,7 @@
                  (st/emit! (udw/trigger-bounding-box-cloaking ids)
                            (dwta/toggle-token {:token (first value)
                                                :attrs #{attr}
-                                               :shapes shapes}))
+                                               :shape-ids ids}))
                  (binding [cts/*wasm-sync* true]
                    (run! #(do-size-change resolved-value attr) shapes)))))))
 
@@ -344,7 +344,7 @@
                  (st/emit! (udw/trigger-bounding-box-cloaking ids)
                            (dwta/toggle-token {:token (first value)
                                                :attrs #{attr}
-                                               :shapes shapes}))
+                                               :shape-ids ids}))
                  (binding [cts/*wasm-sync* true]
                    (run! #(do-position-change %1 resolved-value attr) shapes)))))))
 
@@ -369,7 +369,7 @@
                  (st/emit! (udw/trigger-bounding-box-cloaking ids)
                            (dwta/toggle-token {:token (first value)
                                                :attrs #{:rotation}
-                                               :shapes shapes}))
+                                               :shape-ids ids}))
                  (binding [cts/*wasm-sync* true]
                    (run! #(do-rotation-change resolved-value) shapes)))))))
 
