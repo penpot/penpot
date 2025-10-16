@@ -16,7 +16,7 @@
    [app.main.ui.settings.access-tokens :refer [access-tokens-page]]
    [app.main.ui.settings.change-email]
    [app.main.ui.settings.delete-account]
-   [app.main.ui.settings.feedback :refer [feedback-page]]
+   [app.main.ui.settings.feedback :refer [feedback-page*]]
    [app.main.ui.settings.notifications :refer [notifications-page*]]
    [app.main.ui.settings.options :refer [options-page]]
    [app.main.ui.settings.password :refer [password-page]]
@@ -33,8 +33,8 @@
    [:div {:class (stl/css :dashboard-title)}
     [:h1 {:data-testid "account-title"} (tr "dashboard.your-account-title")]]])
 
-(mf/defc settings
-  [{:keys [route type report-id url-error]}]
+(mf/defc settings*
+  [{:keys [route type error-report-id error-href]}]
   (let [section (get-in route [:data :name])
         profile (mf/deref refs/profile)]
 
@@ -60,9 +60,9 @@
           [:& profile-page]
 
           :settings-feedback
-          [:& feedback-page {:type type
-                             :report-id report-id
-                             :url-error url-error}]
+          [:> feedback-page* {:type type
+                              :error-report-id error-report-id
+                              :error-href error-href}]
 
           :settings-password
           [:& password-page]

@@ -46,8 +46,8 @@
 (def dashboard-page*
   (mf/lazy-component app.main.ui.dashboard/dashboard*))
 
-(def settings-page
-  (mf/lazy-component app.main.ui.settings/settings))
+(def settings-page*
+  (mf/lazy-component app.main.ui.settings/settings*))
 
 (def workspace-page*
   (mf/lazy-component app.main.ui.workspace/workspace*))
@@ -197,14 +197,13 @@
         :settings-subscription
         :settings-access-tokens
         :settings-notifications)
-       (let [params        (get params :query)
-             type          (some-> params :type)
-             report-id     (some-> params :report-id)
-             url-error     (some-> params :url-error)]
-         [:? [:& settings-page {:route route
-                                :type type
-                                :report-id report-id
-                                :url-error url-error}]])
+       (let [params (get params :query)
+             error-report-id (some-> params :error-report-id uuid/parse*)]
+         [:? [:> settings-page*
+              {:route route
+               :type (get params :type)
+               :error-report-id error-report-id
+               :error-href (get params :error-href)}]])
 
        :debug-icons-preview
        (when *assert*

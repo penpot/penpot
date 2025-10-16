@@ -11,9 +11,11 @@
    [app.common.data :as d]
    [app.common.pprint :as pp]
    [app.common.uri :as u]
+   [app.common.uuid :as uuid]
    [app.main.data.auth :refer [is-authenticated?]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
+   [app.main.errors :as errors]
    [app.main.refs :as refs]
    [app.main.repo :as rp]
    [app.main.router :as rt]
@@ -29,6 +31,7 @@
    [app.main.ui.viewer.header :as viewer.header]
    [app.util.dom :as dom]
    [app.util.i18n :refer [tr]]
+   [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [beicon.v2.core :as rx]
    [cuerdas.core :as str]
@@ -352,16 +355,20 @@
 (mf/defc internal-error*
   [{:keys [on-reset report] :as props}]
   (let [report-uri (mf/use-ref nil)
-        on-reset (or on-reset #(st/emit! (rt/assign-exception nil)))
+        on-reset   (or on-reset #(st/emit! (rt/assign-exception nil)))
 
         support-contact-click
         (mf/use-fn
+         (mf/deps on-reset report)
          (fn []
-           (let [report-id (str "report-" (random-uuid))]
-             (.setItem js/localStorage report-id report)
-             (st/emit! (rt/nav :settings-feedback {:type "issue"
-                                                   :report-id report-id
-                                                   :url-error (rt/get-current-href)})))))
+           (tm/schedule on-reset)
+           (let [error-report-id (uuid/next)
+                 error-href (rt/get-current-href)]
+             (set! errors/last-report {:id error-report-id :content report})
+             (st/emit!
+              (rt/nav :settings-feedback {:type "issue"
+                                          :error-report-id error-report-id
+                                          :error-href error-href})))))
 
         on-download
         (mf/use-fn
@@ -372,6 +379,7 @@
 
     (mf/with-effect [report]
       (when (some? report)
+        (set! errors/last-report report)
         (let [report (wapi/create-blob report "text/plain")
               uri    (wapi/create-uri report)]
           (mf/set-ref-val! report-uri uri)
@@ -444,6 +452,7 @@
                                    :path (get route :path)
                                    :report report
                                    :params params}))))
+
     (case type
       :not-found
       [:> not-found* {}]

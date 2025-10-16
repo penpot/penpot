@@ -359,8 +359,10 @@
 
 (def ^:private schema:feedback
   [:map
-   [:subject ::sm/text]
-   [:content ::sm/text]])
+   [:feedback-subject ::sm/text]
+   [:feedback-type ::sm/text]
+   [:feedback-content ::sm/text]
+   [:profile :map]])
 
 (def user-feedback
   "A profile feedback email."

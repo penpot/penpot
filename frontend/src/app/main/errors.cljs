@@ -25,6 +25,9 @@
 ;; From app.main.data.workspace we can use directly because it causes a circular dependency
 (def reload-file nil)
 
+;; Will contain the latest error report assigned
+(def last-report nil)
+
 (defn- print-data!
   [data]
   (-> data
