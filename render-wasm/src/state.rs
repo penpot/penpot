@@ -148,6 +148,7 @@ impl State {
     /// When a shape's selection rectangle changes, all its ancestors need to have their
     /// extended rectangles recalculated because the shape's bounds may have changed.
     /// This ensures proper rendering of frames and groups containing the modified shape.
+    // FIXME: PERFORMANCE
     pub fn set_selrect_for_current_shape(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         let shape = {
             let Some(shape) = self.current_shape_mut() else {

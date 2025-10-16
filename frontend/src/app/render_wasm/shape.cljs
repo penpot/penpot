@@ -121,7 +121,7 @@
 
 ;; --- SHAPE IMPL
 
-(defn set-wasm-single-attr!
+(defn- set-wasm-single-attr!
   [shape k]
   (let [v  (get shape k)
         id (get shape :id)]
@@ -252,8 +252,10 @@
 
 (defn set-wasm-attrs!
   [shape k v]
-  (let [shape-id (dm/get-prop shape :id)]
-    (when (shape-in-current-page? shape-id)
+  (let [shape-id (dm/get-prop shape :id)
+        old-value (get shape k)]
+    (when (and (shape-in-current-page? shape-id)
+               (not (identical? old-value v)))
       (let [shape (assoc shape k v)]
         (api/use-shape shape-id)
         (let [result (set-wasm-single-attr! shape k)

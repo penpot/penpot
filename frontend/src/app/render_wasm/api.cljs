@@ -89,17 +89,16 @@
 
 (def debounce-render (fns/debounce render 100))
 
-(defn cancel-render
-  [_]
-  (when wasm/internal-frame-id
-    (js/cancelAnimationFrame wasm/internal-frame-id)
-    (set! wasm/internal-frame-id nil)))
+(defonce pending-render (atom false))
 
 (defn request-render
-  [requester]
-  (when wasm/internal-frame-id (cancel-render requester))
-  (let [frame-id (js/requestAnimationFrame render)]
-    (set! wasm/internal-frame-id frame-id)))
+  [_requester]
+  (when (not @pending-render)
+    (reset! pending-render true)
+    (js/requestAnimationFrame
+     (fn [ts]
+       (reset! pending-render false)
+       (render ts)))))
 
 (defn use-shape
   [id]
