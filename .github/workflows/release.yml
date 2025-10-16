@@ -60,12 +60,12 @@ jobs:
           EXTRA_TAGS=("main" "latest")
 
           for image in "${IMAGES[@]}"; do
-            docker pull "$REGISTRY/penpotapp/$image:$TAG"
-            docker tag "$REGISTRY/penpotapp/$image:$TAG" "penpotapp/$image:$TAG"
+            docker pull "$REGISTRY/$image:$TAG"
+            docker tag "$REGISTRY/$image:$TAG" "penpotapp/$image:$TAG"
             docker push "penpotapp/$image:$TAG"
 
             for tag in "${EXTRA_TAGS[@]}"; do
-              docker tag "$REGISTRY/penpotapp/$image:$TAG" "penpotapp/$image:$tag"
+              docker tag "$REGISTRY/$image:$TAG" "penpotapp/$image:$tag"
               docker push "penpotapp/$image:$tag"
             done
           done
