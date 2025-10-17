@@ -1555,9 +1555,7 @@ Will return a value that matches this schema:
 (defn- convert-dtcg-box-shadow-composite
   "Convert box-shadow token value from DTCG format to internal format."
   [value]
-  (cond
-    ;; Array of shadows
-    (sequential? value)
+  (if (sequential? value)
     (mapv (fn [shadow]
             (if (map? shadow)
               (-> shadow
@@ -1570,18 +1568,7 @@ Will return a value that matches this schema:
                   (select-keys [:x :y :blur :spread :color :type]))
               shadow))
           value)
-    ;; Reference value (string)
-    (string? value) value
-    ;; Single shadow object
-    (map? value) (-> value
-                     (set/rename-keys {"x" :x
-                                       "y" :y
-                                       "blur" :blur
-                                       "spread" :spread
-                                       "color" :color
-                                       "type" :type})
-                     (select-keys [:x :y :blur :spread :color :type]))
-    :else value))
+    value))
 
 (defn- flatten-nested-tokens-json
   "Convert a tokens tree in the decoded json fragment into a flat map,
@@ -1774,9 +1761,7 @@ Will return a value that matches this schema:
 (defn- box-shadow-token->dtcg-token
   "Convert box-shadow token value from internal format to DTCG format."
   [value]
-  (cond
-    ;; Array of shadows
-    (sequential? value)
+  (if (sequential? value)
     (mapv (fn [shadow]
             (if (map? shadow)
               (-> shadow
@@ -1789,18 +1774,7 @@ Will return a value that matches this schema:
                   (select-keys ["x" "y" "blur" "spread" "color" "type"]))
               shadow))
           value)
-    ;; Reference value (string)
-    (string? value) value
-    ;; Single shadow object
-    (map? value) (-> value
-                     (set/rename-keys {:x "x"
-                                       :y "y"
-                                       :blur "blur"
-                                       :spread "spread"
-                                       :color "color"
-                                       :type "type"})
-                     (select-keys ["x" "y" "blur" "spread" "color" "type"]))
-    :else value))
+    value))
 
 (defn- token->dtcg-token [token]
   (cond-> {"$value" (cond-> (:value token)
