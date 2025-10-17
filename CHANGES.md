@@ -57,6 +57,7 @@
 - Alternative ways of creating variants - Button Viewport [Taiga #11931](https://tree.taiga.io/project/penpot/us/11931)
 - Reorder properties for a component [Taiga #10225](https://tree.taiga.io/project/penpot/us/10225)
 - File Data storage layout refactor [Github #7345](https://github.com/penpot/penpot/pull/7345)
+- Make several queries optimization on comment threads [Github #7506](https://github.com/penpot/penpot/pull/7506)
 
 ### :bug: Bugs fixed
 
@@ -71,6 +72,9 @@
 - Fix auto-width changes to fixed when switching variants [Taiga #12172](https://tree.taiga.io/project/penpot/issue/12172)
 - Fix component number has no singular translation string [Taiga #12106](https://tree.taiga.io/project/penpot/issue/12106)
 - Fix adding/removing identical text fills [Taiga #12287](https://tree.taiga.io/project/penpot/issue/12287)
+- Fix scroll on the inspect tab [Taiga #12293](https://tree.taiga.io/project/penpot/issue/12293)
+- Fix lock proportion tooltip [Taiga #12326](https://tree.taiga.io/project/penpot/issue/12326)
+- Fix internal Error when selecting a set by name in the token theme editor [Taiga #12310](https://tree.taiga.io/project/penpot/issue/12310)
 
 
 ## 2.10.1

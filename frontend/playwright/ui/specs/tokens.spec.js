@@ -864,6 +864,12 @@ test.describe("Tokens: Themes modal", () => {
       }
     }
 
+    const firstButton = await tokenThemeUpdateCreateModal
+      .getByTestId('tokens-set-item')
+      .first();
+    
+    await firstButton.click();
+
     await tokenThemeUpdateCreateModal
       .getByRole("button", {
         name: "Save theme",
