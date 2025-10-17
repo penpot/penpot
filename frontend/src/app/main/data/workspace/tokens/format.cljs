@@ -30,7 +30,7 @@
     (str/join "\n" (map format-token-value token-value))
 
     (sequential? token-value)
-    (str/join ", " (map format-token-value token-value))
+    (str/join ", " token-value)
 
     :else
     (str token-value)))
