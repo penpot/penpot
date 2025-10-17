@@ -8,6 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data :as d]
+   [app.main.data.workspace.tokens.format :refer [category-dictionary
+                                                  format-token-value]]
    [app.main.ui.ds.tooltip :refer [tooltip*]]
    [app.main.ui.inspect.styles.property-detail-copiable :refer [property-detail-copiable*]]
    [app.util.i18n :refer [tr]]
@@ -35,6 +37,7 @@
         copiable-value (if (some? token)
                          (:name token)
                          property)
+
         copy-attr
         (mf/use-fn
          (mf/deps copied)
@@ -52,7 +55,11 @@
                         :content #(mf/html
                                    [:div {:class (stl/css :tooltip-token)}
                                     [:div {:class (stl/css :tooltip-token-title)} (tr "inspect.tabs.styles.token.resolved-value")]
-                                    [:div {:class (stl/css :tooltip-token-value)} (if (= :typography (:type token)) (:name token) (:resolved-value token))]])}
+                                    [:div {:class (stl/css :tooltip-token-value)} (if (= :typography (:type token))
+                                                                                    [:ul {:class (stl/css :tooltip-token-resolved-values)}
+                                                                                     (for [[property value] (:resolved-value token)]
+                                                                                       [:li (str (category-dictionary property) ": " (format-token-value value))])]
+                                                                                    (:resolved-value token))]])}
            [:> property-detail-copiable* {:token token
                                           :copied copied
                                           :on-click copy-attr} detail]]
