@@ -58,7 +58,7 @@
                                     [:div {:class (stl/css :tooltip-token-value)} (if (= :typography (:type token))
                                                                                     [:ul {:class (stl/css :tooltip-token-resolved-values)}
                                                                                      (for [[property value] (:resolved-value token)]
-                                                                                       [:li (str (category-dictionary property) ": " (format-token-value value))])]
+                                                                                       [:li {:key property} (str (category-dictionary property) ": " (format-token-value value))])]
                                                                                     (:resolved-value token))]])}
            [:> property-detail-copiable* {:token token
                                           :copied copied
