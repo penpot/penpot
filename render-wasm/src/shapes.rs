@@ -119,8 +119,11 @@ impl Type {
                     layout.scale_content(value);
                 }
             }
-            Type::Text(TextContent { paragraphs, .. }) => {
-                paragraphs.iter_mut().for_each(|p| p.scale_content(value));
+            Type::Text(text_content) => {
+                text_content
+                    .paragraphs
+                    .iter_mut()
+                    .for_each(|p| p.scale_content(value));
             }
             _ => {}
         }
@@ -267,6 +270,7 @@ impl Shape {
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
             text.set_xywh(left, top, right - left, bottom - top);
+            text.update_layout(self.selrect);
         }
     }
 
@@ -819,10 +823,10 @@ impl Shape {
         shapes_pool: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
     ) -> math::Rect {
-        let shape = self.transformed(modifiers.get(&self.id));
+        let mut shape = self.transformed(modifiers.get(&self.id));
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
-        let mut rect = match &shape.shape_type {
+        let mut rect = match &mut shape.shape_type {
             Type::Path(_) | Type::Bool(_) => {
                 if let Some(path) = shape.get_skia_path() {
                     return path
@@ -830,10 +834,6 @@ impl Shape {
                         .with_outset((max_stroke, max_stroke));
                 }
                 shape.bounds().to_rect()
-            }
-            Type::Text(text_content) => {
-                let text_bounds = text_content.get_bounds(&shape);
-                text_bounds.to_rect()
             }
             _ => shape.bounds().to_rect(),
         };

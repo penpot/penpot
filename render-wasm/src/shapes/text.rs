@@ -1,5 +1,5 @@
 use crate::{
-    math::{Bounds, Matrix, Rect},
+    math::{Matrix, Rect},
     render::{default_font, DEFAULT_EMOJI_FONT},
 };
 
@@ -16,7 +16,7 @@ use std::collections::HashSet;
 
 use super::FontFamily;
 use crate::math::Point;
-use crate::shapes::{self, merge_fills, Shape};
+use crate::shapes::{self, merge_fills};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
@@ -218,7 +218,11 @@ impl TextContent {
     }
 
     pub fn width(&self) -> f32 {
-        self.size.width
+        if self.grow_type() == GrowType::AutoWidth {
+            self.size.width
+        } else {
+            self.bounds.width()
+        }
     }
 
     pub fn grow_type(&self) -> GrowType {
@@ -227,36 +231,6 @@ impl TextContent {
 
     pub fn set_grow_type(&mut self, grow_type: GrowType) {
         self.grow_type = grow_type;
-    }
-
-    pub fn get_bounds(&self, shape: &Shape) -> Bounds {
-        let (x, y, transform, center) = (
-            shape.selrect.x(),
-            shape.selrect.y(),
-            &shape.transform,
-            &shape.center(),
-        );
-        let (width, height) = (self.size.width, self.size.height);
-        let text_rect = Rect::from_xywh(x, y, width, height);
-
-        let mut bounds = Bounds::new(
-            Point::new(text_rect.x(), text_rect.y()),
-            Point::new(text_rect.x() + text_rect.width(), text_rect.y()),
-            Point::new(
-                text_rect.x() + text_rect.width(),
-                text_rect.y() + text_rect.height(),
-            ),
-            Point::new(text_rect.x(), text_rect.y() + text_rect.height()),
-        );
-
-        if !transform.is_identity() {
-            let mut matrix = *transform;
-            matrix.post_translate(*center);
-            matrix.pre_translate(-*center);
-            bounds.transform_mut(&matrix);
-        }
-
-        bounds
     }
 
     pub fn transform(&mut self, transform: &Matrix) {
