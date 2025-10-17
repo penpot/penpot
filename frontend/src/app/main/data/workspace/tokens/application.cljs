@@ -149,23 +149,28 @@
                           :ignore-touched true
                           :changed-sub-attr [:stroke-color]}))))
 
+(defn value->shadow
+  "Transform a token box-shadow value into penpot shadow data structure"
+  [value]
+  (mapv (fn [{:keys [x y blur spread color type]}]
+          {:id (random-uuid)
+           :hidden false
+           :offset-x x
+           :offset-y y
+           :blur blur
+           :color (value->color color)
+           :spread spread
+           :style
+           (case type
+             "innerShadow" :inner-shadow
+             :drop-shadow)})
+        value))
+
 (defn update-box-shadow
   ([value shape-ids attributes]
    (update-box-shadow value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
-   (let [shadows (mapv (fn [{:keys [x y blur spread color type]}]
-                         {:id (random-uuid)
-                          :hidden false
-                          :offset-x x
-                          :offset-y y
-                          :blur blur
-                          :color (value->color color)
-                          :spread spread
-                          :style
-                          (case type
-                            "innerShadow" :inner-shadow
-                            :drop-shadow)})
-                       value)]
+   (let [shadows (value->shadow value)]
      (dwsh/update-shapes shape-ids
                          #(assoc % :shadow shadows)
                          {:reg-objects? true
