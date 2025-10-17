@@ -31,10 +31,6 @@
   margin: 0;
 }
 
-.layout-options {
-  inline-size: fit-content;
-}
-
 .layout-option {
   white-space: nowrap;
 }
@@ -395,7 +391,6 @@
   inset-block-start: $sz-32;
   inset-inline-start: initial;
   inset-inline-end: var(--sp-s);
-  inline-size: 100%;
   max-block-size: var(--menu-max-height, px2rem(300));
   padding: var(--sp-xxs);
   margin: 0;
@@ -408,6 +403,7 @@
   color: var(--color-foreground-primary);
   border: $b-2 solid var(--color-background-quaternary);
   gap: var(--sp-xs);
+  inline-size: fit-content;
 
   button {
     border: none;
