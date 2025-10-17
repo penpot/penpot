@@ -851,7 +851,8 @@
          (fn []
            (let [open? (not color-ramp-open?)]
              (reset! color-ramp-open* open?)
-             (on-display-colorpicker open?))))
+             (when on-display-colorpicker
+               (on-display-colorpicker open?)))))
 
         swatch
         (mf/html
