@@ -133,7 +133,7 @@
                                     :settings-item true)
                :on-click go-settings-feedback}
           feedback-icon
-          [:span {:class (stl/css :element-title)} (tr "labels.give-feedback")]])]]]))
+          [:span {:class (stl/css :element-title)} (tr "labels.contact-us")]])]]]))
 
 (mf/defc sidebar
   {::mf/wrap [mf/memo]

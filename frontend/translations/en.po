@@ -1559,15 +1559,17 @@ msgstr "Old password is incorrect"
 msgid "feedback.description"
 msgstr "Description"
 
-#: src/app/main/ui/settings/feedback.cljs:92
-msgid "feedback.discourse-go-to"
-msgstr "Go to Penpot forum"
+msgid "feedback.description-placeholder"
+msgstr "Please describe the reason of your feedback"
 
 #: src/app/main/ui/settings/feedback.cljs:86
 msgid "feedback.discourse-subtitle1"
 msgstr ""
 "We're happy to have you here. If you need help, please search before you "
 "post."
+
+msgid "feedback.other-ways-contact"
+msgstr "Other ways to contact us"
 
 #: src/app/main/ui/settings/feedback.cljs:85
 msgid "feedback.discourse-title"
@@ -1577,6 +1579,21 @@ msgstr "Penpot community"
 msgid "feedback.subject"
 msgstr "Subject"
 
+msgid "feedback.type"
+msgstr "Type"
+
+msgid "feedback.type.idea"
+msgstr "Idea"
+
+msgid "feedback.type.issue"
+msgstr "Issue"
+
+msgid "feedback.type.doubt"
+msgstr "Doubt"
+
+msgid "feedback.penpot.link"
+msgstr "If the feedback is something related with a file or a project, add the penpot link in here:"
+
 #: src/app/main/ui/settings/feedback.cljs:66
 msgid "feedback.subtitle"
 msgstr ""
@@ -1584,12 +1601,8 @@ msgstr ""
 "idea or a doubt. A member of our team will respond as soon as possible."
 
 #: src/app/main/ui/settings/feedback.cljs:65
-msgid "feedback.title"
-msgstr "Email"
-
-#: src/app/main/ui/settings/feedback.cljs:102
-msgid "feedback.twitter-go-to"
-msgstr "Go to X"
+msgid "feedback.title-contact-us"
+msgstr "Contact us"
 
 #: src/app/main/ui/settings/feedback.cljs:96
 msgid "feedback.twitter-subtitle1"
@@ -2217,6 +2230,9 @@ msgstr "Github repository"
 msgid "labels.give-feedback"
 msgstr "Give feedback"
 
+msgid "labels.contact-us"
+msgstr "Contact us"
+
 #: src/app/main/ui/auth/recovery_request.cljs:104, src/app/main/ui/auth/register.cljs:359, src/app/main/ui/static.cljs:170, src/app/main/ui/viewer/login.cljs:111
 msgid "labels.go-back"
 msgstr "Go back"
@@ -2254,10 +2270,11 @@ msgid "labels.installed-fonts"
 msgstr "Installed fonts"
 
 #: src/app/main/ui/static.cljs:373
-msgid "labels.internal-error.desc-message"
-msgstr ""
-"Something bad happened. Please retry the operation and if the problem "
-"persists, contact support."
+msgid "labels.internal-error.desc-message-first"
+msgstr "Something bad happened."
+
+msgid "labels.internal-error.desc-message-second"
+msgstr "You can retry the operation or contact support to report the error."
 
 #: src/app/main/ui/static.cljs:372
 msgid "labels.internal-error.main-message"
@@ -2524,6 +2541,12 @@ msgstr "Restore"
 #: src/app/main/ui/static.cljs:294, src/app/main/ui/static.cljs:303, src/app/main/ui/static.cljs:377
 msgid "labels.retry"
 msgstr "Retry"
+
+msgid "labels.download"
+msgstr "Download %s"
+
+msgid "labels.contact-support"
+msgstr "Contact support"
 
 #: src/app/main/ui/dashboard/team.cljs:513, src/app/main/ui/dashboard/team.cljs:945
 msgid "labels.role"

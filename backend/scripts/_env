@@ -20,6 +20,7 @@ export PENPOT_FLAGS="\
        enable-audit-log \
        enable-transit-readable-response \
        enable-demo-users \
+       enable-user-feedback \
        disable-secure-session-cookies \
        enable-smtp \
        enable-prepl-server \
@@ -45,6 +46,8 @@ export PENPOT_MEDIA_MAX_FILE_SIZE=104857600
 
 # Setup default multipart upload size to 300MiB
 export PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE=314572800
+
+export PENPOT_USER_FEEDBACK_DESTINATION="support@example.com"
 
 export AWS_ACCESS_KEY_ID=penpot-devenv
 export AWS_SECRET_ACCESS_KEY=penpot-devenv
