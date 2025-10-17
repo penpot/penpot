@@ -415,7 +415,7 @@
           all-errors (mapcat :errors parsed-shadows)
 
           ;; Collect all values from shadows that have values
-          all-values (keep :value parsed-shadows)]
+          all-values (into [] (keep :value parsed-shadows))]
 
       (if (seq all-errors)
         {:errors all-errors
