@@ -956,10 +956,43 @@
      :placeholder "spread"}
     :color
     {:label "color"
-     :placeholder "color"}))
+     :placeholder "color"}
+    :type
+    {:label "inset"
+     :placeholder "inset"
+     :special-input :inset-select}))
+
+(mf/defc inset-type-select*
+  [{:keys [default-value label shadow-idx on-change]}]
+  (let [selected* (mf/use-state (case default-value
+                                  "innerShadow" "true"
+                                  "false"))
+        selected (deref selected*)
+
+        on-change
+        (mf/use-fn
+         (mf/deps on-change)
+         (fn [value e]
+           (let [token-value (case value
+                               "true" "innerShadow"
+                               "boxShadow")]
+             (obj/set! e "tokenValue" token-value)
+             (on-change e)
+             (reset! selected* value))))]
+    [:div {:class (stl/css :input-row)}
+     [:div {:class (stl/css :inset-label)} label]
+     [:& radio-buttons {:selected selected
+                        :on-change on-change
+                        :name (str "inset-select-" shadow-idx)}
+      [:& radio-button {:value "false"
+                        :title "false"
+                        :id (str "inset-false-" shadow-idx)}]
+      [:& radio-button {:value "true"
+                        :title "true"
+                        :id (str "inset-true-" shadow-idx)}]]]))
 
 (mf/defc box-shadow-input*
-  [{:keys [default-value label placeholder shadow shadow-idx input-type on-update-value token-resolve-result errors-by-key]}]
+  [{:keys [default-value label placeholder shadow-idx input-type on-update-value token-resolve-result errors-by-key]}]
   (let [on-change
         (mf/use-fn
          (mf/deps shadow-idx input-type on-update-value)
@@ -978,13 +1011,19 @@
                      (d/without-nils
                       {:resolved-value (when-not (str/empty? resolved) resolved)
                        :errors errors}))]
-    [:div {:class (stl/css :input-row)}
-     [:> input-token*
-      {:aria-label label
-       :placeholder placeholder
-       :default-value default-value
-       :on-change on-change
-       :token-resolve-result token-prop}]]))
+    (case input-type
+      :type
+      [:> inset-type-select*
+       {:default-value default-value
+        :label label
+        :on-change on-change}]
+      [:div {:class (stl/css :input-row)}
+       [:> input-token*
+        {:aria-label label
+         :placeholder placeholder
+         :default-value default-value
+         :on-change on-change
+         :token-resolve-result token-prop}]])))
 
 (mf/defc box-shadow-input-fields*
   [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value token-resolve-result errors-by-key] :as props}]
@@ -1005,7 +1044,7 @@
                        :disabled is-remove-disabled
                        ;; TODO l10n
                        :aria-label "Remove shadow"}]
-     (for [[input-type {:keys [label placeholder]}] (shadow-inputs)]
+     (for [[input-type {:keys [label placeholder special-input]}] (shadow-inputs)]
        [:> box-shadow-input*
         {:key (str input-type shadow-idx)
          :input-type input-type
@@ -1069,7 +1108,9 @@
          (fn [e prev-composite-value]
            (let [prev-composite-value (or prev-composite-value [])
                  [idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
-                 input-value (dom/get-target-val e)
+                 input-value (case token-type
+                               :type (obj/get e "tokenValue")
+                               (dom/get-target-val e))
                  reference-value-input? (not token-type-at-index)]
              (cond
                reference-value-input? input-value
