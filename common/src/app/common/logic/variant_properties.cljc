@@ -28,11 +28,7 @@
               (pcb/update-component
                changes (:id component)
                (fn [component]
-                 (d/update-in-when component [:variant-properties pos]
-                                   (fn [property]
-                                     (-> property
-                                         (assoc :name new-name)
-                                         (with-meta nil)))))
+                 (d/update-in-when component [:variant-properties pos] #(assoc % :name new-name)))
                {:apply-changes-local-library? true}))
             changes
             related-components)))
