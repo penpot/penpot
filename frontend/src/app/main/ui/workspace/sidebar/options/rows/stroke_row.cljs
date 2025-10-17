@@ -43,8 +43,7 @@
            on-detach-token
            disable-stroke-style
            select-on-focus
-           shapes
-           objects]}]
+           ids]}]
 
   (let [on-drop
         (fn [_ data]
@@ -105,25 +104,13 @@
 
         on-token-change
         (mf/use-fn
-         (mf/deps shapes objects)
+         (mf/deps ids)
          (fn [_ token]
-           (let [expanded-shapes
-                 (if (= 1 (count shapes))
-                   (let [shape (first shapes)]
-                     (if (= (:type shape) :group)
-                       (keep objects (:shapes shape))
-                       [shape]))
-
-                   (mapcat (fn [shape]
-                             (if (= (:type shape) :group)
-                               (keep objects (:shapes shape))
-                               [shape]))
-                           shapes))]
-
-             (st/emit!
-              (dwta/toggle-token {:token token
-                                  :attrs #{:stroke-color}
-                                  :shapes expanded-shapes})))))
+           (st/emit!
+            (dwta/toggle-token {:token token
+                                :attrs #{:stroke-color}
+                                :shape-ids ids
+                                :expand-with-children true}))))
 
         stroke-style (or (:stroke-style stroke) :solid)
 

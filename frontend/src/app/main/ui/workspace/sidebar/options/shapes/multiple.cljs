@@ -462,7 +462,6 @@
        :ids layout-container-ids
        :values layout-container-values
        :applied-tokens layout-contianer-tokens
-       :shapes shapes
        :multiple true}]
 
      (when (or is-layout-child? has-flex-layout-container?)
@@ -485,8 +484,6 @@
        [:> fill/fill-menu* {:type type
                             :ids fill-ids
                             :values fill-values
-                            :shapes shapes
-                            :objects objects
                             :applied-tokens fill-tokens}])
 
      (when-not (empty? stroke-ids)
@@ -494,8 +491,6 @@
                         :ids stroke-ids
                         :show-caps show-caps?
                         :values stroke-values
-                        :shapes shapes
-                        :objects objects
                         :disable-stroke-style has-text?
                         :applied-tokens stroke-tokens}])
 

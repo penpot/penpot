@@ -145,6 +145,7 @@
          [:> token-group* {:key (name type)
                            :is-open (get open-status type false)
                            :type type
+                           :selected-ids selected
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
                            :active-theme-tokens resolved-active-tokens

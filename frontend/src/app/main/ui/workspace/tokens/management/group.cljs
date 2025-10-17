@@ -47,7 +47,7 @@
 
 (mf/defc token-group*
   {::mf/private true}
-  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens is-open]}]
+  [{:keys [type tokens selected-shapes is-selected-inside-layout active-theme-tokens is-open selected-ids]}]
   (let [{:keys [modal title]}
         (get dwta/token-properties type)
         editing-ref  (mf/deref refs/workspace-editor-state)
@@ -93,12 +93,12 @@
 
         on-token-pill-click
         (mf/use-fn
-         (mf/deps selected-shapes not-editing?)
+         (mf/deps not-editing? selected-ids)
          (fn [event token]
            (dom/stop-propagation event)
            (when (and not-editing? (seq selected-shapes) (not= (:type token) :number))
              (st/emit! (dwta/toggle-token {:token token
-                                           :shapes selected-shapes})))))]
+                                           :shape-ids selected-ids})))))]
 
     [:div {:on-click on-toggle-open-click :class (stl/css :token-section-wrapper)}
      [:> cmm/asset-section* {:icon (token-section-icon type)

@@ -340,7 +340,7 @@
   (select-padding false false false false))
 
 (mf/defc simple-padding-selection*
-  [{:keys [value on-change shapes applied-tokens ids]}]
+  [{:keys [value on-change applied-tokens ids]}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
 
@@ -373,7 +373,7 @@
                         nil)
         on-change'
         (mf/use-fn
-         (mf/deps on-change shapes)
+         (mf/deps on-change ids)
          (fn [value attr event]
            (if (or (string? value) (int? value))
              (on-change :simple attr value event)
@@ -381,7 +381,7 @@
                (let [resolved-value (:resolved-value (first value))]
                  (st/emit! (dwta/toggle-token {:token (first value)
                                                :attrs #{attr}
-                                               :shapes shapes}))
+                                               :shape-ids ids}))
                  (on-change :simple attr resolved-value event))))))
 
         on-detach-token
@@ -474,7 +474,7 @@
           :value p2}]])]))
 
 (mf/defc multiple-padding-selection*
-  [{:keys [value on-change shapes applied-tokens ids]}]
+  [{:keys [value on-change applied-tokens ids]}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
 
@@ -485,7 +485,7 @@
 
         on-change'
         (mf/use-fn
-         (mf/deps on-change shapes)
+         (mf/deps on-change ids)
          (fn [value attr event]
            (if (or (string? value) (int? value))
              (on-change :multiple attr value event)
@@ -493,7 +493,7 @@
                (let [resolved-value (:resolved-value (first value))]
                  (st/emit! (dwta/toggle-token {:token (first value)
                                                :attrs #{attr}
-                                               :shapes shapes}))
+                                               :shape-ids ids}))
                  (on-change :multiple attr resolved-value event))))))
 
         on-focus
@@ -701,7 +701,7 @@
   (select-gap! nil))
 
 (mf/defc gap-section*
-  [{:keys [is-column wrap-type on-change value applied-tokens shapes ids]
+  [{:keys [is-column wrap-type on-change value applied-tokens ids]
     :as props}]
   (let [token-numeric-inputs
         (features/use-feature "tokens/numeric-input")
@@ -718,7 +718,7 @@
 
         on-change'
         (mf/use-fn
-         (mf/deps on-change wrap-type)
+         (mf/deps on-change wrap-type ids)
          (fn [value attr event]
 
            (if (or (string? value) (int? value))
@@ -727,7 +727,7 @@
                (let [resolved-value (:resolved-value (first value))]
                  (st/emit! (dwta/toggle-token {:token (first value)
                                                :attrs #{attr}
-                                               :shapes shapes}))
+                                               :shape-ids ids}))
                  (on-change (= "nowrap" wrap-type) attr resolved-value event))))))
 
         on-detach-token
@@ -1083,7 +1083,7 @@
 
 (mf/defc layout-container-menu
   {::mf/memo #{:ids :values :multiple :shapes :applied-tokens}}
-  [{:keys [ids values multiple shapes applied-tokens]}]
+  [{:keys [ids values multiple applied-tokens]}]
   (let [;; Display
         layout-type    (:layout values)
         has-layout?    (some? layout-type)
@@ -1339,14 +1339,12 @@
            [:> gap-section* {:is-column is-column
                              :wrap-type wrap-type
                              :on-change on-gap-change
-                             :shapes shapes
                              :ids ids
                              :applied-tokens applied-tokens
                              :value (:layout-gap values)}]
            [:> padding-section* {:value (:layout-padding values)
                                  :type (:layout-padding-type values)
                                  :on-type-change on-padding-type-change
-                                 :shapes shapes
                                  :ids ids
                                  :applied-tokens applied-tokens
                                  :on-change on-padding-change}]]]
@@ -1384,14 +1382,12 @@
 
           [:div {:class (stl/css :gap-row)}
            [:> gap-section* {:on-change on-gap-change
-                             :shapes shapes
                              :ids ids
                              :applied-tokens applied-tokens
                              :value (:layout-gap values)}]]
           [:div {:class (stl/css :padding-row)}
            [:> padding-section* {:value (:layout-padding values)
                                  :type (:layout-padding-type values)
-                                 :shapes shapes
                                  :applied-tokens applied-tokens
                                  :on-type-change on-padding-type-change
                                  :on-change on-padding-change}]]]
@@ -1399,8 +1395,8 @@
          nil))]))
 
 (mf/defc grid-layout-edition
-  {::mf/memo #{:ids :values :shapes :applied-tokens}}
-  [{:keys [ids values shapes applied-tokens]}]
+  {::mf/memo #{:ids :values :applied-tokens}}
+  [{:keys [ids values applied-tokens]}]
   (let [;; Gap
         saved-grid-dir (:layout-grid-dir values)
 
@@ -1584,7 +1580,6 @@
 
      [:div {:class (stl/css :gap-row)}
       [:> gap-section* {:on-change on-gap-change
-                        :shapes shapes
                         :ids ids
                         :applied-tokens applied-tokens
                         :value (:layout-gap values)}]]
