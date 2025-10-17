@@ -232,7 +232,7 @@
                             check-typography-token-self-reference])
         (default-validate-token))))
 
-(defn validate-box-shadow-token
+(defn validate-shadow-token
   [{:keys [token-value] :as props}]
   (cond
     ;; Entering form without a value - show no error just resolve nil
@@ -989,7 +989,7 @@
                         :title "true"
                         :id (str "inset-true-" shadow-idx)}]]]))
 
-(mf/defc box-shadow-input*
+(mf/defc shadow-input*
   [{:keys [default-value label placeholder shadow-idx input-type on-update-value on-blur on-external-update-value token-resolve-result errors-by-key]}]
   (let [color-input-ref (mf/use-ref)
 
@@ -1034,7 +1034,7 @@
          :on-change on-change
          :token-resolve-result token-prop}]])))
 
-(mf/defc box-shadow-input-fields*
+(mf/defc shadow-input-fields*
   [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value token-resolve-result errors-by-key on-external-update-value] :as props}]
   (let [on-remove-shadow
         (mf/use-fn
@@ -1054,7 +1054,7 @@
                        ;; TODO l10n
                        :aria-label "Remove shadow"}]
      (for [[input-type {:keys [label placeholder special-input]}] (shadow-inputs)]
-       [:> box-shadow-input*
+       [:> shadow-input*
         {:key (str input-type shadow-idx)
          :input-type input-type
          :label label
@@ -1066,7 +1066,7 @@
          :errors-by-key errors-by-key
          :on-external-update-value on-external-update-value}])]))
 
-(mf/defc box-shadow-value-inputs*
+(mf/defc shadow-value-inputs*
   [{:keys [default-value on-blur on-update-value token-resolve-result update-composite-value on-external-update-value] :as props}]
   (let [shadows* (mf/use-state (or default-value [{}]))
         shadows (deref shadows*)
@@ -1100,7 +1100,7 @@
                                  (sd/collect-shadow-errors token-resolve-result shadow-idx))]]
        [:div {:key key
               :class (stl/css :nested-input-row)}
-        [:> box-shadow-input-fields*
+        [:> shadow-input-fields*
          {:is-remove-disabled is-remove-disabled
           :shadow-idx shadow-idx
           :on-add-shadow on-add-shadow
@@ -1111,7 +1111,7 @@
           :errors-by-key errors-by-key
           :on-external-update-value on-external-update-value}]])]))
 
-(mf/defc box-shadow-form*
+(mf/defc shadow-form*
   [{:keys [token] :rest props}]
   (let [on-get-token-value
         (mf/use-callback
@@ -1141,11 +1141,11 @@
                (update prev-composite-value idx dissoc token-type)))))]
     [:> composite-form*
      (mf/spread-props props {:token token
-                             :composite-tab box-shadow-value-inputs*
+                             :composite-tab shadow-value-inputs*
                              :reference-icon i/text-typography
                              :is-reference-fn cto/typography-composite-token-reference?
-                             :title "Box shadows"
-                             :validate-token validate-box-shadow-token
+                             :title "Shadows"
+                             :validate-token validate-shadow-token
                              :on-get-token-value on-get-token-value
                              :update-composite-backup-value update-composite-backup-value})]))
 
@@ -1394,7 +1394,7 @@
     (case token-type'
       :color [:> color-form* props]
       :typography [:> typography-form* props]
-      :box-shadow [:> box-shadow-form* props]
+      :shadow [:> shadow-form* props]
       :font-family [:> font-family-form* props]
       :text-case [:> text-case-form* props]
       :text-decoration [:> text-decoration-form* props]

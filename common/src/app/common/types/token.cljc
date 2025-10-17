@@ -54,7 +54,7 @@
 (def token-type->dtcg-token-type
   {:boolean         "boolean"
    :border-radius   "borderRadius"
-   :box-shadow      "boxShadow"
+   :shadow          "shadow"
    :color           "color"
    :dimensions      "dimension"
    :font-family     "fontFamilies"
@@ -116,11 +116,11 @@
 
 (def border-radius-keys (schema-keys schema:border-radius))
 
-(def ^:private schema:box-shadow
-  [:map {:title "BoxShadowTokenAttrs"}
-   [:box-shadow {:optional true} token-name-ref]])
+(def ^:private schema:shadow
+  [:map {:title "ShadowTokenAttrs"}
+   [:shadow {:optional true} token-name-ref]])
 
-(def box-shadow-keys (schema-keys schema:box-shadow))
+(def shadow-keys (schema-keys schema:shadow))
 
 (def ^:private schema:stroke-width
   [:map
@@ -278,7 +278,7 @@
 
 (def all-keys (set/union color-keys
                          border-radius-keys
-                         box-shadow-keys
+                         shadow-keys
                          stroke-width-keys
                          sizing-keys
                          opacity-keys
@@ -297,7 +297,7 @@
   [:merge {:title "AppliedTokens"}
    schema:tokens
    schema:border-radius
-   schema:box-shadow
+   schema:shadow
    schema:sizing
    schema:spacing
    schema:rotation
@@ -342,10 +342,10 @@
      (text-decoration-keys shape-attr) #{shape-attr :typography}
      (font-weight-keys shape-attr)     #{shape-attr :typography}
 
-     (= :shadow shape-attr) #{:box-shadow}
+     (= :shadow shape-attr) #{:shadow}
 
      (border-radius-keys shape-attr) #{shape-attr}
-     (box-shadow-keys shape-attr) #{shape-attr}
+     (shadow-keys shape-attr) #{shape-attr}
      (sizing-keys shape-attr) #{shape-attr}
      (opacity-keys shape-attr) #{shape-attr}
      (spacing-keys shape-attr) #{shape-attr}
@@ -359,7 +359,6 @@
     :fill :fills
     :stroke-color :strokes
     :stroke-width :strokes
-    :box-shadow :shadow
     token-attr))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -374,7 +373,7 @@
              rotation-keys
              sizing-keys
              opacity-keys
-             box-shadow-keys
+             shadow-keys
              position-attributes))
 
 (def rect-attributes
@@ -553,10 +552,10 @@
   (string? token-value))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; BOX SHADOW
+;; SHADOW
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn box-shadow-composite-token-reference?
-  "Predicate if a box-shadow composite token is a reference value - a string pointing to another reference token."
+(defn shadow-composite-token-reference?
+  "Predicate if a shadow composite token is a reference value - a string pointing to another reference token."
   [token-value]
   (string? token-value))

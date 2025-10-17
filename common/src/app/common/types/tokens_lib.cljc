@@ -1552,8 +1552,8 @@ Will return a value that matches this schema:
     ;; Reference value
     value))
 
-(defn- convert-dtcg-box-shadow-composite
-  "Convert box-shadow token value from DTCG format to internal format."
+(defn- convert-dtcg-shadow-composite
+  "Convert shadow token value from DTCG format to internal format."
   [value]
   (if (sequential? value)
     (mapv (fn [shadow]
@@ -1592,7 +1592,7 @@ Will return a value that matches this schema:
                                          (case token-type
                                            :font-family (convert-dtcg-font-family token-value)
                                            :typography (convert-dtcg-typography-composite token-value)
-                                           :box-shadow (convert-dtcg-box-shadow-composite token-value)
+                                           :shadow (convert-dtcg-shadow-composite token-value)
                                            token-value))
                                        :description (get v "$description")))
              ;; Discard unknown type tokens
@@ -1758,8 +1758,8 @@ Will return a value that matches this schema:
      {} value)
     value))
 
-(defn- box-shadow-token->dtcg-token
-  "Convert box-shadow token value from internal format to DTCG format."
+(defn- shadow-token->dtcg-token
+  "Convert shadow token value from internal format to DTCG format."
   [value]
   (if (sequential? value)
     (mapv (fn [shadow]
@@ -1781,9 +1781,9 @@ Will return a value that matches this schema:
                       ;; Transform typography token values
                       (= :typography (:type token))
                       typography-token->dtcg-token
-                      ;; Transform box-shadow token values
-                      (= :box-shadow (:type token))
-                      box-shadow-token->dtcg-token)
+                      ;; Transform shadow token values
+                      (= :shadow (:type token))
+                      shadow-token->dtcg-token)
            "$type" (cto/token-type->dtcg-token-type (:type token))}
     (:description token) (assoc "$description" (:description token))))
 

@@ -150,7 +150,7 @@
                           :changed-sub-attr [:stroke-color]}))))
 
 (defn value->shadow
-  "Transform a token box-shadow value into penpot shadow data structure"
+  "Transform a token shadow value into penpot shadow data structure"
   [value]
   (mapv (fn [{:keys [x y blur spread color type]}]
           {:id (random-uuid)
@@ -166,9 +166,9 @@
              :drop-shadow)})
         value))
 
-(defn update-box-shadow
+(defn update-shadow
   ([value shape-ids attributes]
-   (update-box-shadow value shape-ids attributes nil))
+   (update-shadow value shape-ids attributes nil))
   ([value shape-ids _attributes page-id]
    (let [shadows (value->shadow value)]
      (dwsh/update-shapes shape-ids
@@ -672,13 +672,13 @@
             :fields [{:label "Border Radius"
                       :key :border-radius}]}}
 
-   :box-shadow
-   {:title "Box Shadow"
-    :attributes ctt/box-shadow-keys
-    :on-update-shape update-box-shadow
-    :modal {:key :tokens/box-shadow
-            :fields [{:label "Box Shadow"
-                      :key :box-shadow}]}}
+   :shadow
+   {:title "Shadow"
+    :attributes ctt/shadow-keys
+    :on-update-shape update-shadow
+    :modal {:key :tokens/shadow
+            :fields [{:label "Shadow"
+                      :key :shadow}]}}
 
    :color
    {:title "Color"
