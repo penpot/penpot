@@ -152,17 +152,17 @@
 (defn value->shadow
   "Transform a token shadow value into penpot shadow data structure"
   [value]
-  (mapv (fn [{:keys [x y blur spread color type]}]
+  (mapv (fn [{:keys [offsetX offsetY blur spread color inset]}]
           {:id (random-uuid)
            :hidden false
-           :offset-x x
-           :offset-y y
+           :offset-x offsetX
+           :offset-y offsetY
            :blur blur
            :color (value->color color)
            :spread spread
            :style
-           (case type
-             "innerShadow" :inner-shadow
+           (case inset
+             "true" :inner-shadow
              :drop-shadow)})
         value))
 

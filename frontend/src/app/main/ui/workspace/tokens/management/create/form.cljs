@@ -940,12 +940,12 @@
 ;; TODO l10n
 (def ^:private shadow-inputs
   #(d/ordered-map
-    :x
-    {:label "x"
-     :placeholder "x"}
-    :y
-    {:label "y"
-     :placeholder "y"}
+    :offsetX
+    {:label "X Offset"
+     :placeholder "X Offset"}
+    :offsetY
+    {:label "Y Offset"
+     :placeholder "Y Offset"}
     :blur
     {:label "blur"
      :placeholder "blur"}
@@ -955,28 +955,23 @@
     :color
     {:label "color"
      :placeholder "color"}
-    :type
+    :inset
     {:label "inset"
      :placeholder "inset"
      :special-input :inset-select}))
 
 (mf/defc inset-type-select*
   [{:keys [default-value shadow-idx label on-change]}]
-  (let [selected* (mf/use-state (case default-value
-                                  "innerShadow" "true"
-                                  "false"))
+  (let [selected* (mf/use-state (or default-value "false"))
         selected (deref selected*)
 
         on-change
         (mf/use-fn
          (mf/deps on-change selected shadow-idx)
          (fn [value e]
-           (let [token-value (case value
-                               "true" "innerShadow"
-                               "boxShadow")]
-             (obj/set! e "tokenValue" token-value)
-             (on-change e)
-             (reset! selected* value))))]
+           (obj/set! e "tokenValue" value)
+           (on-change e)
+           (reset! selected* value)))]
     [:div {:class (stl/css :input-row)}
      [:div {:class (stl/css :inset-label)} label]
      [:& radio-buttons {:selected selected
@@ -984,10 +979,12 @@
                         :name (str "inset-select-" shadow-idx)}
       [:& radio-button {:value "false"
                         :title "false"
-                        :id (str "inset-false-" shadow-idx)}]
+                        :icon "❌"
+                        :id (str "inset-default-" shadow-idx)}]
       [:& radio-button {:value "true"
                         :title "true"
-                        :id (str "inset-true-" shadow-idx)}]]]))
+                        :icon "✅"
+                        :id (str "inset-false-" shadow-idx)}]]]))
 
 (mf/defc shadow-input*
   [{:keys [default-value label placeholder shadow-idx input-type on-update-value on-blur on-external-update-value token-resolve-result errors-by-key]}]
@@ -1011,7 +1008,7 @@
                       {:resolved-value resolved
                        :errors errors}))]
     (case input-type
-      :type
+      :inset
       [:> inset-type-select*
        {:default-value default-value
         :shadow-idx shadow-idx

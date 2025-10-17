@@ -328,7 +328,7 @@
   "Parses shadow type value.
   Valid types are 'innerShadow' or 'dropShadow'."
   [value]
-  (let [valid? (contains? #{"innerShadow" "dropShadow"} value)
+  (let [valid? (contains? #{"true" "false"} value)
         references (seq (cto/find-token-value-references value))]
     (cond
       valid?
@@ -344,8 +344,7 @@
 (defn- parse-sd-token-shadow-blur
   "Parses shadow blur value (non-negative number)."
   [value]
-  (js/console.log "[value]" value)
-  (let [parsed (parse-sd-token-number-value value)
+  (let [parsed (parse-sd-token-general-value value)
         valid? (and (:value parsed) (> (:value parsed) 0))]
     (cond
       valid?
@@ -357,7 +356,7 @@
 (defn- parse-sd-token-shadow-spread
   "Parses shadow spread value (non-negative number)."
   [value]
-  (let [parsed (parse-sd-token-number-value value)
+  (let [parsed (parse-sd-token-general-value value)
         valid? (and (:value parsed) (> (:value parsed) 0))]
     (cond
       valid?
@@ -372,12 +371,12 @@
   (let [add-keyed-errors (fn [shadow-result k errors]
                            (update shadow-result :errors concat
                                    (map #(assoc % :shadow-key k :shadow-index shadow-index) errors)))
-        parsers {:x #(parse-sd-token-general-value %)
-                 :y #(parse-sd-token-general-value %)
+        parsers {:offsetX #(parse-sd-token-general-value %)
+                 :offsetY #(parse-sd-token-general-value %)
                  :blur #(parse-sd-token-shadow-blur %)
                  :spread #(parse-sd-token-shadow-spread %)
                  :color #(parse-sd-token-color-value %)
-                 :type #(parse-sd-token-shadow-type %)}
+                 :inset #(parse-sd-token-shadow-type %)}
         valid-shadow (reduce
                       (fn [acc [k v]]
                         (if-let [parser (get parsers k)]
@@ -393,7 +392,6 @@
 (defn- parse-sd-token-shadow-value
   "Parses shadow value and validates it."
   [value]
-  (js/console.log "[value]" value)
   (cond
     ;; Reference value (string)
     (string? value) {:value value}
