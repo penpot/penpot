@@ -957,22 +957,36 @@
      :placeholder "color"}))
 
 (mf/defc box-shadow-input*
-  [{:keys [default-value label placeholder shadow shadow-idx input-type on-update-value]}]
+  [{:keys [default-value label placeholder shadow shadow-idx input-type on-update-value token-resolve-result errors-by-key]}]
   (let [on-change
         (mf/use-fn
          (mf/deps shadow-idx input-type on-update-value)
          (fn [e]
            (-> (obj/set! e "tokenTypeAtIndex" [shadow-idx input-type])
-               (on-update-value))))]
+               (on-update-value))))
+
+        resolved (get-in token-resolve-result [:resolved-value shadow-idx input-type])
+        errors (get errors-by-key input-type)
+
+        should-show? (or (and (some? resolved)
+                              (not= default-value (str resolved)))
+                         (seq errors))
+
+        token-prop (when should-show?
+                     (d/without-nils
+                      {:resolved-value (when-not (str/empty? resolved) resolved)
+                       :errors errors}))]
     [:div {:class (stl/css :input-row)}
      [:> input-token*
       {:aria-label label
        :placeholder placeholder
        :default-value default-value
-       :on-change on-change}]]))
+       :on-change on-change
+       :token-resolve-result token-prop}]]))
 
 (mf/defc box-shadow-input-fields*
-  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value]}]
+  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value token-resolve-result errors-by-key] :as props}]
+  (js/console.log "props" props)
   (let [on-remove-shadow
         (mf/use-fn
          (mf/deps shadow-idx on-remove-shadow)
@@ -998,13 +1012,16 @@
          :placeholder placeholder
          :shadow-idx shadow-idx
          :default-value (get shadow input-type)
-         :on-update-value on-update-value}])]))
+         :on-update-value on-update-value
+         :token-resolve-result token-resolve-result
+         :errors-by-key errors-by-key}])]))
 
 (mf/defc box-shadow-value-inputs*
-  [{:keys [default-value on-blur on-update-value token-resolve-result update-backup-state]}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result update-backup-state] :as props}]
   (let [shadows* (mf/use-state (or default-value [{}]))
         shadows (deref shadows*)
         shadows-count (count shadows)
+        composite-token? (not (cto/typography-composite-token-reference? (:value token-resolve-result)))
 
         on-add-shadow
         (mf/use-fn
@@ -1024,14 +1041,14 @@
             (fn [state]
               (let [new-state (update state :composite d/remove-at-index idx)]
                 (reset! shadows* (:composite new-state))
-                new-state)))))
-
-        #_#_errors-by-key (sd/collect-typography-errors token-resolve-result)]
+                new-state)))))]
     [:div {:class (stl/css :nested-input-row)}
 
      (for [[shadow-idx shadow] (d/enumerate shadows)
            :let [is-remove-disabled (= shadows-count 1)
-                 key (str shadows-count shadow-idx)]]
+                 key (str shadows-count shadow-idx)
+                 errors-by-key (when composite-token?
+                                 (sd/collect-shadow-errors token-resolve-result shadow-idx))]]
        [:div {:key key
               :class (stl/css :nested-input-row)}
         [:> box-shadow-input-fields*
@@ -1040,7 +1057,9 @@
           :on-add-shadow on-add-shadow
           :on-remove-shadow on-remove-shadow
           :shadow shadow
-          :on-update-value on-update-value}]])]))
+          :on-update-value on-update-value
+          :token-resolve-result token-resolve-result
+          :errors-by-key errors-by-key}]])]))
 
 (mf/defc box-shadow-form*
   [{:keys [token] :rest props}]

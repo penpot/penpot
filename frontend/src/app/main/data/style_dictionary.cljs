@@ -324,6 +324,62 @@
 (defn collect-typography-errors [token]
   (group-by :typography-key (:errors token)))
 
+(defn- parse-sd-token-box-shadow-type
+  "Parses box-shadow type value.
+  Valid types are 'innerShadow' or 'dropShadow'."
+  [value]
+  (let [valid? (contains? #{"innerShadow" "dropShadow"} value)
+        references (seq (cto/find-token-value-references value))]
+    (cond
+      valid?
+      {:value value}
+
+      references
+      {:errors [(wte/error-with-value :error.style-dictionary/missing-reference references)]
+       :references references}
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-box-shadow-type value)]})))
+
+(defn- parse-sd-token-box-shadow-blur
+  "Parses box-shadow blur value (non-negative number)."
+  [value]
+  (let [parsed (parse-sd-token-number-value value)]
+    (if (and (:value parsed) (< (:value parsed) 0))
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-box-shadow-blur value)]}
+      parsed)))
+
+(defn- parse-sd-token-box-shadow-spread
+  "Parses box-shadow spread value (non-negative number)."
+  [value]
+  (let [parsed (parse-sd-token-number-value value)]
+    (if (and (:value parsed) (< (:value parsed) 0))
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-box-shadow-spread value)]}
+      parsed)))
+
+(defn- parse-single-box-shadow
+  "Parses a single box-shadow map with properties: x, y, blur, spread, color, type."
+  [shadow-map shadow-index]
+  (let [add-keyed-errors (fn [shadow-result k errors]
+                           (update shadow-result :errors concat
+                                   (map #(assoc % :box-shadow-key k :shadow-index shadow-index) errors)))
+        parsers {:x #(parse-sd-token-number-value %)
+                 :y #(parse-sd-token-number-value %)
+                 :blur #(parse-sd-token-box-shadow-blur %)
+                 :spread #(parse-sd-token-box-shadow-spread %)
+                 :color #(parse-sd-token-color-value %)
+                 :type #(parse-sd-token-box-shadow-type %)}
+        valid-shadow (reduce
+                      (fn [acc [k v]]
+                        (if-let [parser (get parsers k)]
+                          (let [{:keys [errors value]} (parser v)]
+                            (if (seq errors)
+                              (add-keyed-errors acc k errors)
+                              (assoc-in acc [:value k] (or value v))))
+                          acc))
+                      {:value {}}
+                      shadow-map)]
+    valid-shadow))
 
 (defn- parse-sd-token-box-shadow-value
   "Parses box-shadow value and validates it."
@@ -332,13 +388,36 @@
     ;; Reference value (string)
     (string? value) {:value value}
 
-    ;; Array of shadows
-    (js/Array.isArray value) (-> {:value (js->clj value :keywordize-keys true)})
-
     ;; Empty value
     (nil? value) {:errors [(wte/get-error-code :error.token/empty-input)]}
 
-    :else {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}))
+    ;; Invalid value
+    (not (js/Array.isArray value)) {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value value)]}
+
+    ;; Array of shadows
+    :else
+    (let [converted (js->clj value :keywordize-keys true)
+          ;; Parse each shadow with its index
+          parsed-shadows (map-indexed
+                          (fn [idx shadow-map]
+                            (parse-single-box-shadow shadow-map idx))
+                          converted)
+
+          ;; Collect all errors from all shadows
+          all-errors (mapcat :errors parsed-shadows)
+
+          ;; Collect all values from shadows that have values
+          all-values (keep :value parsed-shadows)]
+
+      (if (seq all-errors)
+        {:errors all-errors
+         :value all-values}
+        {:value all-values}))))
+
+(comment
+  (parse-sd-token-box-shadow-value value)
+  nil)
+
 
 (defn collect-shadow-errors [token shadow-index]
   (group-by :box-shadow-key
