@@ -18,7 +18,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.foundations.assets.icon :as i]
    [app.main.ui.hooks :as h]
-   [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row]]
+   [app.main.ui.workspace.sidebar.options.rows.stroke-row :refer [stroke-row*]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr]]
    [cuerdas.core :as str]
@@ -89,10 +89,9 @@
         handle-reorder
         (mf/use-fn
          (mf/deps ids)
-         (fn [new-index]
-           (fn [index]
-             (st/emit! (udw/trigger-bounding-box-cloaking ids))
-             (st/emit! (dc/reorder-strokes ids index new-index)))))
+         (fn [from-pos to-space-between-pos]
+           (st/emit! (udw/trigger-bounding-box-cloaking ids))
+           (st/emit! (dc/reorder-strokes ids from-pos to-space-between-pos))))
 
         on-stroke-style-change
         (mf/use-fn
@@ -177,13 +176,13 @@
                                           :token token
                                           :shape-ids ids}))))]
 
-    [:div {:class (stl/css :element-set)}
-     [:div {:class (stl/css :element-title)}
+    [:div {:class (stl/css :stroke-section)}
+     [:div {:class (stl/css :stroke-title)}
       [:> title-bar* {:collapsable  has-strokes?
                       :collapsed    (not open?)
                       :on-collapsed toggle-content
                       :title        label
-                      :class        (stl/css-case :title-spacing-stroke (not has-strokes?))}
+                      :class        (stl/css-case :stroke-title-bar (not has-strokes?))}
        (when (not (= :multiple strokes))
          [:> icon-button* {:variant "ghost"
                            :aria-label (tr "workspace.options.stroke.add-stroke")
@@ -191,12 +190,12 @@
                            :icon i/add
                            :data-testid "add-stroke"}])]]
      (when open?
-       [:div {:class (stl/css-case :element-content true
-                                   :empty-content (not has-strokes?))}
+       [:div {:class (stl/css-case :stroke-content true
+                                   :stroke-content-empty (not has-strokes?))}
         (cond
           (= :multiple strokes)
-          [:div {:class (stl/css :element-set-options-group)}
-           [:div {:class (stl/css :group-label)}
+          [:div {:class (stl/css :stroke-multiple)}
+           [:div {:class (stl/css :stroke-multiple-label)}
             (tr "settings.multiple")]
            [:> icon-button* {:variant "ghost"
                              :aria-label (tr "workspace.options.stroke.remove-stroke")
@@ -205,29 +204,29 @@
           (seq strokes)
           [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
-             [:& stroke-row {:key (dm/str "stroke-" index)
-                             :stroke value
-                             :title (tr "workspace.options.stroke-color")
-                             :index index
-                             :shapes shapes
-                             :objects objects
-                             :show-caps show-caps
-                             :on-color-change on-color-change
-                             :on-color-detach on-color-detach
-                             :on-stroke-width-change on-stroke-width-change
-                             :on-stroke-style-change on-stroke-style-change
-                             :on-stroke-alignment-change on-stroke-alignment-change
-                             :open-caps-select open-caps-select
-                             :close-caps-select close-caps-select
-                             :on-stroke-cap-start-change on-stroke-cap-start-change
-                             :on-stroke-cap-end-change on-stroke-cap-end-change
-                             :on-stroke-cap-switch on-stroke-cap-switch
-                             :applied-tokens applied-tokens
-                             :on-detach-token on-detach-token
-                             :on-remove on-remove
-                             :on-reorder (handle-reorder index)
-                             :disable-drag disable-drag
-                             :on-focus on-focus
-                             :select-on-focus (not @disable-drag)
-                             :on-blur on-blur
-                             :disable-stroke-style disable-stroke-style}])])])]))
+             [:> stroke-row* {:key (dm/str "stroke-" index)
+                              :stroke value
+                              :title (tr "workspace.options.stroke-color")
+                              :index index
+                              :shapes shapes
+                              :objects objects
+                              :show-caps show-caps
+                              :on-color-change on-color-change
+                              :on-color-detach on-color-detach
+                              :on-stroke-width-change on-stroke-width-change
+                              :on-stroke-style-change on-stroke-style-change
+                              :on-stroke-alignment-change on-stroke-alignment-change
+                              :open-caps-select open-caps-select
+                              :close-caps-select close-caps-select
+                              :on-stroke-cap-start-change on-stroke-cap-start-change
+                              :on-stroke-cap-end-change on-stroke-cap-end-change
+                              :on-stroke-cap-switch on-stroke-cap-switch
+                              :applied-tokens applied-tokens
+                              :on-detach-token on-detach-token
+                              :on-remove on-remove
+                              :on-reorder handle-reorder
+                              :disable-drag disable-drag
+                              :on-focus on-focus
+                              :select-on-focus (not @disable-drag)
+                              :on-blur on-blur
+                              :disable-stroke-style disable-stroke-style}])])])]))

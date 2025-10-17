@@ -1024,6 +1024,29 @@
       :clj
       (sort comp-fn items))))
 
+(defn reorder
+  "Reorder a vector by moving one of their items from some position to some space between positions.
+   It clamps the position numbers to a valid range."
+  [v from-pos to-space-between-pos]
+  (let [max-space-pos  (count v)
+        max-prop-pos   (dec max-space-pos)
+
+        from-pos             (max 0 (min max-prop-pos from-pos))
+        to-space-between-pos (max 0 (min max-space-pos to-space-between-pos))]
+
+    (if (= from-pos to-space-between-pos)
+      v
+      (let [elem         (nth v from-pos)
+            without-elem (-> []
+                             (into (subvec v 0 from-pos))
+                             (into (subvec v (inc from-pos))))
+            insert-pos   (if (< from-pos to-space-between-pos)
+                           (dec to-space-between-pos)
+                           to-space-between-pos)]
+        (-> []
+            (into (subvec without-elem 0 insert-pos))
+            (into [elem])
+            (into (subvec without-elem insert-pos)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; String Functions

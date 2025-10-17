@@ -2637,6 +2637,10 @@ msgstr "Styles"
 msgid "labels.svg"
 msgstr "SVG"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:250
+msgid "labels.switch"
+msgstr "Switch"
+
 #: src/app/main/ui/onboarding/questions.cljs:256
 #, unused
 msgid "labels.team-leader"

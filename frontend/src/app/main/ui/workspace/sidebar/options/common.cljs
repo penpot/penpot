@@ -7,20 +7,20 @@
 (ns app.main.ui.workspace.sidebar.options.common
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data.macros :as dm]
    [app.util.dom :as dom]
    [rumext.v2 :as mf]))
 
-(mf/defc advanced-options [{:keys [visible? class children]}]
+(mf/defc advanced-options*
+  [{:keys [class is-visible children]}]
   (let [ref (mf/use-ref nil)]
     (mf/use-effect
-     (mf/deps visible?)
+     (mf/deps is-visible)
      (fn []
        (when-let [node (mf/ref-val ref)]
-         (when visible?
+         (when is-visible
            (dom/scroll-into-view-if-needed! node)))))
-    (when visible?
-      [:div {:class (dm/str class " " (stl/css :advanced-options-wrapper))
+    (when is-visible
+      [:div {:class [class (stl/css :advanced-options-wrapper)]
              :ref ref}
        children])))
 
