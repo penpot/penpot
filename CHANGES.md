@@ -62,6 +62,7 @@
 - Fix drag & drop functionality is swapping instead or reordering [Taiga #12254](https://tree.taiga.io/project/penpot/issue/12254)
 - Fix variants not syncronizing tokens on switch [Taiga #12290](https://tree.taiga.io/project/penpot/issue/12290)
 - Fix incorrect behavior of Alt + Drag for variants [Taiga #12309](https://tree.taiga.io/project/penpot/issue/12309)
+- Fix text override is lost after switch [Taiga #12269](https://tree.taiga.io/project/penpot/issue/12269)
 
 ## 2.10.1
 
