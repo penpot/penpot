@@ -960,7 +960,7 @@
      :special-input :inset-select}))
 
 (mf/defc inset-type-select*
-  [{:keys [default-value label shadow-idx on-change]}]
+  [{:keys [default-value shadow-idx label on-change]}]
   (let [selected* (mf/use-state (case default-value
                                   "innerShadow" "true"
                                   "false"))
@@ -968,7 +968,7 @@
 
         on-change
         (mf/use-fn
-         (mf/deps on-change)
+         (mf/deps on-change selected shadow-idx)
          (fn [value e]
            (let [token-value (case value
                                "true" "innerShadow"
@@ -1012,6 +1012,7 @@
       :type
       [:> inset-type-select*
        {:default-value default-value
+        :shadow-idx shadow-idx
         :label label
         :on-change on-change}]
       [:div {:class (stl/css :input-row)}
@@ -1119,7 +1120,9 @@
         (mf/use-callback
          (fn [prev-composite-value e]
            (let [[idx token-type :as token-type-at-index] (obj/get e "tokenTypeAtIndex")
-                 token-value (dom/get-target-val e)]
+                 token-value (case token-type
+                               :type (obj/get e "tokenValue")
+                               (dom/get-target-val e))]
              (if (seq token-value)
                (assoc-in (or prev-composite-value []) token-type-at-index token-value)
                ;; Remove empty values so they don't retrigger validation when switching tabs
