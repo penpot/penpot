@@ -344,18 +344,26 @@
 (defn- parse-sd-token-box-shadow-blur
   "Parses box-shadow blur value (non-negative number)."
   [value]
-  (let [parsed (parse-sd-token-number-value value)]
-    (if (and (:value parsed) (< (:value parsed) 0))
-      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-box-shadow-blur value)]}
-      parsed)))
+  (let [parsed (parse-sd-token-number-value value)
+        valid? (and (:value parsed) (> (:value parsed) 0))]
+    (cond
+      valid?
+      parsed
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-box-shadow-blur value)]})))
 
 (defn- parse-sd-token-box-shadow-spread
   "Parses box-shadow spread value (non-negative number)."
   [value]
-  (let [parsed (parse-sd-token-number-value value)]
-    (if (and (:value parsed) (< (:value parsed) 0))
-      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-box-shadow-spread value)]}
-      parsed)))
+  (let [parsed (parse-sd-token-number-value value)
+        valid? (and (:value parsed) (> (:value parsed) 0))]
+    (cond
+      valid?
+      parsed
+
+      :else
+      {:errors [(wte/error-with-value :error.style-dictionary/invalid-token-value-box-shadow-spread value)]})))
 
 (defn- parse-single-box-shadow
   "Parses a single box-shadow map with properties: x, y, blur, spread, color, type."
@@ -413,11 +421,6 @@
         {:errors all-errors
          :value all-values}
         {:value all-values}))))
-
-(comment
-  (parse-sd-token-box-shadow-value value)
-  nil)
-
 
 (defn collect-shadow-errors [token shadow-index]
   (group-by :box-shadow-key
