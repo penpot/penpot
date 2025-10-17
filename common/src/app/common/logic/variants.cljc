@@ -122,8 +122,9 @@
     (some ctk/get-swap-slot ancestors)))
 
 (defn- find-shape-ref-child-of
-  "Get the shape-ref of the near main of the shape, recursively repeated until
-   find a shape-ref with parent-id as ancestor"
+  "Get the shape referenced by the shape-ref of the near main of the shape,
+   recursively repeated until find a shape-ref with parent-id as ancestor.
+   It will return the shape or nil if it doesn't found any"
   [container libraries shape parent-id]
   (let [ref-shape             (ctf/find-ref-shape nil container libraries shape
                                                   :with-context? true)
@@ -131,8 +132,7 @@
         ref-shape-container   (when ref-shape (:container (meta ref-shape)))
         ref-shape-parents-set (when ref-shape
                                 (->> (cfh/get-parents (:objects ref-shape-container) (:id ref-shape))
-                                     (map :id)
-                                     (into #{})))]
+                                     (into #{} d/xf:map-id)))]
 
     (if (or (nil? ref-shape) (contains? ref-shape-parents-set parent-id))
       ref-shape
@@ -203,23 +203,15 @@
 
         ;; Adds a :shape-path attribute to the children of the orig-ref-shape,
         ;; that contains the type of its ancestors and its name
-
-
         o-ref-shapes-wp    (add-unique-path
                             (reverse (cfh/get-children-with-self orig-ref-objects (:id orig-ref-shape)))
                             orig-ref-objects
                             (:id orig-ref-shape))
 
-
         ;; Creates a map to quickly find a child of the orig-ref-shape by its shape-path
-
-
         o-ref-shapes-p-map  (into {} (map (juxt :id :shape-path)) o-ref-shapes-wp)
 
-
         ;; Process each touched children of the original-shape
-
-
         [changes parents-of-swapped]
         (reduce
          (fn [[changes parent-of-swapped] orig-child-touched]
