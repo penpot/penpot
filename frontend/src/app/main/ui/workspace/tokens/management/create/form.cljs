@@ -260,10 +260,7 @@
          (fn [value]
            (let [timeout-id (js/Symbol)
                  ;; Dont execute callback when the timout-id-ref is outdated because this function got called again
-                 timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)
-                 callback (fn [x]
-                            (js/console.log "x" x)
-                            (callback x))]
+                 timeout-outdated-cb? #(not= (mf/ref-val timeout-id-ref) timeout-id)]
              (mf/set-ref-val! timeout-id-ref timeout-id)
              (js/setTimeout
               (fn []
