@@ -286,7 +286,7 @@
           (fn [touched]
             (into #{} (remove #(str/starts-with? (name %) "swap-slot-") touched)))))
 
-(defn get-component-root
+(defn get-deleted-component-root
   [component]
   (if (some? (:main-instance-id component))
     (get-in component [:objects (:main-instance-id component)])

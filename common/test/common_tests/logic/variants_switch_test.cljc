@@ -45,7 +45,6 @@
     ;; The rect has width 15 after the switch
     (t/is (= (:width rect02') 15))))
 
-
 (t/deftest test-switch-with-override
   (let [;; ==== Setup
         file      (-> (thf/sample-file :file1)
@@ -125,11 +124,9 @@
     ;; The rect has width 15 after the switch
     (t/is (= (:width rect02') 15))))
 
-
 (def font-size-path-paragraph [:content :children 0 :children 0 :font-size])
 (def font-size-path-0 [:content :children 0 :children 0 :children 0 :font-size])
 (def font-size-path-1 [:content :children 0 :children 0 :children 1 :font-size])
-
 
 (def text-path-0 [:content :children 0 :children 0 :children 0 :text])
 (def text-path-1 [:content :children 0 :children 0 :children 1 :text])
@@ -188,6 +185,8 @@
 
 
         ;; The copy clean has no overrides
+
+
         copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
@@ -209,6 +208,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
                   (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
@@ -234,6 +235,8 @@
     ;; Before the switch:
     ;;   * font size 14
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-clean-t font-size-path-0) "14"))
     (t/is (= (get-in copy-clean-t text-path-0) "hello world"))
 
@@ -248,6 +251,8 @@
     ;; Before the switch:
     ;;   * font size 25
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-font-size-t font-size-path-0) "25"))
     (t/is (= (get-in copy-font-size-t text-path-0) "hello world"))
 
@@ -306,6 +311,8 @@
 
 
         ;; The copy clean has no overrides
+
+
         copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
@@ -327,6 +334,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
                   (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
@@ -352,6 +361,8 @@
     ;; Before the switch:
     ;;   * font size 14
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-clean-t font-size-path-0) "14"))
     (t/is (= (get-in copy-clean-t text-path-0) "hello world"))
 
@@ -366,6 +377,8 @@
     ;; Before the switch:
     ;;   * font size 25
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-font-size-t font-size-path-0) "25"))
     (t/is (= (get-in copy-font-size-t text-path-0) "hello world"))
 
@@ -401,7 +414,6 @@
     (t/is (= (get-in copy-both-t' font-size-path-0) "50"))
     (t/is (= (get-in copy-both-t' text-path-0) "text overriden"))))
 
-
 (t/deftest test-switch-with-different-text-text-override
   (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
@@ -423,6 +435,8 @@
 
 
         ;; The copy clean has no overrides
+
+
         copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
@@ -444,6 +458,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
                   (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
@@ -469,6 +485,8 @@
     ;; Before the switch:
     ;;   * font size 14
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-clean-t font-size-path-0) "14"))
     (t/is (= (get-in copy-clean-t text-path-0) "hello world"))
 
@@ -483,6 +501,8 @@
     ;; Before the switch:
     ;;   * font size 25
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-font-size-t font-size-path-0) "25"))
     (t/is (= (get-in copy-font-size-t text-path-0) "hello world"))
 
@@ -518,7 +538,6 @@
     (t/is (= (get-in copy-both-t' font-size-path-0) "25"))
     (t/is (= (get-in copy-both-t' text-path-0) "bye"))))
 
-
 (t/deftest test-switch-with-different-text-and-prop-text-override
   (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
@@ -542,6 +561,8 @@
 
 
         ;; The copy clean has no overrides
+
+
         copy-clean       (ths/get-shape file :copy-clean)
         copy-clean-t     (ths/get-shape file :copy-clean-t)
 
@@ -563,6 +584,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-clean :c02 {:new-shape-label :copy-clean-2 :keep-touched? true})
                   (tho/swap-component copy-font-size :c02 {:new-shape-label :copy-font-size-2 :keep-touched? true})
@@ -588,6 +611,8 @@
     ;; Before the switch:
     ;;   * font size 14
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-clean-t font-size-path-0) "14"))
     (t/is (= (get-in copy-clean-t text-path-0) "hello world"))
 
@@ -602,6 +627,8 @@
     ;; Before the switch:
     ;;   * font size 25
     ;;   * text "hello world"
+
+
     (t/is (= (get-in copy-font-size-t font-size-path-0) "25"))
     (t/is (= (get-in copy-font-size-t text-path-0) "hello world"))
 
@@ -637,7 +664,6 @@
     (t/is (= (get-in copy-both-t' font-size-path-0) "50"))
     (t/is (= (get-in copy-both-t' text-path-0) "bye"))))
 
-
 (t/deftest test-switch-with-identical-structure-text-override
   (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
@@ -657,6 +683,8 @@
 
 
         ;; Duplicate a text line in copy-structure-clean
+
+
         file                   (change-structure file :copy-structure-clean-t)
         copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
@@ -678,6 +706,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
                   (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
@@ -763,7 +793,6 @@
     (t/is (= (get-in copy-structure-mixed-t' font-size-path-1) "40"))
     (t/is (= (get-in copy-structure-mixed-t' text-path-1) "new line 2"))))
 
-
 (t/deftest test-switch-with-different-prop-structure-text-override
   (let [;; ==== Setup
         file (-> (thf/sample-file :file1)
@@ -784,6 +813,8 @@
 
 
         ;; Duplicate a text line in copy-structure-clean
+
+
         file                   (change-structure file :copy-structure-clean-t)
         copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
@@ -805,6 +836,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
                   (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
@@ -906,6 +939,8 @@
 
 
         ;; Duplicate a text line in copy-structure-clean
+
+
         file                   (change-structure file :copy-structure-clean-t)
         copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
@@ -927,6 +962,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
                   (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
@@ -971,6 +1008,8 @@
     ;; Second line:
     ;;   * font size 25
     ;;   * text "new line 2"
+
+
     (t/is (= (get-in copy-structure-unif-t font-size-path-0) "25"))
     (t/is (= (get-in copy-structure-unif-t text-path-0) "new line 1"))
     (t/is (= (get-in copy-structure-unif-t font-size-path-1) "25"))
@@ -992,6 +1031,8 @@
     ;; Before the switch, second line:
     ;;   * font size 40
     ;;   * text "new line 2"
+
+
     (t/is (= (get-in copy-structure-mixed-t font-size-path-0) "35"))
     (t/is (= (get-in copy-structure-mixed-t text-path-0) "new line 1"))
     (t/is (= (get-in copy-structure-mixed-t font-size-path-1) "40"))
@@ -1025,6 +1066,8 @@
 
 
         ;; Duplicate a text line in copy-structure-clean
+
+
         file                   (change-structure file :copy-structure-clean-t)
         copy-structure-clean   (ths/get-shape file :copy-structure-clean)
         copy-structure-clean-t (ths/get-shape file :copy-structure-clean-t)
@@ -1046,6 +1089,8 @@
 
 
         ;; ==== Action: Switch all the copies
+
+
         file' (-> file
                   (tho/swap-component copy-structure-clean :c02 {:new-shape-label :copy-structure-clean-2 :keep-touched? true})
                   (tho/swap-component copy-structure-unif :c02 {:new-shape-label :copy-structure-unif-2 :keep-touched? true})
@@ -1090,6 +1135,8 @@
     ;; Second line:
     ;;   * font size 25
     ;;   * text "new line 2"
+
+
     (t/is (= (get-in copy-structure-unif-t font-size-path-0) "25"))
     (t/is (= (get-in copy-structure-unif-t text-path-0) "new line 1"))
     (t/is (= (get-in copy-structure-unif-t font-size-path-1) "25"))
@@ -1111,6 +1158,8 @@
     ;; Before the switch, second line:
     ;;   * font size 40
     ;;   * text "new line 2"
+
+
     (t/is (= (get-in copy-structure-mixed-t font-size-path-0) "35"))
     (t/is (= (get-in copy-structure-mixed-t text-path-0) "new line 1"))
     (t/is (= (get-in copy-structure-mixed-t font-size-path-1) "40"))
@@ -1123,7 +1172,6 @@
     (t/is (= (get-in copy-structure-mixed-t' font-size-path-0) "50"))
     (t/is (= (get-in copy-structure-mixed-t' text-path-0) "bye"))
     (t/is (nil? (get-in copy-structure-mixed-t' font-size-path-1)))))
-
 
 (t/deftest test-switch-variant-for-other-with-same-nested-component
   (let [;; ==== Setup
@@ -1144,6 +1192,8 @@
 
 
         ;; On :copy-cp01, change the width of the rect
+
+
         changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
                                             #{copy-cp01-rect-id}
                                             (fn [shape]
@@ -1165,8 +1215,6 @@
 
     ;; The width of copy-cp02-rect' is 25 (change is preserved)
     (t/is (= (:width copy-cp02-rect') 25))))
-
-
 
 (t/deftest test-switch-variant-that-has-swaped-copy
   (let [;; ==== Setup
@@ -1193,7 +1241,6 @@
         ;; Switch :c01 for :c02
         file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
-
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)]
     (thf/dump-file file')
@@ -1206,7 +1253,6 @@
     (t/is (= (:component-id copy-cp02') (:id external02)))
     ;;copy-02' had copy-cp02' as child
     (t/is (= (-> copy02' :shapes first) (:id copy-cp02')))))
-
 
 (t/deftest test-switch-variant-that-has-swaped-copy-with-changed-attr
   (let [;; ==== Setup
@@ -1244,7 +1290,6 @@
         ;; Switch :c01 for :c02
         file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
 
-
         copy02'    (ths/get-shape file' :copy02)
         copy-cp02' (ths/get-shape file' :copy-cp02)
         copy-cp02-rect' (ths/get-shape-by-id file' (-> copy-cp02' :shapes first))]
@@ -1262,3 +1307,58 @@
     (t/is (= (-> copy02' :shapes first) (:id copy-cp02')))
     ;; The width of copy-cp02-rect' is 25 (change is preserved)
     (t/is (= (:width copy-cp02-rect') 25))))
+
+(t/deftest test-switch-variant-without-touched-but-touched-parent
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant-with-child
+                       :v01 :c01 :m01 :c02 :m02 :r01 :r02
+                       {:child1-params {:width 5}
+                        :child2-params  {:width 5}})
+                      (tho/add-simple-component :external01 :external01-root :external01-child)
+
+                      (thc/instantiate-component :c01
+                                                 :c01-in-root
+                                                 :children-labels [:r01-in-c01-in-root]
+                                                 :parent-label :external01-root))
+
+        ;; Make a change on r01-in-c01-in-root so it is touched
+        page               (thf/current-page file)
+        r01-in-c01-in-root (ths/get-shape file :r01-in-c01-in-root)
+
+        changes            (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                                       #{(:id r01-in-c01-in-root)}
+                                                       (fn [shape]
+                                                         (assoc shape :width 25))
+                                                       (:objects page)
+                                                       {})
+
+        file               (thf/apply-changes file changes)
+
+
+        ;; Instantiate the component :external01
+
+
+        file        (thc/instantiate-component file
+                                               :external01
+                                               :external-copy01
+                                               :children-labels [:external-copy01-rect :c01-in-copy])
+        page        (thf/current-page file)
+        c01-in-copy (ths/get-shape file :c01-in-copy)
+        rect01      (get-in page [:objects (-> c01-in-copy :shapes first)])
+
+
+        ;; ==== Action
+
+
+        file'        (tho/swap-component file c01-in-copy :c02 {:new-shape-label :c02-in-copy :keep-touched? true})
+
+        page'        (thf/current-page file')
+        c02-in-copy' (ths/get-shape file' :c02-in-copy)
+        rect02'      (get-in page' [:objects (-> c02-in-copy' :shapes first)])]
+
+    (thf/dump-file file :keys [:width :touched])
+    ;; The rect had width 25 before the switch
+    (t/is (= (:width rect01) 25))
+    ;; The rect still has width 25 after the switch
+    (t/is (= (:width rect02') 25))))
