@@ -10,6 +10,7 @@
 @use "ds/_sizes.scss" as *;
 @use "ds/_borders.scss" as *;
 @use "ds/typography.scss" as *;
+@use "ds/mixins.scss" as *;
 
 .attributes-image-as-color-row {
   max-inline-size: px2rem(240);
@@ -108,12 +109,7 @@
 
 .color-value-wrapper {
   @include use-typography("body-small");
-
-  display: block;
-  max-inline-size: 99%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  @include textEllipsis;
   color: var(--menu-foreground-color);
   text-transform: uppercase;
 }
@@ -149,11 +145,9 @@
 }
 
 .download-button {
-  @extend .button-secondary;
-  @include use-typography("headline-small");
-  block-size: $sz-32;
+  justify-content: center ;
   inline-size: 100%;
-  margin-top: var(--sp-xs);
+  margin-block-start: var(--sp-xs);
 }
 
 .image-wrapper {
@@ -168,10 +162,10 @@
   max-inline-size: px2rem(248);
   margin: var(--sp-s) 0;
   border-radius: $br-8;
+}
 
-  img {
-    block-size: 100%;
-    inline-size: 100%;
-    object-fit: contain;
-  }
+.resolved-image {
+  block-size: 100%;
+  inline-size: 100%;
+  object-fit: contain;
 }
