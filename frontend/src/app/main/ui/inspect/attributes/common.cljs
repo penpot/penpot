@@ -16,6 +16,7 @@
    [app.main.ui.components.color-bullet :as cb]
    [app.main.ui.components.copy-button :refer [copy-button*]]
    [app.main.ui.components.select :refer [select]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.formats :as fmt]
    [app.main.ui.inspect.common.colors :as isc]
    [app.util.i18n :refer [tr]]
@@ -69,12 +70,13 @@
 
           [:div {:class (stl/css :image-download)}
            [:div {:class (stl/css :image-wrapper)}
-            [:img {:src (cf/resolve-file-media image)}]]
+            [:img {:class (stl/css :resolved-image) :src (cf/resolve-file-media image)}]]
 
-           [:a {:class (stl/css :download-button)
-                :target "_blank"
-                :download (cond-> name extension (str/concat extension))
-                :href (cf/resolve-file-media image)}
+           [:> button* {:class (stl/css :download-button)
+                        :variant "secondary"
+                        :target "_blank"
+                        :download name
+                        :to (cf/resolve-file-media image)}
             (tr "inspect.attributes.image.download")]]]])
 
       [:div {:class (stl/css :attributes-color-row)}
