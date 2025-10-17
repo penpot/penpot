@@ -697,11 +697,6 @@
                             {:composite default-value}))
         default-value (get @backup-state-ref active-tab)
 
-        update-backup-state
-        (mf/use-fn
-         (fn [f]
-           (swap! backup-state-ref f)))
-
         on-toggle-tab
         (mf/use-fn
          (mf/deps active-tab on-external-update-value on-value-resolve clear-resolve-value)
@@ -712,6 +707,13 @@
              ;; Restore the internal value from backup
              (on-external-update-value (get @backup-state-ref next-tab))
              (set-active-tab next-tab))))
+
+        update-composite-value
+        (mf/use-fn
+         (fn [f]
+           (clear-resolve-value)
+           (swap! backup-state-ref f)
+           (on-external-update-value (get @backup-state-ref :composite))))
 
         ;; Store updated value in backup-state-ref
         on-update-value'
@@ -748,7 +750,7 @@
         [:> composite-tab
          (mf/spread-props props {:default-value default-value
                                  :on-update-value on-update-value'
-                                 :update-backup-state update-backup-state})])]]))
+                                 :update-composite-value update-composite-value})])]]))
 
 (mf/defc composite-form*
   "Wrapper around form* that manages composite/reference tab state.
@@ -986,7 +988,6 @@
 
 (mf/defc box-shadow-input-fields*
   [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value token-resolve-result errors-by-key] :as props}]
-  (js/console.log "props" props)
   (let [on-remove-shadow
         (mf/use-fn
          (mf/deps shadow-idx on-remove-shadow)
@@ -1017,7 +1018,7 @@
          :errors-by-key errors-by-key}])]))
 
 (mf/defc box-shadow-value-inputs*
-  [{:keys [default-value on-blur on-update-value token-resolve-result update-backup-state] :as props}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result update-composite-value] :as props}]
   (let [shadows* (mf/use-state (or default-value [{}]))
         shadows (deref shadows*)
         shadows-count (count shadows)
@@ -1025,9 +1026,9 @@
 
         on-add-shadow
         (mf/use-fn
-         (mf/deps shadows update-backup-state)
+         (mf/deps shadows update-composite-value)
          (fn []
-           (update-backup-state
+           (update-composite-value
             (fn [state]
               (let [new-state (update state :composite (fnil conj []) {})]
                 (reset! shadows* (:composite new-state))
@@ -1035,9 +1036,9 @@
 
         on-remove-shadow
         (mf/use-fn
-         (mf/deps shadows update-backup-state)
+         (mf/deps shadows update-composite-value)
          (fn [idx]
-           (update-backup-state
+           (update-composite-value
             (fn [state]
               (let [new-state (update state :composite d/remove-at-index idx)]
                 (reset! shadows* (:composite new-state))
