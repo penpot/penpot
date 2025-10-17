@@ -83,8 +83,10 @@
 
         on-detach-token
         (mf/use-fn
-         (mf/deps detach-token token)
-         #(detach-token token))
+         (mf/deps detach-token token color-token)
+         (fn []
+           (let [token (or token color-token)]
+             (detach-token token))))
 
         has-errors (some? (:errors token))
         token-name (:name token)

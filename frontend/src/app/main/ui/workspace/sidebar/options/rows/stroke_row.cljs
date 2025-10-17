@@ -192,7 +192,9 @@
                      :on-detach on-color-detach
                      :on-remove on-remove
                      :disable-drag disable-drag
-                     :applied-token stroke-color-token
+                     :applied-token (if (= index 0)
+                                      stroke-color-token
+                                      nil)
                      :on-detach-token on-detach-token-color
                      :on-token-change on-token-change
                      :on-focus on-focus
