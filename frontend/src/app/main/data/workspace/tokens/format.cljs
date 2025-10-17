@@ -26,8 +26,11 @@
          (str/join "\n")
          (str "\n"))
 
+    (and (sequential? token-value) (every? map? token-value))
+    (str/join "\n" (map format-token-value token-value))
+
     (sequential? token-value)
-    (str/join ", " token-value)
+    (str/join ", " (map format-token-value token-value))
 
     :else
     (str token-value)))
