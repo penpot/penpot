@@ -157,6 +157,38 @@
         (mf/with-memo []
           (mf/html [:> collapse-button* {}]))]
 
+    ;; --- Scroll position preservation per section (layers/assets/tokens)
+    ;; We keep the scroll position in a var so switching tabs restores last scroll.
+    (let [scroll-pos*     (mf/use-var {:layers 0 :assets 0 :tokens 0})
+          current-section section
+          ;; Helper to read visible scroll container inside the left sidebar.
+          read-visible-scroll-el
+          (fn []
+            (when-let [aside-el (.getElementById js/document "left-sidebar-aside")]
+              (let [nodes (.querySelectorAll aside-el "[data-scroll-container=true]")
+                    arr    (js/Array.from nodes)]
+                (some (fn [el]
+                        (when (and el (.-offsetParent el)) el)) arr))))
+          ;; Capture current scroll before changing tab.
+          capture-current-scroll
+          (fn []
+            (when-let [el (read-visible-scroll-el)]
+              (let [st (.-scrollTop el)]
+                (swap! scroll-pos* assoc current-section st))))
+          ;; Wrapped tab change that also saves current scroll position.
+          on-tab-change-wrapped
+          (mf/use-fn
+           (fn [id]
+             (capture-current-scroll)
+             (on-tab-change id)))
+          ;; Effect: when section changes, restore its previous scrollTop.
+          _
+          (mf/with-effect [section]
+            (when-let [el (read-visible-scroll-el)]
+              (let [target (get @scroll-pos* section 0)]
+                (set! (.-scrollTop el) target)))
+            #())]
+
     [:> (mf/provider muc/sidebar) {:value :left}
      [:aside {:ref parent-ref
               :id "left-sidebar-aside"
@@ -189,7 +221,7 @@
          [:> tab-switcher* {:tabs tabs
                             :default "layers"
                             :selected (name section)
-                            :on-change on-tab-change
+                            :on-change on-tab-change-wrapped
                             :class (stl/css :left-sidebar-tabs)
                             :action-button-position "start"
                             :action-button tabs-action-button}
@@ -198,18 +230,24 @@
             :assets
             [:> assets-toolbox*
              {:size (- width  58)
-              :file-id file-id}]
+              :file-id file-id
+              :initial-scroll-top (get @scroll-pos* :assets 0)
+              :on-scroll-pos-change #(swap! scroll-pos* assoc :assets %)}]
 
             :tokens
             [:> tokens-sidebar-tab*
              {:tokens-lib tokens-lib
               :active-tokens active-tokens
-              :resolved-active-tokens resolved-active-tokens}]
+              :resolved-active-tokens resolved-active-tokens
+              :initial-scroll-top (get @scroll-pos* :tokens 0)
+              :on-scroll-pos-change #(swap! scroll-pos* assoc :tokens %)}]
 
             :layers
             [:> layers-content*
              {:layout layout
-              :width width}])]])]]))
+              :width width
+              :initial-scroll-top (get @scroll-pos* :layers 0)
+              :on-scroll-pos-change #(swap! scroll-pos* assoc :layers %)}])]])]]))
 
 ;; --- Right Sidebar (Component)
 

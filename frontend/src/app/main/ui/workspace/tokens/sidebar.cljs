@@ -140,23 +140,33 @@
                          :on-click open-settings-modal}])]))
 
 (mf/defc tokens-sidebar-tab*
-  [{:keys [tokens-lib] :as props}]
+  [{:keys [tokens-lib initial-scroll-top on-scroll-pos-change] :as props}]
   (let [{on-pointer-down-pages :on-pointer-down
          on-lost-pointer-capture-pages :on-lost-pointer-capture
          on-pointer-move-pages :on-pointer-move
          size-pages-opened :size}
         (use-resize-hook :tokens 200 38 "0.6" :y false nil)]
 
-    [:div {:class (stl/css :sidebar-wrapper)}
+  [:div {:class (stl/css :sidebar-wrapper)}
      [:> token-management-section*
       {:resize-height size-pages-opened
        :tokens-lib tokens-lib}]
-     [:article {:class (stl/css :tokens-section-wrapper)
-                :data-testid "tokens-sidebar"}
+  [:article {:class (stl/css :tokens-section-wrapper)
+       :data-testid "tokens-sidebar"}
       [:div {:class (stl/css :resize-area-horiz)
              :on-pointer-down on-pointer-down-pages
              :on-lost-pointer-capture on-lost-pointer-capture-pages
              :on-pointer-move on-pointer-move-pages}
        [:div {:class (stl/css :resize-handle-horiz)}]]
-      [:> tokens-section* props]]
+      [:div {:class (stl/css :tool-window-content)
+             :data-scroll-container true
+             :ref (fn [el]
+                    (when el
+                      (when (and initial-scroll-top (pos? initial-scroll-top) (= (.-scrollTop el) 0))
+                        (set! (.-scrollTop el) initial-scroll-top))
+                      (events/listen el goog.events.EventType/SCROLL
+                                     (fn [_]
+                                       (when on-scroll-pos-change
+                                         (on-scroll-pos-change (.-scrollTop el)))))))}
+       [:> tokens-section* props]]]
      [:> import-export-button*]]))
