@@ -271,7 +271,7 @@
                                 :selected-set is-selected
                                 :dnd-over     (= drop-over :center)
                                 :dnd-over-top (= drop-over :top)
-                                :dnd-over-bot (= drop-over :bot))        
+                                :dnd-over-bot (= drop-over :bot))
 
            :on-double-click on-double-click
            :on-context-menu on-context-menu
@@ -289,8 +289,8 @@
        [:*
         [:div {:class (stl/css :set-name)}
          :on-click (fn [e]
-                     (.stopPropagation e) 
-                     (when (fn? on-select) 
+                     (.stopPropagation e)
+                     (when (fn? on-select)
                        (on-select id)))
          label]
         [:> checkbox*
