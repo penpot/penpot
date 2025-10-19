@@ -191,7 +191,7 @@
                                    :all true
                                    :partial "mixed"
                                    :none false)
-                        :aria-label (tr "workspace.tokens.select-set")}]]])))
+                        :aria-label (tr "workspace.tokens.select-set")}]])])
 
 ;; ----------------------------
 ;; Token set component
