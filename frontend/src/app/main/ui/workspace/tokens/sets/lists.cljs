@@ -229,10 +229,10 @@
                      (fn [_]
                        (when-not is-selected (on-select path))))
 
-         on-drop
-         (mf/use-fn (mf/deps index on-drop)
-                    (fn [position data]
-                      (on-drop index position data)))
+          on-drop
+          (mf/use-fn (mf/deps index on-drop)
+                     (fn [position data]
+                       (on-drop index position data)))
 
           [dprops dref] (h/use-sortable
                          :data-type "penpot/token-set"
@@ -243,42 +243,44 @@
 
           drop-over (:over dprops)]
     
-     [:div {:ref dref
-            :role "button"
-            :data-testid "tokens-set-item"
-            :id (str "token-set-item-" (str/join "/" path))
-            :style {"--tree-depth" depth}
-            :class (stl/css-case :set-item-container true
-                                 :selected-set is-selected
-                                 :dnd-over (= drop-over :center)
-                                 :dnd-over-top (= drop-over :top)
-                                 :dnd-over-bot (= drop-over :bot))
-            :on-double-click on-double-click
-            :on-context-menu on-context-menu
-            :aria-checked is-active}
+      [:div {:ref dref
+             :role "button"
+             :data-testid "tokens-set-item"
+             :id (str "token-set-item-" (str/join "/" path))
+             :style {"--tree-depth" depth}
+             :class (stl/css-case :set-item-container true
+                                  :selected-set is-selected
+                                  :dnd-over (= drop-over :center)
+                                  :dnd-over-top (= drop-over :top)
+                                  :dnd-over-bot (= drop-over :bot))
+             :on-double-click on-double-click
+             :on-context-menu on-context-menu
+             :aria-checked is-active}
 
-     [:> icon* {:icon-id i/document
-                :class (stl/css-case :icon true
-                                     :root-icon (not depth))}]
 
-     (if is-editing
-       [:> editing-label* {:default-value label
-                           :on-cancel on-reset-edition
-                           :on-submit on-edit-submit'}]
-       [:<>
-        [:div {:class (stl/css :set-name)
-               :on-click (fn [e]
-                           (.stopPropagation e)
-                           (when (fn? on-select)
-                             (on-select id)))}
-         label]
-        [:> checkbox* {:on-click (fn [e]
-                                   (.stopPropagation e)
-                                   (when (fn? on-toggle)
-                                     (on-toggle (ctob/get-name set))))
-                       :disabled (not can-edit?)
-                       :aria-label (tr "workspace.tokens.select-set")
-                       :checked is-active}]])])))
+       [:> icon* {:icon-id i/document
+                  :class (stl/css-case :icon true
+                                       :root-icon (not depth))}]
+ 
+       (if is-editing
+         [:> editing-label* {:default-value label
+                             :on-cancel on-reset-edition
+                             :on-submit on-edit-submit'}]
+         [:<>
+          [:div {:class (stl/css :set-name)
+                 :on-click (fn [e]
+                             (.stopPropagation e)
+                             (when (fn? on-select)
+                               (on-select id)))}
+           label]
+          [:> checkbox* {:on-click (fn [e]
+                                     (.stopPropagation e)
+                                     (when (fn? on-toggle)
+                                       (on-toggle (ctob/get-name set))))
+                         :disabled (not can-edit?)
+                         :aria-label (tr "workspace.tokens.select-set")
+                         :checked is-active}]])])))
+
 
 ;; ----------------------------
 ;; Token sets tree
@@ -296,17 +298,17 @@
         collapsed-paths @collapsed-paths*
 
         collapsed? (mf/use-fn (mf/deps collapsed-paths)
-                     (partial contains? collapsed-paths))
+                              (partial contains? collapsed-paths))
 
         on-drop (mf/use-fn (mf/deps collapsed-paths)
-                  (fn [index position data]
-                    (let [params {:from-index (:index data)
-                                  :to-index index
-                                  :position position
-                                  :collapsed-paths collapsed-paths}]
-                      (if (:is-group data)
-                        (st/emit! (dwtl/drop-token-set-group params))
-                        (st/emit! (dwtl/drop-token-set params))))))
+                      (fn [index position data]
+                        (let [params {:from-index (:index data)
+                                      :to-index index
+                                      :position position
+                                      :collapsed-paths collapsed-paths}]
+                          (if (:is-group data)
+                            (st/emit! (dwtl/drop-token-set-group params))
+                            (st/emit! (dwtl/drop-token-set params))))))
 
         on-toggle-collapse
         (mf/use-fn (fn [path]
