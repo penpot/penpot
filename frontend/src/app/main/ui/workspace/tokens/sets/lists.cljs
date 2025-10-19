@@ -198,9 +198,10 @@
 ;; ----------------------------
 
 (mf/defc sets-tree-set*
-  [{:keys [id set label is-editing is-active is-selected is-draggable is-new path depth index
-           on-select on-toggle on-drop on-start-edition on-reset-edition on-edit-submit]}]
-
+  [{:keys [id set label is-editing is-active is-selected
+           is-draggable is-new path depth index
+           on-select on-toggle on-drop
+           on-start-edition on-reset-edition on-edit-submit]}]
   (let [can-edit? (mf/use-ctx ctx/can-edit?)
         on-context-menu
         (mf/use-fn (mf/deps is-editing id path can-edit?)
@@ -212,25 +213,36 @@
                          {:position (dom/get-client-position event)
                           :is-group false
                           :id id
-                          :path path})))) )
+                          :path path})))))
+
         on-double-click
         (mf/use-fn (mf/deps id is-new)
           (fn []
             (when-not is-new (on-start-edition id))))
+
         on-edit-submit'
-        (mf/use-fn (mf/deps set on-edit-submit) #(on-edit-submit set %))
+        (mf/use-fn (mf/deps set on-edit-submit)
+          #(on-edit-submit set %))
+
         on-drag
         (mf/use-fn (mf/deps path)
-          (fn [_] (when-not is-selected (on-select path))))
+          (fn [_]
+            (when-not is-selected (on-select path))))
+
         on-drop
-        (mf/use-fn (mf/deps index on-drop) (fn [position data] (on-drop index position data)))
+        (mf/use-fn (mf/deps index on-drop)
+          (fn [position data]
+            (on-drop index position data)))
+
         [dprops dref] (h/use-sortable
-                        :data-type "penpot/token-set"
-                        :on-drag on-drag
-                        :on-drop on-drop
-                        :data {:index index :is-group false}
-                        :draggable? is-draggable)
+                       :data-type "penpot/token-set"
+                       :on-drag on-drag
+                       :on-drop on-drop
+                       :data {:index index :is-group false}
+                       :draggable? is-draggable)
+
         drop-over (:over dprops)]
+    
     [:div {:ref dref
            :role "button"
            :data-testid "tokens-set-item"
@@ -244,9 +256,11 @@
            :on-double-click on-double-click
            :on-context-menu on-context-menu
            :aria-checked is-active}
+
      [:> icon* {:icon-id i/document
                 :class (stl/css-case :icon true
                                      :root-icon (not depth))}]
+
      (if is-editing
        [:> editing-label* {:default-value label
                            :on-cancel on-reset-edition
@@ -262,9 +276,9 @@
                                    (.stopPropagation e)
                                    (when (fn? on-toggle)
                                      (on-toggle (ctob/get-name set))))
-                        :disabled (not can-edit?)
-                        :aria-label (tr "workspace.tokens.select-set")
-                        :checked is-active}]])])))
+                       :disabled (not can-edit?)
+                       :aria-label (tr "workspace.tokens.select-set")
+                       :checked is-active}]])])))
 
 ;; ----------------------------
 ;; Token sets tree
