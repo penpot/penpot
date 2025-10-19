@@ -286,7 +286,6 @@
                                 :dnd-over     (= drop-over :center)
                                 :dnd-over-top (= drop-over :top)
                                 :dnd-over-bot (= drop-over :bot))
-           :on-click on-click
            :on-double-click on-double-click
            :on-context-menu on-context-menu
            :aria-checked is-active}
@@ -301,10 +300,17 @@
          :on-cancel on-reset-edition
          :on-submit on-edit-submit'}]
        [:*
-        [:div {:class (stl/css :set-name)}
+        [:div {:class (stl/css :set-name)
+         :on-click (fn [e]
+                   (.stopPropagation e)
+                   (when (fn? on-select)
+                     (on-select id)))}
          label]
         [:> checkbox*
-         {:on-click on-checkbox-click
+         {:on-click (fn [e]
+              (.stopPropagation e)
+              (when (fn? on-toggle)
+                (on-toggle (ctob/get-name set))))
           :disabled (not can-edit?)
           :arial-label (tr "workspace.tokens.select-set")
           :checked is-active}]])]))
