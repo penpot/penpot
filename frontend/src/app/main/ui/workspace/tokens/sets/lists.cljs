@@ -238,13 +238,7 @@
            (when-not is-new
              (on-start-edition id))))
 
-        on-checkbox-click
-        (mf/use-fn
-         (mf/deps id on-toggle)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when (fn? on-toggle)
-             (on-toggle (ctob/get-name set)))))
+
 
         on-edit-submit'
         (mf/use-fn
@@ -286,7 +280,7 @@
                                 :dnd-over     (= drop-over :center)
                                 :dnd-over-top (= drop-over :top)
                                 :dnd-over-bot (= drop-over :bot))
-           :on-click on-click
+                                
            :on-double-click on-double-click
            :on-context-menu on-context-menu
            :aria-checked is-active}
@@ -308,7 +302,7 @@
                        (on-select id)))
          label]
         [:> checkbox*
-         {:on-click (fn [e]
+         {:on-click  (fn [e]
                       (.stopPropagation e)
                       (when (fn? on-toggle)
                         (on-toggle (ctob/get-name set))))
