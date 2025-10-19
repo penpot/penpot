@@ -239,10 +239,10 @@
                          :on-drag on-drag
                          :on-drop on-drop
                          :data {:index index :is-group false}
-                         :draggable? is-draggable)
-                                                                 
+                         :draggable? is-draggable)      
+        
           drop-over (:over dprops)]
-    
+
       [:div {:ref dref
              :role "button"
              :data-testid "tokens-set-item"
@@ -260,8 +260,8 @@
 
         [:> icon* {:icon-id i/document
                    :class (stl/css-case :icon true
-                                        :root-icon (not depth))}]
-
+                                        :root-icon (not depth))}]                   
+                                     
         (if is-editing
           [:> editing-label* {:default-value label
                               :on-cancel on-reset-edition
