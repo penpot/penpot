@@ -280,7 +280,7 @@
                                 :dnd-over     (= drop-over :center)
                                 :dnd-over-top (= drop-over :top)
                                 :dnd-over-bot (= drop-over :bot))
-                                
+
            :on-double-click on-double-click
            :on-context-menu on-context-menu
            :aria-checked is-active}
@@ -303,9 +303,9 @@
          label]
         [:> checkbox*
          {:on-click  (fn [e]
-                      (.stopPropagation e)
-                      (when (fn? on-toggle)
-                        (on-toggle (ctob/get-name set))))
+                       (.stopPropagation e)
+                       (when (fn? on-toggle)
+                         (on-toggle (ctob/get-name set))))
           :disabled (not can-edit?)
           :arial-label (tr "workspace.tokens.select-set")
           :checked is-active}]])]))
