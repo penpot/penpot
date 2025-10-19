@@ -240,7 +240,7 @@
                          :on-drop on-drop
                          :data {:index index :is-group false}
                          :draggable? is-draggable)
-
+                                                                 
           drop-over (:over dprops)]
     
       [:div {:ref dref
@@ -261,7 +261,7 @@
        [:> icon* {:icon-id i/document
                   :class (stl/css-case :icon true
                                        :root-icon (not depth))}]
- 
+                                       
        (if is-editing
          [:> editing-label* {:default-value label
                              :on-cancel on-reset-edition
