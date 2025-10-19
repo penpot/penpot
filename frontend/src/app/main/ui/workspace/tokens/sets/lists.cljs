@@ -302,10 +302,10 @@
          :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)}
-               :on-click (fn [e]
-                           (.stopPropagation e)
-                           (when (fn? on-select)
-                             (on-select id)))
+         :on-click (fn [e]
+                     (.stopPropagation e)
+                     (when (fn? on-select)
+                       (on-select id)))
          label]
         [:> checkbox*
          {:on-click (fn [e]
