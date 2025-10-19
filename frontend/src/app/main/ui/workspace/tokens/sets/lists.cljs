@@ -151,11 +151,11 @@
         on-drop
         (mf/use-fn (mf/deps index on-drop) (fn [position data] (on-drop index position data)))
         [dprops dref] (h/use-sortable
-                      :data-type "penpot/token-set"
-                      :on-drop on-drop
-                      :data {:index index :is-group true}
-                      :detect-center? true
-                      :draggable? is-draggable)]
+                       :data-type "penpot/token-set"
+                       :on-drop on-drop
+                       :data {:index index :is-group true}
+                       :detect-center? true
+                       :draggable? is-draggable)]
     [:div {:ref dref
            :data-testid "tokens-set-group-item"
            :style {"--tree-depth" depth}
@@ -197,65 +197,65 @@
 ;; Token set component
 ;; ----------------------------
 
- (mf/defc sets-tree-set*
-   [{:keys [id set label is-editing is-active is-selected
-            is-draggable is-new path depth index
-            on-select on-toggle on-drop
-            on-start-edition on-reset-edition on-edit-submit]}]
-   (let [can-edit? (mf/use-ctx ctx/can-edit?)
-         on-context-menu
-         (mf/use-fn (mf/deps is-editing id path can-edit?)
-                    (fn [event]
-                      (dom/prevent-default event)
-                      (dom/stop-propagation event)
-                      (when (and can-edit? (not is-editing))
-                        (st/emit! (dwtl/assign-token-set-context-menu
-                                   {:position (dom/get-client-position event)
-                                    :is-group false
-                                    :id id
-                                    :path path})))))
+  (mf/defc sets-tree-set*
+    [{:keys [id set label is-editing is-active is-selected
+             is-draggable is-new path depth index
+             on-select on-toggle on-drop
+             on-start-edition on-reset-edition on-edit-submit]}]
+    (let [can-edit? (mf/use-ctx ctx/can-edit?)
+          on-context-menu
+          (mf/use-fn (mf/deps is-editing id path can-edit?)
+                     (fn [event]
+                       (dom/prevent-default event)
+                       (dom/stop-propagation event)
+                       (when (and can-edit? (not is-editing))
+                         (st/emit! (dwtl/assign-token-set-context-menu
+                                    {:position (dom/get-client-position event)
+                                     :is-group false
+                                     :id id
+                                     :path path})))))
 
-         on-double-click
-         (mf/use-fn (mf/deps id is-new)
-                    (fn []
-                      (when-not is-new (on-start-edition id))))
+          on-double-click
+          (mf/use-fn (mf/deps id is-new)
+                     (fn []
+                       (when-not is-new (on-start-edition id))))
 
-         on-edit-submit'
-         (mf/use-fn (mf/deps set on-edit-submit)
-                    #(on-edit-submit set %))
+          on-edit-submit'
+          (mf/use-fn (mf/deps set on-edit-submit)
+                     #(on-edit-submit set %))
 
-         on-drag
-         (mf/use-fn (mf/deps path)
-                    (fn [_]
-                      (when-not is-selected (on-select path))))
+          on-drag
+          (mf/use-fn (mf/deps path)
+                     (fn [_]
+                       (when-not is-selected (on-select path))))
 
          on-drop
          (mf/use-fn (mf/deps index on-drop)
                     (fn [position data]
                       (on-drop index position data)))
 
-         [dprops dref] (h/use-sortable
-                        :data-type "penpot/token-set"
-                        :on-drag on-drag
-                        :on-drop on-drop
-                        :data {:index index :is-group false}
-                        :draggable? is-draggable)
+          [dprops dref] (h/use-sortable
+                         :data-type "penpot/token-set"
+                         :on-drag on-drag
+                         :on-drop on-drop
+                         :data {:index index :is-group false}
+                         :draggable? is-draggable)
 
-         drop-over (:over dprops)]
+          drop-over (:over dprops)]
     
-    [:div {:ref dref
-           :role "button"
-           :data-testid "tokens-set-item"
-           :id (str "token-set-item-" (str/join "/" path))
-           :style {"--tree-depth" depth}
-           :class (stl/css-case :set-item-container true
-                                :selected-set is-selected
-                                :dnd-over (= drop-over :center)
-                                :dnd-over-top (= drop-over :top)
-                                :dnd-over-bot (= drop-over :bot))
-           :on-double-click on-double-click
-           :on-context-menu on-context-menu
-           :aria-checked is-active}
+     [:div {:ref dref
+            :role "button"
+            :data-testid "tokens-set-item"
+            :id (str "token-set-item-" (str/join "/" path))
+            :style {"--tree-depth" depth}
+            :class (stl/css-case :set-item-container true
+                                 :selected-set is-selected
+                                 :dnd-over (= drop-over :center)
+                                 :dnd-over-top (= drop-over :top)
+                                 :dnd-over-bot (= drop-over :bot))
+            :on-double-click on-double-click
+            :on-context-menu on-context-menu
+            :aria-checked is-active}
 
      [:> icon* {:icon-id i/document
                 :class (stl/css-case :icon true
