@@ -302,9 +302,16 @@
          :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)}
+               :on-click (fn [e]
+                           (.stopPropagation e)
+                           (when (fn? on-select)
+                             (on-select id)))
          label]
         [:> checkbox*
-         {:on-click on-checkbox-click
+         {:on-click (fn [e]
+                      (.stopPropagation e)
+                      (when (fn? on-toggle)
+                        (on-toggle (ctob/get-name set))))
           :disabled (not can-edit?)
           :arial-label (tr "workspace.tokens.select-set")
           :checked is-active}]])]))
