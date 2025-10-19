@@ -209,7 +209,7 @@
 
   (let [can-edit? (mf/use-ctx ctx/can-edit?)
 
-        
+
         on-context-menu
         (mf/use-fn
          (mf/deps is-editing id path can-edit?)
@@ -230,7 +230,7 @@
            (when-not is-new
              (on-start-edition id))))
 
-        
+
 
         on-edit-submit'
         (mf/use-fn
@@ -271,8 +271,8 @@
                                 :selected-set is-selected
                                 :dnd-over     (= drop-over :center)
                                 :dnd-over-top (= drop-over :top)
-                                :dnd-over-bot (= drop-over :bot))
-           
+                                :dnd-over-bot (= drop-over :bot))        
+
            :on-double-click on-double-click
            :on-context-menu on-context-menu
            :aria-checked is-active}
@@ -288,10 +288,10 @@
          :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)}
-               :on-click (fn [e]
-                          (.stopPropagation e) 
-                          (when (fn? on-select) 
-                           (on-select id)))
+         :on-click (fn [e]
+                     (.stopPropagation e) 
+                     (when (fn? on-select) 
+                       (on-select id)))
          label]
         [:> checkbox*
          {:on-click (fn [e]
