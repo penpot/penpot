@@ -301,14 +301,14 @@
                               (partial contains? collapsed-paths))
 
         on-drop (mf/use-fn (mf/deps collapsed-paths)
-                      (fn [index position data]
-                        (let [params {:from-index (:index data)
-                                      :to-index index
-                                      :position position
-                                      :collapsed-paths collapsed-paths}]
-                          (if (:is-group data)
-                            (st/emit! (dwtl/drop-token-set-group params))
-                            (st/emit! (dwtl/drop-token-set params))))))
+                           (fn [index position data]
+                             (let [params {:from-index (:index data)
+                                           :to-index index
+                                           :position position
+                                           :collapsed-paths collapsed-paths}]
+                               (if (:is-group data)
+                                 (st/emit! (dwtl/drop-token-set-group params))
+                                 (st/emit! (dwtl/drop-token-set params))))))
 
         on-toggle-collapse
         (mf/use-fn (fn [path]
