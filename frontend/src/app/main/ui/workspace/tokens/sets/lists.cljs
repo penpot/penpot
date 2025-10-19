@@ -264,7 +264,7 @@
                                      (on-toggle (ctob/get-name set))))
                         :disabled (not can-edit?)
                         :aria-label (tr "workspace.tokens.select-set")
-                        :checked is-active}]]])))
+                        :checked is-active}]])])))
 
 ;; ----------------------------
 ;; Token sets tree
@@ -405,4 +405,4 @@
                              :on-start-edition on-start-edition
                              :on-reset-edition on-reset-edition
                              :on-edit-submit-set on-update-token-set
-                             :on-edit-submit-group on-update-token-set-group}]]]))
+                             :on-edit-submit-group on-update-token-set-group}])]))
