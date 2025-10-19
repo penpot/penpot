@@ -258,13 +258,13 @@
              :aria-checked is-active}
 
 
-       [:> icon* {:icon-id i/document
-                  :class (stl/css-case :icon true
-                                       :root-icon (not depth))}]
-                                       
-       (if is-editing
-         [:> editing-label* {:default-value label
-                             :on-cancel on-reset-edition
+        [:> icon* {:icon-id i/document
+                   :class (stl/css-case :icon true
+                                        :root-icon (not depth))}]
+
+        (if is-editing
+          [:> editing-label* {:default-value label
+                              :on-cancel on-reset-edition
                              :on-submit on-edit-submit'}]
          [:<>
           [:div {:class (stl/css :set-name)
