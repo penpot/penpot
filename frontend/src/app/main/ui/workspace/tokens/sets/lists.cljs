@@ -25,14 +25,12 @@
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
 
-
 ;; ----------------------------
 ;; Helpers
 ;; ----------------------------
 
 (defn- on-start-creation []
   (st/emit! (dwtl/start-token-set-creation [])))
-
 
 ;; ----------------------------
 ;; Editing label component
@@ -57,7 +55,6 @@
            (cond
              (kbd/enter? event) (on-submit event)
              (kbd/esc? event) (on-cancel))))]
-
     [:input
      {:class (stl/css :editing-node)
       :type "text"
@@ -67,7 +64,6 @@
       :auto-focus true
       :placeholder (tr "workspace.tokens.set-edit-placeholder")
       :default-value default-value}]))
-
 
 ;; ----------------------------
 ;; Checkbox component
@@ -94,7 +90,6 @@
          :class (stl/css :check-icon)
          :size "s"
          :icon-id (if mixed? i/remove i/tick)}])]))
-
 
 ;; ----------------------------
 ;; Add buttons
@@ -141,7 +136,7 @@
                         {:position (dom/get-client-position event)
                          :is-group true
                          :id id
-                         :path path})))))
+                         :path path})))) )
         on-collapse-click
         (mf/use-fn (fn [event]
                      (dom/prevent-default event)
@@ -182,7 +177,7 @@
        [:> editing-label* {:default-value label
                            :on-cancel on-reset-edition
                            :on-submit on-edit-submit'}]
-       [:*
+       [:<>
         [:div {:class (stl/css :set-name)
                :role "button"
                :title label
@@ -196,8 +191,7 @@
                                    :all true
                                    :partial "mixed"
                                    :none false)
-                        :aria-label (tr "workspace.tokens.select-set")}]]]))
-
+                        :aria-label (tr "workspace.tokens.select-set")}]]])))
 
 ;; ----------------------------
 ;; Token set component
@@ -218,7 +212,7 @@
                          {:position (dom/get-client-position event)
                           :is-group false
                           :id id
-                          :path path})))))
+                          :path path})))) )
         on-double-click
         (mf/use-fn (mf/deps id is-new)
           (fn []
@@ -257,7 +251,7 @@
        [:> editing-label* {:default-value label
                            :on-cancel on-reset-edition
                            :on-submit on-edit-submit'}]
-       [:*
+       [:<>
         [:div {:class (stl/css :set-name)
                :on-click (fn [e]
                            (.stopPropagation e)
@@ -270,8 +264,7 @@
                                      (on-toggle (ctob/get-name set))))
                         :disabled (not can-edit?)
                         :aria-label (tr "workspace.tokens.select-set")
-                        :checked is-active}]]]))
-
+                        :checked is-active}]]])))
 
 ;; ----------------------------
 ;; Token sets tree
@@ -306,6 +299,7 @@
                      (swap! collapsed-paths* #(if (contains? % path)
                                                 (disj % path)
                                                 (conj % path)))))]
+
     (mf/with-effect []
       (let [sub (rx/subs! (fn [paths']
                             (swap! collapsed-paths* #(apply disj % paths')))
@@ -314,6 +308,7 @@
                                (rx/map deref)
                                (rx/map :paths)))]
         (fn [] (rx/dispose! sub))))
+
     (for [{:keys [token-set id index is-new is-group path depth] :as node}
           (ctob/sets-tree-seq token-sets {:skip-children-pred collapsed?
                                           :new-at-path new-path})]
@@ -369,7 +364,6 @@
                                   :on-reset-edition on-reset-edition
                                   :on-edit-submit on-edit-submit-set}]))))
 
-
 ;; ----------------------------
 ;; Controlled sets list
 ;; ----------------------------
@@ -392,6 +386,7 @@
                              #(when (fn? on-reset-edition) (on-reset-edition %)))
         on-start-edition (mf/use-fn (mf/deps on-start-edition)
                              #(when (fn? on-start-edition) (on-start-edition %)))]
+
     [:div {:class (stl/css :sets-list)}
      (if empty-state?
        [:> text* {:as "span" :typography "body-small" :class (stl/css :empty-state-message-sets)}
@@ -410,4 +405,4 @@
                              :on-start-edition on-start-edition
                              :on-reset-edition on-reset-edition
                              :on-edit-submit-set on-update-token-set
-                             :on-edit-submit-group on-update-token-set-group}])]))
+                             :on-edit-submit-group on-update-token-set-group}]]]))
