@@ -209,14 +209,7 @@
 
   (let [can-edit? (mf/use-ctx ctx/can-edit?)
 
-        on-click
-        (mf/use-fn
-         (mf/deps is-editing on-select id)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when-not is-editing
-             (when (fn? on-select)
-               (on-select id)))))
+        
 
         on-context-menu
         (mf/use-fn
