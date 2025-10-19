@@ -209,15 +209,7 @@
 
   (let [can-edit? (mf/use-ctx ctx/can-edit?)
 
-        on-click
-        (mf/use-fn
-         (mf/deps is-editing on-select id)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when-not is-editing
-             (when (fn? on-select)
-               (on-select id)))))
-
+        
         on-context-menu
         (mf/use-fn
          (mf/deps is-editing id path can-edit?)
@@ -238,13 +230,7 @@
            (when-not is-new
              (on-start-edition id))))
 
-        on-checkbox-click
-        (mf/use-fn
-         (mf/deps id on-toggle)
-         (fn [event]
-           (dom/stop-propagation event)
-           (when (fn? on-toggle)
-             (on-toggle (ctob/get-name set)))))
+        
 
         on-edit-submit'
         (mf/use-fn
@@ -286,7 +272,7 @@
                                 :dnd-over     (= drop-over :center)
                                 :dnd-over-top (= drop-over :top)
                                 :dnd-over-bot (= drop-over :bot))
-           :on-click on-click
+           
            :on-double-click on-double-click
            :on-context-menu on-context-menu
            :aria-checked is-active}
@@ -302,9 +288,16 @@
          :on-submit on-edit-submit'}]
        [:*
         [:div {:class (stl/css :set-name)}
+               :on-click (fn [e]
+                          (.stopPropagation e) 
+                          (when (fn? on-select) 
+                           (on-select id)))
          label]
         [:> checkbox*
-         {:on-click on-checkbox-click
+         {:on-click (fn [e]
+                      (.stopPropagation e)
+                      (when (fn? on-toggle)
+                        (on-toggle (ctob/get-name set))))
           :disabled (not can-edit?)
           :arial-label (tr "workspace.tokens.select-set")
           :checked is-active}]])]))
