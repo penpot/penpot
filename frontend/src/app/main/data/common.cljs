@@ -313,6 +313,25 @@
         (rx/of (modal/hide)
                (rt/nav :dashboard-recent params options))))))
 
+(defn go-to-dashboard-deleted
+  [& {:keys [team-id] :as options}]
+  (ptk/reify ::go-to-dashboard-deleted
+    ptk/WatchEvent
+    (watch [_ state _]
+      (let [profile (get state :profile)
+            team-id (cond
+                      (= :default team-id)
+                      (:default-team-id profile)
+
+                      (uuid? team-id)
+                      team-id
+
+                      :else
+                      (:current-team-id state))
+            params  {:team-id team-id}]
+        (rx/of (modal/hide)
+               (rt/nav :dashboard-deleted params options))))))
+
 (defn go-to-dashboard-members
   [& {:as options}]
   (ptk/reify ::go-to-dashboard-members

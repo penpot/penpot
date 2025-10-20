@@ -8295,3 +8295,27 @@ msgstr "Autosaved versions will be kept for %s days."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Click to close the path"
+
+msgid "dashboard.labels.recent"
+msgstr "Recent"
+
+msgid "dashboard.labels.deleted"
+msgstr "Deleted"
+
+msgid "dashboard.labels.restore-all"
+msgstr "Restore All"
+
+msgid "dashboard.labels.clear"
+msgstr "Clear trash"
+
+msgid "dashboard.deleted.info-text"
+msgstr "Deleted files will remain in the trash for"
+
+msgid "dashboard.deleted.info-days"
+msgstr " %s days. "
+
+msgid "dashboard.deleted.info-text2"
+msgstr "After that, they will be permanently deleted."
+
+msgid "dashboard.deleted.restore-text"
+msgstr "If you change your mind, you can restore them or delete them permanently from each file's menu."
