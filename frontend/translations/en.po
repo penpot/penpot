@@ -7553,6 +7553,10 @@ msgstr ""
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Font weight (300, Bold Italic...) or an {alias}"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Font size or {alias}"
+
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
 msgid "workspace.tokens.gaps"
 msgstr "Gaps"

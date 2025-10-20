@@ -1032,7 +1032,7 @@
     :font-size
     {:label "Font Size"
      :icon i/text-font-size
-     :placeholder (tr "workspace.tokens.token-value-enter")}
+     :placeholder (tr "workspace.tokens.font-size-value-enter")}
     :font-weight
     {:label "Font Weight"
      :icon i/text-font-weight

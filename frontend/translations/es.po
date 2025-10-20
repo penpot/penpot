@@ -7490,6 +7490,10 @@ msgstr ""
 msgid "workspace.tokens.font-weight-value-enter"
 msgstr "Font weight (300, Bold, Regular Italic...) o un {alias}"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.font-size-value-enter"
+msgstr "Font size o {alias}"
+
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs
 #, unused
 msgid "workspace.tokens.generic-error"
