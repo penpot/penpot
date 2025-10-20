@@ -1992,6 +1992,9 @@
                ;; If the values are already equal, don't copy them
                (= (get previous-shape attr) (get current-shape attr))
 
+               ;; If the value is the same as the origin, don't copy it
+               (= (get previous-shape attr) (get origin-ref-shape attr))
+
                ;; If both variants (origin and destiny) don't have the same value
                ;; for that attribute, don't copy it.
                ;; Exceptions: :points :selrect and :content can be different
@@ -2007,10 +2010,7 @@
                 (not= (get origin-ref-shape attr) (get current-shape attr)))
 
                ;; The :content attr cant't be copied to elements of different type
-               (and (= attr :content) (not= (:type previous-shape) (:type current-shape)))
-
-               ;; If the attr is not touched, don't copy it
-               (not (touched attr-group)))
+               (and (= attr :content) (not= (:type previous-shape) (:type current-shape))))
 
               ;; On texts, both text (the actual letters)
               ;; and attrs (bold, font, etc) are in the same attr :content.
