@@ -200,17 +200,16 @@ fn draw_text(
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
 ) {
-    // Width
-    let paragraph_width = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
-        text_content.width()
+    let container_height = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
+        text_content.size.height
     } else {
-        shape.width()
+        shape.selrect().height()
     };
 
-    // Height
-    let container_height = shape.selrect().height();
+    let paragraph_width = shape.selrect().width();
     let total_content_height =
         calculate_all_paragraphs_height(paragraph_builder_groups, paragraph_width);
+
     let mut global_offset_y = match shape.vertical_align() {
         VerticalAlign::Center => (container_height - total_content_height) / 2.0,
         VerticalAlign::Bottom => container_height - total_content_height,

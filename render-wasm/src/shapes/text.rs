@@ -70,17 +70,26 @@ impl TextContentSize {
         self.height = height;
     }
 
-    pub fn copy_finite_size(&mut self, size: TextContentSize) {
+    pub fn copy_finite_size(
+        &mut self,
+        size: TextContentSize,
+        default_height: f32,
+        default_width: f32,
+    ) {
         if f32::is_finite(size.width) {
             self.width = size.width;
+        } else {
+            self.width = default_width;
         }
         if f32::is_finite(size.max_width) {
             self.max_width = size.max_width;
         } else {
-            self.max_width = size.width;
+            self.max_width = default_width
         }
         if f32::is_finite(size.height) {
             self.height = size.height;
+        } else {
+            self.height = default_height;
         }
     }
 }
@@ -229,16 +238,22 @@ impl TextContent {
         self.grow_type = grow_type;
     }
 
-    pub fn get_bounds(&self, shape: &Shape) -> Bounds {
+    pub fn calculate_bounds(&self, shape: &Shape) -> Bounds {
         let (x, y, transform, center) = (
             shape.selrect.x(),
             shape.selrect.y(),
             &shape.transform,
             &shape.center(),
         );
-        let (width, height) = (self.size.width, self.size.height);
-        let text_rect = Rect::from_xywh(x, y, width, height);
 
+        let width = shape.selrect.width();
+        let height = if self.size.width.round() != width.round() {
+            self.get_height(width)
+        } else {
+            self.size.height
+        };
+
+        let text_rect = Rect::from_xywh(x, y, width, height);
         let mut bounds = Bounds::new(
             Point::new(text_rect.x(), text_rect.y()),
             Point::new(text_rect.x() + text_rect.width(), text_rect.y()),
@@ -409,18 +424,43 @@ impl TextContent {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraph_height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
 
-        let size = TextContentSize::new_with_size(width.ceil(), f32::INFINITY);
+        let size = TextContentSize::new_with_size(width.ceil(), paragraph_height.ceil());
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
+    }
+
+    fn get_height(&self, width: f32) -> f32 {
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        let paragraph_height = paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            });
+        paragraph_height
     }
 
     pub fn needs_update_layout(&self) -> bool {
         self.layout.needs_update()
     }
 
-    pub fn set_layout_from_result(&mut self, result: TextContentLayoutResult) {
+    pub fn set_layout_from_result(
+        &mut self,
+        result: TextContentLayoutResult,
+        default_height: f32,
+        default_width: f32,
+    ) {
         self.layout.set(result.0, result.1);
-        self.size.copy_finite_size(result.2);
+        self.size
+            .copy_finite_size(result.2, default_height, default_width);
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
@@ -429,15 +469,15 @@ impl TextContent {
         match self.grow_type() {
             GrowType::AutoHeight => {
                 let result = self.text_layout_auto_height();
-                self.set_layout_from_result(result);
+                self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::AutoWidth => {
                 let result = self.text_layout_auto_width();
-                self.set_layout_from_result(result);
+                self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
             GrowType::Fixed => {
                 let result = self.text_layout_fixed();
-                self.set_layout_from_result(result);
+                self.set_layout_from_result(result, selrect.width(), selrect.height());
             }
         }
         self.size
