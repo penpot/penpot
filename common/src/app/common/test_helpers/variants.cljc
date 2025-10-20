@@ -14,13 +14,14 @@
 
 (defn add-variant
   [file variant-label component1-label root1-label component2-label root2-label
-   & {:keys []}]
+   & {:keys [variant1-params variant2-params]
+      :or   {variant1-params {} variant2-params {}}}]
   (let [file (ths/add-sample-shape file variant-label :type :frame :is-variant-container true)
         variant-id (thi/id variant-label)]
 
     (-> file
-        (ths/add-sample-shape root2-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value2")
-        (ths/add-sample-shape root1-label :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value1")
+        (ths/add-sample-shape root2-label (assoc variant2-params :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value2"))
+        (ths/add-sample-shape root1-label (assoc variant1-params :type :frame :parent-label variant-label :variant-id variant-id :variant-name "Value1"))
         (thc/make-component component1-label root1-label)
         (thc/update-component component1-label {:variant-id variant-id :variant-properties [{:name "Property 1" :value "Value1"}]})
         (thc/make-component component2-label root2-label)
@@ -42,7 +43,8 @@
 
 (defn add-variant-with-child
   [file variant-label component1-label root1-label component2-label root2-label child1-label child2-label
-   & {:keys [child1-params child2-params]}]
+   & {:keys [child1-params child2-params]
+      :or   {child1-params {} child2-params {}}}]
   (let [file (ths/add-sample-shape file variant-label :type :frame :is-variant-container true)
         variant-id (thi/id variant-label)]
     (-> file
