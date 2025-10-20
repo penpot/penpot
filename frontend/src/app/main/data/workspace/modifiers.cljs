@@ -19,7 +19,6 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
-   [app.common.types.shape :as shape]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -232,16 +231,17 @@
             (update-vals #(map second %)))]
 
     ;; Props are grouped by id and then assoc to the shape the new value
-    (doseq [[id properties] wasm-props]
-      (let [shape
-            (->> properties
-                 (reduce
-                  (fn [shape {:keys [property value]}]
-                    (assoc shape property value))
-                  (get objects id)))]
+    (run! (fn [[id properties]]
+            (let [shape
+                  (->> properties
+                       (reduce
+                        (fn [shape {:keys [property value]}]
+                          (assoc shape property value))
+                        (get objects id)))]
 
-        ;; With the new values to the shape change multi props
-        (wasm.shape/set-wasm-multi-attrs! shape (->> properties (map :property)))))))
+              ;; With the new values to the shape change multi props
+              (wasm.shape/set-wasm-multi-attrs! shape (->> properties (map :property)))))
+          wasm-props)))
 
 (defn clear-local-transform []
   (ptk/reify ::clear-local-transform
@@ -649,8 +649,7 @@
       (let [objects          (dsh/lookup-page-objects state)
 
             ignore-tree
-            (binding [shape/*wasm-sync* false]
-              (calculate-ignore-tree modif-tree objects))
+            (calculate-ignore-tree modif-tree objects)
 
             options
             (-> params
