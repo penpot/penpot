@@ -698,7 +698,7 @@
   ;; that will be selected and zoomed along the main one
   ;; update-layout? indicates if it should send a :layout/update event
   ;; for the parents of the component
-  [& {:keys [id additional-ids update-layout?] :as options}]
+  [& {:keys [id additional-ids update-layout? retries] :or {retries 0} :as options}]
   (ptk/reify ::go-to-local-component
     ptk/WatchEvent
     (watch [_ state stream]
@@ -709,15 +709,17 @@
             select-and-zoom
             (fn [ids]
               (let [parent-ids (when update-layout?
-                                 (map #(-> (get objects %) :parent-id) ids))]
-                (rx/concat
-                 (rx/of
-                  (dws/select-shapes ids)
-                  dwz/zoom-to-selected-shape)
-                 (when update-layout?
-                   (->> (rx/of (ptk/data-event :layout/update {:ids parent-ids}))
-                       ;; Delay so the navigation can finish
-                        (rx/delay 250))))))
+                                 (keep #(-> (get objects %) :parent-id) ids))]
+
+                (if (and update-layout? (empty? parent-ids) (< retries 8))
+                  ;; The objects are not loaded yet, wait and try again
+                  (->> (rx/of (go-to-local-component (assoc options :retries (inc retries))))
+                       (rx/delay 250))
+                  (rx/concat
+                   (rx/of (dws/select-shapes ids)
+                          dwz/zoom-to-selected-shape)
+                   (when update-layout?
+                     (rx/of (ptk/data-event :layout/update {:ids parent-ids})))))))
 
             redirect-to-page
             (fn [page-id ids]
