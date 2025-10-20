@@ -182,6 +182,59 @@ pub struct Shape {
     pub extrect: OnceCell<math::Rect>,
 }
 
+// Returns all ancestor shapes of this shape, traversing up the parent hierarchy
+//
+// This function walks up the parent chain starting from this shape's parent,
+// collecting all ancestor IDs. It stops when it reaches a nil UUID or when
+// an ancestor is hidden (unless include_hidden is true).
+//
+// # Arguments
+// * `shapes` - The shapes pool containing all shapes
+// * `include_hidden` - Whether to include hidden ancestors in the result
+//
+// # Returns
+// A set of ancestor UUIDs in traversal order (closest ancestor first)
+pub fn all_with_ancestors(
+    shapes: &[&Uuid],
+    shapes_pool: &ShapesPool,
+    include_hidden: bool,
+) -> IndexSet<Uuid> {
+    let mut pending = Vec::from(shapes);
+    let mut result = IndexSet::new();
+
+    while !pending.is_empty() {
+        let Some(current_id) = pending.pop() else {
+            break;
+        };
+
+        result.insert(*current_id);
+
+        let Some(parent_id) = shapes_pool.get(current_id).and_then(|s| s.parent_id) else {
+            continue;
+        };
+
+        if parent_id == Uuid::nil() {
+            continue;
+        }
+
+        if result.contains(&parent_id) {
+            continue;
+        }
+
+        // Check if the ancestor is hidden
+        let Some(parent) = shapes_pool.get(&parent_id) else {
+            continue;
+        };
+
+        if !include_hidden && parent.hidden() {
+            continue;
+        }
+
+        pending.push(&parent.id);
+    }
+    result
+}
+
 impl Shape {
     pub fn new(id: Uuid) -> Self {
         Self {
