@@ -22,7 +22,8 @@ pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{
-    Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, StructureEntry, Type,
+    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke,
+    StructureEntry, Type,
 };
 use crate::state::ShapesPool;
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -1812,20 +1813,8 @@ impl RenderState {
         tree: &mut ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
     ) {
-        let mut ancestors = IndexSet::new();
-        for (uuid, matrix) in modifiers {
-            let mut shape = {
-                let Some(shape) = tree.get(uuid) else {
-                    panic!("Invalid current shape")
-                };
-                let shape: Cow<Shape> = Cow::Borrowed(shape);
-                shape
-            };
-
-            shape.to_mut().apply_transform(matrix);
-            ancestors.insert(*uuid);
-            ancestors.extend(shape.all_ancestors(tree, false));
-        }
+        let ids: Vec<_> = modifiers.keys().collect();
+        let ancestors = all_with_ancestors(&ids, tree, false);
         self.invalidate_and_update_tiles(&ancestors, tree, modifiers);
     }
 
