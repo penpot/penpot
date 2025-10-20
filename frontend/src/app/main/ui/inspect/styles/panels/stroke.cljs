@@ -45,13 +45,17 @@
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
-;; Current token implementation on fills only supports one token per shape and has to be the first fill
+;; Current token implementation on strokes only supports one token per shape and has to be the first stroke
 ;; This must be improved in the future
+(defn- is-first-element?
+  [idx]
+  (= 0 idx))
+
 (defn- has-color-token?
-  "Returns true if the resolved token matches the color and is the first fill (idx = 0)."
+  "Returns true if the resolved token matches the color and is the first stroke (idx = 0)."
   [resolved-token stroke-type idx]
   (and (= (:resolved-value resolved-token) (:color stroke-type))
-       (= 0 idx)))
+       (is-first-element? idx)))
 
 (mf/defc stroke-panel*
   [{:keys [shapes objects resolved-tokens color-space]}]
@@ -60,12 +64,11 @@
      [:div {:key (:id shape) :class "stroke-shape"}
       (for [[idx stroke] (map-indexed vector (:strokes shape))]
         (for [property properties]
-          (let [property property
-                value (css/get-css-value objects stroke property)
+          (let [value (css/get-css-value objects stroke property)
                 stroke-type (stroke->color stroke)
                 property-name (cmm/get-css-rule-humanized property)
                 property-value (css/get-css-property objects stroke property)
-                resolved-token (get-resolved-token property shape resolved-tokens)
+                resolved-token (when (is-first-element? idx) (get-resolved-token property shape resolved-tokens))
                 has-color-token (has-color-token? resolved-token stroke-type idx)]
             (if (= property :border-color)
               [:> color-properties-row* {:key (str idx property)
