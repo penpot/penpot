@@ -13,6 +13,7 @@
    [app.main.ui.ds.controls.input :refer [input*]]
    [app.main.ui.ds.controls.numeric-input :refer [numeric-input*]]
    [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.controls.utilities.hint-message :refer [hint-message*]]
    [app.main.ui.ds.controls.utilities.input-field :refer [input-field*]]
    [app.main.ui.ds.controls.utilities.label :refer [label*]]
@@ -60,6 +61,7 @@
     :Loader loader*
     :RawSvg raw-svg*
     :Select select*
+    :Switch switch*
     :Combobox combobox*
     :Text text*
     :TabSwitcher tab-switcher*
