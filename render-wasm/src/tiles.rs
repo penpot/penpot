@@ -1,6 +1,5 @@
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
-use indexmap::IndexSet;
 use skia_safe as skia;
 use std::collections::{HashMap, HashSet};
 
@@ -114,7 +113,7 @@ pub fn get_tile_rect(tile: Tile, scale: f32) -> skia::Rect {
 
 // This structure is usseful to keep all the shape uuids by shape id.
 pub struct TileHashMap {
-    grid: HashMap<Tile, IndexSet<Uuid>>,
+    grid: HashMap<Tile, HashSet<Uuid>>,
     index: HashMap<Uuid, HashSet<Tile>>,
 }
 
@@ -126,13 +125,13 @@ impl TileHashMap {
         }
     }
 
-    pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&IndexSet<Uuid>> {
+    pub fn get_shapes_at(&mut self, tile: Tile) -> Option<&HashSet<Uuid>> {
         self.grid.get(&tile)
     }
 
     pub fn remove_shape_at(&mut self, tile: Tile, id: Uuid) {
         if let Some(shapes) = self.grid.get_mut(&tile) {
-            shapes.shift_remove(&id);
+            shapes.remove(&id);
         }
 
         if let Some(tiles) = self.index.get_mut(&id) {
