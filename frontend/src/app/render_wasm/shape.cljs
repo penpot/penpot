@@ -6,14 +6,12 @@
 
 (ns app.render-wasm.shape
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
-   [beicon.v2.core :as rx]
    [cljs.core :as c]
    [cuerdas.core :as str]))
 
@@ -121,7 +119,7 @@
 
 ;; --- SHAPE IMPL
 
-(defn- set-wasm-single-attr!
+(defn set-shape-wasm-attr!
   [shape k]
   (let [v  (get shape k)
         id (get shape :id)]
@@ -233,51 +231,12 @@
   (let [shape-id (dm/get-prop shape :id)]
     (when (shape-in-current-page? shape-id)
       (api/use-shape shape-id)
-      (let [result
-            (->> properties
-                 (mapcat #(set-wasm-single-attr! shape %)))
-            pending (-> (d/index-by :key :callback result) vals)]
-        (if (and pending (seq pending))
-          (->> (rx/from pending)
-               (rx/mapcat (fn [callback] (callback)))
-               (rx/reduce conj [])
-               (rx/subs!
-                (fn [_]
-                  (api/update-shape-tiles)
-                  (api/clear-drawing-cache)
-                  (api/request-render "set-wasm-attrs-pending"))))
-          (do
-            (api/update-shape-tiles)
-            (api/request-render "set-wasm-attrs")))))))
-
-(defn set-wasm-attrs!
-  [shape k v]
-  (let [shape-id (dm/get-prop shape :id)
-        old-value (get shape k)]
-    (when (and (shape-in-current-page? shape-id)
-               (not (identical? old-value v)))
-      (let [shape (assoc shape k v)]
-        (api/use-shape shape-id)
-        (let [result (set-wasm-single-attr! shape k)
-              pending (-> (d/index-by :key :callback result) vals)]
-          (if (and pending (seq pending))
-            (->> (rx/from pending)
-                 (rx/mapcat (fn [callback] (callback)))
-                 (rx/reduce conj [])
-                 (rx/subs!
-                  (fn [_]
-                    (api/update-shape-tiles)
-                    (api/clear-drawing-cache)
-                    (api/request-render "set-wasm-attrs-pending"))))
-            (do
-              (api/update-shape-tiles)
-              (api/request-render "set-wasm-attrs"))))))))
+      (run! (partial set-shape-wasm-attr! shape) properties))))
 
 (defn- impl-assoc
   [self k v]
-  (when ^boolean shape/*wasm-sync*
-    (binding [shape/*wasm-sync* false]
-      (set-wasm-attrs! self k v)))
+  (when shape/*shape-changes*
+    (vswap! shape/*shape-changes* update (:id self) (fnil conj #{}) k))
 
   (case k
     :id
@@ -299,10 +258,14 @@
 
 (defn- impl-dissoc
   [self k]
-  (when ^boolean shape/*wasm-sync*
-    (binding [shape/*wasm-sync* false]
-      (when (shape-in-current-page? (.-id ^ShapeProxy self))
-        (set-wasm-attrs! self k nil))))
+  #_(when ^boolean shape/*wasm-sync*
+      (binding [shape/*wasm-sync* false]
+        (when (shape-in-current-page? (.-id ^ShapeProxy self))
+          (set-wasm-attrs! self k nil))))
+
+  (when shape/*shape-changes*
+    (vswap! shape/*shape-changes* update (:id self) (fnil conj #{}) k))
+
   (case k
     :id
     (ShapeProxy. nil

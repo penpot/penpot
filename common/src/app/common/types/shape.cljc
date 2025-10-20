@@ -36,12 +36,7 @@
    [app.common.uuid :as uuid]
    [clojure.set :as set]))
 
-(defonce ^:dynamic *wasm-sync* false)
-
-;; This is a temporary workaround so the changes-builder doesn't generate updates
-;; in the WASM model.
-(defonce ^:dynamic *wasm-sync-override* false)
-
+(defonce ^:dynamic *shape-changes* nil)
 (defonce wasm-enabled? false)
 (defonce wasm-create-shape (constantly nil))
 

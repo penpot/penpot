@@ -517,8 +517,7 @@
    (when verify?
      (check-changes items))
 
-   (binding [*touched-changes* (volatile! #{})
-             cts/*wasm-sync* (not cts/*wasm-sync-override*)]
+   (binding [*touched-changes* (volatile! #{})]
      (let [result (reduce #(or (process-change %1 %2) %1) data items)
            result (reduce process-touched-change result @*touched-changes*)]
        ;; Validate result shapes (only on the backend)
