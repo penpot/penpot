@@ -93,3 +93,15 @@ jobs:
           tag_name: ${{ steps.vars.outputs.gh_ref }}
           name: ${{ steps.vars.outputs.gh_ref }}
           body: ${{ steps.extract_release_notes.outputs.release_notes }}
+
+      - name: Notify Mattermost
+        if: failure()
+        uses: mattermost/action-mattermost-notify@master
+        with:
+          MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
+          TEXT: |
+            ❌ 🚀 *[PENPOT] Error releasing penpot.*
+            📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
+            🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra
