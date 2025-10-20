@@ -43,7 +43,7 @@
   @include use-typography("headline-small");
   block-size: $sz-32;
   padding: var(--sp-s) 0;
-  color: var(--menu-foreground-color-rest);
+  color: var(--color-foreground-secondary);
 }
 
 .select-format-wrapper {
@@ -51,13 +51,13 @@
   padding: var(--sp-s) var(--sp-xxs);
   background-color: transparent;
   border-color: transparent;
-  color: var(--menu-foreground-color-rest);
+  color: var(--color-foreground-secondary);
 }
 
 .format-info {
   @include use-typography("body-small");
   padding-left: var(--sp-xxs);
-  color: var(--menu-foreground-color-rest);
+  color: var(--color-foreground-secondary);
 }
 
 .color-info {
@@ -136,7 +136,7 @@
 
 .color-name-library {
   @include use-typography("body-small");
-  color: var(--menu-foreground-color-rest);
+  color: var(--color-foreground-secondary);
   word-break: break-word;
 }
 
