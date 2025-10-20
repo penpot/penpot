@@ -337,6 +337,7 @@ pub extern "C" fn get_text_dimensions() -> *mut u8 {
 #[no_mangle]
 pub extern "C" fn update_shape_text_layout() {
     with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.invalidate_extrect();
         if let Type::Text(text_content) = &mut shape.shape_type {
             text_content.update_layout(shape.selrect);
         }

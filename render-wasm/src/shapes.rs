@@ -266,6 +266,7 @@ impl Shape {
         self.invalidate_extrect();
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
+            text.update_layout(self.selrect);
             text.set_xywh(left, top, right - left, bottom - top);
         }
     }
@@ -832,7 +833,8 @@ impl Shape {
                 shape.bounds().to_rect()
             }
             Type::Text(text_content) => {
-                let text_bounds = text_content.get_bounds(&shape);
+                // FIXME: we need to recalculate the text bounds here because the shape's selrect
+                let text_bounds = text_content.calculate_bounds(&shape);
                 text_bounds.to_rect()
             }
             _ => shape.bounds().to_rect(),
