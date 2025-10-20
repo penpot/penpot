@@ -38,6 +38,7 @@
    [app.main.ui.ds.buttons.icon-button :refer [icon-button*]]
    [app.main.ui.ds.controls.combobox :refer [combobox*]]
    [app.main.ui.ds.controls.select :refer [select*]]
+   [app.main.ui.ds.controls.switch :refer [switch*]]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.product.input-with-meta :refer [input-with-meta*]]
    [app.main.ui.hooks :as h]
@@ -501,15 +502,26 @@
                                            (reset! key* (uuid/next))
                                            (st/emit! (ntf/error error-msg)))}
                    params    {:shapes shapes :pos pos :val val}]
-               (st/emit! (dwv/variants-switch (with-meta params mdata)))))))]
+               (st/emit! (dwv/variants-switch (with-meta params mdata)))))))
+
+        switch-component-toggle
+        (mf/use-fn
+         (mf/deps shapes)
+         (fn [pos boolean-pair val]
+           (let [inverted-boolean-pair (d/invert-map boolean-pair)
+                 val                   (get inverted-boolean-pair val)]
+             (switch-component pos val))))]
 
     [:*
      [:div {:class (stl/css :variant-property-list)}
       (for [[pos prop] (map-indexed vector props-first)]
         (let [mixed-value? (not-every? #(= (:value prop) (:value (nth % pos))) properties)
-              options (cond-> (get-options (:name prop))
-                        mixed-value?
-                        (conj {:id mixed-label, :label mixed-label :dimmed true}))]
+              options      (get-options (:name prop))
+              boolean-pair (ctv/find-boolean-pair (mapv :id options))
+              options      (cond-> options
+                             mixed-value?
+                             (conj {:id mixed-label :label mixed-label :dimmed true}))]
+
           [:div {:key (str pos mixed-value?)
                  :class (stl/css :variant-property-container)}
 
@@ -518,12 +530,17 @@
             [:div {:class (stl/css :variant-property-name)}
              (:name prop)]]
 
-           [:div {:class (stl/css :variant-property-value-wrapper)}
-            [:> select* {:default-selected (if mixed-value? mixed-label (:value prop))
-                         :options options
-                         :empty-to-end true
-                         :on-change (partial switch-component pos)
-                         :key (str (:value prop) "-" key)}]]]))]
+           (if boolean-pair
+             [:div {:class (stl/css :variant-property-value-switch-wrapper)}
+              [:> switch* {:default-checked (if mixed-value? nil (get boolean-pair (:value prop)))
+                           :on-change (partial switch-component-toggle pos boolean-pair)
+                           :key (str (:value prop) "-" key)}]]
+             [:div {:class (stl/css :variant-property-value-wrapper)}
+              [:> select* {:default-selected (if mixed-value? mixed-label (:value prop))
+                           :options options
+                           :empty-to-end true
+                           :on-change (partial switch-component pos)
+                           :key (str (:value prop) "-" key)}]])]))]
 
      (if (seq malformed-comps)
        [:div {:class (stl/css :variant-warning)}

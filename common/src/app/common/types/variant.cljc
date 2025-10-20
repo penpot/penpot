@@ -310,3 +310,17 @@
    the real name of the shape joined by the properties values separated by '/'"
   [variant]
   (cpn/merge-path-item (:name variant) (str/replace (:variant-name variant) #", " " / ")))
+
+(defn find-boolean-pair
+  "Given a vector, return the map from 'bool-values' that contains both as keys.
+   Returns nil if none match."
+  [v]
+  (let [bool-values [{"on" true   "off" false}
+                     {"yes" true  "no" false}
+                     {"true" true "false" false}]]
+    (when (= (count v) 2)
+      (some (fn [b]
+              (when (and (contains? b (first v))
+                         (contains? b (last v)))
+                b))
+            bool-values))))
