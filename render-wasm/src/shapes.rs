@@ -648,20 +648,26 @@ impl Shape {
 
     // TODO: Maybe store this inside the shape
     pub fn bounds(&self) -> Bounds {
+        let (x, y, mut width, mut height) = (
+            self.selrect.x(),
+            self.selrect.y(),
+            self.selrect.width(),
+            self.selrect.height(),
+        );
+
+        if let Type::Text(text_content) = &self.shape_type {
+            width = text_content.size.width;
+            height = text_content.size.height
+        }
+
         let mut bounds = Bounds::new(
-            Point::new(self.selrect.x(), self.selrect.y()),
-            Point::new(self.selrect.x() + self.selrect.width(), self.selrect.y()),
-            Point::new(
-                self.selrect.x() + self.selrect.width(),
-                self.selrect.y() + self.selrect.height(),
-            ),
-            Point::new(self.selrect.x(), self.selrect.y() + self.selrect.height()),
+            Point::new(x, y),
+            Point::new(x + width, y),
+            Point::new(x + width, y + height),
+            Point::new(x, y + height),
         );
 
         // Apply this transformation only when self.transform
-        // is not the identity matrix because if it is,
-        // the result of applying this transformations would be
-        // the same identity matrix.
         if !self.transform.is_identity() {
             let mut matrix = self.transform;
             let center = self.center();
@@ -823,10 +829,10 @@ impl Shape {
         shapes_pool: &ShapesPool,
         modifiers: &HashMap<Uuid, Matrix>,
     ) -> math::Rect {
-        let mut shape = self.transformed(modifiers.get(&self.id));
+        let shape = self.transformed(modifiers.get(&self.id));
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
-        let mut rect = match &mut shape.shape_type {
+        let mut rect = match &shape.shape_type {
             Type::Path(_) | Type::Bool(_) => {
                 if let Some(path) = shape.get_skia_path() {
                     return path

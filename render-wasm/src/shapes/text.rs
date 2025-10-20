@@ -1,7 +1,6 @@
-use crate::{
-    math::{Matrix, Rect},
-    render::{default_font, DEFAULT_EMOJI_FONT},
-};
+use crate::render::{default_font, DEFAULT_EMOJI_FONT};
+
+use crate::math::{Matrix, Point, Rect};
 
 use core::f32;
 use macros::ToJs;
@@ -15,7 +14,6 @@ use skia_safe::{
 use std::collections::HashSet;
 
 use super::FontFamily;
-use crate::math::Point;
 use crate::shapes::{self, merge_fills};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
@@ -397,8 +395,21 @@ impl TextContent {
         self.size.copy_finite_size(result.2);
     }
 
+    pub fn get_height(&self, width: f32) -> f32 {
+        let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
+        let paragraphs =
+            self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
+        paragraphs
+            .iter()
+            .flatten()
+            .fold(0.0, |auto_height, paragraph| {
+                auto_height + paragraph.height()
+            })
+    }
+
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
-        self.size.set_size(selrect.width(), selrect.height());
+        let height = self.get_height(selrect.width());
+        self.size.set_size(selrect.width(), height);
 
         match self.grow_type() {
             GrowType::AutoHeight => {

@@ -317,10 +317,9 @@ pub extern "C" fn set_shape_grow_type(grow_type: u8) {
 #[no_mangle]
 pub extern "C" fn get_text_dimensions() -> *mut u8 {
     let mut ptr = std::ptr::null_mut();
-    println!("@@@ get_text_dimensions called");
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        shape.invalidate_extrect();
         if let Type::Text(content) = &mut shape.shape_type {
+            // FIXME: can we use content.size here?
             let text_content_size = content.update_layout(shape.selrect);
 
             let mut bytes = vec![0; 12];
