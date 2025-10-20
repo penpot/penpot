@@ -84,8 +84,10 @@ jobs:
         uses: mattermost/action-mattermost-notify@master
         with:
           MATTERMOST_WEBHOOK_URL: ${{ secrets.MATTERMOST_WEBHOOK }}
+          MATTERMOST_CHANNEL: bot-alerts-cicd
           TEXT: |
-            ❌ *[PENPOT] Error during the execution of the job*
+            ❌ 📦 *[PENPOT] Error building penpot bundles.*
             📄 Triggered from ref: `${{ steps.vars.outputs.gh_ref }}`
                Bundle version: `${{ steps.vars.outputs.bundle_version }}`
             🔗 Run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            @infra
