@@ -4623,6 +4623,9 @@ msgstr "All Professional plan benefits and:"
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "All Unlimited plan benefits and:"
 
+msgid "subscription.settings.recommended"
+msgstr "Recommended"
+
 #: src/app/main/ui/settings/subscription.cljs:39
 msgid "subscription.settings.editors"
 msgstr "(x %s editors)"

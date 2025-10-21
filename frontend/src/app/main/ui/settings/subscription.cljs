@@ -13,6 +13,7 @@
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr c]]
    [potok.v2.core :as ptk]
@@ -30,12 +31,15 @@
            cta-link-trial
            cta-text-with-icon
            cta-link-with-icon
-           editors]}]
+           editors
+           recommended]}]
   [:div {:class (stl/css :plan-card)}
    [:div {:class (stl/css :plan-card-header)}
     [:div {:class (stl/css :plan-card-title-container)}
      (when card-title-icon [:span {:class (stl/css :plan-title-icon)} card-title-icon])
      [:h4 {:class (stl/css :plan-card-title)}  card-title]
+     (when recommended
+       [:& badge-notification {:class (stl/css :plan-recommended) :content (tr "subscription.settings.recommended") :size :small}])
      (when editors [:span {:class (stl/css :plan-editors)} (tr "subscription.settings.editors" editors)])]
     (when (and price-value price-period)
       [:div {:class (stl/css :plan-price)}
@@ -443,7 +447,8 @@
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "unlimited" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
-                         :cta-link-with-icon go-to-pricing-page}])
+                         :cta-link-with-icon go-to-pricing-page
+                         :recommended (= subscription-type "professional")}])
 
        (when (not= subscription-type "enterprise")
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")

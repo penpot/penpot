@@ -112,6 +112,10 @@
   color: var(--color-foreground-primary);
 }
 
+.plan-recommended {
+  padding-inline: var(--sp-s);
+}
+
 .plan-editors {
   @include t.use-typography("body-medium");
   align-self: end;
