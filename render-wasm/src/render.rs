@@ -926,6 +926,10 @@ impl RenderState {
             self.pending_nodes
                 .reserve(tree.len() - self.pending_nodes.capacity());
         }
+        // Clear nested state stacks to avoid residual fills/blurs from previous renders
+        // being incorrectly applied to new frames
+        self.nested_fills.clear();
+        self.nested_blurs.clear();
         // reorder by distance to the center.
         self.current_tile = None;
         self.render_in_progress = true;
