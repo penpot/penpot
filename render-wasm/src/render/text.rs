@@ -220,7 +220,6 @@ fn draw_text(
     canvas.save_layer(&layer_rec);
     for paragraph_builder_group in paragraph_builder_groups {
         let mut group_offset_y = global_offset_y;
-        let group_len = paragraph_builder_group.len();
 
         for (paragraph_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut paragraph = paragraph_builder.build();
@@ -230,25 +229,18 @@ fn draw_text(
             // a reminder in the future to keep digging why the ideographic_baseline
             // works so well and not the paragraph_height. I think we should test
             // this more.
-            let ideographic_baseline = paragraph.ideographic_baseline();
-            let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);
+            if paragraph_index == 0 {
+                group_offset_y += paragraph.ideographic_baseline();
+            }
+            let xy = (shape.selrect().x(), shape.selrect().y() + global_offset_y);
             paragraph.paint(canvas, xy);
 
             for line_metrics in paragraph.get_line_metrics().iter() {
                 render_text_decoration(canvas, &paragraph, paragraph_builder, line_metrics, xy);
             }
-
-            #[allow(clippy::collapsible_else_if)]
-            if group_len == 1 {
-                group_offset_y += ideographic_baseline;
-            } else {
-                if paragraph_index == 0 {
-                    group_offset_y += ideographic_baseline;
-                }
-            }
         }
 
-        global_offset_y = group_offset_y;
+        global_offset_y += group_offset_y;
     }
 }
 
