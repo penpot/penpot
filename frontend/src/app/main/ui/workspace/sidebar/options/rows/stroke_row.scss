@@ -4,10 +4,13 @@
 //
 // Copyright (c) KALEIDOS INC
 
+@use "ds/typography.scss" as t;
 @use "refactor/common-refactor.scss" as deprecated;
 
 .stroke-data {
-  @include deprecated.flexColumn;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-xs);
 
   position: relative;
 
@@ -31,64 +34,28 @@
   align-items: center;
   grid-template-columns: repeat(8, var(--sp-xxxl));
   gap: var(--sp-xs);
-
-  .stroke-width-input-element {
-    @extend .input-element;
-    @include deprecated.bodySmallTypography;
-    grid-column: span 2;
-  }
-
-  .stroke-alignment-select {
-    grid-column: span 3;
-  }
-
-  .stroke-style-select {
-    grid-column: span 3;
-  }
 }
+
+.stroke-width-input {
+  grid-column: span 2;
+
+  // TODO replace with numeric-input* from DS
+  @extend .input-element;
+
+  @include t.use-typography("body-small");
+  padding-inline-start: var(--sp-xs);
+}
+
+.stroke-alignment-select {
+  grid-column: span 3;
+}
+
+.stroke-style-select {
+  grid-column: span 3;
+}
+
 .stroke-caps-options {
-  /* 
-    This element do not match the 8 column grid of sidebar
-
-   |___|-|___|-|___|-|___|-|___|-|___|-|___|-|___|  -> 8 column grid, (--sp-xxxl) width each
-
-   |__________________|-|__________________|-|___|  -> 2 inputs blocks + 1 button.
-
-    We need to calculate the total width of each input block:
-    - 3.5 columns of the the base grid (--sp-xxxl)
-    - plus 3 inter-column gaps (3 * --sp-xs)
-    - minus half a gap (--sp-xs / 2) because the last spacing is shared
-      with the next block, keeping the overall visual rhythm consistent.
-  */
-
-  --input-width: calc(var(--sp-xxxl) * 3.5 + 3 * var(--sp-xs) - (var(--sp-xs) / 2));
-
   display: grid;
-  grid-template-columns:
-    var(--input-width) /* first input block */
-    var(--input-width) /* second input block */
-    var(--sp-xxxl); /* action button */
-  gap: var(--sp-xs);
-}
-
-.stroke-cap-dropdown,
-.stroke-cap-dropdown-start {
-  min-width: deprecated.$s-124;
-  width: fit-content;
-  max-width: deprecated.$s-252;
-  right: 0;
-  left: unset;
-}
-
-.stroke-cap-dropdown-start {
-  left: 0;
-  right: unset;
-}
-.swap-caps-btn {
-  @extend .button-secondary;
-  height: var(--sp-xxxl);
-  width: var(--sp-xxxl);
-  svg {
-    @extend .button-icon;
-  }
+  grid-template-columns: 1fr auto 1fr;
+  column-gap: var(--sp-xs);
 }

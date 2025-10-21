@@ -319,8 +319,10 @@
         on-drop
         (mf/use-fn
          (mf/deps on-reorder index)
-         (fn [_ data]
-           (on-reorder index (:index data))))
+         (fn [relative-pos data]
+           (let [from-pos             (:index data)
+                 to-space-between-pos (if (= relative-pos :bot) (inc index) index)]
+             (on-reorder from-pos to-space-between-pos))))
 
         [dprops dref]
         (if (some? on-reorder)
@@ -329,9 +331,7 @@
            :on-drop on-drop
            :disabled disable-drag
            :detect-center? false
-           :data {:id (str "color-row-" index)
-                  :index index
-                  :name (str "Color row" index)})
+           :data {:index index})
           [nil nil])
 
         row-class

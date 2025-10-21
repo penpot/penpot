@@ -2660,6 +2660,10 @@ msgstr "Styles"
 msgid "labels.svg"
 msgstr "SVG"
 
+#: src/app/main/ui/workspace/sidebar/options/rows/stroke_row.cljs:250
+msgid "labels.switch"
+msgstr "Switch"
+
 #: src/app/main/ui/onboarding/questions.cljs:256
 #, unused
 msgid "labels.team-leader"
@@ -7577,7 +7581,7 @@ msgstr ""
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
 msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Enter a value (300, Bold, Regular Italic...) or an {alias}"
+msgstr "Font weight (300, Bold Italic...) or an {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
 msgid "workspace.tokens.gaps"
@@ -7713,11 +7717,11 @@ msgstr "Add a theme (i.e. Light)"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1047
 msgid "workspace.tokens.letter-spacing-value-enter-composite"
-msgstr "Add letter spacing or {alias}"
+msgstr "Letter spacing or {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
 msgid "workspace.tokens.line-height-value-enter"
-msgstr "Enter line height — multiplier, px, %, or {alias}"
+msgstr "Line height (multiplier, px, %) or {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:220
 msgid "workspace.tokens.margins"
@@ -7865,11 +7869,11 @@ msgstr "Stroke width must be greater than or equal to 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1012, src/app/main/ui/workspace/tokens/management/create/form.cljs:1051
 msgid "workspace.tokens.text-case-value-enter"
-msgstr "Enter: none | uppercase | lowercase | capitalize or {alias}"
+msgstr "none | uppercase | lowercase | capitalize or {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
 msgid "workspace.tokens.text-decoration-value-enter"
-msgstr "Enter text decoration: none | underline | strike-through"
+msgstr "none | underline | strike-through or {alias}"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"

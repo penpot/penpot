@@ -296,7 +296,8 @@
         notify  (or (-> profile :props :notifications :dashboard-comments) :all)
         result  (case notify
                   :all     (db/exec! cfg [sql:unread-all-comment-threads-by-team profile-id team-id])
-                  :partial (db/exec! cfg [sql:unread-partial-comment-threads-by-team profile-id team-id profile-id profile-id]))]
+                  :partial (db/exec! cfg [sql:unread-partial-comment-threads-by-team profile-id team-id profile-id profile-id])
+                  [])]
     (into [] xf-decode-row result)))
 
 (def ^:private
