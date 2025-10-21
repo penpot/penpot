@@ -54,7 +54,7 @@
 
         report
         (mf/with-memo [error-report]
-          (wapi/create-blob error-report "text/plain"))
+          (when error-report (wapi/create-blob error-report "text/plain")))
 
         on-download
         (mf/use-fn
