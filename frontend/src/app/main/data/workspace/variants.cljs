@@ -105,10 +105,8 @@
     ptk/UpdateEvent
     (update [_ state]
       (let [file-id (:current-file-id state)
-            page-id (:current-page-id state)
             data    (dsh/lookup-file-data state)
-            objects (-> (dsh/get-page data page-id)
-                        (get :objects))
+            objects (dsh/lookup-page-objects state)
 
             related-components    (cfv/find-variant-components data objects variant-id)]
 
