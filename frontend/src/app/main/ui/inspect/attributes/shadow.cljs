@@ -52,9 +52,9 @@
          (str (:spread shadow) "px")]]]]
 
      [:& cmm/color-row {:color (:color shadow)
-                    :format @color-format
-                    :copy-data (copy-color-data (:color shadow) color-format*)
-                    :on-change-format on-change-format}]]))
+                        :format @color-format
+                        :copy-data (copy-color-data (:color shadow) color-format*)
+                        :on-change-format on-change-format}]]))
 
 (mf/defc shadow-panel [{:keys [shapes]}]
   (let [shapes (->> shapes (filter has-shadow?))]
