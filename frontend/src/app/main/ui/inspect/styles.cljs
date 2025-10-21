@@ -20,6 +20,7 @@
    [app.main.ui.inspect.styles.panels.geometry :refer [geometry-panel*]]
    [app.main.ui.inspect.styles.panels.layout :refer [layout-panel*]]
    [app.main.ui.inspect.styles.panels.layout-element :refer [layout-element-panel*]]
+   [app.main.ui.inspect.styles.panels.shadow :refer [shadow-panel*]]
    [app.main.ui.inspect.styles.panels.stroke :refer [stroke-panel*]]
    [app.main.ui.inspect.styles.panels.svg :refer [svg-panel*]]
    [app.main.ui.inspect.styles.panels.text :refer [text-panel*]]
@@ -74,6 +75,9 @@
 
 (defn- has-text? [shape]
   (:content shape))
+
+(defn- has-shadow? [shape]
+  (:shadow shape))
 
 (defn- get-shape-type
   [shapes first-shape first-component]
@@ -199,6 +203,7 @@
               [:> style-box* {:panel :blur}
                [:> blur-panel* {:shapes shapes
                                 :objects objects}]]))
+          ;; TEXT PANEL
           :text
           (let [shapes (filter has-text? shapes)]
             (when (seq shapes)
@@ -207,6 +212,13 @@
                                 :color-space color-space
                                 :objects objects
                                 :resolved-tokens resolved-active-tokens}]]))
+          ;; SHADOW PANEL
+          :shadow
+          (let [shapes (filter has-shadow? shapes)]
+            (when (seq shapes)
+              [:> style-box* {:panel :shadow}
+               [:> shadow-panel* {:shapes shapes
+                                  :color-space color-space}]]))
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
