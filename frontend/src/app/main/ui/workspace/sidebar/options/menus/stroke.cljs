@@ -39,7 +39,7 @@
 
 (mf/defc stroke-menu
   {::mf/wrap [#(mf/memo' % (mf/check-props ["ids" "values" "type" "show-caps" "applied-tokens"]))]}
-  [{:keys [ids type values show-caps disable-stroke-style applied-tokens] :as props}]
+  [{:keys [ids type values show-caps disable-stroke-style applied-tokens shapes objects] :as props}]
   (let [label (case type
                 :multiple (tr "workspace.options.selection-stroke")
                 :group (tr "workspace.options.group-stroke")
@@ -204,11 +204,12 @@
           (seq strokes)
           [:> h/sortable-container* {}
            (for [[index value] (d/enumerate (:strokes values []))]
-             [:& stroke-row* {:key (dm/str "stroke-" index)
+             [:> stroke-row* {:key (dm/str "stroke-" index)
                               :stroke value
                               :title (tr "workspace.options.stroke-color")
                               :index index
-                              :ids ids
+                              :shapes shapes
+                              :objects objects
                               :show-caps show-caps
                               :on-color-change on-color-change
                               :on-color-detach on-color-detach
@@ -223,7 +224,7 @@
                               :applied-tokens applied-tokens
                               :on-detach-token on-detach-token
                               :on-remove on-remove
-                              :on-reorder (handle-reorder index)
+                              :on-reorder handle-reorder
                               :disable-drag disable-drag
                               :on-focus on-focus
                               :select-on-focus (not @disable-drag)
