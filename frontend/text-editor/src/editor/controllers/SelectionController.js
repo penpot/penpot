@@ -1101,6 +1101,9 @@ export class SelectionController extends EventTarget {
       );
       this.focusParagraph.after(fragment, newParagraph);
     }
+    if (isLineBreak(collapseNode)) {
+      return this.collapse(collapseNode, 0);
+    }
     return this.collapse(collapseNode, collapseNode.nodeValue.length);
   }
 
