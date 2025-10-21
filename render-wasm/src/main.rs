@@ -253,8 +253,8 @@ pub extern "C" fn set_shape_masked_group(masked: bool) {
 
 #[no_mangle]
 pub extern "C" fn set_shape_selrect(left: f32, top: f32, right: f32, bottom: f32) {
-    with_state_mut!(state, {
-        state.set_selrect_for_current_shape(left, top, right, bottom);
+    with_current_shape_mut!(state, |shape: &mut Shape| {
+        shape.set_selrect(left, top, right, bottom);
     });
 }
 
