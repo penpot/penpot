@@ -102,3 +102,14 @@
   (t/is (= (d/insert-at-index [:a :b :c :d] 1 [:a])
            [:a :b :c :d])))
 
+(t/deftest reorder
+  (let [v ["a" "b" "c" "d"]]
+    (t/is (= (d/reorder v 0 2) ["b" "a" "c" "d"]))
+    (t/is (= (d/reorder v 0 3) ["b" "c" "a" "d"]))
+    (t/is (= (d/reorder v 0 4) ["b" "c" "d" "a"]))
+    (t/is (= (d/reorder v 3 0) ["d" "a" "b" "c"]))
+    (t/is (= (d/reorder v 3 2) ["a" "b" "d" "c"]))
+    (t/is (= (d/reorder v 0 5) ["b" "c" "d" "a"]))
+    (t/is (= (d/reorder v 3 -1) ["d" "a" "b" "c"]))
+    (t/is (= (d/reorder v 5 -1) ["d" "a" "b" "c"]))
+    (t/is (= (d/reorder v -1 5) ["b" "c" "d" "a"]))))

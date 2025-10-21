@@ -7230,7 +7230,7 @@ msgstr "Fichier unique"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1024, src/app/main/ui/workspace/tokens/management/create/form.cljs:1039
 msgid "workspace.tokens.font-weight-value-enter"
-msgstr "Entrer : 400, Bold, 700 Italic ou {alias}"
+msgstr "Font weight (300, Bold, Regular, Italic...) ou {alias}"
 
 #: src/app/main/ui/workspace/tokens/management/context_menu.cljs:228
 msgid "workspace.tokens.gaps"
@@ -7507,7 +7507,7 @@ msgstr "La largueur du tracé doit être plus grand ou égal à 0."
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:1018, src/app/main/ui/workspace/tokens/management/create/form.cljs:1055
 msgid "workspace.tokens.text-decoration-value-enter"
-msgstr "Entrez la décoration de texte : Aucune | Souligné | Barré"
+msgstr "none | underline | strike-through ou {alias}"
 
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:130
 msgid "workspace.tokens.theme-name"
