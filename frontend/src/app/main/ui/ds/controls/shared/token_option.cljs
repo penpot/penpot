@@ -25,7 +25,7 @@
    [:focused {:optional true} :boolean]])
 
 (mf/defc token-option*
-  {::mf/schema schema:token-option}
+  ;; {::mf/schema schema:token-option}
   [{:keys [id name on-click selected ref focused resolved] :rest props}]
   (let [internal-id (mf/use-id)
         id          (d/nilv id internal-id)]
@@ -56,5 +56,12 @@
       [:span {:aria-labelledby (dm/str id "-name")}
        name]]
      (when resolved
-       [:> :span {:class (stl/css :option-pill)}
-        resolved])]))
+       (cond
+         (map? resolved)
+         (for [[k v] resolved]
+           [:div {:key (str k)}
+            [:span (dm/str (d/name k) ": ")]
+            [:strong (str v)]])
+         :else
+         [:span {:class (stl/css :option-pill)}
+          resolved]))]))

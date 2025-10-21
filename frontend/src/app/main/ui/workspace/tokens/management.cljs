@@ -11,6 +11,7 @@
    [app.main.data.workspace.tokens.library-edit :as dwtl]
    [app.main.refs :as refs]
    [app.main.store :as st]
+   [app.main.ui.context :as muc]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.typography.text :refer [text*]]
    [app.main.ui.workspace.tokens.management.context-menu :refer [token-context-menu]]
@@ -113,7 +114,9 @@
 
         [empty-group filled-group]
         (mf/with-memo [tokens-by-type]
-          (get-sorted-token-groups tokens-by-type))]
+          (get-sorted-token-groups tokens-by-type))
+        
+        active-theme-tokens (mf/use-ctx muc/active-tokens-by-type)]
 
     (mf/with-effect [tokens-lib selected-token-set-id]
       (when (and tokens-lib
@@ -147,7 +150,7 @@
                            :type type
                            :selected-shapes selected-shapes
                            :is-selected-inside-layout is-selected-inside-layout
-                           :active-theme-tokens resolved-active-tokens
+                           :active-theme-tokens active-theme-tokens
                            :tokens tokens}]))
 
      (for [type empty-group]
@@ -155,5 +158,5 @@
                          :type type
                          :selected-shapes selected-shapes
                          :is-selected-inside-layout :is-selected-inside-layout
-                         :active-theme-tokens resolved-active-tokens
+                         :active-theme-tokens active-theme-tokens
                          :tokens []}])]))

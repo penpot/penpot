@@ -100,7 +100,8 @@
 
 
 (mf/defc options-dropdown*
-  {::mf/schema schema:options-dropdown}
+  ;; TODO: Review schema
+  ;; {::mf/schema schema:options-dropdown}
   [{:keys [ref on-click options selected focused empty-to-end align] :rest props}]
   (let [align
         (d/nilv align :left)

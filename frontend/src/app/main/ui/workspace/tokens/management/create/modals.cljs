@@ -68,8 +68,8 @@
         (clj->js))))
 
 (mf/defc token-update-create-modal
-  {::mf/wrap-props false}
-  [{:keys [x y position token token-type action selected-token-set-id] :as _args}]
+    { ::mf/props :obj}
+  [{:keys [x y position token token-type action selected-token-set-id tokens] :as _args}]
   (let [wrapper-style (use-viewport-position-style x y position (= token-type :color))
         modal-size-large* (mf/use-state (= token-type :typography))
         modal-size-large? (deref modal-size-large*)
@@ -94,6 +94,7 @@
                         :action action
                         :selected-token-set-id selected-token-set-id
                         :token-type token-type
+                        :tokens tokens
                         :on-display-colorpicker update-modal-size}]]))
 
 ;; Modals ----------------------------------------------------------------------

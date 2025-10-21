@@ -16,7 +16,7 @@
    [app.main.data.workspace.tokens.application :as dwta]
    [app.main.data.workspace.tokens.color :as dwtc]
    [app.main.data.workspace.tokens.format :as dwtf]
-   [app.main.refs :as refs]
+   [app.main.ui.context :as ctx]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.main.ui.ds.foundations.utilities.token.token-status :refer [token-status-icon*]]
    [app.main.ui.ds.utilities.swatch :refer [swatch*]]
@@ -27,7 +27,6 @@
    [rumext.v2 :as mf]))
 
 ;; Translation dictionaries
-
 (def ^:private attribute-dictionary
   {:rotation "Rotation"
    :opacity "Opacity"
@@ -77,8 +76,7 @@
    :y :y})
 
 ;; Helper functions
-
-(defn partially-applied-attr
+(defn- partially-applied-attr
   "Translates partially applied attributes based on the dictionary."
   [app-token-keys is-applied {:keys [attributes all-attributes]}]
   (let [filtered-keys (if all-attributes
@@ -87,7 +85,7 @@
     (when is-applied
       (str/join ", " (map attribute-dictionary filtered-keys)))))
 
-(defn translate-and-format
+(defn- translate-and-format
   "Translates and formats grouped values by category."
   [grouped-values]
   (str/join "\n"
@@ -97,6 +95,18 @@
                      (dm/str "- " (dwtf/category-dictionary category) ": "
                              (str/join ", " (map attribute-dictionary values)) ".")))
                  grouped-values)))
+
+(defn- token-exists?
+  "Returns true if any token in the grouped token map has a name matching `token-name`."
+  [tokens-by-type token-name]
+  (let [clean-name (-> token-name
+                       (str/trim)
+                       (str/replace #"^\{" "")
+                       (str/replace #"\}$" "")
+                       (str/lower))]
+    (some (fn [[_ tokens]]
+            (some #(= clean-name (:name %)) tokens))
+          tokens-by-type)))
 
 (defn- generate-tooltip
   "Generates a tooltip for a given token"
@@ -142,14 +152,6 @@
       ;; Otherwise only show the base title
       :else base-title)))
 
-;; FIXME: the token thould already have precalculated references, so
-;; we don't need to perform this regex operation on each rerender
-(defn contains-reference-value?
-  "Extracts the value between `{}` in a string and checks if it's in the provided vector."
-  [text active-tokens]
-  (let [match (second (re-find #"\{([^}]+)\}" text))]
-    (contains? active-tokens match)))
-
 (def ^:private
   xf:map-id
   (map :id))
@@ -176,7 +178,6 @@
   {::mf/wrap [mf/memo]}
   [{:keys [on-click token on-context-menu selected-shapes is-selected-inside-layout active-theme-tokens]}]
   (let [{:keys [name value errors type]} token
-
         has-selected?  (pos? (count selected-shapes))
         is-reference?  (cft/is-reference? token)
         contains-path? (str/includes? name ".")
@@ -203,14 +204,14 @@
                    (not half-applied?)
                    (not (attributes-match-selection? selected-shapes attributes {:selected-inside-layout? is-selected-inside-layout})))
 
-        ;; FIXME: move to context or props
-        can-edit? (:can-edit (deref refs/permissions))
+        can-edit?
+        (mf/use-ctx ctx/can-edit?)
 
         is-viewer? (not can-edit?)
 
         ref-not-in-active-set
         (and is-reference?
-             (not (contains-reference-value? value active-theme-tokens)))
+             (not (token-exists? @active-theme-tokens value)))
 
         no-valid-value (seq errors)
 
