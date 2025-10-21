@@ -1792,23 +1792,6 @@ impl RenderState {
         }
     }
 
-    /// Processes all ancestors of a shape, invalidating their extended rectangles and updating their tiles
-    ///
-    /// When a shape changes, all its ancestors need to have their extended rectangles recalculated
-    /// because they may contain the changed shape. This function:
-    /// 1. Computes all ancestors of the shape
-    /// 2. Invalidates the extrect cache for each ancestor
-    /// 3. Updates the tiles for each ancestor to ensure proper rendering
-    pub fn process_shape_ancestors(
-        &mut self,
-        shape: &Shape,
-        tree: &mut ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
-        let ancestors = shape.all_ancestors(tree, false);
-        self.invalidate_and_update_tiles(&ancestors, tree, modifiers);
-    }
-
     /// Rebuilds tiles for shapes with modifiers and processes their ancestors
     ///
     /// This function applies transformation modifiers to shapes and updates their tiles.

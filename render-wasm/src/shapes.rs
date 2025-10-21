@@ -959,47 +959,6 @@ impl Shape {
         }
     }
 
-    /// Returns all ancestor shapes of this shape, traversing up the parent hierarchy
-    ///
-    /// This function walks up the parent chain starting from this shape's parent,
-    /// collecting all ancestor IDs. It stops when it reaches a nil UUID or when
-    /// an ancestor is hidden (unless include_hidden is true).
-    ///
-    /// # Arguments
-    /// * `shapes` - The shapes pool containing all shapes
-    /// * `include_hidden` - Whether to include hidden ancestors in the result
-    ///
-    /// # Returns
-    /// A set of ancestor UUIDs in traversal order (closest ancestor first)
-    pub fn all_ancestors(&self, shapes: &ShapesPool, include_hidden: bool) -> IndexSet<Uuid> {
-        let mut ancestors = IndexSet::new();
-        let mut current_id = self.id;
-
-        // Traverse upwards using parent_id
-        while let Some(parent_id) = shapes.get(&current_id).and_then(|s| s.parent_id) {
-            // If the parent_id is the zero UUID, there are no more ancestors
-            if parent_id == Uuid::nil() {
-                break;
-            }
-
-            // Check if the ancestor is hidden
-            if let Some(parent) = shapes.get(&parent_id) {
-                if !include_hidden && parent.hidden() {
-                    break;
-                }
-                ancestors.insert(parent_id);
-                current_id = parent_id;
-            } else {
-                // FIXME: This should panic! I've removed it temporarily until
-                // we fix the problems with shapes without parents.
-                // panic!("Parent can't be found");
-                break;
-            }
-        }
-
-        ancestors
-    }
-
     pub fn get_matrix(&self) -> Matrix {
         let mut matrix = Matrix::new_identity();
         matrix.post_translate(self.left_top());
