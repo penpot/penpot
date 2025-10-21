@@ -7,12 +7,11 @@
 (ns app.main.ui.inspect.styles.panels.shadow
   (:require-macros [app.main.style :as stl])
   (:require
-   [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
-   [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
 
 (mf/defc shadow-panel*
@@ -21,13 +20,13 @@
    (for [shape shapes]
      (for [shadow (:shadow shape)]
        [:div {:key (dm/str (:id shape) (:type shadow)) :class "shadow-shape"}
-        [:> color-properties-row* {:term "Color"
+        [:> color-properties-row* {:term "Shadow Color"
                                    :color (:color shadow)
                                    :format color-space
                                    :copiable true}]
         (let [property :shadow
               value (dm/str (:offset-x shadow) "px" " " (:offset-y shadow) "px" " " (:blur shadow) "px" " " (:spread shadow) "px")
-              property-name (->> shadow :style d/name (str "workspace.options.shadow-options.") (tr))
+              property-name (cmm/get-css-rule-humanized (:style shadow))
               property-value (css/shadow->css shadow)]
           [:> properties-row* {:key (dm/str "shadow-property-" property)
                                :term property-name
