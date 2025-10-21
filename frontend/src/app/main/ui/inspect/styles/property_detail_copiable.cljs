@@ -8,8 +8,8 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.main.refs :as refs]
-   [app.main.ui.components.color-bullet :as bc]
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
+   [app.main.ui.ds.utilities.swatch :refer [swatch*]]
    [app.main.ui.inspect.common.colors :as isc]
    [app.util.i18n :refer [tr]]
    [rumext.v2 :as mf]))
@@ -29,8 +29,8 @@
                                  :property-detail-copiable-color (some? color))
             :on-click on-click}
    (when color
-     [:> bc/color-bullet {:color color
-                          :mini true}])
+     [:> swatch* {:background color
+                  :size "small"}])
    (if token
      [:span {:class (stl/css :property-detail-text :property-detail-text-token)}
       (:name token)]
