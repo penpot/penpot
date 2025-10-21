@@ -4523,7 +4523,14 @@ msgstr "Plan Enterprise"
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Plan Enterprise (Prueba)"
 
+<<<<<<< HEAD
 #: src/app/main/ui/dashboard/subscription.cljs:84
+=======
+#: src/app/main/ui/dashboard/subscription.cljs:64
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Consigue almacenamiento adicional, recuperación de archivos y mucho más para tus equipos."
+
+>>>>>>> 8dc459b382 (:sparkles: Add improvements payment flow)
 msgid "subscription.dashboard.power-up.professional.bottom-button"
 msgstr "Mejóralo!"
 
@@ -4715,6 +4722,18 @@ msgstr "**$%s**/mes"
 #: src/app/main/ui/settings/subscription.cljs:149
 msgid "subscription.settings.management.dialog.title"
 msgstr "Aplica %s a tus equipos"
+
+msgid "subscription.settings.management.dialog.step-2.title"
+msgstr "Ayúdanos a crecer y facilita tu periodo de prueba"
+
+msgid "subscription.settings.management.dialog.step-2.description"
+msgstr "Añade ahora tus datos de pago para que tu suscripción siga funcionando sin problemas tras finalizar el periodo de prueba y seguir apoyando nuestro proyecto de código abierto. Por ahora no se te hará ningún cargo."
+
+msgid "subscription.settings.management.dialog.step-2.skip-button"
+msgstr "Saltar por ahora y comenzar la prueba"
+
+msgid "subscription.settings.management.dialog.step-2.add-payment-button"
+msgstr "Añadir datos de pago"
 
 #: src/app/main/ui/settings/subscription.cljs:209
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"

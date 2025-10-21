@@ -4538,12 +4538,16 @@ msgstr "Enterprise plan"
 msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Enterprise plan (trial)"
 
+<<<<<<< HEAD
 #: src/app/main/ui/dashboard/subscription.cljs:84
 msgid "subscription.dashboard.power-up.professional.bottom-button"
 msgstr "Power up!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:83
 #, markdown
+=======
+#: src/app/main/ui/dashboard/subscription.cljs:64
+>>>>>>> 8dc459b382 (:sparkles: Add improvements payment flow)
 msgid "subscription.dashboard.power-up.professional.bottom-description"
 msgstr "Get extra storage, file recovery and more for your teams."
 
@@ -4718,6 +4722,18 @@ msgstr "**$%s**/month"
 #: src/app/main/ui/settings/subscription.cljs:149
 msgid "subscription.settings.management.dialog.title"
 msgstr "Apply %s to your teams"
+
+msgid "subscription.settings.management.dialog.step-2.title"
+msgstr "Help us grow and make your trial easier"
+
+msgid "subscription.settings.management.dialog.step-2.description"
+msgstr "Add your payment details now to keep your subscription running smoothly after the trial and continue supporting our open-source project. You won’t be charged yet."
+
+msgid "subscription.settings.management.dialog.step-2.skip-button"
+msgstr "Skip for now and start trial"
+
+msgid "subscription.settings.management.dialog.step-2.add-payment-button"
+msgstr "Add payment details"
 
 #: src/app/main/ui/settings/subscription.cljs:209
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
