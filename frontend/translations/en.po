@@ -4513,11 +4513,11 @@ msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Enterprise plan (trial)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:64
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-text"
-msgstr ""
-"Get extra storage, file recovery and more for your teams with the Unlimited "
-"plan. [Power up!|target:self](%s)"
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Get extra storage, file recovery and more for your teams."
+
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Power up!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:63
 msgid "subscription.dashboard.power-up.professional.top-title"

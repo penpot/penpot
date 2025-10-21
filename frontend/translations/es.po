@@ -4488,11 +4488,11 @@ msgid "subscription.dashboard.power-up.enterprise-trial.top-title"
 msgstr "Plan Enterprise (Prueba)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:64
-#, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-text"
-msgstr ""
-"Consigue almacenamiento adicional, recuperación de archivos y mucho más "
-"para tus equipos con el Plan Unlimited. [Mejóralo!|target:self](%s)"
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Consigue almacenamiento adicional, recuperación de archivos y mucho más para tus equipos."
+
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Mejóralo!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:63
 msgid "subscription.dashboard.power-up.professional.top-title"
