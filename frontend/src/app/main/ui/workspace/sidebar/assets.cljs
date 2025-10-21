@@ -73,7 +73,7 @@
 
 (mf/defc assets-toolbox*
   {::mf/wrap [mf/memo]}
-  [{:keys [size file-id]}]
+  [{:keys [size file-id initial-scroll-top on-scroll-pos-change]}]
   (let [read-only?     (mf/use-ctx ctx/workspace-read-only?)
         filters*       (mf/use-state
                         {:term ""
@@ -162,7 +162,7 @@
             :id      "typographies"
             :handler on-section-filter-change}])]
 
-    [:article  {:class (stl/css :assets-bar)}
+  [:article  {:class (stl/css :assets-bar)}
      [:div {:class (stl/css :assets-header)}
       (when-not ^boolean read-only?
         (if (and (= num-libs 1) (empty? components))
@@ -208,6 +208,16 @@
      [:& (mf/provider cmm/assets-filters) {:value filters}
       [:& (mf/provider cmm/assets-toggle-ordering) {:value toggle-ordering}
        [:& (mf/provider cmm/assets-toggle-list-style) {:value toggle-list-style}
-        [:*
+        ;; Scroll container wrapper
+        [:div {:class (stl/css :tool-window-content)
+               :data-scroll-container true
+               :ref (fn [el]
+                      (when el
+                        (when (and initial-scroll-top (pos? initial-scroll-top) (= (.-scrollTop el) 0))
+                          (set! (.-scrollTop el) initial-scroll-top))
+                        (events/listen el goog.events.EventType/SCROLL
+                                       (fn [_]
+                                         (when on-scroll-pos-change
+                                           (on-scroll-pos-change (.-scrollTop el)))))))}
          [:& assets-local-library {:filters filters}]
          [:> assets-libraries* {:filters filters}]]]]]]))

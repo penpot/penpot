@@ -462,7 +462,7 @@
 
 (mf/defc layers-toolbox*
   {::mf/wrap [mf/memo]}
-  [{:keys [size-parent]}]
+  [{:keys [size-parent initial-scroll-top on-scroll-pos-change]}]
   (let [page           (mf/deref refs/workspace-page)
         focus          (mf/deref refs/workspace-focus-selected)
 
@@ -498,7 +498,7 @@
         (mf/use-fn
          #(st/emit! (dw/toggle-focus-mode)))]
 
-    [:div#layers {:class (stl/css :layers) :data-testid "layer-tree"}
+  [:div#layers {:class (stl/css :layers) :data-testid "layer-tree"}
      (if (d/not-empty? focus)
        [:div {:class (stl/css :tool-window-bar)}
         [:button {:class (stl/css :focus-title)
@@ -514,31 +514,44 @@
 
        (filter-component))
 
-     (if (some? filtered-objects)
-       [:*
-        [:div {:class (stl/css :tool-window-content)
-               :data-scroll-container true
-               :ref on-render-container}
-         [:& filters-tree {:objects filtered-objects
-                           :key (dm/str (:id page))
-                           :parent-size size-parent}]
-         [:div {:ref lazy-load-ref
-                :style {:min-height 16}}]]
-        [:div {:on-scroll on-scroll
-               :class (stl/css :tool-window-content)
-               :data-scroll-container true
-               :style {:display (when (some? filtered-objects) "none")}}
-
-         [:& layers-tree {:objects filtered-objects
-                          :key (dm/str (:id page))
-                          :filtered? true
-                          :parent-size size-parent}]]]
-
-       [:div {:on-scroll on-scroll
-              :class (stl/css :tool-window-content)
-              :data-scroll-container true
-              :style {:display (when (some? filtered-objects) "none")}}
-        [:& layers-tree {:objects objects
-                         :key (dm/str (:id page))
-                         :filtered? false
-                         :parent-size size-parent}]])]))
+     (let [attach-scroll-el
+      (fn [el]
+        (when el
+     ;; Restore initial scrollTop if provided and element at top
+     (when (and initial-scroll-top (pos? initial-scroll-top) (= (.-scrollTop el) 0))
+       (set! (.-scrollTop el) initial-scroll-top))
+     ;; Listen for scroll updates to propagate state upward
+     (events/listen el goog.events.EventType/SCROLL
+          (fn [_]
+            (when on-scroll-pos-change
+              (on-scroll-pos-change (.-scrollTop el)))))))]
+  (if (some? filtered-objects)
+    [:*
+     [:div {:class (stl/css :tool-window-content)
+       :data-scroll-container true
+       :ref (fn [el]
+         (on-render-container el)
+         (attach-scroll-el el))}
+      [:& filters-tree {:objects filtered-objects
+         :key (dm/str (:id page))
+         :parent-size size-parent}]
+      [:div {:ref lazy-load-ref
+        :style {:min-height 16}}]]
+     [:div {:on-scroll on-scroll
+       :class (stl/css :tool-window-content)
+       :data-scroll-container true
+       :style {:display (when (some? filtered-objects) "none")}
+       :ref attach-scroll-el}
+      [:& layers-tree {:objects filtered-objects
+        :key (dm/str (:id page))
+        :filtered? true
+        :parent-size size-parent}]]]
+    [:div {:on-scroll on-scroll
+      :class (stl/css :tool-window-content)
+      :data-scroll-container true
+      :style {:display (when (some? filtered-objects) "none")}
+      :ref attach-scroll-el}
+     [:& layers-tree {:objects objects
+            :key (dm/str (:id page))
+            :filtered? false
+            :parent-size size-parent}]])]))))

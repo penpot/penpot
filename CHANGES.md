@@ -15,6 +15,7 @@
 - Fix pan cursor not disabling viewport guides [Github #6985](https://github.com/penpot/penpot/issues/6985)
 - Fix viewport resize on locked shapes [Taiga #11974](https://tree.taiga.io/project/penpot/issue/11974)
 - Fix nested variant in a component doesn't keep inherited overrides [Taiga #12299](https://tree.taiga.io/project/penpot/issue/12299)
+- Preserve scroll position when switching between Layers, Assets and Tokens tabs (left sidebar) [Github #7440](https://github.com/penpot/penpot/issues/7440)
 
 ## 2.11.0 (Unreleased)
 
