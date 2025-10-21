@@ -50,7 +50,7 @@
                                     (fmt/format-number)) "%"))
 
         formatted-color-value (mf/use-memo
-                               (mf/deps color)
+                               (mf/deps color format color-opacity )
                                #(cond
                                   (some? (:color color)) (case format
                                                            "hex" (dm/str color-value " " color-opacity)

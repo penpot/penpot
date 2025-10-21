@@ -24,12 +24,10 @@
                                    :color (:color shadow)
                                    :format color-space
                                    :copiable true}]
-        (let [property :shadow
-              value (dm/str (:offset-x shadow) "px" " " (:offset-y shadow) "px" " " (:blur shadow) "px" " " (:spread shadow) "px")
+        (let [value (dm/str (:offset-x shadow) "px" " " (:offset-y shadow) "px" " " (:blur shadow) "px" " " (:spread shadow) "px")
               property-name (cmm/get-css-rule-humanized (:style shadow))
               property-value (css/shadow->css shadow)]
-          [:> properties-row* {:key (dm/str "shadow-property-" property)
-                               :term property-name
+          [:> properties-row* {:term property-name
                                :detail (dm/str value)
                                :property property-value
                                :copiable true}])]))])
