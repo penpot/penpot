@@ -155,61 +155,65 @@
 
         tabs-action-button
         (mf/with-memo []
-          (mf/html [:> collapse-button* {}]))]
+          (mf/html [:> collapse-button* {}]))
 
-    [:> (mf/provider muc/sidebar) {:value :left}
-     [:aside {:ref parent-ref
-              :id "left-sidebar-aside"
-              :data-testid "left-sidebar"
-              :data-left-sidebar-width (str width)
-              :class aside-class
-              :style {:--left-sidebar-width (dm/str width "px")}}
+        active-tokens-by-type
+        (mf/with-memo [resolved-active-tokens]
+          (delay (ctob/group-by-type resolved-active-tokens)))]
 
-      [:> left-header*
-       {:file file
-        :layout layout
-        :project project
-        :page-id page-id
-        :class (stl/css :left-header)}]
+    [:> (mf/provider muc/active-tokens-by-type) {:value active-tokens-by-type}
+     [:> (mf/provider muc/sidebar) {:value :left}
+      [:aside {:ref parent-ref
+               :id "left-sidebar-aside"
+               :data-testid "left-sidebar"
+               :data-left-sidebar-width (str width)
+               :class aside-class
+               :style {:--left-sidebar-width (dm/str width "px")}}
 
-      [:div {:on-pointer-down on-pointer-down
-             :on-lost-pointer-capture on-lost-pointer-capture
-             :on-pointer-move on-pointer-move
-             :class (stl/css :resize-area)}]
+       [:> left-header*
+        {:file file
+         :layout layout
+         :project project
+         :page-id page-id
+         :class (stl/css :left-header)}]
 
-      (cond
-        (true? shortcuts?)
-        [:> shortcuts-container* {:class (stl/css :settings-bar-content)}]
+       [:div {:on-pointer-down on-pointer-down
+              :on-lost-pointer-capture on-lost-pointer-capture
+              :on-pointer-move on-pointer-move
+              :class (stl/css :resize-area)}]
 
-        (true? show-debug?)
-        [:> debug-panel* {:class (stl/css :settings-bar-content)}]
+       (cond
+         (true? shortcuts?)
+         [:> shortcuts-container* {:class (stl/css :settings-bar-content)}]
 
-        :else
-        [:div {:class (stl/css  :settings-bar-content)}
-         [:> tab-switcher* {:tabs tabs
-                            :default "layers"
-                            :selected (name section)
-                            :on-change on-tab-change
-                            :class (stl/css :left-sidebar-tabs)
-                            :action-button-position "start"
-                            :action-button tabs-action-button}
+         (true? show-debug?)
+         [:> debug-panel* {:class (stl/css :settings-bar-content)}]
 
-          (case section
-            :assets
-            [:> assets-toolbox*
-             {:size (- width  58)
-              :file-id file-id}]
+         :else
+         [:div {:class (stl/css  :settings-bar-content)}
+          [:> tab-switcher* {:tabs tabs
+                             :default "layers"
+                             :selected (name section)
+                             :on-change on-tab-change
+                             :class (stl/css :left-sidebar-tabs)
+                             :action-button-position "start"
+                             :action-button tabs-action-button}
 
-            :tokens
-            [:> tokens-sidebar-tab*
-             {:tokens-lib tokens-lib
-              :active-tokens active-tokens
-              :resolved-active-tokens resolved-active-tokens}]
+           (case section
+             :assets
+             [:> assets-toolbox*
+              {:size (- width  58)
+               :file-id file-id}]
 
-            :layers
-            [:> layers-content*
-             {:layout layout
-              :width width}])]])]]))
+             :tokens
+             [:> tokens-sidebar-tab*
+              {:tokens-lib tokens-lib
+               :active-tokens active-tokens}]
+
+             :layers
+             [:> layers-content*
+              {:layout layout
+               :width width}])]])]]]))
 
 ;; --- Right Sidebar (Component)
 

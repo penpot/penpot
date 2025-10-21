@@ -294,7 +294,7 @@
            selected-token-set-id
            action
            input-value-placeholder
-
+           tokens
            ;; Callbacks
            validate-token
            on-value-resolve
@@ -622,6 +622,8 @@
              :label label
              :default-value default-value
              :ref ref
+             :tokens tokens
+             :type token-type
              :on-blur on-update-value
              :on-change on-update-value
              :token-resolve-result token-resolve-result}]))]
@@ -662,13 +664,15 @@
 ;; Tabs Component --------------------------------------------------------------
 
 (mf/defc composite-reference-input*
-  [{:keys [default-value on-blur on-update-value token-resolve-result reference-label reference-icon is-reference-fn]}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result reference-label reference-icon is-reference-fn tokens]}]
   [:> input-token*
    {:aria-label (tr "labels.reference")
     :placeholder reference-label
     :icon reference-icon
     :default-value (when (is-reference-fn default-value) default-value)
     :on-blur on-blur
+    :tokens tokens
+    :type "composite-reference"
     :on-change on-update-value
     :token-resolve-result (when (or
                                  (:errors token-resolve-result)
@@ -681,6 +685,7 @@
            on-external-update-value
            on-value-resolve
            clear-resolve-value
+           tokens
            custom-input-token-value-props]
     :rest props}]
   (let [;; Active Tab State
@@ -751,6 +756,7 @@
                                  :on-update-value on-update-value'
                                  :reference-icon reference-icon
                                  :reference-label reference-label
+                                 :tokens tokens
                                  :is-reference-fn is-reference-fn})]
         [:> composite-tab
          (mf/spread-props props {:default-value default-value
@@ -760,7 +766,7 @@
 (mf/defc composite-form*
   "Wrapper around form* that manages composite/reference tab state.
    Takes the same props as form* plus a function to determine if a token value is a reference."
-  [{:keys [token is-reference-fn composite-tab reference-icon title update-composite-backup-value] :rest props}]
+  [{:keys [token is-reference-fn composite-tab reference-icon title update-composite-backup-value tokens] :rest props}]
   (let [active-tab* (mf/use-state (if (is-reference-fn (:value token)) :reference :composite))
         active-tab (deref active-tab*)
 
@@ -772,6 +778,7 @@
             :set-active-tab #(reset! active-tab* %)
             :composite-tab composite-tab
             :reference-icon reference-icon
+            :tokens tokens
             :reference-label (tr "workspace.tokens.reference-composite")
             :title title
             :update-composite-backup-value update-composite-backup-value
@@ -848,8 +855,8 @@
        :on-change on-change'}]]))
 
 (mf/defc color-picker*
-  [{:keys [placeholder label default-value input-ref on-blur on-update-value on-external-update-value custom-input-token-value-props token-resolve-result]}]
-  (let [{:keys [color on-display-colorpicker]} custom-input-token-value-props
+  [{:keys [ placeholder label default-value input-ref on-blur on-update-value on-external-update-value custom-input-token-value-props token-resolve-result]}]
+  (let [{:keys [color on-display-colorpicker tokens]} custom-input-token-value-props
         color-ramp-open* (mf/use-state false)
         color-ramp-open? (deref color-ramp-open*)
 
@@ -903,6 +910,8 @@
        :default-value default-value
        :ref input-ref
        :on-blur on-blur
+       :tokens tokens
+       :type "color"
        :on-change on-update-value
        :slot-start swatch}]
      (when color-ramp-open?
@@ -912,7 +921,7 @@
      [:> token-value-hint* {:result token-resolve-result}]]))
 
 (mf/defc color-form*
-  [{:keys [token on-display-colorpicker] :rest props}]
+  [{:keys [token on-display-colorpicker tokens] :rest props}]
   (let [color* (mf/use-state (:value token))
         color (deref color*)
         on-value-resolve (mf/use-fn
@@ -926,6 +935,7 @@
          (mf/deps color on-display-colorpicker)
          (fn []
            {:color color
+            :tokens tokens
             :on-display-colorpicker on-display-colorpicker}))
 
         on-get-token-value
@@ -1233,7 +1243,7 @@
                          :full-size true}]]))
 
 (mf/defc font-picker-combobox*
-  [{:keys [default-value label aria-label input-ref on-blur on-update-value on-external-update-value token-resolve-result placeholder]}]
+  [{:keys [tokens default-value label aria-label input-ref on-blur on-update-value on-external-update-value token-resolve-result placeholder]}]
   (let [font* (mf/use-state (fonts/find-font-family default-value))
         font (deref font*)
         set-font (mf/use-fn
@@ -1287,6 +1297,8 @@
        :ref input-ref
        :on-blur on-blur
        :on-change on-update-value'
+       :tokens tokens
+       :type "font-family"
        :icon i/text-font-family
        :slot-end font-selector-button
        :token-resolve-result token-resolve-result}]
@@ -1359,7 +1371,7 @@
      :placeholder (tr "workspace.tokens.text-decoration-value-enter")}))
 
 (mf/defc typography-value-inputs*
-  [{:keys [default-value on-blur on-update-value token-resolve-result]}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result tokens]}]
   (let [composite-token? (not (cto/typography-composite-token-reference? (:value token-resolve-result)))
         typography-inputs (mf/use-memo typography-inputs)
         errors-by-key (sd/collect-typography-errors token-resolve-result)]
@@ -1407,6 +1419,7 @@
               :input-ref input-ref
               :default-value (when value (cto/join-font-family value))
               :on-blur on-blur
+              :tokens tokens
               :on-update-value on-change
               :on-external-update-value on-external-update-value
               :token-resolve-result token-prop}]
@@ -1415,12 +1428,14 @@
               :placeholder placeholder
               :default-value value
               :on-blur on-blur
+              :tokens tokens
               :icon icon
+              :type "typography-subvalue"
               :on-change on-change
               :token-resolve-result token-prop}])]))]))
 
 (mf/defc typography-form*
-  [{:keys [token] :rest props}]
+  [{:keys [token tokens] :rest props}]
   (let [on-get-token-value
         (mf/use-fn
          (fn [e prev-composite-value]
@@ -1451,13 +1466,15 @@
                              :is-reference-fn cto/typography-composite-token-reference?
                              :title (tr "labels.typography")
                              :validate-token validate-typography-token
+                             :tokens tokens
                              :on-get-token-value on-get-token-value
                              :update-composite-backup-value update-composite-backup-value})]))
 
 (mf/defc form-wrapper*
-  [{:keys [token token-type] :rest props}]
+  [{:keys [token token-type tokens] :rest props}]
   (let [token-type' (or (:type token) token-type)
-        props (mf/spread-props props {:token-type token-type'
+       props (mf/spread-props props {:token-type token-type'
+                                      :tokens tokens
                                       :token token})]
     (case token-type'
       :color [:> color-form* props]

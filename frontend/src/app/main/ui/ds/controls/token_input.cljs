@@ -120,35 +120,33 @@
                               sorted-tokens)
                     no-sets? (nil? sorted-tokens)]
                 (generate-dropdown-options options no-sets?))))
-                  on-option-click
+          on-option-click
           (mf/use-fn
-           (mf/deps )
-           (fn [event]
-             ))
-                  focused-id*     (mf/use-state nil)
+           (mf/deps)
+           (fn [event]))
+          focused-id*     (mf/use-state nil)
           focused-id      (deref focused-id*)
-                  selected-id*
-          (mf/use-state (fn []
-                          ))
-                  empty-to-end    (d/nilv empty-to-end false)
-                  selected-id
+          selected-id*
+          (mf/use-state (fn []))
+          empty-to-end    (d/nilv empty-to-end false)
+          selected-id
           (deref selected-id*)
-                  listbox-id      (mf/use-id)
-                       nodes-ref            (mf/use-ref nil)
-                          set-option-ref
-                  (mf/use-fn
-                   (fn [node]
-                     (let [state (mf/ref-val nodes-ref)
-                           state (d/nilv state #js {})
-                           id    (dom/get-data node "id")
-                           state (obj/set! state id node)]
-                       (mf/set-ref-val! nodes-ref state)
-                       (fn []
-                         (let [state (mf/ref-val nodes-ref)
-                               state (d/nilv state #js {})
-                               id    (dom/get-data node "id")
-                               state (obj/unset! state id)]
-                           (mf/set-ref-val! nodes-ref state))))))
+          listbox-id      (mf/use-id)
+          nodes-ref            (mf/use-ref nil)
+          set-option-ref
+          (mf/use-fn
+           (fn [node]
+             (let [state (mf/ref-val nodes-ref)
+                   state (d/nilv state #js {})
+                   id    (dom/get-data node "id")
+                   state (obj/set! state id node)]
+               (mf/set-ref-val! nodes-ref state)
+               (fn []
+                 (let [state (mf/ref-val nodes-ref)
+                       state (d/nilv state #js {})
+                       id    (dom/get-data node "id")
+                       state (obj/unset! state id)]
+                   (mf/set-ref-val! nodes-ref state))))))
           props (mf/spread-props props {:type type
                                         :id id
                                         :has-hint has-hint
