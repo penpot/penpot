@@ -41,9 +41,7 @@
 
 
     (if image
-      (let [mtype     (-> image :mtype)
-            name      (or (:name image) (tr "media.image"))
-            extension (cm/mtype->extension mtype)]
+      (let [name      (or (:name image) (tr "media.image"))]
         [:div {:class (stl/css :attributes-image-as-color-row)}
          [:div {:class (stl/css :attributes-color-row)}
           [:div {:class (stl/css :bullet-wrapper)
