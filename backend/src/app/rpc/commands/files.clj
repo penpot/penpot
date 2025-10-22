@@ -353,9 +353,8 @@
    ::sm/params schema:get-project-files
    ::sm/result schema:files}
   [{:keys [::db/pool] :as cfg} {:keys [::rpc/profile-id project-id]}]
-  (dm/with-open [conn (db/open pool)]
-    (projects/check-read-permissions! conn profile-id project-id)
-    (get-project-files conn project-id)))
+  (projects/check-read-permissions! pool profile-id project-id)
+  (get-project-files pool project-id))
 
 ;; --- COMMAND QUERY: has-file-libraries
 
@@ -423,7 +422,6 @@
 
 
 ;; --- QUERY COMMAND: get-page
-
 
 (defn- prune-objects
   "Given the page data and the object-id returns the page data with all
@@ -1163,3 +1161,42 @@
   (check-edition-permissions! conn profile-id file-id)
   (->  (ignore-sync conn params)
        (update :features db/decode-pgarray #{})))
+
+
+;; --- MUTATION COMMAND: delete-immediately
+
+(def ^:private sql:get-team-deleted-files
+  "UPDATE file AS uf SET uf.deleted_at = ?::timestamptz
+     FROM (
+        SELECT f.id FROM file AS f
+          JOIN project AS p ON (p.id = f.project_id)
+          JOIN team AS t ON (t.id = p.team_id)
+         WHERE t.deleted_at IS NULL
+           AND t.id = ?
+           AND f.id = ANY(?::uuid[])
+     ) AS subquery
+    WHERE uf.id = subquery.id
+   RETURNING uf.id;"
+
+(def ^:private schema:delete-files-immediately
+  [:map {:title "delete-files-immediatelly"}
+   [:team-id ::sm/uuid]])
+
+(sv/defmethod ::delete-files-immediately
+  "Mark the specified files to be deleted immediatelly"
+  {::doc/added "1.17"
+   ::sm/params schema:delete-files-immediately
+   ::db/transaction true}
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id] :as params}]
+  (teams/check-edition-permissions! conn profile-id file-id)
+  (run! (fn [{:keys [id]}]
+          (wrk/submit! {::db/conn conn
+                        ::wrk/task :delete-object
+                        ::wrk/params {:object :file
+                                      :deleted-at (:deleted-at file)
+                                      :id file-id}})
+
+
+
+
+
