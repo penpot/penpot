@@ -104,7 +104,8 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 1 (count result)))))))
+        (t/is (= 1 (count (remove :deleted-at result))))
+        (t/is (= 2 (count result)))))))
 
 (t/deftest permissions-checks-create-project
   (let [profile1 (th/create-profile* 1)
@@ -207,7 +208,8 @@
       ;; (th/print-result! out)
       (t/is (nil? (:error out)))
       (let [result (:result out)]
-        (t/is (= 1 (count result)))))
+        (t/is (= 2 (count result)))
+        (t/is (= 1 (count (remove :deleted-at result))))))
 
     ;; run permanent deletion (should be noop)
     (let [result (th/run-task! :objects-gc {})]
