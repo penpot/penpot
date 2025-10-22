@@ -67,6 +67,7 @@
 - Fix nested variant in a component doesn't keep inherited overrides [Taiga #12299](https://tree.taiga.io/project/penpot/issue/12299)
 - Fix selected colors not showing colors from children shapes in multiple selection [Taiga #12384](https://tree.taiga.io/project/penpot/issue/12385)
 - Fix scrollbar issue in design tab [Taiga #12367](https://tree.taiga.io/project/penpot/issue/12367)
+- Fix library update notificacions showing when they should not [Taiga #12397](https://tree.taiga.io/project/penpot/issue/12397)
 
 ## 2.10.1
 

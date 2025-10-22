@@ -84,6 +84,9 @@
   (l/derived :shared-files st/state))
 
 (defn select-libraries
+  "Find between all the given files, those who are libraries of the file-id.
+   Also include the file-id file itself.
+   Return a map of id -> library."
   [files file-id]
   (persistent!
    (reduce-kv (fn [result id file]
