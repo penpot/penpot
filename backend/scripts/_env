@@ -7,12 +7,12 @@ export PENPOT_HOST=devenv
 
 export PENPOT_FLAGS="\
        $PENPOT_FLAGS \
-       enable-login-with-ldap \
        enable-login-with-password
-       enable-login-with-oidc \
-       enable-login-with-google \
-       enable-login-with-github \
-       enable-login-with-gitlab \
+       disable-login-with-ldap \
+       disable-login-with-oidc \
+       disable-login-with-google \
+       disable-login-with-github \
+       disable-login-with-gitlab \
        enable-backend-worker \
        enable-backend-asserts \
        disable-feature-fdata-pointer-map \
