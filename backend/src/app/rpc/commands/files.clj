@@ -765,6 +765,56 @@
     (teams/check-read-permissions! conn profile-id team-id)
     (get-team-recent-files conn team-id)))
 
+
+;; --- COMMAND QUERY: get-team-deleted-files
+
+(def sql:team-deleted-files
+  "WITH deleted_files AS (
+     SELECT f.id,
+            f.revn,
+            f.vern,
+            f.project_id,
+            f.created_at,
+            f.modified_at,
+            f.name,
+            f.is_shared,
+            f.deleted_at AS will_be_deleted_at,
+            ft.media_id AS thumbnail_id,
+            row_number() OVER w AS row_num,
+            p.team_id
+       FROM file AS f
+      INNER JOIN project AS p ON (p.id = f.project_id)
+       LEFT JOIN file_thumbnail AS ft on (ft.file_id = f.id
+                                          AND ft.revn = f.revn
+                                          AND ft.deleted_at is null)
+      WHERE p.team_id = ?
+        AND (p.deleted_at > ?::timestamptz OR
+             f.deleted_at > ?::timestamptz)
+     WINDOW w AS (PARTITION BY f.project_id
+                      ORDER BY f.modified_at DESC)
+      ORDER BY f.modified_at DESC
+   )
+   SELECT *
+     FROM deleted_files
+    WHERE row_num <= 10;")
+
+(defn get-team-deleted-files
+  [conn team-id]
+  (let [now (ct/now)]
+    (db/exec! conn [sql:team-deleted-files team-id now now])))
+
+(def ^:private schema:get-team-deleted-files
+  [:map {:title "get-team-deleted-files"}
+   [:team-id ::sm/uuid]])
+
+(sv/defmethod ::get-team-deleted-files
+  {::doc/added "2.12"
+   ::sm/params schema:get-team-deleted-files}
+  [cfg {:keys [::rpc/profile-id team-id]}]
+  (db/run! cfg (fn [{:keys [::db/conn]}]
+                 (teams/check-read-permissions! conn profile-id team-id)
+                 (get-team-deleted-files conn team-id))))
+
 ;; --- COMMAND QUERY: get-file-info
 
 
