@@ -397,7 +397,7 @@ impl TextContent {
                     )
                 });
 
-        let size = TextContentSize::new(width.ceil(), height.ceil(), width.ceil());
+        let size = TextContentSize::new(width.round(), height.round(), width.round());
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
@@ -414,7 +414,7 @@ impl TextContent {
             .fold(0.0, |auto_height, paragraph| {
                 auto_height + paragraph.height()
             });
-        let size = TextContentSize::new_with_size(width.ceil(), height.ceil());
+        let size = TextContentSize::new_with_size(width.round(), height.round());
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
@@ -424,14 +424,17 @@ impl TextContent {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
-        let paragraph_height = paragraphs
+        let (_width, paragraph_height) = paragraphs
             .iter()
             .flatten()
-            .fold(0.0, |auto_height, paragraph| {
-                auto_height + paragraph.height()
+            .fold((0.0, 0.0), |(auto_width, auto_height), paragraph| {
+                (
+                    f32::max(paragraph.max_intrinsic_width(), auto_width),
+                    auto_height + paragraph.height()
+                )
             });
 
-        let size = TextContentSize::new_with_size(width.ceil(), paragraph_height.ceil());
+        let size = TextContentSize::new_with_size(width.round(), paragraph_height.round());
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
@@ -464,6 +467,7 @@ impl TextContent {
     }
 
     pub fn update_layout(&mut self, selrect: Rect) -> TextContentSize {
+        println!("@@@ Updating text layout..., selrect: {:?}", selrect);
         self.size.set_size(selrect.width(), selrect.height());
 
         match self.grow_type() {

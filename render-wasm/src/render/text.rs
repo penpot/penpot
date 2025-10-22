@@ -200,47 +200,43 @@ fn draw_text(
     shape: &Shape,
     paragraph_builder_groups: &mut [Vec<ParagraphBuilder>],
 ) {
-    let container_height = if let crate::shapes::Type::Text(text_content) = &shape.shape_type {
-        text_content.size.height
-    } else {
-        shape.selrect().height()
-    };
-
-    let paragraph_width = shape.selrect().width();
-    let total_content_height =
-        calculate_all_paragraphs_height(paragraph_builder_groups, paragraph_width);
-
+    let text_content = shape.get_text_content();
+    let text_height = text_content.size.height;
+    let selrect_width = shape.selrect().width();
+    let selrect_height = shape.selrect().height();
     let mut global_offset_y = match shape.vertical_align() {
-        VerticalAlign::Center => (container_height - total_content_height) / 2.0,
-        VerticalAlign::Bottom => container_height - total_content_height,
+        VerticalAlign::Center => (selrect_height - text_height) / 2.0,
+        VerticalAlign::Bottom => selrect_height - text_height,
         _ => 0.0,
     };
 
     let layer_rec = SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
-    for paragraph_builder_group in paragraph_builder_groups {
+    for (_index, paragraph_builder_group) in paragraph_builder_groups.iter_mut().enumerate() {
         let mut group_offset_y = global_offset_y;
+        let total_paragraphs = paragraph_builder_group.len();
 
         for (paragraph_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut paragraph = paragraph_builder.build();
-            paragraph.layout(paragraph_width);
+            paragraph.layout(selrect_width);
             let _paragraph_height = paragraph.height();
             // FIXME: I've kept the _paragraph_height variable to have
             // a reminder in the future to keep digging why the ideographic_baseline
             // works so well and not the paragraph_height. I think we should test
             // this more.
-            if paragraph_index == 0 {
+            let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);
+            paragraph.paint(canvas, xy);
+
+            if paragraph_index == total_paragraphs - 1 {
                 group_offset_y += paragraph.ideographic_baseline();
             }
-            let xy = (shape.selrect().x(), shape.selrect().y() + global_offset_y);
-            paragraph.paint(canvas, xy);
 
             for line_metrics in paragraph.get_line_metrics().iter() {
                 render_text_decoration(canvas, &paragraph, paragraph_builder, line_metrics, xy);
             }
         }
 
-        global_offset_y += group_offset_y;
+        global_offset_y = group_offset_y;
     }
 }
 
@@ -415,6 +411,7 @@ fn render_text_decoration(
     }
 }
 
+#[allow(dead_code)]
 fn calculate_total_paragraphs_height(paragraphs: &mut [ParagraphBuilder], width: f32) -> f32 {
     paragraphs
         .iter_mut()
@@ -426,6 +423,7 @@ fn calculate_total_paragraphs_height(paragraphs: &mut [ParagraphBuilder], width:
         .sum()
 }
 
+#[allow(dead_code)]
 fn calculate_all_paragraphs_height(
     paragraph_groups: &mut [Vec<ParagraphBuilder>],
     width: f32,
