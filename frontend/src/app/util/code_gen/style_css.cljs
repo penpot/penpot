@@ -332,4 +332,4 @@ body {
 
 (defn shadow->css
   [shadow]
-  (dm/str "box-shadow: " (format-shadow->css shadow {})))
+  (dm/str "box-shadow: " (format-shadow->css shadow {}) ";"))
