@@ -37,7 +37,7 @@ impl TextPaths {
                     let start = line_metrics.start_index;
                     let end = line_metrics.end_index;
 
-                    // 3. Get styles present in line for each text leaf
+                    // 3. Get styles present in line for each text span
                     let style_metrics = line_metrics.get_style_metrics(start..end);
 
                     let mut offset_x = 0.0;
@@ -56,23 +56,23 @@ impl TextPaths {
                             .map(|(i, _)| i)
                             .unwrap_or(text.len());
 
-                        let leaf_text = &text[start_byte..end_byte];
+                        let span_text = &text[start_byte..end_byte];
 
                         let font = skia_paragraph.get_font_at(*start_index);
 
                         let blob_offset_x = self.bounds.x() + line_metrics.left as f32 + offset_x;
                         let blob_offset_y = line_offset_y;
 
-                        // 4. Get the path for each text leaf
+                        // 4. Get the path for each text span
                         if let Some((text_path, paint)) = self.generate_text_path(
-                            leaf_text,
+                            span_text,
                             &font,
                             blob_offset_x,
                             blob_offset_y,
                             style_metric,
                             antialias,
                         ) {
-                            let text_width = font.measure_text(leaf_text, None).0;
+                            let text_width = font.measure_text(span_text, None).0;
                             offset_x += text_width;
                             paths.push((text_path, paint));
                         }
@@ -87,7 +87,7 @@ impl TextPaths {
 
     fn generate_text_path(
         &self,
-        leaf_text: &str,
+        span_text: &str,
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
@@ -99,10 +99,10 @@ impl TextPaths {
         // This is used to avoid rendering empty paths, but we can
         // revisit this logic later
         if let Some((text_blob_path, text_blob_bounds)) =
-            Self::get_text_blob_path(leaf_text, font, blob_offset_x, blob_offset_y)
+            Self::get_text_blob_path(span_text, font, blob_offset_x, blob_offset_y)
         {
             let mut text_path = text_blob_path.clone();
-            let text_width = font.measure_text(leaf_text, None).0;
+            let text_width = font.measure_text(span_text, None).0;
 
             let decoration = style_metric.text_style.decoration();
             let font_metrics = style_metric.font_metrics;
@@ -165,13 +165,13 @@ impl TextPaths {
     }
 
     fn get_text_blob_path(
-        leaf_text: &str,
+        span_text: &str,
         font: &skia::Font,
         blob_offset_x: f32,
         blob_offset_y: f32,
     ) -> Option<(skia::Path, skia::Rect)> {
         with_state_mut!(state, {
-            let utf16_text = leaf_text.encode_utf16().collect::<Vec<u16>>();
+            let utf16_text = span_text.encode_utf16().collect::<Vec<u16>>();
             let text = unsafe { skia_safe::as_utf16_unchecked(&utf16_text) };
             let emoji_font = state.render_state.fonts().get_emoji_font(font.size());
             let use_font = emoji_font.as_ref().unwrap_or(font);

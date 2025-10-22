@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { isInline } from "./Inline.js";
+import { isTextSpan } from "./TextSpan.js";
 import { isLineBreak } from "./LineBreak.js";
 import { isParagraph } from "./Paragraph.js";
 import { isEditor } from "./Editor.js";
@@ -58,7 +58,7 @@ export function getTextNodeLength(node) {
  */
 export function getClosestTextNode(node) {
   if (isTextNode(node)) return node;
-  if (isInline(node)) return node.firstChild;
+  if (isTextSpan(node)) return node.firstChild;
   if (isParagraph(node)) return node.firstChild.firstChild;
   if (isRoot(node)) return node.firstChild.firstChild.firstChild;
   if (isEditor(node)) return node.firstChild.firstChild.firstChild.firstChild;

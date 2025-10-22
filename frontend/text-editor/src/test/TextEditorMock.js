@@ -1,6 +1,6 @@
 import { createRoot } from "../editor/content/dom/Root.js";
 import { createParagraph } from "../editor/content/dom/Paragraph.js";
-import { createEmptyInline, createInline } from "../editor/content/dom/Inline.js";
+import { createEmptyTextSpan, createTextSpan } from "../editor/content/dom/TextSpan.js";
 import { createLineBreak } from "../editor/content/dom/LineBreak.js";
 
 export class TextEditorMock extends EventTarget {
@@ -68,7 +68,7 @@ export class TextEditorMock extends EventTarget {
    */
   static createTextEditorMockEmpty() {
     const root = createRoot([
-      createParagraph([createInline(createLineBreak())]),
+      createParagraph([createTextSpan(createLineBreak())]),
     ]);
     return this.createTextEditorMockWithRoot(root);
   }
@@ -76,7 +76,7 @@ export class TextEditorMock extends EventTarget {
   /**
    * Creates a TextEditor mock with some text.
    *
-   * NOTE: If the text is empty an empty inline will be
+   * NOTE: If the text is empty an empty text span will be
    * created.
    *
    * @param {string} text
@@ -86,21 +86,21 @@ export class TextEditorMock extends EventTarget {
     return this.createTextEditorMockWithParagraphs([
       createParagraph([
         text.length === 0
-        ? createEmptyInline()
-        : createInline(new Text(text))
+        ? createEmptyTextSpan()
+        : createTextSpan(new Text(text))
       ]),
     ]);
   }
 
   /**
-   * Creates a TextEditor mock with some inlines and
+   * Creates a TextEditor mock with some textSpans and
    * only one paragraph.
    *
-   * @param {Array<HTMLSpanElement>} inlines
+   * @param {Array<HTMLSpanElement>} textSpans
    * @returns
    */
-  static createTextEditorMockWithParagraph(inlines) {
-    return this.createTextEditorMockWithParagraphs([createParagraph(inlines)]);
+  static createTextEditorMockWithParagraph(textSpans) {
+    return this.createTextEditorMockWithParagraphs([createParagraph(textSpans)]);
   }
 
   #element = null;

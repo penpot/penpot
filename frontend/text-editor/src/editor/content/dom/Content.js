@@ -6,7 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
-import { createInline, isLikeInline } from "./Inline.js";
+import { createTextSpan, isLikeTextSpan } from "./TextSpan.js";
 import {
   createEmptyParagraph,
   createParagraph,
@@ -21,11 +21,11 @@ const DEFAULT_FILLS = '[["^ ","~:fill-color", "#000000","~:fill-opacity", 1]]';
 
 /**
  * Returns if the content fragment should be treated as
- * inline content and not a paragraphed one.
+ * text span content and not a paragraphed one.
  *
  * @returns {boolean}
  */
-function isContentFragmentFromDocumentInline(document) {
+function isContentFragmentFromDocumentTextSpan(document) {
   const nodeIterator = document.createNodeIterator(
     document.documentElement,
     NodeFilter.SHOW_ELEMENT,
@@ -37,7 +37,7 @@ function isContentFragmentFromDocumentInline(document) {
       continue;
     }
 
-    if (!isLikeInline(currentNode)) return false;
+    if (!isLikeTextSpan(currentNode)) return false;
 
     currentNode = nodeIterator.nextNode();
   }
@@ -75,29 +75,29 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
         currentParagraph = createParagraph(undefined, currentStyle);
       }
     }
-    const inline = createInline(new Text(currentNode.nodeValue), currentStyle);
-    const fontSize = inline.style.getPropertyValue("font-size");
+    const textSpan = createTextSpan(new Text(currentNode.nodeValue), currentStyle);
+    const fontSize = textSpan.style.getPropertyValue("font-size");
     if (!fontSize) {
       console.warn("font-size", fontSize);
-      inline.style.setProperty("font-size", styleDefaults?.getPropertyValue("font-size") ?? DEFAULT_FONT_SIZE);
+      textSpan.style.setProperty("font-size", styleDefaults?.getPropertyValue("font-size") ?? DEFAULT_FONT_SIZE);
     }
-    const fontFamily = inline.style.getPropertyValue("font-family");
+    const fontFamily = textSpan.style.getPropertyValue("font-family");
     if (!fontFamily) {
       console.warn("font-family", fontFamily);
-      inline.style.setProperty("font-family", styleDefaults?.getPropertyValue("font-family") ?? DEFAULT_FONT_FAMILY);
+      textSpan.style.setProperty("font-family", styleDefaults?.getPropertyValue("font-family") ?? DEFAULT_FONT_FAMILY);
     }
-    const fontWeight = inline.style.getPropertyValue("font-weight");
+    const fontWeight = textSpan.style.getPropertyValue("font-weight");
     if (!fontWeight) {
       console.warn("font-weight", fontWeight);
-      inline.style.setProperty("font-weight", styleDefaults?.getPropertyValue("font-weight") ?? DEFAULT_FONT_WEIGHT)
+      textSpan.style.setProperty("font-weight", styleDefaults?.getPropertyValue("font-weight") ?? DEFAULT_FONT_WEIGHT)
     }
-    const fills = inline.style.getPropertyValue('--fills');
+    const fills = textSpan.style.getPropertyValue('--fills');
     if (!fills) {
       console.warn("fills", fills);
-      inline.style.setProperty("--fills", styleDefaults?.getPropertyValue("--fills") ?? DEFAULT_FILLS);
+      textSpan.style.setProperty("--fills", styleDefaults?.getPropertyValue("--fills") ?? DEFAULT_FILLS);
     }
 
-    currentParagraph.appendChild(inline);
+    currentParagraph.appendChild(textSpan);
 
     currentNode = nodeIterator.nextNode();
   }
@@ -107,9 +107,9 @@ export function mapContentFragmentFromDocument(document, root, styleDefaults) {
   }
 
   if (fragment.children.length === 1) {
-    const isContentInline = isContentFragmentFromDocumentInline(document);
-    if (isContentInline) {
-      currentParagraph.dataset.inline = "force";
+    const isContentTextSpan = isContentFragmentFromDocumentTextSpan(document);
+    if (isContentTextSpan) {
+      currentParagraph.dataset.textSpan = "force";
     }
   }
 
@@ -149,7 +149,7 @@ export function mapContentFragmentFromString(string, styleDefaults) {
     } else {
       fragment.appendChild(
         createParagraph(
-          [createInline(new Text(line), styleDefaults)],
+          [createTextSpan(new Text(line), styleDefaults)],
           styleDefaults,
         ),
       );

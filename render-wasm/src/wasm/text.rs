@@ -9,7 +9,7 @@ use crate::shapes::{
 use crate::utils::{uuid_from_u32, uuid_from_u32_quartet};
 use crate::{with_current_shape_mut, with_state_mut, with_state_mut_current_shape, STATE};
 
-const RAW_LEAF_DATA_SIZE: usize = std::mem::size_of::<RawTextLeaf>();
+const RAW_SPAN_DATA_SIZE: usize = std::mem::size_of::<RawTextSpan>();
 const RAW_PARAGRAPH_DATA_SIZE: usize = std::mem::size_of::<RawParagraphData>();
 
 const MAX_TEXT_FILLS: usize = 8;
@@ -94,7 +94,7 @@ impl From<RawTextTransform> for Option<TextTransform> {
 #[repr(align(4))]
 #[derive(Debug, Clone, Copy)]
 pub struct RawParagraphData {
-    leaf_count: u32,
+    span_count: u32,
     text_align: RawTextAlign,
     text_direction: RawTextDirection,
     text_decoration: RawTextDecoration,
@@ -124,7 +124,7 @@ impl TryFrom<&[u8]> for RawParagraphData {
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct RawTextLeaf {
+pub struct RawTextSpan {
     font_style: RawFontStyle,
     text_decoration: RawTextDecoration,
     text_transform: RawTextTransform,
@@ -140,25 +140,25 @@ pub struct RawTextLeaf {
     fills: [RawFillData; MAX_TEXT_FILLS],
 }
 
-impl From<[u8; RAW_LEAF_DATA_SIZE]> for RawTextLeaf {
-    fn from(bytes: [u8; RAW_LEAF_DATA_SIZE]) -> Self {
+impl From<[u8; RAW_SPAN_DATA_SIZE]> for RawTextSpan {
+    fn from(bytes: [u8; RAW_SPAN_DATA_SIZE]) -> Self {
         unsafe { std::mem::transmute(bytes) }
     }
 }
 
-impl TryFrom<&[u8]> for RawTextLeaf {
+impl TryFrom<&[u8]> for RawTextSpan {
     type Error = String;
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        let data: [u8; RAW_LEAF_DATA_SIZE] = bytes
-            .get(0..RAW_LEAF_DATA_SIZE)
+        let data: [u8; RAW_SPAN_DATA_SIZE] = bytes
+            .get(0..RAW_SPAN_DATA_SIZE)
             .and_then(|slice| slice.try_into().ok())
-            .ok_or("Invalid text leaf data".to_string())?;
-        Ok(RawTextLeaf::from(data))
+            .ok_or("Invalid text span data".to_string())?;
+        Ok(RawTextSpan::from(data))
     }
 }
 
-impl From<RawTextLeaf> for shapes::TextLeaf {
-    fn from(value: RawTextLeaf) -> Self {
+impl From<RawTextSpan> for shapes::TextSpan {
+    fn from(value: RawTextSpan) -> Self {
         let text = String::default();
 
         let font_family = shapes::FontFamily::new(
@@ -193,7 +193,7 @@ impl From<RawTextLeaf> for shapes::TextLeaf {
 #[derive(Debug, Clone)]
 pub struct RawParagraph {
     attrs: RawParagraphData,
-    leaves: Vec<RawTextLeaf>,
+    leaves: Vec<RawTextSpan>,
     text_buffer: Vec<u8>,
 }
 
@@ -204,12 +204,12 @@ impl TryFrom<&Vec<u8>> for RawParagraph {
     fn try_from(bytes: &Vec<u8>) -> Result<Self, Self::Error> {
         let attrs = RawParagraphData::try_from(&bytes[..RAW_PARAGRAPH_DATA_SIZE])?;
         let mut offset = RAW_PARAGRAPH_DATA_SIZE;
-        let mut raw_text_leaves: Vec<RawTextLeaf> = Vec::new();
+        let mut raw_text_leaves: Vec<RawTextSpan> = Vec::new();
 
-        for _ in 0..attrs.leaf_count {
-            let text_leaf = RawTextLeaf::try_from(&bytes[offset..(offset + RAW_LEAF_DATA_SIZE)])?;
-            offset += RAW_LEAF_DATA_SIZE;
-            raw_text_leaves.push(text_leaf);
+        for _ in 0..attrs.span_count {
+            let text_span = RawTextSpan::try_from(&bytes[offset..(offset + RAW_SPAN_DATA_SIZE)])?;
+            offset += RAW_SPAN_DATA_SIZE;
+            raw_text_leaves.push(text_span);
         }
 
         let text_buffer = &bytes[offset..];
@@ -230,16 +230,16 @@ impl From<RawParagraph> for shapes::Paragraph {
         let mut leaves = vec![];
 
         let mut offset = 0;
-        for raw_leaf in value.leaves.into_iter() {
-            let delta = raw_leaf.text_length as usize;
+        for raw_span in value.leaves.into_iter() {
+            let delta = raw_span.text_length as usize;
             let text_buffer = &value.text_buffer[offset..offset + delta];
 
-            let mut leaf = shapes::TextLeaf::from(raw_leaf);
+            let mut span = shapes::TextSpan::from(raw_span);
             if !text_buffer.is_empty() {
-                leaf.set_text(String::from_utf8_lossy(text_buffer).to_string());
+                span.set_text(String::from_utf8_lossy(text_buffer).to_string());
             }
 
-            leaves.push(leaf);
+            leaves.push(span);
             offset += delta;
         }
 

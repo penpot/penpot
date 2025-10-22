@@ -3,21 +3,21 @@
 use crate::shapes::TextPositionWithAffinity;
 
 /// TODO: Now this is just a tuple with 2 i32 working
-/// as indices (paragraph and leaf).
+/// as indices (paragraph and span).
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct TextNodePosition {
     pub paragraph: i32,
-    pub leaf: i32,
+    pub span: i32,
 }
 
 impl TextNodePosition {
-    pub fn new(paragraph: i32, leaf: i32) -> Self {
-        Self { paragraph, leaf }
+    pub fn new(paragraph: i32, span: i32) -> Self {
+        Self { paragraph, span }
     }
 
     #[allow(dead_code)]
     pub fn is_invalid(&self) -> bool {
-        self.paragraph < 0 || self.leaf < 0
+        self.paragraph < 0 || self.span < 0
     }
 }
 
@@ -95,7 +95,7 @@ impl TextEditorState {
         self.selection.set(
             Some(TextNodePosition::new(
                 text_position_with_affinity.paragraph,
-                text_position_with_affinity.leaf,
+                text_position_with_affinity.span,
             )),
             text_position_with_affinity.offset,
         );
