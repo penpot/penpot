@@ -780,28 +780,19 @@
   @extend .input-base;
   height: auto;
 }
-// TODO: Fix this nested classes.
+// FIXME: This does not conform to our CSS Guidelines. Need to unnest and to use
+// custom properties to handle state changes.
 .input-wrapper {
   display: flex;
   align-items: center;
+  @include t.use-typography("body-large");
+
   label {
-    @include t.use-typography("body-small");
     display: flex;
     align-items: center;
     gap: px2rem(6);
     cursor: pointer;
-    color: var(--color-foreground-secondary);
-    span {
-      @extend .checkbox-icon;
-    }
-    input {
-      margin: 0;
-    }
-    &:hover {
-      span {
-        border-color: var(--color-accent-primary-muted);
-      }
-    }
+    color: var(--color-foreground-primary);
 
     &:focus,
     &:focus-within {
@@ -809,6 +800,22 @@
         border-color: var(--color-accent-primary);
       }
     }
+    &:hover {
+      span {
+        border-color: var(--color-accent-primary-muted);
+      }
+    }
+  }
+
+  span {
+    @extend .checkbox-icon;
+    @include t.use-typography("body-small");
+    color: var(--color-foreground-secondary);
+  }
+  input {
+    margin: 0;
+    @include t.use-typography("body-small");
+    color: var(--color-foreground-secondary);
   }
 }
 
