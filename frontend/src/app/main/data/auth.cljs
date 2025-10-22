@@ -163,6 +163,32 @@
                            (logged-in))))
              (rx/catch on-error))))))
 
+(def ^:private schema:login-with-sso
+  [:map {:title "login-with-sso"}
+   [:provider [:or :string ::sm/uuid]]])
+
+(defn login-with-sso
+  "Start the SSO flow"
+  [params]
+  (assert (sm/check schema:login-with-sso params))
+  (ptk/reify ::login-with-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :login-with-oidc params)
+           (rx/map (fn [{:keys [redirect-uri] :as rsp}]
+                     (if redirect-uri
+                       (rt/nav-raw :uri redirect-uri)
+                       (ex/raise :type :internal
+                                 :code :unexpected-response
+                                 :hint "unexpected response from OIDC method"
+                                 :resp (pr-str rsp)))))
+           (rx/catch (fn [cause]
+                       (let [{:keys [type code] :as error} (ex-data cause)]
+                         (if (and (= type :restriction)
+                                  (= code :provider-not-configured))
+                           (rx/of (ntf/error (tr "errors.auth-provider-not-configured")))
+                           (rx/throw cause)))))))))
+
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
   [{:keys [profile] :as tdata}]

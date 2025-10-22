@@ -450,7 +450,10 @@
     :fn (mg/resource "app/migrations/sql/0141-add-idx-to-file-library-rel.sql")}
 
    {:name "0141-add-file-data-table.sql"
-    :fn (mg/resource "app/migrations/sql/0141-add-file-data-table.sql")}])
+    :fn (mg/resource "app/migrations/sql/0141-add-file-data-table.sql")}
+
+   {:name "0142-add-sso-config-table"
+    :fn (mg/resource "app/migrations/sql/0142-add-sso-config-table.sql")}])
 
 (defn apply-migrations!
   [pool name migrations]

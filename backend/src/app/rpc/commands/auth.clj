@@ -402,6 +402,7 @@
                      ;; to detect if the profile is already registered
                      (or (profile/get-profile-by-email conn (:email claims))
                          (let [is-active (or (boolean (:is-active claims))
+                                             (boolean (:email-verified claims))
                                              (not (contains? cf/flags :email-verification)))
                                params    (-> params
                                              (assoc :is-active is-active)
@@ -588,4 +589,27 @@
   [cfg params]
   (db/tx-run! cfg request-profile-recovery params))
 
+;; --- COMMAND: get-sso-config
 
+(defn- extract-domain
+  "Extract the domain part from email"
+  [email]
+  (let [at (str/last-index-of email "@")]
+    (when (and (>= at 0)
+               (< at (dec (count email))))
+      (-> (subs email (inc at))
+          (str/trim)
+          (str/lower)))))
+
+(def ^:private schema:get-sso-config
+  [:map {:title "get-sso-config"}
+   [:email ::sm/email]])
+
+(sv/defmethod ::get-sso-config
+  {::rpc/auth false
+   ::doc/added "2.12"
+   ::sm/params schema:get-sso-config}
+  [cfg {:keys [email]}]
+  (when-let [domain (extract-domain email)]
+    (when-let [config (db/get* cfg :sso-config {:domain domain})]
+      (select-keys config [:id]))))
