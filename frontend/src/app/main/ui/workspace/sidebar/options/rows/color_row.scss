@@ -186,6 +186,7 @@
   align-items: center;
   block-size: $sz-32;
   inline-size: px2rem(60);
+  padding-inline-start: var(--sp-xs);
   border-radius: 0 $br-8 $br-8 0;
   border: $b-1 solid var(--opacity-input-boder-color);
   background-color: var(--opacity-input-background-color);

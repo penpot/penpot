@@ -157,11 +157,11 @@
         color-name       (dm/get-in src-colors [color-id :name])
 
         has-multiple-colors (uc/multiple? color)
-        library-color?   (and (or (:id color) (:ref-id color)) color-name (not has-multiple-colors))
-        gradient-color?  (and (not has-multiple-colors)
+        library-color?   (and (or (:id color) (:ref-id color)) color-name (not ^boolean has-multiple-colors))
+        gradient-color?  (and (not ^boolean has-multiple-colors)
                               (:gradient color)
                               (dm/get-in color [:gradient :type]))
-        image-color?     (and (not has-multiple-colors)
+        image-color?     (and (not ^boolean has-multiple-colors)
                               (:image color))
 
         editing-text*    (mf/use-state false)
@@ -236,7 +236,7 @@
          (mf/deps disable-gradient disable-opacity disable-image disable-picker on-change on-close on-open tokens)
          (fn [color pos tab]
            (let [color (cond
-                         has-multiple-colors
+                         ^boolean has-multiple-colors
                          {:color default-color
                           :opacity 1}
 
@@ -355,6 +355,7 @@
        [:> color-info-wrapper* {:class (stl/css-case :color-name-wrapper true
                                                      :library-name-wrapper true)
                                 :handle-click-color handle-click-color
+                                :opacity false
                                 :color color}
         [:*
          [:div {:class (stl/css :color-name)
@@ -369,11 +370,11 @@
 
        gradient-color?
        [:> color-info-wrapper* {:class (stl/css-case :color-name-wrapper true
-                                                     :no-opacity disable-opacity
+                                                     :no-opacity ^boolean disable-opacity
                                                      :gradient-name-wrapper true)
                                 :handle-click-color handle-click-color
                                 :color color
-                                :opacity true
+                                :opacity (not ^boolean disable-opacity)
                                 :select-on-focus select-on-focus
                                 :on-focus on-focus'
                                 :on-blur on-blur'
@@ -383,10 +384,10 @@
 
        image-color?
        [:> color-info-wrapper* {:class (stl/css-case :color-name-wrapper true
-                                                     :no-opacity disable-opacity)
+                                                     :no-opacity ^boolean disable-opacity)
                                 :handle-click-color handle-click-color
                                 :color color
-                                :opacity true
+                                :opacity (not ^boolean disable-opacity)
                                 :select-on-focus select-on-focus
                                 :on-focus on-focus'
                                 :on-blur on-blur'
@@ -396,19 +397,20 @@
 
        :else
        [:> color-info-wrapper* {:class (stl/css-case :color-name-wrapper true
-                                                     :no-opacity (or disable-opacity
-                                                                     has-multiple-colors)
+                                                     :no-opacity (or ^boolean disable-opacity
+                                                                     ^boolean has-multiple-colors)
                                                      :editing is-editing-text)
                                 :handle-click-color handle-click-color
                                 :color color
-                                :opacity true
+                                :opacity (not (or ^boolean disable-opacity
+                                                  ^boolean has-multiple-colors))
                                 :select-on-focus select-on-focus
                                 :on-focus on-focus'
                                 :on-blur on-blur'
                                 :on-opacity-change on-opacity-change}
 
         [:span {:class (stl/css :color-input-wrapper)}
-         [:> color-input* {:value (if has-multiple-colors
+         [:> color-input* {:value (if ^boolean has-multiple-colors
                                     ""
                                     color-without-hash)
                            :placeholder (tr "settings.multiple")
