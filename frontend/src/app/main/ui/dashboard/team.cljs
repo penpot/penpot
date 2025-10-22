@@ -930,7 +930,7 @@
        [:*
         [:div {:class (stl/css :invitations-actions)}
          [:div
-          (str (count @selected) " invitations selected")]
+          (tr "team.invitations-selected" (i18n/c (count @selected)))]
          [:div
           [:> button* {:variant "secondary"
                        :type "button"
