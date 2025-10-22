@@ -25,7 +25,8 @@
    [app.util.inet :as inet]
    [app.util.services :as-alias sv]
    [app.worker :as wrk]
-   [cuerdas.core :as str]))
+   [cuerdas.core :as str]
+   [yetti.request :as yreq]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; HELPERS
@@ -90,6 +91,22 @@
      ::ip-addr (::rpc/ip-addr params)
      ::context (d/without-nils context)}))
 
+(defn get-external-session-id
+  [request]
+  (when-let [session-id (yreq/get-header request "x-external-session-id")]
+    (when-not (or (> (count session-id) 256)
+                  (= session-id "null")
+                  (str/blank? session-id))
+      session-id)))
+
+(defn- get-external-event-origin
+  [request]
+  (when-let [origin (yreq/get-header request "x-event-origin")]
+    (when-not (or (> (count origin) 256)
+                  (= origin "null")
+                  (str/blank? origin))
+      origin)))
+
 ;; --- SPECS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,8 +143,6 @@
                          (::rpc/profile-id params)
                          uuid/zero)
 
-        session-id   (get params ::rpc/external-session-id)
-        event-origin (get params ::rpc/external-event-origin)
         props        (-> (or (::replace-props resultm)
                              (-> params
                                  (merge (::props resultm))
@@ -138,8 +153,10 @@
 
         token-id     (::actoken/id request)
         context      (-> (::context resultm)
-                         (assoc :external-session-id session-id)
-                         (assoc :external-event-origin event-origin)
+                         (assoc :external-session-id
+                                (get-external-session-id request))
+                         (assoc :external-event-origin
+                                (get-external-event-origin request))
                          (assoc :access-token-id (some-> token-id str))
                          (d/without-nils))
 

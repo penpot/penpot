@@ -11,17 +11,19 @@
    [app.common.logging :as l]
    [app.common.schema :as sm]
    [app.common.time :as ct]
+   [app.common.uuid :as uuid]
    [app.config :as cf]
    [app.db :as db]
    [app.db.sql :as sql]
+   [app.http :as-alias http]
    [app.http.auth :as-alias http.auth]
    [app.http.session.tasks :as-alias tasks]
    [app.main :as-alias main]
    [app.setup :as-alias setup]
    [app.tokens :as tokens]
-   [cuerdas.core :as str]
    [integrant.core :as ig]
-   [yetti.request :as yreq]))
+   [yetti.request :as yreq]
+   [yetti.response :as yres]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; DEFAULTS
@@ -38,10 +40,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defprotocol ISessionManager
-  (read [_ key])
-  (write! [_ key data])
-  (update! [_ data])
-  (delete! [_ key]))
+  (read-session [_ id])
+  (create-session [_ params])
+  (update-session [_ session])
+  (delete-session [_ id]))
 
 (defn manager?
   [o]
@@ -56,71 +58,82 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ^:private schema:params
-  [:map {:title "session-params"}
-   [:user-agent ::sm/text]
+  [:map {:title "SessionParams" :closed true}
    [:profile-id ::sm/uuid]
-   [:created-at ::ct/inst]])
+   [:user-agent {:optional true} ::sm/text]
+   [:sso-provider-id {:optional true} ::sm/uuid]
+   [:sso-session-id {:optional true} :string]])
 
 (def ^:private valid-params?
   (sm/validator schema:params))
 
-(defn- prepare-session-params
-  [params key]
-  (assert (string? key) "expected key to be a string")
-  (assert (not (str/blank? key)) "expected key to be not empty")
-  (assert (valid-params? params) "expected valid params")
-
-  {:user-agent (:user-agent params)
-   :profile-id (:profile-id params)
-   :created-at (:created-at params)
-   :updated-at (:created-at params)
-   :id key})
-
 (defn- database-manager
   [pool]
   (reify ISessionManager
-    (read [_ token]
-      (db/exec-one! pool (sql/select :http-session {:id token})))
+    (read-session [_ id]
+      (if (string? id)
+        ;; Backward compatibility
+        (let [session (db/exec-one! pool (sql/select :http-session {:id id}))]
+          (-> session
+              (assoc :modified-at (:updated-at session))
+              (dissoc :updated-at)))
+        (db/exec-one! pool (sql/select :http-session-v2 {:id id}))))
 
-    (write! [_ key params]
-      (let [params (-> params
-                       (assoc :created-at (ct/now))
-                       (prepare-session-params key))]
-        (db/insert! pool :http-session params)
-        params))
+    (create-session [_ params]
+      (assert (valid-params? params) "expect valid session params")
 
-    (update! [_ params]
-      (let [updated-at (ct/now)]
-        (db/update! pool :http-session
-                    {:updated-at updated-at}
-                    {:id (:id params)})
-        (assoc params :updated-at updated-at)))
+      (let [now    (ct/now)
+            params (-> params
+                       (assoc :id (uuid/next))
+                       (assoc :created-at now)
+                       (assoc :modified-at now))]
+        (db/insert! pool :http-session-v2 params
+                    {::db/return-keys true})))
 
-    (delete! [_ token]
-      (db/delete! pool :http-session {:id token})
+    (update-session [_ session]
+      (let [modified-at (ct/now)]
+        (if (string? (:id session))
+          (let [params (-> session
+                           (assoc :id (uuid/next))
+                           (assoc :created-at modified-at)
+                           (assoc :modified-at modified-at))]
+            (db/insert! pool :http-session-v2 params))
+
+          (db/update! pool :http-session-v2
+                      {:modified-at modified-at}
+                      {:id (:id session)}))))
+
+    (delete-session [_ id]
+      (if (string? id)
+        (db/delete! pool :http-session {:id id} {::db/return-keys false})
+        (db/delete! pool :http-session-v2 {:id id} {::db/return-keys false}))
       nil)))
 
 (defn inmemory-manager
   []
   (let [cache (atom {})]
     (reify ISessionManager
-      (read [_ token]
-        (get @cache token))
+      (read-session [_ id]
+        (get @cache id))
 
-      (write! [_ key params]
-        (let [params (-> params
-                         (assoc :created-at (ct/now))
-                         (prepare-session-params key))]
-          (swap! cache assoc key params)
-          params))
+      (create-session [_ params]
+        (assert (valid-params? params) "expect valid session params")
 
-      (update! [_ params]
-        (let [updated-at (ct/now)]
-          (swap! cache update (:id params) assoc :updated-at updated-at)
-          (assoc params :updated-at updated-at)))
+        (let [now     (ct/now)
+              session (-> params
+                          (assoc :id (uuid/next))
+                          (assoc :created-at now)
+                          (assoc :modified-at now))]
+          (swap! cache assoc (:id session) session)
+          session))
 
-      (delete! [_ token]
-        (swap! cache dissoc token)
+      (update-session [_ session]
+        (let [modified-at (ct/now)]
+          (swap! cache update (:id session) assoc :modified-at modified-at)
+          (assoc session :modified-at modified-at)))
+
+      (delete-session [_ id]
+        (swap! cache dissoc id)
         nil))))
 
 (defmethod ig/assert-key ::manager
@@ -140,43 +153,48 @@
 ;; MANAGER IMPL
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(declare ^:private assign-auth-token-cookie)
-(declare ^:private clear-auth-token-cookie)
-(declare ^:private gen-token)
+(declare ^:private assign-session-cookie)
+(declare ^:private clear-session-cookie)
+
+(defn- assign-token
+  [cfg session]
+  (let [token (tokens/generate cfg
+                               {:iss "authentication"
+                                :aud "penpot"
+                                :sid (:id session)
+                                :iat (:modified-at session)
+                                :uid (:profile-id session)
+                                :sso-provider-id (:sso-provider-id session)
+                                :sso-session-id (:sso-session-id session)})]
+    (assoc session :token token)))
 
 (defn create-fn
-  [{:keys [::manager] :as cfg} profile-id]
+  [{:keys [::manager] :as cfg} {profile-id :id :as profile}
+   & {:keys [sso-provider-id sso-session-id]}]
+
   (assert (manager? manager) "expected valid session manager")
   (assert (uuid? profile-id) "expected valid uuid for profile-id")
 
   (fn [request response]
     (let [uagent  (yreq/get-header request "user-agent")
-          params  {:profile-id profile-id
-                   :user-agent uagent}
-          token   (gen-token cfg params)
-          session (write! manager token params)]
-      (l/trc :hint "create" :profile-id (str profile-id))
-      (-> response
-          (assign-auth-token-cookie session)))))
+          session (->> {:user-agent uagent
+                        :profile-id profile-id
+                        :sso-provider-id sso-provider-id
+                        :sso-session-id sso-session-id}
+                       (d/without-nils)
+                       (create-session manager)
+                       (assign-token cfg))]
+
+      (l/trc :hint "create" :id (str (:id session)) :profile-id (str profile-id))
+      (assign-session-cookie response session))))
 
 (defn delete-fn
   [{:keys [::manager]}]
   (assert (manager? manager) "expected valid session manager")
   (fn [request response]
-    (let [cname   (cf/get :auth-token-cookie-name)
-          cookie  (yreq/get-cookie request cname)]
-      (l/trc :hint "delete" :profile-id (:profile-id request))
-      (some->> (:value cookie) (delete! manager))
-      (-> response
-          (assoc :status 204)
-          (assoc :body nil)
-          (clear-auth-token-cookie)))))
+    (some->> (get request ::id) (delete-session manager))
+    (clear-session-cookie response)))
 
-(defn- gen-token
-  [cfg {:keys [profile-id created-at]}]
-  (tokens/generate cfg {:iss "authentication"
-                        :iat created-at
-                        :uid profile-id}))
 (defn decode-token
   [cfg token]
   (try
@@ -186,44 +204,63 @@
              :token token
              :cause cause))))
 
+(defn get-session
+  [request]
+  (get request ::session))
+
+(defn invalidate-others
+  [cfg session]
+  (let [sql "delete from http_session_v2 where profile_id = ? and id != ?"]
+    (-> (db/exec-one! cfg [sql (:profile-id session) (:id session)])
+        (db/get-update-count))))
+
 (defn- renew-session?
-  [{:keys [updated-at] :as session}]
-  (and (ct/inst? updated-at)
-       (let [elapsed (ct/diff updated-at (ct/now))]
-         (neg? (compare default-renewal-max-age elapsed)))))
+  [{:keys [id modified-at] :as session}]
+  (or (string? id)
+      (and (ct/inst? modified-at)
+           (let [elapsed (ct/diff modified-at (ct/now))]
+             (neg? (compare default-renewal-max-age elapsed))))))
 
 (defn- wrap-authz
   [handler {:keys [::manager] :as cfg}]
   (assert (manager? manager) "expected valid session manager")
-  (fn [{:keys [::http.auth/token-type] :as request}]
-    (cond
-      (= token-type :cookie)
-      (let [session (some->> (get request ::http.auth/token)
-                             (read manager))
-            request (cond-> request
-                      (some? session)
-                      (-> (assoc ::profile-id (:profile-id session))
-                          (assoc ::id (:id session))))
+  (fn [request]
+    (let [{:keys [type token claims]} (get request ::http/auth-data)]
+      (cond
+        (= type :cookie)
+        (let [session (if-let [sid (:sid claims)]
+                        (read-session manager sid)
+                        ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
+                        (read-session manager token))
 
-            response (handler request)]
+              request (cond-> request
+                        (some? session)
+                        (-> (assoc ::profile-id (:profile-id session))
+                            (assoc ::session session)))
 
-        (if (renew-session? session)
-          (let [session (update! manager session)]
-            (-> response
-                (assign-auth-token-cookie session)))
-          response))
+              response (handler request)]
 
-      (= token-type :bearer)
-      (let [session (some->> (get request ::http.auth/token)
-                             (read manager))
-            request (cond-> request
-                      (some? session)
-                      (-> (assoc ::profile-id (:profile-id session))
-                          (assoc ::id (:id session))))]
-        (handler request))
+          (if (renew-session? session)
+            (let [session (->> session
+                               (update-session manager)
+                               (assign-token cfg))]
+              (assign-session-cookie response session))
+            response))
 
-      :else
-      (handler request))))
+        (= type :bearer)
+        (let [session (if-let [sid (:sid claims)]
+                        (read-session manager sid)
+                        ;; BACKWARD COMPATIBILITY WITH OLD TOKENS
+                        (read-session manager token))
+
+              request (cond-> request
+                        (some? session)
+                        (-> (assoc ::profile-id (:profile-id session))
+                            (assoc ::session session)))]
+          (handler request))
+
+        :else
+        (handler request)))))
 
 (def authz
   {:name ::authz
@@ -231,10 +268,10 @@
 
 ;; --- IMPL
 
-(defn- assign-auth-token-cookie
-  [response {token :id updated-at :updated-at}]
+(defn- assign-session-cookie
+  [response {token :token modified-at :modified-at}]
   (let [max-age    (cf/get :auth-token-cookie-max-age default-cookie-max-age)
-        created-at updated-at
+        created-at modified-at
         renewal    (ct/plus created-at default-renewal-max-age)
         expires    (ct/plus created-at max-age)
         secure?    (contains? cf/flags :secure-session-cookies)
@@ -249,12 +286,12 @@
                     :comment comment
                     :same-site (if cors? :none (if strict? :strict :lax))
                     :secure secure?}]
-    (update response :cookies assoc name cookie)))
+    (update response ::yres/cookies assoc name cookie)))
 
-(defn- clear-auth-token-cookie
+(defn- clear-session-cookie
   [response]
   (let [cname (cf/get :auth-token-cookie-name)]
-    (update response :cookies assoc cname {:path "/" :value "" :max-age 0})))
+    (update response ::yres/cookies assoc cname {:path "/" :value "" :max-age 0})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; TASK: SESSION GC

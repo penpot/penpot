@@ -25,6 +25,7 @@
    [app.db.sql :as-alias sql]
    [app.features.fdata :as fdata]
    [app.features.file-snapshots :as fsnap]
+   [app.http.session :as session]
    [app.loggers.audit :as audit]
    [app.main :as main]
    [app.msgbus :as mbus]
@@ -862,10 +863,13 @@
                :domain domain
                :base-uri base-uri}))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; MISC
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn decode-session-token
+  [token]
+  (session/decode-token main/system token))
 
 (defn instrument-var
   [var]

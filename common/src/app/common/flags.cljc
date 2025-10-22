@@ -33,7 +33,9 @@
     :login-with-ldap
     ;; Uses any generic authentication provider that implements OIDC protocol as credentials.
     :login-with-oidc
-    ;; Allows registration with Open ID
+    ;; Enables custom SSO flow
+    :login-with-custom-sso
+    ;; Allows registration with OIDC (takes effect only when general `registration` is disabled)
     :oidc-registration
     ;; This logs to console the invitation tokens. It's useful in case the SMTP is not configured.
     :log-invitation-tokens})
