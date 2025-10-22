@@ -501,7 +501,7 @@
        [:> color-selection-menu*
         {:file-id file-id
          :type type
-         :shapes shapes
+         :shapes (vals objects)
          :libraries libraries}])
 
      (when-not (empty? shadow-ids)
