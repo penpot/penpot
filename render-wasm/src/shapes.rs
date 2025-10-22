@@ -180,6 +180,7 @@ pub struct Shape {
     pub shadows: Vec<Shadow>,
     pub layout_item: Option<LayoutItem>,
     pub extrect: OnceCell<math::Rect>,
+    pub bounds: OnceCell<math::Bounds>,
 }
 
 // Returns all ancestor shapes of this shape, traversing up the parent hierarchy
@@ -260,6 +261,7 @@ impl Shape {
             shadows: Vec::with_capacity(1),
             layout_item: None,
             extrect: OnceCell::new(),
+            bounds: OnceCell::new(),
         }
     }
 
@@ -288,6 +290,10 @@ impl Shape {
 
     pub fn invalidate_extrect(&mut self) {
         self.extrect = OnceCell::new();
+    }
+
+    pub fn invalidate_bounds(&mut self) {
+        self.bounds = OnceCell::new();
     }
 
     pub fn set_parent(&mut self, id: Uuid) {
@@ -319,6 +325,7 @@ impl Shape {
 
     pub fn set_selrect(&mut self, left: f32, top: f32, right: f32, bottom: f32) {
         self.invalidate_extrect();
+        self.invalidate_bounds();
         self.selrect.set_ltrb(left, top, right, bottom);
         if let Type::Text(ref mut text) = self.shape_type {
             text.update_layout(self.selrect);
@@ -685,8 +692,7 @@ impl Shape {
             || self.selrect.height() * scale > ANTIALIAS_THRESHOLD
     }
 
-    // TODO: Maybe store this inside the shape
-    pub fn bounds(&self) -> Bounds {
+    pub fn calculate_bounds(&self) -> Bounds {
         let mut bounds = Bounds::new(
             Point::new(self.selrect.x(), self.selrect.y()),
             Point::new(self.selrect.x() + self.selrect.width(), self.selrect.y()),
@@ -710,6 +716,11 @@ impl Shape {
         }
 
         bounds
+    }
+
+    pub fn bounds(&self) -> Bounds {
+        *self.bounds
+            .get_or_init(|| self.calculate_bounds())
     }
 
     pub fn selrect(&self) -> math::Rect {
@@ -1136,8 +1147,12 @@ impl Shape {
     }
 
     pub fn apply_transform(&mut self, transform: &Matrix) {
-        self.invalidate_extrect();
         self.transform_selrect(transform);
+
+        // We don't need to invalidate this? we can just transform it
+        self.invalidate_extrect();
+        self.invalidate_bounds();
+
         if let shape_type @ (Type::Path(_) | Type::Bool(_)) = &mut self.shape_type {
             if let Some(path) = shape_type.path_mut() {
                 path.transform(transform);
