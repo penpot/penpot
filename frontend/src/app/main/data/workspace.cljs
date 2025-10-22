@@ -139,9 +139,9 @@
         (fn [data]
           (assoc file :data (d/removem (comp t/pointer? val) data))))))
 
-(defn- check-libraries-synchronozation
+(defn- check-libraries-synchronization
   [file-id libraries]
-  (ptk/reify ::check-libraries-synchronozation
+  (ptk/reify ::check-libraries-synchronization
     ptk/WatchEvent
     (watch [_ state _]
       (let [file         (dsh/lookup-file state file-id)
@@ -154,7 +154,7 @@
                   libraries)]
 
         (when needs-check?
-          (->> (rx/of (dwl/notify-sync-file file-id))
+          (->> (rx/of (dwl/notify-sync-file))
                (rx/delay 1000)))))))
 
 (defn- library-resolved
@@ -168,30 +168,32 @@
   [file-id features]
   (ptk/reify ::fetch-libries
     ptk/WatchEvent
-    (watch [_ _ _]
-      (rx/concat
-       (->> (rp/cmd! :get-file-libraries {:file-id file-id})
-            (rx/mapcat
-             (fn [libraries]
-               (rx/concat
-                (rx/of (dwl/libraries-fetched file-id libraries))
-                (rx/merge
-                 (->> (rx/from libraries)
-                      (rx/merge-map
-                       (fn [{:keys [id synced-at]}]
-                         (->> (rp/cmd! :get-file {:id id :features features})
-                              (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
-                      (rx/mapcat resolve-file)
-                      (rx/map library-resolved))
-                 (->> (rx/from libraries)
-                      (rx/map :id)
-                      (rx/mapcat (fn [file-id]
-                                   (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
-                      (rx/map dwl/library-thumbnails-fetched)))
-                (rx/of (check-libraries-synchronozation file-id libraries))))))
+    (watch [_ _ stream]
+      (let [stopper-s (rx/filter (ptk/type? ::finalize-workspace) stream)]
+        (->> (rx/concat
+              (->> (rp/cmd! :get-file-libraries {:file-id file-id})
+                   (rx/mapcat
+                    (fn [libraries]
+                      (rx/concat
+                       (rx/of (dwl/libraries-fetched file-id libraries))
+                       (rx/merge
+                        (->> (rx/from libraries)
+                             (rx/merge-map
+                              (fn [{:keys [id synced-at]}]
+                                (->> (rp/cmd! :get-file {:id id :features features})
+                                     (rx/map #(assoc % :synced-at synced-at :library-of file-id)))))
+                             (rx/mapcat resolve-file)
+                             (rx/map library-resolved))
+                        (->> (rx/from libraries)
+                             (rx/map :id)
+                             (rx/mapcat (fn [file-id]
+                                          (rp/cmd! :get-file-object-thumbnails {:file-id file-id :tag "component"})))
+                             (rx/map dwl/library-thumbnails-fetched)))
+                       (rx/of (check-libraries-synchronization file-id libraries))))))
 
-       ;; This events marks that all the libraries have been resolved
-       (rx/of (ptk/data-event ::all-libraries-resolved))))))
+              ;; This events marks that all the libraries have been resolved
+              (rx/of (ptk/data-event ::all-libraries-resolved)))
+             (rx/take-until stopper-s))))))
 
 (defn- workspace-initialized
   [file-id]

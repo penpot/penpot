@@ -1193,19 +1193,22 @@
          (ctf/used-assets-changed-since file-data library sync-date))))))
 
 (defn notify-sync-file
-  ;; file-id is the id of the modified library
-  [file-id]
-  (dm/assert! (uuid? file-id))
+  "Notify the user that there are updates in the libraries used by the
+   current file, and ask if he wants to update them now."
+  []
   (ptk/reify ::notify-sync-file
     ptk/WatchEvent
     (watch [_ state _]
-      (let [file         (dsh/lookup-file state (:current-file-id state))
+      (let [file-id      (:current-file-id state)
+            file         (dsh/lookup-file state file-id)
             file-data    (get file :data)
             ignore-until (get file :ignore-sync-until)
 
             libraries-need-sync
-            (filter #(seq (assets-need-sync % file-data ignore-until))
-                    (vals (get state :files)))
+            (->> (vals (get state :files))
+                 (filter #(= (:library-of %) file-id))
+                 (filter #(seq (assets-need-sync % file-data ignore-until))))
+
             do-more-info
             #(modal/show! :libraries-dialog {:starting-tab "updates" :file-id file-id})
 
