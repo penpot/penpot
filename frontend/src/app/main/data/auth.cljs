@@ -8,7 +8,6 @@
   "Auth related data events"
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -148,9 +147,7 @@
 (defn login-with-ldap
   [params]
 
-  (dm/assert!
-   "expected valid params"
-   (sm/check schema:login-with-ldap params))
+  (assert (sm/check schema:login-with-ldap params))
 
   (ptk/reify ::login-with-ldap
     ptk/WatchEvent
@@ -248,9 +245,7 @@
 (defn request-profile-recovery
   [data]
 
-  (dm/assert!
-   "expected valid parameters"
-   (sm/check schema:request-profile-recovery data))
+  (assert (sm/check schema:request-profile-recovery data))
 
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
@@ -273,9 +268,7 @@
 
 (defn recover-profile
   [data]
-  (dm/assert!
-   "expected valid arguments"
-   (sm/check schema:recover-profile data))
+  (assert (sm/check schema:recover-profile data))
 
   (ptk/reify ::recover-profile
     ptk/WatchEvent

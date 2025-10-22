@@ -65,9 +65,13 @@
         response (if (fn? result)
                    (result request)
                    (let [result (rph/unwrap result)]
-                     {::yres/status  (::http/status mdata 200)
+                     {::yres/status  (or (::http/status mdata)
+                                         (if (nil? result)
+                                           204
+                                           200))
                       ::yres/headers (::http/headers mdata {})
                       ::yres/body    result}))]
+
     (-> response
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))
