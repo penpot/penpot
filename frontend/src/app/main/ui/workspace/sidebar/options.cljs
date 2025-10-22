@@ -54,7 +54,7 @@
         modifiers  (dm/get-in modifiers [shape-id :modifiers])
 
         shape      (gsh/transform-shape shape modifiers)
-        props      (mf/spread-props props {:shape shape})]
+        props      (mf/spread-props props {:shape shape :file-id file-id :page-id page-id})]
 
     (case shape-type
       :frame   [:> frame/options* props]

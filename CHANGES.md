@@ -63,6 +63,7 @@
 - Fix variants not syncronizing tokens on switch [Taiga #12290](https://tree.taiga.io/project/penpot/issue/12290)
 - Fix incorrect behavior of Alt + Drag for variants [Taiga #12309](https://tree.taiga.io/project/penpot/issue/12309)
 - Fix text override is lost after switch [Taiga #12269](https://tree.taiga.io/project/penpot/issue/12269)
+- Fix exporting a board crashing the app [Taiga #12384](https://tree.taiga.io/project/penpot/issue/12384)
 
 ## 2.10.1
 
