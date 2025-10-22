@@ -280,12 +280,21 @@ fn calculate_decoration_metrics(
             .abs()
             .max(font_metrics.x_height.abs());
         let min_thickness = (font_size * 0.06).max(1.0);
-        let thickness = font_metrics
-            .underline_thickness()
-            .unwrap_or(1.0)
+
+        // Magic numbers for line thickness partially based on Chromium
+        // (see https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/render_text.cc
+        let raw_font_size = style_metric.text_style.font_size();
+        let thickness_factor = raw_font_size.powf(0.4) * 6.0 / 18.0;
+
+        let thickness = (font_metrics.underline_thickness().unwrap_or(1.0) * thickness_factor)
             .max(min_thickness);
+
         if style_metric.text_style.decoration().ty == TextDecoration::UNDERLINE {
-            let y = line_baseline + font_metrics.underline_position().unwrap_or(thickness);
+            // Same gap from baseline to underline as in Chromium
+            // (see https://source.chromium.org/chromium/chromium/src/+/main:ui/gfx/render_text.cc
+            let gap_scaling = raw_font_size * 1.0 / 9.0;
+            let y = line_baseline + gap_scaling;
+
             max_underline_thickness = max_underline_thickness.max(thickness);
             underline_y = Some(y);
         }
