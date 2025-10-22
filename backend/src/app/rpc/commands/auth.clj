@@ -8,7 +8,6 @@
   (:require
    [app.auth :as auth]
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.features :as cfeat]
    [app.common.logging :as l]
@@ -22,6 +21,7 @@
    [app.email.whitelist :as email.whitelist]
    [app.http.session :as session]
    [app.loggers.audit :as audit]
+   [app.media :as media]
    [app.rpc :as-alias rpc]
    [app.rpc.climit :as-alias climit]
    [app.rpc.commands.profile :as profile]
@@ -30,6 +30,7 @@
    [app.rpc.helpers :as rph]
    [app.setup :as-alias setup]
    [app.setup.welcome-file :refer [create-welcome-file]]
+   [app.storage :as sto]
    [app.tokens :as tokens]
    [app.util.services :as sv]
    [app.worker :as wrk]
@@ -271,11 +272,29 @@
 
 ;; ---- COMMAND: Register Profile
 
-(defn create-profile!
+(defn import-profile-picture
+  [cfg uri]
+  (try
+    (let [storage (sto/resolve cfg)
+          input   (media/download-image cfg uri)
+          input   (media/run {:cmd :info :input input})
+          hash    (sto/calculate-hash (:path input))
+          content (-> (sto/content (:path input) (:size input))
+                      (sto/wrap-with-hash hash))
+          sobject (sto/put-object! storage {::sto/content content
+                                            ::sto/deduplicate? true
+                                            :bucket "profile"
+                                            :content-type (:mtype input)})]
+      (:id sobject))
+    (catch Throwable cause
+      (l/err :hint "unable to import profile picture"
+             :cause cause)
+      nil)))
+
+(defn create-profile
   "Create the profile entry on the database with limited set of input
   attrs (all the other attrs are filled with default values)."
-  [conn {:keys [email] :as params}]
-  (dm/assert! ::sm/email email)
+  [{:keys [::db/conn] :as cfg} {:keys [email] :as params}]
   (let [id        (or (:id params) (uuid/next))
         props     (-> (audit/extract-utm-params params)
                       (merge (:props params))
@@ -283,8 +302,7 @@
                               :viewed-walkthrough? false
                               :nudge {:big 10 :small 1}
                               :v2-info-shown true
-                              :release-notes-viewed (:main cf/version)})
-                      (db/tjson))
+                              :release-notes-viewed (:main cf/version)}))
 
         password  (or (:password params) "!")
 
@@ -299,6 +317,12 @@
         theme     (:theme params nil)
         email     (str/lower email)
 
+        photo-id  (some->> (or (:oidc/picture props)
+                               (:google/picture props)
+                               (:github/picture props)
+                               (:gitlab/picture props))
+                           (import-profile-picture cfg))
+
         params    {:id id
                    :fullname (:fullname params)
                    :email email
@@ -306,11 +330,13 @@
                    :lang locale
                    :password password
                    :deleted-at (:deleted-at params)
-                   :props props
+                   :props (db/tjson props)
                    :theme theme
+                   :photo-id photo-id
                    :is-active is-active
                    :is-muted is-muted
                    :is-demo is-demo}]
+
     (try
       (-> (db/insert! conn :profile params)
           (profile/decode-row))
@@ -323,7 +349,7 @@
           (throw cause))))))
 
 
-(defn create-profile-rels!
+(defn create-profile-rels
   [conn {:keys [id] :as profile}]
   (let [features (cfeat/get-enabled-features cf/flags)
         team     (teams/create-team conn
@@ -377,8 +403,8 @@
                                params    (-> params
                                              (assoc :is-active is-active)
                                              (update :password auth/derive-password))
-                               profile   (->> (create-profile! conn params)
-                                              (create-profile-rels! conn))]
+                               profile   (->> (create-profile cfg params)
+                                              (create-profile-rels conn))]
                            (vary-meta profile assoc :created true))))
 
         created?   (-> profile meta :created true?)

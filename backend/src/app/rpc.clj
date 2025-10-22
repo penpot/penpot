@@ -68,13 +68,17 @@
         response (if (fn? result)
                    (result request)
                    (let [result  (rph/unwrap result)
-                         status  (::http/status mdata 200)
+                         status  (or (::http/status mdata)
+                                     (if (nil? result)
+                                       204
+                                       200))
                          headers (cond-> (::http/headers mdata {})
                                    (yres/stream-body? result)
                                    (assoc "content-type" "application/octet-stream"))]
                      {::yres/status  status
                       ::yres/headers headers
                       ::yres/body    result}))]
+
     (-> response
         (handle-response-transformation request mdata)
         (handle-before-comple-hook mdata))))

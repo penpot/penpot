@@ -7,14 +7,10 @@
 (ns app.rpc.commands.media
   (:require
    [app.common.data :as d]
-   [app.common.exceptions :as ex]
-   [app.common.media :as cm]
    [app.common.schema :as sm]
    [app.common.time :as ct]
    [app.common.uuid :as uuid]
-   [app.config :as cf]
    [app.db :as db]
-   [app.http.client :as http]
    [app.loggers.audit :as-alias audit]
    [app.media :as media]
    [app.rpc :as-alias rpc]
@@ -22,13 +18,7 @@
    [app.rpc.commands.files :as files]
    [app.rpc.doc :as-alias doc]
    [app.storage :as sto]
-   [app.storage.tmp :as tmp]
-   [app.util.services :as sv]
-   [cuerdas.core :as str]
-   [datoteka.io :as io]))
-
-(def default-max-file-size
-  (* 1024 1024 10)) ; 10 MiB
+   [app.util.services :as sv]))
 
 (def thumbnail-options
   {:width 100
@@ -197,56 +187,12 @@
 
     mobj))
 
-(defn download-image
-  [{:keys [::http/client]} uri]
-  (letfn [(parse-and-validate [{:keys [headers] :as response}]
-            (let [size     (some-> (get headers "content-length") d/parse-integer)
-                  mtype    (get headers "content-type")
-                  format   (cm/mtype->format mtype)
-                  max-size (cf/get :media-max-file-size default-max-file-size)]
-
-              (when-not size
-                (ex/raise :type :validation
-                          :code :unknown-size
-                          :hint "seems like the url points to resource with unknown size"))
-
-              (when (> size max-size)
-                (ex/raise :type :validation
-                          :code :file-too-large
-                          :hint (str/ffmt "the file size % is greater than the maximum %"
-                                          size
-                                          default-max-file-size)))
-
-              (when (nil? format)
-                (ex/raise :type :validation
-                          :code :media-type-not-allowed
-                          :hint "seems like the url points to an invalid media object"))
-
-              {:size size :mtype mtype :format format}))]
-
-    (let [{:keys [body] :as response} (http/req! client
-                                                 {:method :get :uri uri}
-                                                 {:response-type :input-stream :sync? true})
-          {:keys [size mtype]} (parse-and-validate response)
-          path    (tmp/tempfile :prefix "penpot.media.download.")
-          written (io/write* path body :size size)]
-
-      (when (not= written size)
-        (ex/raise :type :internal
-                  :code :mismatch-write-size
-                  :hint "unexpected state: unable to write to file"))
-
-      {:filename "tempfile"
-       :size size
-       :path path
-       :mtype mtype})))
-
 (defn- create-file-media-object-from-url
   [cfg {:keys [url name] :as params}]
-  (let [content (download-image cfg url)
+  (let [content (media/download-image cfg url)
         params  (-> params
                     (assoc :content content)
-                    (assoc :name (or name (:filename content))))]
+                    (assoc :name (d/nilv name "unknown")))]
 
     ;; NOTE: we use the climit here in a dynamic invocation because we
     ;; don't want saturate the process-image limit with IO (download

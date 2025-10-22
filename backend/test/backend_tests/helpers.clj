@@ -182,10 +182,10 @@
                         :is-demo false}
                        params)]
      (db/run! system
-              (fn [{:keys [::db/conn]}]
+              (fn [{:keys [::db/conn] :as cfg}]
                 (->> params
-                     (cmd.auth/create-profile! conn)
-                     (cmd.auth/create-profile-rels! conn)))))))
+                     (cmd.auth/create-profile cfg)
+                     (cmd.auth/create-profile-rels conn)))))))
 
 (defn create-project*
   ([i params] (create-project* *system* i params))
