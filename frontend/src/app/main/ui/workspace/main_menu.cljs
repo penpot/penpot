@@ -519,8 +519,13 @@
         shared?      (:is-shared file)
 
         objects      (mf/deref refs/workspace-page-objects)
-        frames       (->> (cfh/get-immediate-children objects uuid/zero)
+        selected     (mf/deref refs/selected-shapes)
+        all-frames   (->> (cfh/get-immediate-children objects uuid/zero)
                           (filterv cfh/frame-shape?))
+
+        ;; If there are selected frames, use only those. Otherwise, use all frames
+        selected-frames (filterv #(contains? selected (:id %)) all-frames)
+        frames       (if (seq selected-frames) selected-frames all-frames)
 
         perms        (mf/use-ctx ctx/permissions)
         can-edit     (:can-edit perms)
