@@ -191,9 +191,9 @@
   {::mf/props :obj}
   [{:keys [params hide-separator on-success-callback]}]
   [:*
-   (when login/show-alt-login-buttons?
-     [:& login/login-buttons {:params params}])
-   (when (or login/show-alt-login-buttons? (false? hide-separator))
+   (when login/show-sso-login-buttons?
+     [:> login/login-sso-buttons* {:params params}])
+   (when (or login/show-sso-login-buttons? (false? hide-separator))
      [:hr {:class (stl/css :separator)}])
    (when (contains? cf/flags :login-with-password)
      [:& register-form {:params params :on-success-callback on-success-callback}])])

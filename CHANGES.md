@@ -4,6 +4,39 @@
 
 ### :boom: Breaking changes & Deprecations
 
+#### Updated SSO Callback URL
+
+The OAuth / Single Sign-On (SSO) callback endpoint has changed to
+align with the new OpenID Connect (OIDC) implementation.
+
+Old callback URL:
+
+```
+https://<your_domain>/api/auth/oauth/<oauth_provider>/callback
+```
+
+New callback URL:
+
+```
+https://<your_domain>/api/auth/oidc/callback
+```
+
+**Action required:**
+
+If you have SSO/Social-Auth configured on your on-premise instance,
+the following actions are required before update:
+
+Update your OAuth or SSO provider configuration (e.g., Okta, Google,
+Azure AD, etc.) to use the new callback URL.  Failure to update may
+result in authentication failures after upgrading.
+
+**Reason for change:**
+
+This update standardizes all authentication flows under the single URL
+and makis it more modular, enabling the ability to configure SSO auth
+provider dinamically.
+
+
 ### :rocket: Epics and highlights
 
 ### :heart: Community contributions (Thank you!)

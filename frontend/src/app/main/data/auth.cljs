@@ -8,7 +8,6 @@
   "Auth related data events"
   (:require
    [app.common.data :as d]
-   [app.common.data.macros :as dm]
    [app.common.exceptions :as ex]
    [app.common.schema :as sm]
    [app.common.uuid :as uuid]
@@ -148,9 +147,7 @@
 (defn login-with-ldap
   [params]
 
-  (dm/assert!
-   "expected valid params"
-   (sm/check schema:login-with-ldap params))
+  (assert (sm/check schema:login-with-ldap params))
 
   (ptk/reify ::login-with-ldap
     ptk/WatchEvent
@@ -165,6 +162,32 @@
                            (with-meta {::ev/source "login-with-ldap"})
                            (logged-in))))
              (rx/catch on-error))))))
+
+(def ^:private schema:login-with-sso
+  [:map {:title "login-with-sso"}
+   [:provider [:or :string ::sm/uuid]]])
+
+(defn login-with-sso
+  "Start the SSO flow"
+  [params]
+  (assert (sm/check schema:login-with-sso params))
+  (ptk/reify ::login-with-sso
+    ptk/WatchEvent
+    (watch [_ _ _]
+      (->> (rp/cmd! :login-with-oidc params)
+           (rx/map (fn [{:keys [redirect-uri] :as rsp}]
+                     (if redirect-uri
+                       (rt/nav-raw :uri redirect-uri)
+                       (ex/raise :type :internal
+                                 :code :unexpected-response
+                                 :hint "unexpected response from OIDC method"
+                                 :resp (pr-str rsp)))))
+           (rx/catch (fn [cause]
+                       (let [{:keys [type code] :as error} (ex-data cause)]
+                         (if (and (= type :restriction)
+                                  (= code :provider-not-configured))
+                           (rx/of (ntf/error (tr "errors.auth-provider-not-configured")))
+                           (rx/throw cause)))))))))
 
 (defn login-from-token
   "Used mainly as flow continuation after token validation."
@@ -248,9 +271,7 @@
 (defn request-profile-recovery
   [data]
 
-  (dm/assert!
-   "expected valid parameters"
-   (sm/check schema:request-profile-recovery data))
+  (assert (sm/check schema:request-profile-recovery data))
 
   (ptk/reify ::request-profile-recovery
     ptk/WatchEvent
@@ -273,9 +294,7 @@
 
 (defn recover-profile
   [data]
-  (dm/assert!
-   "expected valid arguments"
-   (sm/check schema:recover-profile data))
+  (assert (sm/check schema:recover-profile data))
 
   (ptk/reify ::recover-profile
     ptk/WatchEvent

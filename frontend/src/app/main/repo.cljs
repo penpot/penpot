@@ -171,9 +171,8 @@
   (send! id params nil))
 
 (defmethod cmd! :login-with-oidc
-  [_ {:keys [provider] :as params}]
-  (let [uri    (u/join cf/public-uri "api/auth/oauth/" (d/name provider))
-        params (dissoc params :provider)]
+  [_ params]
+  (let [uri (u/join cf/public-uri "api/auth/oidc")]
     (->> (http/send! {:method :post
                       :uri uri
                       :credentials "include"
