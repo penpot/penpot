@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 _SCRIPT_DIR=$(dirname $0);
 
-export SKIA_BINARIES_URL="https://github.com/penpot/skia-binaries/releases/download/0.87.0/skia-binaries-e551f334ad5cbdf43abf-x86_64-unknown-linux-gnu-gl-svg-textlayout-binary-cache-webp.tar.gz"
+export BUILD_TARGET="linux"
+. ./_common
+
+export SKIA_BINARIES_URL=${SKIA_BINARIES_URL};
 
 pushd $_SCRIPT_DIR;
 cargo watch -x "test --bin render_wasm -- --show-output"

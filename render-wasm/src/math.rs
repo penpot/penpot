@@ -356,7 +356,7 @@ impl Bounds {
     }
 
     pub fn from_rect(r: &Rect) -> Self {
-        let [nw, ne, se, sw] = r.to_quad();
+        let [nw, ne, se, sw] = r.to_quad(skia::PathDirection::CW);
         Self::new(nw, ne, se, sw)
     }
 
