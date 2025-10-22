@@ -99,9 +99,25 @@
 
 (defn update-property-name
   "Update the variant property name on the position pos
-   in all the components with this variant-id"
+   in all the components with this variant-id and remove the focus"
   [variant-id pos new-name {:keys [trigger]}]
   (ptk/reify ::update-property-name
+    ptk/UpdateEvent
+    (update [_ state]
+      (let [file-id (:current-file-id state)
+            data    (dsh/lookup-file-data state)
+            objects (dsh/lookup-page-objects state)
+
+            related-components    (cfv/find-variant-components data objects variant-id)]
+
+        (reduce
+         (fn [s related-component]
+           (update-in s
+                      [:files file-id :data :components (:id related-component) :variant-properties]
+                      (fn [props] (mapv #(with-meta % nil) props))))
+         state
+         related-components)))
+
     ptk/WatchEvent
     (watch [it state _]
       (let [page-id (:current-page-id state)
