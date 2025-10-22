@@ -302,8 +302,10 @@ fn distribute_fill_main_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]
 }
 
 fn distribute_fill_across_space(layout_axis: &LayoutAxis, tracks: &mut [TrackData]) {
+    let tlen = usize::max(tracks.len(), 1);
+
     let total_across_size = tracks.iter().map(|t| t.across_size).sum::<f32>()
-        + (tracks.len() - 1) as f32 * layout_axis.gap_across;
+        + (tlen - 1) as f32 * layout_axis.gap_across;
 
     let mut left_space = if layout_axis.is_auto_across {
         0.0
@@ -356,7 +358,8 @@ fn stretch_tracks_sizes(
     tracks: &mut [TrackData],
     total_across_size: f32,
 ) {
-    let total_across_size = total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
+    let tlen = usize::max(tracks.len(), 1);
+    let total_across_size = total_across_size + (tlen - 1) as f32 * layout_axis.gap_across;
     let left_space = layout_axis.across_space() - total_across_size;
     let delta = left_space / tracks.len() as f32;
 
@@ -378,8 +381,8 @@ fn calculate_track_positions(
         align_content = &AlignContent::Start;
     }
 
-    let total_across_size_gap: f32 =
-        total_across_size + (tracks.len() - 1) as f32 * layout_axis.gap_across;
+    let tlen = usize::max(tracks.len(), 1);
+    let total_across_size_gap: f32 = total_across_size + (tlen - 1) as f32 * layout_axis.gap_across;
 
     let (real_margin, real_gap) = match align_content {
         AlignContent::End => (
@@ -396,13 +399,12 @@ fn calculate_track_positions(
             layout_axis.padding_across_start,
             f32::max(
                 layout_axis.gap_across,
-                (layout_axis.across_space() - total_across_size) / (tracks.len() - 1) as f32,
+                (layout_axis.across_space() - total_across_size) / (tlen - 1) as f32,
             ),
         ),
 
         AlignContent::SpaceAround => {
-            let effective_gap =
-                (layout_axis.across_space() - total_across_size) / tracks.len() as f32;
+            let effective_gap = (layout_axis.across_space() - total_across_size) / tlen as f32;
             (effective_gap / 2.0, effective_gap)
         }
 
@@ -475,14 +477,15 @@ fn first_anchor(
         return track.anchor + layout_axis.main_v * layout_axis.padding_main_start;
     }
 
+    let slen = usize::max(track.shapes.len(), 1);
+
     let delta = match layout_data.justify_content {
         JustifyContent::Center => (layout_axis.main_size - track.main_size) / 2.0,
         JustifyContent::End => {
             layout_axis.main_size - layout_axis.padding_main_end - track.main_size
         }
         JustifyContent::SpaceAround => {
-            let effective_gap =
-                (layout_axis.main_space() - total_shapes_size) / (track.shapes.len()) as f32;
+            let effective_gap = (layout_axis.main_space() - total_shapes_size) / slen as f32;
             layout_axis.padding_main_end + f32::max(layout_axis.gap_main, effective_gap / 2.0)
         }
         JustifyContent::SpaceEvenly => {
@@ -651,7 +654,7 @@ pub fn reflow_flex_layout(
 
         let auto_across_size = if layout_axis.is_auto_across {
             tracks.iter().map(|track| track.across_size).sum::<f32>()
-                + (tracks.len() - 1) as f32 * layout_axis.gap_across
+                + (tracks.len() as f32 - 1.0) * layout_axis.gap_across
                 + layout_axis.padding_across_start
                 + layout_axis.padding_across_end
         } else {
@@ -662,8 +665,9 @@ pub fn reflow_flex_layout(
             tracks
                 .iter()
                 .map(|track| {
+                    let nshapes = usize::max(track.shapes.len(), 1);
                     track.shapes.iter().map(|s| s.main_size).sum::<f32>()
-                        + (track.shapes.len() - 1) as f32 * layout_axis.gap_main
+                        + (nshapes as f32 - 1.0) * layout_axis.gap_main
                 })
                 .reduce(f32::max)
                 .unwrap_or(0.01)
