@@ -8134,3 +8134,15 @@ msgstr "Los autoguardados duran %s días."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Pulsar para cerrar la ruta"
+
+msgid "dashboard.labels.recent"
+msgstr "Recientes"
+
+msgid "dashboard.labels.deleted"
+msgstr "Eliminados"
+
+msgid "dashboard.labels.restore-all"
+msgstr "Restaurar todo"
+
+msgid "dashboard.labels.clear"
+msgstr "Vaciar papelera"

@@ -4,16 +4,20 @@
 //
 // Copyright (c) KALEIDOS INC
 
-@use "refactor/common-refactor.scss" as deprecated;
+@use "common/refactor/common-refactor.scss" as deprecated;
 @use "common/refactor/common-dashboard";
+@use "../ds/typography.scss" as t;
+@use "../ds/_borders.scss" as *;
+@use "../ds/spacing.scss" as *;
+@use "../ds/_sizes.scss" as *;
 
 .dashboard-container {
   flex: 1 0 0;
   width: 100%;
-  margin-right: deprecated.$s-16;
-  border-top: deprecated.$s-1 solid var(--panel-border-color);
+  margin-inline-end: var(--sp-l);
+  border-top: $b-1 solid var(--panel-border-color);
   overflow-y: auto;
-  padding-bottom: deprecated.$s-32;
+  padding-bottom: var(--sp-xxxl);
 }
 
 .dashboard-projects {
@@ -27,16 +31,16 @@
 
 .dashboard-shared {
   width: calc(100vw - deprecated.$s-320);
-  margin-right: deprecated.$s-52;
+  margin-inline-end: deprecated.$s-52;
 }
 
 .search {
-  margin-top: deprecated.$s-12;
+  margin-block-start: var(--sp-m);
 }
 
 .dashboard-project-row {
   --actions-opacity: 0;
-  margin-bottom: deprecated.$s-24;
+  margin-block-end: var(--sp-xxl);
   position: relative;
 
   &:hover,
@@ -60,12 +64,12 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
   width: 99%;
-  max-height: deprecated.$s-40;
-  padding: deprecated.$s-8 deprecated.$s-8 deprecated.$s-8 deprecated.$s-16;
-  margin-top: deprecated.$s-16;
-  border-radius: deprecated.$br-4;
+  max-height: $sz-40;
+  padding: var(--sp-s) var(--sp-s) var(--sp-s) var(--sp-l);
+  margin-block-start: var(--sp-l);
+  border-radius: $br-4;
 }
 
 .project-name-wrapper {
@@ -73,30 +77,29 @@
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  min-height: deprecated.$s-32;
-  margin-left: deprecated.$s-8;
+  min-height: var(--sp-xxxl);
+  margin-inline-start: var(--sp-s);
 }
 
 .project-name {
-  @include deprecated.bodyLargeTypography;
-  @include deprecated.textEllipsis;
+  @include t.use-typography("body-large");
   width: fit-content;
-  margin-right: deprecated.$s-12;
+  margin-inline-end: var(--sp-m);
   line-height: 0.8;
   color: var(--title-foreground-color-hover);
   cursor: pointer;
-  height: deprecated.$s-16;
+  height: var(--sp-l);
 }
 
 .info-wrapper {
   display: flex;
   align-items: center;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
 }
 
 .info,
 .recent-files-row-title-info {
-  @include deprecated.bodyMediumTypography;
+  @include t.use-typography("body-medium");
   color: var(--title-foreground-color);
   @media (max-width: 760px) {
     display: none;
@@ -106,16 +109,16 @@
 .project-actions {
   display: flex;
   opacity: var(--actions-opacity);
-  margin-left: deprecated.$s-32;
+  margin-inline-start: var(--sp-xxxl);
 }
 
 .add-file-btn,
 .options-btn {
   @extend .button-tertiary;
-  height: deprecated.$s-32;
-  width: deprecated.$s-32;
-  margin: 0 deprecated.$s-8;
-  padding: deprecated.$s-8;
+  height: var(--sp-xxxl);
+  width: var(--sp-xxxl);
+  margin: 0 var(--sp-s);
+  padding: var(--sp-s);
 }
 
 .add-icon,
@@ -126,24 +129,24 @@
 
 .grid-container {
   width: 100%;
-  padding: 0 deprecated.$s-4;
+  padding: 0 var(--sp-xs);
 }
 
 .placeholder-placement {
-  margin: deprecated.$s-16 deprecated.$s-32;
+  margin: var(--sp-l) var(--sp-xxxl);
 }
 
 .show-more {
   --show-more-color: var(--button-secondary-foreground-color-rest);
   @include deprecated.buttonStyle;
-  @include deprecated.bodyMediumTypography;
+  @include t.use-typography("body-medium");
   position: absolute;
-  top: deprecated.$s-8;
+  top: var(--sp-s);
   right: deprecated.$s-52;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  column-gap: deprecated.$s-12;
+  column-gap: var(--sp-m);
   color: var(--show-more-color);
 
   &:hover {
@@ -152,8 +155,8 @@
 }
 
 .show-more-icon {
-  height: deprecated.$s-16;
-  width: deprecated.$s-16;
+  height: var(--sp-l);
+  width: var(--sp-l);
   fill: none;
   stroke: var(--show-more-color);
 }
@@ -164,13 +167,13 @@
   border-radius: deprecated.$br-8;
   border: none;
   display: flex;
-  margin: deprecated.$s-16;
-  padding: deprecated.$s-8;
+  margin: var(--sp-l);
+  padding: var(--sp-s);
   position: relative;
 
   img {
-    border-radius: deprecated.$br-4;
-    height: deprecated.$s-200;
+    border-radius: $br-4;
+    height: var(--sp-xl) 0;
     width: auto;
 
     @media (max-width: 1200px) {
@@ -185,18 +188,18 @@
   flex-direction: column;
   align-items: flex-start;
   flex-grow: 1;
-  padding: deprecated.$s-20 deprecated.$s-20;
+  padding: var(--sp-xl) var(--sp-xl);
 }
 
 .title {
-  font-size: deprecated.$fs-24;
+  font-size: $sz-24;
   color: var(--color-foreground-primary);
   font-weight: deprecated.$fw400;
 }
 
 .info {
   flex: 1;
-  font-size: deprecated.$fs-16;
+  font-size: $sz-16;
   span {
     color: var(--color-foreground-secondary);
     display: block;
@@ -204,15 +207,15 @@
   a {
     color: var(--color-accent-primary);
   }
-  padding: deprecated.$s-8 0;
+  padding: var(--sp-s) 0;
 }
 
 .close {
   --close-icon-foreground-color: var(--icon-foreground);
   position: absolute;
-  top: deprecated.$s-20;
-  right: deprecated.$s-24;
-  width: deprecated.$s-24;
+  top: var(--sp-xl);
+  right: var(--sp-xxl);
+  width: var(--sp-xxl);
   background-color: transparent;
   border: none;
   cursor: pointer;
@@ -227,7 +230,7 @@
 }
 
 .invite {
-  height: deprecated.$s-32;
+  height: var(--sp-xxxl);
   width: deprecated.$s-180;
 }
 
@@ -235,12 +238,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: deprecated.$s-200;
-  height: deprecated.$s-200;
+  width: var(--sp-xl) 0;
+  height: var(--sp-xl) 0;
   overflow: hidden;
   border-radius: deprecated.$br-4;
   @media (max-width: 1200px) {
     display: none;
     width: 0;
   }
+}
+
+.nav-options {
+  display: flex;
+  gap: var(--sp-l);
+  justify-content: space-between;
+  border-bottom: $b-1 solid var(--panel-border-color);
+  padding-inline-start: var(--sp-l);
+}
+
+.selected {
+  @include t.use-typography("headline-small");
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-foreground-primary);
+  border: $b-1 solid transparent;
+  border-bottom: $b-1 solid var(--color-foreground-primary);
+  padding: 0 var(--sp-m);
 }

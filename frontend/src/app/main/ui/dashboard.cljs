@@ -20,6 +20,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.context :as ctx]
+   [app.main.ui.dashboard.deleted :refer [deleted-section*]]
    [app.main.ui.dashboard.files :refer [files-section*]]
    [app.main.ui.dashboard.fonts :refer [fonts-page* font-providers-page*]]
    [app.main.ui.dashboard.import]
@@ -139,6 +140,11 @@
 
        :dashboard-settings
        [:> team-settings-page* {:team team :profile profile}]
+
+       :dashboard-deleted
+       [:> deleted-section* {:team team
+                             :projects projects
+                             :profile profile}]
 
        nil)]))
 
