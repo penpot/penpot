@@ -126,6 +126,7 @@
                                    :variant nil
                                    :grid-element nil})
         shorthands (deref shorthands*)
+        _ (pp/pprint shorthands)
         set-shorthands
         ;; This fn must receive an object `shorthand` with :panel and :property (the shorthand string) keys
         (mf/use-fn
@@ -197,11 +198,13 @@
           :stroke
           (let [shapes (filter has-stroke? shapes)]
             (when (seq shapes)
-              [:> style-box* {:panel :stroke}
+              [:> style-box* {:panel :stroke
+                              :shorthand (:stroke shorthands)}
                [:> stroke-panel* {:color-space color-space
                                   :shapes shapes
                                   :objects objects
-                                  :resolved-tokens resolved-active-tokens}]]))
+                                  :resolved-tokens resolved-active-tokens
+                                  :on-stroke-shorthand set-shorthands}]]))
 
           ;; VISIBILITY PANEL
           :visibility

@@ -9,11 +9,14 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.config :as cfg]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
-   [rumext.v2 :as mf]))
+   [app.util.color :as uc]
+   [rumext.v2 :as mf]
+   [cljs.pprint :as pp]))
 
 (def ^:private properties [:border-color :border-style :border-width])
 
@@ -58,28 +61,56 @@
        (is-first-element? idx)))
 
 (mf/defc stroke-panel*
-  [{:keys [shapes objects resolved-tokens color-space]}]
+  [{:keys [shapes objects resolved-tokens color-space on-stroke-shorthand]}]
   [:div {:class (stl/css :stroke-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class "stroke-shape"}
-      (for [[idx stroke] (map-indexed vector (:strokes shape))]
-        (for [property properties]
-          (let [value (css/get-css-value objects stroke property)
-                stroke-type (stroke->color stroke)
-                property-name (cmm/get-css-rule-humanized property)
-                property-value (css/get-css-property objects stroke property)
-                resolved-token (when (is-first-element? idx) (get-resolved-token property shape resolved-tokens))
-                has-color-token (has-color-token? resolved-token stroke-type idx)]
-            (if (= property :border-color)
-              [:> color-properties-row* {:key (str idx property)
-                                         :term property-name
-                                         :color stroke-type
-                                         :token (when has-color-token resolved-token)
-                                         :format color-space
-                                         :copiable true}]
-              [:> properties-row* {:key  (str idx property)
-                                   :term (d/name property-name)
-                                   :detail (dm/str value)
-                                   :token resolved-token
-                                   :property property-value
-                                   :copiable true}]))))])])
+      (let [shorthand
+            ;; Since CSS does not have a shorthand for multiple borders, we create a shorthand for each stroke in the shape
+            (reduce
+             (fn [acc stroke]
+               (let [stroke-type (stroke->color stroke)
+                     stroke-width (:stroke-width stroke)
+                     stroke-style (:stroke-style stroke)
+                     color-value (:color stroke-type)
+                     color-gradient (:gradient stroke-type)
+                     gradient-data  {:type (get-in stroke-type [:gradient :type])
+                                     :stops (get-in stroke-type [:gradient :stops])}
+                     color-image (:image stroke-type)
+                     image-url (cfg/resolve-file-media color-image)
+                     value (cond
+                             color-value (dm/str "border: " stroke-width "px " (d/name stroke-style) " " color-value ";")
+                             color-gradient (dm/str "border-image: " (uc/gradient->css gradient-data) " 100 / " stroke-width "px;")
+                             color-image (dm/str "border-image: url(" image-url ") 100 / " stroke-width "px;")
+                             :else "")]
+                 (if (empty? acc)
+                   value
+                   (str acc " " value))))
+             ""
+             (:strokes shape))]
+        (mf/use-effect
+         (fn []
+           (when on-stroke-shorthand
+             (on-stroke-shorthand {:panel :stroke
+                                   :property shorthand}))))
+        (for [[idx stroke] (map-indexed vector (:strokes shape))]
+          (for [property properties]
+            (let [value (css/get-css-value objects stroke property)
+                  stroke-type (stroke->color stroke)
+                  property-name (cmm/get-css-rule-humanized property)
+                  property-value (css/get-css-property objects stroke property)
+                  resolved-token (when (is-first-element? idx) (get-resolved-token property shape resolved-tokens))
+                  has-color-token (has-color-token? resolved-token stroke-type idx)]
+              (if (= property :border-color)
+                [:> color-properties-row* {:key (str idx property)
+                                           :term property-name
+                                           :color stroke-type
+                                           :token (when has-color-token resolved-token)
+                                           :format color-space
+                                           :copiable true}]
+                [:> properties-row* {:key  (str idx property)
+                                     :term (d/name property-name)
+                                     :detail (dm/str value)
+                                     :token resolved-token
+                                     :property property-value
+                                     :copiable true}])))))])])
