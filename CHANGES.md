@@ -9,6 +9,7 @@
 ### :heart: Community contributions (Thank you!)
 
 ### :sparkles: New features & Enhancements
+- Select boards to export as PDF [Taiga #12320](https://tree.taiga.io/project/penpot/issue/12320)
 
 ### :bug: Bugs fixed
 
