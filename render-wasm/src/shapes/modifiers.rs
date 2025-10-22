@@ -88,7 +88,6 @@ fn propagate_children(
     result
 }
 
-// FIXME: PERFORMANCE
 fn calculate_group_bounds(
     shape: &Shape,
     shapes: &ShapesPool,
@@ -98,16 +97,14 @@ fn calculate_group_bounds(
     let shape_bounds = bounds.find(shape);
     let mut result = Vec::<Point>::new();
 
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
-    for child_id in children_ids.iter() {
-        let Some(child) = shapes.get(child_id) else {
+    for child_id in shape.modified_children_ids_iter(structure.get(&shape.id), true) {
+        let Some(child) = shapes.get(&child_id) else {
             continue;
         };
 
         let child_bounds = bounds.find(child);
         result.append(&mut child_bounds.points());
     }
-
     shape_bounds.with_points(result)
 }
 
@@ -277,30 +274,32 @@ fn propagate_reflow(
     let shapes = &state.shapes;
     let mut reflow_parent = false;
 
+    if reflown.contains(&id) {
+        return;
+    }
+
     match &shape.shape_type {
         Type::Frame(Frame {
             layout: Some(_), ..
         }) => {
-            if !reflown.contains(id) {
-                let mut skip_reflow = false;
-                if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
-                    if let Some(parent_id) = shape.parent_id {
-                        if !reflown.contains(&parent_id) {
-                            // If this is a fill layout but the parent has not been reflown yet
-                            // we wait for the next iteration for reflow
-                            skip_reflow = true;
-                            reflow_parent = true;
-                        }
+            let mut skip_reflow = false;
+            if shape.is_layout_horizontal_fill() || shape.is_layout_vertical_fill() {
+                if let Some(parent_id) = shape.parent_id {
+                    if !reflown.contains(&parent_id) {
+                        // If this is a fill layout but the parent has not been reflown yet
+                        // we wait for the next iteration for reflow
+                        skip_reflow = true;
+                        reflow_parent = true;
                     }
                 }
+            }
 
-                if shape.is_layout_vertical_auto() || shape.is_layout_horizontal_auto() {
-                    reflow_parent = true;
-                }
+            if shape.is_layout_vertical_auto() || shape.is_layout_horizontal_auto() {
+                reflow_parent = true;
+            }
 
-                if !skip_reflow {
-                    layout_reflows.push(*id);
-                }
+            if !skip_reflow {
+                layout_reflows.push(*id);
             }
         }
         Type::Group(Group { masked: true }) => {
@@ -310,6 +309,7 @@ fn propagate_reflow(
                 bounds.insert(shape.id, child_bounds);
                 reflow_parent = true;
             }
+            reflown.insert(*id);
         }
         Type::Group(_) => {
             if let Some(shape_bounds) =
@@ -318,6 +318,7 @@ fn propagate_reflow(
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
             }
+            reflown.insert(*id);
         }
         Type::Bool(_) => {
             if let Some(shape_bounds) =
@@ -326,6 +327,7 @@ fn propagate_reflow(
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
             }
+            reflown.insert(*id);
         }
         _ => {
             // Other shapes don't have to be reflown

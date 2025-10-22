@@ -719,8 +719,7 @@ impl Shape {
     }
 
     pub fn bounds(&self) -> Bounds {
-        *self.bounds
-            .get_or_init(|| self.calculate_bounds())
+        *self.bounds.get_or_init(|| self.calculate_bounds())
     }
 
     pub fn selrect(&self) -> math::Rect {
@@ -944,6 +943,24 @@ impl Shape {
             }
         } else {
             self.children.clone().into_iter().rev().collect()
+        }
+    }
+
+    pub fn children_ids_iter(&self, include_hidden: bool) -> Box<dyn Iterator<Item = &Uuid> + '_> {
+        if include_hidden {
+            return Box::new(self.children.iter().rev());
+        }
+
+        if let Type::Bool(_) = self.shape_type {
+            Box::new([].iter())
+        } else if let Type::Group(group) = self.shape_type {
+            if group.masked {
+                Box::new(self.children.iter().rev().take(self.children.len() - 1))
+            } else {
+                Box::new(self.children.iter().rev())
+            }
+        } else {
+            Box::new(self.children.iter().rev())
         }
     }
 
@@ -1254,6 +1271,36 @@ impl Shape {
             ret
         } else {
             self.children_ids(include_hidden)
+        }
+    }
+
+    pub fn modified_children_ids_iter<'a>(
+        &'a self,
+        structure: Option<&'a Vec<StructureEntry>>,
+        include_hidden: bool,
+    ) -> Box<dyn Iterator<Item = Cow<'a, Uuid>> + 'a> {
+        if let Some(structure) = structure {
+            let mut result: Vec<Cow<'a, Uuid>> = self
+                .children_ids_iter(include_hidden)
+                .map(Cow::Borrowed)
+                .collect();
+            let mut to_remove = HashSet::<Cow<'a, Uuid>>::new();
+
+            for st in structure {
+                match st.entry_type {
+                    StructureEntryType::AddChild => {
+                        result.insert(result.len() - st.index as usize, Cow::Owned(st.id));
+                    }
+                    StructureEntryType::RemoveChild => {
+                        to_remove.insert(Cow::Owned(st.id));
+                    }
+                    _ => {}
+                }
+            }
+
+            Box::new(result.into_iter().filter(move |id| !to_remove.contains(id)))
+        } else {
+            Box::new(self.children_ids_iter(include_hidden).map(Cow::Borrowed))
         }
     }
 
