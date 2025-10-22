@@ -247,6 +247,11 @@ services:
     networks:
       - penpot
 
+    environment:
+      # You can increase the max memory size if you have sufficient resources,
+      # although this should not be necessary.
+      - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
+
   ## A mailcatch service, used as temporal SMTP server. You can access via HTTP to the
   ## port 1080 for read all emails the penpot platform has sent. Should be only used as a
   ## temporal solution while no real SMTP provider is configured.
