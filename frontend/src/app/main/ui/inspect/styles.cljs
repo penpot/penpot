@@ -30,7 +30,8 @@
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cljs.pprint :as pp]))
 
 (def layout-element-properties
   [:margin-block-start
@@ -111,7 +112,26 @@
                                     (not (or (= shape-type :text) (= shape-type :group)))
                                     (or (:opacity shape)
                                         (:blend-mode shape)
-                                        (:visibility shape))))))]
+                                        (:visibility shape))))))
+        shorthands* (mf/use-state {:fill nil
+                                   :stroke nil
+                                   :text nil
+                                   :shadow nil
+                                   :blur nil
+                                   :layout nil
+                                   :layout-element nil
+                                   :geometry nil
+                                   :svg nil
+                                   :visibility nil
+                                   :variant nil
+                                   :grid-element nil})
+        shorthands (deref shorthands*)
+        set-shorthands
+        ;; This fn must receive an object `shorthand` with :panel and :property (the shorthand string) keys
+        (mf/use-fn
+         (mf/deps shorthands*)
+         (fn [shorthand]
+           (swap! shorthands* assoc (:panel shorthand) (:property shorthand))))]
     [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
      ;;  TOKENS PANEL
      (when (or active-themes active-sets)
@@ -166,10 +186,12 @@
           :fill
           (let [shapes (filter has-fill? shapes)]
             (when (seq shapes)
-              [:> style-box* {:panel :fill}
+              [:> style-box* {:panel :fill
+                              :shorthand (:fill shorthands)}
                [:> fill-panel* {:color-space color-space
                                 :shapes shapes
-                                :resolved-tokens resolved-active-tokens}]]))
+                                :resolved-tokens resolved-active-tokens
+                                :on-fill-shorthand set-shorthands}]]))
 
           ;; STROKE PANEL
           :stroke
