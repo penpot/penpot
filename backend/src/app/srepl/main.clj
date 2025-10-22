@@ -567,48 +567,12 @@
                                           :id file-id})))
     :deleted))
 
-(defn- restore-file*
-  [{:keys [::db/conn]} file-id]
-  (db/update! conn :file
-              {:deleted-at nil
-               :has-media-trimmed false}
-              {:id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-media-object
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-change
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-data
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  ;; Mark thumbnails to be deleted
-  (db/update! conn :file-thumbnail
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  (db/update! conn :file-tagged-object-thumbnail
-              {:deleted-at nil}
-              {:file-id file-id}
-              {::db/return-keys false})
-
-  :restored)
-
 (defn restore-file!
   "Mark a file and all related objects as not deleted"
   [file-id]
   (let [file-id (h/parse-uuid file-id)]
     (db/tx-run! main/system
-                (fn [system]
+                (fn [{:keys [::db/conn] :as system}]
                   (when-let [file (db/get* system :file
                                            {:id file-id}
                                            {::db/remove-deleted false
@@ -622,7 +586,9 @@
                                                      :cause "explicit call to restore-file!"}
                                     ::audit/tracked-at (ct/now)})
 
-                    (restore-file* system file-id))))))
+
+                    (#'files/restore-file conn file-id))
+                  :restored))))
 
 (defn delete-project!
   "Mark a project for deletion"
@@ -655,7 +621,7 @@
   (doseq [{:keys [id]} (db/query conn :file
                                  {:project-id project-id}
                                  {::sql/columns [:id]})]
-    (restore-file* cfg id))
+    (#'files/restore-file conn id))
 
   :restored)
 

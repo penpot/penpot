@@ -19,6 +19,7 @@
    [app.http :as http]
    [app.rpc :as-alias rpc]
    [app.rpc.commands.files :as files]
+   [app.setup.clock :as clock]
    [app.storage :as sto]
    [backend-tests.helpers :as th]
    [clojure.test :as t]
@@ -1865,3 +1866,125 @@
 
       (t/is (= (:id file-2) (:file-id (get rows 0))))
       (t/is (nil? (:deleted-at (get rows 0)))))))
+
+(t/deftest deleted-files-permanently-delete
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
+        file-id (uuid/next)
+        now     (ct/inst "2025-10-31T00:00:00Z")]
+
+    (binding [ct/*clock* (clock/fixed now)]
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "foobar"
+                  :is-shared false
+                  :components-v2 true}
+            out (th/command! data)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (t/is (= (:name data) (:name result)))
+          (t/is (= proj-id (:project-id result)))))
+
+      (let [data {::th/type :delete-file
+                  :id file-id
+                  ::rpc/profile-id (:id prof)}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out))))
+
+      ;; get deleted files
+      (let [data {::th/type :get-team-deleted-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [[row1 :as result] (:result out)]
+          (t/is (= 1 (count result)))
+          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+
+      (let [data {::th/type :permanently-delete-team-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id
+                  :ids #{file-id}}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (= (:ids data) result)))
+
+        (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+          (t/is (= (:deleted-at row) now)))))))
+
+(t/deftest deleted-files-restore
+  (let [prof    (th/create-profile* 1 {:is-active true})
+        team-id (:default-team-id prof)
+        proj-id (:default-project-id prof)
+        file-id (uuid/next)
+        now     (ct/inst "2025-10-31T00:00:00Z")]
+
+    (binding [ct/*clock* (clock/fixed now)]
+      (let [data {::th/type :create-file
+                  ::rpc/profile-id (:id prof)
+                  :project-id proj-id
+                  :id file-id
+                  :name "foobar"
+                  :is-shared false
+                  :components-v2 true}
+            out (th/command! data)]
+
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+
+        (let [result (:result out)]
+          (t/is (= (:name data) (:name result)))
+          (t/is (= proj-id (:project-id result)))))
+
+      (let [data {::th/type :delete-file
+                  :id file-id
+                  ::rpc/profile-id (:id prof)}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (t/is (nil? (:result out))))
+
+      ;; get deleted files
+      (let [data {::th/type :get-team-deleted-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [[row1 :as result] (:result out)]
+          (t/is (= 1 (count result)))
+          (t/is (= (:will-be-deleted-at row1) #penpot/inst "2025-11-07T00:00:00Z"))
+          (t/is (= (:created-at row1) #penpot/inst "2025-10-31T00:00:00Z"))
+          (t/is (= (:modified-at row1) #penpot/inst "2025-10-31T00:00:00Z"))))
+
+      (let [data {::th/type :restore-deleted-team-files
+                  ::rpc/profile-id (:id prof)
+                  :team-id team-id
+                  :ids #{file-id}}
+            out (th/command! data)]
+        ;; (th/print-result! out)
+        (t/is (nil? (:error out)))
+        (let [result (:result out)]
+          (t/is (fn? result))
+
+          (let [events (th/consume-sse result)]
+            ;; (pp/pprint events)
+            (t/is (= 2 (count events)))
+            (t/is (= :end (first (last events))))
+            (t/is (= (:ids data) (last (last events)))))))
+
+      (let [row (th/db-exec-one! ["select * from file where id = ?" file-id])]
+        (t/is (nil? (:deleted-at row)))))))
