@@ -255,8 +255,8 @@ test("Renders a file with different text leaves decoration", async ({
   );
 
   await workspace.goToWorkspace({
-    id: "15b74473-2908-8094-8006-bdb4fbd2c6a3",
-    pageId: "15b74473-2908-8094-8006-bdb4fbd2c6a4",
+    id: "15b74473-2908-8094-8006-bda76b230c6a",
+    pageId: "b4cb802d-4245-807d-8006-b4a4b90b79cd",
   });
 
   await workspace.waitForFirstRender();

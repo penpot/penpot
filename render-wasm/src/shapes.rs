@@ -684,6 +684,13 @@ impl Shape {
             .get_or_init(|| self.calculate_extrect(shapes_pool, modifiers))
     }
 
+    pub fn get_text_content(&self) -> &TextContent {
+        match &self.shape_type {
+            crate::shapes::Type::Text(text_content) => text_content,
+            _ => panic!("Shape is not of type Text"),
+        }
+    }
+
     /// Calculates the bounding rectangle for a selrect shape's shadow, taking into account
     /// stroke widths and shadow properties.
     ///

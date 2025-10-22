@@ -616,6 +616,7 @@ impl RenderState {
                     text_content.paragraph_builder_group_from_text(Some(true));
                 let mut stroke_paragraphs_list = shape
                     .visible_strokes()
+                    .rev()
                     .map(|stroke| {
                         text::stroke_paragraph_builder_group_from_text(
                             &text_content,
@@ -629,6 +630,7 @@ impl RenderState {
 
                 let mut stroke_paragraphs_with_shadows_list = shape
                     .visible_strokes()
+                    .rev()
                     .map(|stroke| {
                         text::stroke_paragraph_builder_group_from_text(
                             &text_content,
