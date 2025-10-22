@@ -45,6 +45,7 @@
         params   {:email email
                   :fullname fullname
                   :is-active true
+                  :is-demo true
                   :deleted-at (ct/in-future (cf/get-deletion-delay))
                   :password (derive-password password)
                   :props {}}
