@@ -955,6 +955,30 @@
                              :custom-input-token-value color-picker*
                              :custom-input-token-value-props custom-input-token-value-props})]))
 
+(mf/defc shadow-color-picker-wrapper*
+  "Wrapper for color-picker* that passes shadow color state from parent.
+   Similar to color-form* but receives color state from shadow-value-inputs*."
+  [{:keys [placeholder label default-value input-ref on-update-value on-external-update-value token-resolve-result shadow-color]}]
+  (let [;; Use the color state passed from parent (shadow-value-inputs*)
+        resolved-color (get token-resolve-result :resolved-value)
+        color (or shadow-color resolved-color default-value "")
+
+        custom-input-token-value-props
+        (mf/use-memo
+         (mf/deps color)
+         (fn []
+           {:color color}))]
+
+    [:> color-picker*
+     {:placeholder placeholder
+      :label label
+      :default-value default-value
+      :input-ref input-ref
+      :on-update-value on-update-value
+      :on-external-update-value on-external-update-value
+      :custom-input-token-value-props custom-input-token-value-props
+      :token-resolve-result token-resolve-result}]))
+
 (def ^:private shadow-inputs
   #(d/ordered-map
     :offsetX
@@ -1004,7 +1028,7 @@
                         :id (str "inset-false-" shadow-idx)}]]]))
 
 (mf/defc shadow-input*
-  [{:keys [default-value label placeholder shadow-idx input-type on-update-value on-blur on-external-update-value token-resolve-result errors-by-key]}]
+  [{:keys [default-value label placeholder shadow-idx input-type on-update-value on-blur on-external-update-value token-resolve-result errors-by-key shadow-color]}]
   (let [color-input-ref (mf/use-ref)
 
         on-change
@@ -1013,6 +1037,12 @@
          (fn [e]
            (-> (obj/set! e "tokenTypeAtIndex" [shadow-idx input-type])
                (on-update-value))))
+
+        on-external-update-value'
+        (mf/use-fn
+         (mf/deps shadow-idx input-type on-external-update-value)
+         (fn [v]
+           (on-external-update-value [shadow-idx input-type] v)))
 
         resolved (get-in token-resolve-result [:resolved-value shadow-idx input-type])
 
@@ -1032,14 +1062,15 @@
         :label label
         :on-change on-change}]
       :color
-      [:> color-picker*
+      [:> shadow-color-picker-wrapper*
        {:placeholder placeholder
         :label label
         :default-value default-value
         :input-ref color-input-ref
         :on-update-value on-change
-        :on-external-update-value on-external-update-value
-        :token-resolve-result token-prop}]
+        :on-external-update-value on-external-update-value'
+        :token-resolve-result token-prop
+        :shadow-color shadow-color}]
       [:div {:class (stl/css :input-row)}
        [:> input-token*
         {:aria-label label
@@ -1048,8 +1079,10 @@
          :on-change on-change
          :token-resolve-result token-prop}]])))
 
+
+
 (mf/defc shadow-input-fields*
-  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value token-resolve-result errors-by-key on-external-update-value] :as props}]
+  [{:keys [shadow shadow-idx on-remove-shadow on-add-shadow is-remove-disabled on-update-value token-resolve-result errors-by-key on-external-update-value shadow-color] :as props}]
   (let [on-remove-shadow
         (mf/use-fn
          (mf/deps shadow-idx on-remove-shadow)
@@ -1076,14 +1109,43 @@
          :on-update-value on-update-value
          :token-resolve-result token-resolve-result
          :errors-by-key errors-by-key
-         :on-external-update-value on-external-update-value}])]))
+         :on-external-update-value on-external-update-value
+         :shadow-color shadow-color}])]))
 
 (mf/defc shadow-value-inputs*
-  [{:keys [default-value on-blur on-update-value token-resolve-result update-composite-value on-external-update-value] :as props}]
+  [{:keys [default-value on-blur on-update-value token-resolve-result update-composite-value] :as props}]
   (let [shadows* (mf/use-state (or default-value [{}]))
         shadows (deref shadows*)
         shadows-count (count shadows)
         composite-token? (not (cto/typography-composite-token-reference? (:value token-resolve-result)))
+
+        ;; Maintain a map of color states for each shadow to prevent reset on add/remove
+        shadow-colors* (mf/use-state {})
+        shadow-colors (deref shadow-colors*)
+
+        ;; Initialize color states for each shadow index
+        _ (mf/use-effect
+           (mf/deps shadows)
+           (fn []
+             (doseq [[idx shadow] (d/enumerate shadows)]
+               (when-not (contains? shadow-colors idx)
+                 (let [resolved-color (get-in token-resolve-result [:resolved-value idx :color])
+                       initial-color (or resolved-color (get shadow :color) "")]
+                   (swap! shadow-colors* assoc idx initial-color))))))
+
+        ;; Define on-external-update-value here where we have access to on-update-value
+        on-external-update-value
+        (mf/use-callback
+         (mf/deps on-update-value shadow-colors*)
+         (fn [token-type-at-index value]
+           (let [[idx token-type] token-type-at-index
+                 e (js-obj)]
+             ;; Update shadow color state if this is a color update
+             (when (= token-type :color)
+               (swap! shadow-colors* assoc idx value))
+             (obj/set! e "tokenTypeAtIndex" token-type-at-index)
+             (obj/set! e "target" #js {:value value})
+             (on-update-value e))))
 
         on-add-shadow
         (mf/use-fn
@@ -1121,7 +1183,8 @@
           :on-update-value on-update-value
           :token-resolve-result token-resolve-result
           :errors-by-key errors-by-key
-          :on-external-update-value on-external-update-value}]])]))
+          :on-external-update-value on-external-update-value
+          :shadow-color (get shadow-colors shadow-idx "")}]])]))
 
 (mf/defc shadow-form*
   [{:keys [token] :rest props}]
