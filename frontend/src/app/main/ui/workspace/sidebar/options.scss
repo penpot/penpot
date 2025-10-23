@@ -5,7 +5,6 @@
 // Copyright (c) KALEIDOS INC
 
 @use "ds/_sizes.scss" as *;
-@use "refactor/common-refactor.scss" as deprecated;
 
 .tool-window {
   position: relative;
@@ -15,26 +14,26 @@
 }
 
 .tab-spacing {
-  margin-right: deprecated.$s-12;
+  margin-inline-end: var(--sp-m);
 }
 
 .content-class {
   overflow-y: auto;
   overflow-x: hidden;
-  height: calc(100vh - deprecated.$s-96);
+  height: calc(100vh - #{$sz-96});
   scrollbar-gutter: stable;
 }
 
 .element-options {
   display: flex;
   flex-direction: column;
-  gap: deprecated.$s-8;
+  gap: var(--sp-s);
   width: 100%;
   /* FIXME: This is hacky and prone to break, we should tackle the whole layout
             of the sidebar differently */
   --sidebar-element-options-height: calc(100vh - #{$sz-88});
   height: var(--sidebar-element-options-height);
-  padding-top: deprecated.$s-8;
+  padding-block-start: var(--sp-s);
 }
 
 .read-only {
