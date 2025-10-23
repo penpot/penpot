@@ -37,11 +37,11 @@ export const TextTransform = {
   fromStyle,
 };
 
-export class TextLeaf {
+export class TextSpan {
   static BYTE_LENGTH = 60;
 
-  static fromDOM(leafElement, fontManager) {
-    const elementStyle = leafElement.style; //window.getComputedStyle(leafElement);
+  static fromDOM(spanElement, fontManager) {
+    const elementStyle = spanElement.style; //window.getComputedStyle(leafElement);
     const fontSize = parseFloat(
       elementStyle.getPropertyValue("font-size"),
     );
@@ -77,7 +77,7 @@ export class TextLeaf {
     if (!font) {
       throw new Error(`Invalid font "${fontFamily}"`)
     }
-    return new TextLeaf({
+    return new TextSpan({
       fontId: font.id, // leafElement.style.getPropertyValue("--font-id"),
       fontFamilyHash: 0,
       fontVariantId: UUID.ZERO, // leafElement.style.getPropertyValue("--font-variant-id"),
@@ -88,7 +88,7 @@ export class TextLeaf {
       textDecoration,
       textTransform,
       textDirection,
-      text: leafElement.textContent,
+      text: spanElement.textContent,
     });
   }
 
@@ -134,7 +134,7 @@ export class TextLeaf {
   }
 
   get leafByteLength() {
-    return this.fills.length * Fill.BYTE_LENGTH + TextLeaf.BYTE_LENGTH;
+    return this.fills.length * Fill.BYTE_LENGTH + TextSpan.BYTE_LENGTH;
   }
 }
 
@@ -162,7 +162,7 @@ export class TextParagraph {
         paragraphElement.style.getPropertyValue("letter-spacing"),
       ),
       leaves: Array.from(paragraphElement.children, (leafElement) =>
-        TextLeaf.fromDOM(leafElement, fontManager),
+        TextSpan.fromDOM(leafElement, fontManager),
       ),
     });
   }
@@ -189,7 +189,7 @@ export class TextParagraph {
     this.#leaves = init?.leaves ?? [];
     if (
       !Array.isArray(this.#leaves) ||
-      !this.#leaves.every((leaf) => leaf instanceof TextLeaf)
+      !this.#leaves.every((leaf) => leaf instanceof TextSpan)
     ) {
       throw new TypeError("Invalid text leaves");
     }

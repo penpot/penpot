@@ -16,7 +16,7 @@
    [app.render-wasm.wasm :as wasm]))
 
 (def ^:const PARAGRAPH-ATTR-U8-SIZE 44)
-(def ^:const LEAF-ATTR-U8-SIZE 60)
+(def ^:const SPAN-ATTR-U8-SIZE 60)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
 (defn- encode-text
@@ -25,7 +25,7 @@
   (let [encoder (js/TextEncoder.)]
     (.encode encoder text)))
 
-(defn- write-leaf-fills
+(defn- write-span-fills
   [offset dview fills]
   (let [new-ofset (reduce (fn [offset fill]
                             (let [opacity  (get fill :fill-opacity 1.0)
@@ -76,20 +76,20 @@
 
 (defn- write-leaves
   [offset dview leaves paragraph]
-  (reduce (fn [offset leaf]
-            (let [font-style  (sr/translate-font-style (get leaf :font-style))
-                  font-size   (get leaf :font-size)
-                  letter-spacing (get leaf :letter-spacing)
-                  font-weight (get leaf :font-weight)
-                  font-id     (f/normalize-font-id (get leaf :font-id))
-                  font-family (hash (get leaf :font-family))
+  (reduce (fn [offset span]
+            (let [font-style  (sr/translate-font-style (get span :font-style))
+                  font-size   (get span :font-size)
+                  letter-spacing (get span :letter-spacing)
+                  font-weight (get span :font-weight)
+                  font-id     (f/normalize-font-id (get span :font-id))
+                  font-family (hash (get span :font-family))
 
-                  text-buffer (encode-text (get leaf :text))
+                  text-buffer (encode-text (get span :text))
                   text-length (mem/size text-buffer)
-                  fills       (take MAX-TEXT-FILLS (get leaf :fills))
+                  fills       (take MAX-TEXT-FILLS (get span :fills))
 
                   font-variant-id
-                  (get leaf :font-variant-id)
+                  (get span :font-variant-id)
 
                   font-variant-id
                   (if (uuid? font-variant-id)
@@ -97,17 +97,17 @@
                     uuid/zero)
 
                   text-decoration
-                  (or (sr/translate-text-decoration (:text-decoration leaf))
+                  (or (sr/translate-text-decoration (:text-decoration span))
                       (sr/translate-text-decoration (:text-decoration paragraph))
                       (sr/translate-text-decoration "none"))
 
                   text-transform
-                  (or (sr/translate-text-transform (:text-transform leaf))
+                  (or (sr/translate-text-transform (:text-transform span))
                       (sr/translate-text-transform (:text-transform paragraph))
                       (sr/translate-text-transform "none"))
 
                   text-direction
-                  (or (sr/translate-text-direction (:text-direction leaf))
+                  (or (sr/translate-text-direction (:text-direction span))
                       (sr/translate-text-direction (:text-direction paragraph))
                       (sr/translate-text-direction "ltr"))]
 
@@ -127,20 +127,20 @@
 
                   (mem/write-i32 dview text-length)
                   (mem/write-i32 dview (count fills))
-                  (mem/assert-written offset LEAF-ATTR-U8-SIZE)
+                  (mem/assert-written offset SPAN-ATTR-U8-SIZE)
 
-                  (write-leaf-fills dview fills))))
+                  (write-span-fills dview fills))))
           offset
           leaves))
 
 (defn write-shape-text
   ;; buffer has the following format:
   ;; [<num-leaves> <paragraph_attributes> <leaves_attributes> <text>]
-  [leaves paragraph text]
-  (let [num-leaves    (count leaves)
+  [spans paragraph text]
+  (let [num-spans    (count spans)
         fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
         metadata-size (+ PARAGRAPH-ATTR-U8-SIZE
-                         (* num-leaves (+ LEAF-ATTR-U8-SIZE fills-size)))
+                         (* num-spans (+ SPAN-ATTR-U8-SIZE fills-size)))
 
         text-buffer   (encode-text text)
         text-size     (mem/size text-buffer)
@@ -151,9 +151,9 @@
         offset        (mem/alloc total-size)]
 
     (-> offset
-        (mem/write-u32 dview num-leaves)
+        (mem/write-u32 dview num-spans)
         (write-paragraph dview paragraph)
-        (write-leaves dview leaves paragraph)
+        (write-leaves dview spans paragraph)
         (mem/write-buffer heapu8 text-buffer))
 
     (h/call wasm/internal-module "_set_shape_text_content")))

@@ -36,15 +36,15 @@ export class SelectionControllerDebug {
   update(selectionController) {
     this.#elements.direction.value = selectionController.direction;
     this.#elements.multiElement.checked = selectionController.isMulti;
-    this.#elements.multiInlineElement.checked =
-      selectionController.isMultiInline;
+    this.#elements.multiTextSpanElement.checked =
+      selectionController.isMultiTextSpan;
     this.#elements.multiParagraphElement.checked =
       selectionController.isMultiParagraph;
     this.#elements.isParagraphStart.checked =
       selectionController.isParagraphStart;
     this.#elements.isParagraphEnd.checked = selectionController.isParagraphEnd;
-    this.#elements.isInlineStart.checked = selectionController.isInlineStart;
-    this.#elements.isInlineEnd.checked = selectionController.isInlineEnd;
+    this.#elements.isTextSpanStart.checked = selectionController.isTextSpanStart;
+    this.#elements.isTextSpanEnd.checked = selectionController.isTextSpanEnd;
     this.#elements.isTextAnchor.checked = selectionController.isTextAnchor;
     this.#elements.isTextFocus.checked = selectionController.isTextFocus;
     this.#elements.focusNode.value = this.getNodeDescription(
@@ -57,11 +57,11 @@ export class SelectionControllerDebug {
       selectionController.anchorOffset
     );
     this.#elements.anchorOffset.value = selectionController.anchorOffset;
-    this.#elements.focusInline.value = this.getNodeDescription(
-      selectionController.focusInline
+    this.#elements.focusTextSpan.value = this.getNodeDescription(
+      selectionController.focusTextSpan
     );
-    this.#elements.anchorInline.value = this.getNodeDescription(
-      selectionController.anchorInline
+    this.#elements.anchorTextSpan.value = this.getNodeDescription(
+      selectionController.anchorTextSpan
     );
     this.#elements.focusParagraph.value = this.getNodeDescription(
       selectionController.focusParagraph

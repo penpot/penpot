@@ -18,7 +18,7 @@ import {
 import { resetInertElement } from "./content/dom/Style.js";
 import { createRoot, createEmptyRoot } from "./content/dom/Root.js";
 import { createParagraph } from "./content/dom/Paragraph.js";
-import { createEmptyInline, createInline } from "./content/dom/Inline.js";
+import { createEmptyTextSpan, createTextSpan } from "./content/dom/TextSpan.js";
 import { isLineBreak } from "./content/dom/LineBreak.js";
 import LayoutType from "./layout/LayoutType.js";
 
@@ -428,8 +428,8 @@ export class TextEditor extends EventTarget {
   }
 
   /**
-   * CSS Style declaration for the current inline. From here we
-   * can infer root, paragraph and inline declarations.
+   * CSS Style declaration for the current text span. From here we
+   * can infer root, paragraph and text span declarations.
    *
    * @type {CSSStyleDeclaration}
    */
@@ -472,27 +472,27 @@ export class TextEditor extends EventTarget {
   }
 
   /**
-   * Creates a new inline from a string.
+   * Creates a new text span from a string.
    *
    * @param {string} text
    * @param {Object.<string,*>|CSSStyleDeclaration} styles
    * @returns {HTMLSpanElement}
    */
-  createInlineFromString(text, styles) {
+  createTextSpanFromString(text, styles) {
     if (text === "") {
-      return createEmptyInline(styles);
+      return createEmptyTextSpan(styles);
     }
-    return createInline(new Text(text), styles);
+    return createTextSpan(new Text(text), styles);
   }
 
   /**
-   * Creates a new inline.
+   * Creates a new text span.
    *
    * @param  {...any} args
    * @returns {HTMLSpanElement}
    */
-  createInline(...args) {
-    return createInline(...args);
+  createTextSpan(...args) {
+    return createTextSpan(...args);
   }
 
   /**

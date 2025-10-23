@@ -98,7 +98,7 @@ impl TextContentSize {
 pub struct TextPositionWithAffinity {
     pub position_with_affinity: PositionWithAffinity,
     pub paragraph: i32,
-    pub leaf: i32,
+    pub span: i32,
     pub offset: i32,
 }
 
@@ -106,13 +106,13 @@ impl TextPositionWithAffinity {
     pub fn new(
         position_with_affinity: PositionWithAffinity,
         paragraph: i32,
-        leaf: i32,
+        span: i32,
         offset: i32,
     ) -> Self {
         Self {
             position_with_affinity,
             paragraph,
-            leaf,
+            span,
             offset,
         }
     }
@@ -289,7 +289,7 @@ impl TextContent {
         let layout_paragraphs = self.layout.paragraphs.iter().flatten();
 
         let mut paragraph_index: i32 = -1;
-        let mut leaf_index: i32 = -1;
+        let mut span_index: i32 = -1;
         for layout_paragraph in layout_paragraphs {
             paragraph_index += 1;
             let start_y = offset_y;
@@ -303,17 +303,17 @@ impl TextContent {
                 if let Some(paragraph) = self.paragraphs().get(paragraph_index as usize) {
                     // Computed position keeps the current position in terms
                     // of number of characters of text. This is used to know
-                    // in which leaf we are.
+                    // in which span we are.
                     let mut computed_position = 0;
-                    let mut leaf_offset = 0;
-                    for leaf in paragraph.children() {
-                        leaf_index += 1;
-                        let length = leaf.text.len();
+                    let mut span_offset = 0;
+                    for span in paragraph.children() {
+                        span_index += 1;
+                        let length = span.text.len();
                         let start_position = computed_position;
                         let end_position = computed_position + length;
                         let current_position = position_with_affinity.position as usize;
                         if start_position <= current_position && end_position >= current_position {
-                            leaf_offset = position_with_affinity.position - start_position as i32;
+                            span_offset = position_with_affinity.position - start_position as i32;
                             break;
                         }
                         computed_position += length;
@@ -321,8 +321,8 @@ impl TextContent {
                     return Some(TextPositionWithAffinity::new(
                         position_with_affinity,
                         paragraph_index,
-                        leaf_index,
-                        leaf_offset,
+                        span_index,
+                        span_offset,
                     ));
                 }
             }
@@ -344,10 +344,10 @@ impl TextContent {
         for paragraph in self.paragraphs() {
             let paragraph_style = paragraph.paragraph_to_style();
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
-            for leaf in paragraph.children() {
-                let remove_alpha = use_shadow.unwrap_or(false) && !leaf.is_transparent();
-                let text_style = leaf.to_style(&self.bounds(), fallback_fonts, remove_alpha);
-                let text = leaf.apply_text_transform();
+            for span in paragraph.children() {
+                let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
+                let text_style = span.to_style(&self.bounds(), fallback_fonts, remove_alpha);
+                let text = span.apply_text_transform();
                 builder.push_style(&text_style);
                 builder.add_text(&text);
             }
@@ -519,7 +519,7 @@ pub struct Paragraph {
     letter_spacing: f32,
     typography_ref_file: Uuid,
     typography_ref_id: Uuid,
-    children: Vec<TextLeaf>,
+    children: Vec<TextSpan>,
 }
 
 impl Default for Paragraph {
@@ -549,7 +549,7 @@ impl Paragraph {
         letter_spacing: f32,
         typography_ref_file: Uuid,
         typography_ref_id: Uuid,
-        children: Vec<TextLeaf>,
+        children: Vec<TextSpan>,
     ) -> Self {
         Self {
             text_align,
@@ -565,17 +565,17 @@ impl Paragraph {
     }
 
     #[allow(dead_code)]
-    fn set_children(&mut self, children: Vec<TextLeaf>) {
+    fn set_children(&mut self, children: Vec<TextSpan>) {
         self.children = children;
     }
 
-    pub fn children(&self) -> &[TextLeaf] {
+    pub fn children(&self) -> &[TextSpan] {
         &self.children
     }
 
     #[allow(dead_code)]
-    fn add_leaf(&mut self, leaf: TextLeaf) {
-        self.children.push(leaf);
+    fn add_span(&mut self, span: TextSpan) {
+        self.children.push(span);
     }
 
     // FIXME: move serialization to wasm module
@@ -622,7 +622,7 @@ impl Paragraph {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct TextLeaf {
+pub struct TextSpan {
     text: String,
     font_family: FontFamily,
     font_size: f32,
@@ -635,7 +635,7 @@ pub struct TextLeaf {
     fills: Vec<shapes::Fill>,
 }
 
-impl TextLeaf {
+impl TextSpan {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         text: String,

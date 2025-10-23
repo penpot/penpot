@@ -33,8 +33,8 @@ pub fn stroke_paragraph_builder_group_from_text(
         let mut stroke_paragraphs_map: std::collections::HashMap<usize, ParagraphBuilder> =
             std::collections::HashMap::new();
 
-        for leaf in paragraph.children().iter() {
-            let text_paint: skia_safe::Handle<_> = merge_fills(leaf.fills(), *bounds);
+        for span in paragraph.children().iter() {
+            let text_paint: skia_safe::Handle<_> = merge_fills(span.fills(), *bounds);
             let stroke_paints = get_text_stroke_paints(
                 stroke,
                 bounds,
@@ -43,7 +43,7 @@ pub fn stroke_paragraph_builder_group_from_text(
                 remove_stroke_alpha,
             );
 
-            let text: String = leaf.apply_text_transform();
+            let text: String = span.apply_text_transform();
 
             for (paint_idx, stroke_paint) in stroke_paints.iter().enumerate() {
                 let builder = stroke_paragraphs_map.entry(paint_idx).or_insert_with(|| {
@@ -51,9 +51,9 @@ pub fn stroke_paragraph_builder_group_from_text(
                     ParagraphBuilder::new(&paragraph_style, fonts)
                 });
                 let stroke_paint = stroke_paint.clone();
-                let remove_alpha = use_shadow.unwrap_or(false) && !leaf.is_transparent();
+                let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
                 let stroke_style =
-                    leaf.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha);
+                    span.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha);
                 builder.push_style(&stroke_style);
                 builder.add_text(&text);
             }
@@ -342,7 +342,7 @@ fn render_text_decoration(
     let (max_underline_thickness, underline_y, max_strike_thickness, strike_y) =
         calculate_decoration_metrics(&style_metrics, line_baseline);
 
-    // Draw decorations per segment (text leaf)
+    // Draw decorations per segment (text span)
     for (i, (style_start, style_metric)) in style_metrics.iter().enumerate() {
         let text_style = &style_metric.text_style;
         let style_end = style_metrics

@@ -14,15 +14,15 @@ import {
   isOffsetAtEnd,
 } from "./Element.js";
 import {
-  isInline,
-  isLikeInline,
-  getInline,
-  getInlinesFrom,
-  createInline,
-  createEmptyInline,
-  isInlineEnd,
-  splitInline,
-} from "./Inline.js";
+  isTextSpan,
+  isLikeTextSpan,
+  getTextSpan,
+  getTextSpansFrom,
+  createTextSpan,
+  createEmptyTextSpan,
+  isTextSpanEnd,
+  splitTextSpan,
+} from "./TextSpan.js";
 import { createLineBreak, isLineBreak } from "./LineBreak.js";
 import { setStyles } from "./Style.js";
 
@@ -50,7 +50,7 @@ export const STYLES = [
 
 /**
  * FIXME: This is a fix for Chrome that removes the
- * current inline when the last character is deleted
+ * current text span when the last character is deleted
  * in `insertCompositionText`.
  *
  * @param {*} node
@@ -60,7 +60,7 @@ export function fixParagraph(node) {
     return;
   }
   const br = createLineBreak();
-  node.replaceChildren(createInline(br));
+  node.replaceChildren(createTextSpan(br));
   return br;
 }
 
@@ -74,7 +74,7 @@ export function fixParagraph(node) {
  * @returns {boolean}
  */
 export function isLikeParagraph(element) {
-  return !isLikeInline(element);
+  return !isLikeTextSpan(element);
 }
 
 /**
@@ -85,9 +85,9 @@ export function isLikeParagraph(element) {
  */
 export function isEmptyParagraph(element) {
   if (!isParagraph(element)) throw new TypeError("Invalid paragraph");
-  const inline = element.firstChild;
-  if (!isInline(inline)) throw new TypeError("Invalid inline");
-  return isLineBreak(inline.firstChild);
+  const textSpan = element.firstChild;
+  if (!isTextSpan(textSpan)) throw new TypeError("Invalid text span");
+  return isLineBreak(textSpan.firstChild);
 }
 
 /**
@@ -106,20 +106,20 @@ export function isParagraph(node) {
 /**
  * Creates a new paragraph.
  *
- * @param {Array<HTMLDivElement>} inlines
+ * @param {Array<HTMLDivElement>} textSpans
  * @param {Object.<string, *>|CSSStyleDeclaration} styles
  * @param {Object.<string, *>} [attrs]
  * @returns {HTMLDivElement}
  */
-export function createParagraph(inlines, styles, attrs) {
-  if (inlines && (!Array.isArray(inlines) || !inlines.every(isInline)))
+export function createParagraph(textSpans, styles, attrs) {
+  if (textSpans && (!Array.isArray(textSpans) || !textSpans.every(isTextSpan)))
     throw new TypeError("Invalid paragraph children");
   return createElement(TAG, {
     attributes: { id: createRandomId(), ...attrs },
     data: { itype: TYPE },
     styles: styles,
     allowedStyles: STYLES,
-    children: inlines,
+    children: textSpans,
   });
 }
 
@@ -130,7 +130,7 @@ export function createParagraph(inlines, styles, attrs) {
  * @returns {HTMLDivElement}
  */
 export function createEmptyParagraph(styles) {
-  return createParagraph([createEmptyInline(styles)], styles);
+  return createParagraph([createEmptyTextSpan(styles)], styles);
 }
 
 /**
@@ -177,11 +177,11 @@ export function getParagraph(node) {
 export function isParagraphStart(node, offset) {
   const paragraph = getParagraph(node);
   if (!paragraph) throw new Error("Can't find the paragraph");
-  const inline = getInline(node);
-  if (!inline) throw new Error("Can't find the inline");
+  const textSpan = getTextSpan(node);
+  if (!textSpan) throw new Error("Can't find the text span");
   return (
-    paragraph.firstElementChild === inline &&
-    isOffsetAtStart(inline.firstChild, offset)
+    paragraph.firstElementChild === textSpan &&
+    isOffsetAtStart(textSpan.firstChild, offset)
   );
 }
 
@@ -196,11 +196,11 @@ export function isParagraphStart(node, offset) {
 export function isParagraphEnd(node, offset) {
   const paragraph = getParagraph(node);
   if (!paragraph) throw new Error("Cannot find the paragraph");
-  const inline = getInline(node);
-  if (!inline) throw new Error("Cannot find the inline");
+  const textSpan = getTextSpan(node);
+  if (!textSpan) throw new Error("Cannot find the text span");
   return (
-    paragraph.lastElementChild === inline &&
-    isOffsetAtEnd(inline.firstChild, offset)
+    paragraph.lastElementChild === textSpan &&
+    isOffsetAtEnd(textSpan.firstChild, offset)
   );
 }
 
@@ -208,17 +208,17 @@ export function isParagraphEnd(node, offset) {
  * Splits a paragraph.
  *
  * @param {HTMLDivElement} paragraph
- * @param {HTMLSpanElement} inline
+ * @param {HTMLSpanElement} textSpan
  * @param {number} offset
  */
-export function splitParagraph(paragraph, inline, offset) {
+export function splitParagraph(paragraph, textSpan, offset) {
   const style = paragraph.style;
-  if (isInlineEnd(inline, offset)) {
-    const newParagraph = createParagraph(getInlinesFrom(inline), style);
+  if (isTextSpanEnd(textSpan, offset)) {
+    const newParagraph = createParagraph(getTextSpansFrom(textSpan), style);
     return newParagraph;
   }
-  const newInline = splitInline(inline, offset);
-  const newParagraph = createParagraph([newInline], style);
+  const newTextSpan = splitTextSpan(textSpan, offset);
+  const newParagraph = createParagraph([newTextSpan], style);
   return newParagraph;
 }
 
@@ -231,11 +231,11 @@ export function splitParagraph(paragraph, inline, offset) {
 export function splitParagraphAtNode(paragraph, startIndex) {
   const style = paragraph.style;
   const newParagraph = createParagraph(null, style);
-  const newInlines = [];
+  const newTextSpans = [];
   for (let index = startIndex; index < paragraph.children.length; index++) {
-    newInlines.push(paragraph.children.item(index));
+    newTextSpans.push(paragraph.children.item(index));
   }
-  newParagraph.append(...newInlines);
+  newParagraph.append(...newTextSpans);
   return newParagraph;
 }
 

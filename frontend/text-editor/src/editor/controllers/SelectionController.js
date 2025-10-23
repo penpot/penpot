@@ -8,18 +8,18 @@
 
 import { createLineBreak, isLineBreak } from "../content/dom/LineBreak.js";
 import {
-  createInline,
-  createInlineFrom,
-  getInline,
-  getInlineLength,
-  isInline,
-  isInlineStart,
-  isInlineEnd,
-  setInlineStyles,
-  splitInline,
-  createEmptyInline,
-  createVoidInline,
-} from "../content/dom/Inline.js";
+  createTextSpan,
+  createTextSpanFrom,
+  getTextSpan,
+  getTextSpanLength,
+  isTextSpan,
+  isTextSpanStart,
+  isTextSpanEnd,
+  setTextSpanStyles,
+  splitTextSpan,
+  createEmptyTextSpan,
+  createVoidTextSpan,
+} from "../content/dom/TextSpan.js";
 import {
   createEmptyParagraph,
   isEmptyParagraph,
@@ -62,9 +62,9 @@ import SafeGuard from "./SafeGuard.js";
 /**
  * SelectionController uses the same concepts used by the Selection API but extending it to support
  * our own internal model based on paragraphs (in drafconst textEditorMock = TextEditorMock.createTextEditorMockWithParagraphs([
-      createParagraph([createInline(new Text("Hello, "))]),
+      createParagraph([createTextSpan(new Text("Hello, "))]),
       createEmptyParagraph(),
-      createParagraph([createInline(new Text("World!"))]),
+      createParagraph([createTextSpan(new Text("World!"))]),
     ]);
     const root = textEditorMock.root;
     const selection = document.getSelection();
@@ -88,12 +88,12 @@ import SafeGuard from "./SafeGuard.js";
       HTMLSpanElement
     );
     expect(textEditorMock.root.firstChild.firstChild.dataset.itype).toBe(
-      "inline"
+      "span"
     );
     expect(textEditorMock.root.textContent).toBe("Hello, World!");
     expect(textEditorMock.root.firstChild.textContent).toBe("Hello, ");
     expect(textEditorMock.root.lastChild.textContent).toBe("World!");
-  t.js they were called blocks) and inlines.
+  t.js they were called blocks) and text spans.
  */
 export class SelectionController extends EventTarget {
   /**
@@ -228,7 +228,7 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Styles of the current inline.
+   * Styles of the current text span.
    *
    * @type {CSSStyleDeclaration}
    */
@@ -266,18 +266,18 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Updates current styles based on the currently selected inline.
+   * Updates current styles based on the currently selected text span.
    *
-   * @param {HTMLSpanElement} inline
+   * @param {HTMLSpanElement} textSpan
    * @returns {SelectionController}
    */
-  #updateCurrentStyle(inline) {
+  #updateCurrentStyle(textSpan) {
     this.#applyDefaultStylesToCurrentStyle();
-    const root = inline.parentElement.parentElement;
+    const root = textSpan.parentElement.parentElement;
     this.#applyStylesToCurrentStyle(root);
-    const paragraph = inline.parentElement;
+    const paragraph = textSpan.parentElement;
     this.#applyStylesToCurrentStyle(paragraph);
-    this.#applyStylesToCurrentStyle(inline);
+    this.#applyStylesToCurrentStyle(textSpan);
     return this;
   }
 
@@ -334,7 +334,7 @@ export class SelectionController extends EventTarget {
     }
 
     // If focus node changed, we need to retrieve all the
-    // styles of the current inline and dispatch an event
+    // styles of the current text span and dispatch an event
     // to notify that the styles have changed.
     if (focusNodeChanges) {
       this.#notifyStyleChange();
@@ -355,19 +355,19 @@ export class SelectionController extends EventTarget {
    * Notifies that the styles have changed.
    */
   #notifyStyleChange() {
-    const inline = this.focusInline;
-    if (inline) {
-      this.#updateCurrentStyle(inline);
+    const textSpan = this.focusTextSpan;
+    if (textSpan) {
+      this.#updateCurrentStyle(textSpan);
       this.dispatchEvent(
         new CustomEvent("stylechange", {
           detail: this.#currentStyle,
         }),
       );
     } else {
-      const firstInline =
+      const firstTextSpan =
         this.#textEditor.root?.firstElementChild?.firstElementChild;
-      if (firstInline) {
-        this.#updateCurrentStyle(firstInline);
+      if (firstTextSpan) {
+        this.#updateCurrentStyle(firstTextSpan);
         this.dispatchEvent(
           new CustomEvent("stylechange", {
             detail: this.#currentStyle,
@@ -766,13 +766,13 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Returns the inline in the focus node
+   * Returns the text span in the focus node
    * of the current selection.
    *
    * @type {HTMLElement|null}
    */
-  get focusInline() {
-    return getInline(this.focusNode);
+  get focusTextSpan() {
+    return getTextSpan(this.focusNode);
   }
 
   /**
@@ -786,13 +786,13 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Returns the current inline in the anchor
+   * Returns the current text span in the anchor
    * node of the current selection.
    *
    * @type {HTMLElement|null}
    */
-  get anchorInline() {
-    return getInline(this.anchorNode);
+  get anchorTextSpan() {
+    return getTextSpan(this.anchorNode);
   }
 
   /**
@@ -829,14 +829,14 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Start inline of the current page.
+   * Start text span of the current page.
    *
    * @type {HTMLElement|null}
    */
-  get startInline() {
+  get startTextSpan() {
     const startContainer = this.startContainer;
     if (!startContainer) return null;
-    return getInline(startContainer);
+    return getTextSpan(startContainer);
   }
 
   /**
@@ -876,15 +876,15 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Inline element of the `endContainer` of
+   * TextSpan element of the `endContainer` of
    * the current range.
    *
    * @type {HTMLElement|null}
    */
-  get endInline() {
+  get endTextSpan() {
     const endContainer = this.endContainer;
     if (!endContainer) return null;
-    return getInline(endContainer);
+    return getTextSpan(endContainer);
   }
 
   /**
@@ -919,21 +919,21 @@ export class SelectionController extends EventTarget {
   }
 
   /**
-   * Is true if the current focus node is a inline.
+   * Is true if the current focus node is a text span.
    *
    * @type {boolean}
    */
-  get isInlineFocus() {
-    return isInline(this.focusNode);
+  get isTextSpanFocus() {
+    return isTextSpan(this.focusNode);
   }
 
   /**
-   * Is true if the current anchor node is a inline.
+   * Is true if the current anchor node is a text span.
    *
    * @type {boolean}
    */
-  get isInlineAnchor() {
-    return isInline(this.anchorNode);
+  get isTextSpanAnchor() {
+    return isTextSpan(this.anchorNode);
   }
 
   /**
@@ -962,7 +962,7 @@ export class SelectionController extends EventTarget {
   get isLineBreakFocus() {
     return (
       isLineBreak(this.focusNode) ||
-      (isInline(this.focusNode) && isLineBreak(this.focusNode.firstChild))
+      (isTextSpan(this.focusNode) && isLineBreak(this.focusNode.firstChild))
     );
   }
 
@@ -996,35 +996,35 @@ export class SelectionController extends EventTarget {
 
   /**
    * Indicates that we have selected multiple
-   * inline elements.
+   * text span elements.
    *
    * @type {boolean}
    */
-  get isMultiInline() {
-    return this.isMulti && this.focusInline !== this.anchorInline;
+  get isMultiTextSpan() {
+    return this.isMulti && this.focusTextSpan !== this.anchorTextSpan;
   }
 
   /**
    * Indicates that the caret (only the caret)
-   * is at the start of an inline.
+   * is at the start of an text span.
    *
    * @type {boolean}
    */
-  get isInlineStart() {
+  get isTextSpanStart() {
     if (!this.isCollapsed) return false;
-    return isInlineStart(this.focusNode, this.focusOffset);
+    return isTextSpanStart(this.focusNode, this.focusOffset);
   }
 
   /**
    * Indicates that the caret (only the caret)
-   * is at the end of an inline. This value doesn't
+   * is at the end of an text span. This value doesn't
    * matter when dealing with selections.
    *
    * @type {boolean}
    */
-  get isInlineEnd() {
+  get isTextSpanEnd() {
     if (!this.isCollapsed) return false;
-    return isInlineEnd(this.focusNode, this.focusOffset);
+    return isTextSpanEnd(this.focusNode, this.focusOffset);
   }
 
   /**
@@ -1055,18 +1055,18 @@ export class SelectionController extends EventTarget {
   insertPaste(fragment) {
     if (
       fragment.children.length === 1 &&
-      fragment.firstElementChild?.dataset?.inline === "force"
+      fragment.firstElementChild?.dataset?.textSpan === "force"
     ) {
       const collapseNode = fragment.firstElementChild.firstChild;
-      if (this.isInlineStart) {
-        this.focusInline.before(...fragment.firstElementChild.children);
-      } else if (this.isInlineEnd) {
-        this.focusInline.after(...fragment.firstElementChild.children);
+      if (this.isTextSpanStart) {
+        this.focusTextSpan.before(...fragment.firstElementChild.children);
+      } else if (this.isTextSpanEnd) {
+        this.focusTextSpan.after(...fragment.firstElementChild.children);
       } else {
-        const newInline = splitInline(this.focusInline, this.focusOffset);
-        this.focusInline.after(
+        const newTextSpan = splitTextSpan(this.focusTextSpan, this.focusOffset);
+        this.focusTextSpan.after(
           ...fragment.firstElementChild.children,
-          newInline,
+          newTextSpan,
         );
       }
       return this.collapse(collapseNode, collapseNode.nodeValue.length);
@@ -1085,7 +1085,7 @@ export class SelectionController extends EventTarget {
     } else {
       const newParagraph = splitParagraph(
         this.focusParagraph,
-        this.focusInline,
+        this.focusTextSpan,
         this.focusOffset,
       );
       this.focusParagraph.after(fragment, newParagraph);
@@ -1110,7 +1110,7 @@ export class SelectionController extends EventTarget {
    */
   replaceLineBreak(text) {
     const newText = new Text(text);
-    this.focusInline.replaceChildren(newText);
+    this.focusTextSpan.replaceChildren(newText);
     this.collapse(newText, text.length);
   }
 
@@ -1131,23 +1131,23 @@ export class SelectionController extends EventTarget {
 
     const paragraph = this.focusParagraph;
     if (!paragraph) throw new Error("Cannot find paragraph");
-    const inline = this.focusInline;
-    if (!inline) throw new Error("Cannot find inline");
+    const textSpan = this.focusTextSpan;
+    if (!textSpan) throw new Error("Cannot find text span");
 
     const nextTextNode = this.#textNodeIterator.nextNode();
     if (this.focusNode.nodeValue === "") {
       this.focusNode.remove();
     }
 
-    if (paragraph.childNodes.length === 1 && inline.childNodes.length === 0) {
+    if (paragraph.childNodes.length === 1 && textSpan.childNodes.length === 0) {
       const lineBreak = createLineBreak();
-      inline.appendChild(lineBreak);
+      textSpan.appendChild(lineBreak);
       return this.collapse(lineBreak, 0);
     } else if (
       paragraph.childNodes.length > 1 &&
-      inline.childNodes.length === 0
+      textSpan.childNodes.length === 0
     ) {
-      inline.remove();
+      textSpan.remove();
       return this.collapse(nextTextNode, 0);
     }
     return this.collapse(this.focusNode, this.focusOffset);
@@ -1177,23 +1177,23 @@ export class SelectionController extends EventTarget {
 
     const paragraph = this.focusParagraph;
     if (!paragraph) throw new Error("Cannot find paragraph");
-    const inline = this.focusInline;
-    if (!inline) throw new Error("Cannot find inline");
+    const textSpan = this.focusTextSpan;
+    if (!textSpan) throw new Error("Cannot find text span");
 
     const previousTextNode = this.#textNodeIterator.previousNode();
     if (this.focusNode.nodeValue === "") {
       this.focusNode.remove();
     }
 
-    if (paragraph.children.length === 1 && inline.childNodes.length === 0) {
+    if (paragraph.children.length === 1 && textSpan.childNodes.length === 0) {
       const lineBreak = createLineBreak();
-      inline.appendChild(lineBreak);
+      textSpan.appendChild(lineBreak);
       return this.collapse(lineBreak, 0);
     } else if (
       paragraph.children.length > 1 &&
-      inline.childNodes.length === 0
+      textSpan.childNodes.length === 0
     ) {
-      inline.remove();
+      textSpan.remove();
       return this.collapse(
         previousTextNode,
         getTextNodeLength(previousTextNode),
@@ -1214,7 +1214,7 @@ export class SelectionController extends EventTarget {
       this.focusOffset,
       newText,
     );
-    this.#mutations.update(this.focusInline);
+    this.#mutations.update(this.focusTextSpan);
     return this.collapse(this.focusNode, this.focusOffset + newText.length);
   }
 
@@ -1259,36 +1259,36 @@ export class SelectionController extends EventTarget {
       this.focusNode.replaceWith(new Text(newText));
     } else if (this.isRootFocus) {
       const newTextNode = new Text(newText);
-      const newInline = createInline(newTextNode, this.#currentStyle);
-      const newParagraph = createParagraph([newInline], this.#currentStyle);
+      const newTextSpan = createTextSpan(newTextNode, this.#currentStyle);
+      const newParagraph = createParagraph([newTextSpan], this.#currentStyle);
       this.focusNode.replaceChildren(newParagraph);
       return this.collapse(newTextNode, newText.length + 1);
     } else {
       throw new Error("Unknown node type");
     }
-    this.#mutations.update(this.focusInline);
+    this.#mutations.update(this.focusTextSpan);
     return this.collapse(this.focusNode, startOffset + newText.length);
   }
 
   /**
-   * Replaces the selected inlines with new text.
+   * Replaces the selected text spans with new text.
    *
    * @param {string} newText
    */
-  replaceInlines(newText) {
+  replaceTextSpans(newText) {
     const currentParagraph = this.focusParagraph;
 
     // This is the special (and fast) case where we're
     // removing everything inside a paragraph.
     if (
-      this.startInline === currentParagraph.firstChild &&
+      this.startTextSpan === currentParagraph.firstChild &&
       this.startOffset === 0 &&
-      this.endInline === currentParagraph.lastChild &&
+      this.endTextSpan === currentParagraph.lastChild &&
       this.endOffset === currentParagraph.lastChild.textContent.length
     ) {
       const newTextNode = new Text(newText);
       currentParagraph.replaceChildren(
-        createInline(newTextNode, this.anchorInline.style),
+        createTextSpan(newTextNode, this.anchorTextSpan.style),
       );
       return this.collapse(newTextNode, newTextNode.nodeValue.length);
     }
@@ -1304,10 +1304,10 @@ export class SelectionController extends EventTarget {
     );
     */
 
-    // FIXME: I'm not sure if we should merge inlines when they share the same styles.
-    // For example: if we have > 2 inlines and the start inline and the end inline
+    // FIXME: I'm not sure if we should merge text spans when they share the same styles.
+    // For example: if we have > 2 text spans and the start text span and the end text span
     // share the same styles, maybe we should merge them?
-    // mergeInlines(startInline, endInline);
+    // mergeTextSpans(startTextSpan, endTextSpan);
     return this.collapse(this.focusNode, this.focusOffset + newText.length);
   }
 
@@ -1368,7 +1368,7 @@ export class SelectionController extends EventTarget {
     const currentParagraph = this.focusParagraph;
     const newParagraph = splitParagraph(
       this.focusParagraph,
-      this.focusInline,
+      this.focusTextSpan,
       this.#focusOffset,
     );
     this.focusParagraph.after(newParagraph);
@@ -1395,13 +1395,13 @@ export class SelectionController extends EventTarget {
    */
   replaceWithParagraph() {
     const currentParagraph = this.focusParagraph;
-    const currentInline = this.focusInline;
+    const currentTextSpan = this.focusTextSpan;
 
     this.removeSelected();
 
     const newParagraph = splitParagraph(
       currentParagraph,
-      currentInline,
+      currentTextSpan,
       this.focusOffset,
     );
     currentParagraph.after(newParagraph);
@@ -1422,15 +1422,15 @@ export class SelectionController extends EventTarget {
     }
     const paragraphToBeRemoved = this.focusParagraph;
     paragraphToBeRemoved.remove();
-    const previousInline =
+    const previousTextSpan =
       previousParagraph.children.length > 1
         ? previousParagraph.lastElementChild
         : previousParagraph.firstChild;
-    const previousOffset = isLineBreak(previousInline.firstChild)
+    const previousOffset = isLineBreak(previousTextSpan.firstChild)
       ? 0
-      : previousInline.firstChild.nodeValue.length;
+      : previousTextSpan.firstChild.nodeValue.length;
     this.#mutations.remove(paragraphToBeRemoved);
-    return this.collapse(previousInline.firstChild, previousOffset);
+    return this.collapse(previousTextSpan.firstChild, previousOffset);
   }
 
   /**
@@ -1442,18 +1442,18 @@ export class SelectionController extends EventTarget {
     if (!previousParagraph) {
       return;
     }
-    let previousInline = previousParagraph.lastChild;
-    const previousOffset = getInlineLength(previousInline);
+    let previousTextSpan = previousParagraph.lastChild;
+    const previousOffset = getTextSpanLength(previousTextSpan);
     if (isEmptyParagraph(previousParagraph)) {
       previousParagraph.replaceChildren(...currentParagraph.children);
-      previousInline = previousParagraph.firstChild;
+      previousTextSpan = previousParagraph.firstChild;
       currentParagraph.remove();
     } else {
       mergeParagraphs(previousParagraph, currentParagraph);
     }
     this.#mutations.remove(currentParagraph);
     this.#mutations.update(previousParagraph);
-    return this.collapse(previousInline.firstChild, previousOffset);
+    return this.collapse(previousTextSpan.firstChild, previousOffset);
   }
 
   /**
@@ -1482,24 +1482,24 @@ export class SelectionController extends EventTarget {
     }
     const paragraphToBeRemoved = this.focusParagraph;
     paragraphToBeRemoved.remove();
-    const nextInline = nextParagraph.firstChild;
+    const nextTextSpan = nextParagraph.firstChild;
     const nextOffset = this.focusOffset;
     this.#mutations.remove(paragraphToBeRemoved);
-    return this.collapse(nextInline.firstChild, nextOffset);
+    return this.collapse(nextTextSpan.firstChild, nextOffset);
   }
 
   /**
    * Cleans up all the affected paragraphs.
    *
    * @param {Set<HTMLDivElement>} affectedParagraphs
-   * @param {Set<HTMLSpanElement>} affectedInlines
+   * @param {Set<HTMLSpanElement>} affectedTextSpans
    */
-  cleanUp(affectedParagraphs, affectedInlines) {
-    // Remove empty inlines
-    for (const inline of affectedInlines) {
-      if (inline.textContent === "") {
-        inline.remove();
-        this.#mutations.remove(inline);
+  cleanUp(affectedParagraphs, affectedTextSpans) {
+    // Remove empty text spans
+    for (const textSpan of affectedTextSpans) {
+      if (textSpan.textContent === "") {
+        textSpan.remove();
+        this.#mutations.remove(textSpan);
       }
     }
 
@@ -1520,7 +1520,7 @@ export class SelectionController extends EventTarget {
   removeSelected(options) {
     if (this.isCollapsed) return;
 
-    const affectedInlines = new Set();
+    const affectedTextSpans = new Set();
     const affectedParagraphs = new Set();
 
     const startNode = getClosestTextNode(this.#range.startContainer);
@@ -1541,9 +1541,9 @@ export class SelectionController extends EventTarget {
       this.#textNodeIterator.currentNode = startNode;
       nextNode = this.#textNodeIterator.nextNode();
 
-      const inline = getInline(startNode);
+      const textSpan = getTextSpan(startNode);
       const paragraph = getParagraph(startNode);
-      affectedInlines.add(inline);
+      affectedTextSpans.add(textSpan);
       affectedParagraphs.add(paragraph);
 
       const newNodeValue = removeSlice(
@@ -1553,7 +1553,7 @@ export class SelectionController extends EventTarget {
       );
       if (newNodeValue === "") {
         const lineBreak = createLineBreak();
-        inline.replaceChildren(lineBreak);
+        textSpan.replaceChildren(lineBreak);
         return this.collapse(lineBreak, 0);
       }
       startNode.nodeValue = newNodeValue;
@@ -1567,9 +1567,9 @@ export class SelectionController extends EventTarget {
     // Select initial node.
     this.#textNodeIterator.currentNode = startNode;
 
-    const startInline = getInline(startNode);
+    const startTextSpan = getTextSpan(startNode);
     const startParagraph = getParagraph(startNode);
-    const endInline = getInline(endNode);
+    const endTextSpan = getTextSpan(endNode);
     const endParagraph = getParagraph(endNode);
 
     SafeGuard.start();
@@ -1578,11 +1578,11 @@ export class SelectionController extends EventTarget {
 
       const { currentNode } = this.#textNodeIterator;
 
-      // We retrieve the inline and paragraph of the
+      // We retrieve the textSpan and paragraph of the
       // current node.
-      const inline = getInline(currentNode);
+      const textSpan = getTextSpan(currentNode);
       const paragraph = getParagraph(currentNode);
-      affectedInlines.add(inline);
+      affectedTextSpans.add(textSpan);
       affectedParagraphs.add(paragraph);
 
       let shouldRemoveNodeCompletely = false;
@@ -1619,8 +1619,8 @@ export class SelectionController extends EventTarget {
           continue;
         }
 
-        if (inline.childNodes.length === 0) {
-          inline.remove();
+        if (textSpan.childNodes.length === 0) {
+          textSpan.remove();
         }
 
         if (paragraph !== startParagraph && paragraph.children.length === 0) {
@@ -1636,44 +1636,44 @@ export class SelectionController extends EventTarget {
     if (startParagraph !== endParagraph) {
       const mergedParagraph = mergeParagraphs(startParagraph, endParagraph);
       if (mergedParagraph.children.length === 0) {
-        const newEmptyInline = createEmptyInline(this.#currentStyle);
-        mergedParagraph.appendChild(newEmptyInline);
-        return this.collapse(newEmptyInline.firstChild, 0);
+        const newEmptyTextSpan = createEmptyTextSpan(this.#currentStyle);
+        mergedParagraph.appendChild(newEmptyTextSpan);
+        return this.collapse(newEmptyTextSpan.firstChild, 0);
       }
     }
 
     if (
-      startInline.childNodes.length === 0 &&
-      endInline.childNodes.length > 0
+      startTextSpan.childNodes.length === 0 &&
+      endTextSpan.childNodes.length > 0
     ) {
-      startInline.remove();
+      startTextSpan.remove();
       return this.collapse(endNode, 0);
     } else if (
-      startInline.childNodes.length > 0 &&
-      endInline.childNodes.length === 0
+      startTextSpan.childNodes.length > 0 &&
+      endTextSpan.childNodes.length === 0
     ) {
-      endInline.remove();
+      endTextSpan.remove();
       return this.collapse(startNode, startOffset);
     } else if (
-      startInline.childNodes.length === 0 &&
-      endInline.childNodes.length === 0
+      startTextSpan.childNodes.length === 0 &&
+      endTextSpan.childNodes.length === 0
     ) {
-      const previousInline = startInline.previousElementSibling;
-      const nextInline = endInline.nextElementSibling;
-      startInline.remove();
-      endInline.remove();
-      if (previousInline) {
+      const previousTextSpan = startTextSpan.previousElementSibling;
+      const nextTextSpan = endTextSpan.nextElementSibling;
+      startTextSpan.remove();
+      endTextSpan.remove();
+      if (previousTextSpan) {
         return this.collapse(
-          previousInline.firstChild,
-          previousInline.firstChild.nodeValue.length,
+          previousTextSpan.firstChild,
+          previousTextSpan.firstChild.nodeValue.length,
         );
       }
-      if (nextInline) {
-        return this.collapse(nextInline.firstChild, 0);
+      if (nextTextSpan) {
+        return this.collapse(nextTextSpan.firstChild, 0);
       }
-      const newEmptyInline = createEmptyInline(this.#currentStyle);
-      startParagraph.appendChild(newEmptyInline);
-      return this.collapse(newEmptyInline.firstChild, 0);
+      const newEmptyTextSpan = createEmptyTextSpan(this.#currentStyle);
+      startParagraph.appendChild(newEmptyTextSpan);
+      return this.collapse(newEmptyTextSpan.firstChild, 0);
     }
 
     return this.collapse(startNode, startOffset);
@@ -1701,30 +1701,30 @@ export class SelectionController extends EventTarget {
       // The styles are applied to the node completely.
       if (startOffset === 0 && endOffset === endNode.nodeValue.length) {
         const paragraph = this.startParagraph;
-        const inline = this.startInline;
+        const textSpan = this.startTextSpan;
         setParagraphStyles(paragraph, newStyles);
-        setInlineStyles(inline, newStyles);
+        setTextSpanStyles(textSpan, newStyles);
 
         // The styles are applied to a part of the node.
       } else if (startOffset !== endOffset) {
         const paragraph = this.startParagraph;
         setParagraphStyles(paragraph, newStyles);
-        const inline = this.startInline;
+        const textSpan = this.startTextSpan;
         const midText = startNode.splitText(startOffset);
         const endText = midText.splitText(endOffset - startOffset);
-        const midInline = createInlineFrom(inline, midText, newStyles);
-        inline.after(midInline);
+        const midTextSpan = createTextSpanFrom(textSpan, midText, newStyles);
+        textSpan.after(midTextSpan);
         if (endText.length > 0) {
-          const endInline = createInline(endText, inline.style);
-          midInline.after(endInline);
+          const endTextSpan = createTextSpan(endText, textSpan.style);
+          midTextSpan.after(endTextSpan);
         }
 
         // NOTE: This is necessary because sometimes
-        // inlines are splitted from the beginning
+        // text spans are splitted from the beginning
         // to a mid offset and then the starting node
         // remains empty.
-        if (inline.firstChild.nodeValue === "") {
-          inline.remove();
+        if (textSpan.firstChild.nodeValue === "") {
+          textSpan.remove();
         }
 
         // FIXME: This can change focus <-> anchor order.
@@ -1735,9 +1735,9 @@ export class SelectionController extends EventTarget {
         this.startOffset === this.endOffset &&
         this.endOffset === endNode.nodeValue.length
       ) {
-        const newInline = createVoidInline(newStyles);
-        this.endInline.after(newInline);
-        this.setSelection(newInline.firstChild, 0, newInline.firstChild, 0);
+        const newTextSpan = createVoidTextSpan(newStyles);
+        this.endTextSpan.after(newTextSpan);
+        this.setSelection(newTextSpan.firstChild, 0, newTextSpan.firstChild, 0);
       }
       // The styles are applied to the paragraph
       else {
@@ -1758,17 +1758,17 @@ export class SelectionController extends EventTarget {
 
         const paragraph = getParagraph(this.#textNodeIterator.currentNode);
         setParagraphStyles(paragraph, newStyles);
-        const inline = getInline(this.#textNodeIterator.currentNode);
+        const textSpan = getTextSpan(this.#textNodeIterator.currentNode);
         // If we're at the start node and offset is greater than 0
-        // then we should split the inline and apply styles to that
-        // new inline.
+        // then we should split the text span and apply styles to that
+        // new text span.
         if (
           this.#textNodeIterator.currentNode === startNode &&
           startOffset > 0
         ) {
-          const newInline = splitInline(inline, startOffset);
-          setInlineStyles(newInline, newStyles);
-          inline.after(newInline);
+          const newTextSpan = splitTextSpan(textSpan, startOffset);
+          setTextSpanStyles(newTextSpan, newStyles);
+          textSpan.after(newTextSpan);
           // If we're at the start node and offset is equal to 0
           // or current node is different to start node and
           // different to end node or we're at the end node
@@ -1781,16 +1781,16 @@ export class SelectionController extends EventTarget {
           (this.#textNodeIterator.currentNode === endNode &&
             endOffset === endNode.nodeValue.length)
         ) {
-          setInlineStyles(inline, newStyles);
+          setTextSpanStyles(textSpan, newStyles);
 
           // If we're at end node
         } else if (
           this.#textNodeIterator.currentNode === endNode &&
           endOffset < endNode.nodeValue.length
         ) {
-          const newInline = splitInline(inline, endOffset);
-          setInlineStyles(inline, newStyles);
-          inline.after(newInline);
+          const newTextSpan = splitTextSpan(textSpan, endOffset);
+          setTextSpanStyles(textSpan, newStyles);
+          textSpan.after(newTextSpan);
         }
 
         // We've reached the final node so we can return safely.

@@ -17,7 +17,7 @@ import { setStyles, mergeStyles } from "./Style.js";
 import { createRandomId } from "./Element.js";
 
 export const TAG = "SPAN";
-export const TYPE = "inline";
+export const TYPE = "span";
 export const QUERY = `[data-itype="${TYPE}"]`;
 export const STYLES = [
   ["--typography-ref-id"],
@@ -37,12 +37,12 @@ export const STYLES = [
 ];
 
 /**
- * Returns true if passed node is an inline.
+ * Returns true if passed node is a text span.
  *
  * @param {Node} node
  * @returns {boolean}
  */
-export function isInline(node) {
+export function isTextSpan(node) {
   if (!node) return false;
   if (!isElement(node, TAG)) return false;
   if (node.dataset.itype !== TYPE) return false;
@@ -50,13 +50,13 @@ export function isInline(node) {
 }
 
 /**
- * Returns true if the passed node "behaves" like an
- * inline.
+ * Returns true if the passed node "behaves" like a
+ * text span.
  *
  * @param {Node} element
  * @returns {boolean}
  */
-export function isLikeInline(element) {
+export function isLikeTextSpan(element) {
   return element
     ? [
         "A",
@@ -97,26 +97,26 @@ export function isLikeInline(element) {
 }
 
 /**
- * Creates a new Inline
+ * Creates a new TextSpan
  *
  * @param {Text|HTMLBRElement} text
  * @param {Object.<string, *>|CSSStyleDeclaration} styles
  * @param {Object.<string, *>} [attrs]
  * @returns {HTMLSpanElement}
  */
-export function createInline(textOrLineBreak, styles, attrs) {
+export function createTextSpan(textOrLineBreak, styles, attrs) {
   if (
     !(textOrLineBreak instanceof HTMLBRElement) &&
     !(textOrLineBreak instanceof Text)
   ) {
-    throw new TypeError("Invalid inline child");
+    throw new TypeError("Invalid text span child");
   }
   if (
     textOrLineBreak instanceof Text &&
     textOrLineBreak.nodeValue.length === 0
   ) {
     console.trace("nodeValue", textOrLineBreak.nodeValue);
-    throw new TypeError("Invalid inline child, cannot be an empty text");
+    throw new TypeError("Invalid text span child, cannot be an empty text");
   }
   return createElement(TAG, {
     attributes: { id: createRandomId(), ...attrs },
@@ -128,34 +128,42 @@ export function createInline(textOrLineBreak, styles, attrs) {
 }
 
 /**
- * Creates a new inline from an older inline. This only
- * merges styles from the older inline to the new inline.
+ * Creates a new text span from an older text span. This only
+ * merges styles from the older text span to the new text span.
  *
- * @param {HTMLSpanElement} inline
+ * @param {HTMLSpanElement} textSpan
  * @param {Object.<string, *>} textOrLineBreak
  * @param {Object.<string, *>|CSSStyleDeclaration} styles
  * @param {Object.<string, *>} [attrs]
  * @returns {HTMLSpanElement}
  */
-export function createInlineFrom(inline, textOrLineBreak, styles, attrs) {
-  return createInline(
+export function createTextSpanFrom(textSpan, textOrLineBreak, styles, attrs) {
+  return createTextSpan(
     textOrLineBreak,
-    mergeStyles(STYLES, inline.style, styles),
+    mergeStyles(STYLES, textSpan.style, styles),
     attrs,
   );
 }
 
 /**
- * Creates a new empty inline.
+ * Creates a new empty text span.
  *
  * @param {Object.<string,*>|CSSStyleDeclaration} styles
  * @returns {HTMLSpanElement}
  */
-export function createEmptyInline(styles) {
-  return createInline(createLineBreak(), styles);
+export function createEmptyTextSpan(styles) {
+  return createTextSpan(createLineBreak(), styles);
 }
 
-export function createVoidInline(styles) {
+/**
+ * Creates a new text span with an empty text. The difference between
+ * this and the createEmptyTextSpan is that createEmptyTextSpan creates
+ * a text span with a <br> inside.
+ *
+ * @param {Object.<string,*>|CSSStyleDeclaration} styles
+ * @returns {HTMLSpanElement}
+ */
+export function createVoidTextSpan(styles) {
   return createElement(TAG, {
     attributes: { id: createRandomId() },
     data: { itype: TYPE },
@@ -166,116 +174,116 @@ export function createVoidInline(styles) {
 }
 
 /**
- * Sets the inline styles.
+ * Sets the text span styles.
  *
  * @param {HTMLSpanElement} element
  * @param {Object.<string,*>|CSSStyleDeclaration} styles
  * @returns {HTMLSpanElement}
  */
-export function setInlineStyles(element, styles) {
+export function setTextSpanStyles(element, styles) {
   return setStyles(element, STYLES, styles);
 }
 
 /**
- * Gets the closest inline from a node.
+ * Gets the closest text span from a node.
  *
  * @param {Node} node
  * @returns {HTMLElement|null}
  */
-export function getInline(node) {
+export function getTextSpan(node) {
   if (!node) return null; // FIXME: Should throw?
-  if (isInline(node)) return node;
+  if (isTextSpan(node)) return node;
   if (node.nodeType === Node.TEXT_NODE) {
-    const inline = node?.parentElement;
-    if (!inline) return null;
-    if (!isInline(inline)) return null;
-    return inline;
+    const textSpan = node?.parentElement;
+    if (!textSpan) return null;
+    if (!isTextSpan(textSpan)) return null;
+    return textSpan;
   }
   return node.closest(QUERY);
 }
 
 /**
  * Returns true if we are at the start offset
- * of an inline.
+ * of a text span.
  *
- * NOTE: Only the first inline returns this as true
+ * NOTE: Only the first text span returns this as true
  *
  * @param {TextNode|HTMLBRElement} node
  * @param {number} offset
  * @returns {boolean}
  */
-export function isInlineStart(node, offset) {
-  const inline = getInline(node);
-  if (!inline) return false;
-  return isOffsetAtStart(inline, offset);
+export function isTextSpanStart(node, offset) {
+  const textSpan = getTextSpan(node);
+  if (!textSpan) return false;
+  return isOffsetAtStart(textSpan, offset);
 }
 
 /**
  * Returns true if we are at the end offset
- * of an inline.
+ * of a text span.
  *
  * @param {TextNode|HTMLBRElement} node
  * @param {number} offset
  * @returns {boolean}
  */
-export function isInlineEnd(node, offset) {
-  const inline = getInline(node);
-  if (!inline) return false;
-  return isOffsetAtEnd(inline.firstChild, offset);
+export function isTextSpanEnd(node, offset) {
+  const textSpan = getTextSpan(node);
+  if (!textSpan) return false;
+  return isOffsetAtEnd(textSpan.firstChild, offset);
 }
 
 /**
- * Splits an inline.
+ * Splits a text span.
  *
- * @param {HTMLSpanElement} inline
+ * @param {HTMLSpanElement} textSpan
  * @param {number} offset
  */
-export function splitInline(inline, offset) {
-  const textNode = inline.firstChild;
-  const style = inline.style;
+export function splitTextSpan(textSpan, offset) {
+  const textNode = textSpan.firstChild;
+  const style = textSpan.style;
   const newTextNode = textNode.splitText(offset);
-  return createInline(newTextNode, style);
+  return createTextSpan(newTextNode, style);
 }
 
 /**
- * Returns all the inlines of a paragraph starting at
- * the specified inline.
+ * Returns all the text spans of a paragraph starting at
+ * the specified text span.
  *
- * @param {HTMLSpanElement} startInline
+ * @param {HTMLSpanElement} startTextSpan
  * @returns {Array<HTMLSpanElement>}
  */
-export function getInlinesFrom(startInline) {
-  const inlines = [];
-  let currentInline = startInline;
+export function getTextSpansFrom(startTextSpan) {
+  const textSpans = [];
+  let currentTextSpan = startTextSpan;
   let index = 0;
-  while (currentInline) {
-    if (index > 0) inlines.push(currentInline);
-    currentInline = currentInline.nextElementSibling;
+  while (currentTextSpan) {
+    if (index > 0) textSpans.push(currentTextSpan);
+    currentTextSpan = currentTextSpan.nextElementSibling;
     index++;
   }
-  return inlines;
+  return textSpans;
 }
 
 /**
- * Returns the length of an inline.
+ * Returns the length of a text span.
  *
- * @param {HTMLElement} inline
+ * @param {HTMLElement} textSpan
  * @returns {number}
  */
-export function getInlineLength(inline) {
-  if (!isInline(inline)) throw new Error("Invalid inline");
-  if (isLineBreak(inline.firstChild)) return 0;
-  return inline.firstChild.nodeValue.length;
+export function getTextSpanLength(textSpan) {
+  if (!isTextSpan(textSpan)) throw new Error("Invalid text span");
+  if (isLineBreak(textSpan.firstChild)) return 0;
+  return textSpan.firstChild.nodeValue.length;
 }
 
 /**
- * Merges two inlines.
+ * Merges two text spans.
  *
  * @param {HTMLSpanElement} a
  * @param {HTMLSpanElement} b
  * @returns {HTMLSpanElement}
  */
-export function mergeInlines(a, b) {
+export function mergeTextSpans(a, b) {
   a.append(...b.childNodes);
   b.remove();
   // We need to normalize Text nodes.

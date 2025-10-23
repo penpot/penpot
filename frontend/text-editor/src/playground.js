@@ -6,7 +6,7 @@ import { UUID } from "./playground/uuid.js";
 import { Rect, Point } from "./playground/geom.js";
 import { WASMModuleWrapper } from "./playground/wasm.js";
 import { FontManager } from "./playground/font.js";
-import { TextContent, TextParagraph, TextLeaf } from "./playground/text.js";
+import { TextContent, TextParagraph, TextSpan } from "./playground/text.js";
 import { Viewport } from "./playground/viewport.js";
 import { Fill } from "./playground/fill.js";
 import { Shape } from "./playground/shape.js";
@@ -80,21 +80,21 @@ class TextEditorPlayground {
       debug: new SelectionControllerDebug({
         direction: document.getElementById("direction"),
         multiElement: document.getElementById("multi"),
-        multiInlineElement: document.getElementById("multi-inline"),
+        multiTextSpanElement: document.getElementById("multi-textspan"),
         multiParagraphElement: document.getElementById("multi-paragraph"),
         isParagraphStart: document.getElementById("is-paragraph-start"),
         isParagraphEnd: document.getElementById("is-paragraph-end"),
-        isInlineStart: document.getElementById("is-inline-start"),
-        isInlineEnd: document.getElementById("is-inline-end"),
+        isTextSpanStart: document.getElementById("is-textspan-start"),
+        isTextSpanEnd: document.getElementById("is-textspan-end"),
         isTextAnchor: document.getElementById("is-text-anchor"),
         isTextFocus: document.getElementById("is-text-focus"),
         focusNode: document.getElementById("focus-node"),
         focusOffset: document.getElementById("focus-offset"),
-        focusInline: document.getElementById("focus-inline"),
+        focusTextSpan: document.getElementById("focus-textspan"),
         focusParagraph: document.getElementById("focus-paragraph"),
         anchorNode: document.getElementById("anchor-node"),
         anchorOffset: document.getElementById("anchor-offset"),
-        anchorInline: document.getElementById("anchor-inline"),
+        anchorTextSpan: document.getElementById("anchor-textspan"),
         anchorParagraph: document.getElementById("anchor-paragraph"),
         startContainer: document.getElementById("start-container"),
         startOffset: document.getElementById("start-offset"),
@@ -496,7 +496,7 @@ class TextEditorPlayground {
 
           leaf.fills.forEach((fill, index) => {
             const fillOffset =
-              offset + TextLeaf.BYTE_LENGTH + index * Fill.BYTE_LENGTH;
+              offset + TextSpan.BYTE_LENGTH + index * Fill.BYTE_LENGTH;
             if (fill.type === Fill.Type.SOLID) {
               view.setUint8(fillOffset + 0, fill.type, true);
               view.setUint32(fillOffset + 4, fill.solid.color.argb32, true);
