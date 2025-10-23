@@ -218,15 +218,10 @@
                                   (gpt/add resize-origin displacement)
                                   resize-origin)
 
-                  ;; Determine resize direction for grow-type logic
-                  resize-direction (cond
-                                     (or (= handler :left) (= handler :right)) :horizontal
-                                     (or (= handler :top) (= handler :bottom)) :vertical
-                                     :else nil)
-
                   ;; Calculate new grow-type for text layers
-                  new-grow-type (when (cfh/text-shape? shape)
-                                  (dwm/next-grow-type (dm/get-prop shape :grow-type) resize-direction))
+                  new-grow-type
+                  (when (cfh/text-shape? shape)
+                    (dwm/next-grow-type (dm/get-prop shape :grow-type) scalev))
 
                   ;; When the horizontal/vertical scale a flex children with auto/fill
                   ;; we change it too fixed
