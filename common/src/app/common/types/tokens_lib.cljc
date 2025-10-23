@@ -926,19 +926,19 @@ Will return a value that matches this schema:
        (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
 
   ITokenSets
-  ;  Naming conventions:
-  ;  (TODO: this will disappear after refactoring the internal structure of TokensLib).
-  ;    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
-  ;    Set final name or fname: the last part of the name \"some-set\".
-  ;    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
-  ;    Set path str:            the set path as a string \"some-group/some-subgroup\".
-  ;    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
-  ;    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
-
-  ;    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
-  ;    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
-  ;    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
-  ;    Prefixed set final name or pfname: a final name with prefix \"S-some-set\".
+  ;;  Naming conventions:
+  ;;  (TODO: this will disappear after refactoring the internal structure of TokensLib).
+  ;;    Set name:                the complete name as a string, without prefix \"some-group/some-subgroup/some-set\".
+  ;;    Set final name or fname: the last part of the name \"some-set\".
+  ;;    Set path:                the groups part of the name, as a vector [\"some-group\" \"some-subgroup\"].
+  ;;    Set path str:            the set path as a string \"some-group/some-subgroup\".
+  ;;    Set full path:           the path including the fname, as a vector [\"some-group\", \"some-subgroup\", \"some-set\"].
+  ;;    Set full path str:       the set full path as a string \"some-group/some-subgroup/some-set\".
+   ;
+  ;;    Set prefix:                        the two-characters prefix added to a full path item \"G-\" / \"S-\".
+  ;;    Prefixed set path or ppath:        a path wit added prefixes [\"G-some-group\", \"G-some-subgroup\"].
+  ;;    Prefixed set full path or pfpath:  a full path wit prefixes [\"G-some-group\", \"G-some-subgroup\", \"S-some-set\"].
+  ;;    Prefixed set final name or pfname: a final name with prefix \"S-some-set\".
   (add-set [_ token-set]
     (assert (token-set? token-set) "expected valid token-set")
     (let [path (get-set-prefixed-path token-set)]
