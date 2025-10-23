@@ -28,7 +28,6 @@
    [app.plugins.register :as r]
    [app.plugins.shape :as shape]
    [app.plugins.text :as text]
-   [app.plugins.tokens :as tokens]
    [app.plugins.utils :as u]
    [app.util.object :as obj]
    [beicon.v2.core :as rx]
@@ -959,12 +958,6 @@
                              (map first)
                              (map #(lib-component-proxy plugin-id file-id %)))]
          (apply array components)))}
-
-    :tokens
-    {:this true
-     :get
-     (fn [_]
-       (tokens/tokens-context plugin-id file-id))}
 
     :createColor
     (fn []
