@@ -370,12 +370,11 @@
                   (dissoc :style)
                   (merge style)
                   (select-keys allowed-keys))
-        str   (sr/serialize-path-attrs attrs)
-        size  (count str)]
-    (when (pos? size)
-      (let [offset (mem/alloc size)]
-        (h/call wasm/internal-module "stringToUTF8" str offset size)
-        (h/call wasm/internal-module "_set_shape_path_attrs" (count attrs))))))
+        fill-rule       (-> attrs :fillRule sr/translate-fill-rule)
+        stroke-linecap  (-> attrs :strokeLinecap sr/translate-stroke-linecap)
+        stroke-linejoin (-> attrs :strokeLinejoin sr/translate-stroke-linejoin)
+        fill-none       (= "none" (-> attrs :fill))]
+    (h/call wasm/internal-module "_set_shape_svg_attrs" fill-rule stroke-linecap stroke-linejoin fill-none)))
 
 (defn set-shape-path-content
   "Upload path content in chunks to WASM."
@@ -1160,7 +1159,10 @@
                                              :text-direction (unchecked-get module "RawTextDirection")
                                              :text-decoration (unchecked-get module "RawTextDecoration")
                                              :text-transform (unchecked-get module "RawTextTransform")
-                                             :segment-data (unchecked-get module "RawSegmentData")}]
+                                             :segment-data (unchecked-get module "RawSegmentData")
+                                             :stroke-linecap (unchecked-get module "RawStrokeLineCap")
+                                             :stroke-linejoin (unchecked-get module "RawStrokeLineJoin")
+                                             :fill-rule (unchecked-get module "RawFillRule")}]
                          (set! wasm/serializers serializers)
                          (default))))
              (p/fmap (fn [default]
