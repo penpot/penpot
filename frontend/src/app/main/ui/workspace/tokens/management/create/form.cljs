@@ -214,6 +214,24 @@
   (when (empty? (:value token))
     (wte/get-error-code :error.token/empty-input)))
 
+(defn check-shadow-token-self-reference
+  "Check token when any of the attributes in a shadow's value have a self-reference."
+  [token]
+  (let [token-name (:name token)
+        shadow-values (:value token)]
+    (some (fn [[shadow-idx shadow-map]]
+            (some (fn [[k v]]
+                    (when-let [err (check-self-reference token-name v)]
+                      (assoc err :shadow-key k :shadow-index shadow-idx)))
+                  shadow-map))
+          (d/enumerate shadow-values))))
+
+(defn check-empty-shadow-token [token]
+  (when (or (empty? (:value token))
+            (some (fn [shadow] (not-every? #(contains? shadow %) [:offsetX :offsetY :blur :spread :color]))
+                  (:value token)))
+    (wte/get-error-code :error.token/empty-input)))
+
 (defn validate-typography-token
   [{:keys [token-value] :as props}]
   (cond
@@ -238,13 +256,13 @@
     ;; Entering form without a value - show no error just resolve nil
     (nil? token-value) (rx/of nil)
     ;; Validate refrence string
-    (cto/typography-composite-token-reference? token-value) (default-validate-token props)
+    (cto/shadow-composite-token-reference? token-value) (default-validate-token props)
     ;; Validate composite token
     :else
     (-> props
         (update :token-value (fn [v] (or v [])))
-        (assoc :validators [#_check-empty-typography-token
-                            #_check-typography-token-self-reference])
+        (assoc :validators [check-empty-shadow-token
+                            check-shadow-token-self-reference])
         (default-validate-token))))
 
 (defn use-debonced-resolve-callback
