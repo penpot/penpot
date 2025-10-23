@@ -1690,10 +1690,10 @@ Will return a value that matches this schema:
                              (uuid/next))
                      :name (get theme "name")
                      :group (get theme "group")
-                     :is-source (get theme "is-source")
+                     :is-source (or (get theme "isSource")
+                                    ;; NOTE: backward compatibility
+                                    (get theme "is-source"))
                      :external-id (get theme "id")
-                     :modified-at (some-> (get theme "modified-at")
-                                          (ct/inst))
                      :sets (into #{}
                                  (comp (map key)
                                        xf-normalize-set-name
@@ -1822,15 +1822,15 @@ Will return a value that matches this schema:
          (filter #(and (instance? TokenTheme %)
                        (not (hidden-theme? %))))
          (map (fn [token-theme]
-                (let [theme-map (->> token-theme
-                                     (into {})
-                                     walk/stringify-keys)]
-                  (-> theme-map
-                      (set/rename-keys  {"sets" "selectedTokenSets"
-                                         "external-id" "id"})
-                      (update "selectedTokenSets" (fn [sets]
-                                                    (->> (for [s sets] [s "enabled"])
-                                                         (into {})))))))))
+                ;; NOTE: this probaly can be implemented as type method
+                (d/without-nils
+                 {"id" (:external-id token-theme)
+                  "name" (:name token-theme)
+                  "group" (:group token-theme)
+                  "description" (:description token-theme)
+                  "isSource" (:is-source token-theme)
+                  "selectedTokenSets" (reduce #(assoc %1 %2 "enabled") {} (:sets token-theme))}))))
+
         themes
         (->> (get-theme-tree tokens-lib)
              (tree-seq d/ordered-map? vals)
@@ -1840,29 +1840,34 @@ Will return a value that matches this schema:
         active-themes
         (-> (get-active-theme-paths tokens-lib)
             (disj hidden-theme-path))]
-    {:themes themes
-     :active-themes active-themes}))
+    [themes active-themes]))
 
 (defn export-dtcg-multi-file
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi json files each encoded in DTCG format."
   [tokens-lib]
-  (let [{:keys [themes active-themes]} (dtcg-export-themes tokens-lib)
-        sets (->> (get-sets tokens-lib)
-                  (map (fn [token-set]
-                         (let [name   (get-name token-set)
-                               tokens (get-tokens- token-set)]
-                           [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
-                  (into {}))]
+  (let [[themes active-themes]
+        (dtcg-export-themes tokens-lib)
+
+        sets
+        (->> (get-sets tokens-lib)
+             (map (fn [token-set]
+                    (let [name   (get-name token-set)
+                          tokens (get-tokens- token-set)]
+                      [(str name ".json") (tokens-tree tokens :update-token-fn token->dtcg-token)])))
+             (into {}))]
+
     (-> sets
         (assoc "$themes.json" themes)
-        (assoc "$metadata.json" {"tokenSetOrder" (get-set-names tokens-lib)
-                                 "activeThemes" active-themes
-                                 "activeSets" (get-active-themes-set-names tokens-lib)}))))
+        (assoc "$metadata.json"
+               {"tokenSetOrder" (get-set-names tokens-lib)
+                "activeThemes" active-themes
+                "activeSets" (get-active-themes-set-names tokens-lib)}))))
 
 (defn export-dtcg-json
   "Convert a TokensLib into a plain clojure map, suitable to be encoded as a multi sets json string in DTCG format."
   [tokens-lib]
-  (let [{:keys [themes active-themes]} (dtcg-export-themes tokens-lib)
+  (let [[themes active-themes]
+        (dtcg-export-themes tokens-lib)
 
         name-set-tuples
         (->> (get-set-tree tokens-lib)
