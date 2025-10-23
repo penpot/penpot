@@ -937,27 +937,26 @@
                              :custom-input-token-value color-picker*
                              :custom-input-token-value-props custom-input-token-value-props})]))
 
-;; TODO l10n
 (def ^:private shadow-inputs
   #(d/ordered-map
     :offsetX
-    {:label "X Offset"
-     :placeholder "X Offset"}
+    {:label (tr "workspace.tokens.shadow-x")
+     :placeholder (tr "workspace.tokens.shadow-x")}
     :offsetY
-    {:label "Y Offset"
-     :placeholder "Y Offset"}
+    {:label (tr "workspace.tokens.shadow-y")
+     :placeholder (tr "workspace.tokens.shadow-y")}
     :blur
-    {:label "blur"
-     :placeholder "blur"}
+    {:label (tr "workspace.tokens.shadow-blur")
+     :placeholder (tr "workspace.tokens.shadow-blur")}
     :spread
-    {:label "spread"
-     :placeholder "spread"}
+    {:label (tr "workspace.tokens.shadow-spread")
+     :placeholder (tr "workspace.tokens.shadow-spread")}
     :color
-    {:label "color"
-     :placeholder "color"}
+    {:label (tr "workspace.tokens.shadow-color")
+     :placeholder (tr "workspace.tokens.shadow-color")}
     :inset
-    {:label "inset"
-     :placeholder "inset"
+    {:label (tr "workspace.tokens.shadow-inset")
+     :placeholder (tr "workspace.tokens.shadow-inset")
      :special-input :inset-select}))
 
 (mf/defc inset-type-select*
@@ -1041,15 +1040,13 @@
      [:> icon-button* {:icon i/add
                        :type "button"
                        :on-click on-add-shadow
-                       ;; TODO l10n
-                       :aria-label "Add shadow"}]
+                       :aria-label (tr "workspace.tokens.shadow-add-shadow")}]
      [:> icon-button* {:variant "ghost"
                        :type "button"
                        :icon i/remove
                        :on-click on-remove-shadow
                        :disabled is-remove-disabled
-                       ;; TODO l10n
-                       :aria-label "Remove shadow"}]
+                       :aria-label (tr "workspace.tokens.shadow-remove-shadow")}]
      (for [[input-type {:keys [label placeholder special-input]}] (shadow-inputs)]
        [:> shadow-input*
         {:key (str input-type shadow-idx)
@@ -1141,7 +1138,7 @@
                              :composite-tab shadow-value-inputs*
                              :reference-icon i/text-typography
                              :is-reference-fn cto/typography-composite-token-reference?
-                             :title "Shadows"
+                             :title (tr "workspace.tokens.shadow-title")
                              :validate-token validate-shadow-token
                              :on-get-token-value on-get-token-value
                              :update-composite-backup-value update-composite-backup-value})]))

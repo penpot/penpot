@@ -1,3 +1,50 @@
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1135
+msgid "workspace.tokens.shadow-title"
+msgstr "Shadows"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:943
+msgid "workspace.tokens.shadow-x"
+msgstr "X"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:946
+msgid "workspace.tokens.shadow-y"
+msgstr "Y"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:949
+msgid "workspace.tokens.shadow-blur"
+msgstr "Blur"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:952
+msgid "workspace.tokens.shadow-spread"
+msgstr "Spread"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:955
+msgid "workspace.tokens.shadow-color"
+msgstr "Color"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:958
+msgid "workspace.tokens.shadow-inset"
+msgstr "Inset"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:109
+msgid "workspace.tokens.shadow-spread-range"
+msgstr "Shadow spread must be greater than or equal to 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:105
+msgid "workspace.tokens.shadow-blur-range"
+msgstr "Shadow blur must be greater than or equal to 0."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:101
+msgid "workspace.tokens.invalid-shadow-type-token-value"
+msgstr "Invalid shadow type: only 'innerShadow' or 'dropShadow' are accepted"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1037
+msgid "workspace.tokens.shadow-add-shadow"
+msgstr "Add Shadow"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1044
+msgid "workspace.tokens.shadow-remove-shadow"
+msgstr "Remove Shadow"
 msgid ""
 msgstr ""
 "PO-Revision-Date: 2025-06-09 09:13+0000\n"
