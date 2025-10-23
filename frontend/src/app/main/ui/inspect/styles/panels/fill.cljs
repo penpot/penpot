@@ -43,26 +43,28 @@
      [:div {:key (:id shape) :class "fill-shape"}
       (let [shorthand
             ;; A background-image shorthand for all fills in the shape
-            (reduce
-             (fn [acc fill]
-               (let [color-type (types.fills/fill->color fill)
-                     color-value (:color color-type)
-                     color-gradient (:gradient color-type)
-                     gradient-data  {:type color-type
-                                     :stops (:stops color-gradient)}
-                     color-image (:image color-type)
-                     image-url (cfg/resolve-file-media color-image)
-                     value (cond
-                             (:color color-type) (dm/str color-value)
-                             color-gradient (uc/gradient->css gradient-data)
-                             color-image (str "url(\"" image-url "\")")
-                             :else "")]
-                 (if (empty? acc)
-                   value
-                   (str acc ", " value))))
-             ""
-             (:fills shape))
-            shorthand (str "background-image: " shorthand ";")]
+            (when (= (count shapes) 1)
+              (reduce
+               (fn [acc fill]
+                 (let [color-type (types.fills/fill->color fill)
+                       color-value (:color color-type)
+                       color-gradient (:gradient color-type)
+                       gradient-data  {:type color-type
+                                       :stops (:stops color-gradient)}
+                       color-image (:image color-type)
+                       image-url (cfg/resolve-file-media color-image)
+                       value (cond
+                               (:color color-type) (dm/str color-value)
+                               color-gradient (uc/gradient->css gradient-data)
+                               color-image (str "url(\"" image-url "\")")
+                               :else "")]
+                   (if (empty? acc)
+                     value
+                     (str acc ", " value))))
+               ""
+               (:fills shape)))
+            shorthand (when shorthand
+                        (str "background-image: " shorthand ";"))]
         (mf/use-effect
          (fn []
            (when on-fill-shorthand

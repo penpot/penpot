@@ -30,8 +30,7 @@
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
-   [rumext.v2 :as mf]
-   [cljs.pprint :as pp]))
+   [rumext.v2 :as mf]))
 
 (def layout-element-properties
   [:margin-block-start
@@ -126,7 +125,7 @@
                                    :variant nil
                                    :grid-element nil})
         shorthands (deref shorthands*)
-        _ (pp/pprint shorthands)
+        _ (.log js/console shorthands)
         set-shorthands
         ;; This fn must receive an object `shorthand` with :panel and :property (the shorthand string) keys
         (mf/use-fn
@@ -232,11 +231,13 @@
           :text
           (let [shapes (filter has-text? shapes)]
             (when (seq shapes)
-              [:> style-box* {:panel :text}
+              [:> style-box* {:panel :text
+                              :shorthand (:text shorthands)}
                [:> text-panel* {:shapes shapes
                                 :color-space color-space
-                                :objects objects
-                                :resolved-tokens resolved-active-tokens}]]))
+                                :resolved-tokens resolved-active-tokens
+                                :on-font-shorthand set-shorthands}]]))
+
           ;; SHADOW PANEL
           :shadow
           (let [shapes (filter has-shadow? shapes)]
@@ -244,6 +245,7 @@
               [:> style-box* {:panel :shadow}
                [:> shadow-panel* {:shapes shapes
                                   :color-space color-space}]]))
+
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))

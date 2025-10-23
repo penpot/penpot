@@ -7,6 +7,7 @@
 (ns app.main.ui.inspect.styles.panels.text
   (:require-macros [app.main.style :as stl])
   (:require
+   [app.common.data.macros :as dm]
    [app.common.types.fills :as types.fills]
    [app.common.types.text :as txt]
    [app.main.fonts :as fonts]
@@ -18,6 +19,7 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
+   [me.flowthing.pp :as pp]
    [rumext.v2 :as mf]))
 
 (defn- get-applied-tokens-in-shape
@@ -59,11 +61,29 @@
                                :copiable true}]))
 
 (mf/defc text-panel*
-  [{:keys [shapes _ resolved-tokens color-space]}]
+  [{:keys [shapes resolved-tokens color-space on-font-shorthand]}]
   [:div {:class (stl/css :text-panel)}
    (for [shape shapes]
      (let [style-text-blocks (get-style-text shape)
-           composite-typography-token (get-resolved-token :typography shape resolved-tokens)]
+           composite-typography-token (get-resolved-token :typography shape resolved-tokens)
+           shorthand
+
+           (when (= (count shapes) 1)
+             (reduce
+              (fn [acc [style _]]
+                (let [font-style (:font-style style)
+                      font-family (dm/str (:font-family style))
+                      font-size (:font-size style)
+                      font-weight (:font-weight style)
+                      line-height (:line-height style)
+                      text-transform (:text-transform style)]
+                  (dm/str acc "font:" font-style " " text-transform " " font-weight " " font-size "/" line-height " "  \"  font-family  \" ";")))
+              ""
+              style-text-blocks))]
+       (mf/use-effect
+        (fn []
+          (on-font-shorthand {:panel :text
+                              :property shorthand})))
 
        [:div {:key (:id shape) :class "text-shape"}
         (for [[style text] style-text-blocks]
