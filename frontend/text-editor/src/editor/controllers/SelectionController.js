@@ -1047,6 +1047,17 @@ export class SelectionController extends EventTarget {
     return isParagraphEnd(this.focusNode, this.focusOffset);
   }
 
+  #getFragmentInlineTextNode(fragment) {
+    if (isInline(fragment.firstElementChild.lastChild)) {
+      return fragment.firstElementChild.firstElementChild.lastChild;
+    }
+    return fragment.firstElementChild.lastChild;
+  }
+
+  #getFragmentParagraphTextNode(fragment) {
+    return fragment.lastElementChild.lastElementChild.lastChild;
+  }
+
   /**
    * Insert pasted fragment.
    *
@@ -1071,7 +1082,7 @@ export class SelectionController extends EventTarget {
       }
       return this.collapse(collapseNode, collapseNode.nodeValue.length);
     }
-    const collapseNode = fragment.lastElementChild.lastElementChild.firstChild;
+    const collapseNode = this.#getFragmentParagraphTextNode(fragment);
     if (this.isParagraphStart) {
       const a = fragment.lastElementChild;
       const b = this.focusParagraph;
@@ -1089,6 +1100,9 @@ export class SelectionController extends EventTarget {
         this.focusOffset,
       );
       this.focusParagraph.after(fragment, newParagraph);
+    }
+    if (isLineBreak(collapseNode)) {
+      return this.collapse(collapseNode, 0);
     }
     return this.collapse(collapseNode, collapseNode.nodeValue.length);
   }
