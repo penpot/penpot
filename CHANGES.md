@@ -69,6 +69,7 @@
 - Fix scrollbar issue in design tab [Taiga #12367](https://tree.taiga.io/project/penpot/issue/12367)
 - Fix library update notificacions showing when they should not [Taiga #12397](https://tree.taiga.io/project/penpot/issue/12397)
 - Fix remove flex button doesn’t work within variant [Taiga #12314](https://tree.taiga.io/project/penpot/issue/12314)
+- Fix an error translation [Taiga #12402](https://tree.taiga.io/project/penpot/issue/12402)
 
 ## 2.10.1
 

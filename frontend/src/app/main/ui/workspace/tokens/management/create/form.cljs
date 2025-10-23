@@ -75,16 +75,16 @@
         (m/-simple-schema
          {:type :token/name-exists
           :pred #(not (cft/token-name-path-exists? % tokens-tree))
-          :type-properties {:error/fn #(str "A token already exists at the path: " (:value %))}})]
+          :type-properties {:error/fn #(tr "workspace.tokens.token-name-duplication-validation-error" (:value %))}})]
     (m/schema
      [:and
-      [:string {:min 1 :max 255}]
+      [:string {:min 1 :max 255 :error/fn #(str (:value %) (tr "workspace.tokens.token-name-length-validation-error"))}]
       valid-token-name-schema
       path-exists-schema])))
 
 (def token-description-schema
   (m/schema
-   [:string {:max 2048}]))
+   [:string {:max 2048 :error/fn #(tr "errors.field-max-length" 2048)}]))
 
 ;; Helpers ---------------------------------------------------------------------
 
