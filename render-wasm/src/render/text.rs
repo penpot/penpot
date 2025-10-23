@@ -52,8 +52,12 @@ pub fn stroke_paragraph_builder_group_from_text(
                 });
                 let stroke_paint = stroke_paint.clone();
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
-                let stroke_style =
-                    span.to_stroke_style(&stroke_paint, fallback_fonts, remove_alpha);
+                let stroke_style = span.to_stroke_style(
+                    &stroke_paint,
+                    fallback_fonts,
+                    remove_alpha,
+                    paragraph.line_height(),
+                );
                 builder.push_style(&stroke_style);
                 builder.add_text(&text);
             }
@@ -214,7 +218,8 @@ fn draw_text(
 
     let layer_rec = SaveLayerRec::default();
     canvas.save_layer(&layer_rec);
-    for paragraph_builder_group in paragraph_builder_groups.iter_mut() {
+
+    for paragraph_builder_group in paragraph_builder_groups {
         let mut group_offset_y = global_offset_y;
         let total_paragraphs = paragraph_builder_group.len();
 

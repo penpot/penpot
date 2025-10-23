@@ -239,6 +239,7 @@ export function isTextSpanEnd(node, offset) {
  * @param {number} offset
  */
 export function splitTextSpan(textSpan, offset) {
+  if (!textSpan) return false;
   const textNode = textSpan.firstChild;
   const style = textSpan.style;
   const newTextNode = textNode.splitText(offset);
