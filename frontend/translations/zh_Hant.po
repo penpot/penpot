@@ -1120,11 +1120,6 @@ msgstr "你正開啟的檔案包含Penpot尚未支援或停用'%s' 功能。"
 msgid "errors.feature-not-supported"
 msgstr "不支援 「%s」功能。"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
-msgid "errors.field-max-length"
-msgstr "最多可包含 1 個字元。"
-
 #, unused
 msgid "errors.field-min-length"
 msgstr "至少須含 1 個字元。"

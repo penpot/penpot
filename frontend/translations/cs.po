@@ -1170,11 +1170,6 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Funkce '%s' není podporována."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
-msgid "errors.field-max-length"
-msgstr "Musí obsahovat maximálně 1 znak."
-
 #, unused
 msgid "errors.field-min-length"
 msgstr "Musí obsahovat alespoň 1 znak."

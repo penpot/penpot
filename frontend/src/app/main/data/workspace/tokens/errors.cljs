@@ -23,7 +23,7 @@
     :error/fn #(tr "workspace.tokens.invalid-json")}
 
    :error.import/invalid-token-name
-   {:error/code :error.import/invalid-json-data
+   {:error/code :error.import/invalid-token-name
     :error/fn #(tr "workspace.tokens.invalid-json-token-name")
     :error/detail #(tr "workspace.tokens.invalid-json-token-name-detail" %)}
 
