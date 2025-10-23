@@ -211,3 +211,20 @@ test("Renders a file with a closed path shape with multiple segments using strok
 
   await expect(workspace.canvas).toHaveScreenshot();
 });
+
+
+test("Renders a file with paths and svg attrs", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-svg-attrs.json");
+
+  await workspace.goToWorkspace({
+    id: "4732f3e3-7a1a-807e-8006-ff76066e631d",
+    pageId: "4732f3e3-7a1a-807e-8006-ff76066e631e",
+  });
+  await workspace.waitForFirstRender();
+
+  await expect(workspace.canvas).toHaveScreenshot();
+});

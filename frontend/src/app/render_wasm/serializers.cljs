@@ -63,6 +63,24 @@
         default (unchecked-get values "rect")]
     (d/nilv (unchecked-get values (d/name type)) default)))
 
+(defn translate-stroke-linecap
+  [stroke-linecap]
+  (let [values (unchecked-get wasm/serializers "stroke-linecap")
+        default (unchecked-get values "butt")]
+    (d/nilv (unchecked-get values (d/name stroke-linecap)) default)))
+
+(defn translate-stroke-linejoin
+  [stroke-linejoin]
+  (let [values (unchecked-get wasm/serializers "stroke-linejoin")
+        default (unchecked-get values "miter")]
+    (d/nilv (unchecked-get values (d/name stroke-linejoin)) default)))
+
+(defn translate-fill-rule
+  [fill-rule]
+  (let [values (unchecked-get wasm/serializers "fill-rule")
+        default (unchecked-get values "nonzero")]
+    (d/nilv (unchecked-get values (d/name fill-rule)) default)))
+
 (defn translate-stroke-style
   [stroke-style]
   (let [values (unchecked-get wasm/serializers "stroke-style")

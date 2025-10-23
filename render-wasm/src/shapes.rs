@@ -21,6 +21,7 @@ mod rects;
 mod shadows;
 mod shape_to_path;
 mod strokes;
+mod svg_attrs;
 mod svgraw;
 mod text;
 pub mod text_paths;
@@ -41,6 +42,7 @@ pub use rects::*;
 pub use shadows::*;
 pub use shape_to_path::*;
 pub use strokes::*;
+pub use svg_attrs::*;
 pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
@@ -174,7 +176,7 @@ pub struct Shape {
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
-    pub svg_attrs: HashMap<String, String>,
+    pub svg_attrs: SvgAttrs,
     pub shadows: Vec<Shadow>,
     pub layout_item: Option<LayoutItem>,
     pub extrect: OnceCell<math::Rect>,
@@ -201,7 +203,7 @@ impl Shape {
             hidden: false,
             blur: None,
             svg: None,
-            svg_attrs: HashMap::new(),
+            svg_attrs: SvgAttrs::default(),
             shadows: Vec::with_capacity(1),
             layout_item: None,
             extrect: OnceCell::new(),
@@ -566,15 +568,6 @@ impl Shape {
         };
     }
 
-    pub fn set_path_attr(&mut self, name: String, value: String) {
-        match self.shape_type {
-            Type::Path(_) | Type::Bool(_) => {
-                self.set_svg_attr(name, value);
-            }
-            _ => unreachable!("This shape should have path attrs"),
-        };
-    }
-
     pub fn set_svg_raw_content(&mut self, content: String) -> Result<(), String> {
         self.shape_type = Type::SVGRaw(SVGRaw::from_content(content));
         Ok(())
@@ -605,10 +598,6 @@ impl Shape {
 
     pub fn set_svg(&mut self, svg: skia::svg::Dom) {
         self.svg = Some(svg);
-    }
-
-    pub fn set_svg_attr(&mut self, name: String, value: String) {
-        self.svg_attrs.insert(name, value);
     }
 
     pub fn blend_mode(&self) -> BlendMode {
@@ -1104,7 +1093,7 @@ impl Shape {
             if let Some(path_transform) = self.to_path_transform() {
                 skia_path.transform(&path_transform);
             }
-            if let Some("evenodd") = self.svg_attrs.get("fill-rule").map(String::as_str) {
+            if self.svg_attrs.fill_rule == FillRule::Evenodd {
                 skia_path.set_fill_type(skia::PathFillType::EvenOdd);
             }
             Some(skia_path)

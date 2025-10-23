@@ -764,14 +764,9 @@ impl RenderState {
                     &shape
                 };
 
-                let has_fill_none = matches!(
-                    shape.svg_attrs.get("fill").map(String::as_str),
-                    Some("none")
-                );
-
                 if shape.fills.is_empty()
                     && !matches!(shape.shape_type, Type::Group(_))
-                    && !has_fill_none
+                    && !shape.svg_attrs.fill_none
                 {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();

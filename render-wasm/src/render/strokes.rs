@@ -1,8 +1,8 @@
-use std::collections::HashMap;
-
 use crate::math::{Matrix, Point, Rect};
 
-use crate::shapes::{Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, Type};
+use crate::shapes::{
+    Corners, Fill, ImageFill, Path, Shape, Stroke, StrokeCap, StrokeKind, SvgAttrs, Type,
+};
 use skia_safe::{self as skia, ImageFilter, RRect};
 
 use super::{RenderState, SurfaceId};
@@ -17,7 +17,7 @@ fn draw_stroke_on_rect(
     rect: &Rect,
     selrect: &Rect,
     corners: &Option<Corners>,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: &SvgAttrs,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -53,7 +53,7 @@ fn draw_stroke_on_circle(
     stroke: &Stroke,
     rect: &Rect,
     selrect: &Rect,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: &SvgAttrs,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -130,7 +130,7 @@ pub fn draw_stroke_on_path(
     path: &Path,
     selrect: &Rect,
     path_transform: Option<&Matrix>,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: &SvgAttrs,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -217,7 +217,7 @@ fn handle_stroke_caps(
     selrect: &Rect,
     canvas: &skia::Canvas,
     is_open: bool,
-    svg_attrs: &HashMap<String, String>,
+    svg_attrs: &SvgAttrs,
     scale: f32,
     blur: Option<&ImageFilter>,
     antialias: bool,
