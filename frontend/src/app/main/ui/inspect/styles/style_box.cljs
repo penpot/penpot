@@ -47,9 +47,9 @@
          (fn []
            (reset! expanded* (not expanded))))
 
-        _ (pp/pprint "style-box*")
-        _ (pp/pprint panel)
-        _ (pp/pprint shorthand)
+        ;; _ (pp/pprint "style-box*")
+        ;; _ (pp/pprint panel)
+        ;; _ (pp/pprint shorthand)
 
         copy-shorthand
         (mf/use-fn

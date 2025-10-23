@@ -150,10 +150,12 @@
                                 :data data}]]
         ;;  GEOMETRY PANEL
           :geometry
-          [:> style-box* {:panel :geometry}
+          [:> style-box* {:panel :geometry
+                          :shorthand (:geometry shorthands)}
            [:> geometry-panel* {:shapes shapes
                                 :objects objects
-                                :resolved-tokens resolved-active-tokens}]]
+                                :resolved-tokens resolved-active-tokens
+                                :on-geometry-shorthand set-shorthands}]]
          ;;  LAYOUT PANEL
           :layout
           (let [layout-shapes (->> shapes (filter ctl/any-layout?))]

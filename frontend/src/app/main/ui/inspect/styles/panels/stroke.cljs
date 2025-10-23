@@ -9,24 +9,17 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.types.color :as ctc]
    [app.config :as cfg]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
    [app.util.color :as uc]
-   [rumext.v2 :as mf]
-   [cljs.pprint :as pp]))
+   [cljs.pprint :as pp]
+   [rumext.v2 :as mf]))
 
 (def ^:private properties [:border-color :border-style :border-width])
-
-(defn- stroke->color [shape]
-  {:color (:stroke-color shape)
-   :opacity (:stroke-opacity shape)
-   :gradient (:stroke-color-gradient shape)
-   :id (:stroke-color-ref-id shape)
-   :file-id (:stroke-color-ref-file shape)
-   :image (:stroke-image shape)})
 
 (def ^:private shape-prop->stroke-prop
   {:border-style :stroke-style
@@ -70,7 +63,7 @@
             (when (= (count shapes) 1)
               (reduce
                (fn [acc stroke]
-                 (let [stroke-type (stroke->color stroke)
+                 (let [stroke-type (ctc/stroke->color stroke)
                        stroke-width (:stroke-width stroke)
                        stroke-style (:stroke-style stroke)
                        color-value (:color stroke-type)
@@ -97,7 +90,7 @@
         (for [[idx stroke] (map-indexed vector (:strokes shape))]
           (for [property properties]
             (let [value (css/get-css-value objects stroke property)
-                  stroke-type (stroke->color stroke)
+                  stroke-type (ctc/stroke->color stroke)
                   property-name (cmm/get-css-rule-humanized property)
                   property-value (css/get-css-property objects stroke property)
                   resolved-token (when (is-first-element? idx) (get-resolved-token property shape resolved-tokens))

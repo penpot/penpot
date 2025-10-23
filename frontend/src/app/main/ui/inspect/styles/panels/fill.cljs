@@ -13,7 +13,6 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.util.color :as uc]
-   [cljs.pprint :as pp]
    [rumext.v2 :as mf]))
 
 (defn- get-applied-tokens-in-shape

@@ -11,7 +11,8 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cljs.pprint :as pp]))
 
 (def ^:private properties
   [:width
@@ -45,11 +46,24 @@
     token))
 
 (mf/defc geometry-panel*
-  [{:keys [shapes objects resolved-tokens]}]
+  [{:keys [shapes objects resolved-tokens on-geometry-shorthand]}]
   [:div {:class (stl/css :geometry-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class "geometry-shape"}
-      (for [property properties]
+      (let [has-border-radius? (some #(and (contains? shape %) (not= 0 (get shape %))) [:r1 :r2 :r3 :r4])
+            shorthand (when (and (= (count shapes) 1) has-border-radius?)
+                        (dm/str "border-radius: "
+                                (:r1 shape) "px "
+                                (:r2 shape) "px "
+                                (:r3 shape) "px "
+                                (:r4 shape) "px;"))
+            ]
+        (mf/use-effect
+         (fn []
+           (when on-geometry-shorthand
+             (on-geometry-shorthand {:panel :geometry
+                                     :property shorthand}))))
+       (for [property properties]
         (when-let [value (css/get-css-value objects shape property)]
           (let [property-name (cmm/get-css-rule-humanized property)
                 resolved-token (get-resolved-token property shape resolved-tokens)
@@ -59,4 +73,4 @@
                                  :detail value
                                  :token resolved-token
                                  :property property-value
-                                 :copiable true}])))])])
+                                 :copiable true}]))))])])
