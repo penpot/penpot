@@ -33,7 +33,13 @@
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! show-data* not)))]
+           (swap! show-data* not)))
+
+        handle-navigation
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (rt/nav-raw :href bottom-button-href))))]
 
     [:div {:class (stl/css :cta-power-up)
            :on-click handle-click}
@@ -57,7 +63,7 @@
         [:> button* {:variant "primary"
                      :type "button"
                      :class (stl/css :cta-bottom-button)
-                     :on-click bottom-button-href} bottom-button]])]))
+                     :on-click handle-navigation} bottom-button]])]))
 
 (mf/defc subscription-sidebar*
   [{:keys [profile]}]

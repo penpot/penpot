@@ -12,6 +12,7 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
@@ -32,14 +33,18 @@
            cta-text-with-icon
            cta-link-with-icon
            editors
-           recommended]}]
-  [:div {:class (stl/css :plan-card)}
+           recommended
+           has-trial-cta]}]
+  [:div {:class (stl/css-case :plan-card true
+                              :plan-card-highlight recommended)}
    [:div {:class (stl/css :plan-card-header)}
     [:div {:class (stl/css :plan-card-title-container)}
      (when card-title-icon [:span {:class (stl/css :plan-title-icon)} card-title-icon])
      [:h4 {:class (stl/css :plan-card-title)}  card-title]
      (when recommended
-       [:& badge-notification {:class (stl/css :plan-recommended) :content (tr "subscription.settings.recommended") :size :small}])
+       [:& badge-notification {:content (tr "subscription.settings.recommended")
+                               :size :small
+                               :is-focus true}])
      (when editors [:span {:class (stl/css :plan-editors)} (tr "subscription.settings.editors" editors)])]
     (when (and price-value price-period)
       [:div {:class (stl/css :plan-price)}
@@ -51,9 +56,13 @@
       [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
    (when (and cta-link-with-icon cta-text-with-icon) [:button {:class (stl/css :cta-button :more-info)
                                                                :on-click cta-link-with-icon} cta-text-with-icon deprecated-icon/open-link])
-   (when (and cta-link cta-text) [:button {:class (stl/css-case :cta-button true
+   (when (and cta-link cta-text (not has-trial-cta)) [:button {:class (stl/css-case :cta-button true
                                                                 :bottom-link (not (and cta-link-trial cta-text-trial)))
                                            :on-click cta-link} cta-text])
+   (when (and cta-link cta-text has-trial-cta) [:> button* {:variant "primary"
+                                                       :type "button"
+                                                       :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
+                                                       :on-click cta-link} cta-text])
    (when (and cta-link-trial cta-text-trial) [:button {:class (stl/css :cta-button :bottom-link)
                                                        :on-click cta-link-trial} cta-text-trial])])
 (defn schema:seats-form [min-editors]
@@ -66,7 +75,8 @@
    ::mf/register-as :management-dialog}
   [{:keys [subscription-type current-subscription editors subscribe-to-trial]}]
 
-  (let [subscription-name (if subscribe-to-trial
+  (let [unlimited-modal-step* (mf/use-state 1)
+        subscription-name (if subscribe-to-trial
                             (if (= subscription-type "unlimited")
                               (tr "subscription.settings.unlimited-trial")
                               (tr "subscription.settings.enterprise-trial"))
@@ -115,6 +125,12 @@
                                     (fn []
                                       (st/emit! (ptk/event ::ev/event {::ev/name "close-subscription-modal"}))
                                       (modal/hide!)))
+        
+        handle-unlimited-modal-step (mf/use-fn
+                                    (fn []
+                                      (if (= @unlimited-modal-step* 1)
+                                        (reset! unlimited-modal-step* 2)
+                                        (reset! unlimited-modal-step* 1))))
 
         show-editors-list*         (mf/use-state false)
         show-editors-list          (deref show-editors-list*)
@@ -157,47 +173,56 @@
          [:& fm/form {:on-submit subscribe-to-unlimited
                       :class (stl/css :seats-form)
                       :form form}
+(println @unlimited-modal-step*)
+          (when (= @unlimited-modal-step* 1) [:div {:class (stl/css :editors-wrapper)}
+                                            [:div {:class (stl/css :fields-row)}
+                                             [:& fm/input {:type "number"
+                                                           :name :min-members
+                                                           :show-error false
+                                                           :label ""
+                                                           :class (stl/css :input-field)}]]
+                                            [:div {:class (stl/css :editors-cost)}
+                                             [:span {:class (stl/css :modal-text-medium)}
+                                              (when (> (get-in @form [:clean-data :min-members]) 25)
+                                                [:> i18n/tr-html*
+                                                 {:class (stl/css :modal-text-cap)
+                                                  :tag-name "span"
+                                                  :content (tr "subscription.settings.management.dialog.price-month" "175")}])
+                                              [:> i18n/tr-html*
+                                               {:class (stl/css-case :text-strikethrough (> (get-in @form [:clean-data :min-members]) 25))
+                                                :tag-name "span"
+                                                :content (tr "subscription.settings.management.dialog.price-month"
+                                                             (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
+                                             [:span {:class (stl/css :modal-text-medium)}
+                                              (tr "subscription.settings.management.dialog.payment-explanation")]]]
 
-          [:div {:class (stl/css :editors-wrapper)}
-           [:div {:class (stl/css :fields-row)}
-            [:& fm/input {:type "number"
-                          :name :min-members
-                          :show-error false
-                          :label ""
-                          :class (stl/css :input-field)}]]
-           [:div {:class (stl/css :editors-cost)}
-            [:span {:class (stl/css :modal-text-medium)}
-             (when (> (get-in @form [:clean-data :min-members]) 25)
-               [:> i18n/tr-html*
-                {:class (stl/css :modal-text-cap)
-                 :tag-name "span"
-                 :content (tr "subscription.settings.management.dialog.price-month" "175")}])
-             [:> i18n/tr-html*
-              {:class (stl/css-case :text-strikethrough (> (get-in @form [:clean-data :min-members]) 25))
-               :tag-name "span"
-               :content (tr "subscription.settings.management.dialog.price-month"
-                            (* 7 (or (get-in @form [:clean-data :min-members]) 0)))}]]
-            [:span {:class (stl/css :modal-text-medium)}
-             (tr "subscription.settings.management.dialog.payment-explanation")]]]
+                (when (get-in @form [:errors :min-members])
+                  [:div {:class (stl/css :error-message)}
+                   (tr "subscription.settings.management.dialog.input-error")])
 
-          (when (get-in @form [:errors :min-members])
-            [:div {:class (stl/css :error-message)}
-             (tr "subscription.settings.management.dialog.input-error")])
+                [:div {:class (stl/css :unlimited-capped-warning)}
+                 (tr "subscription.settings.management.dialog.unlimited-capped-warning")]
 
-          [:div {:class (stl/css :unlimited-capped-warning)}
-           (tr "subscription.settings.management.dialog.unlimited-capped-warning")]
+                [:div {:class (stl/css :modal-footer)}
+                 [:div {:class (stl/css :action-buttons)}
+                  [:input
+                   {:class (stl/css :cancel-button)
+                    :type "button"
+                    :value (tr "ds.confirm-cancel")
+                    :on-click handle-close-dialog}]
 
-          [:div {:class (stl/css :modal-footer)}
-           [:div {:class (stl/css :action-buttons)}
-            [:input
-             {:class (stl/css :cancel-button)
-              :type "button"
-              :value (tr "ds.confirm-cancel")
-              :on-click handle-close-dialog}]
+                  [:input
+                   {:class (stl/css :primary-button)
 
+                    :type "button"
+                    :value (tr "labels.continue")
+                    :on-click handle-unlimited-modal-step}]]])
+
+          (when (= @unlimited-modal-step* 2)
+            [:span "step 2"]
             [:> fm/submit-button*
-             {:label (if subscribe-to-trial (tr "subscription.settings.start-trial") (tr "labels.continue"))
-              :class (stl/css :primary-button)}]]]]
+             {:label (tr "labels.continue")
+              :class (stl/css :primary-button)}])]
 
          [:div {:class (stl/css :modal-footer)}
           [:div {:class (stl/css :action-buttons)}
@@ -448,7 +473,8 @@
                          :cta-link #(open-subscription-modal "unlimited" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
                          :cta-link-with-icon go-to-pricing-page
-                         :recommended (= subscription-type "professional")}])
+                         :recommended (= subscription-type "professional")
+                         :has-trial-cta (not (:type subscription))}])
 
        (when (not= subscription-type "enterprise")
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
@@ -462,4 +488,5 @@
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
-                         :cta-link-with-icon go-to-pricing-page}])]]]))
+                         :cta-link-with-icon go-to-pricing-page
+                         :has-trial-cta (not (:type subscription))}])]]]))
