@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+export SKIA_BINARIES_WASM_URL="https://github.com/penpot/skia-binaries/releases/download/0.89.1/skia-binaries-b98dbc3ef012d6f67535-wasm32-unknown-emscripten-gl-svg-textlayout-binary-cache-webp.tar.gz"
+export SKIA_BINARIES_LINUX_URL="https://github.com/penpot/skia-binaries/releases/download/0.89.1/skia-binaries-cab569e6478958ca0783-x86_64-unknown-linux-gnu-gl-svg-textlayout-binary-cache-webp.tar.gz"
