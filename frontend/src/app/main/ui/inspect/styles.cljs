@@ -30,7 +30,8 @@
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cljs.pprint :as pp]))
 
 (def layout-element-properties
   [:margin-block-start
@@ -125,7 +126,7 @@
                                    :variant nil
                                    :grid-element nil})
         shorthands (deref shorthands*)
-        _ (.log js/console shorthands)
+        _ (pp/pprint shorthands)
         set-shorthands
         ;; This fn must receive an object `shorthand` with :panel and :property (the shorthand string) keys
         (mf/use-fn
@@ -160,10 +161,12 @@
           :layout
           (let [layout-shapes (->> shapes (filter ctl/any-layout?))]
             (when (seq layout-shapes)
-              [:> style-box* {:panel :layout}
+              [:> style-box* {:panel :layout
+                              :shorthand (:layout shorthands)}
                [:> layout-panel* {:shapes layout-shapes
                                   :objects objects
-                                  :resolved-tokens resolved-active-tokens}]]))
+                                  :resolved-tokens resolved-active-tokens
+                                  :on-layout-shorthand set-shorthands}]]))
          ;;  LAYOUT ELEMENT PANEL
           :layout-element
           (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))

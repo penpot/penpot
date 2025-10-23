@@ -31,6 +31,10 @@
    :border-end-start-radius :r3
    :border-end-end-radius :r4})
 
+(defn- has-border-radius?
+  [shape]
+  (some #(and (contains? shape %) (not= 0 (get shape %))) [:r1 :r2 :r3 :r4]))
+
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]
   (let [border-prop (get shape-prop->border-radius-prop property)]
@@ -50,27 +54,21 @@
   [:div {:class (stl/css :geometry-panel)}
    (for [shape shapes]
      [:div {:key (:id shape) :class "geometry-shape"}
-      (let [has-border-radius? (some #(and (contains? shape %) (not= 0 (get shape %))) [:r1 :r2 :r3 :r4])
-            shorthand (when (and (= (count shapes) 1) has-border-radius?)
-                        (dm/str "border-radius: "
-                                (:r1 shape) "px "
-                                (:r2 shape) "px "
-                                (:r3 shape) "px "
-                                (:r4 shape) "px;"))
-            ]
+      (let [shorthand (when (and (= (count shapes) 1) (has-border-radius? shape))
+                        (css/get-css-property objects shape :border-radius))]
         (mf/use-effect
          (fn []
            (when on-geometry-shorthand
              (on-geometry-shorthand {:panel :geometry
                                      :property shorthand}))))
-       (for [property properties]
-        (when-let [value (css/get-css-value objects shape property)]
-          (let [property-name (cmm/get-css-rule-humanized property)
-                resolved-token (get-resolved-token property shape resolved-tokens)
-                property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
-            [:> properties-row* {:key (dm/str "geometry-property-" property)
-                                 :term property-name
-                                 :detail value
-                                 :token resolved-token
-                                 :property property-value
-                                 :copiable true}]))))])])
+        (for [property properties]
+          (when-let [value (css/get-css-value objects shape property)]
+            (let [property-name (cmm/get-css-rule-humanized property)
+                  resolved-token (get-resolved-token property shape resolved-tokens)
+                  property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
+              [:> properties-row* {:key (dm/str "geometry-property-" property)
+                                   :term property-name
+                                   :detail value
+                                   :token resolved-token
+                                   :property property-value
+                                   :copiable true}]))))])])

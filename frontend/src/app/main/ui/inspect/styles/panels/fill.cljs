@@ -13,7 +13,8 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.util.color :as uc]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cljs.pprint :as pp]))
 
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]
@@ -45,25 +46,27 @@
             (when (= (count shapes) 1)
               (reduce
                (fn [acc fill]
-                 (let [color-type (types.fills/fill->color fill)
+                 (let [_ (pp/pprint "acc")
+                       _ (pp/pprint acc)
+                       color-type (types.fills/fill->color fill)
                        color-value (:color color-type)
                        color-gradient (:gradient color-type)
                        gradient-data  {:type color-type
                                        :stops (:stops color-gradient)}
                        color-image (:image color-type)
                        image-url (cfg/resolve-file-media color-image)
+                       prefix (if color-value "background-color: " "background-image: ")
                        value (cond
                                (:color color-type) (dm/str color-value)
                                color-gradient (uc/gradient->css gradient-data)
                                color-image (str "url(\"" image-url "\")")
-                               :else "")]
+                               :else "")
+                       full-value (str prefix value ";")]
                    (if (empty? acc)
-                     value
-                     (str acc ", " value))))
+                     full-value
+                     (str acc " " full-value))))
                ""
-               (:fills shape)))
-            shorthand (when shorthand
-                        (str "background-image: " shorthand ";"))]
+               (:fills shape)))]
         (mf/use-effect
          (fn []
            (when on-fill-shorthand
