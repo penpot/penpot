@@ -16,7 +16,7 @@ use std::collections::HashSet;
 
 use super::FontFamily;
 use crate::math::Point;
-use crate::shapes::{self, merge_fills, Shape};
+use crate::shapes::{self, merge_fills, Shape, VerticalAlign};
 use crate::utils::{get_fallback_fonts, get_font_collection};
 use crate::Uuid;
 
@@ -239,19 +239,31 @@ impl TextContent {
     }
 
     pub fn calculate_bounds(&self, shape: &Shape) -> Bounds {
-        let (x, y, transform, center) = (
+        let (x, mut y, transform, center) = (
             shape.selrect.x(),
             shape.selrect.y(),
             &shape.transform,
             &shape.center(),
         );
 
-        let width = shape.selrect.width();
+        let width = if self.grow_type() == GrowType::AutoWidth {
+            self.size.width
+        } else {
+            shape.selrect().width()
+        };
+
         let height = if self.size.width.round() != width.round() {
             self.get_height(width)
         } else {
             self.size.height
         };
+
+        let offset_y = match shape.vertical_align() {
+            VerticalAlign::Center => (shape.selrect().height() - height) / 2.0,
+            VerticalAlign::Bottom => shape.selrect().height() - height,
+            _ => 0.0,
+        };
+        y += offset_y;
 
         let text_rect = Rect::from_xywh(x, y, width, height);
         let mut bounds = Bounds::new(
@@ -435,7 +447,15 @@ impl TextContent {
         TextContentLayoutResult(paragraph_builders, paragraphs, size)
     }
 
-    fn get_height(&self, width: f32) -> f32 {
+    pub fn get_width(&self) -> f32 {
+        if self.grow_type() == GrowType::AutoWidth {
+            self.size.width
+        } else {
+            self.bounds.width()
+        }
+    }
+
+    pub fn get_height(&self, width: f32) -> f32 {
         let mut paragraph_builders = self.paragraph_builder_group_from_text(None);
         let paragraphs =
             self.build_paragraphs_from_paragraph_builders(&mut paragraph_builders, width);
