@@ -749,7 +749,7 @@
           l.version
      FROM libs AS l
     INNER JOIN project AS p ON (p.id = l.project_id)
-    WHERE l.deleted_at IS NULL OR l.deleted_at > now();")
+    WHERE l.deleted_at IS NULL;")
 
 (defn get-file-libraries
   [conn file-id]
