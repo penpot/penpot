@@ -1314,10 +1314,9 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Feature '%s' is not supported."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
 msgid "errors.field-max-length"
-msgstr "Must contain at most 1 characters."
+msgstr "Must contain at most %s characters."
 
 #, unused
 msgid "errors.field-min-length"
@@ -7920,6 +7919,14 @@ msgstr ""
 " is not a valid token name.\n"
 "Token names should only contain letters and digits separated by . "
 "characters and must not start with a $ sign."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "Name should be at least 1 character"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "A token already exists at the path: %s"
 
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
 #, unused

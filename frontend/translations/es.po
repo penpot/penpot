@@ -1320,10 +1320,9 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Caracteristica no soportada: '%s'."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
 msgid "errors.field-max-length"
-msgstr "Debe contener como máximo 1 caracter."
+msgstr "Debe contener como máximo %s caracteres."
 
 #, unused
 msgid "errors.field-min-length"
@@ -7780,10 +7779,25 @@ msgstr "Descripción"
 msgid "workspace.tokens.token-name"
 msgstr "Nombre"
 
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:69
+msgid "workspace.tokens.token-name-validation-error"
+msgstr ""
+" es un nombre de token no válido.\n"
+"Los nombres de token deben contener letras o dígitos separados por . "
+"y no deben empezar con el símbolo $."
+
 #: src/app/main/ui/workspace/tokens/style_dictionary.cljs:259
 #, unused
 msgid "workspace.tokens.token-not-resolved"
 msgstr "No se pudo resolver el token de referencia con el nombre: %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.token-name-duplication-validation-error"
+msgstr "Ya existe un token en la ruta: %s"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
+msgid "workspace.tokens.token-name-length-validation-error"
+msgstr "El nombre debería ser de al menos 1 caracter"
 
 #: src/app/main/ui/workspace/tokens/management/create/form.cljs:585
 msgid "workspace.tokens.token-value"
