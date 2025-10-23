@@ -1057,16 +1057,17 @@
          {:profile profile
           :on-show-comments handle-show-comments}])]
 
-     (case sub-menu
-       :help-learning
-       [:> help-learning-menu* {:on-close close-sub-menu :on-click on-click}]
+     (when show-profile-menu?
+       (case sub-menu
+         :help-learning
+         [:> help-learning-menu* {:on-close close-sub-menu :on-click on-click}]
 
-       :community-contributions
-       [:> community-contributions-menu* {:on-close close-sub-menu}]
+         :community-contributions
+         [:> community-contributions-menu* {:on-close close-sub-menu}]
 
-       :about-penpot
-       [:> about-penpot-menu* {:on-close close-sub-menu}]
-       nil)]))
+         :about-penpot
+         [:> about-penpot-menu* {:on-close close-sub-menu}]
+         nil))]))
 
 (mf/defc sidebar*
   {::mf/props :obj
