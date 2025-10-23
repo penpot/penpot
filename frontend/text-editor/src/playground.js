@@ -68,7 +68,7 @@ class TextEditorPlayground {
         "font-style": "normal",
         "line-height": "1.2",
         "letter-spacing": "0",
-        "direction": "ltr",
+        direction: "ltr",
         "text-align": "left",
         "text-transform": "none",
         "text-decoration": "none",
@@ -111,6 +111,7 @@ class TextEditorPlayground {
   #onWheel = (e) => {
     e.preventDefault();
     const textShape = this.#shapes.get("text");
+
     if (!textShape) {
       console.warn("Text shape not found");
       return;
@@ -154,6 +155,13 @@ class TextEditorPlayground {
 
   #onClick = (e) => {
     console.log("click", e.type, e);
+    const textShape = this.#shapes.get("text");
+    if (!textShape) {
+      console.warn("Text shape not found");
+      return;
+    }
+
+    this.#module.call("use_shape", ...textShape.id);
     const caretPosition = this.#module.call(
       "get_caret_position_at",
       e.offsetX,
@@ -317,7 +325,7 @@ class TextEditorPlayground {
   #onShapePositionChange = (_e) => {
     const textShape = this.#shapes.get("text");
     if (!textShape) {
-      console.warn("Text shape not found")
+      console.warn("Text shape not found");
       return;
     }
     textShape.selrect.left = this.#ui.shapePositionXElement.valueAsNumber;
@@ -329,7 +337,10 @@ class TextEditorPlayground {
       textShape.selrect.right,
       textShape.selrect.bottom,
     );
-    this.#textEditor.updatePositionWithViewportAndShape(this.#viewport, textShape);
+    this.#textEditor.updatePositionWithViewportAndShape(
+      this.#viewport,
+      textShape,
+    );
     this.render();
   };
 
@@ -346,7 +357,7 @@ class TextEditorPlayground {
       textShape,
     );
     this.render();
-  }
+  };
 
   #setupUI() {
     const fontFamiliesFragment = document.createDocumentFragment();
@@ -360,15 +371,15 @@ class TextEditorPlayground {
 
     this.#ui.shapePositionXElement.addEventListener(
       "change",
-      this.#onShapePositionChange
+      this.#onShapePositionChange,
     );
     this.#ui.shapePositionYElement.addEventListener(
       "change",
-      this.#onShapePositionChange
+      this.#onShapePositionChange,
     );
     this.#ui.shapeRotationElement.addEventListener(
       "change",
-      this.#onShapeRotationChange
+      this.#onShapeRotationChange,
     );
 
     this.#ui.directionLTRElement.addEventListener(
@@ -405,10 +416,7 @@ class TextEditorPlayground {
       "change",
       this.#onFontWeightChange,
     );
-    this.#ui.fontSizeElement.addEventListener(
-      "change",
-      this.#onFontSizeChange
-    );
+    this.#ui.fontSizeElement.addEventListener("change", this.#onFontSizeChange);
     this.#ui.fontStyleElement.addEventListener(
       "change",
       this.#onFontStyleChange,
@@ -454,7 +462,7 @@ class TextEditorPlayground {
         // Number of text leaves in the paragraph.
         view.setUint32(0, paragraph.leaves.length, true);
 
-        console.log('lineHeight', paragraph.lineHeight);
+        console.log("lineHeight", paragraph.lineHeight);
 
         // Serialize paragraph attributes
         view.setUint8(4, paragraph.textAlign, true); // text-align: left
@@ -495,8 +503,7 @@ class TextEditorPlayground {
           view.setUint32(offset + 56, leaf.fills.length, true); // total fills count
 
           leaf.fills.forEach((fill, index) => {
-            const fillOffset =
-              offset + TextSpan.BYTE_LENGTH + index * Fill.BYTE_LENGTH;
+            const fillOffset = offset + 60 + index * Fill.BYTE_LENGTH;
             if (fill.type === Fill.Type.SOLID) {
               view.setUint8(fillOffset + 0, fill.type, true);
               view.setUint32(fillOffset + 4, fill.solid.color.argb32, true);
@@ -530,10 +537,11 @@ class TextEditorPlayground {
       id: UUID.ZERO,
       childrenIds: [textShape.id],
     });
-    this.#shapes.set("text", textShape);
     this.#shapes.set("root", rootShape);
-    this.#setShape(textShape);
     this.#setShape(rootShape);
+
+    this.#shapes.set("text", textShape);
+    this.#setShape(textShape);
   }
 
   #setupTextEditor() {
@@ -572,7 +580,7 @@ const module = await initWasmModule();
 const canvas = document.getElementById("canvas");
 
 const textEditorPlayground = new TextEditorPlayground(module, canvas, {
-  shouldUpdatePositionOnScroll: true
+  shouldUpdatePositionOnScroll: true,
 });
 await textEditorPlayground.setup();
 textEditorPlayground.render();
