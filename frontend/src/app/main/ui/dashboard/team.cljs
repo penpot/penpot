@@ -690,18 +690,18 @@
     [:div {:class (stl/css :table-row :table-row-invitations)}
      [:div {:class (stl/css :table-field :field-email)}
       [:div {:class (stl/css :input-wrapper)}
-       [:label {:for (str "email-" email)}
+       [:label
         [:span {:class (stl/css-case :input-checkbox true
                                      :global/checked (is-selected? email))}
          deprecated-icon/status-tick]
 
         [:input {:type "checkbox"
-                 :id (str "email-" email)
+                 :id (dm/str "email-" email)
                  :data-attr email
                  :value email
                  :checked (is-selected? email)
-                 :on-change on-change}]]]
-      email]
+                 :on-change on-change}]
+        email]]]
 
      [:div {:class (stl/css :table-field :field-roles)}
       [:> invitation-role-selector*
@@ -930,7 +930,7 @@
        [:*
         [:div {:class (stl/css :invitations-actions)}
          [:div
-          (str (count @selected) " invitations selected")]
+          (tr "team.invitations-selected" (i18n/c (count @selected)))]
          [:div
           [:> button* {:variant "secondary"
                        :type "button"

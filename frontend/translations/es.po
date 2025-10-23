@@ -780,6 +780,12 @@ msgstr "Reenviar invitaciones"
 msgid "dashboard.invite-profile"
 msgstr "Invitar a la gente"
 
+#: src/app/main/ui/dashboard/team.cljs:933
+msgid "team.invitations-selected"
+msgid_plural "team.invitations-selected"
+msgstr[0] "1 invitación seleccionada"
+msgstr[1] "%s invitaciones seleccionadas"
+
 #: src/app/main/ui/dashboard/sidebar.cljs:459, src/app/main/ui/dashboard/sidebar.cljs:466, src/app/main/ui/dashboard/sidebar.cljs:471, src/app/main/ui/dashboard/team.cljs:351
 msgid "dashboard.leave-team"
 msgstr "Abandonar equipo"
