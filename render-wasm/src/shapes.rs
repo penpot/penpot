@@ -3,7 +3,7 @@ use skia_safe::{self as skia};
 use crate::uuid::Uuid;
 use std::borrow::Cow;
 use std::cell::OnceCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::iter::once;
 
 mod blend;
@@ -196,11 +196,11 @@ pub struct Shape {
 // # Returns
 // A set of ancestor UUIDs in traversal order (closest ancestor first)
 pub fn all_with_ancestors(
-    shapes: &[&Uuid],
+    shapes: &[Uuid],
     shapes_pool: &ShapesPool,
     include_hidden: bool,
 ) -> IndexSet<Uuid> {
-    let mut pending = Vec::from(shapes);
+    let mut pending = Vec::from_iter(shapes.iter());
     let mut result = IndexSet::new();
 
     while !pending.is_empty() {
@@ -677,13 +677,8 @@ impl Shape {
         self.selrect.width()
     }
 
-    pub fn visually_insignificant(
-        &self,
-        scale: f32,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> bool {
-        let extrect = self.extrect(shapes_pool, modifiers);
+    pub fn visually_insignificant(&self, scale: f32, shapes_pool: &ShapesPool) -> bool {
+        let extrect = self.extrect(shapes_pool);
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
 
@@ -726,14 +721,10 @@ impl Shape {
         self.selrect
     }
 
-    pub fn extrect(
-        &self,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> math::Rect {
+    pub fn extrect(&self, shapes_pool: &ShapesPool) -> math::Rect {
         *self
             .extrect
-            .get_or_init(|| self.calculate_extrect(shapes_pool, modifiers))
+            .get_or_init(|| self.calculate_extrect(shapes_pool))
     }
 
     pub fn get_text_content(&self) -> &TextContent {
@@ -843,12 +834,7 @@ impl Shape {
         rect
     }
 
-    fn apply_children_bounds(
-        &self,
-        mut rect: math::Rect,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> math::Rect {
+    fn apply_children_bounds(&self, mut rect: math::Rect, shapes_pool: &ShapesPool) -> math::Rect {
         let include_children = match self.shape_type {
             Type::Group(_) => true,
             Type::Frame(_) => !self.clip_content,
@@ -858,15 +844,7 @@ impl Shape {
         if include_children {
             for child_id in self.children_ids(false) {
                 if let Some(child_shape) = shapes_pool.get(&child_id) {
-                    // Create a copy of the child shape to apply any transformations
-                    let mut transformed_element: Cow<Shape> = Cow::Borrowed(child_shape);
-                    if let Some(modifier) = modifiers.get(&child_id) {
-                        transformed_element.to_mut().apply_transform(modifier);
-                    }
-
-                    // Get the child's extended rectangle and join it with the container's rectangle
-                    let child_extrect = transformed_element.extrect(shapes_pool, modifiers);
-                    rect.join(child_extrect);
+                    rect.join(child_shape.extrect(shapes_pool));
                 }
             }
         }
@@ -874,12 +852,8 @@ impl Shape {
         rect
     }
 
-    pub fn calculate_extrect(
-        &self,
-        shapes_pool: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> math::Rect {
-        let shape = self.transformed(modifiers.get(&self.id));
+    pub fn calculate_extrect(&self, shapes_pool: &ShapesPool) -> math::Rect {
+        let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
         let mut rect = match &shape.shape_type {
@@ -902,7 +876,7 @@ impl Shape {
         rect = self.apply_stroke_bounds(rect, max_stroke);
         rect = self.apply_shadow_bounds(rect);
         rect = self.apply_blur_bounds(rect);
-        rect = self.apply_children_bounds(rect, shapes_pool, modifiers);
+        rect = self.apply_children_bounds(rect, shapes_pool);
 
         rect
     }

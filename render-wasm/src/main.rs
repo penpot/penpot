@@ -20,6 +20,7 @@ use mem::SerializableResult;
 use shapes::{StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
 use state::State;
+use std::collections::HashMap;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
@@ -595,11 +596,16 @@ pub extern "C" fn set_modifiers() {
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
+    let mut modifiers = HashMap::new();
+    let mut ids = Vec::<Uuid>::new();
+    for entry in entries {
+        modifiers.insert(entry.id, entry.transform);
+        ids.push(entry.id);
+    }
+
     with_state_mut!(state, {
-        for entry in entries {
-            state.modifiers.insert(entry.id, entry.transform);
-        }
-        state.rebuild_modifier_tiles();
+        state.set_modifiers(modifiers);
+        state.rebuild_modifier_tiles(ids);
     });
 }
 
