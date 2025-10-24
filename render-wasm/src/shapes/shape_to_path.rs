@@ -186,11 +186,10 @@ impl ToPath for Shape {
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) -> Path {
-        let shape = self.transformed(modifiers.get(&self.id));
-        match shape.shape_type {
+        match &self.shape_type {
             Type::Frame(ref frame) => {
-                let children = shape.modified_children_ids(structure.get(&shape.id), true);
-                let mut result = Path::new(rect_segments(&shape, frame.corners));
+                let children = self.modified_children_ids(structure.get(&self.id), true);
+                let mut result = Path::new(rect_segments(&self, frame.corners));
                 for id in children {
                     let Some(shape) = shapes.get(&id) else {
                         continue;
@@ -201,7 +200,7 @@ impl ToPath for Shape {
             }
 
             Type::Group(_) => {
-                let children = shape.modified_children_ids(structure.get(&shape.id), true);
+                let children = self.modified_children_ids(structure.get(&self.id), true);
                 let mut result = Path::default();
                 for id in children {
                     let Some(shape) = shapes.get(&id) else {
@@ -215,13 +214,13 @@ impl ToPath for Shape {
                 Path::new(segments)
             }
 
-            Type::Bool(bool_data) => bool_data.path,
+            Type::Bool(bool_data) => bool_data.path.clone(),
 
-            Type::Rect(ref rect) => Path::new(rect_segments(&shape, rect.corners)),
+            Type::Rect(ref rect) => Path::new(rect_segments(&self, rect.corners)),
 
-            Type::Path(path_data) => path_data,
+            Type::Path(path_data) => path_data.clone(),
 
-            Type::Circle => Path::new(circle_segments(&shape)),
+            Type::Circle => Path::new(circle_segments(&self)),
 
             Type::SVGRaw(_) => Path::default(),
 
@@ -232,7 +231,7 @@ impl ToPath for Shape {
                     result = join_paths(result, Path::from_skia_path(path));
                 }
 
-                Path::new(transform_segments(result.segments().clone(), &shape))
+                Path::new(transform_segments(result.segments().clone(), &self))
             }
         }
     }

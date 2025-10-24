@@ -18,7 +18,6 @@
    [app.main.data.helpers :as dsh]
    [app.main.features :as features]
    [app.main.worker :as mw]
-   [app.render-wasm.api :as wasm.api]
    [app.render-wasm.shape :as wasm.shape]
    [beicon.v2.core :as rx]
    [potok.v2.core :as ptk]))
@@ -113,15 +112,7 @@
                   (update-in state [:files file-id :data] apply-changes))]
 
             (let [objects (dm/get-in state [:files file-id :data :pages-index (:current-page-id state) :objects])]
-              (run!
-               (fn [[shape-id props]]
-                 (wasm.api/use-shape shape-id)
-                 (let [shape (get objects shape-id)]
-                   (run! (partial wasm.shape/set-shape-wasm-attr! shape) props)))
-               @shape-changes))
-
-            (wasm.api/update-shape-tiles)
-            (wasm.api/request-render "set-wasm-attrs")
+              (wasm.shape/process-shape-changes! objects @shape-changes))
 
             state)
 

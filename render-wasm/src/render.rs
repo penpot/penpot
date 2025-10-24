@@ -1141,13 +1141,8 @@ impl RenderState {
         self.get_rect_bounds(rect)
     }
 
-    pub fn get_shape_extrect_bounds(
-        &mut self,
-        shape: &Shape,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> Rect {
-        let rect = shape.extrect(tree, modifiers);
+    pub fn get_shape_extrect_bounds(&mut self, shape: &Shape, tree: &ShapesPool) -> Rect {
+        let rect = shape.extrect(tree);
         self.get_rect_bounds(rect)
     }
 
@@ -1285,7 +1280,7 @@ impl RenderState {
             // If the shape is not in the tile set, then we update
             // it.
             if self.tiles.get_tiles_of(node_id).is_none() {
-                self.update_tile_for(element, tree, modifiers);
+                self.update_tile_for(element, tree);
             }
 
             if visited_children {
@@ -1304,18 +1299,14 @@ impl RenderState {
                 let transformed_element: Cow<Shape> = Cow::Borrowed(element);
 
                 let is_visible = transformed_element
-                    .extrect(tree, modifiers)
+                    .extrect(tree)
                     .intersects(self.render_area)
                     && !transformed_element.hidden
-                    && !transformed_element.visually_insignificant(
-                        self.get_scale(),
-                        tree,
-                        modifiers,
-                    );
+                    && !transformed_element.visually_insignificant(self.get_scale(), tree);
 
                 if self.options.is_debug_visible() {
                     let shape_extrect_bounds =
-                        self.get_shape_extrect_bounds(&transformed_element, tree, modifiers);
+                        self.get_shape_extrect_bounds(&transformed_element, tree);
                     debug::render_debug_shape(self, None, Some(shape_extrect_bounds));
                 }
 
@@ -1664,23 +1655,14 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn get_tiles_for_shape(
-        &mut self,
-        shape: &Shape,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) -> TileRect {
+    pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: &ShapesPool) -> TileRect {
+        let extrect = shape.extrect(tree);
         let tile_size = tiles::get_tile_size(self.get_scale());
-        tiles::get_tiles_for_rect(shape.extrect(tree, modifiers), tile_size)
+        tiles::get_tiles_for_rect(extrect, tile_size)
     }
 
-    pub fn update_tile_for(
-        &mut self,
-        shape: &Shape,
-        tree: &ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
-        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree, modifiers);
+    pub fn update_tile_for(&mut self, shape: &Shape, tree: &ShapesPool) {
+        let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
         let old_tiles: HashSet<tiles::Tile> = self
             .tiles
             .get_tiles_of(shape.id)
@@ -1724,7 +1706,7 @@ impl RenderState {
                     if let Some(modifier) = modifiers.get(&shape_id) {
                         shape.to_mut().apply_transform(modifier);
                     }
-                    self.update_tile_for(&shape, tree, modifiers);
+                    self.update_tile_for(&shape, tree);
                 } else {
                     // We only need to rebuild tiles from the first level.
                     let children = shape.modified_children_ids(structure.get(&shape.id), false);
@@ -1754,7 +1736,7 @@ impl RenderState {
                     if let Some(modifier) = modifiers.get(&shape_id) {
                         shape.to_mut().apply_transform(modifier);
                     }
-                    self.update_tile_for(&shape, tree, modifiers);
+                    self.update_tile_for(&shape, tree);
                 }
 
                 let children = shape.modified_children_ids(structure.get(&shape.id), false);
@@ -1778,15 +1760,11 @@ impl RenderState {
         &mut self,
         shape_ids: &IndexSet<Uuid>,
         tree: &mut ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
     ) {
         for shape_id in shape_ids {
-            if let Some(shape) = tree.get_mut(shape_id) {
-                shape.invalidate_extrect();
-            }
             if let Some(shape) = tree.get(shape_id) {
                 if !shape.id.is_nil() {
-                    self.update_tile_for(shape, tree, modifiers);
+                    self.update_tile_for(shape, tree);
                 }
             }
         }
@@ -1798,14 +1776,9 @@ impl RenderState {
     /// Additionally, it processes all ancestors of modified shapes to ensure their
     /// extended rectangles are properly recalculated and their tiles are updated.
     /// This is crucial for frames and groups that contain transformed children.
-    pub fn rebuild_modifier_tiles(
-        &mut self,
-        tree: &mut ShapesPool,
-        modifiers: &HashMap<Uuid, Matrix>,
-    ) {
-        let ids: Vec<_> = modifiers.keys().collect();
+    pub fn rebuild_modifier_tiles(&mut self, tree: &mut ShapesPool, ids: Vec<Uuid>) {
         let ancestors = all_with_ancestors(&ids, tree, false);
-        self.invalidate_and_update_tiles(&ancestors, tree, modifiers);
+        self.invalidate_and_update_tiles(&ancestors, tree);
     }
 
     pub fn get_scale(&self) -> f32 {

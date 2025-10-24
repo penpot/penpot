@@ -5,6 +5,11 @@ use crate::performance;
 use crate::shapes::Shape;
 use crate::uuid::Uuid;
 
+use crate::shapes::StructureEntry;
+use crate::skia;
+
+use std::cell::OnceCell;
+
 const SHAPES_POOL_ALLOC_MULTIPLIER: f32 = 1.3;
 
 /// A pool allocator for `Shape` objects that attempts to minimize memory reallocations.
@@ -20,8 +25,13 @@ const SHAPES_POOL_ALLOC_MULTIPLIER: f32 = 1.3;
 ///
 pub struct ShapesPool {
     shapes: Vec<Shape>,
-    shapes_uuid_to_idx: HashMap<Uuid, usize>,
     counter: usize,
+
+    shapes_uuid_to_idx: HashMap<Uuid, usize>,
+
+    modified_shape_cache: HashMap<Uuid, OnceCell<Shape>>,
+    modifiers: HashMap<Uuid, skia::Matrix>,
+    structure: HashMap<Uuid, Vec<StructureEntry>>,
 }
 
 impl ShapesPool {
@@ -30,6 +40,10 @@ impl ShapesPool {
             shapes: vec![],
             counter: 0,
             shapes_uuid_to_idx: HashMap::default(),
+
+            modified_shape_cache: HashMap::default(),
+            modifiers: HashMap::default(),
+            structure: HashMap::default(),
         }
     }
 
@@ -76,7 +90,22 @@ impl ShapesPool {
 
     pub fn get(&self, id: &Uuid) -> Option<&Shape> {
         let idx = *self.shapes_uuid_to_idx.get(id)?;
-        Some(&self.shapes[idx])
+        if self.modifiers.contains_key(id) || self.structure.contains_key(id) {
+            if let Some(cell) = self.modified_shape_cache.get(id) {
+                Some(cell.get_or_init(|| {
+                    let shape = &self.shapes[idx];
+                    shape.transformed(
+                        self.modifiers.get(id),
+                        self.structure.get(id)
+                    )
+                }))
+            } else {
+                let shape = &self.shapes[idx];
+                Some(shape)
+            }
+        } else {
+            Some(&self.shapes[idx])
+        }
     }
 
     #[allow(dead_code)]
@@ -86,5 +115,45 @@ impl ShapesPool {
 
     pub fn iter_mut(&mut self) -> std::slice::IterMut<'_, Shape> {
         self.shapes.iter_mut()
+    }
+
+    #[allow(dead_code)]
+    fn clean_shape_cache(&mut self) {
+        self.modified_shape_cache.clear()
+    }
+
+    #[allow(dead_code)]
+    pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
+        // self.clean_shape_cache();
+
+        // Initialize the cache cells because
+        // later we don't want to have the mutable pointer
+        for key in modifiers.keys() {
+            self.modified_shape_cache.insert(*key, OnceCell::new());
+        }
+        self.modifiers = modifiers;
+    }
+
+    #[allow(dead_code)]
+    pub fn set_structure(&mut self, structure: HashMap<Uuid, Vec<StructureEntry>>) {
+        // self.clean_shape_cache();
+        // Initialize the cache cells because
+        // later we don't want to have the mutable pointer
+        for key in structure.keys() {
+            self.modified_shape_cache.insert(*key, OnceCell::new());
+        }
+        self.structure = structure;
+    }
+
+    #[allow(dead_code)]
+    pub fn clean_modifiers(&mut self) {
+        self.clean_shape_cache();
+        self.modifiers = HashMap::default();
+    }
+
+    #[allow(dead_code)]
+    pub fn clean_structure(&mut self) {
+        self.clean_shape_cache();
+        self.structure = HashMap::default();
     }
 }
