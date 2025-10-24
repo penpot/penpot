@@ -7736,6 +7736,10 @@ msgstr "none | underline | strike-through o {alias}"
 msgid "workspace.tokens.theme-name"
 msgstr "Tema %s"
 
+#: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:48
+msgid "workspace.tokens.theme-name-already-exists"
+msgstr "Ya existe un tema con este nombre"
+
 #: src/app/main/ui/workspace/tokens/themes/create_modal.cljs:96
 msgid "workspace.tokens.themes-description"
 msgstr ""

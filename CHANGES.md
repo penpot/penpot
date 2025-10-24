@@ -71,6 +71,7 @@
 - Fix remove flex button doesn’t work within variant [Taiga #12314](https://tree.taiga.io/project/penpot/issue/12314)
 - Fix an error translation [Taiga #12402](https://tree.taiga.io/project/penpot/issue/12402)
 - Fix problem with certain text input in some editable labels (pages, components, tokens...) being in conflict with the drag/drop functionality [Taiga #12316](https://tree.taiga.io/project/penpot/issue/12316)
+- Fix not controlled theme renaming [Taiga #12411](https://tree.taiga.io/project/penpot/issue/12411)
 
 ## 2.10.1
 
