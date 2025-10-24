@@ -612,10 +612,9 @@ impl Paragraph {
         let mut style = ParagraphStyle::default();
         let mut strut_style = skia::textlayout::StrutStyle::default();
         strut_style.set_height_override(false);
-        strut_style.set_strut_enabled(true);
+        strut_style.set_strut_enabled(false);
         strut_style.set_half_leading(true);
-        strut_style.set_force_strut_height(false);
-        strut_style.set_leading(0.0);
+        strut_style.set_force_strut_height(true);
 
         style.set_strut_style(strut_style);
         style.set_text_align(self.text_align);
@@ -704,10 +703,6 @@ impl TextSpan {
         style.set_height_override(true);
 
         style.set_foreground_paint(&paint);
-        style.set_font_size(self.font_size);
-        style.set_letter_spacing(self.letter_spacing);
-        style.set_half_leading(false);
-
         style.set_decoration_type(match self.text_decoration {
             Some(text_decoration) => text_decoration,
             None => skia::textlayout::TextDecoration::NO_DECORATION,
@@ -724,6 +719,9 @@ impl TextSpan {
 
         font_families.extend(fallback_fonts.iter().cloned());
         style.set_font_families(&font_families);
+        style.set_font_size(self.font_size);
+        style.set_letter_spacing(self.letter_spacing);
+        style.set_half_leading(false);
 
         style
     }
