@@ -7,10 +7,11 @@
 (ns app.common.types.tokens-lib
   (:require
    #?(:clj [app.common.fressian :as fres])
-   #?(:clj [clojure.data.json :as json])
+   #?(:clj [clojure.data.json :as c.json])
    [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.files.helpers :as cfh]
+   [app.common.json :as json]
    [app.common.path-names :as cpn]
    [app.common.schema :as sm]
    [app.common.schema.generators :as sg]
@@ -198,8 +199,8 @@
      :tokens tokens})
 
   #?@(:clj
-      [json/JSONWriter
-       (-write [this writter options] (json/-write (datafy this) writter options))])
+      [c.json/JSONWriter
+       (-write [this writter options] (c.json/-write (datafy this) writter options))])
 
   INamedItem
   (get-id [_]
@@ -912,6 +913,7 @@ Will return a value that matches this schema:
   (get-tokens [_ set-id] "return a map of tokens in the set, indexed by token-name"))
 
 (declare parse-multi-set-dtcg-json)
+(declare read-multi-set-dtcg)
 (declare export-dtcg-json)
 
 (deftype TokensLib [sets themes active-themes]
@@ -923,8 +925,8 @@ Will return a value that matches this schema:
      :active-themes active-themes})
 
   #?@(:clj
-      [json/JSONWriter
-       (-write [this writter options] (json/-write (export-dtcg-json this) writter options))])
+      [c.json/JSONWriter
+       (-write [this writter options] (c.json/-write (export-dtcg-json this) writter options))])
 
   ITokenSets
   ;;  Naming conventions:
@@ -1409,7 +1411,11 @@ Will return a value that matches this schema:
     ;; function that is declared but not defined; so we need to pass
     ;; an anonymous function and delegate the resolution to runtime
     {:encode/json #(export-dtcg-json %)
-     :decode/json #(parse-multi-set-dtcg-json %)}}))
+     :decode/json #(read-multi-set-dtcg %)
+     ;; FIXME: add better, more reallistic generator
+     :gen/gen (->> (sg/small-int)
+                   (sg/fmap (fn [_]
+                              (make-tokens-lib))))}}))
 
 (defn duplicate-set
   "Make a new set with a unique name, copying data from the given set in the lib."
@@ -1453,18 +1459,20 @@ Will return a value that matches this schema:
      ["value" :map]
      ["type" :string]]]))
 
+(def ^:private schema:dtcg-node
+  [:or
+   [:map
+    ["$value" :string]
+    ["$type" :string]]
+   [:map
+    ["$value" [:sequential [:map ["$type" :string]]]]
+    ["$type" :string]]
+   [:map
+    ["$value" :map]
+    ["$type" :string]]])
+
 (def ^:private dtcg-node?
-  (sm/validator
-   [:or
-    [:map
-     ["$value" :string]
-     ["$type" :string]]
-    [:map
-     ["$value" [:sequential [:map ["$type" :string]]]]
-     ["$type" :string]]
-    [:map
-     ["$value" :map]
-     ["$type" :string]]]))
+  (sm/validator schema:dtcg-node))
 
 (defn- get-json-format
   "Searches through decoded token file and returns:
@@ -1651,6 +1659,43 @@ Will return a value that matches this schema:
   (assert (= (get-json-format decoded-json-tokens) :json-format/legacy) "expected a legacy format for `decoded-json-tokens`")
   (parse-single-set-dtcg-json set-name (legacy-json->dtcg-json decoded-json-tokens)))
 
+(def ^:private schema:multi-set-dtcg
+  "Schema for penpot multi-set dtcg json decoded data/
+
+  Mainly used for validate the structure of the incoming data before
+  proceed to parse it to our internal data structures."
+  [:schema {:registry
+            {::node
+             [:or
+              [:map-of :string [:ref ::node]]
+              schema:dtcg-node]}}
+   [:map
+    ["$themes" {:optional true}
+     [:vector
+      [:map {:title "Theme"}
+       ["id" {:optional true} :string]
+       ["name" :string]
+       ["description" :string]
+       ["isSource" :boolean]
+       ["selectedTokenSets"
+        [:map-of :string [:enum "enabled" "disabled"]]]]]]
+    ["$metadata" {:optional true}
+     [:map {:title "Metadata"}
+      ["tokenSetOrder" {:optional true} [:vector :string]]
+      ["activeThemes" {:optional true} [:vector :string]]
+      ["activeSets" {:optional true} [:vector :string]]]]
+
+    [:malli.core/default
+     [:map-of :string [:ref ::node]]]]])
+
+(def ^:private check-multi-set-dtcg-data
+  (sm/check-fn schema:multi-set-dtcg))
+
+(def ^:private decode-multi-set-dtcg-data
+  (sm/decoder schema:multi-set-dtcg
+              sm/json-transformer))
+
+;; FIXME: remove `-json` suffix
 (defn parse-multi-set-dtcg-json
   "Parse a decoded json file with multi sets in DTCG format into a TokensLib."
   [decoded-json]
@@ -1741,6 +1786,23 @@ Will return a value that matches this schema:
 
     library))
 
+(defn read-multi-set-dtcg
+  "Read penpot multi-set dctg tokens. Accepts string or JSON decoded
+  data (without any case transformation). Used as schema decoder and
+  in the SDK."
+  [data]
+  (let [data (if (string? data)
+               (json/decode data :key-fn identity)
+               data)
+        data #?(:cljs (if (object? data)
+                        (json/->clj data :key-fn identity)
+                        data)
+                :clj data)
+
+        data (decode-multi-set-dtcg-data data)]
+    (-> (check-multi-set-dtcg-data data)
+        (parse-multi-set-dtcg-json))))
+
 (defn- parse-multi-set-legacy-json
   "Parse a decoded json file with multi sets in legacy format into a TokensLib."
   [decoded-json]
@@ -1753,6 +1815,7 @@ Will return a value that matches this schema:
     (parse-multi-set-dtcg-json (merge other-data
                                       dtcg-sets-data))))
 
+;; FIXME: remove `-json` suffix
 (defn parse-decoded-json
   "Guess the format and content type of the decoded json file and parse it into a TokensLib.
    The `file-name` is used to determine the set name when the json file contains a single set."
