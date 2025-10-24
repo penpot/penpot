@@ -9,6 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.logic.tokens :as clt]
+   [app.common.schema :as sm]
    [app.common.types.tokens-lib :as ctob]
    [app.main.constants :refer [max-input-length]]
    [app.main.data.event :as ev]
@@ -31,8 +32,46 @@
    [app.util.i18n :refer [tr]]
    [app.util.keyboard :as k]
    [cuerdas.core :as str]
+   [malli.core :as m]
    [potok.v2.core :as ptk]
    [rumext.v2 :as mf]))
+
+;; Schemas ---------------------------------------------------------------------
+
+(def theme-group-schema
+  (m/schema
+   [:string {:max 2048}]))
+
+(def valid-theme-name-regexp
+  "Only allow letters and digits for theme names.
+  Also allow one `.` for a namespace separator.
+
+  Caution: This will allow a trailing dot like `theme-name.`,
+  But we will trim that in the `finalize-name`,
+  to not throw too many errors while the user is editing."
+  #"(?!\$)([a-zA-Z0-9-$_]+\.?)*")
+
+(def valid-theme-name-schema
+  (m/-simple-schema
+   {:type :theme/invalid-theme-name
+    :pred #(re-matches valid-theme-name-regexp %)
+    :type-properties {:error/fn #(str (:value %) (tr "workspace.tokens.theme-name-validation-error"))}}))
+
+(defn theme-name-schema
+  "Generate a dynamic schema validation to check if a theme path derived from the name already exists at `tokens-tree`."
+  [{:keys [group tokens-lib]}]
+  (let [path-exists-schema
+        (m/-simple-schema
+         {:type :token/name-exists
+          :pred #(nil? (ctob/get-theme-by-name tokens-lib group %))
+          :type-properties {:error/fn #(str "A theme already exists at the path: " (:value %))}})]
+    (m/schema
+     [:and
+      [:string {:min 1 :max 255}]
+      valid-theme-name-schema
+      path-exists-schema])))
+
+;; Form Component --------------------------------------------------------------
 
 (mf/defc empty-themes
   [{:keys [change-view]}]
@@ -183,6 +222,8 @@
          (mf/deps on-change-field)
          (fn [event]
            (let [value (-> event dom/get-target dom/get-value)]
+             (prn "group" (:group theme))
+             (prn "value" value)
              (on-change-field :name value)
              (mf/set-ref-val! theme-name-ref value))))]
 
