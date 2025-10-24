@@ -1162,13 +1162,13 @@
   (->  (ignore-sync conn params)
        (update :features db/decode-pgarray #{})))
 
+;; --- MUTATION COMMAND: delete-files-immediatelly
 
-;; --- MUTATION COMMAND: delete-immediately
-
-(def ^:private sql:get-team-deleted-files
+(def ^:private sql:delete-team-files
   "UPDATE file AS uf SET uf.deleted_at = ?::timestamptz
      FROM (
-        SELECT f.id FROM file AS f
+        SELECT f.id
+          FROM file AS f
           JOIN project AS p ON (p.id = f.project_id)
           JOIN team AS t ON (t.id = p.team_id)
          WHERE t.deleted_at IS NULL
@@ -1176,27 +1176,124 @@
            AND f.id = ANY(?::uuid[])
      ) AS subquery
     WHERE uf.id = subquery.id
-   RETURNING uf.id;"
+   RETURNING uf.id, uf.deleted_at;")
 
 (def ^:private schema:delete-files-immediately
   [:map {:title "delete-files-immediatelly"}
-   [:team-id ::sm/uuid]])
+   [:team-id ::sm/uuid]
+   [:ids [::sm/set ::sm/uuid]]])
 
 (sv/defmethod ::delete-files-immediately
-  "Mark the specified files to be deleted immediatelly"
-  {::doc/added "1.17"
+  "Mark the specified files to be deleted immediatelly on the
+  specified team. The team-id on params will be used to filter and
+  check writable permissons on team."
+
+  {::doc/added "2.12"
    ::sm/params schema:delete-files-immediately
    ::db/transaction true}
-  [{:keys [::db/conn]} {:keys [::rpc/profile-id team-id] :as params}]
-  (teams/check-edition-permissions! conn profile-id file-id)
-  (run! (fn [{:keys [id]}]
+
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id ::rpc/request-at team-id ids]}]
+  (teams/check-edition-permissions! conn profile-id team-id)
+
+  (run! (fn [{:keys [id deleted-at]}]
           (wrk/submit! {::db/conn conn
                         ::wrk/task :delete-object
                         ::wrk/params {:object :file
-                                      :deleted-at (:deleted-at file)
-                                      :id file-id}})
+                                      :deleted-at deleted-at
+                                      :id id}}))
+        (db/plan conn [sql:delete-team-files request-at team-id
+                       (db/create-array conn "uuid" ids)])))
+
+;; --- MUTATION COMMAND: delete-files-immediatelly
+
+(def ^:private sql:restore-file-media-objects
+  "UPDATE file_media_object SET deleted_at = NULL WHERE id = ANY(?::uuid[])")
+
+(def ^:private sql:restore-file-changes
+  "UPDATE file_change SET deleted_at = NULL WHERE id = ANY(?::uuid[])")
+
+(def ^:private sql:restore-file-data
+  "UPDATE file_data SET deleted_at = NULL WHERE id = ANY(?::uuid[])")
+
+(def ^:private sql:delete-team-files
+  "UPDATE file AS uf SET uf.deleted_at = NULL
+     FROM (
+        SELECT f.id
+          FROM file AS f
+          JOIN project AS p ON (p.id = f.project_id)
+          JOIN team AS t ON (t.id = p.team_id)
+         WHERE t.deleted_at IS NULL
+           AND t.id = ?
+           AND f.id = ANY(?::uuid[])
+     ) AS subquery
+    WHERE uf.id = subquery.id
+   RETURNING uf.id")
+
+(def ^:private sql:resolve-editable-files
+  "SELECT f.id
+     FROM file AS f
+     JOIN project AS p ON (p.id = f.project_id)
+     JOIN team AS t ON (t.id = p.team_id)
+    WHERE t.deleted_at IS NULL
+      AND t.id = ?
+      AND f.id = ANY(?::uuid[])")
+
+(defn- restore-file*
+  [{:keys [::db/conn]} file-id]
+  (db/update! conn :file
+              {:deleted-at nil
+               :has-media-trimmed false}
+              {:id file-id}
+              {::db/return-keys false})
+
+  (db/update! conn :file-media-object
+              {:deleted-at nil}
+              {:file-id file-id}
+              {::db/return-keys false})
+
+  (db/update! conn :file-change
+              {:deleted-at nil}
+              {:file-id file-id}
+              {::db/return-keys false})
+
+  (db/update! conn :file-data
+              {:deleted-at nil}
+              {:file-id file-id}
+              {::db/return-keys false})
+
+  (db/update! conn :file-thumbnail
+              {:deleted-at nil}
+              {:file-id file-id}
+              {::db/return-keys false})
+
+  (db/update! conn :file-tagged-object-thumbnail
+              {:deleted-at nil}
+              {:file-id file-id}
+              {::db/return-keys false})
+
+  :restored)
 
 
+(def ^:private schema:restore-files-immediately
+  [:map {:title "delete-files-immediatelly"}
+   [:team-id ::sm/uuid]
+   [:ids [::sm/set ::sm/uuid]]])
 
+(sv/defmethod ::restore-deleted-files
+  "Removes the deletion mark from the files and project affecting that
+  files if proceed."
 
+  {::doc/added "2.12"
+   ::sm/params schema:restore-deleted-files
+   ::db/transaction true}
 
+  [{:keys [::db/conn]} {:keys [::rpc/profile-id ::rpc/request-at team-id ids]}]
+  (teams/check-edition-permissions! conn profile-id team-id)
+
+  (run! (fn [{:keys [id deleted-at]}]
+          (wrk/submit! {::db/conn conn
+                        ::wrk/task :restore-object
+                        ::wrk/params {:object :file
+                                      :id id}}))
+        (db/plan conn [sql:delete-team-files request-at team-id
+                       (db/create-array conn "uuid" ids)])))

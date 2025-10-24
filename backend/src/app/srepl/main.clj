@@ -590,7 +590,6 @@
               {:file-id file-id}
               {::db/return-keys false})
 
-  ;; Mark thumbnails to be deleted
   (db/update! conn :file-thumbnail
               {:deleted-at nil}
               {:file-id file-id}
