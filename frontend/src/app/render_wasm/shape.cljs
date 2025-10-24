@@ -6,12 +6,14 @@
 
 (ns app.render-wasm.shape
   (:require
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
    [app.main.refs :as refs]
    [app.render-wasm.api :as api]
+   [beicon.v2.core :as rx]
    [cljs.core :as c]
    [cuerdas.core :as str]))
 
@@ -118,8 +120,11 @@
     (-write writer (str "#penpot/shape " (:id delegate)))))
 
 ;; --- SHAPE IMPL
-
-(defn set-shape-wasm-attr!
+;; When an attribute is sent to WASM it could still be pending some side operations
+;; for example: font loading when changing a text, this is an async operation that will
+;; resolve eventually.
+;; The `set-wasm-attr!` can return a list of callbacks to be executed in a second pass.
+(defn- set-wasm-attr!
   [shape k]
   (let [v  (get shape k)
         id (get shape :id)]
@@ -224,14 +229,32 @@
           (ctl/flex-layout? shape)
           (api/set-flex-layout shape)))
 
+      ;; Property not in WASM
       nil)))
 
-(defn set-wasm-multi-attrs!
+(defn process-shape!
   [shape properties]
   (let [shape-id (dm/get-prop shape :id)]
-    (when (shape-in-current-page? shape-id)
-      (api/use-shape shape-id)
-      (run! (partial set-shape-wasm-attr! shape) properties))))
+    (if (shape-in-current-page? shape-id)
+      (do
+        (api/use-shape shape-id)
+        (->> properties
+             (mapcat #(set-wasm-attr! shape %))
+             (d/index-by :key :callback)
+             (vals)
+             (rx/from)
+             (rx/mapcat (fn [callback] (callback)))
+             (rx/reduce conj [])))
+      (rx/empty))))
+
+(defn process-shape-changes!
+  [objects shape-changes]
+  (->> (rx/from shape-changes)
+       (rx/mapcat (fn [[shape-id props]] (process-shape! (get objects shape-id) props)))
+       (rx/subs!
+        (fn [_]
+          (api/update-shape-tiles)
+          (api/request-render "set-wasm-attrs")))))
 
 (defn- impl-assoc
   [self k v]

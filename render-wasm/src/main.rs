@@ -20,6 +20,7 @@ use mem::SerializableResult;
 use shapes::{StructureEntry, StructureEntryType, TransformEntry};
 use skia_safe as skia;
 use state::State;
+use std::collections::HashMap;
 use utils::uuid_from_u32_quartet;
 use uuid::Uuid;
 
@@ -537,6 +538,7 @@ pub extern "C" fn set_structure_modifiers() {
         .collect();
 
     with_state_mut!(state, {
+        let mut structure = HashMap::new();
         for entry in entries {
             match entry.entry_type {
                 StructureEntryType::ScaleContent => {
@@ -548,14 +550,16 @@ pub extern "C" fn set_structure_modifiers() {
                     }
                 }
                 _ => {
-                    state.structure.entry(entry.parent).or_insert_with(Vec::new);
-                    state
-                        .structure
+                    structure.entry(entry.parent).or_insert_with(Vec::new);
+                    structure
                         .get_mut(&entry.parent)
                         .expect("Parent not found for entry")
                         .push(entry);
                 }
             }
+        }
+        if !structure.is_empty() {
+            state.shapes.set_structure(structure);
         }
     });
 
@@ -567,7 +571,8 @@ pub extern "C" fn clean_modifiers() {
     with_state_mut!(state, {
         state.structure.clear();
         state.scale_content.clear();
-        state.modifiers.clear();
+        // state.modifiers.clear();
+        state.shapes.clean_modifiers();
     });
 }
 
@@ -595,11 +600,16 @@ pub extern "C" fn set_modifiers() {
         .map(|data| TransformEntry::from_bytes(data.try_into().unwrap()))
         .collect();
 
+    let mut modifiers = HashMap::new();
+    let mut ids = Vec::<Uuid>::new();
+    for entry in entries {
+        modifiers.insert(entry.id, entry.transform);
+        ids.push(entry.id);
+    }
+
     with_state_mut!(state, {
-        for entry in entries {
-            state.modifiers.insert(entry.id, entry.transform);
-        }
-        state.rebuild_modifier_tiles();
+        state.set_modifiers(modifiers);
+        state.rebuild_modifier_tiles(ids);
     });
 }
 

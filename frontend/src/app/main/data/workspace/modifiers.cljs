@@ -226,22 +226,26 @@
         wasm-props
         (concat clean-props wasm-props)
 
-        wasm-props
+        ;; Stores a map shape -> set of properties changed
+        ;; this is the standard format used by process-shape-changes
+        shape-changes
         (-> (group-by first wasm-props)
-            (update-vals #(map second %)))]
+            (update-vals #(into #{} (map (comp :property second)) %)))
 
-    ;; Props are grouped by id and then assoc to the shape the new value
-    (run! (fn [[id properties]]
-            (let [shape
-                  (->> properties
-                       (reduce
-                        (fn [shape {:keys [property value]}]
-                          (assoc shape property value))
-                        (get objects id)))]
-
-              ;; With the new values to the shape change multi props
-              (wasm.shape/set-wasm-multi-attrs! shape (->> properties (map :property)))))
-          wasm-props)))
+        ;; Create a new objects only with the temporary modifications
+        objects-changed
+        (->> wasm-props
+             (reduce
+              (fn [objects [id properties]]
+                (let [shape
+                      (->> properties
+                           (reduce
+                            (fn [shape {:keys [property value]}]
+                              (assoc shape property value))
+                            (get objects id)))]
+                  (assoc objects id shape)))
+              objects))]
+    (wasm.shape/process-shape-changes! objects-changed shape-changes)))
 
 (defn clear-local-transform []
   (ptk/reify ::clear-local-transform

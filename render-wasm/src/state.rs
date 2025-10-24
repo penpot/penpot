@@ -114,8 +114,7 @@ impl State {
         // We don't really do a self.shapes.remove so that redo/undo keep working
         if let Some(shape) = self.shapes.get(&id) {
             let tiles::TileRect(rsx, rsy, rex, rey) =
-                self.render_state
-                    .get_tiles_for_shape(shape, &self.shapes, &self.modifiers);
+                self.render_state.get_tiles_for_shape(shape, &self.shapes);
             for x in rsx..=rex {
                 for y in rsy..=rey {
                     let tile = tiles::Tile(x, y);
@@ -159,8 +158,7 @@ impl State {
 
     pub fn update_tile_for_shape(&mut self, shape_id: Uuid) {
         if let Some(shape) = self.shapes.get(&shape_id) {
-            self.render_state
-                .update_tile_for(shape, &self.shapes, &self.modifiers);
+            self.render_state.update_tile_for(shape, &self.shapes);
         }
     }
 
@@ -170,7 +168,7 @@ impl State {
         };
         if !shape.id.is_nil() {
             self.render_state
-                .update_tile_for(&shape.clone(), &self.shapes, &self.modifiers);
+                .update_tile_for(&shape.clone(), &self.shapes);
         }
     }
 
@@ -184,9 +182,9 @@ impl State {
             .rebuild_tiles(&self.shapes, &self.modifiers, &self.structure);
     }
 
-    pub fn rebuild_modifier_tiles(&mut self) {
+    pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
         self.render_state
-            .rebuild_modifier_tiles(&mut self.shapes, &self.modifiers);
+            .rebuild_modifier_tiles(&mut self.shapes, ids);
     }
 
     pub fn font_collection(&self) -> &FontCollection {
@@ -216,5 +214,9 @@ impl State {
         }
 
         None
+    }
+
+    pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
+        self.shapes.set_modifiers(modifiers);
     }
 }
