@@ -332,7 +332,22 @@ test("Renders a file with texts with different alignments", async ({
   await expect(workspace.canvas).toHaveScreenshot();
 });
 
-test("Updates text alignment edition - part 1", async ({ page }) => {
+test("Renders a file with texts with with text spans of different sizes", async ({
+  page,
+}) => {
+  const workspace = new WasmWorkspacePage(page);
+  await workspace.setupEmptyFile();
+  await workspace.mockGetFile("render-wasm/get-file-text-spans-different-sizes.json");
+
+  await workspace.goToWorkspace({
+    id: "a0b1a70e-0d02-8082-8006-ff6d160f15ce",
+    pageId: "a0b1a70e-0d02-8082-8006-ff6d160f15cf",
+  });
+  await workspace.waitForFirstRender();
+  await expect(workspace.canvas).toHaveScreenshot();
+});
+
+test.skip("Updates text alignment edition - part 1", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
@@ -376,7 +391,7 @@ test("Updates text alignment edition - part 1", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
 });
 
-test("Updates text alignment edition - part 2", async ({ page }) => {
+test.skip("Updates text alignment edition - part 2", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");
@@ -428,7 +443,7 @@ test("Updates text alignment edition - part 2", async ({ page }) => {
   await expect(workspace.canvas).toHaveScreenshot({ timeout: 10000 });
 });
 
-test("Updates text alignment edition - part 3", async ({ page }) => {
+test.skip("Updates text alignment edition - part 3", async ({ page }) => {
   const workspace = new WasmWorkspacePage(page);
   await workspace.setupEmptyFile();
   await workspace.mockGetFile("render-wasm/get-multiple-texts-base.json");

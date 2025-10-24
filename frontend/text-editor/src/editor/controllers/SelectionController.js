@@ -1556,6 +1556,7 @@ export class SelectionController extends EventTarget {
       nextNode = this.#textNodeIterator.nextNode();
 
       const textSpan = getTextSpan(startNode);
+      if (!textSpan) return;
       const paragraph = getParagraph(startNode);
       affectedTextSpans.add(textSpan);
       affectedParagraphs.add(paragraph);
