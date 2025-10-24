@@ -4667,7 +4667,7 @@ msgstr ""
 #: src/app/main/ui/settings/subscription.cljs:177
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr ""
-"Se cobrar después del período de prueba. No se requiere tarjeta de crédito "
+"Se cobrar después del periodo de prueba. No se requiere tarjeta de crédito "
 "en este momento."
 
 #: src/app/main/ui/settings/subscription.cljs:170, src/app/main/ui/settings/subscription.cljs:174
@@ -4678,6 +4678,18 @@ msgstr "**$%s**/mes"
 #: src/app/main/ui/settings/subscription.cljs:126
 msgid "subscription.settings.management.dialog.title"
 msgstr "Aplica %s a tus equipos"
+
+msgid "subscription.settings.management.dialog.step-2.title"
+msgstr "Ayúdanos a crecer y facilita tu periodo de prueba"
+
+msgid "subscription.settings.management.dialog.step-2.description"
+msgstr "Añade ahora tus datos de pago para que tu suscripción siga funcionando sin problemas tras finalizar el periodo de prueba y seguir apoyando nuestro proyecto de código abierto. Por ahora no se te hará ningún cargo."
+
+msgid "subscription.settings.management.dialog.step-2.skip-button"
+msgstr "Saltar por ahora y comenzar la prueba"
+
+msgid "subscription.settings.management.dialog.step-2.add-payment-button"
+msgstr "Añadir datos de pago"
 
 #: src/app/main/ui/settings/subscription.cljs:184
 msgid "subscription.settings.management.dialog.unlimited-capped-warning"
