@@ -235,13 +235,8 @@
   [ids]
   (ptk/reify ::remove-shape-layout
     ptk/WatchEvent
-    (watch [_ state _]
-      (let [objects (dsh/lookup-page-objects state)
-            ids     (->> ids
-                         (remove #(->> %
-                                       (get objects)
-                                       (ctc/is-variant?))))
-            undo-id (js/Symbol)]
+    (watch [_ _ _]
+      (let [undo-id (js/Symbol)]
         (rx/of
          (dwu/start-undo-transaction undo-id)
          (dwsh/update-shapes ids #(apply dissoc % layout-keys))
