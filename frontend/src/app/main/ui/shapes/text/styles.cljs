@@ -106,7 +106,9 @@
                               :overflowWrap "initial"
                               :lineBreak "auto"
                               :whiteSpace "break-spaces"
-                              :textRendering "geometricPrecision"}
+                              :textRendering "geometricPrecision"
+                              :display "inline-block"
+                              :verticalAlign "top"}
          fills
          (cond
            ;; DEPRECATED: still here for backward compatibility with

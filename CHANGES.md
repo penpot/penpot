@@ -11,6 +11,7 @@
 ### :sparkles: New features & Enhancements
 
 ### :bug: Bugs fixed
+- Fix text line-height values are wrong [Taiga #12252](https://tree.taiga.io/project/penpot/issue/12252)
 
 - Fix pan cursor not disabling viewport guides [Github #6985](https://github.com/penpot/penpot/issues/6985)
 - Fix viewport resize on locked shapes [Taiga #11974](https://tree.taiga.io/project/penpot/issue/11974)
