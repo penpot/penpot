@@ -765,6 +765,8 @@
 
 
            ;; Interactions
+
+
            :interactions
            {:this true
             :get
@@ -1223,6 +1225,29 @@
                :else
                (let [guide (u/proxy->ruler-guide value)]
                  (st/emit! (dwgu/remove-guide guide)))))
+
+           :tokens
+           {:this true
+            :get
+            (fn [_]
+              (let [tokens
+                    (-> (u/locate-shape file-id page-id id)
+                        (get :applied-tokens))]
+                (reduce
+                 (fn [acc [prop name]]
+                   (obj/set! acc (d/name prop) name))
+                 #js {}
+                 tokens)))}
+
+           :applyToken
+           (fn [_property _token]
+             ;; TODO
+             )
+
+           :applyTokenName
+           (fn [_property _token-name]
+             ;; TODO
+             )
 
            :isVariantHead
            (fn []
