@@ -8,10 +8,13 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
+   [app.common.pprint :as pp]
+   [app.common.types.shape.layout :as ctl]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [promesa.core :as p]))
 
 (def ^:private properties
   [:display
@@ -37,6 +40,10 @@
    :padding-block-end :p3
    :padding-inline-start :p4})
 
+(defn- has-padding?
+  [shape]
+  (some #(and (contains? (:layout-padding shape) %) (not= 0 (get (:layout-padding shape) %))) [:p1 :p2 :p3 :p4]))
+
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]
   (let [padding-prop (get shape-prop->padding-prop property)]
@@ -52,18 +59,33 @@
     token))
 
 (mf/defc layout-panel*
-  [{:keys [shapes objects resolved-tokens]}]
+  [{:keys [shapes objects resolved-tokens on-layout-shorthand]}]
   [:div {:class (stl/css :variants-panel)}
    (for [shape shapes]
-     [:div {:key (:id shape) :class "layout-shape"}
-      (for [property properties]
-        (when-let [value (css/get-css-value objects shape property)]
-          (let [property-name (cmm/get-css-rule-humanized property)
-                resolved-token (get-resolved-token property shape resolved-tokens)
-                property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
-            [:> properties-row* {:key (dm/str "layout-property-" property)
-                                 :term property-name
-                                 :detail value
-                                 :token resolved-token
-                                 :property property-value
-                                 :copiable true}])))])])
+     (let [shorthand-padding (when (and (= (count shapes) 1) (has-padding? shape))
+                               (css/get-css-property objects shape :padding))
+           shorthand-grid (when (and (= (count shapes) 1)
+                                     (= :grid (:layout shape)))
+                            (str "grid: "
+                                 (css/get-css-value objects shape :grid-template-rows)
+                                 " / "
+                                 (css/get-css-value objects shape :grid-template-columns)
+                                 ";"))
+           shorthand (str shorthand-padding " " shorthand-grid)]
+       (mf/use-effect
+        (fn []
+          (when on-layout-shorthand
+            (on-layout-shorthand {:panel :layout
+                                  :property shorthand}))))
+       [:div {:key (:id shape) :class "layout-shape"}
+        (for [property properties]
+          (when-let [value (css/get-css-value objects shape property)]
+            (let [property-name (cmm/get-css-rule-humanized property)
+                  resolved-token (get-resolved-token property shape resolved-tokens)
+                  property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
+              [:> properties-row* {:key (dm/str "layout-property-" property)
+                                   :term property-name
+                                   :detail value
+                                   :token resolved-token
+                                   :property property-value
+                                   :copiable true}])))]))])

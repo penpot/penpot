@@ -30,7 +30,8 @@
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [cljs.pprint :as pp]))
 
 (def layout-element-properties
   [:margin-block-start
@@ -111,7 +112,27 @@
                                     (not (or (= shape-type :text) (= shape-type :group)))
                                     (or (:opacity shape)
                                         (:blend-mode shape)
-                                        (:visibility shape))))))]
+                                        (:visibility shape))))))
+        shorthands* (mf/use-state {:fill nil
+                                   :stroke nil
+                                   :text nil
+                                   :shadow nil
+                                   :blur nil
+                                   :layout nil
+                                   :layout-element nil
+                                   :geometry nil
+                                   :svg nil
+                                   :visibility nil
+                                   :variant nil
+                                   :grid-element nil})
+        shorthands (deref shorthands*)
+        _ (pp/pprint shorthands)
+        set-shorthands
+        ;; This fn must receive an object `shorthand` with :panel and :property (the shorthand string) keys
+        (mf/use-fn
+         (mf/deps shorthands*)
+         (fn [shorthand]
+           (swap! shorthands* assoc (:panel shorthand) (:property shorthand))))]
     [:ol {:class (stl/css :styles-tab) :aria-label (tr "labels.styles")}
      ;;  TOKENS PANEL
      (when (or active-themes active-sets)
@@ -130,18 +151,22 @@
                                 :data data}]]
         ;;  GEOMETRY PANEL
           :geometry
-          [:> style-box* {:panel :geometry}
+          [:> style-box* {:panel :geometry
+                          :shorthand (:geometry shorthands)}
            [:> geometry-panel* {:shapes shapes
                                 :objects objects
-                                :resolved-tokens resolved-active-tokens}]]
+                                :resolved-tokens resolved-active-tokens
+                                :on-geometry-shorthand set-shorthands}]]
          ;;  LAYOUT PANEL
           :layout
           (let [layout-shapes (->> shapes (filter ctl/any-layout?))]
             (when (seq layout-shapes)
-              [:> style-box* {:panel :layout}
+              [:> style-box* {:panel :layout
+                              :shorthand (:layout shorthands)}
                [:> layout-panel* {:shapes layout-shapes
                                   :objects objects
-                                  :resolved-tokens resolved-active-tokens}]]))
+                                  :resolved-tokens resolved-active-tokens
+                                  :on-layout-shorthand set-shorthands}]]))
          ;;  LAYOUT ELEMENT PANEL
           :layout-element
           (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
@@ -166,20 +191,24 @@
           :fill
           (let [shapes (filter has-fill? shapes)]
             (when (seq shapes)
-              [:> style-box* {:panel :fill}
+              [:> style-box* {:panel :fill
+                              :shorthand (:fill shorthands)}
                [:> fill-panel* {:color-space color-space
                                 :shapes shapes
-                                :resolved-tokens resolved-active-tokens}]]))
+                                :resolved-tokens resolved-active-tokens
+                                :on-fill-shorthand set-shorthands}]]))
 
           ;; STROKE PANEL
           :stroke
           (let [shapes (filter has-stroke? shapes)]
             (when (seq shapes)
-              [:> style-box* {:panel :stroke}
+              [:> style-box* {:panel :stroke
+                              :shorthand (:stroke shorthands)}
                [:> stroke-panel* {:color-space color-space
                                   :shapes shapes
                                   :objects objects
-                                  :resolved-tokens resolved-active-tokens}]]))
+                                  :resolved-tokens resolved-active-tokens
+                                  :on-stroke-shorthand set-shorthands}]]))
 
           ;; VISIBILITY PANEL
           :visibility
@@ -207,11 +236,13 @@
           :text
           (let [shapes (filter has-text? shapes)]
             (when (seq shapes)
-              [:> style-box* {:panel :text}
+              [:> style-box* {:panel :text
+                              :shorthand (:text shorthands)}
                [:> text-panel* {:shapes shapes
                                 :color-space color-space
-                                :objects objects
-                                :resolved-tokens resolved-active-tokens}]]))
+                                :resolved-tokens resolved-active-tokens
+                                :on-font-shorthand set-shorthands}]]))
+
           ;; SHADOW PANEL
           :shadow
           (let [shapes (filter has-shadow? shapes)]
@@ -219,6 +250,7 @@
               [:> style-box* {:panel :shadow}
                [:> shadow-panel* {:shapes shapes
                                   :color-space color-space}]]))
+
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}
            [:div color-space]])])]))
