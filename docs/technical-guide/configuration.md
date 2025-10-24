@@ -23,7 +23,7 @@ Flags and evironment variables are also used together; for example:
 
 ```bash
 # This flag enables the use of SMTP email
-PENPOT_FLAGS: enable-smtp
+PENPOT_FLAGS: [...] enable-smtp
 
 # These environment variables configure the specific SMPT service
 # Backend
@@ -36,7 +36,7 @@ the exporter, or all of them; on the other hand, **environment variables** are c
 each specific service. For example:
 
 ```bash
-PENPOT_FLAGS: enable-login-with-google
+PENPOT_FLAGS: [...] enable-login-with-google
 
 # Backend
 PENPOT_GOOGLE_CLIENT_ID: <client-id>
@@ -56,7 +56,7 @@ Penpot uses anonymous telemetries from the self-hosted instances to improve the 
 Consider sharing these anonymous telemetries enabling the corresponding flag:
 
 ```bash
-PENPOT_FLAGS: enable-telemetries
+PENPOT_FLAGS: [...] enable-telemetries
 ```
 
 ## Registration and authentication
@@ -402,7 +402,7 @@ This is implemented as specific locations in the penpot-front Nginx. If your org
 in a 100% air-gapped environment, you can use the following configuration:
 
 ```bash
-PENPOT_FLAGS: enable-air-gapped-conf
+PENPOT_FLAGS: [...] enable-air-gapped-conf
 ```
 
 When Penpot starts, it will leave out the Nginx configuration related to external requests. This means that,
@@ -459,10 +459,14 @@ POSTGRES_PASSWORD: penpot
 
 ### Storage
 
-Storage refers to storing the user uploaded assets.
+Storage refers to storing the user uploaded different objects in Penpot (assets, file data,...).
 
-Assets storage is implemented using "plugable" backends. Currently there are two
+Objects storage is implemented using "plugable" backends. Currently there are two
 backends available: <code class="language-bash">fs</code> and <code class="language-bash">s3</code> (for AWS S3).
+
+__Since version 2.11.0__
+The configuration variables related to storage has been renamed, `PENPOT_STORAGE_ASSETS_*` are now `PENPOT_OBJECTS_STORAGE_*`.
+`PENPOT_ASSETS_STORAGE_BACKEND` becomes `PENPOT_OBJECTS_STORAGE_BACKEND` and its values now are `fs` and `s3` instead of `assets-fs` or `assets-s3`.
 
 #### FS Backend (default)
 
@@ -471,8 +475,8 @@ configuration looks like this:
 
 ```bash
 # Backend
-PENPOT_ASSETS_STORAGE_BACKEND: assets-fs
-PENPOT_STORAGE_ASSETS_FS_DIRECTORY: /opt/data/assets
+PENPOT_OBJECTS_STORAGE_BACKEND: fs
+PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/objects
 ```
 
 The main downside of this backend is the hard dependency on nginx approach to serve files
@@ -485,7 +489,7 @@ configuration file][4] used in the docker images.
 
 #### AWS S3 Backend
 
-This backend uses AWS S3 bucket for store the user uploaded assets. For use it you should
+This backend uses AWS S3 bucket for store the user uploaded objects. For use it you should
 have an appropriate account on AWS cloud and have the credentials, region and the bucket.
 
 This is how configuration looks for S3 backend:
@@ -494,17 +498,35 @@ This is how configuration looks for S3 backend:
 # Backend
 AWS_ACCESS_KEY_ID: <you-access-key-id-here>
 AWS_SECRET_ACCESS_KEY: <your-secret-access-key-here>
-PENPOT_ASSETS_STORAGE_BACKEND: assets-s3
-PENPOT_STORAGE_ASSETS_S3_REGION: <aws-region>
-PENPOT_STORAGE_ASSETS_S3_BUCKET: <bucket-name>
+PENPOT_OBJECTS_STORAGE_BACKEND: s3
+PENPOT_OBJECTS_STORAGE_S3_REGION: <aws-region>
+PENPOT_OBJECTS_STORAGE_S3_BUCKET: <bucket-name>
 
 # Optional if you want to use it with non AWS, S3 compatible service:
-PENPOT_STORAGE_ASSETS_S3_ENDPOINT: <endpoint-uri>
+PENPOT_OBJECTS_STORAGE_S3_ENDPOINT: <endpoint-uri>
 ```
 
 <p class="advice">
 These settings are equally useful if you have a Minio storage system.
 </p>
+
+### File Data Storage
+
+__Since version 2.11.0__
+
+You can change the default file data storage backend with `PENPOT_FILE_DATA_BACKEND` environment variable. Possible values are:
+
+- `legacy-db`: the current default backend, continues storing the file data of files and snapshots in the same location as previous versions of Penpot (< 2.11.0), this is a conservative default behaviour and will be changed to `db` in next versions.
+- `db`: stores the file data on an specific table (the future default backend).
+- `storage`: stores the file data using the objects storage system (S3 or FS, depending on which one is configured)
+
+This also comes with an additional feature that allows offload the "inactive" files on file storage backend and leaves the database only for the active files. To enable it, you should use the `enable-tiered-file-data-storage` flag and `db` as file data storage backend.
+
+```bash
+# Backend
+PENPOT_FLAGS: [...] enable-tiered-file-data-storage
+PENPOT_FILE_DATA_BACKEND: db
+```
 
 ### Autosave
 
@@ -517,7 +539,7 @@ You need to be very careful when configuring automatic versioning, as it can sig
 This is how configuration looks for auto-file-snapshot
 
 ```bash
-PENPOT_FLAGS: enable-auto-file-snapshot               # Enable automatic version saving
+PENPOT_FLAGS: [...] enable-auto-file-snapshot               # Enable automatic version saving
 
 # Backend
 PENPOT_AUTO_FILE_SNAPSHOT_EVERY: 5             # How many save operations trigger the auto-save-version?
