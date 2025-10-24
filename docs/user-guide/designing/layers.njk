@@ -1,0 +1,519 @@
+---
+title: Layers
+order: 2
+desc: "Work with Penpot's layers: boards, shapes, text, paths, and graphics. Learn to create, select, rename, and customize boards for optimal workflow."
+---
+
+<h1 id="layers">Layers</h1>
+<p class="main-paragraph">Layers are objects or items that you can place in the viewport. Boards, shapes, texts, paths and graphics are layers. The following describes the different layers that you have
+available in Penpot, and how to get the most of them.</p>
+
+<h2 id="available-layers">Available layers</h2>
+
+<h3 id="Boards">Boards</h3>
+<p>Boards are layers that serve as your high-level containers for content organization and layout. Boards are useful if you want to design for a specific screen or print size. Boards can contain other boards. First level boards
+are shown by default at the <a href="/user-guide/prototyping-testing/testing-view-mode/">View mode</a>, acting as screens of a design or pages of a document. Also, layers inside boards can be clipped. Boards are a powerful element at Penpot, opening up a ton of possibilities when creating and organizing your designs.</p>
+
+<h4>Create boards</h4>
+<p>To create a board, use the board tool at the toolbar or the shortcut <kbd>B</kbd>.</p>
+<figure>
+  <img src="/img/objects/board-tool.webp" alt="Board tool">
+</figure>
+
+<p>Then, with the board tool selected, you have two options:</p>
+<ul>
+  <li><strong>Select a board size upfront</strong>. You can choose one of the provided presets with the most common resolution for devices and standard print sizes</li>
+  <li><strong>Click-and-drag</strong> to draw a frame of approximate size, then immediately edit its width/height values to be precise.</li>
+</ul>
+<figure>
+  <video title="Create board" muted="" playsinline="" controls="" width="100%" poster="/img/objects/board-create.webp" height="auto">
+    <source src="/img/objects/board-creation.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<p><strong>TIP:</strong> Create a board around one or more selected layers using the option "Selection to board" at the menu or the shortcut <kbd>Ctrl/⌘</kbd> + <kbd>Alt</kbd> + <kbd>G</kbd>.</p>
+
+<h4>Select boards</h4>
+<p>There are two different cases in terms of selecting boards:</p>
+<ul>
+  <li>For first level boards that have at least one inside, click on the board name or <kbd>Ctrl/⌘</kbd> + click on the board area to select it and then drag</li>
+  <li>For the rest (empty first level boards and inside boards) just click to select.</li>
+</ul>
+<figure>
+  <video title="Select board" muted="" playsinline="" controls="" width="auto" poster="/img/objects/board-select.webp" height="auto">
+    <source src="/img/objects/board-select.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Rename boards</h4>
+<p>There several ways to rename boards:</p>
+<ul>
+  <li>Double click on the board name at the workspace viewport.</li>
+  <li>Double click on the board name at the layers panel.</li>
+  <li>Press <kbd>Alt/⌥</kbd> + <kbd>N</kbd> to rename the board at the layers panel.</li>
+  <li>Right click to show the menu and select "Rename".</li>
+</ul>
+<figure>
+  <video title="Rename board" muted="" playsinline="" controls="" width="auto" poster="/img/objects/board-rename.webp" height="auto">
+    <source src="/img/objects/board-rename.webm" type="video/webm">
+  </video>
+</figure>
+
+<h4>Set board as thumbnail</h4>
+<p>At the workspace, select a specific board to be the file thumbnail that will be shown at the dashboard in the file card.</p>
+<p>To set a custom thumbnail:</p>
+<ol>
+  <li>Select a board.</li>
+  <li>Right click to show the menu and select "Set as thumbnail" or press <kbd>Shift</kbd> <kbd>T</kbd>.</li>
+</ol>
+<figure>
+  <video title="Set board as thumbnail" muted="" playsinline="" controls="" width="auto" poster="/img/objects/board-thumbnail.webp" height="auto">
+    <source src="/img/objects/board-thumbnail.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Copy link to board</h4>
+<p>You can get the link to each individual board, making it easy to share them with team members or include direct links in documentation.</p>
+<figure>
+  <img src="/img/objects/board-copy-link.webp" alt="copy link to board">
+</figure>
+<p>There are two ways to copy a direct link to a board:</p>
+<ul>
+  <li>Using the menu: Select the board, right click and select the "Copy link" option.</li>
+  <li>Using the shortcut: Select the board and press <kbd>Shift/⇧</kbd> + <kbd>Alt/⌥</kbd> + <kbd>C</kbd>.</li>
+</ul>
+
+<h4>Clip content</h4>
+<p>Boards offer the option to clip its content (or not).</p>
+<figure>
+  <video title="Clip board" muted="" playsinline="" controls="" width="100%" poster="/img/objects/board-clip.webp" height="auto">
+    <source src="/img/objects/board-clip.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Show in View mode</h4>
+<p>Boards offer the option to be shown as a separate board/screen in the <a href="/user-guide/first-steps/the-interface/#interface-viewmode">View mode</a>. Use this setting to decide what boards should be shown as individual items in your presentations.</p>
+<p><strong>Defaults</strong></p>
+<p>As it is very likely that the first level boards will be used as a screen and the interiors will not, there are different defaults for newly created boards.</p>
+<ul>
+  <li>Boards created at first level (<a href="/user-guide/designing/workspace-basics/#viewport">the viewport</a>): shown by default.</li>
+  <li>Boards created inside other boards: not shown by default.</li>
+</ul>
+<figure>
+  <img src="/img/objects/board-show.webp" alt="board show in view mode">
+</figure>
+
+<h4>Show fill in exports</h4>
+<p> Sometimes you don’t need the artboards to be part of your designs, but only their support to work on them.
+Penpot allows you to decide if the fill of an artboard will be shown in exports, you just have to check/uncheck the "Show in exports" option which is below the fill setting.</p>
+<figure>
+  <img src="/img/objects/board-fill.webp" alt="show board fill in exports">
+</figure>
+
+<h4>Resize board to fit to content</h4>
+<p>You can adjust the board size to fit its content by clicking the icon in the design sidebar.</p>
+<figure>
+  <img src="/img/objects/board-fit.webp" alt="Resize board to fit to content button">
+</figure>
+
+<h4>Board guides</h4>
+<p>You can set guides on boards that will assist with aligning layers.</p>
+<p>Read more about <a href="/user-guide/designing/workspace-basics/#guides">guides</a>.</p>
+<figure>
+  <img src="/img/objects/board-guides.webp" alt="board guides">
+</figure>
+
+<h4>Prototyping boards</h4>
+<p>You can connect boards with other boards to create rich interactions.</p>
+<p>Read more about <a href="/user-guide/prototyping-testing/prototyping/">prototyping</a>.</p>
+<figure>
+  <img src="/img/objects/board-prototyping.webp" alt="prototyping with boards">
+</figure>
+
+<h3 id="rectangles-ellipses">Rectangles and ellipses</h3>
+<p>Rectangle and ellipses are two basic “primitive” geometric shapes that are useful when starting
+a design.</p>
+<p>The shortcut keys are <kbd>E</kbd> for ellipses and <kbd>R</kbd> for rectangles.</p>
+<p>To find out more about how to edit and modify these shapes go to <a href="/user-guide/designing/layers/#layer-actions">Layer basics</a>.</p>
+<figure>
+  <video title="Rectangles and ellipses" muted="" playsinline="" controls="" width="auto" poster="/img/objects/rectangles-ellipses.webp" height="auto">
+    <source src="/img/objects/rectangles-ellipses.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="text">Text</h3>
+<p> (NOTA: El grosso de este contenido está en su propia sección. Aquí vendría un texto introductorio y un link a la <a href="/user-guide/designing/text-typo/">sección en cuestión</a>. )</p>
+
+<h3 id="curves">Curves (freehand)</h3>
+<p>The curve tool allows a path to be created directly in a freehand mode.
+Select the curve tool by clicking on the icon at the toolbar or pressing <kbd>Shift/⇧</kbd> + <kbd>c</kbd>.
+<p>The path created will contain a lot of points, but it is edited the same way as any other curve.</p>
+
+<h3 id="paths">Paths (bezier)</h3>
+<p>A path is composed of two or more nodes and the line segments between them, which may also be curved. To draw a new path you have to select the path tool by clicking on the icon at the toolbar or pressing <kbd>P</kbd>. Then you have two ways to create the path:</p>
+<ol>
+  <li><strong>Click</strong> to create a new corner node.</li>
+  <li><strong>Click and drag</strong> to create a curved node.</li>
+</ol>
+<p>To finish the path:</p>
+<ol>
+  <li><strong>Close it</strong> clicking over the starting node.</li>
+  <li><strong>Leave it open</strong> pressing <kbd>Esc</kbd> or <kbd>Enter</kbd> to stop editing. Then press <kbd>Esc</kbd> to exit the edit mode.</li>
+</ol>
+<p><strong>Tip:</strong> If you hold <kbd>Shift/⇧</kbd> while adding nodes the angle between the current and the next will change in 45 degree increments.</p>
+<figure>
+  <video title="Paths" muted="" playsinline="" controls="" width="100%" poster="/img/objects/path-create.webp" height="auto">
+    <source src="/img/objects/path-create.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Edit nodes</h4>
+<p>To edit a node double click on a path or select and press <kbd>Enter</kbd>.
+You can choose to edit individual nodes or create new ones. Press <kbd>Esc</kbd> to exit node edition. </p>
+<figure>
+  <video title="Edit nodes" muted="" playsinline="" controls="" width="100%" poster="/img/objects/nodes-edit.webp" height="auto">
+    <source src="/img/objects/nodes-edit.mp4" type="video/mp4">
+  </video>
+</figure><h4>Node types</h4>
+<p>There are two types of nodes: curve or corner (straight). The type of a selected node can be changed at the bezier menu. Curved nodes have bezier handles that allow the curvature of a path to be modified.</p>
+<figure>
+  <video title="Node types" muted="" playsinline="" controls="" width="100%" poster="/img/objects/node-types.webp" height="auto">
+    <source src="/img/objects/node-types.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="images">Images</h3>
+<h4>Insert images</h4>
+<p>There are several options for inserting an image into a Penpot file:</p>
+<ul>
+  <li>Use the <strong>image tool</strong> at the toolbar or press <kbd>K</kbd> to insert images in your file system.</li>
+  <li><strong>Drag</strong> an image from your computer to the viewport.</li>
+  <li>Copy an image & paste it or drag it right from a <strong>browser</strong>.</li>
+  <li>Drag an image from a Penpot <strong>library</strong>.</li>
+</ul>
+
+<h4>Images aspect ratio</h4>
+<p>Images fill the layer backgrounds by default, so they take up the entire layer while maintaining the aspect ratio. This is great for flexible designs because the images can adapt to different sizes.</p>
+<p>However, if you don't want an image to keep its aspect ratio when resizing, you just have to uncheck the option in the image settings.</p>
+<figure>
+  <video title="Changing the aspect ratio of an image" muted="" playsinline="" controls="" width="100%" poster="/img/objects/image-ratio.webp" height="auto">
+    <source src="/img/objects/image-ratio.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h2 id="layer-actions">Layer actions</h2>
+
+<h3 id="creating-layers">Create</h3>
+<p>To create a layer you have to select the type of layer by clicking the selected tool (board, rectangle, ellipse, text, image, path or curve) at the toolbar. Then you usually have to click and drag your mouse on the viewport. </p>
+<p>Hold <kbd>Shift/⇧</kbd> while creating an ellipse or a rectangle to maintain equal width and height.</p>
+<figure>
+  <video title="Layers create" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-create.webp" height="auto">
+    <source src="/img/layers/layers-create.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="duplicating-layers">Duplicate</h3>
+<p>There are several ways to duplicate a layer:</p>
+<ol>
+  <li>You can press <kbd>Ctrl/⌘</kbd> + <kbd>D</kbd> to duplicate a layer right over a selected layer. </li>
+  <li>If you press right click over a selected layer at the viewport or at the layers panel you can use the option at the layer menu. </li>
+  <li>You can also select a layer and drag while pressing <kbd>Alt/⌥</kbd> so you can simultaneously duplicate and drag the new layer.</li>
+</ol>
+<figure>
+  <video title="Duplicate layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-duplicate.webp" height="auto">
+    <source src="/img/layers/layers-duplicate.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="delete-layers">Delete</h3>
+<p>There are a couple ways to delete a layer. </p>
+<ol>
+  <li>You can press <kbd>Supr/⌫</kbd> to delete a selected layer. </li>
+  <li>If you press right click over a selected layer at the viewport or at the layers panel you can use the option at the layer menu.</li>
+</ol>
+
+<h3 id="move-layers">Move</h3>
+<p>To move one or more layers on the viewport you have to select them first and then click and drag the selection where you want to place them. You can also use the design panel to set a precise position relative to the viewport or the board.</p>
+<figure>
+  <video title="Move layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-move.webp" height="auto">
+    <source src="/img/layers/layers-move.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="select-layers">Select</h3>
+<p>The simplest way to select a layer is to click on it. Make sure that you have the “move” pointer selected at the toolbar. </p>
+<p>To select multiple layers you can click and drag around the layers you want to select. You can also click more than one layer while pressing <kbd>Shift/⇧</kbd>. If you hold <kbd>Shift/⇧</kbd> and click you can deselect layers individually.</p>
+<figure>
+  <video title="Select layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-select.webp" height="auto">
+    <source src="/img/layers/layers-select.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h4>Selecting layers at the layers panel</h4>
+<ol>
+  <li>Click a layer to do a single selection.</li>
+  <li>Press <kbd>Ctrl/⌘</kbd> while clicking two or more layers to do a multiple selection.</li>
+  <li>If you press <kbd>Shift/⇧</kbd> while selecting two or more layers all the layers within the selection area will be selected.</li>
+</ol>
+<figure>
+  <video title="Select layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-multiselect.webp" height="auto">
+    <source src="/img/layers/layers-multiselect.mp4" type="video/mp4">
+  </video>
+</figure>
+<h4>Select layers ignoring groups (deep selection)</h4>
+<p>If you want to select an element that is difficult to reach because it is under a group of elements, hold <kbd>Ctrl/⌘</kbd> to make the selection ignore group areas and treat all the layers as being at the same level.</p>
+<figure>
+  <video title="Select layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-deepselect.webp" height="auto">
+    <source src="/img/layers/layers-deepselect.mp4" type="video/mp4">
+  </video>
+</figure>
+<h4>Select layers inside groups</h4>
+<p>To <strong>select a layer inside a group</strong> you do double click. First click selects the group, second click selects a layer.</p>
+
+<h4>Select layer menu</h4>
+<p>At the dropdown menu (right click on a layer to show it) there's the option "Select layer" that allows the user to select one layer among the ones that are under the cursor's location.</p>
+<p><img src="/img/layers-select-menu.gif" alt="layers select" /></p>
+
+<h3 id="hide-lock">Hide and lock layers</h3>
+<h4>Hide and show layers</h4>
+<p>You can control the visibility of any layer by clicking the eye icon next to it in the Layers panel. When a layer is hidden, it will not appear on the canvas, but you can still select it in the Layers panel, move its order, or modify its properties. The eye icon always indicates whether a layer is visible or hidden, making it easy to manage complex designs.</p>
+
+<h4>Lock and unlock</h4>
+<p>Locking a layer helps prevent accidental changes or movement on the canvas. When a layer is locked, it cannot be moved or edited directly in the canvas area. However, you can still select a locked layer in the Layers panel and adjust its properties, such as color, effects, or name. The lock icon next to the layer’s name shows its locked status, helping you keep your design organized and protected.</p>
+
+<figure>
+  <video title="Layers hide and lock" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-hide-lock.webp" height="auto">
+    <source src="/img/layers/layers-hide-lock.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="group-layers">Group</h3>
+<p>Grouped layers can be moved, transformed or styled at the same time. </p>
+<ul>
+  <li><strong>Group:</strong> To group two or more layers, select them and then press <kbd>Ctrl/⌘</kbd> + <kbd>G</kbd>. You can also use the option at the layers menu that you can open with right click.</li>
+  <li><strong>Ungroup:</strong> Press <kbd>Shift/⇧</kbd> + <kbd>G</kbd> or use the option at the layers menu that you can open with right click over the selected group.</li>
+</ul>
+<figure>
+  <video title="Group layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-group.webp" height="auto">
+    <source src="/img/layers/layers-group.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="mask-layers">Mask</h3>
+<p>A mask is a layer that does a clipping and only shows parts of a layer or multiple layers that fall within its shape. </p>
+<ul>
+  <li><strong>Mask layers:</strong> Select more than one layer or a group of them. Then you can apply the masking using the option at the layers menu or by pressing <kbd>Ctrl/⌘</kbd> + <kbd>M</kbd>. The shape that is at the lowest level at the layer list will be used as a mask. </li>
+  <li><strong>Unmask layers:</strong> Select a mask and then press <kbd>Shift/⇧</kbd> + <kbd>Ctrl/⌘</kbd> + <kbd>M</kbd> or use the option at the layers menu.</li>
+</ul>
+<figure>
+  <video title="Mask layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-mask.webp" height="auto">
+    <source src="/img/layers/layers-mask.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="resize-layers">Resize</h3>
+<p>To resize a selected layer you can use the handles at the edges of the selection box. Make sure the cursor is in resizing mode. You can also use the design panel where you can link width and height.</p>
+<ul>
+  <li>Hold <kbd>Shift/⇧</kbd> while resizing the layer to preserve its aspect ratio.</li>
+  <li>Hold <kbd>Alt/⌥</kbd> while resizing the layer to do it from the center and resize simultaneously two opposite sides.</li>
+</ul>
+<figure>
+  <video title="Resize layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-resize.webp" height="auto">
+    <source src="/img/layers/layers-resize.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="scale-elements">Scale elements, texts and properties</h3>
+<p>Activate the scale tool by pressing <kbd>K</kbd> or from the main file menu to scale elements while maintaining their visual aspect. Once it is activated you can resize texts, layers and groups and preserve their aspect ratio while scaling their properties proportionally, including strokes, shadows, blurs and corners.
+<figure>
+  <video title="Scale layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-scale.webp" height="auto">
+    <source src="/img/layers/layers-scale.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="rotate-layers">Rotate</h3>
+<p>To rotate selected layers you can use the handles at the edges of the selection box. Make sure the cursor is in rotation mode. If you hold <kbd>Ctrl/⌘</kbd> while rotation the angle will change in 45 degree increments. You can also find this option at the design panel.</p>
+<figure>
+  <video title="Rotate layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-rotate.webp" height="auto">
+    <source src="/img/layers/layers-rotate.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="flip-layers">Flip</h3>
+<p>You can find the options to flip layers in their contextual menu (select the layer and right click). You also have shortcuts to do this:</p>
+<ul>
+  <li><strong>Flip layers horizontally:</strong> Select the layer and press <kbd>Shift/⇧</kbd> + <kbd>H</kbd></li>
+  <li><strong>Flip layers vertically:</strong> Select the layer and then press <kbd>Shift/⇧</kbd> + <kbd>V</kbd>.</li>
+</ul>
+<figure>
+  <video title="Flip layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-flip.webp" height="auto">
+    <source src="/img/layers/layers-flip.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="aling-distribute-layers">Align and distribute</h3>
+<p>Aligning and distributing layers can be found at the top of the Design panel. </p>
+<h4>Align layers</h4>
+<p>Aligning will move all the selected layers to a position relative to one of them. For instance, aligning top will align the elements with the edge of the top-most element.</p>
+<figure>
+  <video title="Align layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-align.webp" height="auto">
+    <source src="/img/layers/layers-align.mp4" type="video/mp4">
+  </video>
+</figure>
+<h4>Distribute layers</h4>
+<p>Distributing layers to position them vertically and horizontally with equal distances between them.</p>
+<figure>
+  <video title="Distribute layers" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-distribute.webp" height="auto">
+    <source src="/img/layers/layers-distribute.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="boolean-operators">Boolean operators</h3>
+<p>It is possible to combine shapes in a group in different ways to create more complex layers by using
+"boolean" operators. Boolean operators are non destructive and the original shapes remain grouped and available for more editing. There are five boolean operations available: union, difference, intersection, exclusion and flatten. Using boolean operations allows many graphic options and possibilities for your designs.</p>
+<figure>
+  <video title="Boolean operators" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-boolean.webp" height="auto">
+    <source src="/img/layers/layers-boolean.mp4" type="video/mp4">
+  </video>
+</figure>
+<ul>
+  <li><strong>Union:</strong> the resulting combination is the sum of the shapes.</li>
+  <li><strong>Difference:</strong> the opposite of union, the resulting layer has the area of the shape on top has been cut out from the shape at the bottom.</li>
+  <li><strong>Intersection:</strong> creates a group whose shape is the overlapping area between the shapes.</li>
+  <li><strong>Exclusion:</strong> the opposite of intersection, the resulting shape is the area that does not overlap between the shapes.</li>
+  <li><strong>Flatten:</strong> Tecnically not a boolean operator, this is the way to permanently combine the paths of a group of shapes in a single one.</li>
+</ul>
+
+<h3 id="constraints">Resizing constraints</h3>
+<p>Constraints allow you to decide how layers will behave when resizing its container.</p>
+
+<h4>Apply constraints</h4>
+<p>Constraints allow you to decide how layers will behave when resizing its parent container. You can apply horizontal and vertical constraints for every layer.</p>
+<p>To apply constraints select a layer and use the constraints map or the constraints selectors at the design panel.</p>
+<figure>
+  <video title="Constraints" muted="" playsinline="" controls="" width="auto" poster="/img/layers/layers-constraints.webp" height="auto">
+    <source src="/img/layers/layers-constraints.mp4" type="video/mp4">
+  </video>
+</figure>
+<p>Constraints are set to “Scale” by default, but you have other options.</p>
+
+<h5>Horizontal constraints</h5>
+<ul>
+  <li><strong>Left</strong>: The layer maintains its size and position relative to the left side of its parent container.</li>
+  <li><strong>Right</strong>: The layer maintains its size and position relative to the right side of its parent container.</li>
+  <li><strong>Left & right</strong>: The layer resizes while maintaining its distance to both horizontal sides of its parent container.</li>
+  <li><strong>Center</strong>: The layer maintains its size and position relative to the horizontal center of its parent container.</li>
+  <li><strong>Scale</strong>: The layer will horizontally resize proportionally to its parent container size.</li>
+</ul>
+<figure>
+  <img src="/img/layers/layers-constraints-h.webp" alt="Horizontal constraints">
+</figure>
+
+<h5>Vertical constraints</h5>
+<ul>
+  <li><strong>Top</strong>: The layer maintains its size and position relative to the top side of its parent container.</li>
+  <li><strong>Bottom</strong>: The layer maintains its size and position relative to the bottom side of its parent container.</li>
+  <li><strong>Top & bottom</strong>: The layer resizes while maintaining its distance to both vertical sides of its parent container.</li>
+  <li><strong>Center</strong>: The layer maintains its size and position relative to the vertical center of its parent container.</li>
+  <li><strong>Scale</strong>: The layer will vertically resize proportionally to its parent container size.</li>
+</ul>
+<figure>
+  <img src="/img/layers/layers-constraints-v.webp" alt="Vettical constraints">
+</figure>
+
+
+<h2 id="styling-layers">Styling layers</h2>
+
+<p>Penpot has a variety of properties for each layer. When selected, the options are displayed in the design panel on the right.</p>
+
+<h3 id="radius">Border radius</h3>
+<p>You can customize the border radius of rectangles and images, with the option to customize each corner individually.</p>
+<figure>
+  <video title="Border radius" muted="" playsinline="" controls="" width="100%" poster="/img/styling/corners.webp" height="auto">
+    <source src="/img/styling/corners.mp4" type="video/mp4">
+  </video>
+</figure>
+
+
+<h3 id="shadow">Shadow</h3>
+<p>Adding shadows is easy from the design panel. You can add as many as you want.</p>
+<figure>
+  <img alt="Layer shadows" src="/img/styling/shadow.webp"/>
+</figure>
+<p>Shadow options are:</p>
+<ul>
+  <li><strong>Type</strong> - Drop (outside the layer), inner (inside the layer)</li>
+  <li><strong>Horizontal position</strong> (X)</li>
+  <li><strong>Vertical position</strong> (Y)</li>
+  <li><strong>Blur</strong></li>
+  <li><strong>Spread</strong></li>
+  <li><strong>Color and opacity</strong></li>
+</ul>
+
+<h3 id="blur">Blur</h3>
+<p>You can set a blur for each and every layer at Penpot.</p>
+<p><strong></strong>Applying a lot and/or big values for blurs can affect Penpot’s performance as it requires a lot from the browser.</p>
+<figure>
+  <video title="Apply blur to a layer" muted="" playsinline="" controls="" width="100%" poster="/img/styling/blur.webp" height="auto">
+    <source src="/img/styling/blur.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<h3 id="blend">Opacity and blend</h3>
+<p>Set the overal opacity for layers and their blend mode.</p>
+<p>Blend allows you to control how a layer interacts with the layers beneath it, determining how pixels from the current layer are combined with pixels in the underlying layers. Use blend to achive various effects, such as shading, highlights, or creative visual styles.</p>
+<figure>
+  <img alt="Layer blend and opacity" src="/img/styling/blend-opacity.webp"/>
+</figure>
+<p>Blend options available:</p>
+<ul>
+  <li><strong>Normal</strong></li>
+  <li><strong>Darken</strong></li>
+  <li><strong>Multiply</strong></li>
+  <li><strong>Color burn</strong></li>
+  <li><strong>Lighten</strong></li>
+  <li><strong>Screen</strong></li>
+  <li><strong>Color dodge</strong></li>
+  <li><strong>Overlay</strong></li>
+  <li><strong>Soft light</strong></li>
+  <li><strong>Hard light</strong></li>
+  <li><strong>Difference</strong></li>
+  <li><strong>Exclusion</strong></li>
+  <li><strong>Hue</strong></li>
+  <li><strong>Saturation</strong></li>
+  <li><strong>Color</strong></li>
+  <li><strong>Luminosity</strong></li>
+</ul>
+
+<h3 id="copy-paste-properties">Copy/Paste properties</h3>
+<p>You can copy and apply properties, including fills, strokes, shadows, and others from one layer to another—or multiple layers with just a few clicks. You can do it using the layer's menu or shortcuts.</p>
+
+<figure>
+  <video title="Apply blur to a layer" muted="" playsinline="" controls="" width="100%" poster="/img/styling/copy-properties.webp" height="auto">
+    <source src="/img/styling/copy-properties.mp4" type="video/mp4">
+  </video>
+</figure>
+
+<p>Using the layer menu</p>
+<ol>
+  <li>Select one layer.</li>
+  <li>Right click to show the layer menu.</li>
+  <li>Press <strong>Copy/Paste as... > Copy properties</strong>.</li>
+  <li>Select one or more other layers.</li>
+  <li>Right click to show the layer/s menu.</li>
+  <li>Press <strong>Copy/Paste as... > Paste properties</strong>.</li>
+</ol>
+
+<p>Using Shortcuts</p>
+<ul>
+  <li><strong>Copy properties</strong>: <kbd>Ctrl/⌘</kbd> + <kbd>Alt/⌥</kbd> + <kbd>C</kbd></li>
+  <li><strong>Paste properties</strong>: <kbd>Ctrl/⌘</kbd> + <kbd>Alt/⌥</kbd> + <kbd>V</kbd></li>
+</ul>
+
+
+
+
+
+
+
+
