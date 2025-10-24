@@ -1552,6 +1552,24 @@ Will return a value that matches this schema:
     ;; Reference value
     value))
 
+(defn- convert-dtcg-shadow-composite
+  "Convert shadow token value from DTCG format to internal format."
+  [value]
+  (if (sequential? value)
+    (mapv (fn [shadow]
+            (if (map? shadow)
+              (-> shadow
+                  (set/rename-keys {"x" :x
+                                    "y" :y
+                                    "blur" :blur
+                                    "spread" :spread
+                                    "color" :color
+                                    "type" :type})
+                  (select-keys [:x :y :blur :spread :color :type]))
+              shadow))
+          value)
+    value))
+
 (defn- flatten-nested-tokens-json
   "Convert a tokens tree in the decoded json fragment into a flat map,
    being the keys the token paths after joining the keys with '.'."
@@ -1574,6 +1592,7 @@ Will return a value that matches this schema:
                                          (case token-type
                                            :font-family (convert-dtcg-font-family token-value)
                                            :typography (convert-dtcg-typography-composite token-value)
+                                           :shadow (convert-dtcg-shadow-composite token-value)
                                            token-value))
                                        :description (get v "$description")))
              ;; Discard unknown type tokens
@@ -1739,11 +1758,32 @@ Will return a value that matches this schema:
      {} value)
     value))
 
+(defn- shadow-token->dtcg-token
+  "Convert shadow token value from internal format to DTCG format."
+  [value]
+  (if (sequential? value)
+    (mapv (fn [shadow]
+            (if (map? shadow)
+              (-> shadow
+                  (set/rename-keys {:x "x"
+                                    :y "y"
+                                    :blur "blur"
+                                    :spread "spread"
+                                    :color "color"
+                                    :type "type"})
+                  (select-keys ["x" "y" "blur" "spread" "color" "type"]))
+              shadow))
+          value)
+    value))
+
 (defn- token->dtcg-token [token]
   (cond-> {"$value" (cond-> (:value token)
                       ;; Transform typography token values
                       (= :typography (:type token))
-                      typography-token->dtcg-token)
+                      typography-token->dtcg-token
+                      ;; Transform shadow token values
+                      (= :shadow (:type token))
+                      shadow-token->dtcg-token)
            "$type" (cto/token-type->dtcg-token-type (:type token))}
     (:description token) (assoc "$description" (:description token))))
 
