@@ -1,7 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import * as fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import * as penpot  from "#self";
+
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 test("create empty context", () => {
   const context = penpot.createBuildContext();
@@ -117,4 +124,49 @@ test("create context with color", () => {
   assert.equal(color.path, params.path);
   assert.equal(color.opacity, params.opacity);
   assert.equal(color.name, params.name);
+});
+
+
+test("create context with tokens lib as json", () => {
+  const context = penpot.createBuildContext();
+
+  const fileId = context.addFile({name: "file 1"});
+  const pageId = context.addPage({name: "page 1"});
+
+
+  const tokensFilePath = path.join(__dirname, "_tokens-1.json");
+  const tokens = fs.readFileSync(tokensFilePath, "utf8");
+
+  context.addTokensLib(tokens);
+
+
+  const internalState = context.getInternalState();
+  const file = internalState.files[fileId];
+
+  assert.ok(file, "file should exist");
+
+  assert.ok(file.data);
+  assert.ok(file.data.tokensLib)
+});
+
+test("create context with tokens lib as obj", () => {
+  const context = penpot.createBuildContext();
+
+  const fileId = context.addFile({name: "file 1"});
+  const pageId = context.addPage({name: "page 1"});
+
+
+  const tokensFilePath = path.join(__dirname, "_tokens-1.json");
+  const tokens = fs.readFileSync(tokensFilePath, "utf8");
+
+  context.addTokensLib(JSON.parse(tokens))
+
+
+  const internalState = context.getInternalState();
+  const file = internalState.files[fileId];
+
+  assert.ok(file, "file should exist");
+
+  assert.ok(file.data);
+  assert.ok(file.data.tokensLib)
 });

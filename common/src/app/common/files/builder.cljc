@@ -485,6 +485,13 @@
         (commit-change change1)
         (commit-change change2))))
 
+(defn add-tokens-lib
+  [state tokens-lib]
+  (-> state
+      (commit-change
+       {:type :set-tokens-lib
+        :tokens-lib tokens-lib})))
+
 (defn delete-shape
   [file id]
   (commit-change

@@ -1,13 +1,13 @@
 {
   "name": "@penpot/library",
-  "version": "1.0.11",
+  "version": "1.1.0-RC1",
   "license": "MPL-2.0",
   "author": "Kaleidos INC",
   "packageManager": "yarn@4.10.3+sha512.c38cafb5c7bb273f3926d04e55e1d8c9dfa7d9c3ea1f36a4868fa028b9e5f72298f0b7f401ad5eb921749eb012eb1c3bb74bf7503df3ee43fd600d14a018266f",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/penpot/penpot"
+    "url": "git+https://github.com/penpot/penpot.git"
   },
   "resolutions": {
     "@zip.js/zip.js@npm:^2.7.44": "patch:@zip.js/zip.js@npm%3A2.7.60#~/.yarn/patches/@zip.js-zip.js-npm-2.7.60-b6b814410b.patch"
