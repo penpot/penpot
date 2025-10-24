@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.0-RC1
+
+- Add experimental addTokensLib method
+
+
 ## 1.0.11
 
 - Set correct path if it is not provided on addComponent
