@@ -13,7 +13,8 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
-   [rumext.v2 :as mf]))
+   [rumext.v2 :as mf]
+   [promesa.core :as p]))
 
 (def ^:private properties
   [:display
@@ -61,8 +62,16 @@
   [{:keys [shapes objects resolved-tokens on-layout-shorthand]}]
   [:div {:class (stl/css :variants-panel)}
    (for [shape shapes]
-     (let [shorthand (when (and (= (count shapes) 1) (has-padding? shape))
-                       (css/get-css-property objects shape :padding))]
+     (let [shorthand-padding (when (and (= (count shapes) 1) (has-padding? shape))
+                               (css/get-css-property objects shape :padding))
+           shorthand-grid (when (and (= (count shapes) 1)
+                                     (= :grid (:layout shape)))
+                            (str "grid: "
+                                 (css/get-css-value objects shape :grid-template-rows)
+                                 " / "
+                                 (css/get-css-value objects shape :grid-template-columns)
+                                 ";"))
+           shorthand (str shorthand-padding " " shorthand-grid)]
        (mf/use-effect
         (fn []
           (when on-layout-shorthand
