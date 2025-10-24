@@ -691,11 +691,6 @@ msgstr "อีเมลถูกใช้ไปแล้ว"
 msgid "errors.email-domain-not-allowed"
 msgstr "โดเมนนี้ไม่ได้รับอนุญาต"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
-msgid "errors.field-max-length"
-msgstr "ต้องมีไม่เกิน 1 ตัวอักษร"
-
 #, unused
 msgid "errors.field-min-length"
 msgstr "ต้องมีอย่างน้อย 1 ตัวอักษร"

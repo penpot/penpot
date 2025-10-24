@@ -1240,11 +1240,6 @@ msgstr "看起来你正在打开一个启用了'%s'功能的文件，但当前pe
 msgid "errors.feature-not-supported"
 msgstr "不支持功能“%s”。"
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
-msgid "errors.field-max-length"
-msgstr "最多可包含1个字符。"
-
 #, unused
 msgid "errors.field-min-length"
 msgstr "至少需要包含1个字符。"

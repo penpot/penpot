@@ -1214,11 +1214,6 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Fitur '%s' tidak didukung."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
-msgid "errors.field-max-length"
-msgstr "Harus berisi setidaknya 1 karakter."
-
 #, unused
 msgid "errors.field-min-length"
 msgstr "Harus berisi setidaknya 1 karakter."
