@@ -371,7 +371,7 @@
    [:set-tokens-lib
     [:map {:title "SetTokensLib"}
      [:type [:= :set-tokens-lib]]
-     [:tokens-lib ::sm/any]]]  ;; TODO: we should define a plain object schema for tokens-lib
+     [:tokens-lib ctob/schema:tokens-lib]]]
 
    [:set-token
     [:map {:title "SetTokenChange"}
