@@ -11,6 +11,7 @@
 ### :sparkles: New features & Enhancements
 
 ### :bug: Bugs fixed
+
 - Fix text line-height values are wrong [Taiga #12252](https://tree.taiga.io/project/penpot/issue/12252)
 
 - Fix pan cursor not disabling viewport guides [Github #6985](https://github.com/penpot/penpot/issues/6985)
@@ -19,7 +20,7 @@
 - Fix on copy instance inside a components chain touched are missing [Taiga #12371](https://tree.taiga.io/project/penpot/issue/12371)
 - Fix problem with multiple selection and shadows [Github #7437](https://github.com/penpot/penpot/issues/7437)
 - Fix search shortcut [Taiga #10265](https://tree.taiga.io/project/penpot/issue/10265)
-
+- Fix shortcut conflict in text editor (increase/decrease font size vs word selection)
 
 ## 2.11.0 (Unreleased)
 

@@ -231,13 +231,13 @@
                    :subsections [:text-editor]
                    :fn #(update-attrs-when-no-readonly {:text-decoration "toggle-line-through"})}
 
-   :font-size-inc {:tooltip (ds/meta-shift ds/right-arrow)
-                   :command (ds/c-mod "shift+right")
+   :font-size-inc {:tooltip (ds/meta-shift ">")
+                   :command (ds/c-mod "shift+.")
                    :subsections [:text-editor]
                    :fn #(update-attrs-when-no-readonly {:font-size-inc true})}
 
-   :font-size-dec {:tooltip (ds/meta-shift ds/left-arrow)
-                   :command (ds/c-mod "shift+left")
+   :font-size-dec {:tooltip (ds/meta-shift "<")
+                   :command (ds/c-mod "shift+,")
                    :subsections [:text-editor]
                    :fn #(update-attrs-when-no-readonly {:font-size-dec true})}
 
