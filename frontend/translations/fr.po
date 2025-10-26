@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"PO-Revision-Date: 2025-10-13 09:26+0000\n"
-"Last-Translator: Pablo Alba <pablo.alba@kaleidos.net>\n"
+"PO-Revision-Date: 2025-10-27 12:02+0000\n"
+"Last-Translator: Ingrid Pigueron <ingridp.uxr@gmail.com>\n"
 "Language-Team: French <https://hosted.weblate.org/projects/penpot/frontend/"
 "fr/>\n"
 "Language: fr\n"
@@ -9,7 +9,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
-"X-Generator: Weblate 5.14-dev\n"
+"X-Generator: Weblate 5.14.1-dev\n"
 
 #: src/app/main/ui/auth/register.cljs:215, src/app/main/ui/static.cljs:153, src/app/main/ui/viewer/login.cljs:98
 msgid "auth.already-have-account"
@@ -330,7 +330,7 @@ msgstr "Démonstration de l'interface"
 
 #: src/app/main/ui/settings/access_tokens.cljs:103
 msgid "dashboard.access-tokens.copied-success"
-msgstr "Jeton copié"
+msgstr "Token copié"
 
 #: src/app/main/ui/settings/access_tokens.cljs:189
 msgid "dashboard.access-tokens.create"
@@ -1508,7 +1508,7 @@ msgstr "Une erreur inattendue s’est produite."
 
 #: src/app/main/ui/auth/verify_token.cljs:62
 msgid "errors.unexpected-token"
-msgstr "Jeton inconnu"
+msgstr "Token inconnu"
 
 #, unused
 msgid "errors.validation"
@@ -4638,7 +4638,7 @@ msgstr "%s – Mode spectateur – Penpot"
 
 #: src/app/main/ui/workspace.cljs:232
 msgid "title.workspace"
-msgstr "%s –Penpot"
+msgstr "%s – Penpot"
 
 #: src/app/main/ui.cljs:138
 #, unused
@@ -7918,3 +7918,332 @@ msgstr "Les versions auto-enregistrées seront gardées %s jours."
 #, unused
 msgid "workspace.viewport.click-to-close-path"
 msgstr "Cliquez pour fermer le chemin"
+
+#: src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:98, src/app/main/ui/workspace/sidebar/options/rows/color_row.cljs:105
+msgid "color-row.token-color-row.deleted-token"
+msgstr "Ce token n'existe pas ou a été supprimé."
+
+#: src/app/main/ui/dashboard/team.cljs:756
+msgid "dashboard.invitation-modal.title.delete-invitations"
+msgstr "Supprimer les invitations"
+
+#: src/app/main/ui/dashboard/team.cljs:757
+msgid "dashboard.invitation-modal.title.resend-invitations"
+msgstr "Renvoyer les invitations"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Copier dans le Presse-papiers"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Thèmes actifs"
+
+#: src/app/main/ui/inspect/styles/rows/color_properties_row.cljs:102, src/app/main/ui/inspect/styles/rows/properties_row.cljs:53
+msgid "inspect.tabs.styles.token.resolved-value"
+msgstr "Valeur déduite :"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1043
+msgid "labels.about-penpot"
+msgstr "À propos de Penpot"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:1030
+msgid "labels.community-contributions"
+msgstr "Communauté et contributions"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:644
+msgid "labels.reference"
+msgstr "Référence"
+
+#: src/app/main/ui/dashboard/team.cljs:788
+msgid "labels.resend"
+msgstr "Renvoyer"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:107, src/app/main/ui/inspect/styles.cljs:107
+#, fuzzy
+msgid "labels.styles"
+msgstr "Styles"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:33
+msgid "labels.svg"
+msgstr "SVG"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:25
+msgid "labels.text"
+msgstr "Texte"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1148
+msgid "labels.typography"
+msgstr "Typographie"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:32
+msgid "labels.visibility"
+msgstr "Visibilité"
+
+#: src/app/main/ui/workspace/libraries.cljs:107, src/app/main/ui/workspace/libraries.cljs:133
+msgid "workspace.libraries.colors"
+msgid_plural "workspace.libraries.colors"
+msgstr[0] "1 couleur"
+msgstr[1] "%s couleurs"
+
+#: src/app/main/ui/workspace/libraries.cljs:101, src/app/main/ui/workspace/libraries.cljs:125
+msgid "workspace.libraries.components"
+msgid_plural "workspace.libraries.components"
+msgstr[0] "1 composant"
+msgstr[1] "%s composants"
+
+#: src/app/main/ui/workspace/libraries.cljs:104, src/app/main/ui/workspace/libraries.cljs:129
+msgid "workspace.libraries.graphics"
+msgid_plural "workspace.libraries.graphics"
+msgstr[0] "1 graphique"
+msgstr[1] "%s graphiques"
+
+#: src/app/main/ui/workspace/libraries.cljs:110, src/app/main/ui/workspace/libraries.cljs:137
+msgid "workspace.libraries.typography"
+msgid_plural "workspace.libraries.typography"
+msgstr[0] "1 typographie"
+msgstr[1] "%s typographies"
+
+#: src/app/main/ui/workspace/colorpicker/color_tokens.cljs:35
+msgid "color-token.empty-state"
+msgstr ""
+"Aucun token de couleur disponible. Consultez les collections/thèmes "
+"disponibles ou ajoutez de nouveaux tokens."
+
+#: src/app/main/ui/dashboard/team.cljs:765
+msgid "dashboard.invitation-modal.delete"
+msgstr "Vous allez supprimer les invitations envoyées à :"
+
+#: src/app/main/ui/dashboard/team.cljs:766
+msgid "dashboard.invitation-modal.resend"
+msgstr "Vous allez renvoyer les invitations à :"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:69
+msgid "workspace.tokens.value-with-percent"
+msgstr "Valeur non valide : % n'est pas autorisé."
+
+#: src/app/main/ui/workspace/sidebar/assets/groups.cljs:81
+msgid "workspace.assets.component-group-options"
+msgstr "Options de groupe de composants"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:431, src/app/main/ui/workspace/colorpicker.cljs:443
+msgid "workspace.colorpicker.color-tokens"
+msgstr "Tokens de couleur"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:464
+msgid "workspace.component.swap.loop-error"
+msgstr "Impossible d'imbriquer des composants dans eux-mêmes."
+
+#: src/app/main/ui/dashboard/team.cljs:949
+msgid "dashboard.order-invitations-by-role"
+msgstr "Classer par fonction"
+
+#: src/app/main/ui/dashboard/team.cljs:958
+msgid "dashboard.order-invitations-by-status"
+msgstr "Classer par statut"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:22
+msgid "inspect.tabs.styles.panel.geometry"
+msgstr "Taille et position"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:21
+msgid "inspect.tabs.styles.panel.token"
+msgstr "Collections de tokens et thèmes"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Collections actives"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:20
+msgid "inspect.tabs.styles.panel.variant"
+msgstr "Propriétés de la variante"
+
+#: src/app/main/ui/workspace/colorpicker.cljs:427
+msgid "labels.color"
+msgstr "Couleur"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:23
+msgid "labels.fill"
+msgstr "Remplir"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:28
+msgid "labels.layout"
+msgstr "Disposition"
+
+#: src/app/main/ui/inspect/right_sidebar.cljs:65, src/app/main/ui/workspace/sidebar/options/menus/component.cljs:949, src/app/main/ui/workspace/sidebar/options/menus/typography.cljs:518
+msgid "labels.variant"
+msgstr "Variante"
+
+#: src/app/main/ui/dashboard/sidebar.cljs:872
+msgid "labels.version-notes"
+msgstr "Notes de la version %s"
+
+#: src/app/main/ui/dashboard/team.cljs:825
+msgid "notifications.invitation-deleted"
+msgstr "L'invitation a bien été supprimée"
+
+#: src/app/main/ui/workspace/sidebar/shortcuts.cljs:97
+msgid "shortcuts.create-component-variant"
+msgstr "Créer un composant/une variante"
+
+#: src/app/main/ui/dashboard/subscription.cljs:176
+#, markdown
+msgid "subscription.dashboard.professional-dashboard-cta-upgrade-owner"
+msgstr ""
+"Mettez votre abonnement à niveau maintenant et passez à un abonnement "
+"Illimité ou Entreprise pour déverrouiller plus d'éditeurs, plus de stockage "
+"et la récupération de fichiers. [Abonnez-vous.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:171
+msgid "subscription.dashboard.unlimited-dashboard-cta-title"
+msgstr ""
+"Votre équipe continue à ses développer. Votre abonnement Illimité couvre "
+"jusqu'à %s éditeurs, mais il y en a maintenant %s dans votre équipe."
+
+#: src/app/main/ui/dashboard/subscription.cljs:179
+#, markdown
+msgid "subscription.dashboard.unlimited-dashboard-cta-upgrade-owner"
+msgstr ""
+"Mettez votre abonnement à niveau pour qu'il corresponde au nombre d'éditeurs "
+"actuel de votre équipe. [Abonnez-vous maintenant.|target:self](%s)"
+
+#: src/app/main/ui/dashboard/subscription.cljs:152
+msgid "subscription.dashboard.unlimited-members-extra-editors-cta-title"
+msgstr "Invitation de personnes dans le cadre de l'abonnement Illimité"
+
+#: src/app/main/ui/settings/subscription.cljs:39
+msgid "subscription.settings.editors"
+msgstr "(× %s éditeurs)"
+
+#: src/app/main/ui/settings/subscription.cljs:393, src/app/main/ui/settings/subscription.cljs:403, src/app/main/ui/settings/subscription.cljs:455
+msgid "subscription.settings.enterprise.autosave"
+msgstr ""
+"Versions à enregistrement automatique pendant 90 jours et récupération de "
+"fichiers"
+
+#: src/app/main/ui/settings/subscription.cljs:392, src/app/main/ui/settings/subscription.cljs:402, src/app/main/ui/settings/subscription.cljs:454
+msgid "subscription.settings.enterprise.unlimited-storage-benefit"
+msgstr "Stockage illimité"
+
+#: src/app/main/ui/settings/subscription.cljs:133
+msgid "subscription.settings.management.dialog.editors"
+msgstr "Éditeur"
+
+#: src/app/main/ui/settings/subscription.cljs:138
+msgid "subscription.settings.management.dialog.editors-explanation"
+msgstr ""
+"(Propriétaires, administrateur et éditeurs. Les spectateurs ne sont pas "
+"comptabilisés comme éditeurs.)"
+
+#: src/app/main/ui/settings/subscription.cljs:360, src/app/main/ui/settings/subscription.cljs:427
+msgid "subscription.settings.professional.autosave-benefit"
+msgstr ""
+"Versions à enregistrement automatique pendant 7 jours et récupération de "
+"fichiers"
+
+#: src/app/main/ui/settings/subscription.cljs:359, src/app/main/ui/settings/subscription.cljs:426
+msgid "subscription.settings.professional.storage-benefit"
+msgstr "10 Go de stockage"
+
+#: src/app/main/ui/settings/subscription.cljs:361, src/app/main/ui/settings/subscription.cljs:428
+msgid "subscription.settings.professional.teams-editors-benefit"
+msgstr ""
+"Nombre d'équipes illimité. Jusqu'à 8 éditeurs dans les équipes dont vous "
+"êtes propriétaire."
+
+#: src/app/main/ui/settings/subscription.cljs:238
+msgid "subscription.settings.success.dialog.thanks"
+msgstr "Merci d'avoir choisi l'abonnement Penpot %s !"
+
+#: src/app/main/ui/settings/subscription.cljs:369, src/app/main/ui/settings/subscription.cljs:381, src/app/main/ui/settings/subscription.cljs:441
+msgid "subscription.settings.unlimited.autosave-benefit"
+msgstr ""
+"Versions à enregistrement automatique pendant 30 jours et récupération de "
+"fichiers"
+
+#: src/app/main/ui/settings/subscription.cljs:368, src/app/main/ui/settings/subscription.cljs:380, src/app/main/ui/settings/subscription.cljs:440
+msgid "subscription.settings.unlimited.storage-benefit"
+msgstr "25 Go de stockage"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:56
+#, markdown
+msgid "subscription.workspace.versions.warning.enterprise.subtext-owner"
+msgstr ""
+"Si vous souhaitez augmenter cette limite, écrivez-nous à l'adressse [%s]"
+"(mailto)"
+
+#: src/app/main/ui/workspace/sidebar/versions.cljs:58
+#, markdown
+msgid "subscription.workspace.versions.warning.subtext-member"
+msgstr ""
+"Si vous souhaitez augmenter cette limite, contactez le propriétaire de "
+"l'équipe : [%s](mailto)"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1281
+msgid "workspace.options.component.variant.duplicated.group.locate"
+msgstr "Chercher des variantes en double"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:1278
+msgid "workspace.options.component.variant.duplicated.group.title"
+msgstr "Certaines variantes possèdent des propriétés et des valeurs identiques"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/component.cljs:502
+msgid "workspace.options.component.variant.malformed.locate"
+msgstr "Chercher les variantes non valides"
+
+#: src/app/main/ui/workspace/sidebar/options/menus/variants_help_modal.cljs:88
+msgid "workspace.options.component.variants-help-modal.rule3.detail"
+msgstr ""
+"Les groupes, les tableaux de bord et les dispositions sont considérés "
+"équivalents."
+
+#: src/app/main/data/workspace/tokens/errors.cljs:97
+msgid "workspace.tokens.composite-line-height-needs-font-size"
+msgstr ""
+"L'interlignage dépend de la taille de la police. Ajoutez une taille de "
+"police pour obtenir la valeur déduite."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:711
+msgid "workspace.tokens.individual-tokens"
+msgstr "Utiliser des tokens individuels"
+
+#: src/app/main/data/workspace/tokens/errors.cljs:93
+msgid "workspace.tokens.invalid-token-value-typography"
+msgstr ""
+"Valeur non valide : elle doit faire référence à un token de typographie "
+"composite."
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:1043
+msgid "workspace.tokens.line-height-value-enter"
+msgstr "Entrer l'interlignage — multiplicateur, px, % ou {alias}"
+
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs:715
+msgid "workspace.tokens.use-reference"
+msgstr "Utiliser une référence"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:59, src/app/main/ui/workspace/colorpicker/color_tokens.cljs:179
+msgid "inspect.tabs.styles.panel.toggle-style"
+msgstr "Afficher/Masquer le panneau %s"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:26
+msgid "labels.blur"
+msgstr "Flou"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:27
+msgid "labels.shadow"
+msgstr "Ombre"
+
+#: src/app/main/ui/inspect/styles/style_box.cljs:24, src/app/main/ui/workspace/sidebar/options/menus/stroke.cljs:46
+msgid "labels.stroke"
+msgstr "Barré"
+
+#: src/app/main/ui/settings/subscription.cljs:394, src/app/main/ui/settings/subscription.cljs:404, src/app/main/ui/settings/subscription.cljs:456
+msgid "subscription.settings.enterprise.capped-bill"
+msgstr "Facture mensuelle forfaitaire"
+
+#: src/app/main/ui/settings/subscription.cljs:131
+msgid "subscription.settings.management.dialog.currently-editors-title"
+msgid_plural "subscription.settings.management.dialog.currently-editors-title"
+msgstr[0] "Il y a actuellement %s personne dans vos équipe qui peut être éditeur."
+msgstr[1] ""
+"Il y a actuellement %s personnes dans vos équipe qui peuvent être éditeurs."
