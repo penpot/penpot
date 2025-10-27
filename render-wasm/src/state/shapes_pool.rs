@@ -62,30 +62,119 @@ impl<'a> ShapesPoolImpl<'a> {
             return;
         }
 
+        // Reserve exact capacity to avoid any future reallocations
+        // This is critical because we store &'a Uuid references that would be invalidated
+        let target_capacity = (capacity as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize;
+        self.shapes
+            .reserve_exact(target_capacity.saturating_sub(self.shapes.len()));
+
         self.shapes
             .extend(iter::repeat_with(|| Shape::new(Uuid::nil())).take(additional as usize));
         performance::end_measure!("shapes_pool_initialize");
     }
 
     pub fn add_shape(&mut self, id: Uuid) -> &mut Shape {
-        if self.counter >= self.shapes.len() {
+        let did_reallocate = if self.counter >= self.shapes.len() {
+            // We need more space. Check if we'll need to reallocate the Vec.
+            let current_capacity = self.shapes.capacity();
             let additional = (self.shapes.len() as f32 * SHAPES_POOL_ALLOC_MULTIPLIER) as usize;
+            let needed_capacity = self.shapes.len() + additional;
+
+            let will_reallocate = needed_capacity > current_capacity;
+
+            if will_reallocate {
+                // Reserve extra space to minimize future reallocations
+                let extra_reserve = (needed_capacity as f32 * 0.5) as usize;
+                self.shapes
+                    .reserve(needed_capacity + extra_reserve - current_capacity);
+            }
+
             self.shapes
                 .extend(iter::repeat_with(|| Shape::new(Uuid::nil())).take(additional));
-        }
+
+            will_reallocate
+        } else {
+            false
+        };
+
         let idx = self.counter;
         let new_shape = &mut self.shapes[idx];
         new_shape.id = id;
 
-        // Get a reference to the id field in the shape
-        // SAFETY: We need to get a reference with lifetime 'a from the shape's id.
-        // This is safe because the shapes Vec is stable and won't be reallocated
-        // (we pre-allocate), and the id field won't move within the Shape.
+        // Get a reference to the id field in the shape with lifetime 'a
+        // SAFETY: This is safe because:
+        // 1. We pre-allocate enough capacity to avoid Vec reallocation
+        // 2. The shape and its id field won't move within the Vec
+        // 3. The reference won't outlive the ShapesPoolImpl
         let id_ref: &'a Uuid = unsafe { &*(&self.shapes[idx].id as *const Uuid) };
 
         self.shapes_uuid_to_idx.insert(id_ref, idx);
         self.counter += 1;
+
+        // If the Vec reallocated, we need to rebuild all references in the HashMaps
+        // because the old references point to deallocated memory
+        if did_reallocate {
+            self.rebuild_references();
+        }
+
         &mut self.shapes[idx]
+    }
+
+    /// Rebuilds all &'a Uuid references in the HashMaps after a Vec reallocation.
+    /// This is necessary because Vec reallocation invalidates all existing references.
+    fn rebuild_references(&mut self) {
+        // Rebuild shapes_uuid_to_idx with fresh references
+        let mut new_map = HashMap::with_capacity(self.shapes_uuid_to_idx.len());
+        for (_, idx) in self.shapes_uuid_to_idx.drain() {
+            let id_ref: &'a Uuid = unsafe { &*(&self.shapes[idx].id as *const Uuid) };
+            new_map.insert(id_ref, idx);
+        }
+        self.shapes_uuid_to_idx = new_map;
+
+        // Rebuild modifiers with fresh references
+        if !self.modifiers.is_empty() {
+            let old_modifiers: Vec<(Uuid, skia::Matrix)> = self
+                .modifiers
+                .drain()
+                .map(|(uuid_ref, matrix)| (*uuid_ref, matrix))
+                .collect();
+
+            for (uuid, matrix) in old_modifiers {
+                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                    self.modifiers.insert(uuid_ref, matrix);
+                }
+            }
+        }
+
+        // Rebuild structure with fresh references
+        if !self.structure.is_empty() {
+            let old_structure: Vec<(Uuid, Vec<StructureEntry>)> = self
+                .structure
+                .drain()
+                .map(|(uuid_ref, entries)| (*uuid_ref, entries))
+                .collect();
+
+            for (uuid, entries) in old_structure {
+                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                    self.structure.insert(uuid_ref, entries);
+                }
+            }
+        }
+
+        // Rebuild modified_shape_cache with fresh references
+        if !self.modified_shape_cache.is_empty() {
+            let old_cache: Vec<(Uuid, OnceCell<Shape>)> = self
+                .modified_shape_cache
+                .drain()
+                .map(|(uuid_ref, cell)| (*uuid_ref, cell))
+                .collect();
+
+            for (uuid, cell) in old_cache {
+                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                    self.modified_shape_cache.insert(uuid_ref, cell);
+                }
+            }
+        }
     }
 
     pub fn len(&self) -> usize {
