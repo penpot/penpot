@@ -12,7 +12,6 @@
    [app.main.ui.ds.foundations.assets.icon :refer [icon*] :as i]
    [app.util.i18n :refer [tr]]
    [app.util.webapi :as wapi]
-   [cljs.pprint :as pp]
    [rumext.v2 :as mf]))
 
 (defn- panel->title
@@ -46,10 +45,6 @@
          (mf/deps expanded)
          (fn []
            (reset! expanded* (not expanded))))
-
-        ;; _ (pp/pprint "style-box*")
-        ;; _ (pp/pprint panel)
-        ;; _ (pp/pprint shorthand)
 
         copy-shorthand
         (mf/use-fn

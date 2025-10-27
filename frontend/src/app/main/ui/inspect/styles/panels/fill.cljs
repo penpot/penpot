@@ -13,7 +13,6 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.util.color :as uc]
-   [me.flowthing.pp :as pp]
    [rumext.v2 :as mf]))
 
 (defn- get-applied-tokens-in-shape
@@ -65,7 +64,9 @@
   (let [shorthand* (mf/use-state (generate-fill-shorthand (first shapes)))
         shorthand (deref shorthand*)]
     (mf/use-effect
+     (mf/deps shorthand on-fill-shorthand shapes)
      (fn []
+       (reset! shorthand* (generate-fill-shorthand (first shapes)))
        (on-fill-shorthand {:panel :fill
                            :property shorthand})))
     [:div {:class (stl/css :fill-panel)}

@@ -30,8 +30,7 @@
    [app.main.ui.inspect.styles.style-box :refer [style-box*]]
    [app.util.code-gen.style-css :as css]
    [app.util.i18n :refer [tr]]
-   [rumext.v2 :as mf]
-   [cljs.pprint :as pp]))
+   [rumext.v2 :as mf]))
 
 (def layout-element-properties
   [:margin-block-start
@@ -126,7 +125,6 @@
                                    :variant nil
                                    :grid-element nil})
         shorthands (deref shorthands*)
-        _ (pp/pprint shorthands)
         set-shorthands
         ;; This fn must receive an object `shorthand` with :panel and :property (the shorthand string) keys
         (mf/use-fn

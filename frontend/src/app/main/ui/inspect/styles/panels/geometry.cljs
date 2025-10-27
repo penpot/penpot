@@ -58,10 +58,11 @@
   (let [shorthand* (mf/use-state (generate-geometry-shorthand shapes objects))
         shorthand (deref shorthand*)]
     (mf/use-effect
+     (mf/deps shorthand on-geometry-shorthand shapes objects)
      (fn []
-       (when on-geometry-shorthand
-         (on-geometry-shorthand {:panel :geometry
-                                 :property shorthand}))))
+       (reset! shorthand* (generate-geometry-shorthand shapes objects))
+       (on-geometry-shorthand {:panel :geometry
+                               :property shorthand})))
     [:div {:class (stl/css :geometry-panel)}
      (for [shape shapes]
        [:div {:key (:id shape) :class "geometry-shape"}

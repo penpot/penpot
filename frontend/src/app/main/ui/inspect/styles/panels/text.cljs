@@ -19,7 +19,6 @@
    [app.util.timers :as tm]
    [app.util.webapi :as wapi]
    [cuerdas.core :as str]
-   [me.flowthing.pp :as pp]
    [rumext.v2 :as mf]))
 
 (defn- get-applied-tokens-in-shape
@@ -82,128 +81,129 @@
   (let [shorthand* (mf/use-state (generate-typography-shorthand shapes))
         shorthand (deref shorthand*)]
     (mf/use-effect
+     (mf/deps shorthand on-font-shorthand shapes)
      (fn []
-       (when on-font-shorthand
-         (on-font-shorthand {:panel :text
-                             :property shorthand}))))
-   [:div {:class (stl/css :text-panel)}
-   (for [shape shapes]
-     (let [style-text-blocks (get-style-text shape)
-           composite-typography-token (get-resolved-token :typography shape resolved-tokens)]
-       [:div {:key (:id shape) :class "text-shape"}
-        (for [[style text] style-text-blocks]
+       (reset! shorthand* (generate-typography-shorthand shapes))
+       (on-font-shorthand {:panel :text
+                           :property shorthand})))
+    [:div {:class (stl/css :text-panel)}
+     (for [shape shapes]
+       (let [style-text-blocks (get-style-text shape)
+             composite-typography-token (get-resolved-token :typography shape resolved-tokens)]
+         [:div {:key (:id shape) :class "text-shape"}
+          (for [[style text] style-text-blocks]
 
-          [:div {:key (:id shape) :class "text-properties"}
+            [:div {:key (:id shape) :class "text-properties"}
 
-           (when (:fills style)
-             (for [[idx fill] (map-indexed vector (:fills style))]
-               [:> typography-color-row* {:key idx
-                                          :fill fill
-                                          :shape shape
-                                          :resolved-tokens resolved-tokens
-                                          :color-space color-space}]))
+             (when (:fills style)
+               (for [[idx fill] (map-indexed vector (:fills style))]
+                 [:> typography-color-row* {:key idx
+                                            :fill fill
+                                            :shape shape
+                                            :resolved-tokens resolved-tokens
+                                            :color-space color-space}]))
 
            ;; Typography style
-           (when (and (not composite-typography-token)
-                      (:typography-ref-id style))
-             [:> typography-name-block* {:style style}])
+             (when (and (not composite-typography-token)
+                        (:typography-ref-id style))
+               [:> typography-name-block* {:style style}])
 
            ;; Composite Typography token
-           (when (and (not (:typography-ref-id style))
-                      composite-typography-token)
-             [:> properties-row* {:term "Typography"
-                                  :detail (:name composite-typography-token)
-                                  :token composite-typography-token
-                                  :property (:name composite-typography-token)
-                                  :copiable true}])
+             (when (and (not (:typography-ref-id style))
+                        composite-typography-token)
+               [:> properties-row* {:term "Typography"
+                                    :detail (:name composite-typography-token)
+                                    :token composite-typography-token
+                                    :property (:name composite-typography-token)
+                                    :copiable true}])
 
-           (when (:font-id style)
-             (let [name (get (fonts/get-font-data (:font-id style)) :name)
-                   resolved-token (get-resolved-token :font-family shape resolved-tokens)]
-               [:> properties-row* {:term "Font Family"
-                                    :detail name
-                                    :token resolved-token
-                                    :property (str "font-family: \"" name "\";")
-                                    :copiable true}]))
+             (when (:font-id style)
+               (let [name (get (fonts/get-font-data (:font-id style)) :name)
+                     resolved-token (get-resolved-token :font-family shape resolved-tokens)]
+                 [:> properties-row* {:term "Font Family"
+                                      :detail name
+                                      :token resolved-token
+                                      :property (str "font-family: \"" name "\";")
+                                      :copiable true}]))
 
-           (when (:font-style style)
-             [:> properties-row* {:term "Font Style"
-                                  :detail (:font-style style)
-                                  :property (str "font-style: " (:font-style style) ";")
-                                  :copiable true}])
+             (when (:font-style style)
+               [:> properties-row* {:term "Font Style"
+                                    :detail (:font-style style)
+                                    :property (str "font-style: " (:font-style style) ";")
+                                    :copiable true}])
 
-           (when (:font-size style)
-             (let [font-size (fmt/format-pixels (:font-size style))
-                   resolved-token (get-resolved-token :font-size shape resolved-tokens)]
-               [:> properties-row* {:term "Font Size"
-                                    :detail font-size
-                                    :token resolved-token
-                                    :property (str "font-size: " font-size ";")
-                                    :copiable true}]))
-           (when (:font-weight style)
-             (let [resolved-token (get-resolved-token :font-weight shape resolved-tokens)]
-               [:> properties-row* {:term "Font Weight"
-                                    :detail (:font-weight style)
-                                    :token resolved-token
-                                    :property (str "font-weight: " (:font-weight style) ";")
-                                    :copiable true}]))
+             (when (:font-size style)
+               (let [font-size (fmt/format-pixels (:font-size style))
+                     resolved-token (get-resolved-token :font-size shape resolved-tokens)]
+                 [:> properties-row* {:term "Font Size"
+                                      :detail font-size
+                                      :token resolved-token
+                                      :property (str "font-size: " font-size ";")
+                                      :copiable true}]))
+             (when (:font-weight style)
+               (let [resolved-token (get-resolved-token :font-weight shape resolved-tokens)]
+                 [:> properties-row* {:term "Font Weight"
+                                      :detail (:font-weight style)
+                                      :token resolved-token
+                                      :property (str "font-weight: " (:font-weight style) ";")
+                                      :copiable true}]))
 
-           (when (:line-height style)
-             (let [line-height (:line-height style)
-                   resolved-token (get-resolved-token :line-height shape resolved-tokens)]
-               [:> properties-row* {:term "Line Height"
-                                    :detail (str line-height)
-                                    :token resolved-token
-                                    :property (str "line-height: " line-height ";")
-                                    :copiable true}]))
+             (when (:line-height style)
+               (let [line-height (:line-height style)
+                     resolved-token (get-resolved-token :line-height shape resolved-tokens)]
+                 [:> properties-row* {:term "Line Height"
+                                      :detail (str line-height)
+                                      :token resolved-token
+                                      :property (str "line-height: " line-height ";")
+                                      :copiable true}]))
 
-           (when (:letter-spacing style)
-             (let [letter-spacing (fmt/format-pixels (:letter-spacing style))
-                   resolved-token (get-resolved-token :letter-spacing shape resolved-tokens)]
-               [:> properties-row* {:term "Letter Spacing"
-                                    :detail letter-spacing
-                                    :token resolved-token
-                                    :property (str "letter-spacing: " letter-spacing ";")
-                                    :copiable true}]))
+             (when (:letter-spacing style)
+               (let [letter-spacing (fmt/format-pixels (:letter-spacing style))
+                     resolved-token (get-resolved-token :letter-spacing shape resolved-tokens)]
+                 [:> properties-row* {:term "Letter Spacing"
+                                      :detail letter-spacing
+                                      :token resolved-token
+                                      :property (str "letter-spacing: " letter-spacing ";")
+                                      :copiable true}]))
 
-           (when (:text-decoration style)
-             (let [resolved-token (get-resolved-token :text-decoration shape resolved-tokens)]
-               [:> properties-row* {:term "Text Decoration"
-                                    :detail (:text-decoration style)
-                                    :token resolved-token
-                                    :property (str "text-decoration: " (:text-decoration style) ";")
-                                    :copiable true}]))
+             (when (:text-decoration style)
+               (let [resolved-token (get-resolved-token :text-decoration shape resolved-tokens)]
+                 [:> properties-row* {:term "Text Decoration"
+                                      :detail (:text-decoration style)
+                                      :token resolved-token
+                                      :property (str "text-decoration: " (:text-decoration style) ";")
+                                      :copiable true}]))
 
-           (when (:text-transform style)
-             (let [resolved-token (get-resolved-token :text-case shape resolved-tokens)]
-               [:> properties-row* {:term "Text Transform"
-                                    :detail (:text-transform style)
-                                    :token resolved-token
-                                    :property (str "text-transform: " (:text-transform style) ";")
-                                    :copiable true}]))
-           (when text
-             (let [copied* (mf/use-state false)
-                   copied (deref copied*)
+             (when (:text-transform style)
+               (let [resolved-token (get-resolved-token :text-case shape resolved-tokens)]
+                 [:> properties-row* {:term "Text Transform"
+                                      :detail (:text-transform style)
+                                      :token resolved-token
+                                      :property (str "text-transform: " (:text-transform style) ";")
+                                      :copiable true}]))
+             (when text
+               (let [copied* (mf/use-state false)
+                     copied (deref copied*)
 
-                   text (str/trim text)
+                     text (str/trim text)
 
-                   copy-text
-                   (mf/use-fn
-                    (mf/deps copied)
-                    (fn []
-                      (let [formatted-text (if (= (:text-transform style) "uppercase")
-                                             (.toUpperCase text)
-                                             text)]
-                        (reset! copied* true)
-                        (wapi/write-to-clipboard formatted-text)
-                        (tm/schedule 1000 #(reset! copied* false)))))]
-               [:div {:class (stl/css :text-content-wrapper)}
-                [:> property-detail-copiable* {:copied copied
-                                               :on-click copy-text}
-                 [:span {:class (stl/css :text-content)
-                         :style {:font-family (:font-family style)
-                                 :font-weight (:font-weight style)
-                                 :text-transform (:text-transform style)
-                                 :letter-spacing (fmt/format-pixels (:letter-spacing style))
-                                 :font-style (:font-style style)}}
-                  text]]]))])]))]))
+                     copy-text
+                     (mf/use-fn
+                      (mf/deps copied)
+                      (fn []
+                        (let [formatted-text (if (= (:text-transform style) "uppercase")
+                                               (.toUpperCase text)
+                                               text)]
+                          (reset! copied* true)
+                          (wapi/write-to-clipboard formatted-text)
+                          (tm/schedule 1000 #(reset! copied* false)))))]
+                 [:div {:class (stl/css :text-content-wrapper)}
+                  [:> property-detail-copiable* {:copied copied
+                                                 :on-click copy-text}
+                   [:span {:class (stl/css :text-content)
+                           :style {:font-family (:font-family style)
+                                   :font-weight (:font-weight style)
+                                   :text-transform (:text-transform style)
+                                   :letter-spacing (fmt/format-pixels (:letter-spacing style))
+                                   :font-style (:font-style style)}}
+                    text]]]))])]))]))

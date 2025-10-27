@@ -67,10 +67,11 @@
         shorthand* (mf/use-state (generate-layout-element-shorthand shapes objects))
         shorthand (deref shorthand*)]
     (mf/use-effect
+     (mf/deps shorthand on-layout-element-shorthand shapes objects)
      (fn []
-       (when on-layout-element-shorthand
-         (on-layout-element-shorthand {:panel :layout-element
-                                       :property shorthand}))))
+       (reset! shorthand* (generate-layout-element-shorthand shapes objects))
+       (on-layout-element-shorthand {:panel :layout-element
+                                     :property shorthand})))
     [:div {:class (stl/css :layout-element-panel)}
      (for [shape shapes]
        [:div {:key (:id shape) :class "layout-element-shape"}

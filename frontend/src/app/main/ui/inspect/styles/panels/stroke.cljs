@@ -83,10 +83,11 @@
   (let [shorthand* (mf/use-state (generate-stroke-shorthand shapes))
         shorthand (deref shorthand*)]
     (mf/use-effect
+     (mf/deps shorthand on-stroke-shorthand shapes)
      (fn []
-       (when on-stroke-shorthand
-         (on-stroke-shorthand {:panel :stroke
-                               :property shorthand}))))
+       (reset! shorthand* (generate-stroke-shorthand shapes))
+       (on-stroke-shorthand {:panel :stroke
+                             :property shorthand})))
     [:div {:class (stl/css :stroke-panel)}
      (for [shape shapes]
        [:div {:key (:id shape) :class "stroke-shape"}
