@@ -4,7 +4,7 @@ use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
     Modifier, Shape, StructureEntry,
 };
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
 use std::collections::{HashMap, VecDeque};
@@ -179,7 +179,7 @@ fn initialize_tracks(
     layout_bounds: &Bounds,
     layout_axis: &LayoutAxis,
     flex_data: &FlexData,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
@@ -433,7 +433,7 @@ fn calculate_track_data(
     layout_data: &LayoutData,
     flex_data: &FlexData,
     layout_bounds: &Bounds,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
@@ -574,7 +574,7 @@ pub fn reflow_flex_layout(
     shape: &Shape,
     layout_data: &LayoutData,
     flex_data: &FlexData,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {

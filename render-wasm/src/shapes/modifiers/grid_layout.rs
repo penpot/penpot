@@ -4,7 +4,7 @@ use crate::shapes::{
     JustifyContent, JustifyItems, JustifySelf, Layout, LayoutData, LayoutItem, Modifier, Shape,
     StructureEntry, Type,
 };
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 use indexmap::IndexSet;
 use std::collections::{HashMap, VecDeque};
@@ -45,7 +45,7 @@ pub fn calculate_tracks(
     grid_data: &GridData,
     layout_bounds: &Bounds,
     cells: &Vec<GridCell>,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) -> Vec<TrackData> {
     let layout_size = if is_column {
@@ -122,7 +122,7 @@ fn set_auto_base_size(
     column: bool,
     tracks: &mut [TrackData],
     cells: &Vec<GridCell>,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     for cell in cells {
@@ -173,7 +173,7 @@ fn set_auto_multi_span(
     column: bool,
     tracks: &mut [TrackData],
     cells: &[GridCell],
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups with flex (will be set in flex_multi_span)
@@ -248,7 +248,7 @@ fn set_flex_multi_span(
     layout_data: &LayoutData,
     tracks: &mut [TrackData],
     cells: &[GridCell],
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
 ) {
     // Remove groups without flex
@@ -539,7 +539,7 @@ fn cell_bounds(
 pub fn create_cell_data<'a>(
     layout_bounds: &Bounds,
     children: &IndexSet<Uuid>,
-    shapes: &'a ShapesPool,
+    shapes: ShapesPoolRef<'a>,
     cells: &Vec<GridCell>,
     column_tracks: &[TrackData],
     row_tracks: &[TrackData],
@@ -602,7 +602,7 @@ pub fn create_cell_data<'a>(
 
 pub fn grid_cell_data<'a>(
     shape: &Shape,
-    shapes: &'a ShapesPool,
+    shapes: ShapesPoolRef<'a>,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
     allow_empty: bool,
@@ -723,7 +723,7 @@ pub fn reflow_grid_layout(
     shape: &Shape,
     layout_data: &LayoutData,
     grid_data: &GridData,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {

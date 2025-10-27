@@ -4,14 +4,14 @@ use std::collections::HashMap;
 use crate::math::{Matrix, Rect};
 use crate::shapes::modifiers::grid_layout::grid_cell_data;
 use crate::shapes::{Shape, StructureEntry};
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 
 pub fn render_overlay(
     zoom: f32,
     canvas: &skia::Canvas,
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) {

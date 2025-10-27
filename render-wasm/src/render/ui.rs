@@ -1,7 +1,7 @@
 use skia_safe::{self as skia, Color4f};
 use std::collections::HashMap;
 
-use super::{RenderState, ShapesPool, SurfaceId};
+use super::{RenderState, ShapesPoolRef, SurfaceId};
 use crate::math::Matrix;
 use crate::render::grid_layout;
 use crate::shapes::StructureEntry;
@@ -9,7 +9,7 @@ use crate::uuid::Uuid;
 
 pub fn render(
     render_state: &mut RenderState,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) {
