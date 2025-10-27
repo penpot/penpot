@@ -719,8 +719,7 @@
         on-change'
         (mf/use-fn
          (mf/deps on-change wrap-type ids)
-         (fn [value attr event]
-
+         (fn [value event attr]
            (if (or (string? value) (int? value))
              (on-change (= "nowrap" wrap-type) attr value event)
              (do
@@ -740,10 +739,10 @@
                                           :shape-ids ids}))))
 
         on-row-gap-change
-        (mf/use-fn (mf/deps on-change') #(on-change' % :row-gap))
+        (mf/use-fn (mf/deps on-change') #(on-change' %1 %2 :row-gap))
 
         on-column-gap-change
-        (mf/use-fn (mf/deps on-change') #(on-change' % :column-gap))
+        (mf/use-fn (mf/deps on-change') #(on-change' %1 %2 :column-gap))
 
         on-focus-row-gap
         (mf/use-fn (mf/deps on-gap-focus) #(on-gap-focus :row-gap))
@@ -785,7 +784,7 @@
           :data-type "row-gap"
           :data-wrap-type (d/name wrap-type)
           :on-focus on-focus-row-gap
-          :on-change on-change'
+          :on-change on-row-gap-change
           :on-blur on-gap-blur
           :nillable true
           :min 0
@@ -819,7 +818,7 @@
           :data-type "column-gap"
           :data-wrap-type (d/name wrap-type)
           :on-focus on-focus-column-gap
-          :on-change on-change'
+          :on-change on-column-gap-change
           :on-blur on-gap-blur
           :nillable true
           :min 0
