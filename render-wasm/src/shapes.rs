@@ -50,7 +50,7 @@ pub use transform::*;
 use crate::math::{self, Bounds, Matrix, Point};
 use indexmap::IndexSet;
 
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 
 const MIN_VISIBLE_SIZE: f32 = 2.0;
 const ANTIALIAS_THRESHOLD: f32 = 15.0;
@@ -197,7 +197,7 @@ pub struct Shape {
 // A set of ancestor UUIDs in traversal order (closest ancestor first)
 pub fn all_with_ancestors(
     shapes: &[Uuid],
-    shapes_pool: &ShapesPool,
+    shapes_pool: ShapesPoolRef,
     include_hidden: bool,
 ) -> IndexSet<Uuid> {
     let mut pending = Vec::from_iter(shapes.iter());
@@ -677,7 +677,7 @@ impl Shape {
         self.selrect.width()
     }
 
-    pub fn visually_insignificant(&self, scale: f32, shapes_pool: &ShapesPool) -> bool {
+    pub fn visually_insignificant(&self, scale: f32, shapes_pool: ShapesPoolRef) -> bool {
         let extrect = self.extrect(shapes_pool);
         extrect.width() * scale < MIN_VISIBLE_SIZE && extrect.height() * scale < MIN_VISIBLE_SIZE
     }
@@ -721,7 +721,7 @@ impl Shape {
         self.selrect
     }
 
-    pub fn extrect(&self, shapes_pool: &ShapesPool) -> math::Rect {
+    pub fn extrect(&self, shapes_pool: ShapesPoolRef) -> math::Rect {
         *self
             .extrect
             .get_or_init(|| self.calculate_extrect(shapes_pool))
@@ -834,7 +834,11 @@ impl Shape {
         rect
     }
 
-    fn apply_children_bounds(&self, mut rect: math::Rect, shapes_pool: &ShapesPool) -> math::Rect {
+    fn apply_children_bounds(
+        &self,
+        mut rect: math::Rect,
+        shapes_pool: ShapesPoolRef,
+    ) -> math::Rect {
         let include_children = match self.shape_type {
             Type::Group(_) => true,
             Type::Frame(_) => !self.clip_content,
@@ -852,7 +856,7 @@ impl Shape {
         rect
     }
 
-    pub fn calculate_extrect(&self, shapes_pool: &ShapesPool) -> math::Rect {
+    pub fn calculate_extrect(&self, shapes_pool: ShapesPoolRef) -> math::Rect {
         let shape = self;
         let max_stroke = Stroke::max_bounds_width(shape.strokes.iter(), shape.is_open());
 
@@ -940,7 +944,7 @@ impl Shape {
 
     pub fn all_children(
         &self,
-        shapes: &ShapesPool,
+        shapes: ShapesPoolRef,
         include_hidden: bool,
         include_self: bool,
     ) -> IndexSet<Uuid> {
@@ -968,7 +972,7 @@ impl Shape {
         matrix
     }
 
-    pub fn get_concatenated_matrix(&self, shapes: &ShapesPool) -> Matrix {
+    pub fn get_concatenated_matrix(&self, shapes: ShapesPoolRef) -> Matrix {
         let mut matrix = Matrix::new_identity();
         let mut current_id = self.id;
         while let Some(parent_id) = shapes.get(&current_id).and_then(|s| s.parent_id) {

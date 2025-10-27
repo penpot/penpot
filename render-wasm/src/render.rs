@@ -25,7 +25,7 @@ use crate::shapes::{
     all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke,
     StructureEntry, Type,
 };
-use crate::state::ShapesPool;
+use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
 use crate::uuid::Uuid;
 use crate::view::Viewbox;
@@ -276,7 +276,7 @@ pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
 
 fn is_modified_child(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     modifiers: &HashMap<Uuid, Matrix>,
 ) -> bool {
     if modifiers.is_empty() {
@@ -475,7 +475,7 @@ impl RenderState {
     #[allow(clippy::too_many_arguments)]
     pub fn render_shape(
         &mut self,
-        shapes: &ShapesPool,
+        shapes: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
@@ -834,7 +834,7 @@ impl RenderState {
 
     pub fn render_from_cache(
         &mut self,
-        shapes: &ShapesPool,
+        shapes: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -879,7 +879,7 @@ impl RenderState {
 
     pub fn start_render_loop(
         &mut self,
-        tree: &ShapesPool,
+        tree: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -939,7 +939,7 @@ impl RenderState {
 
     pub fn process_animation_frame(
         &mut self,
-        tree: &ShapesPool,
+        tree: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -1022,7 +1022,7 @@ impl RenderState {
     #[inline]
     pub fn render_shape_exit(
         &mut self,
-        tree: &ShapesPool,
+        tree: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         element: &Shape,
@@ -1134,7 +1134,7 @@ impl RenderState {
         self.get_rect_bounds(rect)
     }
 
-    pub fn get_shape_extrect_bounds(&mut self, shape: &Shape, tree: &ShapesPool) -> Rect {
+    pub fn get_shape_extrect_bounds(&mut self, shape: &Shape, tree: ShapesPoolRef) -> Rect {
         let rect = shape.extrect(tree);
         self.get_rect_bounds(rect)
     }
@@ -1172,7 +1172,7 @@ impl RenderState {
     #[allow(clippy::too_many_arguments)]
     fn render_drop_black_shadow(
         &mut self,
-        shapes: &ShapesPool,
+        shapes: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
@@ -1246,7 +1246,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial_uncached(
         &mut self,
-        tree: &ShapesPool,
+        tree: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -1530,7 +1530,7 @@ impl RenderState {
 
     pub fn render_shape_tree_partial(
         &mut self,
-        tree: &ShapesPool,
+        tree: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
@@ -1648,13 +1648,13 @@ impl RenderState {
         Ok(())
     }
 
-    pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: &ShapesPool) -> TileRect {
+    pub fn get_tiles_for_shape(&mut self, shape: &Shape, tree: ShapesPoolRef) -> TileRect {
         let extrect = shape.extrect(tree);
         let tile_size = tiles::get_tile_size(self.get_scale());
         tiles::get_tiles_for_rect(extrect, tile_size)
     }
 
-    pub fn update_tile_for(&mut self, shape: &Shape, tree: &ShapesPool) {
+    pub fn update_tile_for(&mut self, shape: &Shape, tree: ShapesPoolRef) {
         let TileRect(rsx, rsy, rex, rey) = self.get_tiles_for_shape(shape, tree);
         let old_tiles: HashSet<tiles::Tile> = self
             .tiles
@@ -1684,7 +1684,7 @@ impl RenderState {
 
     pub fn rebuild_tiles_shallow(
         &mut self,
-        tree: &ShapesPool,
+        tree: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -1714,7 +1714,7 @@ impl RenderState {
 
     pub fn rebuild_tiles(
         &mut self,
-        tree: &ShapesPool,
+        tree: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) {
@@ -1752,7 +1752,7 @@ impl RenderState {
     pub fn invalidate_and_update_tiles(
         &mut self,
         shape_ids: &IndexSet<Uuid>,
-        tree: &mut ShapesPool,
+        tree: ShapesPoolMutRef<'_>,
     ) {
         for shape_id in shape_ids {
             if let Some(shape) = tree.get(shape_id) {
@@ -1769,7 +1769,7 @@ impl RenderState {
     /// Additionally, it processes all ancestors of modified shapes to ensure their
     /// extended rectangles are properly recalculated and their tiles are updated.
     /// This is crucial for frames and groups that contain transformed children.
-    pub fn rebuild_modifier_tiles(&mut self, tree: &mut ShapesPool, ids: Vec<Uuid>) {
+    pub fn rebuild_modifier_tiles(&mut self, tree: ShapesPoolMutRef<'_>, ids: Vec<Uuid>) {
         let ancestors = all_with_ancestors(&ids, tree, false);
         self.invalidate_and_update_tiles(&ancestors, tree);
     }

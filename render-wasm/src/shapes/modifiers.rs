@@ -13,13 +13,13 @@ use crate::shapes::{
     ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, StructureEntry,
     TransformEntry, Type,
 };
-use crate::state::{ShapesPool, State};
+use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
 
 #[allow(clippy::too_many_arguments)]
 fn propagate_children(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     parent_bounds_before: &Bounds,
     parent_bounds_after: &Bounds,
     transform: Matrix,
@@ -90,7 +90,7 @@ fn propagate_children(
 
 fn calculate_group_bounds(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
@@ -110,7 +110,7 @@ fn calculate_group_bounds(
 
 fn calculate_bool_bounds(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
@@ -464,7 +464,7 @@ mod tests {
         let parent_id = Uuid::new_v4();
 
         let shapes = {
-            let mut shapes = ShapesPool::new();
+            let mut shapes = ShapesPoolRef::new();
             shapes.initialize(10);
 
             let child_id = Uuid::new_v4();
@@ -507,7 +507,7 @@ mod tests {
     fn test_group_bounds() {
         let parent_id = Uuid::new_v4();
         let shapes = {
-            let mut shapes = ShapesPool::new();
+            let mut shapes = ShapesPoolRef::new();
             shapes.initialize(10);
 
             let child1_id = Uuid::new_v4();
