@@ -48,18 +48,24 @@
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
+(defn- generate-geometry-shorthand
+  [shapes objects]
+  (when (and (= (count shapes) 1) (has-border-radius? (first shapes)))
+    (css/get-css-property objects (first shapes) :border-radius)))
+
 (mf/defc geometry-panel*
   [{:keys [shapes objects resolved-tokens on-geometry-shorthand]}]
-  [:div {:class (stl/css :geometry-panel)}
-   (for [shape shapes]
-     [:div {:key (:id shape) :class "geometry-shape"}
-      (let [shorthand (when (and (= (count shapes) 1) (has-border-radius? shape))
-                        (css/get-css-property objects shape :border-radius))]
-        (mf/use-effect
-         (fn []
-           (when on-geometry-shorthand
-             (on-geometry-shorthand {:panel :geometry
-                                     :property shorthand}))))
+  (let [shorthand* (mf/use-state (generate-geometry-shorthand shapes objects))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (fn []
+       (when on-geometry-shorthand
+         (on-geometry-shorthand {:panel :geometry
+                                 :property shorthand}))))
+    [:div {:class (stl/css :geometry-panel)}
+     (for [shape shapes]
+       [:div {:key (:id shape) :class "geometry-shape"}
+
         (for [property properties]
           (when-let [value (css/get-css-value objects shape property)]
             (let [property-name (cmm/get-css-rule-humanized property)
@@ -70,4 +76,4 @@
                                    :detail value
                                    :token resolved-token
                                    :property property-value
-                                   :copiable true}]))))])])
+                                   :copiable true}])))])]))

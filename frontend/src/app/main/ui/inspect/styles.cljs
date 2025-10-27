@@ -249,9 +249,11 @@
           :shadow
           (let [shapes (filter has-shadow? shapes)]
             (when (seq shapes)
-              [:> style-box* {:panel :shadow}
+              [:> style-box* {:panel :shadow
+                              :shorthand (:shadow shorthands)}
                [:> shadow-panel* {:shapes shapes
-                                  :color-space color-space}]]))
+                                  :color-space color-space
+                                  :on-shadow-shorthand set-shorthands}]]))
 
           ;; DEFAULT WIP
           [:> style-box* {:panel panel}

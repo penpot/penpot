@@ -55,31 +55,38 @@
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
-(mf/defc layout-panel*
-  [{:keys [shapes objects resolved-tokens on-layout-shorthand]}]
-  [:div {:class (stl/css :variants-panel)}
-   (for [shape shapes]
-     (let [shorthand-padding (mf/use-memo
-                              [shapes shape objects]
-                              (fn []
-                                (when (and (= (count shapes) 1) (has-padding? shape))
-                                  (css/get-css-property objects shape :padding))))
-           shorthand-grid (mf/use-memo
+(defn- generate-layout-shorthand
+  [shapes objects]
+  (let [shape (first shapes)
+        shorthand-padding (mf/use-memo
                            [shapes shape objects]
                            (fn []
-                             (when (and (= (count shapes) 1)
-                                        (= :grid (:layout shape)))
-                               (str "grid: "
-                                    (css/get-css-value objects shape :grid-template-rows)
-                                    " / "
-                                    (css/get-css-value objects shape :grid-template-columns)
-                                    ";"))))
-           shorthand (str shorthand-padding " " shorthand-grid)]
-       (mf/use-effect
-        (fn []
-          (when on-layout-shorthand
-            (on-layout-shorthand {:panel :layout
-                                  :property shorthand}))))
+                             (when (and (= (count shapes) 1) (has-padding? shape))
+                               (css/get-css-property objects shape :padding))))
+        shorthand-grid (mf/use-memo
+                        [shapes shape objects]
+                        (fn []
+                          (when (and (= (count shapes) 1)
+                                     (= :grid (:layout shape)))
+                            (str "grid: "
+                                 (css/get-css-value objects shape :grid-template-rows)
+                                 " / "
+                                 (css/get-css-value objects shape :grid-template-columns)
+                                 ";"))))
+        shorthand (str shorthand-padding " " shorthand-grid)]
+    shorthand))
+
+(mf/defc layout-panel*
+  [{:keys [shapes objects resolved-tokens on-layout-shorthand]}]
+  (let [shorthand* (mf/use-state (generate-layout-shorthand shapes objects))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (fn []
+       (when on-layout-shorthand
+         (on-layout-shorthand {:panel :layout
+                               :property shorthand}))))
+  [:div {:class (stl/css :variants-panel)}
+   (for [shape shapes]
        [:div {:key (:id shape) :class "layout-shape"}
         (for [property properties]
           (when-let [value (css/get-css-value objects shape property)]
@@ -91,4 +98,4 @@
                                    :detail value
                                    :token resolved-token
                                    :property property-value
-                                   :copiable true}])))]))])
+                                   :copiable true}])))])]))

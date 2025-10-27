@@ -40,6 +40,23 @@
        (remove (fn [[_ text]] (str/empty? (str/trim text))))
        (mapv (fn [[style text]] (vector (merge (txt/get-default-text-attrs) style) text)))))
 
+(defn- generate-typography-shorthand
+  [shapes]
+  (when (= (count shapes) 1)
+    (let [shape (first shapes)
+          style-text-blocks (get-style-text shape)]
+      (reduce
+       (fn [acc [style _]]
+         (let [font-style (:font-style style)
+               font-family (dm/str (:font-family style))
+               font-size (:font-size style)
+               font-weight (:font-weight style)
+               line-height (:line-height style)
+               text-transform (:text-transform style)]
+           (dm/str acc "font:" font-style " " text-transform " " font-weight " " font-size "/" line-height " "  \"  font-family  \" ";")))
+       ""
+       style-text-blocks))))
+
 (mf/defc typography-name-block*
   [{:keys [style]}]
   (let [typography (ict/get-typography style)
@@ -62,29 +79,17 @@
 
 (mf/defc text-panel*
   [{:keys [shapes resolved-tokens color-space on-font-shorthand]}]
-  [:div {:class (stl/css :text-panel)}
+  (let [shorthand* (mf/use-state (generate-typography-shorthand shapes))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (fn []
+       (when on-font-shorthand
+         (on-font-shorthand {:panel :text
+                             :property shorthand}))))
+   [:div {:class (stl/css :text-panel)}
    (for [shape shapes]
      (let [style-text-blocks (get-style-text shape)
-           composite-typography-token (get-resolved-token :typography shape resolved-tokens)
-           shorthand
-
-           (when (= (count shapes) 1)
-             (reduce
-              (fn [acc [style _]]
-                (let [font-style (:font-style style)
-                      font-family (dm/str (:font-family style))
-                      font-size (:font-size style)
-                      font-weight (:font-weight style)
-                      line-height (:line-height style)
-                      text-transform (:text-transform style)]
-                  (dm/str acc "font:" font-style " " text-transform " " font-weight " " font-size "/" line-height " "  \"  font-family  \" ";")))
-              ""
-              style-text-blocks))]
-       (mf/use-effect
-        (fn []
-          (on-font-shorthand {:panel :text
-                              :property shorthand})))
-
+           composite-typography-token (get-resolved-token :typography shape resolved-tokens)]
        [:div {:key (:id shape) :class "text-shape"}
         (for [[style text] style-text-blocks]
 
@@ -201,4 +206,4 @@
                                  :text-transform (:text-transform style)
                                  :letter-spacing (fmt/format-pixels (:letter-spacing style))
                                  :font-style (:font-style style)}}
-                  text]]]))])]))])
+                  text]]]))])]))]))

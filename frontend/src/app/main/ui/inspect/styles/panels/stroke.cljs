@@ -52,40 +52,44 @@
   (and (= (:resolved-value resolved-token) (:color stroke-type))
        (is-first-element? idx)))
 
+(defn- generate-stroke-shorthand
+  [shapes]
+  (when (= (count shapes) 1)
+    (let [shape (first shapes)]
+      (reduce
+       (fn [acc stroke]
+         (let [stroke-type (ctc/stroke->color stroke)
+               stroke-width (:stroke-width stroke)
+               stroke-style (:stroke-style stroke)
+               color-value (:color stroke-type)
+               color-gradient (:gradient stroke-type)
+               gradient-data  {:type (get-in stroke-type [:gradient :type])
+                               :stops (get-in stroke-type [:gradient :stops])}
+               color-image (:image stroke-type)
+               image-url (cfg/resolve-file-media color-image)
+               value (cond
+                       color-value (dm/str "border: " stroke-width "px " (d/name stroke-style) " " color-value ";")
+                       color-gradient (dm/str "border-image: " (uc/gradient->css gradient-data) " 100 / " stroke-width "px;")
+                       color-image (dm/str "border-image: url(" image-url ") 100 / " stroke-width "px;")
+                       :else "")]
+           (if (empty? acc)
+             value
+             (str acc " " value))))
+       ""
+       (:strokes shape)))))
+
 (mf/defc stroke-panel*
   [{:keys [shapes objects resolved-tokens color-space on-stroke-shorthand]}]
-  [:div {:class (stl/css :stroke-panel)}
-   (for [shape shapes]
-     [:div {:key (:id shape) :class "stroke-shape"}
-      (let [shorthand
-            ;; Since CSS does not have a shorthand for multiple borders, we create a shorthand for each stroke in the shape
-            (when (= (count shapes) 1)
-              (reduce
-               (fn [acc stroke]
-                 (let [stroke-type (ctc/stroke->color stroke)
-                       stroke-width (:stroke-width stroke)
-                       stroke-style (:stroke-style stroke)
-                       color-value (:color stroke-type)
-                       color-gradient (:gradient stroke-type)
-                       gradient-data  {:type (get-in stroke-type [:gradient :type])
-                                       :stops (get-in stroke-type [:gradient :stops])}
-                       color-image (:image stroke-type)
-                       image-url (cfg/resolve-file-media color-image)
-                       value (cond
-                               color-value (dm/str "border: " stroke-width "px " (d/name stroke-style) " " color-value ";")
-                               color-gradient (dm/str "border-image: " (uc/gradient->css gradient-data) " 100 / " stroke-width "px;")
-                               color-image (dm/str "border-image: url(" image-url ") 100 / " stroke-width "px;")
-                               :else "")]
-                   (if (empty? acc)
-                     value
-                     (str acc " " value))))
-               ""
-               (:strokes shape)))]
-        (mf/use-effect
-         (fn []
-           (when on-stroke-shorthand
-             (on-stroke-shorthand {:panel :stroke
-                                   :property shorthand}))))
+  (let [shorthand* (mf/use-state (generate-stroke-shorthand shapes))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (fn []
+       (when on-stroke-shorthand
+         (on-stroke-shorthand {:panel :stroke
+                               :property shorthand}))))
+    [:div {:class (stl/css :stroke-panel)}
+     (for [shape shapes]
+       [:div {:key (:id shape) :class "stroke-shape"}
         (for [[idx stroke] (map-indexed vector (:strokes shape))]
           (for [property properties]
             (let [value (css/get-css-value objects stroke property)
@@ -106,4 +110,4 @@
                                      :detail (dm/str value)
                                      :token resolved-token
                                      :property property-value
-                                     :copiable true}])))))])])
+                                     :copiable true}]))))])]))
