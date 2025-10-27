@@ -8,13 +8,10 @@
   (:require-macros [app.main.style :as stl])
   (:require
    [app.common.data.macros :as dm]
-   [app.common.pprint :as pp]
-   [app.common.types.shape.layout :as ctl]
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
-   [rumext.v2 :as mf]
-   [promesa.core :as p]))
+   [rumext.v2 :as mf]))
 
 (def ^:private properties
   [:display
@@ -62,15 +59,21 @@
   [{:keys [shapes objects resolved-tokens on-layout-shorthand]}]
   [:div {:class (stl/css :variants-panel)}
    (for [shape shapes]
-     (let [shorthand-padding (when (and (= (count shapes) 1) (has-padding? shape))
-                               (css/get-css-property objects shape :padding))
-           shorthand-grid (when (and (= (count shapes) 1)
-                                     (= :grid (:layout shape)))
-                            (str "grid: "
-                                 (css/get-css-value objects shape :grid-template-rows)
-                                 " / "
-                                 (css/get-css-value objects shape :grid-template-columns)
-                                 ";"))
+     (let [shorthand-padding (mf/use-memo
+                              [shapes shape objects]
+                              (fn []
+                                (when (and (= (count shapes) 1) (has-padding? shape))
+                                  (css/get-css-property objects shape :padding))))
+           shorthand-grid (mf/use-memo
+                           [shapes shape objects]
+                           (fn []
+                             (when (and (= (count shapes) 1)
+                                        (= :grid (:layout shape)))
+                               (str "grid: "
+                                    (css/get-css-value objects shape :grid-template-rows)
+                                    " / "
+                                    (css/get-css-value objects shape :grid-template-columns)
+                                    ";"))))
            shorthand (str shorthand-padding " " shorthand-grid)]
        (mf/use-effect
         (fn []

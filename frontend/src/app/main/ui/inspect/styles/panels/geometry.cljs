@@ -11,8 +11,7 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
-   [rumext.v2 :as mf]
-   [cljs.pprint :as pp]))
+   [rumext.v2 :as mf]))
 
 (def ^:private properties
   [:width

@@ -25,6 +25,10 @@
    :min-inline-size :layout-item-min-w ;; :min-width
    })
 
+(defn- has-margin?
+  [shape]
+  (some #(and (contains? (:layout-item-margin shape) %) (not= 0 (get (:layout-item-margin shape) %))) [:m1 :m2 :m3 :m4]))
+
 (defn- get-applied-margins-in-shape
   [shape-tokens property]
   (if-let [margin-prop (get shape-prop->margin-prop property)]
@@ -39,19 +43,38 @@
       token)))
 
 (mf/defc layout-element-panel*
-  [{:keys [shapes objects resolved-tokens layout-element-properties]}]
+  [{:keys [shapes objects resolved-tokens layout-element-properties on-layout-element-shorthand]}]
   (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))]
     [:div {:class (stl/css :layout-element-panel)}
      (for [shape shapes]
-       [:div {:key (:id shape) :class "layout-element-shape"}
-        (for [property layout-element-properties]
-          (when-let [value (css/get-css-value objects shape property)]
-            (let [property-name (cmm/get-css-rule-humanized property)
-                  resolved-token (get-resolved-tokens property shape resolved-tokens)
-                  property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
-              [:> properties-row* {:key (dm/str "layout-element-property-" property)
-                                   :term property-name
-                                   :detail (str value)
-                                   :token resolved-token
-                                   :property property-value
-                                   :copiable true}])))])]))
+       (let [shorthand-margin (when (and (= (count shapes) 1) (has-margin? shape))
+                                (css/get-css-property objects shape :margin))
+             shorthand-grow (when (and (= (count shapes) 1)
+                                       (ctl/flex-layout-immediate-child? objects shape))
+                              (if-let [flex-value (css/get-css-value objects shape :flex)]
+                                flex-value
+                                0))
+             shorthand-shrink (when (and (= (count shapes) 1)
+                                         (ctl/flex-layout-immediate-child? objects shape))
+                                (if-let [flex-shrink-value (css/get-css-value objects shape :flex-shrink)]
+                                  flex-shrink-value
+                                  0))
+             shorthand-flex (dm/str "flex: " shorthand-grow " 0 " shorthand-shrink ";")
+             shorthand (dm/str  shorthand-margin " " shorthand-flex)]
+         (mf/use-effect
+          (fn []
+            (when on-layout-element-shorthand
+              (on-layout-element-shorthand {:panel :layout-element
+                                            :property shorthand}))))
+         [:div {:key (:id shape) :class "layout-element-shape"}
+          (for [property layout-element-properties]
+            (when-let [value (css/get-css-value objects shape property)]
+              (let [property-name (cmm/get-css-rule-humanized property)
+                    resolved-token (get-resolved-tokens property shape resolved-tokens)
+                    property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
+                [:> properties-row* {:key (dm/str "layout-element-property-" property)
+                                     :term property-name
+                                     :detail (str value)
+                                     :token resolved-token
+                                     :property property-value
+                                     :copiable true}])))]))]))

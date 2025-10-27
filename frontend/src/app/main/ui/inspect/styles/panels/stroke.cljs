@@ -16,7 +16,6 @@
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
    [app.util.color :as uc]
-   [cljs.pprint :as pp]
    [rumext.v2 :as mf]))
 
 (def ^:private properties [:border-color :border-style :border-width])

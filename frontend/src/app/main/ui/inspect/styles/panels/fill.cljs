@@ -13,8 +13,7 @@
    [app.main.ui.inspect.attributes.common :as cmm]
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.util.color :as uc]
-   [rumext.v2 :as mf]
-   [cljs.pprint :as pp]))
+   [rumext.v2 :as mf]))
 
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]
@@ -46,9 +45,7 @@
             (when (= (count shapes) 1)
               (reduce
                (fn [acc fill]
-                 (let [_ (pp/pprint "acc")
-                       _ (pp/pprint acc)
-                       color-type (types.fills/fill->color fill)
+                 (let [color-type (types.fills/fill->color fill)
                        color-value (:color color-type)
                        color-gradient (:gradient color-type)
                        gradient-data  {:type color-type

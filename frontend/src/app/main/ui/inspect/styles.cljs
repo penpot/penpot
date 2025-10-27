@@ -182,11 +182,13 @@
                             (if only-grid?
                               :grid-element
                               :layout-element))]
-                [:> style-box* {:panel panel}
+                [:> style-box* {:panel panel
+                                :shorthand (:layout-element shorthands)}
                  [:> layout-element-panel* {:shapes shapes
                                             :objects objects
                                             :resolved-tokens resolved-active-tokens
-                                            :layout-element-properties layout-element-properties}]])))
+                                            :layout-element-properties layout-element-properties
+                                            :on-layout-element-shorthand set-shorthands}]])))
           ;; FILL PANEL
           :fill
           (let [shapes (filter has-fill? shapes)]
