@@ -37,14 +37,14 @@
 ;; --- Helpers & Specs
 
 (def ^:private sql:team-permissions
-  "select tpr.is_owner,
+  "SELECT tpr.is_owner,
           tpr.is_admin,
           tpr.can_edit
-     from team_profile_rel as tpr
-     join team as t on (t.id = tpr.team_id)
-    where tpr.profile_id = ?
-      and tpr.team_id = ?
-      and t.deleted_at is null")
+     FROM team_profile_rel AS tpr
+     JOIN team AS t ON (t.id = tpr.team_id)
+    WHERE tpr.profile_id = ?
+      AND tpr.team_id = ?
+      AND t.deleted_at IS NULL")
 
 (defn get-permissions
   [conn profile-id team-id]

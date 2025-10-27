@@ -291,7 +291,7 @@
 
 (defn- get-unread-comment-threads
   [cfg profile-id team-id]
-  (let [profile (-> (db/get cfg :profile {:id profile-id})
+  (let [profile (-> (db/get cfg :profile {:id profile-id} ::db/remove-deleted false)
                     (profile/decode-row))
         notify  (or (-> profile :props :notifications :dashboard-comments) :all)
         result  (case notify
