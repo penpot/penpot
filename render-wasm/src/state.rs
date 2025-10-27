@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 mod shapes_pool;
 mod text_editor;
-pub use shapes_pool::*;
+pub use shapes_pool::{ShapesPool, ShapesPoolMutRef, ShapesPoolRef};
 pub use text_editor::*;
 
 use crate::render::RenderState;
@@ -19,17 +19,17 @@ use crate::shapes::modifiers::grid_layout::grid_cell_data;
 /// It is created by [init] and passed to the other exported functions.
 /// Note that rust-skia data structures are not thread safe, so a state
 /// must not be shared between different Web Workers.
-pub(crate) struct State {
+pub(crate) struct State<'a> {
     pub render_state: RenderState,
     pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
-    pub shapes: ShapesPool,
+    pub shapes: ShapesPool<'a>,
     pub modifiers: HashMap<Uuid, skia::Matrix>,
     pub scale_content: HashMap<Uuid, f32>,
     pub structure: HashMap<Uuid, Vec<StructureEntry>>,
 }
 
-impl State {
+impl<'a> State<'a> {
     pub fn new(width: i32, height: i32) -> Self {
         State {
             render_state: RenderState::new(width, height),
@@ -183,8 +183,16 @@ impl State {
     }
 
     pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
-        self.render_state
-            .rebuild_modifier_tiles(&mut self.shapes, ids);
+        // SAFETY: We're extending the lifetime of the mutable borrow to 'a.
+        // This is safe because:
+        // 1. shapes has lifetime 'a in the struct
+        // 2. The reference won't outlive the struct
+        // 3. No other references to shapes exist during this call
+        unsafe {
+            let shapes_ptr = &mut self.shapes as *mut ShapesPool<'a>;
+            self.render_state
+                .rebuild_modifier_tiles(&mut *shapes_ptr, ids);
+        }
     }
 
     pub fn font_collection(&self) -> &FontCollection {

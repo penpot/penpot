@@ -4,7 +4,7 @@ use super::{Corners, Path, Segment, Shape, StructureEntry, Type};
 use crate::math;
 
 use crate::shapes::text_paths::TextPaths;
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 use std::collections::HashMap;
 
@@ -13,7 +13,7 @@ const BEZIER_CIRCLE_C: f32 = 0.551_915_05;
 pub trait ToPath {
     fn to_path(
         &self,
-        shapes: &ShapesPool,
+        shapes: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) -> Path;
@@ -182,7 +182,7 @@ fn transform_segments(segments: Vec<Segment>, shape: &Shape) -> Vec<Segment> {
 impl ToPath for Shape {
     fn to_path(
         &self,
-        shapes: &ShapesPool,
+        shapes: ShapesPoolRef,
         modifiers: &HashMap<Uuid, Matrix>,
         structure: &HashMap<Uuid, Vec<StructureEntry>>,
     ) -> Path {

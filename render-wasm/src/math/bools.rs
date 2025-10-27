@@ -1,7 +1,7 @@
 use super::Matrix;
 use crate::render::{RenderState, SurfaceId};
 use crate::shapes::{BoolType, Path, Segment, Shape, StructureEntry, ToPath, Type};
-use crate::state::ShapesPool;
+use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
 use bezier_rs::{Bezier, BezierHandles, ProjectionOptions, TValue};
 use glam::DVec2;
@@ -387,7 +387,7 @@ fn beziers_to_segments(beziers: &[(BezierSource, Bezier)]) -> Vec<Segment> {
 pub fn bool_from_shapes(
     bool_type: BoolType,
     children_ids: &IndexSet<Uuid>,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Path {
@@ -424,7 +424,7 @@ pub fn bool_from_shapes(
 
 pub fn update_bool_to_path(
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Shape {
@@ -449,7 +449,7 @@ pub fn update_bool_to_path(
 pub fn debug_render_bool_paths(
     render_state: &mut RenderState,
     shape: &Shape,
-    shapes: &ShapesPool,
+    shapes: ShapesPoolRef,
     modifiers: &HashMap<Uuid, Matrix>,
     structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) {
