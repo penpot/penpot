@@ -525,9 +525,10 @@ export class SelectionController extends EventTarget {
    * @param {number} offset
    */
   collapse(node, offset) {
+    const nodeValue = node?.nodeValue ?? "";
     const nodeOffset =
-      node.nodeType === Node.TEXT_NODE && offset >= node.nodeValue.length
-        ? node.nodeValue.length
+      node.nodeType === Node.TEXT_NODE && offset >= nodeValue.length
+        ? nodeValue.length
         : offset;
 
     return this.setSelection(node, nodeOffset, node, nodeOffset);
@@ -709,7 +710,7 @@ export class SelectionController extends EventTarget {
    * @type {boolean}
    */
   get anchorAtEnd() {
-    return this.anchorOffset === this.anchorNode.nodeValue.length;
+    return this.anchorOffset === (this.anchorNode.nodeValue?.length ?? 0);
   }
 
   /**
@@ -752,7 +753,7 @@ export class SelectionController extends EventTarget {
    * @type {boolean}
    */
   get focusAtEnd() {
-    return this.focusOffset === this.focusNode.nodeValue.length;
+    return this.focusOffset === (this.focusNode.nodeValue?.length ?? 0);
   }
 
   /**
@@ -1080,7 +1081,7 @@ export class SelectionController extends EventTarget {
           newTextSpan,
         );
       }
-      return this.collapse(collapseNode, collapseNode.nodeValue.length);
+      return this.collapse(collapseNode, collapseNode.nodeValue?.length || 0);
     }
     const collapseNode = this.#getFragmentParagraphTextNode(fragment);
     if (this.isParagraphStart) {
@@ -1104,7 +1105,7 @@ export class SelectionController extends EventTarget {
     if (isLineBreak(collapseNode)) {
       return this.collapse(collapseNode, 0);
     }
-    return this.collapse(collapseNode, collapseNode.nodeValue.length);
+    return this.collapse(collapseNode, collapseNode.nodeValue?.length || 0);
   }
 
   /**
@@ -1304,7 +1305,7 @@ export class SelectionController extends EventTarget {
       currentParagraph.replaceChildren(
         createTextSpan(newTextNode, this.anchorTextSpan.style),
       );
-      return this.collapse(newTextNode, newTextNode.nodeValue.length);
+      return this.collapse(newTextNode, newTextNode.nodeValue?.length || 0);
     }
 
     this.removeSelected();
@@ -1442,7 +1443,7 @@ export class SelectionController extends EventTarget {
         : previousParagraph.firstChild;
     const previousOffset = isLineBreak(previousTextSpan.firstChild)
       ? 0
-      : previousTextSpan.firstChild.nodeValue.length;
+      : previousTextSpan.firstChild.nodeValue?.length || 0;
     this.#mutations.remove(paragraphToBeRemoved);
     return this.collapse(previousTextSpan.firstChild, previousOffset);
   }
@@ -1611,7 +1612,7 @@ export class SelectionController extends EventTarget {
       } else if (currentNode === endNode) {
         if (
           isLineBreak(endNode) ||
-          (isTextNode(endNode) && endOffset === endNode.nodeValue.length)
+          (isTextNode(endNode) && endOffset === (endNode.nodeValue?.length || 0))
         ) {
           // We should remove this node completely.
           shouldRemoveNodeCompletely = true;
@@ -1679,7 +1680,7 @@ export class SelectionController extends EventTarget {
       if (previousTextSpan) {
         return this.collapse(
           previousTextSpan.firstChild,
-          previousTextSpan.firstChild.nodeValue.length,
+          previousTextSpan.firstChild.nodeValue?.length || 0,
         );
       }
       if (nextTextSpan) {
@@ -1713,7 +1714,7 @@ export class SelectionController extends EventTarget {
     // node.
     if (startNode === endNode && startNode.nodeType === Node.TEXT_NODE) {
       // The styles are applied to the node completely.
-      if (startOffset === 0 && endOffset === endNode.nodeValue.length) {
+      if (startOffset === 0 && endOffset === (endNode.nodeValue?.length || 0)) {
         const paragraph = this.startParagraph;
         const textSpan = this.startTextSpan;
         setParagraphStyles(paragraph, newStyles);
@@ -1742,7 +1743,7 @@ export class SelectionController extends EventTarget {
         }
 
         // FIXME: This can change focus <-> anchor order.
-        this.setSelection(midText, 0, midText, midText.nodeValue.length);
+        this.setSelection(midText, 0, midText, midText.nodeValue?.length || 0);
       }
       // the styles are applied to the current caret
       else if (
