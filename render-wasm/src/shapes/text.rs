@@ -358,8 +358,13 @@ impl TextContent {
             let mut builder = ParagraphBuilder::new(&paragraph_style, fonts);
             for span in paragraph.children() {
                 let remove_alpha = use_shadow.unwrap_or(false) && !span.is_transparent();
-                let text_style = span.to_style(&self.bounds(), fallback_fonts, remove_alpha);
-                let text = span.apply_text_transform();
+                let text_style = span.to_style(
+                    &self.bounds(),
+                    fallback_fonts,
+                    remove_alpha,
+                    paragraph.line_height(),
+                );
+                let text: String = span.apply_text_transform();
                 builder.push_style(&text_style);
                 builder.add_text(&text);
             }
@@ -598,38 +603,17 @@ impl Paragraph {
         self.children.push(span);
     }
 
+    pub fn line_height(&self) -> f32 {
+        self.line_height
+    }
+
     // FIXME: move serialization to wasm module
     pub fn paragraph_to_style(&self) -> ParagraphStyle {
         let mut style = ParagraphStyle::default();
+
         style.set_text_align(self.text_align);
         style.set_text_direction(self.text_direction);
-
-        if !self.children.is_empty() {
-            let reference_child = self
-                .children
-                .iter()
-                .find(|child| !child.text.trim().is_empty())
-                .unwrap_or(&self.children[0]);
-
-            let mut strut_style = skia::textlayout::StrutStyle::default();
-            let line_height = self.line_height.max(0.0);
-            strut_style.set_font_size(reference_child.font_size);
-            strut_style.set_height(line_height);
-            strut_style.set_height_override(true);
-            strut_style.set_half_leading(true);
-            strut_style.set_strut_enabled(true);
-            strut_style.set_force_strut_height(true);
-
-            let font_families = vec![
-                reference_child.serialized_font_family(),
-                default_font(),
-                DEFAULT_EMOJI_FONT.to_string(),
-            ];
-            strut_style.set_font_families(&font_families);
-
-            style.set_strut_style(strut_style);
-        }
-
+        style.set_text_height_behavior(skia::textlayout::TextHeightBehavior::All);
         style
     }
 
@@ -696,6 +680,7 @@ impl TextSpan {
         content_bounds: &Rect,
         fallback_fonts: &HashSet<String>,
         remove_alpha: bool,
+        paragraph_line_height: f32, // Add this parameter
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
 
@@ -708,11 +693,10 @@ impl TextSpan {
             paint = merge_fills(&self.fills, *content_bounds);
         }
 
-        style.set_foreground_paint(&paint);
-        style.set_font_size(self.font_size);
-        style.set_letter_spacing(self.letter_spacing);
-        style.set_half_leading(false);
+        style.set_height(paragraph_line_height);
+        style.set_height_override(true);
 
+        style.set_foreground_paint(&paint);
         style.set_decoration_type(match self.text_decoration {
             Some(text_decoration) => text_decoration,
             None => skia::textlayout::TextDecoration::NO_DECORATION,
@@ -729,6 +713,9 @@ impl TextSpan {
 
         font_families.extend(fallback_fonts.iter().cloned());
         style.set_font_families(&font_families);
+        style.set_font_size(self.font_size);
+        style.set_letter_spacing(self.letter_spacing);
+        style.set_half_leading(true);
 
         style
     }
@@ -738,8 +725,14 @@ impl TextSpan {
         stroke_paint: &Paint,
         fallback_fonts: &HashSet<String>,
         remove_alpha: bool,
+        paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
-        let mut style = self.to_style(&Rect::default(), fallback_fonts, remove_alpha);
+        let mut style = self.to_style(
+            &Rect::default(),
+            fallback_fonts,
+            remove_alpha,
+            paragraph_line_height,
+        );
         if remove_alpha {
             let mut paint = skia::Paint::default();
             paint.set_style(stroke_paint.style());
