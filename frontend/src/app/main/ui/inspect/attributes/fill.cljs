@@ -54,7 +54,7 @@
   [{:keys [objects shape color-space]}]
   (let [color     (types.fills/fill->color shape)]
     [:div {:class (stl/css :attributes-fill-block)}
-     [:> color-row
+     [:& color-row
       {:color color
        :property "Background"
        :format (d/nilv (keyword color-space) :hex)
