@@ -95,6 +95,24 @@ const setupTypographyTokensFile = async (page, options = {}) => {
   });
 };
 
+const checkInputFieldWithError = async (tokenThemeUpdateCreateModal, inputLocator) => {
+    await expect(inputLocator).toHaveAttribute("aria-invalid", "true");
+
+    const errorMessageId = await inputLocator.getAttribute("aria-describedby");
+    await expect(
+      tokenThemeUpdateCreateModal.locator(`#${errorMessageId}`),
+    ).toBeVisible();
+};
+
+const checkInputFieldWithoutError = async (tokenThemeUpdateCreateModal, inputLocator) => {
+    expect(
+      await inputLocator.getAttribute("aria-invalid")
+    ).toBeNull();
+    expect(
+      await inputLocator.getAttribute("aria-describedby")
+    ).toBeNull();
+};
+
 test.describe("Tokens: Tokens Tab", () => {
   test("Clicking tokens tab button opens tokens sidebar tab", async ({
     page,
@@ -806,18 +824,25 @@ test.describe("Tokens: Themes modal", () => {
       })
       .click();
 
-    await tokenThemeUpdateCreateModal
-      .getByLabel("Group")
-      .fill("New Group name");
-    await tokenThemeUpdateCreateModal
-      .getByLabel("Theme")
-      .fill("New Theme name");
+    const groupInput = tokenThemeUpdateCreateModal.getByLabel("Group");
+    const nameInput = tokenThemeUpdateCreateModal.getByLabel("Theme");
+    const saveButton = tokenThemeUpdateCreateModal.getByRole("button", {
+      name: "Save theme",
+    });
+ 
+    await groupInput.fill("Core"); // Invalid because "Core / Light" theme already exists
+    await nameInput.fill("Light");
 
-    await tokenThemeUpdateCreateModal
-      .getByRole("button", {
-        name: "Save theme",
-      })
-      .click();
+    await checkInputFieldWithError(tokenThemeUpdateCreateModal, nameInput);
+    await expect(saveButton).toBeDisabled();
+
+    await groupInput.fill("New Group name");
+    await nameInput.fill("New Theme name");
+
+    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal, nameInput);
+    await expect(saveButton).not.toBeDisabled();
+
+    await saveButton.click();
 
     await expect(
       tokenThemeUpdateCreateModal.getByText("New Theme name"),
@@ -845,12 +870,36 @@ test.describe("Tokens: Themes modal", () => {
       .first()
       .click();
 
-    await tokenThemeUpdateCreateModal
-      .getByLabel("Theme")
-      .fill("Changed Theme name");
-    await tokenThemeUpdateCreateModal
-      .getByLabel("Group")
-      .fill("Changed Group name");
+    const groupInput = tokenThemeUpdateCreateModal.getByLabel("Group");
+    const nameInput = tokenThemeUpdateCreateModal.getByLabel("Theme");
+    const saveButton = tokenThemeUpdateCreateModal.getByRole("button", {
+      name: "Save theme",
+    });
+ 
+    await groupInput.fill("Core"); // Invalid because "Core / Dark" theme already exists
+    await nameInput.fill("Dark");
+
+    await checkInputFieldWithError(tokenThemeUpdateCreateModal, nameInput);
+    await expect(saveButton).toBeDisabled();
+ 
+    await groupInput.fill("Core"); // Valid because "Core / Light" theme already exists
+    await nameInput.fill("Light"); // but it's the same theme we are editing
+
+    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal, nameInput);
+    await expect(saveButton).not.toBeDisabled();
+
+    await nameInput.fill("Changed Theme name"); // New names should be also valid
+    await groupInput.fill("Changed Group name");
+
+    await checkInputFieldWithoutError(tokenThemeUpdateCreateModal, nameInput);
+    await expect(saveButton).not.toBeDisabled();
+
+    expect(
+      await nameInput.getAttribute("aria-invalid")
+    ).toBeNull();
+    expect(
+      await nameInput.getAttribute("aria-describedby")
+    ).toBeNull();
 
     const checkboxes = await tokenThemeUpdateCreateModal
       .locator('[role="checkbox"]')
@@ -870,11 +919,9 @@ test.describe("Tokens: Themes modal", () => {
     
     await firstButton.click();
 
-    await tokenThemeUpdateCreateModal
-      .getByRole("button", {
-        name: "Save theme",
-      })
-      .click();
+    await expect(saveButton).not.toBeDisabled();
+
+    await saveButton.click();
 
     await expect(
       tokenThemeUpdateCreateModal.getByText("Changed Theme name"),
