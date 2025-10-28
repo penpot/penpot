@@ -176,7 +176,7 @@ pub struct Shape {
     pub opacity: f32,
     pub hidden: bool,
     pub svg: Option<skia::svg::Dom>,
-    pub svg_attrs: SvgAttrs,
+    pub svg_attrs: Option<SvgAttrs>,
     pub shadows: Vec<Shadow>,
     pub layout_item: Option<LayoutItem>,
     pub extrect: OnceCell<math::Rect>,
@@ -203,7 +203,7 @@ impl Shape {
             hidden: false,
             blur: None,
             svg: None,
-            svg_attrs: SvgAttrs::default(),
+            svg_attrs: None,
             shadows: Vec::with_capacity(1),
             layout_item: None,
             extrect: OnceCell::new(),
@@ -1093,8 +1093,10 @@ impl Shape {
             if let Some(path_transform) = self.to_path_transform() {
                 skia_path.transform(&path_transform);
             }
-            if self.svg_attrs.fill_rule == FillRule::Evenodd {
-                skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+            if let Some(svg_attrs) = &self.svg_attrs {
+                if svg_attrs.fill_rule == FillRule::Evenodd {
+                    skia_path.set_fill_type(skia::PathFillType::EvenOdd);
+                }
             }
             Some(skia_path)
         } else {

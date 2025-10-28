@@ -161,7 +161,7 @@ impl Stroke {
     pub fn to_paint(
         &self,
         rect: &Rect,
-        svg_attrs: &SvgAttrs,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -177,12 +177,14 @@ impl Stroke {
         paint.set_stroke_width(width);
         paint.set_anti_alias(antialias);
 
-        if svg_attrs.stroke_linecap == StrokeLineCap::Round {
-            paint.set_stroke_cap(skia::paint::Cap::Round);
-        }
+        if let Some(svg_attrs) = svg_attrs {
+            if svg_attrs.stroke_linecap == StrokeLineCap::Round {
+                paint.set_stroke_cap(skia::paint::Cap::Round);
+            }
 
-        if svg_attrs.stroke_linejoin == StrokeLineJoin::Round {
-            paint.set_stroke_join(skia::paint::Join::Round);
+            if svg_attrs.stroke_linejoin == StrokeLineJoin::Round {
+                paint.set_stroke_join(skia::paint::Join::Round);
+            }
         }
 
         if self.style != StrokeStyle::Solid {
@@ -227,7 +229,7 @@ impl Stroke {
         &self,
         is_open: bool,
         rect: &Rect,
-        svg_attrs: &SvgAttrs,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
@@ -251,7 +253,7 @@ impl Stroke {
         &self,
         is_open: bool,
         rect: &Rect,
-        svg_attrs: &SvgAttrs,
+        svg_attrs: Option<&SvgAttrs>,
         scale: f32,
         antialias: bool,
     ) -> skia::Paint {
