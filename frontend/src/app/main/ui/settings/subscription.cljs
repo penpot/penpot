@@ -12,7 +12,9 @@
    [app.main.store :as st]
    [app.main.ui.components.forms :as fm]
    [app.main.ui.dashboard.subscription :refer [get-subscription-type]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.icons :as deprecated-icon]
+   [app.main.ui.notifications.badge :refer [badge-notification]]
    [app.util.dom :as dom]
    [app.util.i18n :as i18n :refer [tr c]]
    [potok.v2.core :as ptk]
@@ -30,12 +32,20 @@
            cta-link-trial
            cta-text-with-icon
            cta-link-with-icon
-           editors]}]
-  [:div {:class (stl/css :plan-card)}
+           editors
+           recommended
+           has-trial-cta]}]
+
+  [:div {:class (stl/css-case :plan-card true
+                              :plan-card-highlight recommended)}
    [:div {:class (stl/css :plan-card-header)}
     [:div {:class (stl/css :plan-card-title-container)}
      (when card-title-icon [:span {:class (stl/css :plan-title-icon)} card-title-icon])
-     [:h4 {:class (stl/css :plan-card-title)}  card-title]
+     [:h4 {:class (stl/css :plan-card-title)} card-title]
+     (when recommended
+       [:& badge-notification {:content (tr "subscription.settings.recommended")
+                               :size :small
+                               :is-focus true}])
      (when editors [:span {:class (stl/css :plan-editors)} (tr "subscription.settings.editors" editors)])]
     (when (and price-value price-period)
       [:div {:class (stl/css :plan-price)}
@@ -47,9 +57,13 @@
       [:li {:key (dm/str benefit) :class (stl/css :benefit)} "- " benefit])]
    (when (and cta-link-with-icon cta-text-with-icon) [:button {:class (stl/css :cta-button :more-info)
                                                                :on-click cta-link-with-icon} cta-text-with-icon deprecated-icon/open-link])
-   (when (and cta-link cta-text) [:button {:class (stl/css-case :cta-button true
-                                                                :bottom-link (not (and cta-link-trial cta-text-trial)))
-                                           :on-click cta-link} cta-text])
+   (when (and cta-link cta-text (not has-trial-cta)) [:button {:class (stl/css-case :cta-button true
+                                                                                    :bottom-link (not (and cta-link-trial cta-text-trial)))
+                                                               :on-click cta-link} cta-text])
+   (when (and cta-link cta-text has-trial-cta) [:> button* {:variant "primary"
+                                                            :type "button"
+                                                            :class (stl/css-case :bottom-button (not (and cta-link-trial cta-text-trial)))
+                                                            :on-click cta-link} cta-text])
    (when (and cta-link-trial cta-text-trial) [:button {:class (stl/css :cta-button :bottom-link)
                                                        :on-click cta-link-trial} cta-text-trial])])
 (defn schema:seats-form [min-editors]
@@ -443,7 +457,9 @@
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "unlimited" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
-                         :cta-link-with-icon go-to-pricing-page}])
+                         :cta-link-with-icon go-to-pricing-page
+                         :recommended (= subscription-type "professional")
+                         :has-trial-cta (not (:type subscription))}])
 
        (when (not= subscription-type "enterprise")
          [:> plan-card* {:card-title (tr "subscription.settings.enterprise")
@@ -457,4 +473,6 @@
                          :cta-text (if (:type subscription) (tr "subscription.settings.subscribe") (tr "subscription.settings.try-it-free"))
                          :cta-link #(open-subscription-modal "enterprise" subscription)
                          :cta-text-with-icon (tr "subscription.settings.more-information")
-                         :cta-link-with-icon go-to-pricing-page}])]]]))
+                         :cta-link-with-icon go-to-pricing-page
+                         :has-trial-cta (not (:type subscription))}])]]]))
+
