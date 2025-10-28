@@ -32,7 +32,7 @@ export function assignCanvas(canvas) {
 
 export function hexToU32ARGB(hex, opacity = 1) {
   const rgb = parseInt(hex.slice(1), 16);
-  const a = Math.floor(opacity * 0xFF);
+  const a = Math.floor(opacity * 0xff);
   const argb = (a << 24) | rgb;
   return argb >>> 0;
 }
@@ -42,9 +42,9 @@ export function getRandomInt(min, max) {
 }
 
 export function getRandomColor() {
-  const r = getRandomInt(0, 256).toString(16).padStart(2, '0');
-  const g = getRandomInt(0, 256).toString(16).padStart(2, '0');
-  const b = getRandomInt(0, 256).toString(16).padStart(2, '0');
+  const r = getRandomInt(0, 256).toString(16).padStart(2, "0");
+  const g = getRandomInt(0, 256).toString(16).padStart(2, "0");
+  const b = getRandomInt(0, 256).toString(16).padStart(2, "0");
   return `#${r}${g}${b}`;
 }
 
@@ -103,12 +103,12 @@ export function addShapeSolidStrokeFill(argb) {
 
 function serializePathAttrs(svgAttrs) {
   return Object.entries(svgAttrs).reduce((acc, [key, value]) => {
-    return acc + key + '\0' + value + '\0';
-  }, '');
+    return acc + key + "\0" + value + "\0";
+  }, "");
 }
 
 export function draw_star(x, y, width, height) {
-  const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE 
+  const len = 11; // 1 MOVE + 9 LINE + 1 CLOSE
   const ptr = allocBytes(len * 28);
   const heap = getHeapU32();
   const dv = new DataView(heap.buffer);
@@ -120,7 +120,7 @@ export function draw_star(x, y, width, height) {
 
   const star = [];
   for (let i = 0; i < 10; i++) {
-    const angle = Math.PI / 5 * i - Math.PI / 2;
+    const angle = (Math.PI / 5) * i - Math.PI / 2;
     const r = i % 2 === 0 ? outerRadius : innerRadius;
     const px = cx + r * Math.cos(angle);
     const py = cy + r * Math.sin(angle);
@@ -147,18 +147,7 @@ export function draw_star(x, y, width, height) {
   dv.setUint16(ptr + offset + 0, 4, true); // CLOSE
 
   Module._set_shape_path_content();
-
-  const str = serializePathAttrs({
-    "fill": "none",
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
-  });
-  const size = str.length;
-  offset = allocBytes(size);
-  Module.stringToUTF8(str, offset, size);
-  Module._set_shape_path_attrs(3);
 }
-  
 
 export function setShapeChildren(shapeIds) {
   const offset = allocBytes(shapeIds.length * 16);
@@ -227,17 +216,23 @@ export function setupInteraction(canvas) {
     }
   });
 
-  canvas.addEventListener("mouseup", () => { isPanning = false; });
-  canvas.addEventListener("mouseout", () => { isPanning = false; });
+  canvas.addEventListener("mouseup", () => {
+    isPanning = false;
+  });
+  canvas.addEventListener("mouseout", () => {
+    isPanning = false;
+  });
 }
 
 export function addTextShape(x, y, fontSize, text) {
   const numLeaves = 1; // Single text leaf for simplicity
   const paragraphAttrSize = 48;
-  const leafAttrSize = 56;
-  const fillSize = 160;
+  // const leafAttrSize = 56;
+  const singleFillSize = 160;
   const textBuffer = new TextEncoder().encode(text);
   const textSize = textBuffer.byteLength;
+
+  const leafSize = 1340; // leaf attrs + 8 fills
 
   // Calculate fills
   const fills = [
@@ -247,12 +242,7 @@ export function addTextShape(x, y, fontSize, text) {
       opacity: getRandomFloat(0.5, 1.0),
     },
   ];
-  const totalFills = fills.length;
-  const totalFillsSize = totalFills * fillSize;
-
-  // Calculate metadata and total buffer size
-  const metadataSize = paragraphAttrSize + leafAttrSize + totalFillsSize;
-  const totalSize = metadataSize + textSize;
+  const totalSize = paragraphAttrSize + leafSize + textSize;
 
   // Allocate buffer
   const bufferPtr = allocBytes(totalSize);
@@ -282,32 +272,33 @@ export function addTextShape(x, y, fontSize, text) {
   const leafOffset = paragraphAttrSize;
   dview.setUint8(leafOffset, 0); // font-style: normal
   dview.setFloat32(leafOffset + 4, fontSize, true); // font-size
-  dview.setUint32(leafOffset + 8, 400, true); // font-weight: normal
-  dview.setUint32(leafOffset + 12, 0, true); // font-id (UUID part 1)
-  dview.setUint32(leafOffset + 16, 0, true); // font-id (UUID part 2)
-  dview.setUint32(leafOffset + 20, 0, true); // font-id (UUID part 3)
-  dview.setInt32(leafOffset + 24, 0, true); // font-id (UUID part 4)
-  dview.setInt32(leafOffset + 28, 0, true); // font-family hash
-  dview.setUint32(leafOffset + 32, 0, true); // font-variant-id (UUID part 1)
-  dview.setUint32(leafOffset + 36, 0, true); // font-variant-id (UUID part 2)
-  dview.setUint32(leafOffset + 40, 0, true); // font-variant-id (UUID part 3)
-  dview.setInt32(leafOffset + 44, 0, true); // font-variant-id (UUID part 4)
-  dview.setInt32(leafOffset + 48, textSize, true); // text-length
-  dview.setInt32(leafOffset + 52, totalFills, true); // total fills count
+  dview.setFloat32(leafOffset + 8, 0, true); // letter-spacing
+  dview.setUint32(leafOffset + 12, 400, true); // font-weight: normal
+  dview.setUint32(leafOffset + 16, 0, true); // font-id (UUID part 1)
+  dview.setUint32(leafOffset + 20, 0, true); // font-id (UUID part 2)
+  dview.setUint32(leafOffset + 24, 0, true); // font-id (UUID part 3)
+  dview.setInt32(leafOffset + 28, 0, true); // font-id (UUID part 4)
+  dview.setInt32(leafOffset + 32, 0, true); // font-family hash
+  dview.setUint32(leafOffset + 36, 0, true); // font-variant-id (UUID part 1)
+  dview.setUint32(leafOffset + 40, 0, true); // font-variant-id (UUID part 2)
+  dview.setUint32(leafOffset + 44, 0, true); // font-variant-id (UUID part 3)
+  dview.setInt32(leafOffset + 48, 0, true); // font-variant-id (UUID part 4)
+  dview.setInt32(leafOffset + 52, textSize, true); // text-length
+  dview.setInt32(leafOffset + 56, fills.length, true); // total fills count
 
   // Serialize fills
-  let fillOffset = leafOffset + leafAttrSize;
+  let fillOffset = leafOffset + 60;
   fills.forEach((fill) => {
     if (fill.type === "solid") {
       const argb = hexToU32ARGB(fill.color, fill.opacity);
       dview.setUint8(fillOffset, 0x00, true); // Fill type: solid
       dview.setUint32(fillOffset + 4, argb, true);
-      fillOffset += fillSize; // Move to the next fill
+      fillOffset += singleFillSize; // Move to the next fill
     }
   });
 
   // Add text content
-  const textOffset = metadataSize;
+  const textOffset = leafSize;
   heap.set(textBuffer, textOffset);
 
   // Call the WebAssembly function

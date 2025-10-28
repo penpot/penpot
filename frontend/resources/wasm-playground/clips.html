@@ -79,6 +79,7 @@
       setShapeChildren([frameUuid]);
 
       performance.mark('render:begin');
+      Module._set_view(1, 0, 0);
       Module._render(Date.now());
       performance.mark('render:end');
       const { duration } = performance.measure('render', 'render:begin', 'render:end');

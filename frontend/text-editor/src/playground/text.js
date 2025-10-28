@@ -38,27 +38,21 @@ export const TextTransform = {
 };
 
 export class TextSpan {
-  static BYTE_LENGTH = 60;
+  static BYTE_LENGTH = 1340;
 
   static fromDOM(spanElement, fontManager) {
     const elementStyle = spanElement.style; //window.getComputedStyle(leafElement);
-    const fontSize = parseFloat(
-      elementStyle.getPropertyValue("font-size"),
-    );
+    const fontSize = parseFloat(elementStyle.getPropertyValue("font-size"));
     const fontStyle =
       FontStyle.fromStyle(elementStyle.getPropertyValue("font-style")) ??
       FontStyle.NORMAL;
-    const fontWeight = parseInt(
-      elementStyle.getPropertyValue("font-weight"),
-    );
+    const fontWeight = parseInt(elementStyle.getPropertyValue("font-weight"));
     const letterSpacing = parseFloat(
       elementStyle.getPropertyValue("letter-spacing"),
     );
     const fontFamily = elementStyle.getPropertyValue("font-family");
     console.log("fontFamily", fontFamily);
-    const fontStyles = fontManager.fonts.get(
-      fontFamily,
-    );
+    const fontStyles = fontManager.fonts.get(fontFamily);
     const textDecoration = TextDecoration.fromStyle(
       elementStyle.getPropertyValue("text-decoration"),
     );
@@ -75,7 +69,7 @@ export class TextSpan {
         currentFontStyle.styleAsNumber === fontStyle,
     );
     if (!font) {
-      throw new Error(`Invalid font "${fontFamily}"`)
+      throw new Error(`Invalid font "${fontFamily}"`);
     }
     return new TextSpan({
       fontId: font.id, // leafElement.style.getPropertyValue("--font-id"),
@@ -134,7 +128,7 @@ export class TextSpan {
   }
 
   get leafByteLength() {
-    return this.fills.length * Fill.BYTE_LENGTH + TextSpan.BYTE_LENGTH;
+    return TextLeaf.BYTE_LENGTH;
   }
 }
 

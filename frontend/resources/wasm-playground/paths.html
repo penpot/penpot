@@ -41,7 +41,6 @@
       init(Module);
       assignCanvas(canvas);
       Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
-      Module._set_view(1, 0, 0);
       Module._init_shapes_pool(shapes + 1);
       setupInteraction(canvas);
 
@@ -74,6 +73,7 @@
       setShapeChildren(children);
 
       performance.mark('render:begin');
+      Module._set_view(1, 0, 0);
       Module._render(Date.now());
       performance.mark('render:end');
       const { duration } = performance.measure('render', 'render:begin', 'render:end');

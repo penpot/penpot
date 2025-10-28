@@ -38,7 +38,6 @@
       init(Module);
       assignCanvas(canvas);
       Module._set_canvas_background(hexToU32ARGB("#FABADA", 1));
-      Module._set_view(1, 0, 0);
       Module._init_shapes_pool(shapes + 1);
       setupInteraction(canvas);
 
@@ -78,6 +77,7 @@
       Module._set_shape_masked_group(true);
       setShapeChildren(group_children);
 
+      Module._set_view(1, 0, 0);
       Module._render(Date.now());
     });
     
