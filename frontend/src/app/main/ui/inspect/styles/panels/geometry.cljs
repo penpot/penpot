@@ -31,8 +31,13 @@
    :border-end-end-radius :r4})
 
 (defn- has-border-radius?
+  "Returns true if the shape has any non-zero border radius values."
   [shape]
-  (some #(and (contains? shape %) (not= 0 (get shape %))) [:r1 :r2 :r3 :r4]))
+  (let [radius-keys [:r1 :r2 :r3 :r4]]
+    (some (fn [key]
+            (and (contains? shape key)
+                 (not= 0 (get shape key))))
+          radius-keys)))
 
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]

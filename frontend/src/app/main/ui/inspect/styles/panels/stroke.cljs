@@ -66,11 +66,10 @@
                gradient-data  {:type (get-in stroke-type [:gradient :type])
                                :stops (get-in stroke-type [:gradient :stops])}
                color-image (:image stroke-type)
-               image-url (cfg/resolve-file-media color-image)
                value (cond
                        color-value (dm/str "border: " stroke-width "px " (d/name stroke-style) " " color-value ";")
                        color-gradient (dm/str "border-image: " (uc/gradient->css gradient-data) " 100 / " stroke-width "px;")
-                       color-image (dm/str "border-image: url(" image-url ") 100 / " stroke-width "px;")
+                       color-image (dm/str "border-image: url(" (cfg/resolve-file-media color-image) ") 100 / " stroke-width "px;")
                        :else "")]
            (if (empty? acc)
              value

@@ -27,7 +27,12 @@
 
 (defn- has-margin?
   [shape]
-  (some #(and (contains? (:layout-item-margin shape) %) (not= 0 (get (:layout-item-margin shape) %))) [:m1 :m2 :m3 :m4]))
+  (let [margin (:layout-item-margin shape)
+        margin-keys [:m1 :m2 :m3 :m4]]
+    (some (fn [key]
+            (and (contains? margin key)
+                 (not= 0 (get margin key))))
+          margin-keys)))
 
 (defn- get-applied-margins-in-shape
   [shape-tokens property]
@@ -52,12 +57,13 @@
                          (if-let [flex-value (css/get-css-value objects shape :flex)]
                            flex-value
                            0))
+        shorthand-basis 0 ;; Default-value. Currently not supported in the UI
         shorthand-shrink (when (and (= (count shapes) 1)
                                     (ctl/flex-layout-immediate-child? objects shape))
                            (if-let [flex-shrink-value (css/get-css-value objects shape :flex-shrink)]
                              flex-shrink-value
                              0))
-        shorthand-flex (dm/str "flex: " shorthand-grow " 0 " shorthand-shrink ";")
+        shorthand-flex (dm/str "flex: " shorthand-grow " " shorthand-basis " " shorthand-shrink ";")
         shorthand (dm/str  shorthand-margin " " shorthand-flex)]
     shorthand))
 

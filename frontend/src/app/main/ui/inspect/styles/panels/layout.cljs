@@ -39,7 +39,12 @@
 
 (defn- has-padding?
   [shape]
-  (some #(and (contains? (:layout-padding shape) %) (not= 0 (get (:layout-padding shape) %))) [:p1 :p2 :p3 :p4]))
+  (let [padding (:layout-padding shape)
+        padding-keys [:p1 :p2 :p3 :p4]]
+    (some (fn [key]
+            (and (contains? padding key)
+                 (not= 0 (get padding key))))
+          padding-keys)))
 
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]

@@ -45,16 +45,15 @@
            gradient-data  {:type color-type
                            :stops (:stops color-gradient)}
            color-image (:image color-type)
-           image-url (cfg/resolve-file-media color-image)
            prefix (if color-value "background-color: " "background-image: ")
            value (cond
                    (:color color-type) (dm/str color-value)
                    color-gradient (uc/gradient->css gradient-data)
-                   color-image (str "url(\"" image-url "\")")
+                   color-image (str "url(\"" (cfg/resolve-file-media color-image) "\")")
                    :else "")
            full-value (str prefix value ";")]
        (if (empty? acc)
-         full-value
+         acc
          (str acc " " full-value))))
    ""
    (:fills shape)))
@@ -85,9 +84,7 @@
                                          :token (when has-token resolved-token)
                                          :format color-space
                                          :copiable true}]
-              (if (or (:gradient color-type) (:image color-type))
-                [:> color-properties-row* {:key idx
-                                           :term property-name
-                                           :color color-type
-                                           :copiable true}]
-                [:span "background-image"]))))])]))
+              [:> color-properties-row* {:key idx
+                                         :term property-name
+                                         :color color-type
+                                         :copiable true}])))])]))

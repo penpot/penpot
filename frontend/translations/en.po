@@ -1905,7 +1905,7 @@ msgstr "Info"
 #: src/app/main/ui/inspect/styles/style_box.cljs:66
 #, fuzzy
 msgid "inspect.tabs.styles.panel.copy-style-shorthand"
-msgstr ""
+msgstr "Copy CSS shorthand to clipboard"
 
 #: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
 msgid "inspect.tabs.styles.panel.copy-to-clipboard"
