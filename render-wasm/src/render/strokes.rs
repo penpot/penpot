@@ -17,7 +17,7 @@ fn draw_stroke_on_rect(
     rect: &Rect,
     selrect: &Rect,
     corners: &Option<Corners>,
-    svg_attrs: &SvgAttrs,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -53,7 +53,7 @@ fn draw_stroke_on_circle(
     stroke: &Stroke,
     rect: &Rect,
     selrect: &Rect,
-    svg_attrs: &SvgAttrs,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -130,7 +130,7 @@ pub fn draw_stroke_on_path(
     path: &Path,
     selrect: &Rect,
     path_transform: Option<&Matrix>,
-    svg_attrs: &SvgAttrs,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     shadow: Option<&ImageFilter>,
     blur: Option<&ImageFilter>,
@@ -217,7 +217,7 @@ fn handle_stroke_caps(
     selrect: &Rect,
     canvas: &skia::Canvas,
     is_open: bool,
-    svg_attrs: &SvgAttrs,
+    svg_attrs: Option<&SvgAttrs>,
     scale: f32,
     blur: Option<&ImageFilter>,
     antialias: bool,
@@ -389,7 +389,7 @@ fn draw_image_stroke_in_container(
     let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
     let container = &shape.selrect;
     let path_transform = shape.to_path_transform();
-    let svg_attrs = &shape.svg_attrs;
+    let svg_attrs = shape.svg_attrs.as_ref();
 
     // Save canvas and layer state
     let mut pb = skia::Paint::default();
@@ -529,7 +529,7 @@ pub fn render(
         .canvas(surface_id.unwrap_or(surface_id.unwrap_or(SurfaceId::Strokes)));
     let selrect = shape.selrect;
     let path_transform = shape.to_path_transform();
-    let svg_attrs = &shape.svg_attrs;
+    let svg_attrs = shape.svg_attrs.as_ref();
 
     if !matches!(shape.shape_type, Type::Text(_))
         && shadow.is_none()
@@ -603,7 +603,7 @@ pub fn render_text_paths(
         .surfaces
         .canvas(surface_id.unwrap_or(SurfaceId::Strokes));
     let selrect = &shape.selrect;
-    let svg_attrs = &shape.svg_attrs;
+    let svg_attrs = shape.svg_attrs.as_ref();
     let mut paint: skia_safe::Handle<_> =
         stroke.to_text_stroked_paint(false, selrect, svg_attrs, scale, antialias);
 

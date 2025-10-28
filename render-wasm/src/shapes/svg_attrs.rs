@@ -1,3 +1,5 @@
+use crate::wasm::svg_attrs::{RawFillRule, RawStrokeLineCap, RawStrokeLineJoin};
+
 #[derive(Debug, Clone, PartialEq, Copy, Default)]
 pub enum FillRule {
     #[default]
@@ -44,6 +46,22 @@ impl Default for SvgAttrs {
             stroke_linecap: StrokeLineCap::Butt,
             stroke_linejoin: StrokeLineJoin::Miter,
             fill_none: false,
+        }
+    }
+}
+
+impl SvgAttrs {
+    pub fn from_raw(
+        fill_rule: u8,
+        stroke_linecap: u8,
+        stroke_linejoin: u8,
+        fill_none: bool,
+    ) -> Self {
+        Self {
+            fill_rule: RawFillRule::from(fill_rule).into(),
+            stroke_linecap: RawStrokeLineCap::from(stroke_linecap).into(),
+            stroke_linejoin: RawStrokeLineJoin::from(stroke_linejoin).into(),
+            fill_none,
         }
     }
 }

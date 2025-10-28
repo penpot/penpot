@@ -248,6 +248,7 @@ pub(crate) struct RenderState {
     // without their own fill definitions. This is necessary because in SVG, a group's `fill`
     // can affect its child elements if they don't specify one themselves. If the planned
     // migration to remove group-level fills is completed, this code should be removed.
+    // Frames contained in groups must reset this nested_fills stack pushing a new empty vector.
     pub nested_fills: Vec<Vec<Fill>>,
     pub nested_blurs: Vec<Option<Blur>>, // FIXME: why is this an option?
     pub show_grid: Option<Uuid>,
@@ -766,7 +767,11 @@ impl RenderState {
 
                 if shape.fills.is_empty()
                     && !matches!(shape.shape_type, Type::Group(_))
-                    && !shape.svg_attrs.fill_none
+                    && !matches!(shape.shape_type, Type::Frame(_))
+                    && !shape
+                        .svg_attrs
+                        .as_ref()
+                        .is_some_and(|attrs| attrs.fill_none)
                 {
                     if let Some(fills_to_render) = self.nested_fills.last() {
                         let fills_to_render = fills_to_render.clone();
@@ -994,6 +999,10 @@ impl RenderState {
             }
         }
 
+        if let Type::Frame(_) = element.shape_type {
+            self.nested_fills.push(Vec::new());
+        }
+
         let mut paint = skia::Paint::default();
         paint.set_blend_mode(element.blend_mode().into());
         paint.set_alpha_f(element.opacity());
@@ -1065,12 +1074,10 @@ impl RenderState {
                 }
             }
         }
-        if let Type::Group(_) = element.shape_type {
-            self.nested_fills.pop();
-        }
 
         match element.shape_type {
             Type::Frame(_) | Type::Group(_) => {
+                self.nested_fills.pop();
                 self.nested_blurs.pop();
             }
             _ => {}

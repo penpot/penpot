@@ -1,6 +1,6 @@
 use macros::ToJs;
 
-use crate::shapes::{FillRule, StrokeLineCap, StrokeLineJoin};
+use crate::shapes::{FillRule, StrokeLineCap, StrokeLineJoin, SvgAttrs};
 use crate::{with_current_shape_mut, STATE};
 
 #[derive(PartialEq, ToJs)]
@@ -84,12 +84,11 @@ pub extern "C" fn set_shape_svg_attrs(
     fill_none: bool,
 ) {
     with_current_shape_mut!(state, |shape: &mut Shape| {
-        let fill_rule = RawFillRule::from(fill_rule);
-        shape.svg_attrs.fill_rule = fill_rule.into();
-        let stroke_linecap = RawStrokeLineCap::from(stroke_linecap);
-        shape.svg_attrs.stroke_linecap = stroke_linecap.into();
-        let stroke_linejoin = RawStrokeLineJoin::from(stroke_linejoin);
-        shape.svg_attrs.stroke_linejoin = stroke_linejoin.into();
-        shape.svg_attrs.fill_none = fill_none;
+        shape.svg_attrs = Some(SvgAttrs::from_raw(
+            fill_rule,
+            stroke_linecap,
+            stroke_linejoin,
+            fill_none,
+        ));
     });
 }

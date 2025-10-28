@@ -777,8 +777,19 @@
         rotation     (get shape :rotation)
         transform    (get shape :transform)
 
-        ;; Groups from imported SVG's can have their own fills
-        fills        (get shape :fills)
+        ;; If the shape comes from an imported SVG (we know this because
+        ;; it has the :svg-attrs attribute) and it does not have its
+        ;; own fill, we set a default black fill. This fill will be
+        ;; inherited by child nodes and emulates the behavior of
+        ;; standard SVG, where a node without an explicit fill
+        ;; defaults to black.
+        fills        (let [base-fills (get shape :fills)]
+                       (if (and ^boolean (contains? shape :svg-attrs)
+                                ^boolean (or ^boolean (= :svg-raw type)
+                                             ^boolean (= :group type))
+                                ^boolean (empty? base-fills))
+                         [{:fill-color "#000000" :fill-opacity 1}]
+                         base-fills))
 
         strokes      (if (= type :group)
                        [] (get shape :strokes))
@@ -815,7 +826,7 @@
     (when (and (some? content)
                (or (= type :path)
                    (= type :bool)))
-      (when (seq svg-attrs)
+      (when (some? svg-attrs)
         (set-shape-path-attrs svg-attrs))
       (set-shape-path-content content))
     (when (and (some? content) (= type :svg-raw))
