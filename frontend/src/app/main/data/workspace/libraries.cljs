@@ -1018,12 +1018,19 @@
               (clv/generate-keep-touched changes new-shape shape orig-shapes page libraries ldata)
               [changes []])
             update-layout-ids (concat all-parents parents-of-swapped new-children-ids)]
-        (rx/of
-         (dwu/start-undo-transaction undo-id)
-         (dch/commit-changes changes)
-         (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group})
-         (dwu/commit-undo-transaction undo-id)
-         (dws/select-shape (:id new-shape) false))))))
+        (rx/concat
+         (rx/of
+          (dwu/start-undo-transaction undo-id)
+          (dch/commit-changes changes)
+          (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group}))
+         ;; NOTE: we need to schedule a commit into a
+         ;; microtask for ensure that all the scheduled
+         ;; microtask of previous events execute before the
+         ;; commit (specifically the layout/update)
+         (->> (rx/of (dwu/commit-undo-transaction undo-id)
+                     (dws/select-shape (:id new-shape) false))
+              (rx/observe-on :async)
+              (rx/delay 1000)))))))
 
 (defn component-multi-swap
   "Swaps several components with another one"
