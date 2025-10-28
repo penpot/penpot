@@ -17,7 +17,7 @@ import { setStyles, mergeStyles } from "./Style.js";
 import { createRandomId } from "./Element.js";
 
 export const TAG = "SPAN";
-export const TYPE = "span";
+export const TYPE = "inline";
 export const QUERY = `[data-itype="${TYPE}"]`;
 export const STYLES = [
   ["--typography-ref-id"],
