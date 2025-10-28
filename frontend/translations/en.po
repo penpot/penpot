@@ -4514,10 +4514,11 @@ msgstr "Enterprise plan (trial)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:64
 #, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-text"
-msgstr ""
-"Get extra storage, file recovery and more for your teams with the Unlimited "
-"plan. [Power up!|target:self](%s)"
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Get extra storage, file recovery and more for your teams."
+
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Power up!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:63
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4622,6 +4623,9 @@ msgstr "All Professional plan benefits and:"
 #: src/app/main/ui/settings/subscription.cljs:379, src/app/main/ui/settings/subscription.cljs:391, src/app/main/ui/settings/subscription.cljs:401, src/app/main/ui/settings/subscription.cljs:453
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "All Unlimited plan benefits and:"
+
+msgid "subscription.settings.recommended"
+msgstr "Recommended"
 
 #: src/app/main/ui/settings/subscription.cljs:39
 msgid "subscription.settings.editors"

@@ -9,6 +9,7 @@
    [app.main.router :as rt]
    [app.main.store :as st]
    [app.main.ui.components.dropdown-menu :refer [dropdown-menu-item*]]
+   [app.main.ui.ds.buttons.button :refer [button*]]
    [app.main.ui.ds.product.cta :refer [cta*]]
    [app.main.ui.icons :as deprecated-icon]
    [app.util.dom :as dom]
@@ -25,14 +26,19 @@
     "professional"))
 
 (mf/defc cta-power-up*
-  [{:keys [top-title top-description bottom-description has-dropdown]}]
+  [{:keys [top-title top-description bottom-description bottom-button bottom-button-href has-dropdown]}]
   (let [show-data* (mf/use-state false)
         show-data (deref show-data*)
         handle-click
         (mf/use-fn
          (fn [event]
            (dom/stop-propagation event)
-           (swap! show-data* not)))]
+           (swap! show-data* not)))
+        handle-navigation
+        (mf/use-fn
+         (fn [event]
+           (dom/stop-propagation event)
+           (st/emit! (rt/nav-raw :href bottom-button-href))))]
 
     [:div {:class (stl/css :cta-power-up)
            :on-click handle-click}
@@ -47,7 +53,16 @@
        [:div {:class (stl/css :cta-bottom-section)}
         [:> i18n/tr-html* {:content bottom-description
                            :class (stl/css :content)
-                           :tag-name "span"}]])]))
+                           :tag-name "span"}]])
+
+     (when (and bottom-description bottom-button)
+       [:div {:class (stl/css :cta-bottom-section)}
+        [:span {:class (stl/css :content)}
+         bottom-description]
+        [:> button* {:variant "primary"
+                     :type "button"
+                     :class (stl/css :cta-bottom-button)
+                     :on-click handle-navigation} bottom-button]])]))
 
 (mf/defc subscription-sidebar*
   [{:keys [profile]}]
@@ -61,8 +76,10 @@
       [:> cta-power-up*
        {:top-title (tr "subscription.dashboard.power-up.your-subscription")
         :top-description (tr "subscription.dashboard.power-up.professional.top-title")
-        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-text" subscription-href)
-        :has-dropdown true}]
+        :bottom-description (tr "subscription.dashboard.power-up.professional.bottom-description")
+        :bottom-button (tr "subscription.dashboard.power-up.professional.bottom-button")
+        :bottom-button-href subscription-href
+        :has-dropdown false}]
 
       "unlimited"
       (if subscription-is-trial

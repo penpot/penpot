@@ -4489,10 +4489,11 @@ msgstr "Plan Enterprise (Prueba)"
 
 #: src/app/main/ui/dashboard/subscription.cljs:64
 #, markdown
-msgid "subscription.dashboard.power-up.professional.bottom-text"
-msgstr ""
-"Consigue almacenamiento adicional, recuperación de archivos y mucho más "
-"para tus equipos con el Plan Unlimited. [Mejóralo!|target:self](%s)"
+msgid "subscription.dashboard.power-up.professional.bottom-description"
+msgstr "Consigue almacenamiento adicional, recuperación de archivos y mucho más para tus equipos."
+
+msgid "subscription.dashboard.power-up.professional.bottom-button"
+msgstr "Mejóralo!"
 
 #: src/app/main/ui/dashboard/subscription.cljs:63
 msgid "subscription.dashboard.power-up.professional.top-title"
@@ -4604,6 +4605,9 @@ msgstr "Todas las prestaciones del plan Professional y:"
 msgid "subscription.settings.benefits.all-unlimited-benefits"
 msgstr "Todas las prestaciones del plan Unlimited y:"
 
+msgid "subscription.settings.recommended"
+msgstr "Recomendado"
+
 #: src/app/main/ui/settings/subscription.cljs:39
 msgid "subscription.settings.editors"
 msgstr "(x %s editores)"
@@ -4664,7 +4668,7 @@ msgstr ""
 #: src/app/main/ui/settings/subscription.cljs:177
 msgid "subscription.settings.management.dialog.payment-explanation"
 msgstr ""
-"Se cobrar después del período de prueba. No se requiere tarjeta de crédito "
+"Se cobrara después del periodo de prueba. No se requiere tarjeta de crédito "
 "en este momento."
 
 #: src/app/main/ui/settings/subscription.cljs:170, src/app/main/ui/settings/subscription.cljs:174
