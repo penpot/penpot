@@ -147,16 +147,6 @@ export function draw_star(x, y, width, height) {
   dv.setUint16(ptr + offset + 0, 4, true); // CLOSE
 
   Module._set_shape_path_content();
-
-  const str = serializePathAttrs({
-    fill: "none",
-    "stroke-linecap": "round",
-    "stroke-linejoin": "round",
-  });
-  const size = str.length;
-  offset = allocBytes(size);
-  Module.stringToUTF8(str, offset, size);
-  Module._set_shape_path_attrs(3);
 }
 
 export function setShapeChildren(shapeIds) {
