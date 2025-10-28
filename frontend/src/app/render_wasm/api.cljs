@@ -8,7 +8,7 @@
   "A WASM based render API"
   (:require
    ["react-dom/server" :as rds]
-   [app.common.data :as d :refer [not-empty?]]
+   [app.common.data :as d]
    [app.common.data.macros :as dm]
    [app.common.math :as mth]
    [app.common.types.fills :as types.fills]
@@ -850,20 +850,14 @@
   [pending]
   (let [event (js/CustomEvent. "wasm:set-objects-finished")
         pending (-> (d/index-by :key :callback pending) vals)]
-    (if (not-empty? pending)
-      (->> (rx/from pending)
-           (rx/merge-map (fn [callback] (callback)))
-           (rx/tap (fn [_] (request-render "set-objects")))
-           (rx/reduce conj [])
-           (rx/subs! (fn [_]
-                       (clear-drawing-cache)
-                       (request-render "pending-finished")
-                       (h/call wasm/internal-module "_update_shape_text_layout_for_all")
-                       (.dispatchEvent ^js js/document event))))
-      (do
-        (clear-drawing-cache)
-        (request-render "pending-finished")
-        (.dispatchEvent ^js js/document event)))))
+    (->> (rx/from pending)
+         (rx/merge-map (fn [callback] (callback)))
+         (rx/reduce conj [])
+         (rx/subs! (fn [_]
+                     (clear-drawing-cache)
+                     (request-render "pending-finished")
+                     (h/call wasm/internal-module "_update_shape_text_layout_for_all")
+                     (.dispatchEvent ^js js/document event))))))
 
 (defn process-object
   [shape]
@@ -987,6 +981,10 @@
 (defn clean-modifiers
   []
   (h/call wasm/internal-module "_clean_modifiers"))
+
+(defn clean-geometry-modifiers
+  []
+  (h/call wasm/internal-module "_clean_geometry_modifiers"))
 
 (defn set-modifiers
   [modifiers]
@@ -1116,7 +1114,6 @@
 
 (defn calculate-bool
   [bool-type ids]
-
   (let [size   (mem/get-alloc-size ids UUID-U8-SIZE)
         heap   (mem/get-heap-u32)
         offset (mem/alloc->offset-32 size)]

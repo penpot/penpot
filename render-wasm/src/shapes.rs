@@ -47,6 +47,7 @@ pub use svgraw::*;
 pub use text::*;
 pub use transform::*;
 
+use crate::math::bools as math_bools;
 use crate::math::{self, Bounds, Matrix, Point};
 use indexmap::IndexSet;
 
@@ -307,6 +308,10 @@ impl Shape {
     #[allow(dead_code)]
     pub fn is_frame(&self) -> bool {
         matches!(self.shape_type, Type::Frame(_))
+    }
+
+    pub fn is_bool(&self) -> bool {
+        matches!(self.shape_type, Type::Bool(_))
     }
 
     pub fn is_group_like(&self) -> bool {
@@ -901,6 +906,7 @@ impl Shape {
         self.children.first()
     }
 
+    // TODO: Review this to use children_ids_iter instead
     pub fn children_ids(&self, include_hidden: bool) -> IndexSet<Uuid> {
         if include_hidden {
             return self.children.clone().into_iter().rev().collect();
@@ -1164,7 +1170,7 @@ impl Shape {
         for st in structure {
             match st.entry_type {
                 StructureEntryType::AddChild => {
-                    result.insert(result.len() - st.index as usize, st.id);
+                    result.insert(st.index as usize, st.id);
                 }
                 StructureEntryType::RemoveChild => {
                     to_remove.insert(&st.id);
@@ -1182,6 +1188,7 @@ impl Shape {
 
     pub fn transformed(
         &self,
+        shapes_pool: ShapesPoolRef,
         transform: Option<&Matrix>,
         structure: Option<&Vec<StructureEntry>>,
     ) -> Self {
@@ -1191,6 +1198,9 @@ impl Shape {
         }
         if let Some(structure) = structure {
             shape.to_mut().apply_structure(structure);
+        }
+        if self.is_bool() {
+            math_bools::update_bool_to_path(shape.to_mut(), shapes_pool)
         }
         shape.into_owned()
     }
@@ -1245,73 +1255,6 @@ impl Shape {
         self.visible_strokes()
             .filter(|s| s.kind == StrokeKind::Inner)
             .count()
-    }
-
-    /*
-      Returns the list of children taking into account the structure modifiers
-    */
-    pub fn modified_children_ids(
-        &self,
-        structure: Option<&Vec<StructureEntry>>,
-        include_hidden: bool,
-    ) -> IndexSet<Uuid> {
-        if let Some(structure) = structure {
-            let mut result: Vec<Uuid> =
-                Vec::from_iter(self.children_ids(include_hidden).iter().copied());
-            let mut to_remove = HashSet::<&Uuid>::new();
-
-            for st in structure {
-                match st.entry_type {
-                    StructureEntryType::AddChild => {
-                        result.insert(result.len() - st.index as usize, st.id);
-                    }
-                    StructureEntryType::RemoveChild => {
-                        to_remove.insert(&st.id);
-                    }
-                    _ => {}
-                }
-            }
-
-            let ret: IndexSet<Uuid> = result
-                .iter()
-                .filter(|id| !to_remove.contains(id))
-                .copied()
-                .collect();
-
-            ret
-        } else {
-            self.children_ids(include_hidden)
-        }
-    }
-
-    pub fn modified_children_ids_iter<'a>(
-        &'a self,
-        structure: Option<&'a Vec<StructureEntry>>,
-        include_hidden: bool,
-    ) -> Box<dyn Iterator<Item = Cow<'a, Uuid>> + 'a> {
-        if let Some(structure) = structure {
-            let mut result: Vec<Cow<'a, Uuid>> = self
-                .children_ids_iter(include_hidden)
-                .map(Cow::Borrowed)
-                .collect();
-            let mut to_remove = HashSet::<Cow<'a, Uuid>>::new();
-
-            for st in structure {
-                match st.entry_type {
-                    StructureEntryType::AddChild => {
-                        result.insert(result.len() - st.index as usize, Cow::Owned(st.id));
-                    }
-                    StructureEntryType::RemoveChild => {
-                        to_remove.insert(Cow::Owned(st.id));
-                    }
-                    _ => {}
-                }
-            }
-
-            Box::new(result.into_iter().filter(move |id| !to_remove.contains(id)))
-        } else {
-            Box::new(self.children_ids_iter(include_hidden).map(Cow::Borrowed))
-        }
     }
 
     pub fn drop_shadow_paints(&self) -> Vec<skia_safe::Paint> {

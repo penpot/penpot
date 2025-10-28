@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::iter;
 
 use crate::performance;
+use crate::shapes;
 use crate::shapes::Shape;
 use crate::uuid::Uuid;
 
@@ -208,11 +209,15 @@ impl<'a> ShapesPoolImpl<'a> {
             // Extend the lifetime of id to 'a - safe because it's the same Uuid stored in shapes[idx].id
             let id_ref: &'a Uuid = &*(id as *const Uuid);
 
-            if (*modifiers_ptr).contains_key(&id_ref) || (*structure_ptr).contains_key(&id_ref) {
+            if self.to_update_bool(&*shape_ptr)
+                || (*modifiers_ptr).contains_key(&id_ref)
+                || (*structure_ptr).contains_key(&id_ref)
+            {
                 if let Some(cell) = (*cache_ptr).get(&id_ref) {
                     Some(cell.get_or_init(|| {
                         let shape = &*shape_ptr;
                         shape.transformed(
+                            &self,
                             (*modifiers_ptr).get(&id_ref),
                             (*structure_ptr).get(&id_ref),
                         )
@@ -246,14 +251,25 @@ impl<'a> ShapesPoolImpl<'a> {
 
         // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
         // Initialize the cache cells because later we don't want to have the mutable pointer
+
+        let mut ids = Vec::<Uuid>::new();
+
         let mut modifiers_with_refs = HashMap::with_capacity(modifiers.len());
         for (uuid, matrix) in modifiers {
             if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
+                // self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
                 modifiers_with_refs.insert(uuid_ref, matrix);
+                ids.push(*uuid_ref);
             }
         }
         self.modifiers = modifiers_with_refs;
+
+        let all_ids = shapes::all_with_ancestors(&ids, &self, true);
+        for uuid in all_ids {
+            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
+            }
+        }
     }
 
     #[allow(dead_code)]
@@ -261,13 +277,22 @@ impl<'a> ShapesPoolImpl<'a> {
         // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
         // Initialize the cache cells because later we don't want to have the mutable pointer
         let mut structure_with_refs = HashMap::with_capacity(structure.len());
+        let mut ids = Vec::<Uuid>::new();
+
         for (uuid, entries) in structure {
             if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
-                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
                 structure_with_refs.insert(uuid_ref, entries);
+                ids.push(*uuid_ref);
             }
         }
         self.structure = structure_with_refs;
+
+        let all_ids = shapes::all_with_ancestors(&ids, &self, true);
+        for uuid in all_ids {
+            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
+            }
+        }
     }
 
     #[allow(dead_code)]
@@ -290,4 +315,33 @@ impl<'a> ShapesPoolImpl<'a> {
         // and won't be reallocated.
         unsafe { Some(&*(&self.shapes[idx].id as *const Uuid)) }
     }
+
+    fn to_update_bool(&self, shape: &Shape) -> bool {
+        // TODO: Check if any of the children is in the modifiers with a
+        // different matrix than the current one.
+        shape.is_bool()
+    }
 }
+
+// fn is_modified_child(
+//     shape: &Shape,
+//     shapes: ShapesPoolRef,
+//     modifiers: &HashMap<Uuid, Matrix>,
+// ) -> bool {
+//     if modifiers.is_empty() {
+//         return false;
+//     }
+//
+//     let ids = shape.all_children(shapes, true, false);
+//     let default = &Matrix::default();
+//     let parent_modifier = modifiers.get(&shape.id).unwrap_or(default);
+//
+//     // Returns true if the transform of any child is different to the parent's
+//     ids.iter().any(|id| {
+//         !math::is_close_matrix(
+//             parent_modifier,
+//             modifiers.get(id).unwrap_or(&Matrix::default()),
+//         )
+//     })
+// }
+

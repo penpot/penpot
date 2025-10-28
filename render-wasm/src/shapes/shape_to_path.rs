@@ -1,22 +1,13 @@
-use skia_safe::Matrix;
-
-use super::{Corners, Path, Segment, Shape, StructureEntry, Type};
+use super::{Corners, Path, Segment, Shape, Type};
 use crate::math;
 
 use crate::shapes::text_paths::TextPaths;
 use crate::state::ShapesPoolRef;
-use crate::uuid::Uuid;
-use std::collections::HashMap;
 
 const BEZIER_CIRCLE_C: f32 = 0.551_915_05;
 
 pub trait ToPath {
-    fn to_path(
-        &self,
-        shapes: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) -> Path;
+    fn to_path(&self, shapes: ShapesPoolRef) -> Path;
 }
 
 enum CornerType {
@@ -180,33 +171,28 @@ fn transform_segments(segments: Vec<Segment>, shape: &Shape) -> Vec<Segment> {
 }
 
 impl ToPath for Shape {
-    fn to_path(
-        &self,
-        shapes: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) -> Path {
+    fn to_path(&self, shapes: ShapesPoolRef) -> Path {
         match &self.shape_type {
             Type::Frame(ref frame) => {
-                let children = self.modified_children_ids(structure.get(&self.id), true);
+                let children = self.children_ids(true);
                 let mut result = Path::new(rect_segments(&self, frame.corners));
                 for id in children {
                     let Some(shape) = shapes.get(&id) else {
                         continue;
                     };
-                    result = join_paths(result, shape.to_path(shapes, modifiers, structure));
+                    result = join_paths(result, shape.to_path(shapes));
                 }
                 result
             }
 
             Type::Group(_) => {
-                let children = self.modified_children_ids(structure.get(&self.id), true);
+                let children = self.children_ids(true);
                 let mut result = Path::default();
                 for id in children {
                     let Some(shape) = shapes.get(&id) else {
                         continue;
                     };
-                    result = join_paths(result, shape.to_path(shapes, modifiers, structure));
+                    result = join_paths(result, shape.to_path(shapes));
                 }
                 // Force closure of the group path
                 let mut segments = result.segments().clone();

@@ -19,6 +19,7 @@
    [app.common.types.component :as ctk]
    [app.common.types.container :as ctn]
    [app.common.types.modifiers :as ctm]
+   [app.common.types.path :as path]
    [app.common.types.shape-tree :as ctst]
    [app.common.types.shape.attrs :refer [editable-attrs]]
    [app.common.types.shape.layout :as ctl]
@@ -669,6 +670,8 @@
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
 
+            _ (wasm.api/clean-geometry-modifiers)
+
             transforms
             (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
 
@@ -685,12 +688,24 @@
                     modifiers   (dm/get-in modif-tree [shape-id :modifiers])]
                 (-> shape
                     (gsh/apply-transform transform)
-                    (ctm/apply-structure-modifiers modifiers))))]
+                    (ctm/apply-structure-modifiers modifiers))))
+
+            bool-ids
+            (into #{}
+                  (comp
+                   (mapcat (partial cfh/get-parents-with-self objects))
+                   (filter cfh/bool-shape?)
+                   (map :id))
+                  ids)]
         (rx/of
          (clear-local-transform)
          (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
          (ptk/event ::dwcm/move-frame-comment-threads transforms)
-         (dwsh/update-shapes ids update-shape options))))))
+         (dwsh/update-shapes ids update-shape options)
+
+         ;; The update to the bool path needs to be in a different operation because it
+         ;; needs to have the updated children info
+         (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))))))
 
 (def ^:private
   xf-rotation-shape

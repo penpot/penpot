@@ -495,11 +495,7 @@ pub extern "C" fn get_selection_rect() -> *mut u8 {
     with_state_mut!(state, {
         let bbs: Vec<_> = entries
             .iter()
-            .flat_map(|id| {
-                let default = Matrix::default();
-                let modifier = state.modifiers.get(id).unwrap_or(&default);
-                state.shapes.get(id).map(|b| b.bounds().transform(modifier))
-            })
+            .flat_map(|id| state.shapes.get(id).map(|b| b.bounds()))
             .collect();
 
         let result_bound = if bbs.len() == 1 {
@@ -569,9 +565,15 @@ pub extern "C" fn set_structure_modifiers() {
 #[no_mangle]
 pub extern "C" fn clean_modifiers() {
     with_state_mut!(state, {
-        state.structure.clear();
         state.scale_content.clear();
-        // state.modifiers.clear();
+        state.shapes.clean_modifiers();
+        state.shapes.clean_structure();
+    });
+}
+
+#[no_mangle]
+pub extern "C" fn clean_geometry_modifiers() {
+    with_state_mut!(state, {
         state.shapes.clean_modifiers();
     });
 }

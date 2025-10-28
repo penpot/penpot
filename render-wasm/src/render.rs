@@ -22,8 +22,7 @@ pub use surfaces::{SurfaceId, Surfaces};
 
 use crate::performance;
 use crate::shapes::{
-    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke,
-    StructureEntry, Type,
+    all_with_ancestors, Blur, BlurType, Corners, Fill, Shadow, Shape, SolidColor, Stroke, Type,
 };
 use crate::state::{ShapesPoolMutRef, ShapesPoolRef};
 use crate::tiles::{self, PendingTiles, TileRect};
@@ -31,8 +30,6 @@ use crate::uuid::Uuid;
 use crate::view::Viewbox;
 use crate::wapi;
 
-use crate::math;
-use crate::math::bools;
 use indexmap::IndexSet;
 
 pub use fonts::*;
@@ -63,13 +60,11 @@ impl NodeRenderState {
     /// Calculates the clip bounds for child elements of a given shape.
     ///
     /// This function determines the clipping region that should be applied to child elements
-    /// when rendering. It takes into account the element's selection rectangle, transform,
-    /// and any additional modifiers.
+    /// when rendering. It takes into account the element's selection rectangle, transform.
     ///
     /// # Parameters
     ///
     /// * `element` - The shape element for which to calculate clip bounds
-    /// * `modifiers` - Optional transformation matrix to apply to the bounds
     /// * `offset` - Optional offset (x, y) to adjust the bounds position. When provided,
     ///   the bounds are translated by the negative of this offset, effectively moving
     ///   the clipping region to compensate for coordinate system transformations.
@@ -78,7 +73,6 @@ impl NodeRenderState {
     pub fn get_children_clip_bounds(
         &self,
         element: &Shape,
-        modifiers: Option<&Matrix>,
         offset: Option<(f32, f32)>,
     ) -> Option<(Rect, Option<Corners>, Matrix)> {
         if self.id.is_nil() || !element.clip() {
@@ -96,10 +90,6 @@ impl NodeRenderState {
         let mut transform = element.transform;
         transform.post_translate(bounds.center());
         transform.pre_translate(-bounds.center());
-
-        if let Some(modifier) = modifiers {
-            transform.post_concat(modifier);
-        }
 
         let corners = match &element.shape_type {
             Type::Rect(data) => data.corners,
@@ -119,12 +109,10 @@ impl NodeRenderState {
     /// # Parameters
     ///
     /// * `element` - The shape element for which to calculate shadow clip bounds
-    /// * `modifiers` - Optional transformation matrix to apply to the bounds
     /// * `shadow` - The shadow configuration containing blur, offset, and other properties
     pub fn get_nested_shadow_clip_bounds(
         &self,
         element: &Shape,
-        modifiers: Option<&Matrix>,
         shadow: &Shadow,
     ) -> Option<(Rect, Option<Corners>, Matrix)> {
         if self.id.is_nil() {
@@ -141,10 +129,6 @@ impl NodeRenderState {
         let mut transform = element.transform;
         transform.post_translate(element.center());
         transform.pre_translate(-element.center());
-
-        if let Some(modifier) = modifiers {
-            transform.post_concat(modifier);
-        }
 
         let corners = match &element.shape_type {
             Type::Rect(data) => data.corners,
@@ -273,28 +257,6 @@ pub fn get_cache_size(viewbox: Viewbox, scale: f32) -> skia::ISize {
         ((iey - isy).abs() + dy) * tile_size as i32,
     )
         .into()
-}
-
-fn is_modified_child(
-    shape: &Shape,
-    shapes: ShapesPoolRef,
-    modifiers: &HashMap<Uuid, Matrix>,
-) -> bool {
-    if modifiers.is_empty() {
-        return false;
-    }
-
-    let ids = shape.all_children(shapes, true, false);
-    let default = &Matrix::default();
-    let parent_modifier = modifiers.get(&shape.id).unwrap_or(default);
-
-    // Returns true if the transform of any child is different to the parent's
-    ids.iter().any(|id| {
-        !math::is_close_matrix(
-            parent_modifier,
-            modifiers.get(id).unwrap_or(&Matrix::default()),
-        )
-    })
 }
 
 impl RenderState {
@@ -476,9 +438,6 @@ impl RenderState {
     #[allow(clippy::too_many_arguments)]
     pub fn render_shape(
         &mut self,
-        shapes: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
         scale_content: Option<&f32>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
@@ -546,10 +505,6 @@ impl RenderState {
         // We don't want to change the value in the global state
         let mut shape: Cow<Shape> = Cow::Borrowed(shape);
 
-        if let Some(shape_modifiers) = modifiers.get(&shape.id) {
-            shape.to_mut().apply_transform(shape_modifiers);
-        }
-
         let mut nested_blur_value = 0.;
         for nested_blur in self.nested_blurs.iter().flatten() {
             if !nested_blur.hidden && nested_blur.blur_type == BlurType::LayerBlur {
@@ -580,11 +535,6 @@ impl RenderState {
 
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
-                if let Some(shape_modifiers) = modifiers.get(&shape.id) {
-                    self.surfaces
-                        .canvas(fills_surface_id)
-                        .concat(shape_modifiers);
-                }
                 self.surfaces.canvas(fills_surface_id).concat(&matrix);
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas(fills_surface_id))
@@ -751,20 +701,7 @@ impl RenderState {
                     s.canvas().concat(&matrix);
                 });
 
-                // For boolean shapes, there's no need to calculate children because
-                // when painting the shape, the necessary path is already calculated
-                let shape = if let Type::Bool(_) = &shape.shape_type {
-                    // If any child transform doesn't match the parent transform means
-                    // that the children is transformed and we need to recalculate the
-                    // boolean
-                    if is_modified_child(&shape, shapes, modifiers) {
-                        &bools::update_bool_to_path(&shape, shapes, modifiers, structure)
-                    } else {
-                        &shape
-                    }
-                } else {
-                    &shape
-                };
+                let shape = &shape;
 
                 if shape.fills.is_empty()
                     && !matches!(shape.shape_type, Type::Group(_))
@@ -837,12 +774,7 @@ impl RenderState {
         }
     }
 
-    pub fn render_from_cache(
-        &mut self,
-        shapes: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) {
+    pub fn render_from_cache(&mut self, shapes: ShapesPoolRef) {
         let scale = self.get_cached_scale();
         if let Some(snapshot) = &self.cached_target_snapshot {
             let canvas = self.surfaces.canvas(SurfaceId::Target);
@@ -875,7 +807,7 @@ impl RenderState {
                 debug::render(self);
             }
 
-            ui::render(self, shapes, modifiers, structure);
+            ui::render(self, shapes);
             debug::render_wasm_label(self);
 
             self.flush_and_submit();
@@ -885,8 +817,6 @@ impl RenderState {
     pub fn start_render_loop(
         &mut self,
         tree: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
@@ -937,7 +867,7 @@ impl RenderState {
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
-        self.process_animation_frame(tree, modifiers, structure, scale_content, timestamp)?;
+        self.process_animation_frame(tree, scale_content, timestamp)?;
         performance::end_measure!("start_render_loop");
         Ok(())
     }
@@ -945,21 +875,13 @@ impl RenderState {
     pub fn process_animation_frame(
         &mut self,
         tree: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             if tree.len() != 0 {
-                self.render_shape_tree_partial(
-                    tree,
-                    modifiers,
-                    structure,
-                    scale_content,
-                    timestamp,
-                )?;
+                self.render_shape_tree_partial(tree, scale_content, timestamp)?;
             } else {
                 println!("Empty tree");
             }
@@ -1031,9 +953,6 @@ impl RenderState {
     #[inline]
     pub fn render_shape_exit(
         &mut self,
-        tree: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         element: &Shape,
         visited_mask: bool,
         scale_content: Option<&f32>,
@@ -1091,9 +1010,6 @@ impl RenderState {
             element_strokes.to_mut().clear_shadows();
             element_strokes.to_mut().clip_content = false;
             self.render_shape(
-                tree,
-                modifiers,
-                structure,
                 &element_strokes,
                 scale_content,
                 None,
@@ -1179,9 +1095,6 @@ impl RenderState {
     #[allow(clippy::too_many_arguments)]
     fn render_drop_black_shadow(
         &mut self,
-        shapes: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         shape: &Shape,
         shadow: &Shadow,
         scale_content: Option<&f32>,
@@ -1233,9 +1146,6 @@ impl RenderState {
             .translate(translation);
 
         self.render_shape(
-            shapes,
-            modifiers,
-            structure,
             &plain_shape,
             scale_content,
             clip_bounds,
@@ -1254,8 +1164,6 @@ impl RenderState {
     pub fn render_shape_tree_partial_uncached(
         &mut self,
         tree: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(bool, bool), String> {
@@ -1272,10 +1180,11 @@ impl RenderState {
             } = node_render_state;
 
             is_empty = false;
-            let element = tree.get(&node_id).ok_or(
-                "Error: Element with root_id {node_render_state.id} not found in the tree."
-                    .to_string(),
-            )?;
+
+            let element = tree.get(&node_id).ok_or(format!(
+                "Error: Element with root_id {} not found in the tree.",
+                node_render_state.id
+            ))?;
 
             // If the shape is not in the tile set, then we update
             // it.
@@ -1284,14 +1193,7 @@ impl RenderState {
             }
 
             if visited_children {
-                self.render_shape_exit(
-                    tree,
-                    modifiers,
-                    structure,
-                    element,
-                    visited_mask,
-                    scale_content.get(&element.id),
-                );
+                self.render_shape_exit(element, visited_mask, scale_content.get(&element.id));
                 continue;
             }
 
@@ -1351,9 +1253,6 @@ impl RenderState {
 
                         // First pass: Render shadow in black to establish alpha mask
                         self.render_drop_black_shadow(
-                            tree,
-                            modifiers,
-                            structure,
                             element,
                             shadow,
                             scale_content.get(&element.id),
@@ -1369,17 +1268,11 @@ impl RenderState {
                                 if shadow_shape.hidden {
                                     continue;
                                 }
-                                let clip_bounds = node_render_state.get_nested_shadow_clip_bounds(
-                                    element,
-                                    modifiers.get(&element.id),
-                                    shadow,
-                                );
+                                let clip_bounds = node_render_state
+                                    .get_nested_shadow_clip_bounds(element, shadow);
 
                                 if !matches!(shadow_shape.shape_type, Type::Text(_)) {
                                     self.render_drop_black_shadow(
-                                        tree,
-                                        modifiers,
-                                        structure,
                                         shadow_shape,
                                         shadow,
                                         scale_content.get(&element.id),
@@ -1415,9 +1308,6 @@ impl RenderState {
                                     new_shadow_paint.set_blend_mode(skia::BlendMode::SrcOver);
 
                                     self.render_shape(
-                                        tree,
-                                        modifiers,
-                                        structure,
                                         shadow_shape,
                                         scale_content.get(&element.id),
                                         clip_bounds,
@@ -1456,9 +1346,6 @@ impl RenderState {
                     .clear(skia::Color::TRANSPARENT);
 
                 self.render_shape(
-                    tree,
-                    modifiers,
-                    structure,
                     element,
                     scale_content.get(&element.id),
                     clip_bounds,
@@ -1497,14 +1384,10 @@ impl RenderState {
             });
 
             if element.is_recursive() {
-                let children_clip_bounds = node_render_state.get_children_clip_bounds(
-                    element,
-                    modifiers.get(&element.id),
-                    None,
-                );
+                let children_clip_bounds =
+                    node_render_state.get_children_clip_bounds(element, None);
 
-                let mut children_ids =
-                    element.modified_children_ids(structure.get(&element.id), false);
+                let mut children_ids = element.children_ids(false);
 
                 // Z-index ordering on Layouts
                 if element.has_layout() {
@@ -1538,8 +1421,6 @@ impl RenderState {
     pub fn render_shape_tree_partial(
         &mut self,
         tree: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
         scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
@@ -1566,13 +1447,8 @@ impl RenderState {
                     }
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
-                    let (is_empty, early_return) = self.render_shape_tree_partial_uncached(
-                        tree,
-                        modifiers,
-                        structure,
-                        scale_content,
-                        timestamp,
-                    )?;
+                    let (is_empty, early_return) =
+                        self.render_shape_tree_partial_uncached(tree, scale_content, timestamp)?;
                     if early_return {
                         return Ok(());
                     }
@@ -1606,7 +1482,7 @@ impl RenderState {
             let Some(root) = tree.get(&Uuid::nil()) else {
                 return Err(String::from("Root shape not found"));
             };
-            let root_ids = root.modified_children_ids(structure.get(&root.id), false);
+            let root_ids = root.children_ids(false);
 
             // If we finish processing every node rendering is complete
             // let's check if there are more pending nodes
@@ -1649,7 +1525,7 @@ impl RenderState {
             debug::render(self);
         }
 
-        ui::render(self, tree, modifiers, structure);
+        ui::render(self, tree);
         debug::render_wasm_label(self);
 
         Ok(())
@@ -1678,6 +1554,7 @@ impl RenderState {
 
         // Then, add the shape to the new tiles
         for tile in new_tiles {
+            self.remove_cached_tile_shape(tile, shape.id);
             self.tiles.add_shape_at(tile, shape.id);
         }
     }
@@ -1689,27 +1566,18 @@ impl RenderState {
         self.tiles.remove_shape_at(tile, id);
     }
 
-    pub fn rebuild_tiles_shallow(
-        &mut self,
-        tree: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) {
+    pub fn rebuild_tiles_shallow(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles_shallow");
         self.tiles.invalidate();
         self.surfaces.remove_cached_tiles(self.background_color);
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
-                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
-                    if let Some(modifier) = modifiers.get(&shape_id) {
-                        shape.to_mut().apply_transform(modifier);
-                    }
                     self.update_tile_for(&shape, tree);
                 } else {
                     // We only need to rebuild tiles from the first level.
-                    let children = shape.modified_children_ids(structure.get(&shape.id), false);
+                    let children = shape.children_ids(false);
                     for child_id in children.iter() {
                         nodes.push(*child_id);
                     }
@@ -1719,27 +1587,18 @@ impl RenderState {
         performance::end_measure!("rebuild_tiles_shallow");
     }
 
-    pub fn rebuild_tiles(
-        &mut self,
-        tree: ShapesPoolRef,
-        modifiers: &HashMap<Uuid, Matrix>,
-        structure: &HashMap<Uuid, Vec<StructureEntry>>,
-    ) {
+    pub fn rebuild_tiles(&mut self, tree: ShapesPoolRef) {
         performance::begin_measure!("rebuild_tiles");
         self.tiles.invalidate();
         self.surfaces.remove_cached_tiles(self.background_color);
         let mut nodes = vec![Uuid::nil()];
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
-                let mut shape: Cow<Shape> = Cow::Borrowed(shape);
                 if shape_id != Uuid::nil() {
-                    if let Some(modifier) = modifiers.get(&shape_id) {
-                        shape.to_mut().apply_transform(modifier);
-                    }
                     self.update_tile_for(&shape, tree);
                 }
 
-                let children = shape.modified_children_ids(structure.get(&shape.id), false);
+                let children = shape.children_ids(false);
                 for child_id in children.iter() {
                     nodes.push(*child_id);
                 }

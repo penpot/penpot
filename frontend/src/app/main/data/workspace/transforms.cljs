@@ -314,8 +314,8 @@
                                    :ignore-constraints (contains? layout :scale-text))))))
                             (rx/take-until stopper))
 
-                 ;; The last event we need to use the old method so the elements are correctly positioned until
-                 ;; all the logic is implemented in wasm
+                       ;; The last event we need to use the old method so the elements are correctly
+                       ;; positioned until all the logic is implemented in wasm
                        (->> resize-events-stream
                             (rx/take-until stopper)
                             (rx/last)

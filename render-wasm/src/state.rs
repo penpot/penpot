@@ -8,7 +8,6 @@ pub use text_editor::*;
 
 use crate::render::RenderState;
 use crate::shapes::Shape;
-use crate::shapes::StructureEntry;
 use crate::tiles;
 use crate::uuid::Uuid;
 
@@ -24,9 +23,7 @@ pub(crate) struct State<'a> {
     pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
     pub shapes: ShapesPool<'a>,
-    pub modifiers: HashMap<Uuid, skia::Matrix>,
     pub scale_content: HashMap<Uuid, f32>,
-    pub structure: HashMap<Uuid, Vec<StructureEntry>>,
 }
 
 impl<'a> State<'a> {
@@ -36,9 +33,7 @@ impl<'a> State<'a> {
             text_editor_state: TextEditorState::new(),
             current_id: None,
             shapes: ShapesPool::new(),
-            modifiers: HashMap::new(),
             scale_content: HashMap::new(),
-            structure: HashMap::new(),
         }
     }
 
@@ -65,29 +60,18 @@ impl<'a> State<'a> {
     }
 
     pub fn render_from_cache(&mut self) {
-        self.render_state
-            .render_from_cache(&self.shapes, &self.modifiers, &self.structure);
+        self.render_state.render_from_cache(&self.shapes);
     }
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
-        self.render_state.start_render_loop(
-            &self.shapes,
-            &self.modifiers,
-            &self.structure,
-            &self.scale_content,
-            timestamp,
-        )?;
+        self.render_state
+            .start_render_loop(&self.shapes, &self.scale_content, timestamp)?;
         Ok(())
     }
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
-        self.render_state.process_animation_frame(
-            &self.shapes,
-            &self.modifiers,
-            &self.structure,
-            &self.scale_content,
-            timestamp,
-        )?;
+        self.render_state
+            .process_animation_frame(&self.shapes, &self.scale_content, timestamp)?;
         Ok(())
     }
 
@@ -147,6 +131,8 @@ impl<'a> State<'a> {
                 panic!("Invalid current shape")
             };
             shape.set_parent(id);
+
+            // TODO this clone doesn't seem necessary
             shape.clone()
         };
 
@@ -166,6 +152,7 @@ impl<'a> State<'a> {
         let Some(shape) = self.current_shape() else {
             panic!("Invalid current shape")
         };
+        // TODO: Remove this clone
         if !shape.id.is_nil() {
             self.render_state
                 .update_tile_for(&shape.clone(), &self.shapes);
@@ -173,13 +160,11 @@ impl<'a> State<'a> {
     }
 
     pub fn rebuild_tiles_shallow(&mut self) {
-        self.render_state
-            .rebuild_tiles_shallow(&self.shapes, &self.modifiers, &self.structure);
+        self.render_state.rebuild_tiles_shallow(&self.shapes);
     }
 
     pub fn rebuild_tiles(&mut self) {
-        self.render_state
-            .rebuild_tiles(&self.shapes, &self.modifiers, &self.structure);
+        self.render_state.rebuild_tiles(&self.shapes);
     }
 
     pub fn rebuild_modifier_tiles(&mut self, ids: Vec<Uuid>) {
@@ -204,7 +189,7 @@ impl<'a> State<'a> {
         let bounds = shape.bounds();
         let position = Point::new(pos_x, pos_y);
 
-        let cells = grid_cell_data(shape, &self.shapes, &self.modifiers, &self.structure, true);
+        let cells = grid_cell_data(shape, &self.shapes, true);
 
         for cell in cells {
             let points = &[

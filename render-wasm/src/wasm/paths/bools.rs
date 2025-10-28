@@ -57,13 +57,7 @@ pub extern "C" fn calculate_bool(raw_bool_type: u8) -> *mut u8 {
     let bool_type = RawBoolType::from(raw_bool_type).into();
     let result;
     with_state!(state, {
-        let path = math::bools::bool_from_shapes(
-            bool_type,
-            &entries,
-            &state.shapes,
-            &state.modifiers,
-            &state.structure,
-        );
+        let path = math::bools::bool_from_shapes(bool_type, &entries, &state.shapes);
         result = path
             .segments()
             .iter()

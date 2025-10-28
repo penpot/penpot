@@ -388,8 +388,6 @@ pub fn bool_from_shapes(
     bool_type: BoolType,
     children_ids: &IndexSet<Uuid>,
     shapes: ShapesPoolRef,
-    modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Path {
     if children_ids.is_empty() {
         return Path::default();
@@ -399,13 +397,13 @@ pub fn bool_from_shapes(
         return Path::default();
     };
 
-    let mut current_path = child.to_path(shapes, modifiers, structure);
+    let mut current_path = child.to_path(shapes);
 
     for idx in (0..children_ids.len() - 1).rev() {
         let Some(other) = shapes.get(&children_ids[idx]) else {
             continue;
         };
-        let other_path = other.to_path(shapes, modifiers, structure);
+        let other_path = other.to_path(shapes);
 
         let (segs_a, segs_b) = split_segments(&current_path, &other_path);
 
@@ -422,26 +420,15 @@ pub fn bool_from_shapes(
     current_path
 }
 
-pub fn update_bool_to_path(
-    shape: &Shape,
-    shapes: ShapesPoolRef,
-    modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
-) -> Shape {
-    let mut shape = shape.clone();
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+#[allow(dead_code)]
+pub fn update_bool_to_path(shape: &mut Shape, shapes: ShapesPoolRef) {
+    let children_ids = shape.children_ids(true);
 
     let Type::Bool(bool_data) = &mut shape.shape_type else {
-        return shape;
+        return;
     };
-    bool_data.path = bool_from_shapes(
-        bool_data.bool_type,
-        &children_ids,
-        shapes,
-        modifiers,
-        structure,
-    );
-    shape
+
+    bool_data.path = bool_from_shapes(bool_data.bool_type, &children_ids, shapes);
 }
 
 #[allow(dead_code)]
@@ -450,14 +437,14 @@ pub fn debug_render_bool_paths(
     render_state: &mut RenderState,
     shape: &Shape,
     shapes: ShapesPoolRef,
-    modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
+    _modifiers: &HashMap<Uuid, Matrix>,
+    _structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) {
     let canvas = render_state.surfaces.canvas(SurfaceId::Strokes);
 
     let mut shape = shape.clone();
 
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+    let children_ids = shape.children_ids(true);
 
     let Type::Bool(bool_data) = &mut shape.shape_type else {
         return;
@@ -471,13 +458,13 @@ pub fn debug_render_bool_paths(
         return;
     };
 
-    let mut current_path = child.to_path(shapes, modifiers, structure);
+    let mut current_path = child.to_path(shapes);
 
     for idx in (0..children_ids.len() - 1).rev() {
         let Some(other) = shapes.get(&children_ids[idx]) else {
             continue;
         };
-        let other_path = other.to_path(shapes, modifiers, structure);
+        let other_path = other.to_path(shapes);
 
         let (segs_a, segs_b) = split_segments(&current_path, &other_path);
 

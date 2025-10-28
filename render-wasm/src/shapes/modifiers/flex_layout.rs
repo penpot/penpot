@@ -2,7 +2,7 @@
 use crate::math::{self as math, Bounds, Matrix, Point, Vector, VectorExt};
 use crate::shapes::{
     AlignContent, AlignItems, AlignSelf, FlexData, JustifyContent, LayoutData, LayoutItem,
-    Modifier, Shape, StructureEntry,
+    Modifier, Shape,
 };
 use crate::state::ShapesPoolRef;
 use crate::uuid::Uuid;
@@ -181,11 +181,10 @@ fn initialize_tracks(
     flex_data: &FlexData,
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
     let mut tracks = Vec::<TrackData>::new();
     let mut current_track = TrackData::default();
-    let mut children = shape.modified_children_ids(structure.get(&shape.id), true);
+    let mut children = shape.children_ids(true);
     let mut first = true;
 
     if flex_data.is_reverse() {
@@ -435,7 +434,6 @@ fn calculate_track_data(
     layout_bounds: &Bounds,
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Vec<TrackData> {
     let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
     let mut tracks = initialize_tracks(
@@ -445,7 +443,6 @@ fn calculate_track_data(
         flex_data,
         shapes,
         bounds,
-        structure,
     );
 
     distribute_fill_main_space(&layout_axis, &mut tracks);
@@ -576,20 +573,11 @@ pub fn reflow_flex_layout(
     flex_data: &FlexData,
     shapes: ShapesPoolRef,
     bounds: &mut HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> VecDeque<Modifier> {
     let mut result = VecDeque::new();
     let layout_bounds = &bounds.find(shape);
     let layout_axis = LayoutAxis::new(shape, layout_bounds, layout_data, flex_data);
-    let tracks = calculate_track_data(
-        shape,
-        layout_data,
-        flex_data,
-        layout_bounds,
-        shapes,
-        bounds,
-        structure,
-    );
+    let tracks = calculate_track_data(shape, layout_data, flex_data, layout_bounds, shapes, bounds);
 
     for track in tracks.iter() {
         let total_shapes_size = track.shapes.iter().map(|s| s.main_size).sum::<f32>();

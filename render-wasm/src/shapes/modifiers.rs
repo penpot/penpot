@@ -10,8 +10,7 @@ use crate::math::{self as math, bools, identitish, Bounds, Matrix, Point};
 use common::GetBounds;
 
 use crate::shapes::{
-    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, StructureEntry,
-    TransformEntry, Type,
+    ConstraintH, ConstraintV, Frame, Group, GrowType, Layout, Modifier, Shape, TransformEntry, Type,
 };
 use crate::state::{ShapesPoolRef, State};
 use crate::uuid::Uuid;
@@ -24,10 +23,9 @@ fn propagate_children(
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
     scale_content: &HashMap<Uuid, f32>,
 ) -> VecDeque<Modifier> {
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+    let children_ids = shape.children_ids(true);
 
     if children_ids.is_empty() || identitish(&transform) {
         return VecDeque::new();
@@ -92,12 +90,11 @@ fn calculate_group_bounds(
     shape: &Shape,
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
     let shape_bounds = bounds.find(shape);
     let mut result = Vec::<Point>::new();
 
-    for child_id in shape.modified_children_ids_iter(structure.get(&shape.id), true) {
+    for child_id in shape.children_ids_iter(true) {
         let Some(child) = shapes.get(&child_id) else {
             continue;
         };
@@ -112,23 +109,15 @@ fn calculate_bool_bounds(
     shape: &Shape,
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
-    modifiers: &HashMap<Uuid, Matrix>,
-    structure: &HashMap<Uuid, Vec<StructureEntry>>,
 ) -> Option<Bounds> {
     let shape_bounds = bounds.find(shape);
-    let children_ids = shape.modified_children_ids(structure.get(&shape.id), true);
+    let children_ids = shape.children_ids(true);
 
     let Type::Bool(bool_data) = &shape.shape_type else {
         return Some(shape_bounds);
     };
 
-    let path = bools::bool_from_shapes(
-        bool_data.bool_type,
-        &children_ids,
-        shapes,
-        modifiers,
-        structure,
-    );
+    let path = bools::bool_from_shapes(bool_data.bool_type, &children_ids, shapes);
 
     Some(path.bounds())
 }
@@ -235,7 +224,6 @@ fn propagate_transform(
             &shape_bounds_after,
             transform,
             bounds,
-            &state.structure,
             &state.scale_content,
         );
         entries.append(&mut children);
@@ -265,7 +253,6 @@ fn propagate_reflow(
     bounds: &mut HashMap<Uuid, Bounds>,
     layout_reflows: &mut Vec<Uuid>,
     reflown: &mut HashSet<Uuid>,
-    modifiers: &HashMap<Uuid, Matrix>,
 ) {
     let Some(shape) = state.shapes.get(id) else {
         return;
@@ -303,7 +290,7 @@ fn propagate_reflow(
             }
         }
         Type::Group(Group { masked: true }) => {
-            let children_ids = shape.modified_children_ids(state.structure.get(&shape.id), true);
+            let children_ids = shape.children_ids(true);
             if let Some(child) = shapes.get(&children_ids[0]) {
                 let child_bounds = bounds.find(child);
                 bounds.insert(shape.id, child_bounds);
@@ -312,18 +299,14 @@ fn propagate_reflow(
             reflown.insert(*id);
         }
         Type::Group(_) => {
-            if let Some(shape_bounds) =
-                calculate_group_bounds(shape, shapes, bounds, &state.structure)
-            {
+            if let Some(shape_bounds) = calculate_group_bounds(shape, shapes, bounds) {
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
             }
             reflown.insert(*id);
         }
         Type::Bool(_) => {
-            if let Some(shape_bounds) =
-                calculate_bool_bounds(shape, shapes, bounds, modifiers, &state.structure)
-            {
+            if let Some(shape_bounds) = calculate_bool_bounds(shape, shapes, bounds) {
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
             }
@@ -365,24 +348,12 @@ fn reflow_shape(
     };
 
     if let Some(Layout::FlexLayout(layout_data, flex_data)) = &frame_data.layout {
-        let mut children = flex_layout::reflow_flex_layout(
-            shape,
-            layout_data,
-            flex_data,
-            shapes,
-            bounds,
-            &state.structure,
-        );
+        let mut children =
+            flex_layout::reflow_flex_layout(shape, layout_data, flex_data, shapes, bounds);
         entries.append(&mut children);
     } else if let Some(Layout::GridLayout(layout_data, grid_data)) = &frame_data.layout {
-        let mut children = grid_layout::reflow_grid_layout(
-            shape,
-            layout_data,
-            grid_data,
-            shapes,
-            bounds,
-            &state.structure,
-        );
+        let mut children =
+            grid_layout::reflow_grid_layout(shape, layout_data, grid_data, shapes, bounds);
         entries.append(&mut children);
     }
     reflown.insert(*id);
@@ -397,12 +368,6 @@ pub fn propagate_modifiers(
         .iter()
         .map(|entry| Modifier::Transform(entry.clone()))
         .collect();
-
-    for id in state.structure.keys() {
-        if id != &Uuid::nil() {
-            entries.push_back(Modifier::Reflow(*id));
-        }
-    }
 
     let mut modifiers = HashMap::<Uuid, Matrix>::new();
     let mut bounds = HashMap::<Uuid, Bounds>::new();
@@ -432,7 +397,6 @@ pub fn propagate_modifiers(
                     &mut bounds,
                     &mut layout_reflows,
                     &mut reflown,
-                    &modifiers,
                 ),
             }
         }
