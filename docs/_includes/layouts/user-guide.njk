@@ -4,7 +4,7 @@ templateClass: tmpl-user-guide
 ---
 
 {%- macro show_children(item) -%}
-  {%- for child in item | children | sorted('data.title') %}
+  {%- for child in item | children | sorted('data.order') %}
     {%- if loop.first -%}<ul>{%- endif -%}
     <li>
       <a href="{{ child.url }}">{{ child.data.title }}</a>
