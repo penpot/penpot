@@ -666,11 +666,12 @@
 
     [:div {:class (stl/css :form-buttons-wrapper)}
      [:> mentions-button*]
-     [:> button* {:variant "ghost"
-                  :type "button"
-                  :on-key-down handle-cancel
-                  :on-click on-cancel}
-      (tr "ds.confirm-cancel")]
+     (when (some? on-cancel)
+       [:> button* {:variant "ghost"
+                    :type "button"
+                    :on-key-down handle-cancel
+                    :on-click on-cancel}
+        (tr "ds.confirm-cancel")])
      [:> button* {:variant "primary"
                   :type "button"
                   :on-key-down handle-submit
@@ -686,52 +687,39 @@
   {::mf/props :obj
    ::mf/private true}
   [{:keys [on-submit]}]
-  (let [show-buttons? (mf/use-state false)
-        content       (mf/use-state "")
+  (let [content       (mf/use-state "")
 
         disabled? (or (blank-content? @content)
                       (exceeds-length? @content))
 
-        on-focus
+        on-cancel
         (mf/use-fn
-         #(reset! show-buttons? true))
-
-        on-blur
-        (mf/use-fn
-         #(reset! show-buttons? false))
+         #(st/emit! :interrupt))
 
         on-change
         (mf/use-fn
          #(reset! content %))
-
-        on-cancel
-        (mf/use-fn
-         #(do (reset! content "")
-              (reset! show-buttons? false)))
 
         on-submit*
         (mf/use-fn
          (mf/deps @content)
          (fn []
            (on-submit @content)
-           (on-cancel)))]
+           (reset! content "")))]
 
     [:div {:class (stl/css :form)}
      [:> comment-input*
       {:value @content
        :placeholder (tr "labels.reply.thread")
        :autofocus true
-       :on-blur on-blur
-       :on-focus on-focus
        :on-ctrl-enter on-submit*
        :on-change on-change}]
      (when (exceeds-length? @content)
        [:div {:class (stl/css :error-text)}
         (tr "errors.character-limit-exceeded")])
-     (when (or @show-buttons? (seq @content))
-       [:> comment-form-buttons* {:on-submit on-submit*
-                                  :on-cancel on-cancel
-                                  :is-disabled disabled?}])]))
+     [:> comment-form-buttons* {:on-submit on-submit*
+                                :on-cancel on-cancel
+                                :is-disabled disabled?}]]))
 
 (mf/defc comment-edit-form*
   {::mf/private true}
