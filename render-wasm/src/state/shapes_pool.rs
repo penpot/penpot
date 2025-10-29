@@ -316,6 +316,38 @@ impl<'a> ShapesPoolImpl<'a> {
         unsafe { Some(&*(&self.shapes[idx].id as *const Uuid)) }
     }
 
+    pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl<'a> {
+        let Some(shape) = self.get(id) else { panic!("Subtree not found"); };
+
+        // TODO: Maybe create all_children_iter
+        let all_children = shape.all_children(self, true, true);
+
+        let mut shapes = vec![];
+        let mut idx = 0;
+        let mut shapes_uuid_to_idx = HashMap::default();
+
+        for id in all_children.iter() {
+            let Some(shape) = self.get(id) else { panic!("Not found"); };
+            shapes.push(shape.clone());
+
+            let id_ref: &'a Uuid = unsafe { &*(&self.shapes[idx].id as *const Uuid) };
+            shapes_uuid_to_idx.insert(id_ref, idx);
+            idx += 1;
+        }
+
+        let mut result = ShapesPoolImpl {
+            shapes,
+            counter: idx,
+            shapes_uuid_to_idx,
+            modified_shape_cache: HashMap::default(),
+            modifiers: HashMap::default(),
+            structure: HashMap::default(),
+        };
+        result.rebuild_references();
+
+        result
+    }
+
     fn to_update_bool(&self, shape: &Shape) -> bool {
         // TODO: Check if any of the children is in the modifiers with a
         // different matrix than the current one.
@@ -344,4 +376,3 @@ impl<'a> ShapesPoolImpl<'a> {
 //         )
 //     })
 // }
-

@@ -109,6 +109,7 @@ fn calculate_bool_bounds(
     shape: &Shape,
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
+    modifiers: &HashMap<Uuid, Matrix>
 ) -> Option<Bounds> {
     let shape_bounds = bounds.find(shape);
     let children_ids = shape.children_ids(true);
@@ -117,9 +118,13 @@ fn calculate_bool_bounds(
         return Some(shape_bounds);
     };
 
-    let path = bools::bool_from_shapes(bool_data.bool_type, &children_ids, shapes);
+    let mut subtree = shapes.subtree(&shape.id);
+    subtree.set_modifiers(modifiers.clone());
 
-    Some(path.bounds())
+    let path = bools::bool_from_shapes(bool_data.bool_type, &children_ids, &subtree);
+    let result = path.bounds();
+
+    Some(result)
 }
 
 fn set_pixel_precision(transform: &mut Matrix, bounds: &mut Bounds) {
@@ -253,6 +258,7 @@ fn propagate_reflow(
     bounds: &mut HashMap<Uuid, Bounds>,
     layout_reflows: &mut Vec<Uuid>,
     reflown: &mut HashSet<Uuid>,
+    modifiers: &HashMap<Uuid, Matrix>
 ) {
     let Some(shape) = state.shapes.get(id) else {
         return;
@@ -306,7 +312,7 @@ fn propagate_reflow(
             reflown.insert(*id);
         }
         Type::Bool(_) => {
-            if let Some(shape_bounds) = calculate_bool_bounds(shape, shapes, bounds) {
+            if let Some(shape_bounds) = calculate_bool_bounds(shape, shapes, bounds, modifiers) {
                 bounds.insert(shape.id, shape_bounds);
                 reflow_parent = true;
             }
@@ -397,6 +403,7 @@ pub fn propagate_modifiers(
                     &mut bounds,
                     &mut layout_reflows,
                     &mut reflown,
+                    &mut modifiers,
                 ),
             }
         }
