@@ -32,6 +32,7 @@
    [app.common.types.typographies-list :as ctyl]
    [app.common.types.typography :as cty]
    [app.common.uuid :as uuid]
+   [clojure.set :as set]
    [cuerdas.core :as str]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1119,3 +1120,29 @@
 (defn set-base-font-size
   [file-data base-font-size]
   (assoc-in file-data [:options :base-font-size] base-font-size))
+
+
+;; Ref Chains
+(defn get-ref-chain-until-target-ref
+  "Returns a vector with the shape ref chain until target-ref, including itself"
+  [container libraries shape target-ref]
+  (loop [chain [shape]
+         current shape]
+    (if (= current target-ref)
+      chain
+      (if-let [ref (find-ref-shape nil container libraries current :with-context? true)]
+        (recur (conj chain ref) ref)
+        chain))))
+
+(defn get-touched-from-ref-chain-until-target-ref
+  "Returns a set with the :touched of all the items on the shape
+   ref chain until target-ref, including itself"
+  [container libraries shape target-ref]
+  (let [chain (get-ref-chain-until-target-ref container libraries shape target-ref)
+        more-touched (->> chain
+                          (map :touched)
+                          (remove nil?)
+                          (apply set/union)
+                          (remove ctk/swap-slot?)
+                          set)]
+    (set/union (or (:touched shape) #{}) more-touched)))

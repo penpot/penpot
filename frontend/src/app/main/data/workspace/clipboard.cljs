@@ -60,30 +60,6 @@
    [promesa.core :as p]))
 
 
-(defn- get-ref-chain-until-target-ref
-  "Returns a vector with the shape ref chain until target-ref, including itself"
-  [container libraries shape target-ref]
-  (loop [chain [shape]
-         current shape]
-    (if (= current target-ref)
-      chain
-      (if-let [ref (ctf/find-ref-shape nil container libraries current :with-context? true)]
-        (recur (conj chain ref) ref)
-        chain))))
-
-(defn- get-touched-from-ref-chain-until-target-ref
-  "Returns a set with the :touched of all the items on the shape
-   ref chain until target-ref, including itself"
-  [container libraries shape target-ref]
-  (let [chain (when target-ref (get-ref-chain-until-target-ref container libraries shape target-ref))
-        more-touched (->> chain
-                          (map :touched)
-                          (remove nil?)
-                          (apply set/union)
-                          (remove ctc/swap-slot?)
-                          set)]
-    (set/union (or (:touched shape) #{}) more-touched)))
-
 (defn copy-selected
   []
   (letfn [(sort-selected [state data]
@@ -191,7 +167,7 @@
           (advance-shape [file libraries page level-delta objects shape]
             (let [new-shape-ref (ctf/advance-shape-ref file page libraries shape level-delta {:include-deleted? true})
                   container     (ctn/make-container page :page)
-                  new-touched   (get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)]
+                  new-touched   (ctf/get-touched-from-ref-chain-until-target-ref container libraries shape new-shape-ref)]
               (cond-> objects
                 (and (some? new-shape-ref) (not= new-shape-ref (:shape-ref shape)))
                 (-> (assoc-in [(:id shape) :shape-ref] new-shape-ref)
