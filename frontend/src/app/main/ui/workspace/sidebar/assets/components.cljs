@@ -65,6 +65,7 @@
         component-id   (:id component)
 
         visible?       (h/use-visible item-ref :once? true)
+        renaming?      (= renaming (:id component))
 
         ;; NOTE: we don't use reactive deref for it because we don't
         ;; really need rerender on any change on the file change. If
@@ -82,12 +83,13 @@
 
         on-component-double-click
         (mf/use-fn
-         (mf/deps file-id component is-local)
+         (mf/deps file-id component is-local renaming?)
          (fn [event]
            (dom/stop-propagation event)
-           (if is-local
-             (st/emit! (dwl/go-to-local-component :id component-id))
-             (st/emit! (dwl/go-to-component-file file-id component false)))))
+           (when-not renaming?
+             (if is-local
+               (st/emit! (dwl/go-to-local-component :id component-id))
+               (st/emit! (dwl/go-to-component-file file-id component false))))))
 
         on-drop
         (mf/use-fn
@@ -113,18 +115,16 @@
 
         on-component-drag-start
         (mf/use-fn
-         (mf/deps file-id component selected item-ref on-drag-start read-only? is-local)
+         (mf/deps file-id component selected item-ref on-drag-start read-only? renaming? is-local)
          (fn [event]
-           (if read-only?
+           (if (or read-only? renaming?)
              (dom/prevent-default event)
              (cmm/on-asset-drag-start event file-id component selected item-ref :components on-drag-start))))
 
         on-context-menu
         (mf/use-fn
          (mf/deps on-context-menu component-id)
-         (partial on-context-menu component-id))
-
-        renaming? (= renaming (:id component))]
+         (partial on-context-menu component-id))]
 
     [:div {:ref item-ref
            :class (stl/css-case :component-item true

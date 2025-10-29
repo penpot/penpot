@@ -76,9 +76,9 @@
 
         on-typography-drag-start
         (mf/use-fn
-         (mf/deps typography file-id selected item-ref read-only?)
+         (mf/deps typography file-id selected item-ref read-only? renaming? open?)
          (fn [event]
-           (if read-only?
+           (if (or read-only? renaming? open?)
              (dom/prevent-default event)
              (cmm/on-asset-drag-start event file-id typography selected item-ref :typographies identity))))
 
