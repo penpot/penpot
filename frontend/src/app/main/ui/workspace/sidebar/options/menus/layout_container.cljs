@@ -378,9 +378,10 @@
            (if (or (string? value) (int? value))
              (on-change :simple attr value event)
              (do
-               (let [resolved-value (:resolved-value (first value))]
+               (let [resolved-value (:resolved-value (first value))
+                     updated-attr (if (= :p1 attr) #{:p1 :p3} #{:p2 :p4})]
                  (st/emit! (dwta/toggle-token {:token (first value)
-                                               :attrs #{attr}
+                                               :attrs updated-attr
                                                :shape-ids ids}))
                  (on-change :simple attr resolved-value event))))))
 
