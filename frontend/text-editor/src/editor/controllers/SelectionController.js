@@ -1263,6 +1263,7 @@ export class SelectionController extends EventTarget {
   replaceText(newText) {
     const startOffset = Math.min(this.anchorOffset, this.focusOffset);
     const endOffset = Math.max(this.anchorOffset, this.focusOffset);
+
     if (this.isTextFocus) {
       this.focusNode.nodeValue = replaceWith(
         this.focusNode.nodeValue,
@@ -1279,7 +1280,11 @@ export class SelectionController extends EventTarget {
       this.focusNode.replaceChildren(newParagraph);
       return this.collapse(newTextNode, newText.length + 1);
     } else {
-      throw new Error("Unknown node type");
+      const newTextNode = new Text(newText);
+      const newTextSpan = createTextSpan(newTextNode, this.#currentStyle);
+      const newParagraph = createParagraph([newTextSpan], this.#currentStyle);
+      this.#textEditor.root.replaceChildren(newParagraph);
+      return this.collapse(newTextNode, newText.length + 1);
     }
     this.#mutations.update(this.focusTextSpan);
     return this.collapse(this.focusNode, startOffset + newText.length);
@@ -1538,14 +1543,14 @@ export class SelectionController extends EventTarget {
     const affectedTextSpans = new Set();
     const affectedParagraphs = new Set();
 
-    const startNode = getClosestTextNode(this.#range.startContainer);
-    const endNode = getClosestTextNode(this.#range.endContainer);
-
-    const startOffset = this.#range.startOffset;
-    const endOffset = this.#range.endOffset;
-
     let previousNode = null;
     let nextNode = null;
+
+    let { startNode, endNode, startOffset, endOffset } = this.getRanges();
+
+    if (this.shouldHandleCompleteDeletion(startNode, endNode)) {
+      return this.handleCompleteContentDeletion();
+    }
 
     // This is the simplest case, when the startNode and
     // the endNode are the same and they're textNodes.
@@ -1612,7 +1617,8 @@ export class SelectionController extends EventTarget {
       } else if (currentNode === endNode) {
         if (
           isLineBreak(endNode) ||
-          (isTextNode(endNode) && endOffset === (endNode.nodeValue?.length || 0))
+          (isTextNode(endNode) &&
+            endOffset === (endNode.nodeValue?.length || 0))
         ) {
           // We should remove this node completely.
           shouldRemoveNodeCompletely = true;
@@ -1692,6 +1698,58 @@ export class SelectionController extends EventTarget {
     }
 
     return this.collapse(startNode, startOffset);
+  }
+
+  getRanges() {
+    let startNode = getClosestTextNode(this.#range.startContainer);
+    let endNode = getClosestTextNode(this.#range.endContainer);
+
+    let startOffset = this.#range.startOffset;
+    let endOffset = this.#range.startOffset + this.#range.toString().length;
+
+    return { startNode, endNode, startOffset, endOffset };
+  }
+
+  shouldHandleCompleteDeletion(startNode, endNode) {
+    const root = this.#textEditor.root;
+    return (
+      (startNode &&
+        endNode &&
+        this.#range.toString() === (root.textContent || "") &&
+        root.textContent.length > 0) ||
+      !startNode ||
+      !endNode
+    );
+  }
+
+  /**
+   * Handles complete content deletion when all content is selected.
+   * @returns {SelectionController}
+   */
+  handleCompleteContentDeletion() {
+    const root = this.#textEditor.root;
+    const firstParagraph = root.firstElementChild;
+
+    const newTextSpan = createEmptyTextSpan(this.#currentStyle);
+    if (!newTextSpan.firstChild) {
+      newTextSpan.appendChild(new Text(""));
+    }
+
+    if (firstParagraph) {
+      firstParagraph.replaceChildren(newTextSpan);
+      let currentParagraph = firstParagraph.nextElementSibling;
+      while (currentParagraph) {
+        const nextParagraph = currentParagraph.nextElementSibling;
+        currentParagraph.remove();
+        currentParagraph = nextParagraph;
+      }
+    } else {
+      const newParagraph = createEmptyParagraph();
+      newParagraph.appendChild(newTextSpan);
+      root.replaceChildren(newParagraph);
+    }
+
+    return this.collapse(newTextSpan.firstChild, 0);
   }
 
   /**
