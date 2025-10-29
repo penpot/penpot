@@ -1096,10 +1096,9 @@ msgstr ""
 msgid "errors.feature-not-supported"
 msgstr "Recurso '%s' não é suportado."
 
-#: src/app/main/ui/auth/register.cljs, src/app/main/ui/dashboard/team_form.cljs, src/app/main/ui/onboarding/team_choice.cljs, src/app/main/ui/setti ngs/access_tokens.cljs, src/app/main/ui/settings/feedback.cljs, src/app/main/ui/settings/profile.cljs, src/app/main/ui/workspace/sidebar/assets.cljs
-#, unused
+#: src/app/main/ui/workspace/tokens/management/create/form.cljs
 msgid "errors.field-max-length"
-msgstr "Deve conter no máximo 1 caractere."
+msgstr "Deve conter no máximo %s caracteres."
 
 #, unused
 msgid "errors.field-min-length"
