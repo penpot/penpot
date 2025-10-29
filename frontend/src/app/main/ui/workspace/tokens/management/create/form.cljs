@@ -119,7 +119,7 @@
 
 (defn- validate-token-with [token validators]
   (if-let [error (some (fn [validate] (validate token)) validators)]
-    (rx/throw {:errors [error]})
+    (rx/throw {:errors [error] :pepito "kakota"})
     (rx/of token)))
 
 (def ^:private default-validators
@@ -151,7 +151,10 @@
          ;; Simple validation of the editing token
          (rx/mapcat #(validate-token-with % validators))
          ;; Resolving token via StyleDictionary
-         (rx/mapcat #(validate-resolve-token % prev-token tokens)))))
+         (rx/mapcat #(validate-resolve-token % prev-token tokens))
+         (rx/catch (fn [e] (if (contains? e :errors)
+                             {:errors (:errors e)}
+                             (rx/throw e)))))))
 
 (defn- check-coll-self-reference
   "Invalidate a collection of `token-vals` for a self-refernce against `token-name`.,"
@@ -626,6 +629,7 @@
              :type token-type
              :on-blur on-update-value
              :on-change on-update-value
+             :on-external-update-value on-external-update-value
              :token-resolve-result token-resolve-result}]))]
       [:div {:class (stl/css :input-row)}
        [:> input* {:label (tr "workspace.tokens.token-description")

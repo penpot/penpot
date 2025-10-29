@@ -157,7 +157,7 @@
 (mf/defc input-token*
   {::mf/forward-ref true
    ::mf/schema schema::input-token}
-  [{:keys [class label token-resolve-result tokens empty-to-end type] :rest props} ref]
+  [{:keys [class label token-resolve-result tokens empty-to-end type on-external-update-value] :rest props} ref]
   (let [error (not (nil? (:errors token-resolve-result)))
         id (mf/use-id)
 
@@ -211,7 +211,7 @@
                             sorted-tokens)
                   no-sets? (nil? sorted-tokens)]
               (generate-dropdown-options options no-sets?))))
-        
+
         update-input
         (mf/use-fn
          (mf/deps ref)
@@ -231,7 +231,8 @@
                  option  (get-option options id)
                  name    (get option :name)
                  new-value (str "{" name "}")]
-             (update-input new-value))))
+             (on-external-update-value new-value)
+             (reset! is-open* false))))
 
         open-dropdown
         (mf/use-fn
@@ -251,7 +252,7 @@
                                                                              :ref open-dropdown-ref
                                                                              :on-click open-dropdown}]))
                                       :ref ref})]
-    
+
     (mf/with-effect [dropdown-options]
       (mf/set-ref-val! options-ref dropdown-options))
     [:*
