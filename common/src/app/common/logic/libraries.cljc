@@ -13,6 +13,7 @@
    [app.common.files.helpers :as cfh]
    [app.common.files.variant :as cfv]
    [app.common.geom.point :as gpt]
+   [app.common.geom.rect :as grc]
    [app.common.geom.shapes :as gsh]
    [app.common.logging :as log]
    [app.common.logic.shapes :as cls]
@@ -98,6 +99,7 @@
 (declare update-flex-child-main-attrs)
 (declare update-flex-child-copy-attrs)
 (declare reposition-shape)
+(declare move-shape-to)
 (declare make-change)
 
 (defn pretty-file
@@ -1976,8 +1978,31 @@
   [changes current-shape previous-shape current-root prev-root origin-ref-shape container]
   (let [;; We need to sync only the position relative to the origin of the component.
         ;; (see update-attrs for a full explanation)
-        previous-shape (reposition-shape previous-shape prev-root current-root)
-        touched        (get previous-shape :touched #{})]
+        previous-shape   (reposition-shape previous-shape prev-root current-root)
+
+        ;; Similar for origin-ref-shape, but we don't have the root info, so
+        ;; we move it to the coords of previous-shape
+        origin-ref-shape (move-shape-to origin-ref-shape previous-shape)
+        touched        (get previous-shape :touched #{})
+
+
+        is-frame?  (= (:type current-shape) :frame)
+        fake-shape (when is-frame?
+                     (cond-> current-shape
+                       (not= (:width previous-shape) (:width origin-ref-shape))
+                       (assoc :width (:width previous-shape))
+                       (not= (:heigth previous-shape) (:heigth origin-ref-shape))
+                       (assoc :heigth (:heigth previous-shape))))
+        selrect (when fake-shape (gsh/shape->rect fake-shape))
+        points  (when selrect (grc/rect->points selrect))
+
+;;        _ (prn "")
+;;        _ (prn "")
+;;        _ (prn "=========================")
+;;        _ (prn "current" (:id current-shape) (:x current-shape))
+;;        _ (prn "previous-shape" (:id previous-shape) (:x previous-shape))
+;;        _ (prn "origin-ref-shape" (:id origin-ref-shape) (:x origin-ref-shape))
+        _ (prn "update-attrs-on-switch")]
 
     (loop [attrs       updatable-attrs
            roperations [{:type :set-touched :touched (:touched previous-shape)}]
@@ -2030,7 +2055,7 @@
               reset-pos-data? (and
                                (not skip-operations?)
                                (cfh/text-shape? previous-shape)
-                               (or (= attr :position-data) (= attr :selrect))
+                               (= attr :position-data)
                                (not= (:position-data previous-shape) (:position-data current-shape))
                                (touched :geometry-group))
 
@@ -2052,12 +2077,21 @@
                                             (:content origin-ref-shape)
                                             touched)
 
+                  (and is-frame? (= attr :points))
+                  points
+
+                  (and is-frame? (= attr :selrect))
+                  selrect
+
                   :else
                   (get previous-shape attr)))
 
               ;; If the final attr-value is the actual value, skip
               skip-operations? (or skip-operations?
                                    (= attr-val (get current-shape attr)))
+
+              debug #(prn "current" (:id current-shape) attr (get current-shape attr) "-->" attr-val)
+              _ (when (not skip-operations?) (debug))
 
               ;; On a text-change, we want to force a position-data reset
               ;; so it's calculated again
@@ -2249,6 +2283,17 @@
         origin-root-pos (shape-pos origin-root)
         dest-root-pos   (shape-pos dest-root)
         delta           (gpt/subtract dest-root-pos origin-root-pos)]
+    (gsh/move shape delta)))
+
+(defn- move-shape-to
+  [shape dest-shape]
+  (let [shape-pos (fn [shape]
+                    (gpt/point (:x shape)
+                               (:y shape)))
+
+        pos              (shape-pos shape)
+        dest-shape-pos   (shape-pos dest-shape)
+        delta           (gpt/subtract dest-shape-pos pos)]
     (gsh/move shape delta)))
 
 (defn- make-change

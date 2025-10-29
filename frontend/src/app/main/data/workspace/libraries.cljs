@@ -1022,7 +1022,7 @@
          (rx/of
           (dwu/start-undo-transaction undo-id)
           (dch/commit-changes changes)
-          (ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group}))
+          #_(ptk/data-event :layout/update {:ids update-layout-ids :undo-group undo-group}))
          ;; NOTE: we need to schedule a commit into a
          ;; microtask for ensure that all the scheduled
          ;; microtask of previous events execute before the

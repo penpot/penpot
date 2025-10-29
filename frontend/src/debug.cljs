@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.files.helpers :as cfh]
    [app.common.files.repair :as cfr]
    [app.common.files.validate :as cfv]
    [app.common.json :as json]
@@ -113,7 +114,11 @@
 (defn ^:export logjs
   ([str] (tap (partial logjs str)))
   ([str val]
-   (js/console.log str (json/->js val))
+   (prn (type val))
+   (let [data (json/->js val)
+         _ (prn data)
+         _ (prn (type data))]
+     (js/console.log str data))
    val))
 
 (when (exists? js/window)
@@ -456,3 +461,13 @@
 (defn ^:export network-averages
   []
   (.log js/console (clj->js @http/network-averages)))
+
+
+
+(defn ^:export dump-selected-recursive
+  []
+  (let [objects (dsh/lookup-page-objects @st/state)
+        id (first (get-selected @st/state))
+        result (cfh/get-children-with-self objects id)]
+    (logjs "selected" result)
+    nil))
