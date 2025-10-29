@@ -83,26 +83,26 @@
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-top-bottom]
       [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder m1-placeholder
-                          :data-name "m1"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m1}]]
+                                           :placeholder m1-placeholder
+                                           :data-name "m1"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m1}]]
 
      [:div {:class (stl/css :horizontal-margin)
             :title "Horizontal margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-left-right]
       [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder m2-placeholder
-                          :data-name "m2"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m2}]]]))
+                                           :placeholder m2-placeholder
+                                           :data-name "m2"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m2}]]]))
 
 (mf/defc margin-multiple*
   [{:keys [value on-change on-blur]}]
@@ -135,51 +135,51 @@
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-top]
       [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m1"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m1}]]
+                                           :placeholder "--"
+                                           :data-name "m1"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m1}]]
      [:div {:class (stl/css :right-margin)
             :title "Right margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-right]
       [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m2"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m2}]]
+                                           :placeholder "--"
+                                           :data-name "m2"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m2}]]
 
      [:div {:class (stl/css :bottom-margin)
             :title "Bottom margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-bottom]
       [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m3"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m3}]]
+                                           :placeholder "--"
+                                           :data-name "m3"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m3}]]
 
      [:div {:class (stl/css :left-margin)
             :title "Left margin"}
       [:span {:class (stl/css :icon)}
        deprecated-icon/margin-left]
       [:> deprecated-input/numeric-input* {:class (stl/css :numeric-input)
-                          :placeholder "--"
-                          :data-name "m4"
-                          :on-focus on-focus
-                          :on-change on-change'
-                          :on-blur on-blur
-                          :nillable true
-                          :value m4}]]]))
+                                           :placeholder "--"
+                                           :data-name "m4"
+                                           :on-focus on-focus
+                                           :on-change on-change'
+                                           :on-blur on-blur
+                                           :nillable true
+                                           :value m4}]]]))
 
 
 (mf/defc margin-section*
