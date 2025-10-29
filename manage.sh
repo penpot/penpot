@@ -310,11 +310,11 @@ function build-exporter-docker-image {
 }
 
 function build-storybook-docker-image {
-    rsync -avr --delete ./bundles/frontend/ ./docker/images/bundle-frontend/;
+    rsync -avr --delete ./bundles/storybook/ ./docker/images/bundle-storybook/;
     pushd ./docker/images;
     docker build \
         -t penpotapp/storybook:$CURRENT_BRANCH -t penpotapp/storybook:latest \
-        --build-arg BUNDLE_PATH="./bundle-frontend/storybook-static/" \
+        --build-arg BUNDLE_PATH="./bundle-storybook/" \
         -f Dockerfile.storybook .;
     popd;
 }
