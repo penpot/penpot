@@ -382,7 +382,19 @@
 
              get-modifier
              (fn [shape]
-               (ctm/change-dimensions-modifiers shape attr value))
+               (let [modifiers (ctm/change-dimensions-modifiers shape attr value)]
+                 ;; For text shapes, also update grow-type based on the resize
+                 (if (cfh/text-shape? shape)
+                   (let [{sr-width :width sr-height :height} (:selrect shape)
+                         new-width (if (= attr :width) value sr-width)
+                         new-height (if (= attr :height) value sr-height)
+                         scalev (gpt/point (/ new-width sr-width) (/ new-height sr-height))
+                         current-grow-type (dm/get-prop shape :grow-type)
+                         new-grow-type (dwm/next-grow-type current-grow-type scalev)]
+                     (cond-> modifiers
+                       (not= new-grow-type current-grow-type)
+                       (ctm/change-property :grow-type new-grow-type)))
+                   modifiers)))
 
              modif-tree
              (-> (dwm/build-modif-tree ids objects get-modifier)
