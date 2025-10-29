@@ -53,7 +53,7 @@
                    :else "")
            full-value (str prefix value ";")]
        (if (empty? acc)
-         acc
+         full-value
          (str acc " " full-value))))
    ""
    (:fills shape)))

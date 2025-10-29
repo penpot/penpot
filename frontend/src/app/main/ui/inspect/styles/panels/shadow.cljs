@@ -41,8 +41,8 @@
                              :property shorthand})))
     [:div {:class (stl/css :shadow-panel)}
      (for [shape shapes]
-       (for [shadow (:shadow shape)]
-         [:div {:key (dm/str (:id shape) (:type shadow)) :class "shadow-shape"}
+       (for [[idx shadow] (map-indexed vector (:shadow shape))]
+         [:div {:key (dm/str idx) :class "shadow-shape"}
           [:> color-properties-row* {:term "Shadow Color"
                                      :color (:color shadow)
                                      :format color-space
