@@ -18,6 +18,29 @@
 
 (t/use-fixtures :each thi/test-fixture)
 
+
+(t/deftest test-basic-switch
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant
+                       :v01 :c01 :m01 :c02 :m02
+                       {:variant1-params {:width 5}
+                        :variant2-params  {:width 15}})
+
+                      (thc/instantiate-component :c01
+                                                 :copy01))
+        copy01 (ths/get-shape file :copy01)
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        copy01'   (ths/get-shape file' :copy02)]
+    (thf/dump-file file :keys [:width])
+    ;; The copy had width 5 before the switch
+    (t/is (= (:width copy01) 5))
+    ;; The rect has width 15 after the switch
+    (t/is (= (:width copy01') 15))))
+
 (t/deftest test-simple-switch
   (let [;; ==== Setup
         file      (-> (thf/sample-file :file1)
@@ -44,6 +67,41 @@
     (t/is (= (:width rect01) 5))
     ;; The rect has width 15 after the switch
     (t/is (= (:width rect02') 15))))
+
+
+(t/deftest test-basic-switch-override
+  (let [;; ==== Setup
+        file      (-> (thf/sample-file :file1)
+                      (thv/add-variant
+                       :v01 :c01 :m01 :c02 :m02
+                       {:variant1-params {:width 5}
+                        :variant2-params  {:width 5}})
+
+                      (thc/instantiate-component :c01
+                                                 :copy01))
+        copy01 (ths/get-shape file :copy01)
+
+        ;; Change width of copy
+        page   (thf/current-page file)
+        changes (cls/generate-update-shapes (pcb/empty-changes nil (:id page))
+                                            #{(:id copy01)}
+                                            (fn [shape]
+                                              (assoc shape :width 25))
+                                            (:objects page)
+                                            {})
+
+        file   (thf/apply-changes file changes)
+        copy01 (ths/get-shape file :copy01)
+
+        ;; ==== Action
+        file'     (tho/swap-component file copy01 :c02 {:new-shape-label :copy02 :keep-touched? true})
+
+        copy01'   (ths/get-shape file' :copy02)]
+    (thf/dump-file file :keys [:width])
+    ;; The copy had width 25 before the switch
+    (t/is (= (:width copy01) 25))
+    ;; The override is keept: The copy still has width 25 after the switch
+    (t/is (= (:width copy01') 25))))
 
 (t/deftest test-switch-with-override
   (let [;; ==== Setup
