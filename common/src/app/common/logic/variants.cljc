@@ -131,7 +131,7 @@
 
         ref-shape-container   (when ref-shape (:container (meta ref-shape)))
         ref-shape-parents-set (when ref-shape
-                                (->> (cfh/get-parents-with-self (:objects ref-shape-container) (:id ref-shape))
+                                (->> (cfh/get-parents (:objects ref-shape-container) (:id ref-shape))
                                      (into #{} d/xf:map-id)))]
 
     (if (or (nil? ref-shape) (contains? ref-shape-parents-set parent-id))
@@ -198,15 +198,15 @@
 
         ;; The original-shape is in a copy. For the relation rules, we need the referenced
         ;; shape on the main component
-        orig-base-ref-shape (ctf/find-remote-shape container libraries original-shape {:with-context? true})
-        orig-ref-objects   (:objects (:container (meta orig-base-ref-shape)))
+        orig-ref-shape     (ctf/find-remote-shape container libraries original-shape {:with-context? true})
+        orig-ref-objects   (:objects (:container (meta orig-ref-shape)))
 
         ;; Adds a :shape-path attribute to the children of the orig-ref-shape,
         ;; that contains the type of its ancestors and its name
         o-ref-shapes-wp    (add-unique-path
-                            (reverse (cfh/get-children-with-self orig-ref-objects (:id orig-base-ref-shape)))
+                            (reverse (cfh/get-children-with-self orig-ref-objects (:id orig-ref-shape)))
                             orig-ref-objects
-                            (:id orig-base-ref-shape))
+                            (:id orig-ref-shape))
 
         ;; Creates a map to quickly find a child of the orig-ref-shape by its shape-path
         o-ref-shapes-p-map  (into {} (map (juxt :id :shape-path)) o-ref-shapes-wp)
@@ -221,7 +221,7 @@
                  ;; orig-child-touched is in a copy. Get the referenced shape on the main component
                  ;; If there is a swap slot, we will get the referenced shape in another way
                  orig-ref-shape (when-not swap-slot
-                                  (find-shape-ref-child-of container libraries orig-child-touched (:id orig-base-ref-shape)))
+                                  (find-shape-ref-child-of container libraries orig-child-touched (:id orig-ref-shape)))
 
                  orig-ref-id    (if swap-slot
                                   ;; If there is a swap slot, find the referenced shape id
@@ -231,7 +231,6 @@
 
                  ;; Get the shape path of the referenced main
                  shape-path     (get o-ref-shapes-p-map orig-ref-id)
-
                  ;; Get its related shape in the children of new-shape: the one that
                  ;; has the same shape-path
                  related-shape-in-new  (get new-shapes-map shape-path)
