@@ -6,7 +6,7 @@ USER root
 RUN set -ex; \
     useradd -U -M -u 1001 -s /bin/false -d /opt/penpot penpot;
 
-ARG BUNDLE_PATH="./bundle-frontend/storybook-static/"
+ARG BUNDLE_PATH="./bundle-storybook/"
 COPY $BUNDLE_PATH /var/www/
 COPY ./files/nginx.storybook.conf /etc/nginx/conf.d/default.conf
 
