@@ -77,7 +77,7 @@
   (:content shape))
 
 (defn- has-shadow? [shape]
-  (:shadow shape))
+  (seq (:shadow shape)))
 
 (defn- get-shape-type
   [shapes first-shape first-component]

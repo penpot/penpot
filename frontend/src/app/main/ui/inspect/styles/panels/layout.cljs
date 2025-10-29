@@ -63,22 +63,17 @@
 (defn- generate-layout-shorthand
   [shapes objects]
   (let [shape (first shapes)
-        shorthand-padding (mf/use-memo
-                           [shapes shape objects]
-                           (fn []
-                             (when (and (= (count shapes) 1) (has-padding? shape))
-                               (css/get-css-property objects shape :padding))))
-        shorthand-grid (mf/use-memo
-                        [shapes shape objects]
-                        (fn []
-                          (when (and (= (count shapes) 1)
-                                     (= :grid (:layout shape)))
-                            (str "grid: "
-                                 (css/get-css-value objects shape :grid-template-rows)
-                                 " / "
-                                 (css/get-css-value objects shape :grid-template-columns)
-                                 ";"))))
-        shorthand (str shorthand-padding " " shorthand-grid)]
+        shorthand-padding (when (and (= (count shapes) 1) (has-padding? shape))
+                            (css/get-css-property objects shape :padding))
+        shorthand-grid (when (and (= (count shapes) 1)
+                                  (= :grid (:layout shape)))
+                         (str "grid: "
+                              (css/get-css-value objects shape :grid-template-rows)
+                              " / "
+                              (css/get-css-value objects shape :grid-template-columns)
+                              ";"))
+        shorthand (when (or shorthand-padding shorthand-grid)
+                    (str shorthand-grid " " shorthand-padding))]
     shorthand))
 
 (mf/defc layout-panel*
