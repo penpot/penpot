@@ -150,8 +150,8 @@ test("User copy paste a variant container", async ({ page }) => {
   await workspacePage.clickAt(500, 500);
   await workspacePage.page.keyboard.press("Control+v");
 
-  const variant_original = await findVariant(workspacePage, 0);
-  const variant_duplicate = await findVariant(workspacePage, 1);
+  const variant_original = await findVariant(workspacePage, 1);
+  const variant_duplicate = await findVariant(workspacePage, 0);
 
   // Expand the layers
   await variant_duplicate.container.getByRole("button").first().click();
