@@ -60,7 +60,7 @@
 
 (mf/defc geometry-panel*
   [{:keys [shapes objects resolved-tokens on-geometry-shorthand]}]
-  (let [shorthand* (mf/use-state (generate-geometry-shorthand shapes objects))
+  (let [shorthand* (mf/use-state #(generate-geometry-shorthand shapes objects))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-geometry-shorthand shapes objects)
@@ -70,7 +70,7 @@
                                :property shorthand})))
     [:div {:class (stl/css :geometry-panel)}
      (for [shape shapes]
-       [:div {:key (:id shape) :class "geometry-shape"}
+       [:div {:key (:id shape) :class (stl/css :geometry-shape)}
 
         (for [property properties]
           (when-let [value (css/get-css-value objects shape property)]

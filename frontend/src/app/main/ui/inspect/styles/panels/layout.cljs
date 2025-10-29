@@ -78,7 +78,7 @@
 
 (mf/defc layout-panel*
   [{:keys [shapes objects resolved-tokens on-layout-shorthand]}]
-  (let [shorthand* (mf/use-state (generate-layout-shorthand shapes objects))
+  (let [shorthand* (mf/use-state #(generate-layout-shorthand shapes objects))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-layout-shorthand shapes objects)
@@ -88,7 +88,7 @@
                              :property shorthand})))
     [:div {:class (stl/css :variants-panel)}
      (for [shape shapes]
-       [:div {:key (:id shape) :class "layout-shape"}
+       [:div {:key (:id shape) :class (stl/css :layout-shape)}
         (for [property properties]
           (when-let [value (css/get-css-value objects shape property)]
             (let [property-name (cmm/get-css-rule-humanized property)

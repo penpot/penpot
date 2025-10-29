@@ -112,18 +112,18 @@
                                     (or (:opacity shape)
                                         (:blend-mode shape)
                                         (:visibility shape))))))
-        shorthands* (mf/use-state {:fill nil
-                                   :stroke nil
-                                   :text nil
-                                   :shadow nil
-                                   :blur nil
-                                   :layout nil
-                                   :layout-element nil
-                                   :geometry nil
-                                   :svg nil
-                                   :visibility nil
-                                   :variant nil
-                                   :grid-element nil})
+        shorthands* (mf/use-state #(do {:fill nil
+                                        :stroke nil
+                                        :text nil
+                                        :shadow nil
+                                        :blur nil
+                                        :layout nil
+                                        :layout-element nil
+                                        :geometry nil
+                                        :svg nil
+                                        :visibility nil
+                                        :variant nil
+                                        :grid-element nil}))
         shorthands (deref shorthands*)
         set-shorthands
         ;; This fn must receive an object `shorthand` with :panel and :property (the shorthand string) keys

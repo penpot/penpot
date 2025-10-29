@@ -31,7 +31,7 @@
 
 (mf/defc shadow-panel*
   [{:keys [shapes color-space on-shadow-shorthand]}]
-  (let [shorthand* (mf/use-state (generate-shadow-shorthand shapes))
+  (let [shorthand* (mf/use-state #(generate-shadow-shorthand shapes))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-shadow-shorthand shapes)
@@ -42,7 +42,7 @@
     [:div {:class (stl/css :shadow-panel)}
      (for [shape shapes]
        (for [[idx shadow] (map-indexed vector (:shadow shape))]
-         [:div {:key (dm/str idx) :class "shadow-shape"}
+         [:div {:key (dm/str idx) :class (stl/css :shadow-shape)}
           [:> color-properties-row* {:term "Shadow Color"
                                      :color (:color shadow)
                                      :format color-space

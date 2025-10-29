@@ -78,7 +78,7 @@
 
 (mf/defc text-panel*
   [{:keys [shapes resolved-tokens color-space on-font-shorthand]}]
-  (let [shorthand* (mf/use-state (generate-typography-shorthand shapes))
+  (let [shorthand* (mf/use-state #(generate-typography-shorthand shapes))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-font-shorthand shapes)
@@ -90,10 +90,10 @@
      (for [shape shapes]
        (let [style-text-blocks (get-style-text shape)
              composite-typography-token (get-resolved-token :typography shape resolved-tokens)]
-         [:div {:key (:id shape) :class "text-shape"}
+         [:div {:key (:id shape) :class (stl/css :text-shape)}
           (for [[style text] style-text-blocks]
 
-            [:div {:key (:id shape) :class "text-properties"}
+            [:div {:key (:id shape) :class (stl/css :text-properties)}
 
              (when (:fills style)
                (for [[idx fill] (map-indexed vector (:fills style))]

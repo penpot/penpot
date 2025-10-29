@@ -60,7 +60,7 @@
 
 (mf/defc fill-panel*
   [{:keys [shapes resolved-tokens color-space on-fill-shorthand]}]
-  (let [shorthand* (mf/use-state (generate-fill-shorthand (first shapes)))
+  (let [shorthand* (mf/use-state #(generate-fill-shorthand (first shapes)))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-fill-shorthand shapes)
@@ -70,7 +70,7 @@
                            :property shorthand})))
     [:div {:class (stl/css :fill-panel)}
      (for [shape shapes]
-       [:div {:key (:id shape) :class "fill-shape"}
+       [:div {:key (:id shape) :class (stl/css :fill-shape)}
         (for [[idx fill] (map-indexed vector (:fills shape))]
           (let [property :background
                 color-type (types.fills/fill->color fill) ;; can be :color, :gradient or :image

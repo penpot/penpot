@@ -79,7 +79,7 @@
 
 (mf/defc stroke-panel*
   [{:keys [shapes objects resolved-tokens color-space on-stroke-shorthand]}]
-  (let [shorthand* (mf/use-state (generate-stroke-shorthand shapes))
+  (let [shorthand* (mf/use-state #(generate-stroke-shorthand shapes))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-stroke-shorthand shapes)
@@ -89,7 +89,7 @@
                              :property shorthand})))
     [:div {:class (stl/css :stroke-panel)}
      (for [shape shapes]
-       [:div {:key (:id shape) :class "stroke-shape"}
+       [:div {:key (:id shape) :class (stl/css :stroke-shape)}
         (for [[idx stroke] (map-indexed vector (:strokes shape))]
           (for [property properties]
             (let [value (css/get-css-value objects stroke property)

@@ -70,7 +70,7 @@
 (mf/defc layout-element-panel*
   [{:keys [shapes objects resolved-tokens layout-element-properties on-layout-element-shorthand]}]
   (let [shapes (->> shapes (filter #(ctl/any-layout-immediate-child? objects %)))
-        shorthand* (mf/use-state (generate-layout-element-shorthand shapes objects))
+        shorthand* (mf/use-state #(generate-layout-element-shorthand shapes objects))
         shorthand (deref shorthand*)]
     (mf/use-effect
      (mf/deps shorthand on-layout-element-shorthand shapes objects)
@@ -80,7 +80,7 @@
                                      :property shorthand})))
     [:div {:class (stl/css :layout-element-panel)}
      (for [shape shapes]
-       [:div {:key (:id shape) :class "layout-element-shape"}
+       [:div {:key (:id shape) :class (stl/css :layout-element-shape)}
         (for [property layout-element-properties]
           (when-let [value (css/get-css-value objects shape property)]
             (let [property-name (cmm/get-css-rule-humanized property)
