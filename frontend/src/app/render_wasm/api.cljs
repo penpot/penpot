@@ -699,17 +699,17 @@
 
       (if (< index total)
         (let [paragraph (nth paragraphs index)
-              leaves    (get paragraph :children)]
-          (if (empty? (seq leaves))
+              spans    (get paragraph :children)]
+          (if (empty? (seq spans))
             (recur (inc index)
                    emoji?
                    langs)
 
-            (let [text   (apply str (map :text leaves))
+            (let [text   (apply str (map :text spans))
                   emoji? (if emoji? emoji? (t/contains-emoji? text))
                   langs  (t/collect-used-languages langs text)]
 
-              (t/write-shape-text leaves paragraph text)
+              (t/write-shape-text spans paragraph text)
               (recur (inc index)
                      emoji?
                      langs))))

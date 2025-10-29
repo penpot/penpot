@@ -130,6 +130,7 @@ pub struct RawTextSpan {
     text_transform: RawTextTransform,
     text_direction: RawTextDirection,
     font_size: f32,
+    line_height: f32,
     letter_spacing: f32,
     font_weight: i32,
     font_id: [u32; 4],
@@ -178,6 +179,7 @@ impl From<RawTextSpan> for shapes::TextSpan {
             text,
             font_family,
             value.font_size,
+            value.line_height,
             value.letter_spacing,
             value.text_decoration.into(),
             value.text_transform.into(),
@@ -193,7 +195,7 @@ impl From<RawTextSpan> for shapes::TextSpan {
 #[derive(Debug, Clone)]
 pub struct RawParagraph {
     attrs: RawParagraphData,
-    leaves: Vec<RawTextSpan>,
+    spans: Vec<RawTextSpan>,
     text_buffer: Vec<u8>,
 }
 
@@ -204,19 +206,19 @@ impl TryFrom<&Vec<u8>> for RawParagraph {
     fn try_from(bytes: &Vec<u8>) -> Result<Self, Self::Error> {
         let attrs = RawParagraphData::try_from(&bytes[..RAW_PARAGRAPH_DATA_SIZE])?;
         let mut offset = RAW_PARAGRAPH_DATA_SIZE;
-        let mut raw_text_leaves: Vec<RawTextSpan> = Vec::new();
+        let mut raw_text_spans: Vec<RawTextSpan> = Vec::new();
 
         for _ in 0..attrs.span_count {
             let text_span = RawTextSpan::try_from(&bytes[offset..(offset + RAW_SPAN_DATA_SIZE)])?;
             offset += RAW_SPAN_DATA_SIZE;
-            raw_text_leaves.push(text_span);
+            raw_text_spans.push(text_span);
         }
 
         let text_buffer = &bytes[offset..];
 
         Ok(Self {
             attrs,
-            leaves: raw_text_leaves,
+            spans: raw_text_spans,
             text_buffer: text_buffer.to_vec(),
         })
     }
@@ -227,10 +229,10 @@ impl From<RawParagraph> for shapes::Paragraph {
         let typography_ref_file = uuid_from_u32(value.attrs.typography_ref_file);
         let typography_ref_id = uuid_from_u32(value.attrs.typography_ref_id);
 
-        let mut leaves = vec![];
+        let mut spans = vec![];
 
         let mut offset = 0;
-        for raw_span in value.leaves.into_iter() {
+        for raw_span in value.spans.into_iter() {
             let delta = raw_span.text_length as usize;
             let text_buffer = &value.text_buffer[offset..offset + delta];
 
@@ -239,7 +241,7 @@ impl From<RawParagraph> for shapes::Paragraph {
                 span.set_text(String::from_utf8_lossy(text_buffer).to_string());
             }
 
-            leaves.push(span);
+            spans.push(span);
             offset += delta;
         }
 
@@ -252,7 +254,7 @@ impl From<RawParagraph> for shapes::Paragraph {
             value.attrs.letter_spacing,
             typography_ref_file,
             typography_ref_id,
-            leaves,
+            spans,
         )
     }
 }

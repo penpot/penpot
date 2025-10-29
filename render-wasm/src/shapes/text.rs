@@ -630,6 +630,7 @@ pub struct TextSpan {
     text: String,
     font_family: FontFamily,
     font_size: f32,
+    line_height: f32,
     letter_spacing: f32,
     font_weight: i32,
     font_variant_id: Uuid,
@@ -645,6 +646,7 @@ impl TextSpan {
         text: String,
         font_family: FontFamily,
         font_size: f32,
+        line_height: f32,
         letter_spacing: f32,
         text_decoration: Option<TextDecoration>,
         text_transform: Option<TextTransform>,
@@ -657,6 +659,7 @@ impl TextSpan {
             text,
             font_family,
             font_size,
+            line_height,
             letter_spacing,
             text_decoration,
             text_transform,
@@ -680,10 +683,9 @@ impl TextSpan {
         content_bounds: &Rect,
         fallback_fonts: &HashSet<String>,
         remove_alpha: bool,
-        paragraph_line_height: f32, // Add this parameter
+        paragraph_line_height: f32,
     ) -> skia::textlayout::TextStyle {
         let mut style = skia::textlayout::TextStyle::default();
-
         let mut paint = paint::Paint::default();
 
         if remove_alpha {
@@ -693,9 +695,14 @@ impl TextSpan {
             paint = merge_fills(&self.fills, *content_bounds);
         }
 
-        style.set_height(paragraph_line_height);
-        style.set_height_override(true);
+        // FIXME
+        if self.line_height <= 0.0 {
+            style.set_height(paragraph_line_height);
+        } else {
+            style.set_height(self.line_height);
+        }
 
+        style.set_height_override(true);
         style.set_foreground_paint(&paint);
         style.set_decoration_type(match self.text_decoration {
             Some(text_decoration) => text_decoration,
