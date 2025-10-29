@@ -169,9 +169,9 @@
 
         on-color-drag-start
         (mf/use-fn
-         (mf/deps color file-id selected item-ref read-only?)
+         (mf/deps color file-id selected item-ref read-only? editing?)
          (fn [event]
-           (if read-only?
+           (if (or read-only? editing?)
              (dom/prevent-default event)
              (cmm/on-asset-drag-start event file-id color selected item-ref :colors identity))))
 

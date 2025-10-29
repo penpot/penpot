@@ -162,7 +162,7 @@
          :data {:index index
                 :is-group true}
          :detect-center? true
-         :draggable? is-draggable)]
+         :draggable? (and is-draggable (not is-editing)))]
 
     [:div {:ref dref
            :data-testid "tokens-set-group-item"
@@ -271,7 +271,7 @@
          :on-drop on-drop
          :data {:index index
                 :is-group false}
-         :draggable? is-draggable)
+         :draggable? (and is-draggable (not is-editing)))
 
         drop-over
         (get dprops :over)]
