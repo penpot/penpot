@@ -101,8 +101,10 @@
               (impl/updateBlockData state block-key (clj->js attrs)))))
 
         state (impl/applyInlineStyle state (legacy.txt/attrs-to-styles attrs))
-        selected (impl/getSelectedBlocks state)]
-    (reduce update-blocks state selected)))
+        selection-after-apply (impl/getSelection state)
+        selected (impl/getSelectedBlocks state)
+        state (reduce update-blocks state selected)]
+    (impl/setSelection state selection-after-apply)))
 
 (defn update-editor-current-inline-styles-fn
   [state update-fn]
