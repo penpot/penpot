@@ -1896,6 +1896,23 @@ msgstr "Calculado"
 msgid "inspect.tabs.info"
 msgstr "Información"
 
+#: src/app/main/ui/inspect/styles/style_box.cljs:66
+#, fuzzy
+msgid "inspect.tabs.styles.panel.copy-style-shorthand"
+msgstr "Copiar CSS shorthand al portapapeles"
+
+#: src/app/main/ui/inspect/styles/property_detail_copiable.cljs:52
+msgid "inspect.tabs.styles.panel.copy-to-clipboard"
+msgstr "Copiar al portapapeles"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:26
+msgid "inspect.tabs.styles.panel.tokens.active-sets"
+msgstr "Sets activos"
+
+#: src/app/main/ui/inspect/styles/panels/tokens_panel.cljs:21
+msgid "inspect.tabs.styles.panel.tokens.active-themes"
+msgstr "Temas activos"
+
 #: src/app/main/ui/inspect/styles/style_box.cljs:22
 msgid "inspect.tabs.styles.panel.geometry"
 msgstr "Tamaño y posición"

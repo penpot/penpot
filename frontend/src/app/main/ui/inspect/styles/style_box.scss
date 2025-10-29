@@ -17,6 +17,7 @@
 
 .disclosure-header {
   display: flex;
+  align-items: center;
   gap: var(--title-gap);
   padding-block: var(--title-padding);
 }

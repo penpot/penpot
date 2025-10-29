@@ -48,8 +48,9 @@
 
         copy-shorthand
         (mf/use-fn
+         (mf/deps shorthand)
          (fn []
-           (wapi/write-to-clipboard (str "Style: " title))))]
+           (wapi/write-to-clipboard (str shorthand))))]
     [:article {:class (stl/css :style-box)}
      [:header {:class (stl/css :disclosure-header)}
       [:button {:class (stl/css :disclosure-button)

@@ -12,22 +12,45 @@
    [app.main.ui.inspect.styles.rows.color-properties-row :refer [color-properties-row*]]
    [app.main.ui.inspect.styles.rows.properties-row :refer [properties-row*]]
    [app.util.code-gen.style-css :as css]
+   [app.util.code-gen.style-css-formats :as scf]
    [rumext.v2 :as mf]))
 
+(defn- generate-shadow-shorthand
+  [shapes]
+  (when (= (count shapes) 1)
+    (let [shorthand-property (dm/str "box-shadow: ")
+          shorthand-value (reduce
+                           (fn [acc shadow]
+                             (let [value (scf/format-shadow->css shadow {})]
+                               (if (empty? acc)
+                                 value
+                                 (dm/str acc ", " value))))
+                           ""
+                           (:shadow (first shapes)))]
+      (dm/str shorthand-property shorthand-value ";"))))
+
 (mf/defc shadow-panel*
-  [{:keys [shapes color-space]}]
-  [:div {:class (stl/css :shadow-panel)}
-   (for [shape shapes]
-     (for [shadow (:shadow shape)]
-       [:div {:key (dm/str (:id shape) (:type shadow)) :class "shadow-shape"}
-        [:> color-properties-row* {:term "Shadow Color"
-                                   :color (:color shadow)
-                                   :format color-space
-                                   :copiable true}]
-        (let [value (dm/str (:offset-x shadow) "px" " " (:offset-y shadow) "px" " " (:blur shadow) "px" " " (:spread shadow) "px")
-              property-name (cmm/get-css-rule-humanized (:style shadow))
-              property-value (css/shadow->css shadow)]
-          [:> properties-row* {:term property-name
-                               :detail (dm/str value)
-                               :property property-value
-                               :copiable true}])]))])
+  [{:keys [shapes color-space on-shadow-shorthand]}]
+  (let [shorthand* (mf/use-state #(generate-shadow-shorthand shapes))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (mf/deps shorthand on-shadow-shorthand shapes)
+     (fn []
+       (reset! shorthand* (generate-shadow-shorthand shapes))
+       (on-shadow-shorthand {:panel :shadow
+                             :property shorthand})))
+    [:div {:class (stl/css :shadow-panel)}
+     (for [shape shapes]
+       (for [[idx shadow] (map-indexed vector (:shadow shape))]
+         [:div {:key (dm/str idx) :class (stl/css :shadow-shape)}
+          [:> color-properties-row* {:term "Shadow Color"
+                                     :color (:color shadow)
+                                     :format color-space
+                                     :copiable true}]
+          (let [value (dm/str (:offset-x shadow) "px" " " (:offset-y shadow) "px" " " (:blur shadow) "px" " " (:spread shadow) "px")
+                property-name (cmm/get-css-rule-humanized (:style shadow))
+                property-value (css/shadow->css shadow)]
+            [:> properties-row* {:term property-name
+                                 :detail (dm/str value)
+                                 :property property-value
+                                 :copiable true}])]))]))

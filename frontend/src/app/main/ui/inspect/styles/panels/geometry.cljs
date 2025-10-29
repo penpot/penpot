@@ -30,6 +30,15 @@
    :border-end-start-radius :r3
    :border-end-end-radius :r4})
 
+(defn- has-border-radius?
+  "Returns true if the shape has any non-zero border radius values."
+  [shape]
+  (let [radius-keys [:r1 :r2 :r3 :r4]]
+    (some (fn [key]
+            (and (contains? shape key)
+                 (not= 0 (get shape key))))
+          radius-keys)))
+
 (defn- get-applied-tokens-in-shape
   [shape-tokens property]
   (let [border-prop (get shape-prop->border-radius-prop property)]
@@ -44,19 +53,33 @@
         token (get resolved-tokens applied-tokens-in-shape)]
     token))
 
+(defn- generate-geometry-shorthand
+  [shapes objects]
+  (when (and (= (count shapes) 1) (has-border-radius? (first shapes)))
+    (css/get-css-property objects (first shapes) :border-radius)))
+
 (mf/defc geometry-panel*
-  [{:keys [shapes objects resolved-tokens]}]
-  [:div {:class (stl/css :geometry-panel)}
-   (for [shape shapes]
-     [:div {:key (:id shape) :class "geometry-shape"}
-      (for [property properties]
-        (when-let [value (css/get-css-value objects shape property)]
-          (let [property-name (cmm/get-css-rule-humanized property)
-                resolved-token (get-resolved-token property shape resolved-tokens)
-                property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
-            [:> properties-row* {:key (dm/str "geometry-property-" property)
-                                 :term property-name
-                                 :detail value
-                                 :token resolved-token
-                                 :property property-value
-                                 :copiable true}])))])])
+  [{:keys [shapes objects resolved-tokens on-geometry-shorthand]}]
+  (let [shorthand* (mf/use-state #(generate-geometry-shorthand shapes objects))
+        shorthand (deref shorthand*)]
+    (mf/use-effect
+     (mf/deps shorthand on-geometry-shorthand shapes objects)
+     (fn []
+       (reset! shorthand* (generate-geometry-shorthand shapes objects))
+       (on-geometry-shorthand {:panel :geometry
+                               :property shorthand})))
+    [:div {:class (stl/css :geometry-panel)}
+     (for [shape shapes]
+       [:div {:key (:id shape) :class (stl/css :geometry-shape)}
+
+        (for [property properties]
+          (when-let [value (css/get-css-value objects shape property)]
+            (let [property-name (cmm/get-css-rule-humanized property)
+                  resolved-token (get-resolved-token property shape resolved-tokens)
+                  property-value (if (not resolved-token) (css/get-css-property objects shape property) "")]
+              [:> properties-row* {:key (dm/str "geometry-property-" property)
+                                   :term property-name
+                                   :detail value
+                                   :token resolved-token
+                                   :property property-value
+                                   :copiable true}])))])]))

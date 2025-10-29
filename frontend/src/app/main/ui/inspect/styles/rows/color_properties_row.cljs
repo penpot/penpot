@@ -34,7 +34,6 @@
   [{:keys [class term color format token]}]
   (let [copied* (mf/use-state false)
         copied (deref copied*)
-
         color-value (:color color)
         color-gradient (:gradient color)
         color-image (:image color)
