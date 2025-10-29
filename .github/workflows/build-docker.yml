@@ -46,6 +46,7 @@ jobs:
           mv penpot/backend bundle-backend
           mv penpot/frontend bundle-frontend
           mv penpot/exporter bundle-exporter
+          mv penpot/storybook bundle-storybook
           popd
 
       - name: Set up Docker Buildx
@@ -94,6 +95,20 @@ jobs:
         with:
           context: ./docker/images/
           file: ./docker/images/Dockerfile.exporter
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+
+      - name: Build and push Storybook Docker image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_IMAGE: 'storybook'
+          BUNDLE_PATH: './bundle-storybook'
+        with:
+          context: ./docker/images/
+          file: ./docker/images/Dockerfile.storybook
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ secrets.DOCKER_REGISTRY }}/${{ env.DOCKER_IMAGE }}:${{ steps.vars.outputs.gh_ref }}
