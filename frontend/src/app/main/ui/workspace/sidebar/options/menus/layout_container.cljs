@@ -453,6 +453,7 @@
          :icon i/padding-left-right
          :min 0
          :name :p2
+         :align :right
          :property (tr "workspace.layout_grid.editor.padding.horizontal")
          :nillable true
          :applied-tokens {:p2 applied-to-p2}
@@ -573,6 +574,7 @@
          :icon i/padding-right
          :min 0
          :name :p2
+         :align :right
          :property (tr "workspace.layout_grid.editor.padding.right")
          :applied-tokens applied-tokens
          :values value}]
@@ -628,6 +630,7 @@
          :on-focus on-focus-p4
          :icon i/padding-left
          :min 0
+         :align :right
          :name :p4
          :property (tr "workspace.layout_grid.editor.padding.left")
          :applied-tokens applied-tokens
@@ -800,6 +803,7 @@
          :nillable true
          :min 0
          :name :column-gap
+         :align :right
          :applied-tokens applied-tokens
          :property "Column gap"
          :values {:column-gap (:column-gap value)}

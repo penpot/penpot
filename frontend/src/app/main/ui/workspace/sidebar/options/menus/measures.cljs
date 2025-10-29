@@ -111,7 +111,7 @@
                                                 (tr "settings.multiple") "--")
                                  :class (stl/css :numeric-input-measures)
                                  :applied-token (get applied-tokens name)
-                                 :tokens tokens
+                                 :tokens @tokens
                                  :align align
                                  :on-detach on-detach-attr
                                  :value (get values name)})]

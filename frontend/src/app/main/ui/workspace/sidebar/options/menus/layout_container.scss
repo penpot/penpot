@@ -469,3 +469,8 @@
   grid-column: 1 / -1;
   align-items: center;
 }
+
+// TODO: Add a proper variable to this sizing
+.numeric-input-measures {
+  --dropdown-width: 247px;
+}
