@@ -41,7 +41,6 @@
         (mf/use-fn
          (mf/deps token on-token-pill-click)
          (fn [event]
-           (prn "entro en el on-click")
            (on-token-pill-click event token)))
         id-tooltip  (mf/use-id)
         resolved    (:resolved-value token)
@@ -139,7 +138,6 @@
          (fn [event token]
            (dom/stop-propagation event)
            (when (seq selected-shapes)
-             (prn "entro en on-token-pill-click")
              (on-token-change event token))))
 
         create-token-on-set

@@ -496,7 +496,6 @@
   (ptk/reify ::apply-token
     ptk/WatchEvent
     (watch [_ state _]
-      (prn "apply token" token attributes shape-ids)
       ;; We do not allow to apply tokens while text editor is open.
       (when (empty? (get state :workspace-editor-state))
         (let [attributes-to-remove
@@ -609,8 +608,7 @@
             {:keys [attributes all-attributes on-update-shape]}
             (get token-properties (:type token))
             unapply-tokens?
-            (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))
-            shape-ids (map :id shapes)]
+            (cft/shapes-token-applied? token shapes (or attrs all-attributes attributes))]
         (if unapply-tokens?
           (rx/of
            (unapply-token {:attributes (or attrs all-attributes attributes)

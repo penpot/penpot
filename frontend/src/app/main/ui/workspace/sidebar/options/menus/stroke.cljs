@@ -229,4 +229,5 @@
                               :on-focus on-focus
                               :select-on-focus (not @disable-drag)
                               :on-blur on-blur
+                              :ids ids
                               :disable-stroke-style disable-stroke-style}])])])]))

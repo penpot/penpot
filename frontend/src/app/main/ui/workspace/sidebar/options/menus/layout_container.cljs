@@ -733,7 +733,6 @@
         (mf/use-fn
          (mf/deps ids)
          (fn [token attr]
-           (prn ids)
            (st/emit! (dwta/unapply-token {:token (first token)
                                           :attributes #{attr}
                                           :shape-ids ids}))))
