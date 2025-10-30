@@ -6,6 +6,8 @@
  * Copyright (c) KALEIDOS INC
  */
 
+import SafeGuard from '~/editor/controllers/SafeGuard';
+
 /**
  * Iterator direction.
  *
@@ -244,6 +246,51 @@ export class TextNodeIterator {
 
     this.#currentNode = previousNode;
     return this.#currentNode;
+  }
+
+  /**
+   * Returns an array of text nodes.
+   *
+   * @param {TextNode} startNode
+   * @param {TextNode} endNode
+   * @returns {Array<TextNode>}
+   */
+  collectFrom(startNode, endNode) {
+    const nodes = [];
+    for (const node of this.iterateFrom(startNode, endNode)) {
+      nodes.push(node);
+    }
+    return nodes;
+  }
+
+  /**
+   * Iterates over a list of nodes.
+   *
+   * @param {TextNode} startNode
+   * @param {TextNode} endNode
+   * @yields {TextNode}
+   */
+  * iterateFrom(startNode, endNode) {
+    const comparedPosition = startNode.compareDocumentPosition(
+      endNode
+    );
+    this.#currentNode = startNode;
+    SafeGuard.start();
+    while (this.#currentNode !== endNode) {
+      yield this.#currentNode;
+      SafeGuard.update();
+      if (comparedPosition === Node.DOCUMENT_POSITION_PRECEDING) {
+        if (!this.previousNode()) {
+          break;
+        }
+      } else if (comparedPosition === Node.DOCUMENT_POSITION_FOLLOWING) {
+        if (!this.nextNode()) {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
   }
 }
 

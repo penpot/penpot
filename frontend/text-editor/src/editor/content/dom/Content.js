@@ -230,14 +230,19 @@ export function mapContentFragmentFromString(string, styleDefaults) {
   const fragment = document.createDocumentFragment();
   for (const line of lines) {
     if (line === "") {
-      fragment.appendChild(createEmptyParagraph(styleDefaults));
-    } else {
       fragment.appendChild(
-        createParagraph(
-          [createTextSpan(new Text(line), styleDefaults)],
-          styleDefaults,
-        ),
+        createEmptyParagraph(styleDefaults)
       );
+    } else {
+      const textSpan = createTextSpan(new Text(line), styleDefaults);
+      const paragraph = createParagraph(
+        [textSpan],
+        styleDefaults,
+      );
+      if (lines.length === 1) {
+        paragraph.dataset.textSpan = "force";
+      }
+      fragment.appendChild(paragraph);
     }
   }
   return fragment;
