@@ -146,7 +146,7 @@
 (defn start-resize
   "Enter mouse resize mode, until mouse button is released."
   [handler ids shape]
-  (letfn [(resize [shape initial layout [point lock? center? point-snap]]
+  (letfn [(resize [shape initial layout objects [point lock? center? point-snap]]
             (let [selrect  (dm/get-prop shape :selrect)
                   width    (dm/get-prop selrect :width)
                   height   (dm/get-prop selrect :height)
@@ -243,10 +243,14 @@
                 :always
                 (ctm/resize scalev resize-origin shape-transform shape-transform-inverse)
 
-                ^boolean change-width?
+                (and (ctl/any-layout-immediate-child? objects shape)
+                     (not= (:layout-item-h-sizing shape) :fix)
+                     ^boolean change-width?)
                 (ctm/change-property :layout-item-h-sizing :fix)
 
-                ^boolean change-height?
+                (and (ctl/any-layout-immediate-child? objects shape)
+                     (not= (:layout-item-v-sizing shape) :fix)
+                     ^boolean change-height?)
                 (ctm/change-property :layout-item-v-sizing :fix)
 
                 ;; Set grow-type if it should change
@@ -298,7 +302,7 @@
                           (fn [[point _ _ :as current]]
                             (->> (snap/closest-snap-point page-id shapes objects layout zoom focus point)
                                  (rx/map #(conj current %)))))
-                         (rx/map #(resize shape initial-position layout %))
+                         (rx/map #(resize shape initial-position layout objects %))
                          (rx/share))
 
                     modifiers-stream
@@ -332,8 +336,8 @@
                            (rx/take-until stopper)))]
 
                 (rx/concat
-           ;; This initial stream waits for some pixels to be move before making the resize
-           ;; if you make a click in the border will not make a resize
+                 ;; This initial stream waits for some pixels to be move before making the resize
+                 ;; if you make a click in the border will not make a resize
                  (->> ms/mouse-position
                       (rx/map #(gpt/to-vec initial-position %))
                       (rx/map #(gpt/length %))
@@ -745,12 +749,6 @@
                       (fn [[modifiers snap-ignore-axis]]
                         (dwm/set-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
 
-                (->> modifiers-stream
-                     (rx/last)
-                     (rx/map
-                      (fn [[modifiers snap-ignore-axis]]
-                        (dwm/apply-wasm-modifiers modifiers :snap-ignore-axis snap-ignore-axis))))
-
                 (->> move-stream
                      (rx/with-latest-from ms/mouse-position-alt)
                      (rx/filter (fn [[_ alt?]] alt?))
@@ -765,14 +763,18 @@
                 ;; Last event will write the modifiers creating the changes
                 (->> move-stream
                      (rx/last)
+                     (rx/with-latest-from modifiers-stream)
                      (rx/mapcat
-                      (fn [[_ target-frame drop-index drop-cell]]
+                      (fn [[[_ target-frame drop-index drop-cell] [modifiers snap-ignore-axis]]]
                         (let [undo-id (js/Symbol)]
-                          (rx/of (dwu/start-undo-transaction undo-id)
-                                 ;; (dwm/apply-modifiers {:undo-transation? false})
-                                 (move-shapes-to-frame ids target-frame drop-index drop-cell)
-                                 (finish-transform)
-                                 (dwu/commit-undo-transaction undo-id)))))))
+                          (rx/of
+                           (dwu/start-undo-transaction undo-id)
+                           (dwm/apply-wasm-modifiers modifiers
+                                                     :snap-ignore-axis snap-ignore-axis
+                                                     :undo-transation? false)
+                           (move-shapes-to-frame ids target-frame drop-index drop-cell)
+                           (finish-transform)
+                           (dwu/commit-undo-transaction undo-id)))))))
 
                (rx/merge
                 (->> modifiers-stream

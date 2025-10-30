@@ -645,12 +645,16 @@
 
 #_:clj-kondo/ignore
 (defn apply-wasm-modifiers
-  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-group]
-                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-group nil}
+  [modif-tree & {:keys [ignore-constraints ignore-snap-pixel snap-ignore-axis undo-transation?]
+                 :or {ignore-constraints false ignore-snap-pixel false snap-ignore-axis nil undo-transation? true}
                  :as params}]
   (ptk/reify ::apply-wasm-modifiesr
     ptk/WatchEvent
     (watch [_ state _]
+      (wasm.api/clean-modifiers)
+      (let [structure-entries (parse-structure-modifiers modif-tree)]
+        (wasm.api/set-structure-modifiers structure-entries))
+
       (let [objects          (dsh/lookup-page-objects state)
 
             ignore-tree
@@ -669,8 +673,6 @@
 
             snap-pixel?
             (and (not ignore-snap-pixel) (contains? (:workspace-layout state) :snap-pixel-grid))
-
-            _ (wasm.api/clean-geometry-modifiers)
 
             transforms
             (into {} (wasm.api/propagate-modifiers geometry-entries snap-pixel?))
@@ -696,16 +698,26 @@
                    (mapcat (partial cfh/get-parents-with-self objects))
                    (filter cfh/bool-shape?)
                    (map :id))
-                  ids)]
-        (rx/of
-         (clear-local-transform)
-         (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
-         (ptk/event ::dwcm/move-frame-comment-threads transforms)
-         (dwsh/update-shapes ids update-shape options)
+                  ids)
 
-         ;; The update to the bool path needs to be in a different operation because it
-         ;; needs to have the updated children info
-         (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))))))
+            undo-id (js/Symbol)]
+        (rx/concat
+         (if undo-transation?
+           (rx/of (dwu/start-undo-transaction undo-id))
+           (rx/empty))
+         (rx/of
+          (clear-local-transform)
+          (ptk/event ::dwg/move-frame-guides {:ids ids :transforms transforms})
+          (ptk/event ::dwcm/move-frame-comment-threads transforms)
+          (dwsh/update-shapes ids update-shape options)
+
+          ;; The update to the bool path needs to be in a different operation because it
+          ;; needs to have the updated children info
+          (dwsh/update-shapes bool-ids path/update-bool-shape (assoc options :with-objects? true)))
+
+         (if undo-transation?
+           (rx/of (dwu/commit-undo-transaction undo-id))
+           (rx/empty)))))))
 
 (def ^:private
   xf-rotation-shape

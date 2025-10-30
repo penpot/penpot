@@ -135,7 +135,10 @@
                       (when (or (= v :path) (= v :bool))
                         (api/set-shape-path-content (:content shape))))
       :bool-type    (api/set-shape-bool-type v)
-      :selrect      (api/set-shape-selrect v)
+      :selrect      (do
+                      (api/set-shape-selrect v)
+                      (when (= (:type shape) :svg-raw)
+                        (api/set-shape-svg-raw-content (api/get-static-markup shape))))
       :show-content (if (= (:type shape) :frame)
                       (api/set-shape-clip-content (not v))
                       (api/set-shape-clip-content false))

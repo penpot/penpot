@@ -290,15 +290,21 @@ pub extern "C" fn add_shape_child(a: u32, b: u32, c: u32, d: u32) {
 
 fn set_children_set(entries: IndexSet<Uuid>) {
     let mut deleted = IndexSet::new();
+    let mut parent_id = None;
 
     with_current_shape_mut!(state, |shape: &mut Shape| {
+        parent_id = Some(shape.id);
         (_, deleted) = shape.compute_children_differences(&entries);
         shape.children = entries.clone();
     });
 
     with_state_mut!(state, {
+        let Some(parent_id) = parent_id else {
+            return;
+        };
+
         for id in deleted {
-            state.delete_shape(id);
+            state.delete_shape_children(parent_id, id);
         }
     });
 }

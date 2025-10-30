@@ -175,7 +175,7 @@ impl ToPath for Shape {
         match &self.shape_type {
             Type::Frame(ref frame) => {
                 let children = self.children_ids(true);
-                let mut result = Path::new(rect_segments(&self, frame.corners));
+                let mut result = Path::new(rect_segments(self, frame.corners));
                 for id in children {
                     let Some(shape) = shapes.get(&id) else {
                         continue;
@@ -202,11 +202,11 @@ impl ToPath for Shape {
 
             Type::Bool(bool_data) => bool_data.path.clone(),
 
-            Type::Rect(ref rect) => Path::new(rect_segments(&self, rect.corners)),
+            Type::Rect(ref rect) => Path::new(rect_segments(self, rect.corners)),
 
             Type::Path(path_data) => path_data.clone(),
 
-            Type::Circle => Path::new(circle_segments(&self)),
+            Type::Circle => Path::new(circle_segments(self)),
 
             Type::SVGRaw(_) => Path::default(),
 
@@ -217,7 +217,7 @@ impl ToPath for Shape {
                     result = join_paths(result, Path::from_skia_path(path));
                 }
 
-                Path::new(transform_segments(result.segments().clone(), &self))
+                Path::new(transform_segments(result.segments().clone(), self))
             }
         }
     }

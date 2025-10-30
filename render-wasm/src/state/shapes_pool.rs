@@ -217,7 +217,7 @@ impl<'a> ShapesPoolImpl<'a> {
                     Some(cell.get_or_init(|| {
                         let shape = &*shape_ptr;
                         shape.transformed(
-                            &self,
+                            self,
                             (*modifiers_ptr).get(&id_ref),
                             (*structure_ptr).get(&id_ref),
                         )
@@ -264,7 +264,7 @@ impl<'a> ShapesPoolImpl<'a> {
         }
         self.modifiers = modifiers_with_refs;
 
-        let all_ids = shapes::all_with_ancestors(&ids, &self, true);
+        let all_ids = shapes::all_with_ancestors(&ids, self, true);
         for uuid in all_ids {
             if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
                 self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
@@ -287,7 +287,7 @@ impl<'a> ShapesPoolImpl<'a> {
         }
         self.structure = structure_with_refs;
 
-        let all_ids = shapes::all_with_ancestors(&ids, &self, true);
+        let all_ids = shapes::all_with_ancestors(&ids, self, true);
         for uuid in all_ids {
             if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
                 self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
@@ -317,7 +317,9 @@ impl<'a> ShapesPoolImpl<'a> {
     }
 
     pub fn subtree(&self, id: &Uuid) -> ShapesPoolImpl<'a> {
-        let Some(shape) = self.get(id) else { panic!("Subtree not found"); };
+        let Some(shape) = self.get(id) else {
+            panic!("Subtree not found");
+        };
 
         // TODO: Maybe create all_children_iter
         let all_children = shape.all_children(self, true, true);
@@ -327,7 +329,9 @@ impl<'a> ShapesPoolImpl<'a> {
         let mut shapes_uuid_to_idx = HashMap::default();
 
         for id in all_children.iter() {
-            let Some(shape) = self.get(id) else { panic!("Not found"); };
+            let Some(shape) = self.get(id) else {
+                panic!("Not found");
+            };
             shapes.push(shape.clone());
 
             let id_ref: &'a Uuid = unsafe { &*(&self.shapes[idx].id as *const Uuid) };

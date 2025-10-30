@@ -95,7 +95,7 @@ fn calculate_group_bounds(
     let mut result = Vec::<Point>::new();
 
     for child_id in shape.children_ids_iter(true) {
-        let Some(child) = shapes.get(&child_id) else {
+        let Some(child) = shapes.get(child_id) else {
             continue;
         };
 
@@ -109,7 +109,7 @@ fn calculate_bool_bounds(
     shape: &Shape,
     shapes: ShapesPoolRef,
     bounds: &HashMap<Uuid, Bounds>,
-    modifiers: &HashMap<Uuid, Matrix>
+    modifiers: &HashMap<Uuid, Matrix>,
 ) -> Option<Bounds> {
     let shape_bounds = bounds.find(shape);
     let children_ids = shape.children_ids(true);
@@ -258,7 +258,7 @@ fn propagate_reflow(
     bounds: &mut HashMap<Uuid, Bounds>,
     layout_reflows: &mut Vec<Uuid>,
     reflown: &mut HashSet<Uuid>,
-    modifiers: &HashMap<Uuid, Matrix>
+    modifiers: &HashMap<Uuid, Matrix>,
 ) {
     let Some(shape) = state.shapes.get(id) else {
         return;
@@ -267,7 +267,7 @@ fn propagate_reflow(
     let shapes = &state.shapes;
     let mut reflow_parent = false;
 
-    if reflown.contains(&id) {
+    if reflown.contains(id) {
         return;
     }
 
@@ -403,7 +403,7 @@ pub fn propagate_modifiers(
                     &mut bounds,
                     &mut layout_reflows,
                     &mut reflown,
-                    &mut modifiers,
+                    &modifiers,
                 ),
             }
         }
@@ -429,13 +429,14 @@ mod tests {
 
     use crate::math::{Matrix, Point};
     use crate::shapes::*;
+    use crate::state::ShapesPool;
 
     #[test]
     fn test_propagate_shape() {
         let parent_id = Uuid::new_v4();
 
         let shapes = {
-            let mut shapes = ShapesPoolRef::new();
+            let mut shapes = ShapesPool::new();
             shapes.initialize(10);
 
             let child_id = Uuid::new_v4();
@@ -468,7 +469,6 @@ mod tests {
             transform,
             &HashMap::new(),
             &HashMap::new(),
-            &HashMap::new(),
         );
 
         assert_eq!(result.len(), 1);
@@ -478,7 +478,7 @@ mod tests {
     fn test_group_bounds() {
         let parent_id = Uuid::new_v4();
         let shapes = {
-            let mut shapes = ShapesPoolRef::new();
+            let mut shapes = ShapesPool::new();
             shapes.initialize(10);
 
             let child1_id = Uuid::new_v4();
@@ -500,7 +500,7 @@ mod tests {
         let parent = shapes.get(&parent_id).unwrap();
 
         let bounds =
-            calculate_group_bounds(parent, &shapes, &HashMap::new(), &HashMap::new()).unwrap();
+            calculate_group_bounds(parent, &shapes, &HashMap::new()).unwrap();
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);

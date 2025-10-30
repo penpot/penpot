@@ -182,6 +182,7 @@ pub struct Shape {
     pub layout_item: Option<LayoutItem>,
     pub extrect: OnceCell<math::Rect>,
     pub bounds: OnceCell<math::Bounds>,
+    pub svg_transform: Option<Matrix>,
 }
 
 // Returns all ancestor shapes of this shape, traversing up the parent hierarchy
@@ -263,6 +264,7 @@ impl Shape {
             layout_item: None,
             extrect: OnceCell::new(),
             bounds: OnceCell::new(),
+            svg_transform: None,
         }
     }
 
@@ -391,6 +393,10 @@ impl Shape {
 
     pub fn set_hidden(&mut self, value: bool) {
         self.hidden = value;
+    }
+
+    pub fn svg_transform(&self) -> Option<Matrix> {
+        self.svg_transform
     }
 
     // FIXME: These arguments could be grouped or simplified
@@ -876,7 +882,7 @@ impl Shape {
             }
             Type::Text(text_content) => {
                 // FIXME: we need to recalculate the text bounds here because the shape's selrect
-                let text_bounds = text_content.calculate_bounds(&shape);
+                let text_bounds = text_content.calculate_bounds(shape);
                 text_bounds.to_rect()
             }
             _ => shape.bounds().to_rect(),
@@ -1160,6 +1166,8 @@ impl Shape {
             }
         } else if let Type::Text(text) = &mut self.shape_type {
             text.transform(transform);
+        } else if let Type::SVGRaw(_) = &mut self.shape_type {
+            self.svg_transform = Some(*transform);
         }
     }
 

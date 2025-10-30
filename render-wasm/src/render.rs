@@ -535,7 +535,12 @@ impl RenderState {
 
         match &shape.shape_type {
             Type::SVGRaw(sr) => {
+                if let Some(svg_transform) = shape.svg_transform() {
+                    matrix.pre_concat(&svg_transform);
+                }
+
                 self.surfaces.canvas(fills_surface_id).concat(&matrix);
+
                 if let Some(svg) = shape.svg.as_ref() {
                     svg.render(self.surfaces.canvas(fills_surface_id))
                 } else {
@@ -1574,7 +1579,7 @@ impl RenderState {
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    self.update_tile_for(&shape, tree);
+                    self.update_tile_for(shape, tree);
                 } else {
                     // We only need to rebuild tiles from the first level.
                     let children = shape.children_ids(false);
@@ -1595,7 +1600,7 @@ impl RenderState {
         while let Some(shape_id) = nodes.pop() {
             if let Some(shape) = tree.get(&shape_id) {
                 if shape_id != Uuid::nil() {
-                    self.update_tile_for(&shape, tree);
+                    self.update_tile_for(shape, tree);
                 }
 
                 let children = shape.children_ids(false);

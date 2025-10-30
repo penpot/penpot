@@ -94,9 +94,14 @@ impl<'a> State<'a> {
         self.current_id = Some(id);
     }
 
-    pub fn delete_shape(&mut self, id: Uuid) {
+    pub fn delete_shape_children(&mut self, parent_id: Uuid, id: Uuid) {
         // We don't really do a self.shapes.remove so that redo/undo keep working
-        if let Some(shape) = self.shapes.get(&id) {
+        let Some(shape) = self.shapes.get(&id) else {
+            return;
+        };
+
+        // Only remove the children when is being deleted from the owner
+        if shape.parent_id.is_none() || shape.parent_id == Some(parent_id) {
             let tiles::TileRect(rsx, rsy, rex, rey) =
                 self.render_state.get_tiles_for_shape(shape, &self.shapes);
             for x in rsx..=rex {
