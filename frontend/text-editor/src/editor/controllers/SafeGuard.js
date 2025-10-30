@@ -28,7 +28,20 @@ export function update() {
   }
 }
 
+let timeoutId = 0
+export function throwAfter(error, timeout = SAFE_GUARD_TIME) {
+  timeoutId = setTimeout(() => {
+    throw error
+  }, timeout)
+}
+
+export function throwCancel() {
+  clearTimeout(timeoutId)
+}
+
 export default {
   start,
   update,
-}
+  throwAfter,
+  throwCancel,
+};

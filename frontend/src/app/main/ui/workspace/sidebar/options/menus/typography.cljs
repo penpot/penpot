@@ -378,6 +378,7 @@
         :step 0.1
         :default-value "1.2"
         :class (stl/css :line-height-input)
+        :aria-label (tr "inspect.attributes.typography.line-height")
         :value (attr->string line-height)
         :placeholder (if (= :multiple line-height) (tr "settings.multiple") "--")
         :nillable (= :multiple line-height)
@@ -396,6 +397,7 @@
         :step 0.1
         :default-value "0"
         :class (stl/css :letter-spacing-input)
+        :aria-label (tr "inspect.attributes.typography.letter-spacing")
         :value (attr->string letter-spacing)
         :placeholder (if (= :multiple letter-spacing) (tr "settings.multiple") "--")
         :on-change #(handle-change % :letter-spacing)

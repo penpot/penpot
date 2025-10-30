@@ -6,6 +6,7 @@
  * Copyright (c) KALEIDOS INC
  */
 
+import StyleDeclaration from '../../controllers/StyleDeclaration.js';
 import { getFills } from "./Color.js";
 
 const DEFAULT_FONT_SIZE = "16px";
@@ -386,7 +387,8 @@ export function setStylesFromDeclaration(
  * @returns {HTMLElement}
  */
 export function setStyles(element, allowedStyles, styleObjectOrDeclaration) {
-  if (styleObjectOrDeclaration instanceof CSSStyleDeclaration) {
+  if (styleObjectOrDeclaration instanceof CSSStyleDeclaration
+   || styleObjectOrDeclaration instanceof StyleDeclaration) {
     return setStylesFromDeclaration(
       element,
       allowedStyles,
@@ -426,13 +428,15 @@ export function mergeStyles(allowedStyles, styleDeclaration, newStyles) {
   const mergedStyles = {};
   for (const [styleName, styleUnit] of allowedStyles) {
     if (styleName in newStyles) {
-      mergedStyles[styleName] = newStyles[styleName];
+      const styleValue = newStyles[styleName];
+      mergedStyles[styleName] = styleValue;
     } else {
-      mergedStyles[styleName] = getStyleFromDeclaration(
+      const styleValue = getStyleFromDeclaration(
         styleDeclaration,
         styleName,
         styleUnit,
       );
+      mergedStyles[styleName] = styleValue;
     }
   }
   return mergedStyles;
