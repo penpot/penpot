@@ -33,6 +33,7 @@ pub struct ShapesPoolImpl<'a> {
     modified_shape_cache: HashMap<&'a Uuid, OnceCell<Shape>>,
     modifiers: HashMap<&'a Uuid, skia::Matrix>,
     structure: HashMap<&'a Uuid, Vec<StructureEntry>>,
+    scale_content: HashMap<&'a Uuid, f32>,
 }
 
 // Type aliases to avoid writing lifetimes everywhere
@@ -50,6 +51,7 @@ impl<'a> ShapesPoolImpl<'a> {
             modified_shape_cache: HashMap::default(),
             modifiers: HashMap::default(),
             structure: HashMap::default(),
+            scale_content: HashMap::default(),
         }
     }
 
@@ -162,6 +164,20 @@ impl<'a> ShapesPoolImpl<'a> {
             }
         }
 
+        // Rebuild scale_content with fresh references
+        if !self.scale_content.is_empty() {
+            let old_scale_content: Vec<(Uuid, f32)> = self
+                .scale_content
+                .drain()
+                .map(|(uuid_ref, scale)| (*uuid_ref, scale))
+                .collect();
+
+            for (uuid, scale) in old_scale_content {
+                if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                    self.scale_content.insert(uuid_ref, scale);
+                }
+            }
+        }
         // Rebuild modified_shape_cache with fresh references
         if !self.modified_shape_cache.is_empty() {
             let old_cache: Vec<(Uuid, OnceCell<Shape>)> = self
@@ -204,6 +220,7 @@ impl<'a> ShapesPoolImpl<'a> {
             let shape_ptr = &self.shapes[idx] as *const Shape;
             let modifiers_ptr = &self.modifiers as *const HashMap<&'a Uuid, skia::Matrix>;
             let structure_ptr = &self.structure as *const HashMap<&'a Uuid, Vec<StructureEntry>>;
+            let scale_content_ptr = &self.scale_content as *const HashMap<&'a Uuid, f32>;
             let cache_ptr = &self.modified_shape_cache as *const HashMap<&'a Uuid, OnceCell<Shape>>;
 
             // Extend the lifetime of id to 'a - safe because it's the same Uuid stored in shapes[idx].id
@@ -212,15 +229,19 @@ impl<'a> ShapesPoolImpl<'a> {
             if self.to_update_bool(&*shape_ptr)
                 || (*modifiers_ptr).contains_key(&id_ref)
                 || (*structure_ptr).contains_key(&id_ref)
+                || (*scale_content_ptr).contains_key(&id_ref)
             {
                 if let Some(cell) = (*cache_ptr).get(&id_ref) {
                     Some(cell.get_or_init(|| {
-                        let shape = &*shape_ptr;
-                        shape.transformed(
+                        let mut shape = (*shape_ptr).transformed(
                             self,
                             (*modifiers_ptr).get(&id_ref),
                             (*structure_ptr).get(&id_ref),
-                        )
+                        );
+                        if let Some(scale) = (*scale_content_ptr).get(&id_ref) {
+                            shape.scale_content(*scale);
+                        }
+                        shape
                     }))
                 } else {
                     Some(&*shape_ptr)
@@ -240,12 +261,10 @@ impl<'a> ShapesPoolImpl<'a> {
         self.shapes.iter_mut()
     }
 
-    #[allow(dead_code)]
     fn clean_shape_cache(&mut self) {
         self.modified_shape_cache.clear()
     }
 
-    #[allow(dead_code)]
     pub fn set_modifiers(&mut self, modifiers: HashMap<Uuid, skia::Matrix>) {
         // self.clean_shape_cache();
 
@@ -272,7 +291,6 @@ impl<'a> ShapesPoolImpl<'a> {
         }
     }
 
-    #[allow(dead_code)]
     pub fn set_structure(&mut self, structure: HashMap<Uuid, Vec<StructureEntry>>) {
         // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
         // Initialize the cache cells because later we don't want to have the mutable pointer
@@ -295,16 +313,33 @@ impl<'a> ShapesPoolImpl<'a> {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn clean_modifiers(&mut self) {
-        self.clean_shape_cache();
-        self.modifiers = HashMap::default();
+    pub fn set_scale_content(&mut self, scale_content: HashMap<Uuid, f32>) {
+        // Convert HashMap<Uuid, V> to HashMap<&'a Uuid, V> using references from shapes and
+        // Initialize the cache cells because later we don't want to have the mutable pointer
+        let mut scale_content_with_refs = HashMap::with_capacity(scale_content.len());
+        let mut ids = Vec::<Uuid>::new();
+
+        for (uuid, value) in scale_content {
+            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                scale_content_with_refs.insert(uuid_ref, value);
+                ids.push(*uuid_ref);
+            }
+        }
+        self.scale_content = scale_content_with_refs;
+
+        let all_ids = shapes::all_with_ancestors(&ids, self, true);
+        for uuid in all_ids {
+            if let Some(uuid_ref) = self.get_uuid_ref(&uuid) {
+                self.modified_shape_cache.insert(uuid_ref, OnceCell::new());
+            }
+        }
     }
 
-    #[allow(dead_code)]
-    pub fn clean_structure(&mut self) {
+    pub fn clean_all(&mut self) {
         self.clean_shape_cache();
+        self.modifiers = HashMap::default();
         self.structure = HashMap::default();
+        self.scale_content = HashMap::default();
     }
 
     /// Get a reference to the Uuid stored in a shape, if it exists
@@ -346,6 +381,7 @@ impl<'a> ShapesPoolImpl<'a> {
             modified_shape_cache: HashMap::default(),
             modifiers: HashMap::default(),
             structure: HashMap::default(),
+            scale_content: HashMap::default(),
         };
         result.rebuild_references();
 

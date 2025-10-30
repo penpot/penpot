@@ -541,6 +541,7 @@ pub extern "C" fn set_structure_modifiers() {
 
     with_state_mut!(state, {
         let mut structure = HashMap::new();
+        let mut scale_content = HashMap::new();
         for entry in entries {
             match entry.entry_type {
                 StructureEntryType::ScaleContent => {
@@ -548,7 +549,7 @@ pub extern "C" fn set_structure_modifiers() {
                         continue;
                     };
                     for id in shape.all_children(&state.shapes, true, true) {
-                        state.scale_content.insert(id, entry.value);
+                        scale_content.insert(id, entry.value);
                     }
                 }
                 _ => {
@@ -559,6 +560,9 @@ pub extern "C" fn set_structure_modifiers() {
                         .push(entry);
                 }
             }
+        }
+        if !scale_content.is_empty() {
+            state.shapes.set_scale_content(scale_content);
         }
         if !structure.is_empty() {
             state.shapes.set_structure(structure);
@@ -571,16 +575,7 @@ pub extern "C" fn set_structure_modifiers() {
 #[no_mangle]
 pub extern "C" fn clean_modifiers() {
     with_state_mut!(state, {
-        state.scale_content.clear();
-        state.shapes.clean_modifiers();
-        state.shapes.clean_structure();
-    });
-}
-
-#[no_mangle]
-pub extern "C" fn clean_geometry_modifiers() {
-    with_state_mut!(state, {
-        state.shapes.clean_modifiers();
+        state.shapes.clean_all();
     });
 }
 

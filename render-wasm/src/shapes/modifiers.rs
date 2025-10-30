@@ -23,7 +23,6 @@ fn propagate_children(
     parent_bounds_after: &Bounds,
     transform: Matrix,
     bounds: &HashMap<Uuid, Bounds>,
-    scale_content: &HashMap<Uuid, f32>,
 ) -> VecDeque<Modifier> {
     let children_ids = shape.children_ids(true);
 
@@ -37,8 +36,6 @@ fn propagate_children(
         let Some(child) = shapes.get(child_id) else {
             continue;
         };
-
-        let ignore_constraints = scale_content.contains_key(child_id);
 
         let child_bounds = bounds.find(child);
 
@@ -77,7 +74,7 @@ fn propagate_children(
             constraint_h,
             constraint_v,
             transform,
-            ignore_constraints,
+            child.ignore_constraints,
         );
 
         result.push_back(Modifier::transform(*child_id, transform));
@@ -229,7 +226,6 @@ fn propagate_transform(
             &shape_bounds_after,
             transform,
             bounds,
-            &state.scale_content,
         );
         entries.append(&mut children);
     }
@@ -342,12 +338,6 @@ fn reflow_shape(
     };
 
     let shapes = &state.shapes;
-
-    let shape = if let Some(scale_content) = state.scale_content.get(id) {
-        &shape.scale_content(*scale_content)
-    } else {
-        shape
-    };
 
     let Type::Frame(frame_data) = &shape.shape_type else {
         return;
@@ -468,7 +458,6 @@ mod tests {
             &bounds_after,
             transform,
             &HashMap::new(),
-            &HashMap::new(),
         );
 
         assert_eq!(result.len(), 1);
@@ -499,8 +488,7 @@ mod tests {
 
         let parent = shapes.get(&parent_id).unwrap();
 
-        let bounds =
-            calculate_group_bounds(parent, &shapes, &HashMap::new()).unwrap();
+        let bounds = calculate_group_bounds(parent, &shapes, &HashMap::new()).unwrap();
 
         assert_eq!(bounds.width(), 3.0);
         assert_eq!(bounds.height(), 3.0);

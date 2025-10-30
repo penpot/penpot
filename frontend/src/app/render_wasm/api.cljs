@@ -982,10 +982,6 @@
   []
   (h/call wasm/internal-module "_clean_modifiers"))
 
-(defn clean-geometry-modifiers
-  []
-  (h/call wasm/internal-module "_clean_geometry_modifiers"))
-
 (defn set-modifiers
   [modifiers]
 

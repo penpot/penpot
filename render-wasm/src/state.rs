@@ -23,7 +23,6 @@ pub(crate) struct State<'a> {
     pub text_editor_state: TextEditorState,
     pub current_id: Option<Uuid>,
     pub shapes: ShapesPool<'a>,
-    pub scale_content: HashMap<Uuid, f32>,
 }
 
 impl<'a> State<'a> {
@@ -33,7 +32,6 @@ impl<'a> State<'a> {
             text_editor_state: TextEditorState::new(),
             current_id: None,
             shapes: ShapesPool::new(),
-            scale_content: HashMap::new(),
         }
     }
 
@@ -65,13 +63,13 @@ impl<'a> State<'a> {
 
     pub fn start_render_loop(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .start_render_loop(&self.shapes, &self.scale_content, timestamp)?;
+            .start_render_loop(&self.shapes, timestamp)?;
         Ok(())
     }
 
     pub fn process_animation_frame(&mut self, timestamp: i32) -> Result<(), String> {
         self.render_state
-            .process_animation_frame(&self.shapes, &self.scale_content, timestamp)?;
+            .process_animation_frame(&self.shapes, timestamp)?;
         Ok(())
     }
 

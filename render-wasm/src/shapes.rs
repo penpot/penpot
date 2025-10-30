@@ -183,6 +183,7 @@ pub struct Shape {
     pub extrect: OnceCell<math::Rect>,
     pub bounds: OnceCell<math::Bounds>,
     pub svg_transform: Option<Matrix>,
+    pub ignore_constraints: bool,
 }
 
 // Returns all ancestor shapes of this shape, traversing up the parent hierarchy
@@ -265,30 +266,24 @@ impl Shape {
             extrect: OnceCell::new(),
             bounds: OnceCell::new(),
             svg_transform: None,
+            ignore_constraints: false,
         }
     }
 
-    pub fn scale_content(&self, value: f32) -> Self {
-        let mut result = self.clone();
-        result.shape_type.scale_content(value);
-        result
-            .strokes
-            .iter_mut()
-            .for_each(|s| s.scale_content(value));
-        result
-            .shadows
-            .iter_mut()
-            .for_each(|s| s.scale_content(value));
+    pub fn scale_content(&mut self, value: f32) {
+        self.ignore_constraints = true;
+        self.shape_type.scale_content(value);
+        self.strokes.iter_mut().for_each(|s| s.scale_content(value));
 
-        if let Some(blur) = result.blur.as_mut() {
+        self.shadows.iter_mut().for_each(|s| s.scale_content(value));
+
+        if let Some(blur) = self.blur.as_mut() {
             blur.scale_content(value);
         }
 
-        result
-            .layout_item
+        self.layout_item
             .iter_mut()
             .for_each(|i| i.scale_content(value));
-        result
     }
 
     pub fn invalidate_extrect(&mut self) {

@@ -14,7 +14,7 @@ mod ui;
 
 use skia_safe::{self as skia, Matrix, RRect, Rect};
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use gpu_state::GpuState;
 use options::RenderOptions;
@@ -439,7 +439,6 @@ impl RenderState {
     pub fn render_shape(
         &mut self,
         shape: &Shape,
-        scale_content: Option<&f32>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
         fills_surface_id: SurfaceId,
         strokes_surface_id: SurfaceId,
@@ -449,12 +448,6 @@ impl RenderState {
         offset: Option<(f32, f32)>,
         parent_shadows: Option<Vec<skia_safe::Paint>>,
     ) {
-        let shape = if let Some(scale_content) = scale_content {
-            &shape.scale_content(*scale_content)
-        } else {
-            shape
-        };
-
         let surface_ids = fills_surface_id as u32
             | strokes_surface_id as u32
             | innershadows_surface_id as u32
@@ -819,12 +812,7 @@ impl RenderState {
         }
     }
 
-    pub fn start_render_loop(
-        &mut self,
-        tree: ShapesPoolRef,
-        scale_content: &HashMap<Uuid, f32>,
-        timestamp: i32,
-    ) -> Result<(), String> {
+    pub fn start_render_loop(&mut self, tree: ShapesPoolRef, timestamp: i32) -> Result<(), String> {
         let scale = self.get_scale();
         self.tile_viewbox.update(self.viewbox, scale);
 
@@ -872,7 +860,7 @@ impl RenderState {
         self.current_tile = None;
         self.render_in_progress = true;
         self.apply_drawing_to_render_canvas(None);
-        self.process_animation_frame(tree, scale_content, timestamp)?;
+        self.process_animation_frame(tree, timestamp)?;
         performance::end_measure!("start_render_loop");
         Ok(())
     }
@@ -880,13 +868,12 @@ impl RenderState {
     pub fn process_animation_frame(
         &mut self,
         tree: ShapesPoolRef,
-        scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
         performance::begin_measure!("process_animation_frame");
         if self.render_in_progress {
             if tree.len() != 0 {
-                self.render_shape_tree_partial(tree, scale_content, timestamp)?;
+                self.render_shape_tree_partial(tree, timestamp)?;
             } else {
                 println!("Empty tree");
             }
@@ -956,12 +943,7 @@ impl RenderState {
     }
 
     #[inline]
-    pub fn render_shape_exit(
-        &mut self,
-        element: &Shape,
-        visited_mask: bool,
-        scale_content: Option<&f32>,
-    ) {
+    pub fn render_shape_exit(&mut self, element: &Shape, visited_mask: bool) {
         if visited_mask {
             // Because masked groups needs two rendering passes (first drawing
             // the content and then drawing the mask), we need to do an
@@ -1016,7 +998,6 @@ impl RenderState {
             element_strokes.to_mut().clip_content = false;
             self.render_shape(
                 &element_strokes,
-                scale_content,
                 None,
                 SurfaceId::Fills,
                 SurfaceId::Strokes,
@@ -1102,7 +1083,6 @@ impl RenderState {
         &mut self,
         shape: &Shape,
         shadow: &Shadow,
-        scale_content: Option<&f32>,
         clip_bounds: Option<(Rect, Option<Corners>, Matrix)>,
         scale: f32,
         translation: (f32, f32),
@@ -1152,7 +1132,6 @@ impl RenderState {
 
         self.render_shape(
             &plain_shape,
-            scale_content,
             clip_bounds,
             SurfaceId::DropShadows,
             SurfaceId::DropShadows,
@@ -1169,7 +1148,6 @@ impl RenderState {
     pub fn render_shape_tree_partial_uncached(
         &mut self,
         tree: ShapesPoolRef,
-        scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(bool, bool), String> {
         let mut iteration = 0;
@@ -1198,7 +1176,7 @@ impl RenderState {
             }
 
             if visited_children {
-                self.render_shape_exit(element, visited_mask, scale_content.get(&element.id));
+                self.render_shape_exit(element, visited_mask);
                 continue;
             }
 
@@ -1260,7 +1238,6 @@ impl RenderState {
                         self.render_drop_black_shadow(
                             element,
                             shadow,
-                            scale_content.get(&element.id),
                             clip_bounds,
                             scale,
                             translation,
@@ -1280,7 +1257,6 @@ impl RenderState {
                                     self.render_drop_black_shadow(
                                         shadow_shape,
                                         shadow,
-                                        scale_content.get(&element.id),
                                         clip_bounds,
                                         scale,
                                         translation,
@@ -1314,7 +1290,6 @@ impl RenderState {
 
                                     self.render_shape(
                                         shadow_shape,
-                                        scale_content.get(&element.id),
                                         clip_bounds,
                                         SurfaceId::DropShadows,
                                         SurfaceId::DropShadows,
@@ -1352,7 +1327,6 @@ impl RenderState {
 
                 self.render_shape(
                     element,
-                    scale_content.get(&element.id),
                     clip_bounds,
                     SurfaceId::Fills,
                     SurfaceId::Strokes,
@@ -1426,7 +1400,6 @@ impl RenderState {
     pub fn render_shape_tree_partial(
         &mut self,
         tree: ShapesPoolRef,
-        scale_content: &HashMap<Uuid, f32>,
         timestamp: i32,
     ) -> Result<(), String> {
         let mut should_stop = false;
@@ -1453,7 +1426,7 @@ impl RenderState {
                 } else {
                     performance::begin_measure!("render_shape_tree::uncached");
                     let (is_empty, early_return) =
-                        self.render_shape_tree_partial_uncached(tree, scale_content, timestamp)?;
+                        self.render_shape_tree_partial_uncached(tree, timestamp)?;
                     if early_return {
                         return Ok(());
                     }
