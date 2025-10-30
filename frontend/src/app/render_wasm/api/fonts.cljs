@@ -14,6 +14,7 @@
    [app.main.fonts :as fonts]
    [app.main.store :as st]
    [app.render-wasm.helpers :as h]
+   [app.render-wasm.mem :as mem]
    [app.render-wasm.wasm :as wasm]
    [app.util.http :as http]
    [beicon.v2.core :as rx]
@@ -82,31 +83,57 @@
   (let [font-id-buffer  (:family-id-buffer font-data)
         shape-id-buffer (uuid/get-u32 shape-id)
         size (.-byteLength font-array-buffer)
-        ptr  (h/call wasm/internal-module "_alloc_bytes" size)
-        heap (gobj/get ^js wasm/internal-module "HEAPU8")
-        mem  (js/Uint8Array. (.-buffer heap) ptr size)]
-    (.set mem (js/Uint8Array. font-array-buffer))
-    (h/call wasm/internal-module "_store_font"
-            (aget shape-id-buffer 0)
-            (aget shape-id-buffer 1)
-            (aget shape-id-buffer 2)
-            (aget shape-id-buffer 3)
-            (aget font-id-buffer 0)
-            (aget font-id-buffer 1)
-            (aget font-id-buffer 2)
-            (aget font-id-buffer 3)
-            (:weight font-data)
-            (:style font-data)
-            emoji?
-            fallback?)
+        ptr  (h/call wasm/internal-module "_alloc_bytes" size)]
 
-    (h/call wasm/internal-module "_update_shape_text_layout_for"
-            (aget shape-id-buffer 0)
-            (aget shape-id-buffer 1)
-            (aget shape-id-buffer 2)
-            (aget shape-id-buffer 3))
+    (if (or (nil? ptr) (zero? ptr))
+      ;; Allocation failed - log error and return false
+      (do
+        (log/error :hint "Failed to allocate memory for font buffer"
+                   :font-id (:font-id font-data)
+                   :size size
+                   :shape-id shape-id)
+        false)
 
-    true))
+      ;; Allocation succeeded - proceed with font storage
+      (try
+        (let [heap (gobj/get ^js wasm/internal-module "HEAPU8")
+              mem  (js/Uint8Array. (.-buffer heap) ptr size)]
+          (.set mem (js/Uint8Array. font-array-buffer))
+          (h/call wasm/internal-module "_store_font"
+                  (aget shape-id-buffer 0)
+                  (aget shape-id-buffer 1)
+                  (aget shape-id-buffer 2)
+                  (aget shape-id-buffer 3)
+                  (aget font-id-buffer 0)
+                  (aget font-id-buffer 1)
+                  (aget font-id-buffer 2)
+                  (aget font-id-buffer 3)
+                  (:weight font-data)
+                  (:style font-data)
+                  emoji?
+                  fallback?)
+
+          (h/call wasm/internal-module "_update_shape_text_layout_for"
+                  (aget shape-id-buffer 0)
+                  (aget shape-id-buffer 1)
+                  (aget shape-id-buffer 2)
+                  (aget shape-id-buffer 3))
+
+          true)
+        (catch :default e
+          ;; Error during font storage - free allocated memory and log error
+          (log/error :hint "Error storing font buffer"
+                     :font-id (:font-id font-data)
+                     :shape-id shape-id
+                     :cause e)
+          (try
+            (h/call wasm/internal-module "_free_bytes" ptr size)
+            (catch :default free-error
+              (log/error :hint "Failed to free memory after font storage error"
+                         :ptr ptr
+                         :size size
+                         :cause free-error)))
+          false)))))
 
 (defn- fetch-font
   [shape-id font-data font-url emoji? fallback?]
@@ -120,6 +147,7 @@
                                (log/error :hint "Could not fetch font"
                                           :font-url font-url
                                           :cause cause)
+                               (mem/free)
                                (rx/empty))))})
 
 (defn- google-font-ttf-url

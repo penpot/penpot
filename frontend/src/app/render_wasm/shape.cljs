@@ -8,6 +8,7 @@
   (:require
    [app.common.data :as d]
    [app.common.data.macros :as dm]
+   [app.common.logging :as log]
    [app.common.transit :as t]
    [app.common.types.shape :as shape]
    [app.common.types.shape.layout :as ctl]
@@ -21,11 +22,65 @@
 (declare ^:private impl-conj)
 (declare ^:private impl-dissoc)
 
+;; Track pending async operations to prevent race conditions
+(defonce ^:private pending-operations (atom {}))
+
+(defn- cancel-pending-operations!
+  "Cancel all pending async operations for a given shape"
+  [shape-id]
+  (when-let [operations (get @pending-operations shape-id)]
+    (doseq [subscription operations]
+      (try
+        (rx/dispose! subscription)
+        (catch :default e
+          (log/error :hint "Error disposing subscription"
+                     :shape-id shape-id
+                     :cause e))))
+    (swap! pending-operations dissoc shape-id)))
+
 (defn shape-in-current-page?
   "Check if a shape is in the current page by looking up the current page objects"
   [shape-id]
   (let [objects (deref refs/workspace-page-objects)]
     (contains? objects shape-id)))
+
+(defn- add-pending-operation!
+  "Track a pending async operation for cleanup"
+  [shape-id subscription]
+  (swap! pending-operations update shape-id (fnil conj []) subscription)
+  subscription)
+
+(defn- execute-with-safety-checks
+  "Execute callback only if shape is still valid, with proper error handling and memory validation"
+  [shape-id callback-fn]
+  (try
+    (when (shape-in-current-page? shape-id)
+      ;; Validate that we can safely use the shape before proceeding
+      (api/use-shape shape-id)
+      ;; Execute the callback with additional error protection
+      (try
+        (callback-fn)
+        (catch :default inner-e
+          (log/error :hint "Error in shape callback inner execution"
+                     :shape-id shape-id
+                     :cause inner-e)
+          ;; Attempt to clean up any potential memory corruption
+          (try
+            (api/clear-drawing-cache)
+            (catch :default _cleanup-e
+              (log/warn :hint "Could not clear cache during error recovery"
+                        :shape-id shape-id))))))
+    (catch :default e
+      (log/error :hint "Error in shape callback execution"
+                 :shape-id shape-id
+                 :cause e)
+      ;; Cancel any remaining operations for this shape on critical error
+      (cancel-pending-operations! shape-id))))
+
+(defn cleanup-shape-operations!
+  "Public function to cleanup all pending operations for a shape (e.g., when shape is deleted)"
+  [shape-id]
+  (cancel-pending-operations! shape-id))
 
 (defn map-entry
   [k v]
@@ -231,47 +286,92 @@
 (defn set-wasm-multi-attrs!
   [shape properties]
   (let [shape-id (dm/get-prop shape :id)]
-    (when (shape-in-current-page? shape-id)
-      (api/use-shape shape-id)
-      (let [result
-            (->> properties
-                 (mapcat #(set-wasm-single-attr! shape %)))
-            pending (-> (d/index-by :key :callback result) vals)]
-        (if (and pending (seq pending))
-          (->> (rx/from pending)
-               (rx/mapcat (fn [callback] (callback)))
-               (rx/reduce conj [])
-               (rx/subs!
-                (fn [_]
-                  (api/update-shape-tiles)
-                  (api/clear-drawing-cache)
-                  (api/request-render "set-wasm-attrs-pending"))))
-          (do
-            (api/update-shape-tiles)
-            (api/request-render "set-wasm-attrs")))))))
+    (when (and shape-id (shape-in-current-page? shape-id))
+      ;; Cancel any existing pending operations for this shape to prevent race conditions
+      (cancel-pending-operations! shape-id)
+
+      (try
+        (api/use-shape shape-id)
+        (let [result
+              (->> properties
+                   (mapcat #(set-wasm-single-attr! shape %)))
+              pending (-> (d/index-by :key :callback result) vals)]
+          (if (and pending (seq pending))
+            (let [subscription
+                  (->> (rx/from pending)
+                       (rx/mapcat (fn [callback] (callback)))
+                       (rx/reduce conj [])
+                       (rx/subs!
+                        (fn [_]
+                          (execute-with-safety-checks shape-id
+                                                      (fn []
+                                                        (api/update-shape-tiles)
+                                                        (api/clear-drawing-cache)
+                                                        (api/request-render "set-wasm-attrs-pending"))))
+                        (fn [error]
+                          (log/error :hint "Error in async shape operation"
+                                     :shape-id shape-id
+                                     :cause error))))]
+            ;; Cancel any existing pending operations for this shape
+              (cancel-pending-operations! shape-id)
+            ;; Track the new operation
+              (add-pending-operation! shape-id subscription))
+            (do
+              (api/update-shape-tiles)
+              (api/request-render "set-wasm-attrs"))))
+        (catch :default e
+          (log/error :hint "Error in set-wasm-multi-attrs!"
+                     :shape-id shape-id
+                     :properties properties
+                     :cause e)
+          ;; Clean up on error
+          (cancel-pending-operations! shape-id))))))
 
 (defn set-wasm-attrs!
   [shape k v]
   (let [shape-id (dm/get-prop shape :id)
         old-value (get shape k)]
-    (when (and (shape-in-current-page? shape-id)
+    (when (and shape-id
+               (shape-in-current-page? shape-id)
                (not (identical? old-value v)))
+      ;; Cancel any existing pending operations for this shape to prevent race conditions
+      (cancel-pending-operations! shape-id)
+
       (let [shape (assoc shape k v)]
-        (api/use-shape shape-id)
-        (let [result (set-wasm-single-attr! shape k)
-              pending (-> (d/index-by :key :callback result) vals)]
-          (if (and pending (seq pending))
-            (->> (rx/from pending)
-                 (rx/mapcat (fn [callback] (callback)))
-                 (rx/reduce conj [])
-                 (rx/subs!
-                  (fn [_]
-                    (api/update-shape-tiles)
-                    (api/clear-drawing-cache)
-                    (api/request-render "set-wasm-attrs-pending"))))
-            (do
-              (api/update-shape-tiles)
-              (api/request-render "set-wasm-attrs"))))))))
+        (try
+          (api/use-shape shape-id)
+          (let [result (set-wasm-single-attr! shape k)
+                pending (-> (d/index-by :key :callback result) vals)]
+            (if (and pending (seq pending))
+              (let [subscription
+                    (->> (rx/from pending)
+                         (rx/mapcat (fn [callback] (callback)))
+                         (rx/reduce conj [])
+                         (rx/subs!
+                          (fn [_]
+                            (execute-with-safety-checks shape-id
+                                                        (fn []
+                                                          (api/update-shape-tiles)
+                                                          (api/clear-drawing-cache)
+                                                          (api/request-render "set-wasm-attrs-pending"))))
+                          (fn [error]
+                            (log/error :hint "Error in async shape operation"
+                                       :shape-id shape-id
+                                       :cause error))))]
+              ;; Cancel any existing pending operations for this shape
+                (cancel-pending-operations! shape-id)
+              ;; Track the new operation
+                (add-pending-operation! shape-id subscription))
+              (do
+                (api/update-shape-tiles)
+                (api/request-render "set-wasm-attrs"))))
+          (catch :default e
+            (log/error :hint "Error in set-wasm-attrs!"
+                       :shape-id shape-id
+                       :attribute k
+                       :cause e)
+            ;; Clean up on error
+            (cancel-pending-operations! shape-id)))))))
 
 (defn- impl-assoc
   [self k v]
