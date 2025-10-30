@@ -204,9 +204,12 @@
                                    :grid-view (= list-style :grid))}
 
         (for [token (:tokens group-or-set)]
-          (let [selected? (if (= color-origin :fill)
-                            (= has-color-tokens? (:name token))
-                            (= has-stroke-tokens? (:name token)))]
+          (let [selected? (case color-origin
+                            :fill (= has-color-tokens? (:name token))
+                            :stroke-color (= has-stroke-tokens? (:name token))
+                            :color-selection (or (= has-color-tokens? (:name token))
+                                                 (= has-stroke-tokens? (:name token)))
+                            false)]
             (if (= :grid list-style)
               [:> grid-item* {:key (str "token-grid-" (:id token))
                               :on-token-pill-click on-token-pill-click
