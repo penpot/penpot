@@ -48,6 +48,9 @@
   "This function strips units from attr values and un-scapes font-family"
   [k v]
   (cond
+    (= v "mixed")
+    :multiple
+
     (and (or (= k :font-size)
              (= k :letter-spacing))
          (= (str/slice v -2) "px"))
