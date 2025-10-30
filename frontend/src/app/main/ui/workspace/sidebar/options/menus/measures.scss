@@ -207,5 +207,5 @@
 
 // TODO: Add a proper variable to this sizing
 .numeric-input-measures {
-  --dropdown-width: 247px;
+  --dropdown-width: var(--8-columns-dropdown-width);
 }

@@ -1,0 +1,32 @@
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+// Copyright (c) KALEIDOS INC
+
+@use "ds/_sizes.scss" as *;
+@use "ds/spacing.scss" as *;
+@use "ds/_utils.scss" as *;
+
+// Before changing these values also check:
+// frontend/src/app/main/constants.cljs
+
+$left-sidebar-width: px2rem(318);
+$left-sidebar-width-max: $sz-500;
+
+$right-sidebar-width: px2rem(318);
+$right-sidebar-width-max: px2rem(768);
+
+$dropdown-width: px2rem(247);
+
+// TODO: Review calculation
+$options-width: calc($right-sidebar-width - var(--sp-xxl) - 18px);
+
+:root {
+  --left-sidebar-width: #{$left-sidebar-width};
+  --left-sidebar-width-max: #{$left-sidebar-width-max};
+  --right-sidebar-width: #{$right-sidebar-width};
+  --right-sidebar-width-max: #{$right-sidebar-width-max};
+  --8-columns-dropdown-width: #{$dropdown-width};
+  --options-width: #{$options-width};
+}

@@ -9,7 +9,7 @@
   (:require
    [app.common.data.macros :as dm]
    [app.common.types.tokens-lib :as ctob]
-   [app.main.constants :refer [sidebar-default-width sidebar-default-max-width]]
+   [app.main.constants :refer [right-sidebar-default-width right-sidebar-default-max-width left-sidebar-default-max-width left-sidebar-default-width]]
    [app.main.data.common :as dcm]
    [app.main.data.event :as ev]
    [app.main.data.style-dictionary :as sd]
@@ -119,7 +119,7 @@
          on-pointer-move :on-pointer-move
          parent-ref :parent-ref
          width :size}
-        (use-resize-hook :left-sidebar 318 318 500 :x false :left)
+        (use-resize-hook :left-sidebar left-sidebar-default-width left-sidebar-default-width left-sidebar-default-max-width :x false :left)
 
         on-tab-change
         (mf/use-fn
@@ -161,9 +161,9 @@
      [:aside {:ref parent-ref
               :id "left-sidebar-aside"
               :data-testid "left-sidebar"
-              :data-size (str width)
+              :data-left-sidebar-width (str width)
               :class aside-class
-              :style {:--width (dm/str width "px")}}
+              :style {:--left-sidebar-width (dm/str width "px")}}
 
       [:> left-header*
        {:file file
@@ -284,7 +284,7 @@
          on-pointer-move :on-pointer-move
          set-width :set-size
          width :size}
-        (use-resize-hook :code sidebar-default-width sidebar-default-width sidebar-default-max-width :x true :right)
+        (use-resize-hook :code right-sidebar-default-width right-sidebar-default-width right-sidebar-default-max-width :x true :right)
 
         on-change-section
         (mf/use-fn #(reset! current-section* %))
@@ -293,9 +293,9 @@
         (mf/use-fn
          (mf/deps width set-width)
          (fn []
-           (set-width (if (> width sidebar-default-width)
-                        sidebar-default-width
-                        sidebar-default-max-width))))
+           (set-width (if (> width right-sidebar-default-width)
+                        right-sidebar-default-width
+                        right-sidebar-default-max-width))))
 
         active-tokens-by-type
         (mf/with-memo [active-tokens]
@@ -306,14 +306,14 @@
       [:aside
        {:class (stl/css-case :right-settings-bar true
                              :not-expand (not can-be-expanded?)
-                             :expanded (> width sidebar-default-width))
+                             :expanded (> width right-sidebar-default-width))
 
         :id "right-sidebar-aside"
         :data-testid "right-sidebar"
         :data-size (str width)
-        :style {:--width (if can-be-expanded?
-                           (dm/str width "px")
-                           (dm/str sidebar-default-width "px"))}}
+        :style {:--right-sidebar-width (if can-be-expanded?
+                                         (dm/str width "px")
+                                         (dm/str right-sidebar-default-width "px"))}}
 
        (when can-be-expanded?
          [:div {:class (stl/css :resize-area)
