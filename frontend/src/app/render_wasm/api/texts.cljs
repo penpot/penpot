@@ -77,7 +77,7 @@
 (defn- write-spans
   [offset dview spans paragraph]
   (let [paragraph-font-size (get paragraph :font-size)
-        paragraph-font-weight (get paragraph :font-weight)
+        paragraph-font-weight (-> paragraph :font-weight f/serialize-font-weight)
         paragraph-line-height (get paragraph :line-height)]
     (reduce (fn [offset span]
               (let [font-style  (sr/translate-font-style (get span :font-style))
@@ -85,6 +85,8 @@
                     line-height  (get span :line-height paragraph-line-height)
                     letter-spacing (get span :letter-spacing)
                     font-weight (get span :font-weight paragraph-font-weight)
+                    font-weight (f/serialize-font-weight font-weight)
+
                     font-id     (f/normalize-font-id (get span :font-id))
                     font-family (hash (get span :font-family))
 
