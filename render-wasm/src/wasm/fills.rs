@@ -75,6 +75,7 @@ pub extern "C" fn set_shape_fills() {
         // Skip the first 4 bytes (header with fill count) and parse only the actual fills
         let fills = parse_fills_from_bytes(&bytes[4..], num_fills);
         shape.set_fills(fills);
+        mem::free_bytes();
     });
 }
 

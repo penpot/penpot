@@ -16,7 +16,7 @@
    [app.render-wasm.wasm :as wasm]))
 
 (def ^:const PARAGRAPH-ATTR-U8-SIZE 44)
-(def ^:const SPAN-ATTR-U8-SIZE 60)
+(def ^:const SPAN-ATTR-U8-SIZE 64)
 (def ^:const MAX-TEXT-FILLS types.fills.impl/MAX-FILLS)
 
 (defn- encode-text
@@ -74,68 +74,73 @@
         (mem/write-uuid dview (d/nilv typography-ref-id uuid/zero))
         (mem/assert-written offset PARAGRAPH-ATTR-U8-SIZE))))
 
-(defn- write-leaves
-  [offset dview leaves paragraph]
-  (reduce (fn [offset span]
-            (let [font-style  (sr/translate-font-style (get span :font-style))
-                  font-size   (get span :font-size)
-                  letter-spacing (get span :letter-spacing)
-                  font-weight (get span :font-weight)
-                  font-id     (f/normalize-font-id (get span :font-id))
-                  font-family (hash (get span :font-family))
+(defn- write-spans
+  [offset dview spans paragraph]
+  (let [paragraph-font-size (get paragraph :font-size)
+        paragraph-font-weight (get paragraph :font-weight)
+        paragraph-line-height (get paragraph :line-height)]
+    (reduce (fn [offset span]
+              (let [font-style  (sr/translate-font-style (get span :font-style))
+                    font-size   (get span :font-size paragraph-font-size)
+                    line-height  (get span :line-height paragraph-line-height)
+                    letter-spacing (get span :letter-spacing)
+                    font-weight (get span :font-weight paragraph-font-weight)
+                    font-id     (f/normalize-font-id (get span :font-id))
+                    font-family (hash (get span :font-family))
 
-                  text-buffer (encode-text (get span :text))
-                  text-length (mem/size text-buffer)
-                  fills       (take MAX-TEXT-FILLS (get span :fills))
+                    text-buffer (encode-text (get span :text))
+                    text-length (mem/size text-buffer)
+                    fills       (take MAX-TEXT-FILLS (get span :fills))
 
-                  font-variant-id
-                  (get span :font-variant-id)
-
-                  font-variant-id
-                  (if (uuid? font-variant-id)
                     font-variant-id
-                    uuid/zero)
+                    (get span :font-variant-id)
 
-                  text-decoration
-                  (or (sr/translate-text-decoration (:text-decoration span))
-                      (sr/translate-text-decoration (:text-decoration paragraph))
-                      (sr/translate-text-decoration "none"))
+                    font-variant-id
+                    (if (uuid? font-variant-id)
+                      font-variant-id
+                      uuid/zero)
 
-                  text-transform
-                  (or (sr/translate-text-transform (:text-transform span))
-                      (sr/translate-text-transform (:text-transform paragraph))
-                      (sr/translate-text-transform "none"))
+                    text-decoration
+                    (or (sr/translate-text-decoration (:text-decoration span))
+                        (sr/translate-text-decoration (:text-decoration paragraph))
+                        (sr/translate-text-decoration "none"))
 
-                  text-direction
-                  (or (sr/translate-text-direction (:text-direction span))
-                      (sr/translate-text-direction (:text-direction paragraph))
-                      (sr/translate-text-direction "ltr"))]
+                    text-transform
+                    (or (sr/translate-text-transform (:text-transform span))
+                        (sr/translate-text-transform (:text-transform paragraph))
+                        (sr/translate-text-transform "none"))
 
-              (-> offset
-                  (mem/write-u8 dview font-style)
-                  (mem/write-u8 dview text-decoration)
-                  (mem/write-u8 dview text-transform)
-                  (mem/write-u8 dview text-direction)
+                    text-direction
+                    (or (sr/translate-text-direction (:text-direction span))
+                        (sr/translate-text-direction (:text-direction paragraph))
+                        (sr/translate-text-direction "ltr"))]
 
-                  (mem/write-f32 dview font-size)
-                  (mem/write-f32 dview letter-spacing)
-                  (mem/write-u32 dview font-weight)
+                (-> offset
+                    (mem/write-u8 dview font-style)
+                    (mem/write-u8 dview text-decoration)
+                    (mem/write-u8 dview text-transform)
+                    (mem/write-u8 dview text-direction)
 
-                  (mem/write-uuid dview font-id)
-                  (mem/write-i32 dview font-family)
-                  (mem/write-uuid dview (d/nilv font-variant-id uuid/zero))
+                    (mem/write-f32 dview font-size)
+                    (mem/write-f32 dview line-height)
+                    (mem/write-f32 dview letter-spacing)
+                    (mem/write-u32 dview font-weight)
 
-                  (mem/write-i32 dview text-length)
-                  (mem/write-i32 dview (count fills))
-                  (mem/assert-written offset SPAN-ATTR-U8-SIZE)
+                    (mem/write-uuid dview font-id)
+                    (mem/write-i32 dview font-family)
+                    (mem/write-uuid dview (d/nilv font-variant-id uuid/zero))
 
-                  (write-span-fills dview fills))))
-          offset
-          leaves))
+                    (mem/write-i32 dview text-length)
+                    (mem/write-i32 dview (count fills))
+                    (mem/assert-written offset SPAN-ATTR-U8-SIZE)
+
+                    (write-span-fills dview fills))))
+            offset
+            spans)))
 
 (defn write-shape-text
   ;; buffer has the following format:
-  ;; [<num-leaves> <paragraph_attributes> <leaves_attributes> <text>]
+  ;; [<num-spans> <paragraph_attributes> <spans_attributes> <text>]
   [spans paragraph text]
   (let [num-spans    (count spans)
         fills-size    (* types.fills.impl/FILL-U8-SIZE MAX-TEXT-FILLS)
@@ -153,7 +158,7 @@
     (-> offset
         (mem/write-u32 dview num-spans)
         (write-paragraph dview paragraph)
-        (write-leaves dview spans paragraph)
+        (write-spans dview spans paragraph)
         (mem/write-buffer heapu8 text-buffer))
 
     (h/call wasm/internal-module "_set_shape_text_content")))

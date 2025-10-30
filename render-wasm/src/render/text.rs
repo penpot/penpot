@@ -221,21 +221,16 @@ fn draw_text(
 
     for paragraph_builder_group in paragraph_builder_groups {
         let mut group_offset_y = global_offset_y;
-        let total_paragraphs = paragraph_builder_group.len();
+        let group_len = paragraph_builder_group.len();
 
         for (paragraph_index, paragraph_builder) in paragraph_builder_group.iter_mut().enumerate() {
             let mut paragraph = paragraph_builder.build();
             paragraph.layout(text_width);
-            let _paragraph_height = paragraph.height();
-            // FIXME: I've kept the _paragraph_height variable to have
-            // a reminder in the future to keep digging why the ideographic_baseline
-            // works so well and not the paragraph_height. I think we should test
-            // this more.
             let xy = (shape.selrect().x(), shape.selrect().y() + group_offset_y);
             paragraph.paint(canvas, xy);
 
-            if paragraph_index == total_paragraphs - 1 {
-                group_offset_y += paragraph.ideographic_baseline();
+            if paragraph_index == group_len - 1 {
+                group_offset_y += paragraph.height();
             }
 
             for line_metrics in paragraph.get_line_metrics().iter() {
