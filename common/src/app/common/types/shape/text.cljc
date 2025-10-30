@@ -34,13 +34,13 @@
           [:fills {:optional true}
            [:maybe
             [:vector {:gen/max 2}  schema:fill]]]
-          [:font-family {:optional true} :string]
-          [:font-size {:optional true} :string]
-          [:font-style {:optional true} :string]
-          [:font-weight {:optional true} :string]
-          [:direction {:optional true} :string]
-          [:text-decoration {:optional true} :string]
-          [:text-transform {:optional true} :string]
+          [:font-family {:optional true} ::sm/text]
+          [:font-size {:optional true} ::sm/text]
+          [:font-style {:optional true} ::sm/text]
+          [:font-weight {:optional true} ::sm/text]
+          [:direction {:optional true} ::sm/text]
+          [:text-decoration {:optional true} ::sm/text]
+          [:text-transform {:optional true} ::sm/text]
           [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
           [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]
           [:children
@@ -51,13 +51,13 @@
              [:fills {:optional true}
               [:maybe
                [:vector {:gen/max 2} schema:fill]]]
-             [:font-family {:optional true} :string]
-             [:font-size {:optional true} :string]
-             [:font-style {:optional true} :string]
-             [:font-weight {:optional true} :string]
-             [:direction {:optional true} :string]
-             [:text-decoration {:optional true} :string]
-             [:text-transform {:optional true} :string]
+             [:font-family {:optional true} ::sm/text]
+             [:font-size {:optional true} ::sm/text]
+             [:font-style {:optional true} ::sm/text]
+             [:font-weight {:optional true} ::sm/text]
+             [:direction {:optional true} ::sm/text]
+             [:text-decoration {:optional true} ::sm/text]
+             [:text-transform {:optional true} ::sm/text]
              [:typography-ref-id {:optional true} [:maybe ::sm/uuid]]
              [:typography-ref-file {:optional true} [:maybe ::sm/uuid]]]]]]]]]]]]])
 
@@ -72,8 +72,8 @@
     [:width ::sm/safe-number]
     [:height ::sm/safe-number]
     [:fills [:vector {:gen/max 2} schema:fill]]
-    [:font-family {:optional true} :string]
-    [:font-size {:optional true} :string]
+    [:font-family {:optional true} ::sm/text]
+    [:font-size {:optional true} ::sm/text]
     [:font-style {:optional true} :string]
     [:font-weight {:optional true} :string]
     [:rtl {:optional true} :boolean]
